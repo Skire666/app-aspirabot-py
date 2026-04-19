@@ -1,8 +1,8 @@
-import asyncio
 import logging
-from typing import Any, Dict
+from typing import Any
 from playwright.async_api import async_playwright, BrowserContext, Page
 from shared.constants import CTK_BROWSER
+from models.provider_model import ProviderModel
 
 # Récupération du logger pour ce fichier/module spécifique
 logger = logging.getLogger(__name__)
@@ -11,19 +11,19 @@ class WebBrowserUtil:
     """
     Classe gérant l'automatisation du navigateur Chromium via Playwright.
     """
-    _config: Dict[str, Any]
+    _provider: ProviderModel
     _url: str
     _headless: bool
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, provider: ProviderModel) -> None:
         """
         Initialise le gestionnaire de navigateur web avec la configuration fournie.
 
-        :param config: Paramètres du gestionnaire (URL, mode headless, etc.).
+        :param provider: Modèle de fournisseur (URL, mode headless, étapes).
         """
-        self._config = config
-        self._url = self._config.get("url", "https://google.com") # TODO PCO : Constante
-        self._headless = self._config.get("headless", False) # TODO PCO : si case cochée dans IHM adapter le chromium
+        self._provider = provider
+        self._url = self._provider.url or "https://google.com" # TODO PCO : Constante
+        self._headless = self._provider.headless # TODO PCO : si case cochée dans IHM adapter le chromium
         
         # Dossier local pour sauvegarder la session, cookies et cache
         self.user_data_dir = CTK_BROWSER.USER_DATA_DIR
@@ -92,24 +92,89 @@ class WebBrowserUtil:
         
         :param page: L'objet Page asynchrone manipulé par Playwright.
         """
-        # TODO PCO : faire des steps que l'algorithme applique, penser au wysiwyg
         logger.info(f"Navigation vers {self._url}")
         await page.goto(self._url)
         
-        logger.info("Récupération du titre de la page...")
-        title = await page.title()
-        logger.info(f"Résultat - Titre trouvé : '{title}'")
-        
-        # Pause simulant une activité utilisateur (pour éviter les détections)
-        logger.info("Pause de 3 secondes pour simuler une action...")
-        await asyncio.sleep(3)
+        steps = self._provider.steps
+        if not steps:
+            logger.info("Aucune étape à exécuter.")
+            return
+
+        variables = {}
+        for idx, step in enumerate(steps):
+            action = step.get("type")
+            logger.info(f"Exécution de l'étape {idx + 1}: {action}")
+            
+            try:
+                if action == "FIND_ELEMENT":
+                    sel = step.get("selector", "")
+                    await page.wait_for_selector(sel, timeout=10000)
+                    logger.info(f"Element {sel} trouvé.")
+                    
+                elif action == "CLICK":
+                    sel = step.get("selector", "")
+                    await page.click(sel)
+                    logger.info(f"Clic sur {sel}.")
+                    
+                elif action == "DOWNLOAD_IMAGE":
+                    images = await page.locator("img").all()
+                    largest = None
+                    max_area = 0
+                    for img in images:
+                        box = await img.bounding_box()
+                        if box:
+                            area = box["width"] * box["height"]
+                            if area > max_area:
+                                max_area = area
+                                largest = img
+                    if largest:
+                        src = await largest.get_attribute("src")
+                        logger.info(f"Plus grande image a télécharger: {src}")
+                        import urllib.parse
+                        if src:
+                            src_url = urllib.parse.urljoin(page.url, src)
+                            logger.info(f"-> A télécharger: {src_url}")
+                            # TODO PCO : Downloading can be implemented with requests or playwright download
+                    else:
+                        logger.info("Aucune image trouvée.")
+                        
+                elif action == "WAIT":
+                    if "timeout" in step:
+                        ms = step["timeout"]
+                        await page.wait_for_timeout(ms)
+                        logger.info(f"Attente de {ms}ms terminée.")
+                    elif "selector" in step:
+                        sel = step["selector"]
+                        await page.wait_for_selector(sel)
+                        logger.info(f"Attente du sélecteur {sel} terminée.")
+                        
+                elif action == "EXTRACT_TEXT":
+                    sel = step.get("selector", "")
+                    var_name = step.get("variable_name", "var1")
+                    text = await page.locator(sel).inner_text()
+                    variables[var_name] = text
+                    logger.info(f"Texte extrait pour {var_name} : {text}")
+                    
+                elif action == "CLOSE_OTHER_TABS":
+                    import urllib.parse
+                    start_domain = urllib.parse.urlparse(self._url).netloc
+                    context = page.context
+                    for p in context.pages:
+                        if p != page:
+                            p_domain = urllib.parse.urlparse(p.url).netloc
+                            if p_domain != start_domain:
+                                await p.close()
+                    logger.info("Onglets fermés hors du domaine.")
+                    
+            except Exception as e:
+                logger.error(f"Erreur à l'étape {idx + 1} ({action}): {e}")
 
 
-async def run_scraping_task(config: Dict[str, Any]) -> None:
+async def run_scraping_task(provider: ProviderModel) -> None:
     """
     Fonction principale appelée par l'IHM qui exécute la classe de scraping.
     
-    :param config: Configuration pour le lancement du scraper.
+    :param provider: Modèle pour le lancement du scraper.
     """
-    scraper = WebBrowserUtil(config)
+    scraper = WebBrowserUtil(provider)
     await scraper.start()

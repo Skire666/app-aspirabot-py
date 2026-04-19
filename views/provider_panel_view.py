@@ -10,7 +10,7 @@ from tkinter import ttk
 import threading
 import asyncio
 import logging
-from typing import Optional, Dict, Any, Callable
+from typing import Optional, Any, Callable
 
 from models.provider_model import ProviderModel
 from utils.web_browser_util import run_scraping_task
@@ -192,31 +192,26 @@ class ProviderPanelView(ttk.Frame):
         if self.on_start_scraping:
             self.on_start_scraping()
         
-        config: Dict[str, Any] = {
-            "provider": selected_provider,
-            "url": target_url
-        }
-        
         self.logger.info(f"Démarrage de la tâche avec config : {selected_provider} ({target_url})")
-        thread = threading.Thread(target=self._run_async_scraper, args=(config,), daemon=True)
+        thread = threading.Thread(target=self._run_async_scraper, args=(provider,), daemon=True)
         thread.start()
 
-    def _run_async_scraper(self, config: Dict[str, Any]) -> None:
+    def _run_async_scraper(self, provider: ProviderModel) -> None:
         """Enveloppe l'exécution de la boucle asynchrone.
 
         Cette méthode est exécutée au sein de son propre thread. Elle lance
         la tâche de récupération selon la configuration.
 
         Args:
-            config (Dict[str, Any]): Dictionnaire d'options regroupant l'url cible, 
-                le mode headless et les identifiants de provider requis.
+            provider (ProviderModel): Instance du fournisseur contenant 
+                l'url cible, le mode headless et les étapes.
 
         Raises:
             Exception: Capture et relaye les problèmes survenus dans le moteur 
                 de scraping (AP101).
         """
         try:
-            asyncio.run(run_scraping_task(config))
+            asyncio.run(run_scraping_task(provider))
         except Exception as e:
             self.logger.exception(f"Erreur [AP101] durant le scraping : {e}")
         finally:

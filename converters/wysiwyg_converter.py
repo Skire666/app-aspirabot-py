@@ -26,6 +26,8 @@ class WysiwygConverter:
         view_model.version.set(model.version)
         view_model.tags_str.set(tags_str)
         view_model.headless.set(bool(model.headless))
+        import copy
+        view_model.steps = copy.deepcopy(model.steps) if hasattr(model, 'steps') else []
         
         return view_model
 
@@ -42,3 +44,5 @@ class WysiwygConverter:
         model.tags = [t.strip() for t in tags_raw if t.strip()]
         
         model.headless = view_model.headless.get()
+        import copy
+        model.steps = copy.deepcopy(view_model.steps)

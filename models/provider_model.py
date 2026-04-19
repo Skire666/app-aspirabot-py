@@ -56,7 +56,8 @@ class ProviderModel:
             "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "version": "1.0.0",
             "tags": [],
-            "headless": True
+            "headless": True,
+            "steps": []
         }
 
     ## ------------------------------------------
@@ -123,3 +124,11 @@ class ProviderModel:
     @headless.setter
     def headless(self, value: bool) -> None:
         self._repository.set_value("headless", value)
+
+    @property
+    def steps(self) -> list[dict[str, Any]]:
+        return self._repository.get_value("steps", [])
+
+    @steps.setter
+    def steps(self, value: list[dict[str, Any]]) -> None:
+        self._repository.set_value("steps", value)

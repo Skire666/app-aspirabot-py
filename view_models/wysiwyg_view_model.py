@@ -6,6 +6,7 @@ les données formatées spécifiquement pour l'affichage et l'édition dans la v
 
 import tkinter as tk
 from dataclasses import dataclass, field
+from typing import Any, List
 
 @dataclass
 class WysiwygViewModel:
@@ -20,6 +21,7 @@ class WysiwygViewModel:
     version: tk.StringVar = field(default_factory=tk.StringVar)
     tags_str: tk.StringVar = field(default_factory=tk.StringVar)
     headless: tk.BooleanVar = field(default_factory=lambda: tk.BooleanVar(value=True))
+    steps: List[dict[str, Any]] = field(default_factory=list)
 
     def validate(self) -> list[str]:
         """Vérifie la validité des données du ViewModel.
@@ -32,4 +34,13 @@ class WysiwygViewModel:
             errors.append("Le champ 'Nom' est obligatoire.")
         if not self.url.get() or not self.url.get().strip():
             errors.append("Le champ 'URL' est obligatoire.")
+            
+        for idx, step in enumerate(self.steps):
+            t = step.get("type")
+            if t in ["FIND_ELEMENT", "CLICK", "EXTRACT_TEXT"]:
+                if not step.get("selector"):
+                    errors.append(f"Étape {idx + 1} ({t}) : le sélecteur est requis.")
+            elif t == "WAIT":
+                if not step.get("timeout") and not step.get("selector"):
+                    errors.append(f"Étape {idx + 1} ({t}) : timeout ou sélecteur est requis.")
         return errors
