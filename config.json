@@ -1,0 +1,4 @@
+{
+    "folder_providers": "./user_folder_providers",
+    "log_level": "INFO"
+}

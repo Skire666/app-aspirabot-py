@@ -12,7 +12,8 @@ from typing import Any
 
 from models.aspirabot_app_model import AspirabotAppModel
 from views.provider_panel_view import ProviderPanelView
-from views.logs_panel_view import LogsPanel
+from views.logs_panel_view import LogsPanelView
+from views.wysiwyg_panel_view import WysiwygPanelView
 
 class MultiTabsPanel(ttk.Notebook):
     """Gère le système d'onglets de la fenêtre principale.
@@ -24,8 +25,8 @@ class MultiTabsPanel(ttk.Notebook):
     Attributes:
         app_config (Optional[ConfigAspirabot]): La configuration de l'application.
         logger (logging.Logger): Le logger utilisé pour cette classe.
-        provider_panel (ProviderPanel): L'onglet de configuration et lancement.
-        logs_panel (LogsPanel): L'onglet d'affichage des journaux (logs).
+        provider_panel (ProviderPanelView): L'onglet de configuration et lancement.
+        logs_panel (LogsPanelView): L'onglet d'affichage des journaux (logs).
 
     Example:
         >>> import tkinter as tk
@@ -56,10 +57,14 @@ class MultiTabsPanel(ttk.Notebook):
         des journaux (LogsPanel) au Notebook de façon ordonnée.
         """
         self.provider_panel = ProviderPanelView(self, self.app_config, on_start_scraping=self._show_logs_tab)
-        self.add(self.provider_panel, text="Configuration & Lancement")
-        self.logger.debug("Création de l'onglet 'Configuration'.")
+        self.add(self.provider_panel, text="Fournisseurs")
+        self.logger.debug("Création de l'onglet 'Fournisseurs'.")
 
-        self.logs_panel = LogsPanel(self)
+        self.wysiwyg_panel = WysiwygPanelView(self, self.app_config, on_provider_saved=self.provider_panel._refresh_providers)
+        self.add(self.wysiwyg_panel, text="WYSIWYG")
+        self.logger.debug("Création de l'onglet 'WYSIWYG'.")
+
+        self.logs_panel = LogsPanelView(self)
         self.add(self.logs_panel, text="Journal")
         self.logger.debug("Création de l'onglet 'Journal'.")
 

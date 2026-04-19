@@ -1,8 +1,8 @@
 import datetime
 
-class StringUtil:
+class StringHelper:
     @staticmethod
-    def add_timestamp_and_extension(base_string: str, extension: str) -> str:
+    def concat_timestamp_and_extension(base_string: str, extension: str) -> str:
         """
         Ajoute un horodatage (format yyyy_mm_dd_hh_mm_ss_sss) et une extension à une chaîne.
         

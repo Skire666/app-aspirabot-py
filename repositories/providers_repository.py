@@ -38,6 +38,15 @@ class ProvidersRepository:
         """
         self._folder_path = path_folder
 
+    def provider_folder_exists(self) -> bool:
+        """Vérifie si le dossier contenant les fournisseurs existe sur le système.
+        
+        Returns:
+            bool: True si le dossier existe, False sinon.
+        """
+        providers_dir = Path(self._folder_path)
+        return providers_dir.exists() and providers_dir.is_dir()
+
     def list_provider_files(self) -> List[Path]:
         """Liste tous les fichiers JSON présents dans le dossier des fournisseurs.
 

@@ -97,9 +97,6 @@ class ProviderPanelView(ttk.Frame):
         self.provider_combo = ttk.Combobox(self.url_frame, textvariable=self.provider_var, state="readonly", width=47)
         self.provider_combo.pack(side="left")
         self.provider_combo.bind("<<ComboboxSelected>>", self._on_provider_selected)
-
-        self.create_provider_btn = ttk.Button(self.url_frame, text="Nouveau", command=self.create_default_provider)
-        self.create_provider_btn.pack(side="left", padx=5)
         
         self.open_folder_btn = ttk.Button(self.url_frame, text="Ouvrir dossier", command=self.open_provider_folder)
         
@@ -130,7 +127,15 @@ class ProviderPanelView(ttk.Frame):
             self.logger.error("Configuration non fournie.")
             return
             
+        from tkinter import messagebox
         _controller = ProviderController(self.app_config)
+        
+        if not _controller.check_folder_exists():
+            self.logger.error("Dossier des fournisseurs introuvable.")
+            messagebox.showerror("Dossier introuvable", "Le dossier des fournisseurs n'existe pas ou a été supprimé.")
+            self._refresh_providers()
+            return
+            
         _controller.open_provider_folder()
 
     def _refresh_providers(self) -> None:
@@ -155,31 +160,6 @@ class ProviderPanelView(ttk.Frame):
         self.provider_combo.current(0)
         self._on_provider_selected()
         
-    def create_default_provider(self) -> None:
-        """Génère un nouveau fournisseur avec des valeurs par défaut et l'enregistre.
-
-        Délègue la logique de création au contrôleur de fournisseurs (logic MVC).
-
-        Raises:
-            Exception: Enregistre l'erreur survenue en cas de problème lors de 
-                la création du fournisseur.
-        """
-        if not self.app_config:
-            self.logger.error("Configuration non fournie, impossible de créer un provider.")
-            return
-
-        from controllers.provider_controller import ProviderController
-        controller = ProviderController(self.app_config)
-            
-        try:
-            new_provider_stem = controller.create_default_provider()
-            self.logger.info(f"Nouveau provider créé : {new_provider_stem}")
-            self._refresh_providers()
-            self.provider_var.set(new_provider_stem)
-            self._on_provider_selected()
-        except Exception as e:
-            self.logger.error(f"Erreur lors de la création du provider : {e}")
-
     def start_scraping(self) -> None:
         """Vérifie la configuration actuelle et déclenche le processus de scraping.
 

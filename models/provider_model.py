@@ -49,9 +49,14 @@ class ProviderModel:
     @classmethod
     def get_default_data(cls, provider_name: str) -> dict[str, Any]:
         """Retourne les données par défaut pour un nouveau fournisseur."""
+        from datetime import datetime
         return {
             "provider_name": provider_name,
-            "url": "https://example.com"
+            "url": "https://example.com",
+            "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "version": "1.0.0",
+            "tags": [],
+            "headless": True
         }
 
     ## ------------------------------------------
@@ -69,30 +74,52 @@ class ProviderModel:
         self._file_path = value
         self._repository = JsonFileRepository(self._file_path, {})
 
-    ## Propriété pour le nom du fournisseur
+    ## Propriétés du Provider
+
     @property
     def provider_name(self) -> str:
-        """str: Obtient ou définit le nom du fournisseur.
-
-        Si le nom n'a pas été préalablement défini dans le stockage JSON,
-        retourne une chaîne de caractères vide par défaut.
-        """
         return self._repository.get_value("provider_name", "")
 
     @provider_name.setter
     def provider_name(self, value: str) -> None:
         self._repository.set_value("provider_name", value)
 
-    ## Propriété pour l'URL du fournisseur
     @property
     def url(self) -> str:
-        """str: Obtient ou définit l'URL associée au fournisseur.
-
-        Si l'URL n'a pas été préalablement définie dans le stockage JSON,
-        retourne une chaîne de caractères vide par défaut.
-        """
         return self._repository.get_value("url", "")
 
     @url.setter
     def url(self, value: str) -> None:
         self._repository.set_value("url", value)
+
+    @property
+    def created_date(self) -> str:
+        return self._repository.get_value("created_date", "")
+
+    @created_date.setter
+    def created_date(self, value: str) -> None:
+        self._repository.set_value("created_date", value)
+
+    @property
+    def version(self) -> str:
+        return self._repository.get_value("version", "1.0.0")
+
+    @version.setter
+    def version(self, value: str) -> None:
+        self._repository.set_value("version", value)
+
+    @property
+    def tags(self) -> list[str]:
+        return self._repository.get_value("tags", [])
+
+    @tags.setter
+    def tags(self, value: list[str]) -> None:
+        self._repository.set_value("tags", value)
+
+    @property
+    def headless(self) -> bool:
+        return self._repository.get_value("headless", True)
+
+    @headless.setter
+    def headless(self, value: bool) -> None:
+        self._repository.set_value("headless", value)

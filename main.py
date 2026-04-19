@@ -3,7 +3,7 @@ Point d'entrée principal de l'application Scraper Configurator.
 Initialise le gestionnaire de logs, la configuration et lance l'interface graphique.
 """
 
-from constants import CTK_APP
+from shared.constants import CTK_APP
 from views.root_frame_view import RootFrameView
 from models.aspirabot_app_model import AspirabotAppModel
 from utils.logging_util import setup_logger, update_logger_level

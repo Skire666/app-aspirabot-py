@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 import logging
 
-from constants import CTK_GUI
+from shared.constants import CTK_GUI
 from models.aspirabot_app_model import AspirabotAppModel
 from views.multi_tabs_panel_view import MultiTabsPanel
 

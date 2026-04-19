@@ -1,0 +1,8 @@
+{
+    "provider_name": "sushiscan",
+    "url": "https://sushiscan.net/",
+    "created_date": "2026-04-19 22:08:34",
+    "version": "1.0.0",
+    "tags": [],
+    "headless": false
+}

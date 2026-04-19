@@ -94,6 +94,14 @@ class ProviderController:
         self.repository.save_provider(available_path, default_data)
         return name_without_extension
 
+    def check_folder_exists(self) -> bool:
+        """Vérifie l'existence du dossier des fournisseurs via le dépôt.
+
+        Returns:
+            bool: True si le dossier existe, False sinon.
+        """
+        return self.repository.provider_folder_exists()
+
     def open_provider_folder(self) -> None:
         """Ouvre le dossier contenant les fichiers des fournisseurs dans l'explorateur.
 

@@ -18,7 +18,7 @@ from typing import Any
 
 from utils.logging_util import setup_logger
 
-class LogsPanel(ttk.Frame):
+class LogsPanelView(ttk.Frame):
     """Panneau responsable de l'affichage des journaux (logs).
 
     Ce composant hérite de ttk.Frame et intègre une zone de texte avec défilement

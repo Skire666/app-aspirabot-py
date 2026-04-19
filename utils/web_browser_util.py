@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Any, Dict
 from playwright.async_api import async_playwright, BrowserContext, Page
-from constants import CTK_BROWSER
+from shared.constants import CTK_BROWSER
 
 # Récupération du logger pour ce fichier/module spécifique
 logger = logging.getLogger(__name__)

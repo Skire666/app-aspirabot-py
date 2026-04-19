@@ -7,6 +7,9 @@ class CTK_APP:
     # Fichier de configuration JSON utilisé pour stocker les paramètres de l'application
     ASPIRABOT_CONFIG_FILE = "config.json"
 
+    # Version de l'application
+    VERSION = "1.0.0"
+
 ## ----------------------------------------------
 ## Logger
 ## ----------------------------------------------
@@ -44,6 +47,6 @@ class CTK_GUI:
     APP_NAME = "Aspirabot"
 
     # Dimensions initiales de la fenêtre principale
-    SIZE_ROOT_FRAME = "850x500"
+    SIZE_ROOT_FRAME = "1000x600"
 
 ## END
