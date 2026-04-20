@@ -10,10 +10,10 @@ from tkinter import ttk
 import logging
 from typing import Any
 
-from models.aspirabot_app_model import AspirabotAppModel
-from views.provider_panel_view import ProviderPanelView
+from models.config_aspirabot_model import ConfigAspirabotModel
 from views.logs_panel_view import LogsPanelView
-from views.wysiwyg_panel_view import WysiwygPanelView
+from __src__.views.providers_list_panel_view import ProvidersListPanelView
+from views.update_panel_view import UpdatePanelView
 
 class MultiTabsPanel(ttk.Notebook):
     """Gère le système d'onglets de la fenêtre principale.
@@ -25,7 +25,6 @@ class MultiTabsPanel(ttk.Notebook):
     Attributes:
         app_config (Optional[ConfigAspirabot]): La configuration de l'application.
         logger (logging.Logger): Le logger utilisé pour cette classe.
-        provider_panel (ProviderPanelView): L'onglet de configuration et lancement.
         logs_panel (LogsPanelView): L'onglet d'affichage des journaux (logs).
 
     Example:
@@ -37,7 +36,7 @@ class MultiTabsPanel(ttk.Notebook):
         >>> notebook.pack(fill="both", expand=True)
     """
 
-    def __init__(self, parent: tk.Misc, app_config: AspirabotAppModel, **kwargs: Any):
+    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, **kwargs: Any):
         """Initialise le composant MultiTabsPanel.
 
         Args:
@@ -56,25 +55,36 @@ class MultiTabsPanel(ttk.Notebook):
         Crée et ajoute le panneau de configuration (ProviderPanel) et le panneau 
         des journaux (LogsPanel) au Notebook de façon ordonnée.
         """
-        self.provider_panel = ProviderPanelView(self, self.app_config, on_start_scraping=self._show_logs_tab)
-        self.add(self.provider_panel, text="Fournisseurs")
+        style = ttk.Style()
+        style.configure("TNotebook.Tab", font=('Helvetica', 12, 'bold'))
+
+        self._panel_providers_list = ProvidersListPanelView(self, self.app_config, on_provider_saved=None)
+        self.add(self._panel_providers_list, text=" Fournisseurs ")
         self.logger.debug("Création de l'onglet 'Fournisseurs'.")
 
-        self.wysiwyg_panel = WysiwygPanelView(self, self.app_config, on_provider_saved=self.provider_panel._refresh_providers)
-        self.add(self.wysiwyg_panel, text="WYSIWYG")
-        self.logger.debug("Création de l'onglet 'WYSIWYG'.")
-
-        self.logs_panel = LogsPanelView(self)
-        self.add(self.logs_panel, text="Journal")
+        self._panel_logs = LogsPanelView(self)
+        self.add(self._panel_logs, text=" Journal ")
         self.logger.debug("Création de l'onglet 'Journal'.")
 
-    def _show_logs_tab(self) -> None:
-        """Bascule l'affichage actif sur l'onglet du journal.
+        def on_update_action_complete() -> None:
+            self.select(str(self._panel_providers_list)) # type: ignore
+
+        self.update_panel = UpdatePanelView(
+            self, 
+            self.app_config, 
+            on_provider_saved=self._panel_providers_list.refresh_providers_list,
+            on_action_complete=on_update_action_complete
+        )
+        self.add(self.update_panel, text=" Mettre à jour ")
+        self.logger.debug("Création de l'onglet 'Mettre à jour'.")
         
-        Cette méthode est utilisée comme callback (`on_start_scraping`) lors du 
-        clic sur le bouton de lancement pour basculer automatiquement l'utilisateur 
-        vers la vue des logs d'exécution.
-        """
-        tab_id: str = str(self.logs_panel)
-        self.select(tab_id)  # type: ignore
+        def on_providers_list_selected(provider_alias: str) -> None:
+            if provider_alias:
+                self.update_panel.load_provider(provider_alias)
+            else:
+                self.update_panel.load_default()
+            self.select(str(self.update_panel)) # type: ignore
+                
+        self._panel_providers_list.on_provider_saved = None
+        self._panel_providers_list.on_provider_selected_callback = on_providers_list_selected
 

@@ -78,10 +78,10 @@ def setup_logger(log_queue: Optional[queue.Queue[tuple[logging.LogRecord, str]]]
     logger.addHandler(console_handler)
 
     # 2. Rotating File Handler
-    log_dir = CTK_LOGGING.FOLDER_LOG
+    log_dir = CTK_LOGGING.DEFAULT_FOLDER_LOGS
     os.makedirs(log_dir, exist_ok=True)
     file_handler = RotatingFileHandler(
-        os.path.join(log_dir, StringHelper.concat_timestamp_and_extension(CTK_LOGGING.BASE_NAME_LOGFILE, "log")),
+        os.path.join(log_dir, StringHelper.concat_yyyy_and_extension(CTK_LOGGING.BASE_NAME_LOGFILE, "log")),
         maxBytes= CTK_LOGGING.LOG_MAX_BYTES,
         backupCount= CTK_LOGGING.BACKUP_LOG_COUNT,
         encoding="utf-8"

@@ -39,23 +39,23 @@ class ProviderModel:
 
         Example:
             >>> modele = ProviderModel("data/fournisseur.json")
-            >>> modele.provider_name = "Mon Fournisseur"
-            >>> print(modele.provider_name)
+            >>> modele.provider_alias = "Mon Fournisseur"
+            >>> print(modele.provider_alias)
             Mon Fournisseur
         """
         self._file_path: str = file_path
         self._repository = JsonFileRepository(self._file_path, {})
 
     @classmethod
-    def get_default_data(cls, provider_name: str) -> dict[str, Any]:
+    def get_default_data(cls, provider_alias: str, provider_filename: str) -> dict[str, Any]:
         """Retourne les données par défaut pour un nouveau fournisseur."""
         from datetime import datetime
         return {
-            "provider_name": provider_name,
+            "provider_alias": provider_alias,
+            "provider_filename": provider_filename,
             "url": "https://example.com",
             "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "version": "1.0.0",
-            "tags": [],
             "headless": True,
             "steps": []
         }
@@ -78,12 +78,20 @@ class ProviderModel:
     ## Propriétés du Provider
 
     @property
-    def provider_name(self) -> str:
-        return self._repository.get_value("provider_name", "")
+    def provider_alias(self) -> str:
+        return self._repository.get_value("provider_alias", "")
 
-    @provider_name.setter
-    def provider_name(self, value: str) -> None:
-        self._repository.set_value("provider_name", value)
+    @provider_alias.setter
+    def provider_alias(self, value: str) -> None:
+        self._repository.set_value("provider_alias", value)
+
+    @property
+    def provider_filename(self) -> str:
+        return self._repository.get_value("provider_filename", "")
+
+    @provider_filename.setter
+    def provider_filename(self, value: str) -> None:
+        self._repository.set_value("provider_filename", value)
 
     @property
     def url(self) -> str:
@@ -108,14 +116,6 @@ class ProviderModel:
     @version.setter
     def version(self, value: str) -> None:
         self._repository.set_value("version", value)
-
-    @property
-    def tags(self) -> list[str]:
-        return self._repository.get_value("tags", [])
-
-    @tags.setter
-    def tags(self, value: list[str]) -> None:
-        self._repository.set_value("tags", value)
 
     @property
     def headless(self) -> bool:

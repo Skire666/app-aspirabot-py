@@ -5,7 +5,7 @@ Initialise le gestionnaire de logs, la configuration et lance l'interface graphi
 
 from shared.constants import CTK_APP
 from views.root_frame_view import RootFrameView
-from models.aspirabot_app_model import AspirabotAppModel
+from models.config_aspirabot_model import ConfigAspirabotModel
 from utils.logging_util import setup_logger, update_logger_level
 
 def main() -> None:
@@ -18,7 +18,7 @@ def main() -> None:
 
     # Chargement de la configuration
     logger.info("Chargement des configurations.")
-    config = AspirabotAppModel(CTK_APP.ASPIRABOT_CONFIG_FILE)
+    config = ConfigAspirabotModel(CTK_APP.ASPIRABOT_CONFIG_FILE)
     config.verify_keys_exist()  # Vérifie que toutes les clés par défaut sont présentes.
     logger.debug("Configuration chargée.")
     

@@ -21,7 +21,7 @@ s_logger = logging.getLogger(__name__)
 ## Classe
 ## ----------------------------------------------
 
-class AspirabotAppModel:
+class ConfigAspirabotModel:
     """Gestionnaire de configuration de l'application (format JSON).
 
     Cette classe prend en charge la lecture et l'écriture de la configuration
@@ -42,14 +42,16 @@ class AspirabotAppModel:
         """
         self.config_path = config_path
         s_logger.debug(f"Initialisation du gestionnaire de configuration (cible: {self.config_path})")
-        self._repository = JsonFileRepository(self.config_path, AspirabotAppModel.get_default_data())
+        self._repository = JsonFileRepository(self.config_path, ConfigAspirabotModel.get_default_data())
 
     @classmethod
     def get_default_data(cls) -> dict[str, Any]:
         """Retourne les données par défaut pour un nouveau fournisseur."""
         return {
+            "log_level": "INFO", # niveau de log par défaut (ex: "INFO", "DEBUG", "WARNING")
+            "folder_logs": "./tmp_logs", # Dossier pour les fichiers de logs
             "folder_providers": "./user_folder_providers", # dossier local pour stocker les providers personnalisés
-            "log_level": "INFO" # niveau de log par défaut (ex: "INFO", "DEBUG", "WARNING")
+            "user_data_dir": "./tmp_chromium_session" # Dossier local pour sauvegarder la session, cookies et cache de Chromium
         }
 
     def verify_keys_exist(self) -> bool:
@@ -58,7 +60,7 @@ class AspirabotAppModel:
         Returns:
             bool: True si toutes les clés de DEFAULT_CONFIG sont présentes, False sinon.
         """
-        missing_keys = [key for key in AspirabotAppModel.get_default_data() if key not in self.data]
+        missing_keys = [key for key in ConfigAspirabotModel.get_default_data() if key not in self.all_data]
         if missing_keys:
             s_logger.warning(f"Clés de configuration manquantes : {missing_keys}")
             return False
@@ -69,18 +71,18 @@ class AspirabotAppModel:
     ## ------------------------------------------
 
     @property
-    def data(self) -> Dict[str, Any]:
+    def all_data(self) -> Dict[str, Any]:
         """Dict[str, Any]: Obtient une copie des données de configuration."""
-        return self._repository.data
+        return self._repository.all_data
 
-    @data.setter
-    def data(self, value: Dict[str, Any]) -> None:
+    @all_data.setter
+    def all_data(self, value: Dict[str, Any]) -> None:
         """Définit l'ensemble des données de configuration et sauvegarde le fichier.
 
         Args:
             value (Dict[str, Any]): Le nouveau dictionnaire de configuration.
         """
-        self._repository.data = value
+        self._repository.all_data = value
         self._repository.save_to_file()
 
     @property
@@ -100,5 +102,23 @@ class AspirabotAppModel:
     @log_level.setter
     def log_level(self, value: str) -> None:
         self._repository.set_value("log_level", value)
+
+    @property
+    def folder_logs(self) -> str:
+        """str: Dossier pour les fichiers de logs."""
+        return self._repository.get_value("folder_log", "./tmp_logs")
+
+    @folder_logs.setter
+    def folder_logs(self, value: str) -> None:
+        self._repository.set_value("folder_log", value)
+
+    @property
+    def user_data_dir(self) -> str:
+        """str: Dossier local pour sauvegarder la session, cookies et cache de Chromium."""
+        return self._repository.get_value("user_data_dir", "./tmp_chromium_session")
+
+    @user_data_dir.setter
+    def user_data_dir(self, value: str) -> None:
+        self._repository.set_value("user_data_dir", value)
 
 ## END

@@ -38,6 +38,16 @@ class ProvidersRepository:
         """
         self._folder_path = path_folder
 
+    @property
+    def folder_path(self) -> str | Path:
+        """Obtient le chemin vers le dossier des fournisseurs."""
+        return self._folder_path
+
+    @folder_path.setter
+    def folder_path(self, value: str | Path) -> None:
+        """Définit le chemin vers le dossier des fournisseurs."""
+        self._folder_path = value
+
     def provider_folder_exists(self) -> bool:
         """Vérifie si le dossier contenant les fournisseurs existe sur le système.
         
@@ -62,14 +72,14 @@ class ProvidersRepository:
         """Lit et instancie le fichier de fournisseur spécifié.
 
         Args:
-            name_provider (str): Le nom du fournisseur à lire.
+            name_provider (str): Le nom du fichier fournisseur à lire.
 
         Returns:
             ProviderModel: L'instance du fournisseur lu.
         """
         for file_path in self.list_provider_files():
-            ## On compare le nom du fichier (sans extension) avec le nom du provider recherché
-            if file_path.stem == name_provider:
+            ## On compare le nom du fichier avec le nom du provider recherché
+            if file_path.name == name_provider or file_path.stem == name_provider:
                 try:
                     return ProviderModel(str(file_path))
                 except Exception as e:
@@ -79,32 +89,29 @@ class ProvidersRepository:
     def get_next_available_path(self, base_name: str) -> Path:
         """Trouve le prochain nom de fichier disponible avec un suffixe incrémenté.
 
-        Si le fichier cible (ex: `base_name.json`) existe déjà, cette méthode ajoute
-        et incrémente un suffixe numérique (ex: `base_name_1.json`, `base_name_2.json`)
+        Si le fichier cible existe déjà, cette méthode ajoute un suffixe numérique
         jusqu'à ce qu'un nom de fichier libre soit trouvé.
 
         Args:
-            base_name (str): Le nom de base souhaité pour le fichier (sans l'extension).
-
-        Returns:
-            Path: Le chemin complet vers le nouveau fichier qui est disponible pour écriture.
-
-        Example:
-            >>> repo = ProvidersRepository("/path/to/providers")
-            >>> path = repo.get_next_available_path("nouveau_provider")
-            >>> print(path.name)
-            'nouveau_provider.json'
+            base_name (str): Le nom complet du fichier, y compris l'extension .json.
         """
         providers_dir = Path(self._folder_path)
         providers_dir.mkdir(parents=True, exist_ok=True)
         
-        new_file = providers_dir / f"{base_name}.json"
+        # Retire l'extension pour pouvoir rajouter le _1, _2 au milieu si besoin
+        name_without_ext = base_name[:-5] if base_name.lower().endswith('.json') else base_name
+        ext = ".json" if base_name.lower().endswith('.json') else ""
+        
+        new_file = providers_dir / base_name
+        if not new_file.name.lower().endswith('.json'):
+            new_file = providers_dir / f"{base_name}.json"
+            ext = ".json"
+
         counter = 1
         
         # Tant que le fichier existe, incrémente le suffixe pour trouver un nom disponible
         while new_file.exists():
-            # Exemple: "folder/base_name_1.json", "folder/base_name_2.json", etc.
-            new_file = providers_dir / f"{base_name}_{counter}.json"
+            new_file = providers_dir / f"{name_without_ext}_{counter}{ext}"
             counter += 1
         return new_file
 

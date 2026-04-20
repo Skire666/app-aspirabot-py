@@ -47,7 +47,7 @@ Une fois activé, vous devriez voir `(venv)` apparaître au début de votre lign
 Installez `playwright` (et autres paquets éventuels) à l'aide du fichier `requirements.txt` :
 
 ```bash
-pip install -r requirements.txt
+pip install -r './__src__/requirements.txt'
 ```
 
 ### 4. Installer les navigateurs pour Playwright

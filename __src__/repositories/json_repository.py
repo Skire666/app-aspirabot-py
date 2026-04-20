@@ -15,7 +15,7 @@ Example:
 import json
 import os
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 s_logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class JsonFileRepository:
         data (Dict[str, Any]): Les données actuellement chargées en mémoire.
     """
 
-    def __init__(self, file_path: str, default_data: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, file_path: str, default_data: Dict[str, Any]) -> None:
         """
         Initialise le dépôt de fichier JSON.
 
@@ -48,8 +48,8 @@ class JsonFileRepository:
                 Si None, un dictionnaire vide sera utilisé par défaut.
         """
         self.file_path = file_path
-        self.default_data = default_data if default_data is not None else {}
-        self.data: Dict[str, Any] = {}
+        self.default_data = default_data # jamais none, doit être un dict
+        self.all_data: Dict[str, Any] = {}
         self.load_from_file()
 
     def load_from_file(self) -> None:
@@ -62,16 +62,16 @@ class JsonFileRepository:
         """
         if not os.path.exists(self.file_path):
             s_logger.warning(f"Fichier '{self.file_path}' introuvable. Création par défaut.")
-            self.data = self.default_data.copy()
+            self.all_data = self.default_data.copy()
             self.save_to_file()
         else:
             try:
                 with open(self.file_path, "r", encoding="utf-8") as f:
-                    self.data = json.load(f)
+                    self.all_data = json.load(f)
                 s_logger.info(f"Données chargées depuis '{self.file_path}'.")
             except json.JSONDecodeError as e:
                 s_logger.error(f"Fichier '{self.file_path}' corrompu ({e}). Restauration par défaut.")
-                self.data = self.default_data.copy()
+                self.all_data = self.default_data.copy()
                 self.save_to_file()
 
     def save_to_file(self) -> None:
@@ -83,7 +83,7 @@ class JsonFileRepository:
         """
         try:
             with open(self.file_path, "w", encoding="utf-8") as f:
-                json.dump(self.data, f, indent=4)
+                json.dump(self.all_data, f, indent=4)
             s_logger.debug(f"Données sauvegardées dans '{self.file_path}'.")
         except Exception as e:
             s_logger.exception(f"Erreur de sauvegarde dans '{self.file_path}' : {e}")
@@ -99,7 +99,7 @@ class JsonFileRepository:
         Returns:
             Any: La valeur trouvée ou la valeur par défaut.
         """
-        return self.data.get(key, default)
+        return self.all_data.get(key, default)
 
     def set_value(self, key: str, value: Any) -> None:
         """
@@ -109,5 +109,5 @@ class JsonFileRepository:
             key (str): La clé à ajouter ou modifier.
             value (Any): La valeur à associer à la clé.
         """
-        self.data[key] = value
+        self.all_data[key] = value
         self.save_to_file()

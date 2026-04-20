@@ -93,8 +93,4 @@ Au moment de sauvegarder, vérifie la cohérence du JSON et des actions.
 Au moment de charger, vérifie la cohérence du JSON et des actions.
 Lorsque le workflow est exécuté, chaque action doit être disponible dans playwright.
 
--------------------------------
--------------------------------
-
-Je suis en python strict. Il faut donc résoudre les problèmes de typages (is unknown, is partially unknown)
 

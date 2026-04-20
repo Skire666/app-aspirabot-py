@@ -10,7 +10,7 @@ from tkinter import ttk
 import logging
 
 from shared.constants import CTK_GUI
-from models.aspirabot_app_model import AspirabotAppModel
+from models.config_aspirabot_model import ConfigAspirabotModel
 from views.multi_tabs_panel_view import MultiTabsPanel
 
 class RootFrameView(tk.Tk):
@@ -31,7 +31,7 @@ class RootFrameView(tk.Tk):
         >>> app.mainloop()
     """
 
-    def __init__(self, app_config: AspirabotAppModel) -> None:
+    def __init__(self, app_config: ConfigAspirabotModel) -> None:
         """Initialise la fenêtre principale et intègre les onglets.
 
         Args:
@@ -53,7 +53,7 @@ class RootFrameView(tk.Tk):
         Définit le titre et les dimensions initiales de la fenêtre.
         """
         self.title(CTK_GUI.APP_NAME)
-        self.geometry(CTK_GUI.SIZE_ROOT_FRAME)
+        self.geometry(CTK_GUI.DEFAULT_SIZE_ROOT_FRAME)
 
     def _init_theme(self) -> None:
         """Applique un thème moderne à l'interface, si disponible.
@@ -74,5 +74,5 @@ class RootFrameView(tk.Tk):
         Crée une instance de `MultiTabsPanel` et l'ajoute à la fenêtre
         principale en l'étendant pour remplir tout l'espace disponible.
         """
-        self.notebook = MultiTabsPanel(self, self.app_config)
-        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        self._panel_multi_tabs = MultiTabsPanel(self, self.app_config)
+        self._panel_multi_tabs.pack(fill="both", expand=True)

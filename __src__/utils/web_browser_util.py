@@ -26,7 +26,7 @@ class WebBrowserUtil:
         self._headless = self._provider.headless # TODO PCO : si case cochée dans IHM adapter le chromium
         
         # Dossier local pour sauvegarder la session, cookies et cache
-        self.user_data_dir = CTK_BROWSER.USER_DATA_DIR
+        self.user_data_dir = CTK_BROWSER.DEFAULT_USER_DATA_DIR
 
     async def start(self) -> None:
         """Lance l'ensemble du processus de scraping de manière asynchrone."""

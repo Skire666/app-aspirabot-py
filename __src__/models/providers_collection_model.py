@@ -9,7 +9,7 @@ le dépôt de fournisseurs pour récupérer et formater les données des fournis
 ## ----------------------------------------------
 
 from repositories.providers_repository import ProvidersRepository
-from models.aspirabot_app_model import AspirabotAppModel
+from models.config_aspirabot_model import ConfigAspirabotModel
 
 
 class ProvidersCollectionModel:
@@ -23,7 +23,7 @@ class ProvidersCollectionModel:
             accéder aux données des fournisseurs.
     """
 
-    def __init__(self, config: AspirabotAppModel) -> None:
+    def __init__(self, config: ConfigAspirabotModel) -> None:
         """Initialise une nouvelle instance de ProvidersCollectionModel.
 
         Args:
