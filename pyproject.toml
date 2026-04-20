@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "app-aspirabot"
+version = "1.0.0"
+description = "Aspirabot Application"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+# Indique que la recherche commence à la racine "."
+where = ["."] 
+# Demande explicitement de considérer le dossier "__src__" comme un package 
+# (ou "src" si vous aviez nommé le dossier "src")
+include = ["__src__*", "controllers*", "models*", "views*", "shared*", "utils*"]

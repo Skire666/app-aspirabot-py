@@ -22,7 +22,12 @@ rajouter les options de human_delay
 tester chaque choix dans le tableau
 et regarder commne ça se comporte.
 
+mettre l'enum a droit d'ajouter, arreter d'ouvrir la 1er fenetre.
+
+
 Ce qu'il manque : une aide, pour savoir quoi saisir
+gner des exemples en bas, rapide à copier et à adapter
+
 trop de menu, ça serait bien de faire moins de clique
 le tableau, n'a pas de colonne, on pourrait imaginer le template : ID, action, value (est ootionnel) , goto special
 
