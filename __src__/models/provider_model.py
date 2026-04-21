@@ -39,24 +39,27 @@ class ProviderModel:
 
         Example:
             >>> modele = ProviderModel("data/fournisseur.json")
-            >>> modele.provider_alias = "Mon Fournisseur"
-            >>> print(modele.provider_alias)
+            >>> modele.provider_title = "Mon Fournisseur"
+            >>> print(modele.provider_title)
             Mon Fournisseur
         """
         self._file_path: str = file_path
         self._repository = JsonFileRepository(self._file_path, {})
 
     @classmethod
-    def get_default_data(cls, provider_alias: str, provider_filename: str) -> dict[str, Any]:
+    def get_default_data(cls, provider_title: str, provider_filename: str) -> dict[str, Any]:
         """Retourne les données par défaut pour un nouveau fournisseur."""
         from datetime import datetime
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return {
-            "provider_alias": provider_alias,
+            "provider_title": provider_title,
             "provider_filename": provider_filename,
             "url": "https://example.com",
-            "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "created_date": now,
+            "modified_date": now,
             "version": "1.0.0",
-            "headless": True,
+            "browser_displayed": True,
+            "automation_obfuscated": True,
             "steps": []
         }
 
@@ -78,16 +81,16 @@ class ProviderModel:
     ## Propriétés du Provider
 
     @property
-    def provider_alias(self) -> str:
-        return self._repository.get_value("provider_alias", "")
+    def provider_title(self) -> str:
+        return self._repository.get_value("provider_title", "Nouv. Fournisseur")
 
-    @provider_alias.setter
-    def provider_alias(self, value: str) -> None:
-        self._repository.set_value("provider_alias", value)
+    @provider_title.setter
+    def provider_title(self, value: str) -> None:
+        self._repository.set_value("provider_title", value)
 
     @property
     def provider_filename(self) -> str:
-        return self._repository.get_value("provider_filename", "")
+        return self._repository.get_value("provider_filename", "nouv_fournisseur")
 
     @provider_filename.setter
     def provider_filename(self, value: str) -> None:
@@ -118,12 +121,28 @@ class ProviderModel:
         self._repository.set_value("version", value)
 
     @property
-    def headless(self) -> bool:
-        return self._repository.get_value("headless", True)
+    def browser_displayed(self) -> bool:
+        return self._repository.get_value("browser_displayed", True)
 
-    @headless.setter
-    def headless(self, value: bool) -> None:
-        self._repository.set_value("headless", value)
+    @browser_displayed.setter
+    def browser_displayed(self, value: bool) -> None:
+        self._repository.set_value("browser_displayed", value)
+
+    @property
+    def automation_obfuscated(self) -> bool:
+        return self._repository.get_value("automation_obfuscated", True)
+
+    @automation_obfuscated.setter
+    def automation_obfuscated(self, value: bool) -> None:
+        self._repository.set_value("automation_obfuscated", value)
+
+    @property
+    def modified_date(self) -> str:
+        return self._repository.get_value("modified_date", "")
+
+    @modified_date.setter
+    def modified_date(self, value: str) -> None:
+        self._repository.set_value("modified_date", value)
 
     @property
     def steps(self) -> list[dict[str, Any]]:

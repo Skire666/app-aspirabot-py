@@ -23,7 +23,7 @@ class WebBrowserUtil:
         """
         self._provider = provider
         self._url = self._provider.url or "https://google.com" # TODO PCO : Constante
-        self._headless = self._provider.headless # TODO PCO : si case cochée dans IHM adapter le chromium
+        self._headless = self._provider.browser_displayed # TODO PCO : si case cochée dans IHM adapter le chromium
         
         # Dossier local pour sauvegarder la session, cookies et cache
         self.user_data_dir = CTK_BROWSER.DEFAULT_USER_DATA_DIR

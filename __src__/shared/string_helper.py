@@ -1,4 +1,5 @@
 import datetime
+import re
 
 class StringHelper:
     @staticmethod
@@ -67,3 +68,15 @@ class StringHelper:
         except Exception as e:
             raise RuntimeError(f"Erreur lors de la génération de la chaîne avec horodatage : {e}")
 
+    @staticmethod
+    def mega_safized_string_for_futur_path(name: str) -> str:
+        """
+        Sécurise une chaîne pour qu'elle puisse être utilisée comme nom de fichier.
+        Remplace les espaces par des underscores, supprime les caractères interdits, et convertit en minuscules.
+        Exemple:
+            name = "Mon Fournisseur: Version 1.0"
+            Résultat: "mon_fournisseur_version_1.0"
+        """
+        safized_name = name.replace(" ", "_").replace("-", "").replace(":", "")
+        safized_name = re.sub(r'[^a-zA-Z0-9_.\-]', '', safized_name.strip()).lower()
+        return safized_name

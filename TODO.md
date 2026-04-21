@@ -14,6 +14,47 @@ E:\app-py-life-selector\src_python_2026_03_sushi_scan
 
 
 
+colonne dans le tableau
+Rajouter nom fichier + date de modification
+
+action a ajouter : run
+
+
+à l'init de l'applicaiton
+chargé config
+et créer les dossiers par défaut (toujours)
+améliore la résilience
+
+
+splashscreen avant de lancer l'application
+avec chargement
+
+
+à l'init
+vérifier les fournisseurs
+tout ce invalide
+les rename en BROKEN
+fait un message qui résumé les erreurs
+
+
+tableau, faire colonne sortable
+
+
+
+colorier une ligne sur 2 du tableau
+
+le _repository pour save
+il est déguelasse, j'ai give up
+
+
+bonus :
+lorqu'on edit
+sauvegarder temporaire à chaque modif
+et ainsi ne pas perdre le travail
+
+
+
+
 télécharger l'iamge c'est fait
 mais il ne fait rien sur le disque dur
 le WebBrowserUtil deviens bordélique, à voir pour refonte

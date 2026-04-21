@@ -1,6 +1,6 @@
 from typing import List
 from models.provider_model import ProviderModel
-from __src__.view_models.providers_list_view_model import ProviderItemViewModel, ProvidersListViewModel
+from view_models.providers_list_view_model import ProviderItemViewModel, ProvidersListViewModel
 
 class ProvidersListConverter:
     """Convertisseur pour la liste des fournisseurs."""
@@ -9,7 +9,7 @@ class ProvidersListConverter:
         provider_filename = provider.provider_filename or stem
         return ProviderItemViewModel(
             provider_filename=provider_filename,
-            provider_alias=provider.provider_alias or provider_filename,
+            provider_title=provider.provider_title or provider_filename,
             url=provider.url or "",
             created_date=provider.created_date or ""
         )

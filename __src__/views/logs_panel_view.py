@@ -66,14 +66,14 @@ class LogsPanelView(ttk.Frame):
         self.logger.debug("Branchement du gestionnaire de logs IHM via QueueHandler.")
         self.logger.info("L'interface graphique est prête.")
 
-        self.after(100, self._process_log_queue)
+        self.after(50, self._process_log_queue)
 
     def _process_log_queue(self) -> None:
         """Traite les enregistrements en attente depuis la file et les affiche.
 
         Cette méthode dépile de manière asynchrone les messages de la file d'attente
         et les insère dans le champ texte, en appliquant le style approprié au
-        niveau de gravité. La boucle relance automatiquement la tâche après 100ms.
+        niveau de gravité. La boucle relance automatiquement la tâche après 50ms.
         """
         while True:
             try:
@@ -90,7 +90,7 @@ class LogsPanelView(ttk.Frame):
             except queue.Empty:
                 break
         
-        self.after(100, self._process_log_queue)
+        self.after(50, self._process_log_queue)
         
     def _get_color_for_level(self, level: int) -> str:
         """Détermine la couleur textuelle Tkinter depuis le niveau de log.

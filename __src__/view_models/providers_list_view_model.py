@@ -5,7 +5,7 @@ from typing import List
 @dataclass
 class ProviderItemViewModel:
     provider_filename: str = ""
-    provider_alias: str = ""
+    provider_title: str = ""
     url: str = ""
     created_date: str = ""
 

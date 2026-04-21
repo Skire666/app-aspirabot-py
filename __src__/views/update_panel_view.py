@@ -58,47 +58,60 @@ class UpdatePanelView(ttk.Frame):
         self.logger = logging.getLogger(__name__)
         self.controller = UpdateController(app_config)
         self._current_view_model: UpdateViewModel = UpdateViewModel()
-        self.on_provider_saved = on_provider_saved
-        self.on_action_complete = on_action_complete
-        self._selected_provider: Optional[str] = None
+        self._event_after_provider_was_saved = on_provider_saved
+        self._event_redirect_to_tab = on_action_complete
+        self._selected_provider_title: Optional[str] = None
         self._init_ui()
 
     def _init_ui(self) -> None:
         """Initialise les composants de l'interface."""
-        # Top Frame: Formulaire
-        _frame_top_form = ttk.LabelFrame(self, text="Informations")
-        _frame_top_form.pack(fill="x", padx=10, pady=10)
-        self.form_frame = _frame_top_form
+        # Top Container: Split into Information and Metadata
+        _top_container = ttk.Frame(self)
+        _top_container.pack(fill="x", padx=10, pady=10)
+        _top_container.columnconfigure(0, weight=1, uniform="half")
+        _top_container.columnconfigure(1, weight=1, uniform="half")
+        self.form_frame = _top_container
 
-        # ligne 1
-        ttk.Label(_frame_top_form, text="Fichier :").grid(row=0, column=0, sticky="e", padx=(10, 0))
-        self._filename_entry = ttk.Entry(_frame_top_form, textvariable=self._current_view_model.provider_filename, state="disabled")
-        self._filename_entry.grid(row=0, column=1, sticky="w", ipadx=75, padx=(5, 10), pady=10)
+        # Informations (Left)
+        _frame_info = ttk.LabelFrame(_top_container, text="Informations")
+        _frame_info.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        
+        ttk.Label(_frame_info, text="Nom :").grid(row=0, column=0, sticky="e", padx=(10, 5), pady=10)
+        ttk.Entry(_frame_info, textvariable=self._current_view_model.provider_title).grid(row=0, column=1, sticky="we", padx=(0, 10), pady=10)
+        
+        ttk.Label(_frame_info, text="URL :").grid(row=1, column=0, sticky="e", padx=(10, 5), pady=(0, 10))
+        ttk.Entry(_frame_info, textvariable=self._current_view_model.url).grid(row=1, column=1, sticky="we", padx=(0, 10), pady=(0, 10))
+        
+        # case à cocher (avec style pour les agrandir un peu)
+        style = ttk.Style()
+        style.configure('Big.TCheckbutton', indicatorsize=18)
+        
+        ttk.Checkbutton(_frame_info, text="Browser affiché (si headless alors le désactivé)", variable=self._current_view_model.browser_displayed, style="Big.TCheckbutton").grid(row=2, column=1, sticky="w", pady=(0, 5))
+        ttk.Checkbutton(_frame_info, text="Automatisation obfusquée (masque l'emprunte de playwright)", variable=self._current_view_model.automation_obfuscated, style="Big.TCheckbutton").grid(row=3, column=1, sticky="w", pady=(0, 10))
+        
+        _frame_info.columnconfigure(1, weight=1)
 
-        ttk.Label(_frame_top_form, text="Nom :").grid(row=0, column=2, sticky="e")
-        ttk.Entry(_frame_top_form, textvariable=self._current_view_model.provider_alias).grid(row=0, column=3, sticky="w", ipadx=25, padx=(5, 10), pady=10)
+        # Métadonnées (Right)
+        _frame_meta = ttk.LabelFrame(_top_container, text="Métadonnées")
+        _frame_meta.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+        
+        ttk.Label(_frame_meta, text="Fichier :").grid(row=0, column=0, sticky="e", padx=(10, 5), pady=10)
+        self._filename_entry = ttk.Entry(_frame_meta, textvariable=self._current_view_model.provider_filename, state="disabled")
+        self._filename_entry.grid(row=0, column=1, sticky="we", padx=(0, 10), pady=10)
+        
+        ttk.Label(_frame_meta, text="Version :").grid(row=1, column=0, sticky="e", padx=(10, 5), pady=(0, 10))
+        ttk.Entry(_frame_meta, textvariable=self._current_view_model.version).grid(row=1, column=1, sticky="we", padx=(0, 10), pady=(0, 10))
+        
+        ttk.Label(_frame_meta, text="Date de création :").grid(row=2, column=0, sticky="e", padx=(10, 5), pady=(0, 10))
+        ttk.Entry(_frame_meta, textvariable=self._current_view_model.created_date).grid(row=2, column=1, sticky="we", padx=(0, 10), pady=(0, 10))
 
-        ttk.Label(_frame_top_form, text="Date de création :").grid(row=0, column=4, sticky="e")
-        ttk.Entry(_frame_top_form, textvariable=self._current_view_model.created_date).grid(row=0, column=5, sticky="w", padx=(5, 10))
+        ttk.Label(_frame_meta, text="Date de modification :").grid(row=3, column=0, sticky="e", padx=(10, 5), pady=(0, 10))
+        ttk.Entry(_frame_meta, textvariable=self._current_view_model.modified_date).grid(row=3, column=1, sticky="we", padx=(0, 10), pady=(0, 10))
 
-        ttk.Label(_frame_top_form, text="Version :").grid(row=0, column=6, sticky="e")
-        ttk.Entry(_frame_top_form, textvariable=self._current_view_model.version, width=5).grid(row=0, column=7, sticky="w", padx=(5, 10))
-
-        # ligne 2
-        ttk.Label(_frame_top_form, text="URL :").grid(row=1, column=0, sticky="e", pady=(0, 10))
-        ttk.Entry(_frame_top_form, textvariable=self._current_view_model.url).grid(row=1, column=1, columnspan=3, sticky="we", padx=(5, 10), pady=(0, 10))
-
-        ttk.Checkbutton(_frame_top_form, text="Browser caché (Headless)", variable=self._current_view_model.headless).grid(row=1, column=5, columnspan=2, sticky="w", pady=(0, 10))
-
-        # Configuration des poids de colonnes pour une meilleure répartition de l'espace
-        for col in range(8):
-            _frame_top_form.columnconfigure(col, weight=0)
-        _frame_top_form.columnconfigure(1, weight=1)
-        _frame_top_form.columnconfigure(3, weight=1)
-        _frame_top_form.columnconfigure(5, weight=1)
+        _frame_meta.columnconfigure(1, weight=1)
 
         # Traces pour calculer dynamiquement le nom de fichier
-        self._current_view_model.provider_alias.trace_add("write", self._on_filename_dependency_changed)
+        self._current_view_model.provider_title.trace_add("write", self._on_filename_dependency_changed)
         self._current_view_model.created_date.trace_add("write", self._on_filename_dependency_changed)
 
         # Bottom Frame: Workflow Editor
@@ -207,47 +220,42 @@ class UpdatePanelView(ttk.Frame):
                 display_text = f"[{action_type}] {details}" if details else f"[{action_type}]"
                 self.steps_listbox.insert(tk.END, display_text)
 
-    def refresh_providers_list(self) -> None:
-        """Met à jour la liste des fournisseurs (utile si le composant courant a été supprimé)."""
-        providers = self.controller.get_providers_list()
-        if self._selected_provider and self._selected_provider not in providers:
-            self._selected_provider = None
-            self._current_view_model.provider_alias.set("")
-            self._current_view_model.url.set("")
-            self._current_view_model.steps.clear()
-            self._update_steps_list()
-            self._set_form_state("disabled")
-
-    def load_provider(self, provider_alias: str) -> None:
+    def load_existing_provider(self, provider_title: str) -> None:
         """Charge les données d'un fournisseur spécifié pour la mise à jour."""
-        self._selected_provider = provider_alias
+        self._selected_provider_title = provider_title
         self._set_form_state("normal")
         try:
-            self.controller.get_provider_view_model(provider_alias, self._current_view_model)
+            self.controller.get_provider_view_model(provider_title, self._current_view_model)
             self._update_steps_list()
-            self.logger.debug(f"Données chargées pour {provider_alias}")
+            self.logger.debug(f"Données chargées pour {provider_title}")
         except Exception as e:
-            self.logger.error(f"Erreur au chargement de {provider_alias}: {e}")
+            self.logger.error(f"Erreur au chargement de {provider_title}: {e}")
             messagebox.showerror("Erreur", f"Erreur lors du chargement des données:\n{str(e)}")
 
     def load_default(self) -> None:
         """Prépare le formulaire pour une nouvelle création."""
-        self._selected_provider = None
+        self._selected_provider_title = None
         self._set_form_state("normal")
         self.controller.load_default_view_model(self._current_view_model)
         self._update_steps_list()
         self.logger.debug("Données par défaut chargées pour création")
 
     def _reset_form(self) -> None:
-        self._selected_provider = None
-        self._current_view_model.provider_alias.set("")
+        self._selected_provider_title = None
+        self._current_view_model.provider_title.set("")
+        self._current_view_model.provider_filename.set("")
         self._current_view_model.url.set("")
+        self._current_view_model.version.set("")
+        self._current_view_model.created_date.set("")
+        self._current_view_model.modified_date.set("")
+        self._current_view_model.browser_displayed.set(True)
+        self._current_view_model.automation_obfuscated.set(True)
         self._current_view_model.steps.clear()
         self._update_steps_list()
         self._set_form_state("disabled")
         
-        if self.on_action_complete:
-            self.on_action_complete()
+        if self._event_redirect_to_tab:
+            self._event_redirect_to_tab()
 
     def _save_form(self) -> None:
         errors = self._current_view_model.validate()
@@ -256,24 +264,43 @@ class UpdatePanelView(ttk.Frame):
             return
             
         try:
-            selected = self._selected_provider
-            if not selected:
-                new_stem = self.controller.create_new_provider_from_view_model(self._current_view_model)
-                self._selected_provider = new_stem
-                messagebox.showinfo("Succès", f"Le fournisseur {new_stem} a été créé avec succès.")
-                self.logger.info(f"Nouveau fournisseur créé : {new_stem}")
-            else:
-                new_stem = self.controller.save_provider_from_view_model(selected, self._current_view_model)
-                if new_stem != selected:
-                    self._selected_provider = new_stem
-                messagebox.showinfo("Succès", f"Les données de {new_stem} ont été sauvegardées.")
-                self.logger.info(f"Modifications sauvegardées pour {new_stem}")
+            selected: str | None = self._selected_provider_title
 
-            if self.on_provider_saved:
-                self.on_provider_saved()
+            if not selected:
+                # Vérifier si le fichier existe déjà
+                import os
+                from pathlib import Path
+                filename = self._current_view_model.provider_filename.get()
+                suggested_path = Path(self.controller.config.folder_providers) / filename
+                if os.path.exists(suggested_path):
+                    if not messagebox.askyesno("Attention", f"Le fichier '{filename}' existe déjà.\nVoulez-vous l'écraser ?"):
+                        return
+
+                # Création d'un nouveau fournisseur
+                self.create_new_provider()
+            else:
+                # Mise à jour d'un fournisseur existant
+                self.udpate_existing_provider(selected)
+
+            if self._event_after_provider_was_saved:
+                self._event_after_provider_was_saved()
+
+            self._reset_form()
                 
-            if self.on_action_complete:
-                self.on_action_complete()
+            if self._event_redirect_to_tab:
+                self._event_redirect_to_tab()
         except Exception as e:
             self.logger.error(f"Erreur lors de la sauvegarde: {e}")
             messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde:\n{str(e)}")
+
+    def udpate_existing_provider(self, selected: str) -> None:
+        self.logger.info(f"Mise à jour du fournisseur : {selected}")
+        self.controller.save_provider_from_view_model(selected, self._current_view_model)
+        messagebox.showinfo("Succès", f"Les données de {selected} ont été sauvegardées.")
+        self.logger.info(f"Modifications sauvegardées pour {selected}")
+
+    def create_new_provider(self):
+        new_stem = self.controller.create_new_provider_from_view_model(self._current_view_model)
+        self._selected_provider_title = new_stem
+        messagebox.showinfo("Succès", f"Le fournisseur {new_stem} a été créé avec succès.")
+        self.logger.info(f"Nouveau fournisseur créé : {new_stem}")

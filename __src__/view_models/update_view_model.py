@@ -5,16 +5,18 @@ from typing import Any
 @dataclass
 class UpdateViewModel:
     provider_filename: tk.StringVar = field(default_factory=tk.StringVar)
-    provider_alias: tk.StringVar = field(default_factory=tk.StringVar)
+    provider_title: tk.StringVar = field(default_factory=tk.StringVar)
     url: tk.StringVar = field(default_factory=tk.StringVar)
     created_date: tk.StringVar = field(default_factory=tk.StringVar)
+    modified_date: tk.StringVar = field(default_factory=tk.StringVar)
     version: tk.StringVar = field(default_factory=tk.StringVar)
-    headless: tk.BooleanVar = field(default_factory=lambda: tk.BooleanVar(value=True))
+    browser_displayed: tk.BooleanVar = field(default_factory=lambda: tk.BooleanVar(value=True))
+    automation_obfuscated: tk.BooleanVar = field(default_factory=lambda: tk.BooleanVar(value=True))
     steps: list[dict[str, Any]] = field(default_factory=list) # type: ignore[reportUnknownVariableType]
 
     def validate(self) -> list[str]:
         errors: list[str] = []
-        if not self.provider_alias.get() or not self.provider_alias.get().strip():
+        if not self.provider_title.get() or not self.provider_title.get().strip():
             errors.append("Le champ 'Nom' est obligatoire.")
         if not self.provider_filename.get() or not self.provider_filename.get().strip():
             errors.append("Le champ 'Nom de fichier' est obligatoire.")

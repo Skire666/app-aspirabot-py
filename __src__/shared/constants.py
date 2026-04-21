@@ -21,8 +21,8 @@ class CTK_LOGGING:
     # Dossier pour les fichiers de logs
     DEFAULT_FOLDER_LOGS = "./tmp_logs"
 
-    # Format de logs (ex: 2024-06-01 12:00:00,000 | INFO | app.module | Message de log)
-    FORMAT_MSG = '%(asctime)s | %(levelname)s | %(name)s | %(message)s'
+    # Format de logs (ex: 2024-06-01 12:00:00,000 || INFO || app.module || Message de log)
+    FORMAT_MSG = '%(asctime)s || %(levelname)s || %(name)s || %(message)s'
 
     # Taille maximale d'un fichier de log avant rotation (10 MB). Tips -> 1024 * 1024 = 1 MB
     LOG_MAX_BYTES = 10 * 1024 * 1024

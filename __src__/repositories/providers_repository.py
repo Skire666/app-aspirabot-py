@@ -5,9 +5,10 @@ sauvegarder et gérer les fichiers de configuration des fournisseurs au format J
 """
 
 import logging
-import json
+import os
 from pathlib import Path
-from typing import Any, List
+from typing import List
+from repositories.file_manager_repository import FileManagerRepository
 from models.provider_model import ProviderModel
 
 s_logger = logging.getLogger(__name__)
@@ -86,43 +87,10 @@ class ProvidersRepository:
                     s_logger.warning(f"Impossible de lire le provider {file_path}: {e}")
         raise FileNotFoundError(f"Fournisseur non trouvé: {name_provider}")
 
-    def get_next_available_path(self, base_name: str) -> Path:
-        """Trouve le prochain nom de fichier disponible avec un suffixe incrémenté.
+    def open_providers_folder(self) -> None:
+        """Ouvre le répertoire de destination des fournisseurs."""
+        FileManagerRepository.open_folder(self.folder_path)
 
-        Si le fichier cible existe déjà, cette méthode ajoute un suffixe numérique
-        jusqu'à ce qu'un nom de fichier libre soit trouvé.
-
-        Args:
-            base_name (str): Le nom complet du fichier, y compris l'extension .json.
-        """
-        providers_dir = Path(self._folder_path)
-        providers_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Retire l'extension pour pouvoir rajouter le _1, _2 au milieu si besoin
-        name_without_ext = base_name[:-5] if base_name.lower().endswith('.json') else base_name
-        ext = ".json" if base_name.lower().endswith('.json') else ""
-        
-        new_file = providers_dir / base_name
-        if not new_file.name.lower().endswith('.json'):
-            new_file = providers_dir / f"{base_name}.json"
-            ext = ".json"
-
-        counter = 1
-        
-        # Tant que le fichier existe, incrémente le suffixe pour trouver un nom disponible
-        while new_file.exists():
-            new_file = providers_dir / f"{name_without_ext}_{counter}{ext}"
-            counter += 1
-        return new_file
-
-    def save_provider(self, file_path: Path, data: dict[str, Any]) -> None:
-        """Sauvegarde les données d'un fournisseur dans un fichier au format JSON.
-
-        Args:
-            file_path (Path): Le chemin complet de destination pour enregistrer le fichier.
-            data (dict[str, Any]): Le dictionnaire de données représentant les configurations du
-                fournisseur à enregistrer.
-        """
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-
+    def delete_provider(self, provider_filename: str) -> None:
+        """Supprime le fournisseur en mémoire et sur le disque."""
+        os.remove(provider_filename)

@@ -82,9 +82,14 @@ class JsonFileRepository:
         Les données sont formatées avec une indentation de 4 espaces pour la lisibilité.
         """
         try:
+            s_logger.debug(f"Sauvegarde des données dans '{self.file_path}'...")
+            
+            dir_name = os.path.dirname(self.file_path)
+            if dir_name:
+                os.makedirs(dir_name, exist_ok=True)
+
             with open(self.file_path, "w", encoding="utf-8") as f:
                 json.dump(self.all_data, f, indent=4)
-            s_logger.debug(f"Données sauvegardées dans '{self.file_path}'.")
         except Exception as e:
             s_logger.exception(f"Erreur de sauvegarde dans '{self.file_path}' : {e}")
 
@@ -110,4 +115,3 @@ class JsonFileRepository:
             value (Any): La valeur à associer à la clé.
         """
         self.all_data[key] = value
-        self.save_to_file()
