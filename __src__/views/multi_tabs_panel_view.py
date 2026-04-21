@@ -81,6 +81,7 @@ class MultiTabsPanel(ttk.Notebook):
             
         self._panel_scraping = ScrapingPanelView(self, self.config_aspirabot_model, lock_actions, unlock_actions)
         self.add(self._panel_scraping, text=f" {name_tab} ")
+        self.tab(self._panel_scraping, state="disabled")        
         self.logger.debug(f"Cr\u00e9ation de l'onglet '{name_tab}'.")
 
     def init_tab_update_provider(self):
@@ -123,6 +124,7 @@ class MultiTabsPanel(ttk.Notebook):
         def on_providers_list_launched(provider_title: str) -> None:
             if provider_title:
                 self.logger.debug("on_providers_list_launched -> set_provider and change tab.")
+                self.tab(self._panel_scraping, state="normal")
                 self._panel_scraping.load_provider(provider_title)
                 self.select(str(self._panel_scraping)) # type: ignore
                 self._panel_scraping._event_launch_scrapping()

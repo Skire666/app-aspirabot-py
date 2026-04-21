@@ -8,6 +8,8 @@ class ProviderItemViewModel:
     provider_title: str = ""
     url: str = ""
     created_date: str = ""
+    modified_date: str = ""
+    version: str = ""
 
 @dataclass
 class ProvidersListViewModel:

@@ -16,8 +16,8 @@ class UpdateViewModel:
 
     def validate(self) -> list[str]:
         errors: list[str] = []
-        if not self.provider_title.get() or not self.provider_title.get().strip():
-            errors.append("Le champ 'Nom' est obligatoire.")
+        if not self.provider_title.get() or not self.provider_title.get().strip() or len(self.provider_title.get().strip()) < 3:
+            errors.append("Le champ 'Nom' est obligatoire (3 caractères minimum).")
         if not self.provider_filename.get() or not self.provider_filename.get().strip():
             errors.append("Le champ 'Nom de fichier' est obligatoire.")
         if not self.url.get() or not self.url.get().strip():

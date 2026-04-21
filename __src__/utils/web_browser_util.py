@@ -12,7 +12,7 @@ class WebBrowserUtil:
     Classe gérant l'automatisation du navigateur Chromium via Playwright.
     """
     _provider: ProviderModel
-    _url: str
+    url_of_website: str
     _headless: bool
 
     def __init__(self, provider: ProviderModel) -> None:
@@ -22,7 +22,7 @@ class WebBrowserUtil:
         :param provider: Modèle de fournisseur (URL, mode headless, étapes).
         """
         self._provider = provider
-        self._url = self._provider.url or "https://google.com" # TODO PCO : Constante
+        self.url_of_website = self._provider.url or "https://google.com" # TODO PCO : Constante
         self._headless = self._provider.browser_displayed # TODO PCO : si case cochée dans IHM adapter le chromium
         
         # Dossier local pour sauvegarder la session, cookies et cache
@@ -33,16 +33,16 @@ class WebBrowserUtil:
         logger.info("Démarrage du moteur asynchrone Playwright...")
         
         async with async_playwright() as playwright_instance:
-            context = await self._launch_browser(playwright_instance)
-            await self._mask_webdriver(context)
+            context = await self.launch_browser(playwright_instance)
+            await self.mask_webdriver(context)
             
-            page = await self._get_or_create_page(context)
+            page = await self.get_or_create_page(context)
             await self._run_scraping_steps(page)
             
             logger.info("Fermeture de la session sécurisée.")
             await context.close()
 
-    async def _launch_browser(self, playwright_instance: Any) -> BrowserContext:
+    async def launch_browser(self, playwright_instance: Any) -> BrowserContext:
         """
         Lance le contexte navigateur persistant (conserve cookies et cache).
         
@@ -56,7 +56,7 @@ class WebBrowserUtil:
             args=["--disable-blink-features=AutomationControlled"] # Réduit détection bot
         )
 
-    async def _mask_webdriver(self, context: BrowserContext) -> None:
+    async def mask_webdriver(self, context: BrowserContext) -> None:
         """
         Masque le flag navigator.webdriver pour réduire la détection par les bots.
         
@@ -72,7 +72,7 @@ class WebBrowserUtil:
         """
         await context.add_init_script(script)
 
-    async def _get_or_create_page(self, context: BrowserContext) -> Page:
+    async def get_or_create_page(self, context: BrowserContext) -> Page:
         """
         Récupère l'onglet actif ou en ouvre un nouveau s'il n'y en a pas.
         
@@ -92,8 +92,8 @@ class WebBrowserUtil:
         
         :param page: L'objet Page asynchrone manipulé par Playwright.
         """
-        logger.info(f"Navigation vers {self._url}")
-        await page.goto(self._url)
+        logger.info(f"Navigation vers {self.url_of_website}")
+        await page.goto(self.url_of_website)
         
         steps = self._provider.steps
         if not steps:
@@ -157,7 +157,7 @@ class WebBrowserUtil:
                     
                 elif action == "CLOSE_OTHER_TABS":
                     import urllib.parse
-                    start_domain = urllib.parse.urlparse(self._url).netloc
+                    start_domain = urllib.parse.urlparse(self.url_of_website).netloc
                     context = page.context
                     for p in context.pages:
                         if p != page:

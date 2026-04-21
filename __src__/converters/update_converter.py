@@ -7,7 +7,7 @@ class UpdateConverter:
     def to_view_model(self, provider: ProviderModel, view_model: UpdateViewModel) -> UpdateViewModel:
         """Convertit un ProviderModel en UpdateViewModel."""
         view_model.provider_title.set(provider.provider_title or "Nouv. Fournisseur")
-        view_model.provider_filename.set(provider.provider_filename or "nouv_fournisseur")
+        view_model.provider_filename.set(provider.provider_filename or "nouv._fournisseur.json")
         view_model.url.set(provider.url or "https://")
         view_model.created_date.set(provider.created_date or "")
         view_model.modified_date.set(provider.modified_date or "")

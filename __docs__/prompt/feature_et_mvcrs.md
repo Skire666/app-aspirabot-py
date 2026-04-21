@@ -1,9 +1,12 @@
-Prérequis :
+
+## Prérequis
+
 Rajoute un nouvel onglet 'Scrapping'.
 Ce nouvel onglet permettra de suivre la progression du scrapping.
 Il se positionne en dernier dans les onglets.
 
-Nouveau comportement :
+## Nouveau comportement :
+
 Lorque l'on clique sur le bouton 'Lancer' d'un fournisseur, il passe vers le nouvel onglet.
 Il journalise en détail toutes les étapes en cours, 1 à 1 (lancement du navigateur, mise en cache, ouverture d'un lien, etc...).
 Les messages s'ajoute de haut en bas.
@@ -22,7 +25,9 @@ Si échec (une erreur fatale est survenue).
 Affiche la fin et résumé (temps écoulées, nombres d'action effectuées) ainsi que l'erreur effectuée.
 Il rends la main à l'utilisateur et débloque les actions qui étaient bloquées.
 
-Concernant la composition de l'IHM dans ce nouvel onglet :
+## Composition de l'IHM
+
+Dans le nouvel onglet 'Scrapping' :
 
 Sur la 1ère ligne :
 
@@ -39,34 +44,50 @@ Un texte résume les informations sur le fournisseur qu'on vient de lancer.
 
 Le reste de la journalisation occupe le bas de l'écran.
 
-## Contrainte architecturale :
+## Contrainte d'architecture logicielle
 
-Respecter une architecture en couches avec dépendances unidirectionnelles strictes.
+Génère du code propre, maintenable et modulaire en respectant STRICTEMENT l’architecture suivante :
 
-Liste des règles de dépendance (obligatoires) :
-View -> utilise le ViewModel ou le Controller
-ViewModel -> utilisé uniquement par la View
-Controller -> utilise Service ou Repository
-Service -> utilise Repository (via interfaces) ou le Model
-Model -> utilise Repository (via interfaces)
-Repository -> utilise le Model
-Aucune autre dépendance n’est autorisée.
+Règles de dépendances (OBLIGATOIRES) :
+- View -> utilise uniquement ViewModel OU Controller
+- ViewModel -> utilisé uniquement par la View
+- Controller -> utilise Service OU Repository OU Model (aucune logique métier complexe)
+- Service -> utilise Repository (via interfaces) OU Model
+- Model -> peut utiliser Repository (via interfaces uniquement)
+- Repository -> utilise Model
+- Converter -> transforme un objet A en objet B (nommage : A_Converter), utilisable partout
 
-## Responsabilités :
+Contraintes générales :
+- Respecte une séparation stricte des responsabilités (SRP)
+- Aucune dépendance circulaire
+- Utilise des interfaces (ABC ou Protocol) pour les Repository
+- Injection de dépendances obligatoire (pas d’instanciation directe dans les classes métier)
+- Typage Python complet (type hints obligatoires)
+- Code compatible Python 3.11+
+- Chaque couche est pensé pour permettre d'avoir un code testable.
 
-Model : structures de données métier, sans logique métier.
-Repository : persistance uniquement (lecture/écriture et infra), retourne des Models.
-Service : contient toute la logique métier, dépend d’interfaces de Repository uniquement.
-Controller : orchestre les appels, sans logique métier.
-ViewModel : données pour la View + validation des entrées utilisateur.
-View : affichage uniquement, interagit avec le Controller ou/et le ViewModel.
+Structure attendue :
+- /views
+- /viewmodels
+- /controllers
+- /services
+- /models
+- /repositories
+- /converters
+- /interfaces
 
-## Contraintes supplémentaires :
+Règles spécifiques :
+- Les Controllers orchestrent, mais ne transforment pas les données
+- Les Services contiennent la logique métier
+- Les ViewModels préparent les données pour la View
+- Les Models représentent les entités métier (simples et cohérentes)
+- Les Repositories encapsulent l’accès aux données
+- Les Converters sont stateless et isolés
 
-Interdire toute logique métier, hors Service.
-Interdire toute dépendance circulaire.
-Chaque couche est isolé pour permettre d'avoir un code testable.
-
+Style de code :
+- Lisible, concis, documenté (docstrings)
+- Pas de logique inutile
+- Nommage explicite (anglais recommandé)
 
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------

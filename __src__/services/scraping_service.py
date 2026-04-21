@@ -1,7 +1,6 @@
-import asyncio
 import time
 import logging
-from typing import Callable, Any, Optional
+from typing import Callable, Optional
 from models.provider_model import ProviderModel
 
 # Nous adaptons l'usage de web_browser_util pour intercepter les diff\u00e9rentes \u00e9tapes
@@ -37,15 +36,15 @@ class ScrapingService:
             async with async_playwright() as play:
                 if check_stop(): raise Exception("Stopp\u00e9 par l'utilisateur.")
                 
-                context = await scraper._launch_browser(play)
+                context = await scraper.launch_browser(play)
                 on_log("Navigateur initialis\u00e9 et s\u00e9curis\u00e9.")
                 
-                await scraper._mask_webdriver(context)
+                await scraper.mask_webdriver(context)
                 
                 if check_stop(): raise Exception("Stopp\u00e9 par l'utilisateur.")
-                page = await scraper._get_or_create_page(context)
-                on_log(f"Navigation vers l'URL principale : {scraper._url}")
-                await page.goto(scraper._url)
+                page = await scraper.get_or_create_page(context)
+                on_log(f"Navigation vers l'URL principale : {scraper.url_of_website}")
+                await page.goto(scraper.url_of_website)
                 
                 steps = provider.steps or []
                 on_log(f"{len(steps)} \u00e9tape(s) d\u00e9t\u00e9ct\u00e9e(s).")

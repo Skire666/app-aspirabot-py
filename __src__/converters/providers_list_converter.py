@@ -11,7 +11,9 @@ class ProvidersListConverter:
             provider_filename=provider_filename,
             provider_title=provider.provider_title or provider_filename,
             url=provider.url or "",
-            created_date=provider.created_date or ""
+            created_date=provider.created_date or "",
+            modified_date=provider.modified_date or "",
+            version=provider.version or "1.0.0"
         )
 
     def to_view_model(self, providers_tuples: List[tuple[ProviderModel, str]], view_model: ProvidersListViewModel) -> ProvidersListViewModel:

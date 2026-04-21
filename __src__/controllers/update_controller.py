@@ -29,7 +29,7 @@ class UpdateController:
         """Charge des valeurs par défaut dans le ViewModel."""
         from datetime import datetime
         view_model.provider_title.set("Nouv. Fournisseur")
-        view_model.provider_filename.set("nouv_fournisseur")
+        view_model.provider_filename.set("nouv._fournisseur.json")
         view_model.url.set("https://example.com")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         view_model.created_date.set(now)

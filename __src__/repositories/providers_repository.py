@@ -11,8 +11,6 @@ from typing import List
 from repositories.file_manager_repository import FileManagerRepository
 from models.provider_model import ProviderModel
 
-s_logger = logging.getLogger(__name__)
-
 ## ----------------------------------------------
 ## Classe
 ## ----------------------------------------------
@@ -37,26 +35,19 @@ class ProvidersRepository:
         Example:
             >>> repo = ProvidersRepository("/path/to/providers")
         """
-        self._folder_path = path_folder
+        self._folder_path: Path = Path(path_folder)
+        self.logger = logging.getLogger(__name__)
+
 
     @property
-    def folder_path(self) -> str | Path:
+    def folder_path(self) -> Path:
         """Obtient le chemin vers le dossier des fournisseurs."""
         return self._folder_path
 
     @folder_path.setter
     def folder_path(self, value: str | Path) -> None:
         """Définit le chemin vers le dossier des fournisseurs."""
-        self._folder_path = value
-
-    def provider_folder_exists(self) -> bool:
-        """Vérifie si le dossier contenant les fournisseurs existe sur le système.
-        
-        Returns:
-            bool: True si le dossier existe, False sinon.
-        """
-        providers_dir = Path(self._folder_path)
-        return providers_dir.exists() and providers_dir.is_dir()
+        self._folder_path = Path(value)
 
     def list_provider_files(self) -> List[Path]:
         """Liste tous les fichiers JSON présents dans le dossier des fournisseurs.
@@ -84,13 +75,16 @@ class ProvidersRepository:
                 try:
                     return ProviderModel(str(file_path))
                 except Exception as e:
-                    s_logger.warning(f"Impossible de lire le provider {file_path}: {e}")
+                    self.logger.warning(f"Impossible de lire le provider {file_path}: {e}")
         raise FileNotFoundError(f"Fournisseur non trouvé: {name_provider}")
 
     def open_providers_folder(self) -> None:
         """Ouvre le répertoire de destination des fournisseurs."""
+        self.logger.info("Ouverture du dossier des fournisseurs.")
         FileManagerRepository.open_folder(self.folder_path)
 
     def delete_provider(self, provider_filename: str) -> None:
         """Supprime le fournisseur en mémoire et sur le disque."""
-        os.remove(provider_filename)
+        provider_path = self._folder_path / provider_filename
+        self.logger.info(f"Suppression du fournisseur: {provider_path}")
+        os.remove(provider_path)
