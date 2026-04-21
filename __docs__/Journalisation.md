@@ -9,47 +9,38 @@ Ce système permet de suivre en temps réel l'exécution du programme, le bon d�
 Le système de logs diffuse les messages vers trois destinations simultanées :
 
 1. **La Console (Terminal) :** Pratique pour le développeur lors de l'exécution du script en ligne de commande.
-2. **Le Fichier avec Rotation (`app.log`) :** Sauvegardé à la racine du projet. 
-   - **Rotation :** Pour éviter que le fichier ne s'alourdisse indéfiniment, il est limité à **5 Mo**. Lorsqu'il atteint cette taille, il est archivé (ex: `app.log.1`), et un nouveau `.log` vierge est créé. Le système conserve jusqu'à 3 archives récentes.
-3. **L'Interface Graphique (IHM) :** Les logs sont envoyés dynamiquement et de manière sécurisée (Thread-Safe) dans l'onglet **"Journal"** de l'application grâce au gestionnaire personnalisé `GUILoggingHandler`.
+2. **Le Fichier avec Rotation (`app_aspirabot.log`) :** Sauvegardé automatiquement dans le répertoire racine (et/ou `tmp_logs`).
+   - **Rotation :** Pour éviter que le fichier ne s'alourdisse indéfiniment, il est limité en taille. Lorsqu'il l'atteint, il est archivé, et un nouveau `.log` vierge est créé.
+3. **L'Interface Graphique (IHM) :** Les logs sont envoyés dynamiquement et de manière sécurisée (Thread-Safe) dans l'onglet **"Journal"** (`LogsPanelView`) de l'application grâce au module `QueueHandler` interceptant les évènements pour Tkinter.
 
 ## 2. Niveaux de journalisation
 
 Les niveaux suivants sont utilisés dans le code pour catégoriser l'importance de chaque événement :
-- **DEBUG** : Détails très techniques et étapes intermédiaires (ex: *Ouverture d'un nouvel onglet*). Uniquement utile pour le débogage.
-- **INFO** : Informations générales du bon déroulement (ex: *Démarrage du moteur*, *Titre trouvé*).
-- **WARNING** : Avertissements sur des comportements inattendus qui ne bloquent pas le programme (non utilisé par défaut, mais disponible).
-- **ERROR / EXCEPTION** : Erreurs bloquantes ou crash (ex: *Playwright n'a pas pu trouver l'élément*, *Problème réseau*). L'utilisation de `logger.exception()` ajoute automatiquement la trace de l'erreur (Stacktrace).
+- **DEBUG** : Détails très techniques et étapes intermédiaires (ex: *Lancement du bouton*, *Affichage Modale*). Utile pour le débogage de la couche Vue (`views`).
+- **INFO** : Informations générales du bon déroulement (ex: *Démarrage du moteur*, *URL Chargée*).
+- **WARNING** : Avertissements sur des comportements inattendus qui ne bloquent pas techniquement le programme.
+- **ERROR / EXCEPTION** : Erreurs bloquantes ou crash (ex: *Timeout Playwright de 30s introuvable*, *Problème de sélection CSS*). L'utilisation de `logger.exception()` ou `logger.error("...", exc_info=True)` ajoute automatiquement la trace de l'erreur (Stacktrace).
 
 ### Changer le niveau de journalisation
-Par défaut, le niveau est réglé sur **INFO** (les messages `DEBUG` sont donc masqués).
-Pour faire apparaître les logs de débogage, vous pouvez lancer l'application en définissant la variable d'environnement `APP_LOG_LEVEL` :
-
-**Sur Windows (PowerShell) :**
-```powershell
-$env:APP_LOG_LEVEL="DEBUG"; python main.py
-```
-
-**Sur macOS / Linux :**
-```bash
-APP_LOG_LEVEL=DEBUG python main.py
-```
+Dans le fichier de paramétrage `config-aspirabot.json`, ou via une variable d'environnement si l'application est repensée pour la CI/CD. Actuellement, le niveau par défaut d'affichage écran (console) et IHM est conditionné dans le service `utils/logging_util.py`.
 
 ## 3. Architecture Technique
 
-### 3.1. `core/logger.py`
-Ce fichier contient la fonction `setup_logger(name, level)` qui configure le format unifié : `Date/Heure | Niveau | Nom du logger | Message`. Il s'assure qu'aucun gestionnaire (handler) n'est dupliqué si la fonction est appelée plusieurs fois, évitant ainsi l'affichage en double des messages.
+### 3.1. `utils/logging_util.py`
+Ce fichier (utilitaire) contient la fonction `setup_logger(log_queue)` qui configure le format unifié : `Date/Heure - Nom du logger - Niveau - Message`. Il s'assure de lier le gestionnaire (handler) de flux système, de fichier tournant, et d'une file d'attente asynchrone sans doublon.
 
-### 3.2. Intégration IHM (`gui/app.py`)
-La classe `GUILoggingHandler` hérite de la classe native `logging.Handler`. Elle intercepte les messages, les formate pour l'utilisateur (`Heure | Niveau | Message`) et les injecte dans le widget de texte de l'onglet "Journal". L'utilisation de la méthode `.after(0, ...)` permet de garantir la sécurité des appels inter-threads entre la boucle événementielle de `tkinter` et `playwright`.
+### 3.2. Intégration IHM (`views/logs_panel_view.py`)
+La classe `LogsPanelView` hérite de la classe `ttk.Frame`. Elle gère une `queue.Queue` qui reçoit tous les messages de l'application (même depuis un Thread détaché de Playwright). 
+L'utilisation de la méthode `.after(50, self._process_log_queue)` permet de scruter toutes les 50 millisecondes si un message est en attente dans la file et de l'insérer proprement dans le composant visuel de Tkinter (qui est par défaut monotâche), en lui injectant une couleur selon le niveau de criticité.
 
 ### 3.3. Bonne pratique de modularité
-Le moteur de scraping (`scraper/engine.py`) n'a plus besoin qu'on lui passe une fonction de retour (`callback`) de l'IHM. Il déclare de manière complètement autonome son propre logger en début de fichier :
+Chaque fichier métier (que ce soit une `view`, un `controller` ou le `scraping_service.py`) n'a plus besoin qu'on lui passe une fonction de retour spécifique pour les erreurs globales. Ils déclarent de manière complètement autonome leur propre logger en début de fichier :
 ```python
 import logging
 logger = logging.getLogger(__name__)
 
 # Utilisation :
 # logger.info("Message...")
+# logger.error("Zut !", exc_info=True)
 ```
-Cela permet de découpler totalement la logique métier de l'interface graphique : le moteur envoie des logs dans le "vide", et l'application décide de brancher (ou non) un écouteur pour les afficher.
+Cela permet de découpler totalement la logique métier de l'interface graphique. Le système capte nativement l'appel `logger.info()` n'importe où dans `app-aspirabot-py` et le redirigera avec succès dans l'IHM `Tkinter`.

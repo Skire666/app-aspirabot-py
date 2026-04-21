@@ -1,3 +1,13 @@
+"""Onglet d'édition et de création pour les fournisseurs de scraping.
+
+Ce module abrite un composant UI complexe combiné à une fenêtre modale (`ActionSelectionDialog`)
+afin de dicter le workflow métier JSON (séquence d'instructions asynchrones) que subira Playwright.
+
+Exemples d'utilisation:
+    >>> vue_edit = UpdatePanelView(notebook, config_app)
+    >>> vue_edit.load_existing_provider("fichier.json")
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import logging
@@ -9,6 +19,7 @@ from view_models.update_view_model import UpdateViewModel
 from enum import Enum
 
 class WorkflowAction(str, Enum):
+    """Énumération des différentes actions asynchrones de scraping permises."""
     FIND_ELEMENT = "FIND_ELEMENT"
     CLICK = "CLICK"
     DOWNLOAD_IMAGE = "DOWNLOAD_IMAGE"
@@ -17,7 +28,20 @@ class WorkflowAction(str, Enum):
     CLOSE_OTHER_TABS = "CLOSE_OTHER_TABS"
 
 class ActionSelectionDialog:
-    def __init__(self, parent: tk.Misc, title: str):
+    """Fenêtre surgissante (Modale) d'aide à la sélection d'une action de workflow.
+
+    Attributes:
+        top (tk.Toplevel): Fenêtre enfant capturant le focus.
+        selected_action (Optional[WorkflowAction]): Enum choisi par l'utilisateur.
+        action_var (tk.StringVar): Variable de liaison pour la Combobox.
+    """
+    def __init__(self, parent: tk.Misc, title: str) -> None:
+        """Prépare et affiche la fenêtre modale.
+
+        Args:
+            parent (tk.Misc): Composant appelant et conteneur Tkinter.
+            title (str): Titre formel de la fenêtre.
+        """
         self.top = tk.Toplevel(parent)
         self.top.title(title)
         self.top.transient(parent) # type: ignore
@@ -44,16 +68,38 @@ class ActionSelectionDialog:
         self.top.wait_window()
 
     def _on_ok(self) -> None:
+        """Enregistre le choix et ferme la modale."""
         self.selected_action = WorkflowAction(self.action_var.get())
         self.top.destroy()
 
     def _on_cancel(self) -> None:
+        """Annule l'opération (sans sélection) et ferme."""
         self.top.destroy()
 
 class UpdatePanelView(ttk.Frame):
-    """Vue pour la mise à jour de fournisseurs."""
+    """Panneau de mise à jour des paramètres et étapes métiers des fournisseurs.
 
-    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, on_provider_saved: Optional[Callable[[], None]] = None, on_action_complete: Optional[Callable[[], None]] = None, **kwargs: Any):
+    Gère tous les champs via un `UpdateViewModel` en double sens avec le `UpdateController`.
+    Il s'occupe de générer automatiquement un nom de fichier standard si le fournisseur
+    est en cours de création.
+
+    Attributes:
+        logger (logging.Logger): Observateur de classe.
+        controller (UpdateController): Moteur contenant la logique métier.
+        form_frame (ttk.Frame): Composant haut (Informations/Metadonnées).
+        workflow_frame (ttk.LabelFrame): Supportant la liste séquentielle d'instructions.
+    """
+
+    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, on_provider_saved: Optional[Callable[[], None]] = None, on_action_complete: Optional[Callable[[], None]] = None, **kwargs: Any) -> None:
+        """Initialise la fenêtre d'édition (UI + ViewModel).
+
+        Args:
+            parent (tk.Misc): Support Tkinter.
+            app_config (ConfigAspirabotModel): Accès au système de fichiers de l'application.
+            on_provider_saved (Optional[Callable[[], None]]): Action signalant une sauvegarde réussie (souvent un rechargement liste).
+            on_action_complete (Optional[Callable[[], None]]): Action clôturant le cycle et justifiant le changement d'onglet.
+            **kwargs (Any): Arguments usuels pour Frame Tk.
+        """
         super().__init__(parent, **kwargs)
         self.logger = logging.getLogger(__name__)
         self.controller = UpdateController(app_config)
@@ -64,7 +110,7 @@ class UpdatePanelView(ttk.Frame):
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """Initialise les composants de l'interface."""
+        """Construit et dispose spatialement l'ensemble du formulaire CRUD."""
         # Top Container: Split into Information and Metadata
         _top_container = ttk.Frame(self)
         _top_container.pack(fill="x", padx=10, pady=10)
@@ -140,6 +186,7 @@ class UpdatePanelView(ttk.Frame):
         self._set_form_state("disabled")
 
     def _set_form_state(self, state: str) -> None:
+        """Modifie grossièrement l'état des entrées du composant parent ('normal' ou 'disabled')."""
         def change_state(widget: tk.Misc) -> None:
             try:
                 # Ne pas changer l'état du champ calculé s'il doit rester gris/désactivé
@@ -165,6 +212,7 @@ class UpdatePanelView(ttk.Frame):
             self.controller.update_filename_from_fields(self._current_view_model)
 
     def _add_step(self) -> None:
+        """Demande les informations au travers du `ActionSelectionDialog` puis ajoute une ligne."""
         dialog = ActionSelectionDialog(self, "Ajouter une étape")
         if not dialog.selected_action:
             return
@@ -189,6 +237,7 @@ class UpdatePanelView(ttk.Frame):
         self._update_steps_list()
 
     def _remove_step(self) -> None:
+        """Détruit la ligne de la ListBox."""
         sel = self.steps_listbox.curselection() # type: ignore
         if sel:
             idx = int(str(sel[0])) # type: ignore
@@ -196,6 +245,7 @@ class UpdatePanelView(ttk.Frame):
             self._update_steps_list()
 
     def _move_up(self) -> None:
+        """Permute tactiquement avec la ligne supérieure."""
         sel = self.steps_listbox.curselection() # type: ignore
         if sel and int(str(sel[0])) > 0: # type: ignore
             idx = int(str(sel[0])) # type: ignore
@@ -204,6 +254,7 @@ class UpdatePanelView(ttk.Frame):
             self.steps_listbox.selection_set(idx-1)
 
     def _move_down(self) -> None:
+        """Permute tactiquement avec la ligne inférieure."""
         sel = self.steps_listbox.curselection() # type: ignore
         if sel and hasattr(self._current_view_model, 'steps') and self._current_view_model.steps and int(str(sel[0])) < len(self._current_view_model.steps) - 1: # type: ignore
             idx = int(str(sel[0])) # type: ignore
@@ -212,6 +263,7 @@ class UpdatePanelView(ttk.Frame):
             self.steps_listbox.selection_set(idx+1)
 
     def _update_steps_list(self) -> None:
+        """Regénère les libellés condensés des étapes Playwright enregistrées."""
         self.steps_listbox.delete(0, tk.END)
         if hasattr(self._current_view_model, 'steps') and self._current_view_model.steps:
             for step in self._current_view_model.steps:
@@ -221,7 +273,11 @@ class UpdatePanelView(ttk.Frame):
                 self.steps_listbox.insert(tk.END, display_text)
 
     def load_existing_provider(self, provider_title: str) -> None:
-        """Charge les données d'un fournisseur spécifié pour la mise à jour."""
+        """Demande l'hydratation du `UpdateViewModel` depuis la structure logicielle JSON.
+
+        Args:
+            provider_title (str): L'identifiant (titre) absolu du fournisseur visé.
+        """
         self._selected_provider_title = provider_title
         self._set_form_state("normal")
         try:
@@ -233,7 +289,7 @@ class UpdatePanelView(ttk.Frame):
             messagebox.showerror("Erreur", f"Erreur lors du chargement des données:\n{str(e)}")
 
     def load_default(self) -> None:
-        """Prépare le formulaire pour une nouvelle création."""
+        """Active l'UI et initie des valeurs factices ou par défaut (Nouveau Profil)."""
         self._selected_provider_title = None
         self._set_form_state("normal")
         self.controller.load_default_view_model(self._current_view_model)
@@ -241,6 +297,7 @@ class UpdatePanelView(ttk.Frame):
         self.logger.debug("Données par défaut chargées pour création")
 
     def _reset_form(self) -> None:
+        """Annule toutes entrées, vidant et verrouillant le mode Edition."""
         self._selected_provider_title = None
         self._current_view_model.provider_title.set("")
         self._current_view_model.provider_filename.set("")
@@ -248,6 +305,29 @@ class UpdatePanelView(ttk.Frame):
         self._current_view_model.version.set("")
         self._current_view_model.created_date.set("")
         self._current_view_model.modified_date.set("")
+        
+    def _save_form(self) -> None:
+        """Vérifie l'intégrité (via le `UpdateViewModel`) et lance l'archivage disque.
+        
+        Affiche des MessageBox bloquantes si des fautes de structures ou typographies
+        sont observées dans le paramétrage.
+        """
+        erreurs = self._current_view_model.validate()
+        if erreurs:
+            msg = "Impossible de sauvegarder : \n- " + "\n- ".join(erreurs)
+            messagebox.showwarning("Validation", msg)
+            return
+            
+        try:
+            self.controller.save_provider(self._current_view_model, self._selected_provider_title)
+            messagebox.showinfo("Succès", "Fournisseur sauvegardé avec succès.")
+            if self._event_after_provider_was_saved:
+                self._event_after_provider_was_saved()
+            if self._event_redirect_to_tab:
+                self._event_redirect_to_tab()
+        except Exception as e:
+            self.logger.error(f"Erreur lors de la sauvegarde: {e}")
+            messagebox.showerror("Erreur", f"Une erreur est survenue:\n{e}")
         self._current_view_model.browser_displayed.set(True)
         self._current_view_model.automation_obfuscated.set(True)
         self._current_view_model.steps.clear()

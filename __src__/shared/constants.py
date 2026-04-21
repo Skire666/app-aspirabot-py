@@ -1,52 +1,75 @@
+"""Constantes globales pour l'application Aspirabot.
+
+Ce module regroupe l'ensemble des constantes de configuration,
+des paramètres de logs, de l'interface graphique et du navigateur.
+Il permet de centraliser les valeurs statiques pour faciliter leur
+modification et garantir la cohérence dans tout le projet.
+
+Exemples d'utilisation:
+    >>> from shared.constants import CTK_APP, CTK_LOGGING
+    >>> print(CTK_APP.VERSION)
+    '1.0.0'
+"""
 
 ## ----------------------------------------------
 ## Configuration application
 ## ----------------------------------------------
 
 class CTK_APP:
-    # Fichier de configuration JSON utilisé pour stocker les paramètres de l'application
-    ASPIRABOT_CONFIG_FILE = "config-aspirabot.json"
+    """Constantes liées à la configuration générale de l'application.
 
-    # Version de l'application
-    VERSION = "1.0.0"
+    Attributes:
+        ASPIRABOT_CONFIG_FILE (str): Nom du fichier de configuration JSON.
+        VERSION (str): Version actuelle de l'application.
+    """
+    ASPIRABOT_CONFIG_FILE: str = "config-aspirabot.json"
+    VERSION: str = "1.0.0"
 
 ## ----------------------------------------------
 ## Logger
 ## ----------------------------------------------
 
 class CTK_LOGGING:
-    # Nom de base pour les fichiers de log (sans extension ni timestamp)
-    BASE_NAME_LOGFILE = "aspirabot"
+    """Constantes liées à la configuration du système de journalisation (logs).
 
-    # Dossier pour les fichiers de logs
-    DEFAULT_FOLDER_LOGS = "./tmp_logs"
-
-    # Format de logs (ex: 2024-06-01 12:00:00,000 || INFO || app.module || Message de log)
-    FORMAT_MSG = '%(asctime)s || %(levelname)s || %(name)s || %(message)s'
-
-    # Taille maximale d'un fichier de log avant rotation (10 MB). Tips -> 1024 * 1024 = 1 MB
-    LOG_MAX_BYTES = 10 * 1024 * 1024
-
-    # Nombre de fichiers de log à conserver (ex: app.log.1, app.log.2, etc.)
-    BACKUP_LOG_COUNT = 5
+    Attributes:
+        BASE_NAME_LOGFILE (str): Nom de base pour les fichiers de log.
+        DEFAULT_FOLDER_LOGS (str): Dossier par défaut pour stocker les logs.
+        FORMAT_MSG (str): Format des messages de log.
+        LOG_MAX_BYTES (int): Taille maximale d'un fichier de log (en octets) avant rotation.
+        BACKUP_LOG_COUNT (int): Nombre de fichiers de log de secours à conserver.
+    """
+    BASE_NAME_LOGFILE: str = "aspirabot"
+    DEFAULT_FOLDER_LOGS: str = "./tmp_logs"
+    FORMAT_MSG: str = '%(asctime)s || %(levelname)s || %(name)s || %(message)s'
+    LOG_MAX_BYTES: int = 10 * 1024 * 1024  # 10 MB
+    BACKUP_LOG_COUNT: int = 5
 
 ## ----------------------------------------------
 ## Configuration pour le moteur de scraping (Playwright)
 ## ----------------------------------------------
 
 class CTK_BROWSER:
-    # Dossier local pour sauvegarder la session, cookies et cache de Chromium (Playwright)
-    DEFAULT_USER_DATA_DIR = "./tmp_chromium_session"
+    """Constantes liées à la configuration du navigateur pour le scraping.
+
+    Attributes:
+        DEFAULT_USER_DATA_DIR (str): Dossier local par défaut pour stocker
+            les données utilisateurs Chromium (sessions, cookies, cache).
+    """
+    DEFAULT_USER_DATA_DIR: str = "./tmp_chromium_session"
 
 ## ----------------------------------------------
 ## Interface graphique (GUI)
 ## ----------------------------------------------
 
 class CTK_GUI:
-    # Titre de la fenêtre principale
-    APP_NAME = "Aspirabot"
+    """Constantes liées à la configuration de l'interface utilisateur.
 
-    # Dimensions initiales de la fenêtre principale
-    DEFAULT_SIZE_ROOT_FRAME = "900x600"
+    Attributes:
+        APP_NAME (str): Titre de la fenêtre principale.
+        DEFAULT_SIZE_ROOT_FRAME (str): Dimensions par défaut de la fenêtre principale.
+    """
+    APP_NAME: str = "Aspirabot"
+    DEFAULT_SIZE_ROOT_FRAME: str = "900x600"
 
 ## END

@@ -1,6 +1,12 @@
-"""
-Point d'entrée principal de l'application Scraper Configurator.
-Initialise le gestionnaire de logs, la configuration et lance l'interface graphique.
+"""Point d'entrée principal de l'application Scraper Configurator.
+
+Ce module contient la fonction principale qui sert de point d'entrée pour l'application.
+Il est responsable de l'initialisation du gestionnaire de logs, du chargement de la 
+configuration, et du lancement de l'interface graphique Tkinter.
+
+Exemples:
+    Pour lancer l'application, exécutez ce script depuis le terminal racine :
+        $ python __src__/main.py
 """
 
 from shared.constants import CTK_APP
@@ -9,10 +15,27 @@ from models.config_aspirabot_model import ConfigAspirabotModel
 from utils.logging_util import setup_logger, update_logger_level
 
 def main() -> None:
+    """Initialise les composants principaux et démarre l'application.
+
+    Cette fonction configure le logger initial, charge la configuration de 
+    l'application depuis le fichier de configuration défini, met à jour 
+    le niveau de log en fonction des préférences de l'utilisateur, 
+    et démarre la boucle principale de l'interface graphique (Tkinter).
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: Si le fichier de configuration est introuvable (géré par le modèle).
+        KeyError: Si une clé de configuration essentielle est manquante.
+
+    Exemple d'utilisation:
+        >>> main()
     """
-    Initialise les composants principaux et démarre la boucle Tkinter.
-    """
-    # Initialisation du Logger principal au démarrage avec un niveau par défaut (INFO)
+    # Initialisation du Logger principal au démarrage avec un niveau par défaut (DEBUG)
     logger = setup_logger(name="app", level="DEBUG")
     logger.info(" ---------------- Démarrage de l'application ----------------")
 

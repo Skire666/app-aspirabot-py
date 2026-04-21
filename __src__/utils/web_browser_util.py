@@ -1,3 +1,18 @@
+"""Module utilitaire pour l'automatisation du navigateur web.
+
+Ce module gère l'interaction avec le navigateur Chromium via la bibliothèque
+asynchrone Playwright. Il fournit la classe `WebBrowserUtil` capable d'imiter
+un comportement utilisateur pour le scraping, tout en réduisant les risques
+de détection (anti-bot) et en maintenant la persistance de session.
+
+Exemples d'utilisation:
+    >>> import asyncio
+    >>> from models.provider_model import ProviderModel
+    >>> from utils.web_browser_util import run_scraping_task
+    >>> provider = ProviderModel("data/config.json")
+    >>> asyncio.run(run_scraping_task(provider))
+"""
+
 import logging
 from typing import Any
 from playwright.async_api import async_playwright, BrowserContext, Page
@@ -8,33 +23,62 @@ from models.provider_model import ProviderModel
 logger = logging.getLogger(__name__)
 
 class WebBrowserUtil:
-    """
-    Classe gérant l'automatisation du navigateur Chromium via Playwright.
+    """Classe gérant l'automatisation du navigateur Chromium via Playwright.
+
+    Cette classe encapsule la logique d'initialisation de Playwright, le lancement
+    d'un contexte persistant (pour sauvegarder les cookies/cache) et l'exécution
+    séquentielle des étapes de scraping définies dans le ProviderModel.
+
+    Attributes:
+        _provider (ProviderModel): Le modèle de configuration du scraping à utiliser.
+        url_of_website (str): L'URL cible principale pour lancer le processus.
+        _headless (bool): Détermine si le navigateur s'exécute en arrière-plan (True) ou s'il est visible.
+        user_data_dir (str): Le chemin vers le répertoire stockant la session Chromium du bot.
     """
     _provider: ProviderModel
     url_of_website: str
     _headless: bool
 
     def __init__(self, provider: ProviderModel) -> None:
-        """
-        Initialise le gestionnaire de navigateur web avec la configuration fournie.
+        """Initialise le gestionnaire de navigateur web avec la configuration fournie.
 
-        :param provider: Modèle de fournisseur (URL, mode headless, étapes).
+        Args:
+            provider (ProviderModel): Modèle contenant l'URL, le mode d'affichage, et les étapes.
+
+        Raises:
+            ValueError: Si le provider fourni n'est pas valide ou mal initialisé.
+            
+        Exemples d'utilisation:
+            >>> provider = ProviderModel("config.json")
+            >>> browser_util = WebBrowserUtil(provider)
         """
+        if not provider:
+            raise ValueError("Un ProviderModel valide est requis.")
+        
         self._provider = provider
         self.url_of_website = self._provider.url or "https://google.com" # TODO PCO : Constante
-        self._headless = self._provider.browser_displayed # TODO PCO : si case cochée dans IHM adapter le chromium
+        self._headless = not self._provider.browser_displayed # Inverse logique: affiché dans GUI == not headless
         
         # Dossier local pour sauvegarder la session, cookies et cache
         self.user_data_dir = CTK_BROWSER.DEFAULT_USER_DATA_DIR
 
     async def start(self) -> None:
-        """Lance l'ensemble du processus de scraping de manière asynchrone."""
+        """Lance l'ensemble du processus de scraping de manière asynchrone.
+
+        Cette méthode est le point d'entrée principal. Elle initialise Playwright,
+        ouvre le navigateur en mode persistant, masque le flag webdriver, ouvre
+        la page cible et lance l'exécution des étapes.
+        
+        Returns:
+            None
+        """
         logger.info("Démarrage du moteur asynchrone Playwright...")
         
         async with async_playwright() as playwright_instance:
             context = await self.launch_browser(playwright_instance)
-            await self.mask_webdriver(context)
+            
+            if self._provider.automation_obfuscated:
+                await self.mask_webdriver(context)
             
             page = await self.get_or_create_page(context)
             await self._run_scraping_steps(page)
@@ -43,27 +87,41 @@ class WebBrowserUtil:
             await context.close()
 
     async def launch_browser(self, playwright_instance: Any) -> BrowserContext:
-        """
-        Lance le contexte navigateur persistant (conserve cookies et cache).
+        """Lance le contexte navigateur persistant Chromium.
         
-        :param playwright_instance: Instance Playwright active.
-        :return: Le contexte du navigateur ouvert.
+        Le contexte persistant garantit que les sessions, cookies et le cache 
+        sont réutilisés lors des lancements ultérieurs, ce qui peut empêcher 
+        la réauthentification ou limiter la détection des comportements de bot.
+
+        Args:
+            playwright_instance (Any): Une instance validée du gestionnaire `async_playwright()`.
+
+        Returns:
+            BrowserContext: Le contexte de navigateur persistant actif.
+            
+        Raises:
+            Exception: Si l'instance de Playwright ne peut pas lancer Chromium.
         """
         logger.info(f"Lancement Chromium Persistant (headless={self._headless})...")
         return await playwright_instance.chromium.launch_persistent_context(
             user_data_dir=self.user_data_dir,
-            headless=self._headless, # True pour exécution invisible
+            headless=self._headless,
             args=["--disable-blink-features=AutomationControlled"] # Réduit détection bot
         )
 
     async def mask_webdriver(self, context: BrowserContext) -> None:
-        """
-        Masque le flag navigator.webdriver pour réduire la détection par les bots.
+        """Masque le flag `navigator.webdriver` pour réduire la détection.
         
-        :param context: Le contexte du navigateur actif.
+        Injecte un script JavaScript s'exécutant à chaque initialisation de page
+        pour redéfinir la propriété `webdriver` comme non définie, contournant
+        les protections anti-bot basiques.
+
+        Args:
+            context (BrowserContext): Le contexte de navigateur concerné par l'injection.
+
+        Returns:
+            None
         """
-        
-        # TODO PCO : si case cochée dans IHM adapter le chromium
         logger.debug("Masquage du flag webdriver (Anti-Bot)...")
         script = """
             Object.defineProperty(navigator, 'webdriver', {
@@ -73,11 +131,13 @@ class WebBrowserUtil:
         await context.add_init_script(script)
 
     async def get_or_create_page(self, context: BrowserContext) -> Page:
-        """
-        Récupère l'onglet actif ou en ouvre un nouveau s'il n'y en a pas.
+        """Récupère l'onglet actif ou en ouvre un nouveau.
         
-        :param context: Le contexte du navigateur actif.
-        :return: L'objet Page pour interagir.
+        Args:
+            context (BrowserContext): Le contexte lié à la session navigateur en cours.
+
+        Returns:
+            Page: L'objet de page validée prête à recevoir des commandes.
         """
         pages = context.pages
         if len(pages) > 0:
@@ -87,14 +147,25 @@ class WebBrowserUtil:
         return await context.new_page()
 
     async def _run_scraping_steps(self, page: Page) -> None:
-        """
-        Exécute la séquence d'actions de scraping sur la page cible.
+        """Exécute la séquence d'actions de scraping sur la page cible.
         
-        :param page: L'objet Page asynchrone manipulé par Playwright.
+        Navigue d'abord vers l'URL configurée, puis itère sur toutes
+        les étapes fournies par le `ProviderModel` (cliques, attentes, lectures).
+
+        Args:
+            page (Page): L'objet Page asynchrone manipulé par Playwright.
+
+        Returns:
+            None
         """
         logger.info(f"Navigation vers {self.url_of_website}")
-        await page.goto(self.url_of_website)
         
+        try:
+            await page.goto(self.url_of_website)
+        except Exception as e:
+            logger.error(f"Erreur de navigation vers {self.url_of_website} : {e}")
+            return
+            
         steps = self._provider.steps
         if not steps:
             logger.info("Aucune étape à exécuter.")
@@ -171,10 +242,21 @@ class WebBrowserUtil:
 
 
 async def run_scraping_task(provider: ProviderModel) -> None:
-    """
-    Fonction principale appelée par l'IHM qui exécute la classe de scraping.
+    """Fonction principale pour exécuter la tâche de scraping asynchrone.
     
-    :param provider: Modèle pour le lancement du scraper.
+    Instancie la classe `WebBrowserUtil` à partir d'un fournisseur
+    et lance le proxy asynchrone complet. Principalement conçu pour 
+    être invoqué depuis l'UI dans un thread asyncio dédié.
+
+    Args:
+        provider (ProviderModel): Modèle contenant les directives de scraping.
+
+    Returns:
+        None
+
+    Exemples d'utilisation:
+        >>> provider = ProviderModel("config.json")
+        >>> asyncio.run(run_scraping_task(provider))
     """
     scraper = WebBrowserUtil(provider)
     await scraper.start()

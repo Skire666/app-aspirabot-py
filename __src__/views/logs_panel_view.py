@@ -4,11 +4,11 @@ Ce module fournit un widget Tkinter personnalisé permettant d'afficher
 les messages de log de l'application en temps réel, avec une coloration
 syntaxique basée sur le niveau de sévérité du log.
 
-Exemple d'utilisation:
-    root = tk.Tk()
-    logs_panel = LogsPanel(root)
-    logs_panel.pack(fill="both", expand=True)
-    root.mainloop()
+Exemples d'utilisation:
+    >>> root = tk.Tk()
+    >>> logs_panel = LogsPanelView(root)
+    >>> logs_panel.pack(fill="both", expand=True)
+    >>> root.mainloop()
 """
 import tkinter as tk
 from tkinter import ttk, scrolledtext
@@ -36,6 +36,9 @@ class LogsPanelView(ttk.Frame):
         Args:
             parent (tk.Misc): Le widget parent auquel ce panneau est rattaché.
             **kwargs (Any): Arguments supplémentaires passés au constructeur de ttk.Frame.
+            
+        Exemples d'utilisation:
+            >>> frame = LogsPanelView(master_window)
         """
         super().__init__(parent, **kwargs)
         self.logger = logging.getLogger(__name__)
@@ -100,7 +103,10 @@ class LogsPanelView(ttk.Frame):
 
         Returns:
             str: Nom de la couleur reconnue par Tkinter pour correspondre
-            à la sévérité du log.
+                à la sévérité du log.
+                
+        Exemples d'utilisation:
+            >>> couleur = self._get_color_for_level(logging.WARNING)
         """
         if level >= logging.ERROR:
             return "red"

@@ -1,8 +1,14 @@
-"""
-Module contenant la fenêtre principale de l'application.
+"""Module contenant la fenêtre principale de l'application.
 
-Ce module définit la classe `RootFrame`, qui hérite de `tk.Tk`, et configure
-la fenêtre principale, le thème, et les différents onglets de l'interface.
+Ce module définit la classe `RootFrameView`, qui hérite de `tk.Tk`, et configure
+la fenêtre d'entrée, le thème visuel, et l'orchestration des différents onglets en
+s'appuyant sur `MultiTabsPanel`.
+
+Exemples d'utilisation:
+    >>> from models.config_aspirabot_model import ConfigAspirabotModel
+    >>> config = ConfigAspirabotModel()
+    >>> app = RootFrameView(config)
+    >>> app.mainloop()
 """
 
 import tkinter as tk
@@ -17,26 +23,24 @@ class RootFrameView(tk.Tk):
     """Classe principale représentant la fenêtre racine de l'application.
 
     Cette classe initialise l'interface graphique Tkinter, définit le thème de
-    la fenêtre et intègre le panneau à onglets (`MultiTabsPanel`).
+    la fenêtre et intègre le gestionnaire d'onglets (`MultiTabsPanel`).
 
     Attributes:
-        app_config (Optional[ConfigAspirabot]): Configuration de l'application.
-        logger (logging.Logger): Logger pour cette classe.
-        notebook (MultiTabsPanel): Notebook contenant les onglets de l'interface.
-
-    Example:
-        >>> from model.config_aspirabot import ConfigAspirabot
-        >>> config = ConfigAspirabot()
-        >>> app = RootFrame(app_config=config)
-        >>> app.mainloop()
+        app_config (ConfigAspirabotModel): Paramètres globaux permettant localiser les fichiers.
+        logger (logging.Logger): Logger dédié à cette classe.
+        _panel_multi_tabs (MultiTabsPanel): Composant gérant l'orchestration des écrans.
     """
 
     def __init__(self, app_config: ConfigAspirabotModel) -> None:
-        """Initialise la fenêtre principale et intègre les onglets.
+        """Initialise la fenêtre principale (racine de l'UI Tkinter) et ses enfants.
 
         Args:
-            app_config (Optional[ConfigAspirabot]): Configuration globale de
-                l'application. Par défaut, None.
+            app_config (ConfigAspirabotModel): Configuration globale de
+                l'application contenant les répertoires cibles et les settings réseaux.
+                
+        Exemples d'utilisation:
+            >>> fenetre = RootFrameView(config_pre_chargee)
+            >>> fenetre.title("Aspirabot Custom")
         """
         super().__init__()
         self.app_config = app_config
@@ -48,19 +52,19 @@ class RootFrameView(tk.Tk):
         self._init_notebook()
 
     def _init_window(self) -> None:
-        """Configure les propriétés de la fenêtre principale.
+        """Configure les propriétés géométriques et textes de la fenêtre parent.
 
-        Définit le titre et les dimensions initiales de la fenêtre.
+        Définit le titre (basé sur CTK_GUI) et les dimensions initiales.
         """
         self.title(CTK_GUI.APP_NAME)
         self.geometry(CTK_GUI.DEFAULT_SIZE_ROOT_FRAME)
 
     def _init_theme(self) -> None:
-        """Applique un thème moderne à l'interface, si disponible.
+        """Applique un thème moderne à l'interface, si disponible par le système.
 
-        Tente d'appliquer le thème 'clam' provenant de ttk. En cas d'échec
-        (TclError), enregistre un avertissement via le logger et conserve le
-        thème par défaut.
+        Tente d'appliquer le thème 'clam' provenant de ttk pour une charte plus 
+        neutre. En cas d'échec (TclError), enregistre un avertissement via le logger 
+        et conserve le thème système par défaut de l'OS.
         """
         style = ttk.Style(self)
         try:
@@ -69,10 +73,10 @@ class RootFrameView(tk.Tk):
             self.logger.warning("Thème 'clam' indisponible, utilisation du thème par défaut.")
 
     def _init_notebook(self) -> None:
-        """Initialise le panneau à onglets principal.
+        """Fabrique et accroche le panneau contenant le système d'onglets de l'application.
 
-        Crée une instance de `MultiTabsPanel` et l'ajoute à la fenêtre
-        principale en l'étendant pour remplir tout l'espace disponible.
+        Crée l'instance de `MultiTabsPanel` et exécute la méthode classique `pack`
+        en forçant le composant à épouser intégralement la fenêtre mère.
         """
         self._panel_multi_tabs = MultiTabsPanel(self, self.app_config)
         self._panel_multi_tabs.pack(fill="both", expand=True)

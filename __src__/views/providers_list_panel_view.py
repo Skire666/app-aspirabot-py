@@ -1,3 +1,14 @@
+"""L'onglet affichant la liste des fournisseurs configurés.
+
+Ce module définit `ProvidersListPanelView`, un cadre (Frame) contenant 
+un tableau listant dynamiquement tous les fournisseurs identifiés, 
+avec des options pour en créer, éditer ou lancer le processus de scraping.
+
+Exemples d'utilisation:
+    >>> vue = ProvidersListPanelView(notebook, config)
+    >>> vue.pack(fill="both")
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -8,9 +19,33 @@ from models.config_aspirabot_model import ConfigAspirabotModel
 from view_models.providers_list_view_model import ProvidersListViewModel
 
 class ProvidersListPanelView(ttk.Frame):
-    """Vue listant les fournisseurs existants."""
+    """Vue listant les fournisseurs existants sous Tkinter.
 
-    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, **kwargs: Any):
+    S'appuie sur `ProvidersListViewModel` pour la donnée et `ProvidersListController`
+    pour la gestion des actions telles que la suppression et l'ouverture de dossiers.
+
+    Attributes:
+        logger (logging.Logger): Consignateur du module.
+        controller (ProvidersListController): Logique sous-jacente d'orchestration.
+        on_provider_selected_callback (Optional[Callable[[str], None]]): 
+            Déclenché lorsque l'édition d'un fournisseur est demandée.
+        on_provider_launched_callback (Optional[Callable[[str], None]]): 
+            Déclenché lorsque le scraping sur un fournisseur est initié.
+        sort_col (str): Clé de la colonne en cours de tri.
+        sort_reverse (bool): Direction du tri.
+    """
+
+    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, **kwargs: Any) -> None:
+        """Initialise le panneau de table des fournisseurs.
+
+        Args:
+            parent (tk.Misc): Connecteur vers la structuration parent (Notebook).
+            app_config (ConfigAspirabotModel): Paramètres globaux permettant localiser les fichiers.
+            **kwargs (Any): Les aguments liés au Frame Tkinter.
+            
+        Exemples d'utilisation:
+            >>> view = ProvidersListPanelView(self, self.config_aspirabot_model)
+        """
         super().__init__(parent, **kwargs)
         self.logger = logging.getLogger(__name__)
         self.controller = ProvidersListController(app_config)
@@ -23,7 +58,11 @@ class ProvidersListPanelView(ttk.Frame):
         self.refresh_providers_list()
 
     def _init_ui(self) -> None:
-        """Construit l'interface."""
+        """Construit l'interface comprenant l'en-tête et l'ossature du tableau.
+        
+        Prépare les boutons (Créer, Actualiser, Ouvrir dossier) et génère la
+        première construction de la grille.
+        """
         # Header Frame
         self.header_frame = ttk.Frame(self)
         self.header_frame.pack(fill="x", padx=10, pady=10)
@@ -47,7 +86,11 @@ class ProvidersListPanelView(ttk.Frame):
         self._build_list()
         
     def _sort_by(self, col: str) -> None:
-        """Trie la liste des fournisseurs et reconstruit la vue."""
+        """Trie la liste des fournisseurs par clic sur l'en-tête et redessine la vue.
+
+        Args:
+            col (str): Le nom de la propriété/colonne selon laquelle la liste est triée.
+        """
         if self.sort_col == col:
             self.sort_reverse = not self.sort_reverse
         else:
@@ -56,6 +99,7 @@ class ProvidersListPanelView(ttk.Frame):
         self._build_list()
 
     def _build_list(self) -> None:
+        """Reconstruit intégralement la grille de données avec alternance de lignes."""
         # Nettoyage préalable
         for widget in self.list_frame.winfo_children():
             widget.destroy()
@@ -127,41 +171,52 @@ class ProvidersListPanelView(ttk.Frame):
             ttk.Button(action_frame, text="Supprimer", width=10, command=lambda s=provider.provider_filename, n=provider.provider_title: self._event_when_delete_clicked(s, n)).pack(side="left", padx=(0, 5))
 
     def refresh_providers_list(self) -> None:
-        """Recharge les données depuis le contrôleur et reconstruit la liste."""
+        """Recharge les données métier depuis le contrôleur et reconstruit la liste visuelle."""
         self.controller.load_providers_into_view_model(self._view_model)
         self._build_list()
 
     def _event_when_create_clicked(self) -> None:
-        """Demande la création via l'onglet Mettre à jour."""
+        """Demande la création d'un nouveau fournisseur via l'évèvement de délégation."""
         self.logger.debug("_event_when_create_clicked.")
         if self.on_provider_selected_callback:
-            # stringa vide = instruction de création (géré par le callback ou load default)
             self.on_provider_selected_callback("") 
 
     def _event_when_open_folder_clicked(self) -> None:
+        """Ouvre le répertoire de destination des fournisseurs du projet avec l'OS parent."""
         self.logger.debug("_event_when_open_folder_clicked.")
-        """Ouvre le répertoire de destination des fournisseurs."""
         self.controller.open_providers_folder()
 
     def _event_when_launch_clicked(self, stem: str) -> None:
+        """Lance le processus de scraping sur un fournisseur particulier.
+
+        Args:
+            stem (str): Le nom de fichier cible (incluant .json).
+        """
         self.logger.debug("_event_when_launch_clicked.")
-        """Lance le process de scraping sur ce fournisseur."""
         if self.on_provider_launched_callback:
             self.on_provider_launched_callback(stem)
 
     def _event_when_edit_clicked(self, stem: str) -> None:
+        """Charge l'éditeur pour configurer un fournisseur existant.
+
+        Args:
+            stem (str): Le nom de fichier cible de l'objet métier.
+        """
         self.logger.debug("_event_when_edit_clicked.")
-        """Édite le fournisseur existant."""
         if self.on_provider_selected_callback:
             self.on_provider_selected_callback(stem)
 
     def _event_when_delete_clicked(self, stem: str, name: str) -> None:
+        """Soulève la fenêtre de confirmation et ordonne la suppression au contrôleur.
+
+        Args:
+            stem (str): Le nom du fichier JSON identifiant unique.
+            name (str): Le nom affichable du fournisseur (pour la boite de dialog).
+        """
         self.logger.debug(f"_event_when_delete_clicked. -> stem: {stem}, name: {name}")
-        """Demande de supprimer le fournisseur."""
         if messagebox.askyesno("Confirmation", f"Voulez-vous vraiment supprimer le fournisseur '{name}' ?"):
             try:
                 self.controller.delete_provider(stem)
-                # On rafraîchit
                 self.refresh_providers_list()
             except Exception as e:
                 self.logger.error(f"Erreur de suppression: {e}")

@@ -1,14 +1,14 @@
 """Module de gestion de la configuration de l'application.
 
-Ce module fournit la classe `ConfigAspirabot` qui permet de charger,
+Ce module fournit la classe `ConfigAspirabotModel` qui permet de charger,
 sauvegarder et accéder aux paramètres de configuration stockés
 dans un fichier JSON. Il garantit qu'une configuration par défaut
 est utilisée si le fichier est manquant ou corrompu.
 
-Examples:
-    >>> from model.aspirabot_app_model import AspirabotAppModel
-    >>> config = AspirabotAppModel("my_config.json")
-    >>> value = config.get_value("theme", "dark")
+Exemples d'utilisation:
+    >>> from models.config_aspirabot_model import ConfigAspirabotModel
+    >>> config = ConfigAspirabotModel("config-aspirabot.json")
+    >>> value = config.log_level
 """
 
 import logging
@@ -25,28 +25,39 @@ class ConfigAspirabotModel:
     """Gestionnaire de configuration de l'application (format JSON).
 
     Cette classe prend en charge la lecture et l'écriture de la configuration
-    en format JSON via la classe JsonFileRepository.
+    en format JSON via la classe JsonFileRepository. Elle offre des propriétés
+    pour accéder facilement aux attributs clés de l'application.
 
     Attributes:
         config_path (str): Le chemin absolu ou relatif vers le fichier de configuration JSON.
     """
 
     def __init__(self, config_path: str) -> None:
-        """Initialise le gestionnaire de configuration.
+        """Initialise le gestionnaire de configuration avec le JSON spécifié.
 
         Args:
             config_path (str): Chemin vers le fichier JSON de configuration.
 
-        Examples:
-            >>> config = AspirabotAppModel("my_config.json")
+        Raises:
+            IOError: En cas d'impossibilité d'accéder au fichier (propagé depuis JsonFileRepository).
+
+        Exemples d'utilisation:
+            >>> config = ConfigAspirabotModel("config-aspirabot.json")
         """
         self.config_path = config_path
         s_logger.debug(f"Initialisation du gestionnaire de configuration (cible: {self.config_path})")
         self._repository = JsonFileRepository(self.config_path, ConfigAspirabotModel.get_default_data())
 
     @classmethod
-    def get_default_data(cls) -> dict[str, Any]:
-        """Retourne les données par défaut pour un nouveau fournisseur."""
+    def get_default_data(cls) -> Dict[str, Any]:
+        """Retourne les données par défaut pour la configuration de l'application.
+
+        Fournit un dictionnaire contenant les valeurs par défaut au cas où
+        le fichier n'existerait pas ou serait incomplet.
+
+        Returns:
+            Dict[str, Any]: Dictionnaire contenant les paramètres par défaut.
+        """
         return {
             "log_level": "INFO", # niveau de log par défaut (ex: "INFO", "DEBUG", "WARNING")
             "folder_logs": "./tmp_logs", # Dossier pour les fichiers de logs
@@ -55,10 +66,12 @@ class ConfigAspirabotModel:
         }
 
     def verify_keys_exist(self) -> bool:
-        """Vérifie si toutes les clés par défaut existent dans la configuration.
+        """Vérifie si toutes les clés par défaut existent dans la configuration en cours.
+
+        Utilise `get_default_data` pour vérifier l'intégrité de la structure JSON chargée.
 
         Returns:
-            bool: True si toutes les clés de DEFAULT_CONFIG sont présentes, False sinon.
+            bool: True si toutes les clés requises sont présentes, False sinon.
         """
         missing_keys = [key for key in ConfigAspirabotModel.get_default_data() if key not in self.all_data]
         if missing_keys:
