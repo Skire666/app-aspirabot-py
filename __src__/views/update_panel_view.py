@@ -305,29 +305,6 @@ class UpdatePanelView(ttk.Frame):
         self._current_view_model.version.set("")
         self._current_view_model.created_date.set("")
         self._current_view_model.modified_date.set("")
-        
-    def _save_form(self) -> None:
-        """Vérifie l'intégrité (via le `UpdateViewModel`) et lance l'archivage disque.
-        
-        Affiche des MessageBox bloquantes si des fautes de structures ou typographies
-        sont observées dans le paramétrage.
-        """
-        erreurs = self._current_view_model.validate()
-        if erreurs:
-            msg = "Impossible de sauvegarder : \n- " + "\n- ".join(erreurs)
-            messagebox.showwarning("Validation", msg)
-            return
-            
-        try:
-            self.controller.save_provider(self._current_view_model, self._selected_provider_title)
-            messagebox.showinfo("Succès", "Fournisseur sauvegardé avec succès.")
-            if self._event_after_provider_was_saved:
-                self._event_after_provider_was_saved()
-            if self._event_redirect_to_tab:
-                self._event_redirect_to_tab()
-        except Exception as e:
-            self.logger.error(f"Erreur lors de la sauvegarde: {e}")
-            messagebox.showerror("Erreur", f"Une erreur est survenue:\n{e}")
         self._current_view_model.browser_displayed.set(True)
         self._current_view_model.automation_obfuscated.set(True)
         self._current_view_model.steps.clear()
