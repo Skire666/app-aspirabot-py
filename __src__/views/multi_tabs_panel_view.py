@@ -69,6 +69,19 @@ class MultiTabsPanel(ttk.Notebook):
         self.init_tab_update_provider() # onglet : mise à jour d'un fournisseur
         self.init_tab_scraping() # nouvel onglet pour le suivi du scraping
 
+    def _set_tabs_state(self, tabs: list[object], state: str) -> None:
+        """Modifie l'état d'une liste d'onglets."""
+        for tab in tabs:
+            self.tab(tab, state=state) # type: ignore
+
+    def _lock_scraping_actions(self) -> None:
+        """Bloque les actions des autres onglets pendant le scraping."""
+        self._set_tabs_state([self._panel_providers_list, self.update_panel], "disabled")
+
+    def _unlock_scraping_actions(self) -> None:
+        """Débloque les actions des autres onglets."""
+        self._set_tabs_state([self._panel_providers_list, self.update_panel], "normal")
+
     def init_tab_scraping(self) -> None:
         """Prépare et injecte l'onglet de supervision du scraping.
         
@@ -76,34 +89,30 @@ class MultiTabsPanel(ttk.Notebook):
         les autres onglets durant l'exécution, évitant les incohérences.
         """
         name_tab = "Scrapping"
-        
-        def lock_actions() -> None:
-            """Bloque les actions des autres onglets pendant le scraping."""
-            self.tab(self._panel_providers_list, state="disabled")
-            self.tab(self.update_panel, state="disabled")
             
-        def unlock_actions() -> None:
-            """Débloque les actions des autres onglets."""
-            self.tab(self._panel_providers_list, state="normal")
-            self.tab(self.update_panel, state="normal")
-            
-        self._panel_scraping = ScrapingPanelView(self, self.config_aspirabot_model, lock_actions, unlock_actions)
+        self._panel_scraping = ScrapingPanelView(
+            self, 
+            self.config_aspirabot_model, 
+            self._lock_scraping_actions, 
+            self._unlock_scraping_actions
+        )
         self.add(self._panel_scraping, text=f" {name_tab} ")
-        self.tab(self._panel_scraping, state="disabled")        
+        self.tab(self._panel_scraping, state="disabled") # type: ignore
         self.logger.debug(f"Création de l'onglet '{name_tab}'.")
+
+    def _on_update_action_complete(self) -> None:
+        """Sélectionne l'onglet liste des fournisseurs une fois la mise à jour terminée."""
+        self.select(str(self._panel_providers_list)) # type: ignore
 
     def init_tab_update_provider(self) -> None:
         """Prépare l'onglet de création ou modification d'un fournisseur JSON."""
         name_tab: str = "Mettre à jour"
 
-        def on_update_action_complete() -> None:
-            self.select(str(self._panel_providers_list)) # type: ignore
-
         self.update_panel = UpdatePanelView(
             self, 
             self.config_aspirabot_model, 
             on_provider_saved=self._panel_providers_list.refresh_providers_list,
-            on_action_complete=on_update_action_complete
+            on_action_complete=self._on_update_action_complete
         )
 
         self.add(self.update_panel, text=f" {name_tab} ")
@@ -116,34 +125,34 @@ class MultiTabsPanel(ttk.Notebook):
         self.add(self._panel_logs, text=f" {name_tab} ")
         self.logger.debug(f"Création de l'onglet '{name_tab}'.")
 
+    def _on_providers_list_selected(self, provider_title: str) -> None:
+        """Gère la sélection d'un fournisseur dans la liste."""
+        if provider_title:
+            self.logger.debug("on_providers_list_selected -> load_existing_provider.")
+            self.update_panel.load_existing_provider(provider_title)
+        else:
+            self.logger.debug("on_providers_list_selected -> load_default.")
+            self.update_panel.load_default()
+        # afficher l'onglet de mise à jour
+        self.select(str(self.update_panel)) # type: ignore
+        
+    def _on_providers_list_launched(self, provider_title: str) -> None:
+        """Gère le lancement du scraping pour un fournisseur sélectionné."""
+        if provider_title:
+            self.logger.debug("on_providers_list_launched -> set_provider and change tab.")
+            self.tab(self._panel_scraping, state="normal") # type: ignore
+            self._panel_scraping.load_provider(provider_title)
+            self.select(str(self._panel_scraping)) # type: ignore
+            self._panel_scraping.launch_scrapping()
+
     def init_tab_providers_list(self) -> None:
         """Instancie l'onglet listant tous les fournisseurs existants dans le répertoire."""
         name_tab: str = "Fournisseurs"
         self._panel_providers_list = ProvidersListPanelView(self, self.config_aspirabot_model)
         self.add(self._panel_providers_list, text=f" {name_tab} ")
 
-        def on_providers_list_selected(provider_title: str) -> None:
-            # S'il y a un titre, charger en mode édition, sinon nettoyage
-            if provider_title:
-                self.logger.debug("on_providers_list_selected -> load_existing_provider.")
-                self.update_panel.load_existing_provider(provider_title)
-            else:
-                self.logger.debug("on_providers_list_selected -> load_default.")
-                self.update_panel.load_default()
-            # afficher l'onglet de mise à jour
-            self.select(str(self.update_panel)) # type: ignore
-            
-        def on_providers_list_launched(provider_title: str) -> None:
-            # Action du bouton Lancer
-            if provider_title:
-                self.logger.debug("on_providers_list_launched -> set_provider and change tab.")
-                self.tab(self._panel_scraping, state="normal")
-                self._panel_scraping.load_provider(provider_title)
-                self.select(str(self._panel_scraping)) # type: ignore
-                self._panel_scraping._event_launch_scrapping()
-
-        self._panel_providers_list.on_provider_selected_callback = on_providers_list_selected
-        self._panel_providers_list.on_provider_launched_callback = on_providers_list_launched
+        self._panel_providers_list.on_provider_selected_callback = self._on_providers_list_selected
+        self._panel_providers_list.on_provider_launched_callback = self._on_providers_list_launched
         self.logger.debug(f"Création de l'onglet '{name_tab}'.")
 
 

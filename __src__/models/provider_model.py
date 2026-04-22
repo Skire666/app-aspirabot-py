@@ -89,6 +89,21 @@ class ProviderModel:
             "automation_obfuscated": True,
             "steps": []
         }
+        
+    def save_to_file(self) -> None:
+        """Enregistre les données actuelles du fournisseur dans le fichier JSON associé.
+
+        Cette méthode doit être appelée après avoir modifié les propriétés du modèle
+        pour assurer que les changements soient persistés sur le disque.
+
+        Raises:
+            IOError: Si l'écriture dans le fichier JSON échoue.
+            
+        Exemples d'utilisation:
+            >>> modele.url = "https://nouveau.fournisseur"
+            >>> modele.save_to_file()
+        """
+        self._repository.save_to_file()
 
     ## ------------------------------------------
     ## Propriétés
@@ -122,7 +137,7 @@ class ProviderModel:
     @property
     def provider_filename(self) -> str:
         """str: Récupère ou modifie le nom sécurisé du fichier fournisseur."""
-        return self._repository.get_value("provider_filename", "nouv_fournisseur")
+        return self._repository.get_value("provider_filename", "nouv_fournisseur.json")
 
     @provider_filename.setter
     def provider_filename(self, value: str) -> None:
@@ -131,7 +146,7 @@ class ProviderModel:
     @property
     def url(self) -> str:
         """str: Récupère ou modifie l'URL racine ciblée par le fournisseur."""
-        return self._repository.get_value("url", "")
+        return self._repository.get_value("url", "https://example.com")
 
     @url.setter
     def url(self, value: str) -> None:

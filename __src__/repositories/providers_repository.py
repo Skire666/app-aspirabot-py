@@ -113,7 +113,11 @@ class ProvidersRepository:
         Returns:
             None
         """
-        self.logger.info("Ouverture du dossier des fournisseurs.")
+        self.logger.info("Ouverture du dossier des fournisseurs...")
+        if not self._folder_path.exists():
+            os.makedirs(self._folder_path)
+        if not self._folder_path.is_dir():
+            raise NotADirectoryError(f"Le chemin spécifié n'est pas un dossier: {self._folder_path}")
         FileManagerRepository.open_folder(self.folder_path)
 
     def delete_provider(self, provider_filename: str) -> None:

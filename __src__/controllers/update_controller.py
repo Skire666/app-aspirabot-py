@@ -13,12 +13,13 @@ Exemples d'utilisation:
 from typing import List
 from pathlib import Path
 
-from models.provider_model import ProviderModel
 from shared.string_helper import StringHelper
+from models.provider_model import ProviderModel
 from models.config_aspirabot_model import ConfigAspirabotModel
 from repositories.providers_repository import ProvidersRepository
 from view_models.update_view_model import UpdateViewModel
-from converters.update_converter import UpdateConverter
+from converters.provider_model_converter import ProviderModelConverter
+from converters.udpate_view_model_converter import UpdateViewModelConverter
 
 class UpdateController:
     """Contrôleur gérant les opérations de création, lecture et mise à jour JSON.
@@ -30,7 +31,7 @@ class UpdateController:
     Attributes:
         config (ConfigAspirabotModel): L'état global de configuration.
         repository (ProvidersRepository): Accès au dépôt de fournisseurs JSON.
-        converter (UpdateConverter): Utilitaire de transferts de données (Model <-> ViewModel).
+        converter (UpdateViewModelConverter): Utilitaire de transferts de données (Model <-> ViewModel).
     """
 
     def __init__(self, config: ConfigAspirabotModel) -> None:
@@ -41,7 +42,6 @@ class UpdateController:
         """
         self.config = config
         self.repository = ProvidersRepository(self.config.folder_providers)
-        self.converter = UpdateConverter()
 
     def get_providers_list(self) -> List[str]:
         """Récupère une liste complète des noms de fichiers de fournisseurs actuels.
@@ -66,7 +66,7 @@ class UpdateController:
             UpdateViewModel: Le ViewModel mis à jour de ses valeurs.
         """
         provider = self.repository.read_provider_content_selected(name_provider)
-        return self.converter.to_view_model(provider, view_model)
+        return ProviderModelConverter.to_view_model(provider, view_model)
 
     def load_default_view_model(self, view_model: UpdateViewModel) -> None:
         """Charge de nouvelles valeurs par défaut dans un ViewModel pour la création d'un fournisseur.
@@ -124,8 +124,8 @@ class UpdateController:
         # Conversion inverse pour enregistrer
         from datetime import datetime
         view_model.modified_date.set(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        self.converter.update_model_from_view_model(provider, view_model)
-        provider._repository.save_to_file()
+        UpdateViewModelConverter.to_provider_model(view_model, provider)
+        provider.save_to_file()
         
     def create_new_provider_from_view_model(self, view_model: UpdateViewModel) -> str:
         """Crée physiquement sur le disque un nouveau fichier fournisseur depuis l'UI asynchrone.
@@ -151,8 +151,8 @@ class UpdateController:
         from datetime import datetime
         view_model.modified_date.set(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         
-        self.converter.update_model_from_view_model(provider, view_model)
-        provider._repository.save_to_file()
+        UpdateViewModelConverter.to_provider_model(view_model, provider)
+        provider.save_to_file()
         
         return safe_name
     

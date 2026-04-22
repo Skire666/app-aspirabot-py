@@ -143,7 +143,7 @@ class ProvidersListPanelView(ttk.Frame):
         
         # Récupère la couleur de fond normale par défaut
         for row, provider in enumerate(providers, start=1):
-            bg_color = "#DCDAD5" if row % 2 != 0 else "#E7E7E7" # gris clair ou normal
+            bg_color = "#DCDAD5" if row % 2 != 0 else "#E3E3D4" # gris clair ou normal
             
             # Application du background via tk.Label pour supporter la couleur de fond
             lbl_nom = tk.Label(self.list_frame, text=provider.provider_title, bg=bg_color, anchor="w", padx=5, pady=2)
@@ -184,7 +184,12 @@ class ProvidersListPanelView(ttk.Frame):
     def _event_when_open_folder_clicked(self) -> None:
         """Ouvre le répertoire de destination des fournisseurs du projet avec l'OS parent."""
         self.logger.debug("_event_when_open_folder_clicked.")
-        self.controller.open_providers_folder()
+        
+        try:
+            self.controller.open_providers_folder()
+        except Exception as e:
+            self.logger.error(f"Erreur lors de l'ouverture du dossier: {e}")
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir le dossier:\n{e}")
 
     def _event_when_launch_clicked(self, stem: str) -> None:
         """Lance le processus de scraping sur un fournisseur particulier.

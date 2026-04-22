@@ -74,7 +74,7 @@ class ScrapingPanelView(ttk.Frame):
         self.stop_btn = ttk.Button(btn_frame, text="Stopper le scrapping", command=self._event_stop_scrapping, state="disabled")
         self.stop_btn.pack(side="left", padx=5)
         
-        self.launch_btn = ttk.Button(btn_frame, text="Lancer / Relancer", command=self._event_launch_scrapping, state="disabled")
+        self.launch_btn = ttk.Button(btn_frame, text="Lancer / Relancer", command=self.launch_scrapping, state="disabled")
         self.launch_btn.pack(side="left", padx=5)
         
         # 2ème ligne : Texte résumé
@@ -85,7 +85,7 @@ class ScrapingPanelView(ttk.Frame):
         self.log_text = tk.Text(self, state="disabled", wrap="word", height=20)
         self.log_text.pack(fill="both", expand=True, padx=10, pady=10)
         
-        scrollbar = ttk.Scrollbar(self.log_text, command=self.log_text.yview)
+        scrollbar = ttk.Scrollbar(self.log_text, command=self.log_text.yview) # type: ignore
         scrollbar.pack(side="right", fill="y")
         self.log_text.config(yscrollcommand=scrollbar.set)
 
@@ -103,7 +103,7 @@ class ScrapingPanelView(ttk.Frame):
         self._clear_text()
         self._add_text_log(f"Prêt à lancer le scraping pour le fournisseur '{stem}'.")
 
-    def _event_launch_scrapping(self) -> None:
+    def launch_scrapping(self) -> None:
         """Signal initiateur du thread asynchrone de `WebBrowserUtil`.
         
         Utilise un délégué pour remonter les messages de façon Thread-Safe via `.after()`
