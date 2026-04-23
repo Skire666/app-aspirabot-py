@@ -11,8 +11,19 @@ Exemples:
 
 from shared.constants import CTK_APP
 from views.root_frame_view import RootFrameView
-from models.config_aspirabot_model import ConfigAspirabotModel
 from utils.logging_util import setup_logger, update_logger_level
+
+# Repositories & Services import
+from repositories.json_config_repository import JsonConfigRepository
+from repositories.providers_repository import ProvidersRepository
+from services.config_service import ConfigService
+from services.provider_service import ProviderService
+
+# Controllers import
+from controllers.providers_list_controller import ProvidersListController
+from controllers.update_controller import UpdateController
+from controllers.scraping_controller import ScrapingController
+from controllers.config_controller import ConfigController
 
 def main() -> None:
     """Initialise les composants principaux et démarre l'application.
@@ -41,9 +52,15 @@ def main() -> None:
 
     # Chargement de la configuration
     logger.info("Chargement des configurations.")
-    config = ConfigAspirabotModel(CTK_APP.ASPIRABOT_CONFIG_FILE)
-    config.verify_keys_exist()  # Vérifie que toutes les clés par défaut sont présentes.
-    logger.debug("Configuration chargée.")
+    
+    # Configuration Repository & Service Setup
+    config_repository = JsonConfigRepository(CTK_APP.ASPIRABOT_CONFIG_FILE)
+    config_service = ConfigService(config_repository)
+
+    # Récupération et vérification de la configuration
+    config = config_service.get_config()
+    config_service.verify_configuration()
+    logger.debug("Configuration chargée et validée.")
     
     # Mise à jour dynamique du niveau de log selon la configuration
     log_level_str = config.log_level
@@ -51,8 +68,23 @@ def main() -> None:
 
     logger.debug("Chargement des configurations et initialisation terminés.")
     
+    # Providers Repository & Service Setup
+    providers_repository = ProvidersRepository(config.folder_providers)
+    provider_service = ProviderService(providers_repository)
+    
+    # Controllers setup
+    providers_list_controller = ProvidersListController(provider_service, config)
+    update_controller = UpdateController(provider_service, config)
+    scraping_controller = ScrapingController(config)
+    config_controller = ConfigController(config_service)
+
     # Point d'entrée principal de l'application
-    app = RootFrameView(app_config=config)
+    app = RootFrameView(
+        providers_list_controller, 
+        update_controller, 
+        scraping_controller, 
+        config_controller
+    )
     app.mainloop()
 
 if __name__ == "__main__":

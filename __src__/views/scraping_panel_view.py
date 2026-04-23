@@ -17,7 +17,6 @@ from typing import Callable, Any
 
 from controllers.scraping_controller import ScrapingController
 from view_models.scraping_view_model import ScrapingViewModel
-from models.config_aspirabot_model import ConfigAspirabotModel
 
 class ScrapingPanelView(ttk.Frame):
     """Environnement d'exécution et de suivi direct du scraping pour un fournisseur sélectionné.
@@ -37,18 +36,18 @@ class ScrapingPanelView(ttk.Frame):
         log_text (tk.Text): Historique textuelle du fil déroulant.
     """
 
-    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, on_lock_actions: Callable[[], None], on_unlock_actions: Callable[[], None], **kwargs: Any) -> None:
+    def __init__(self, parent: tk.Misc, controller: ScrapingController, on_lock_actions: Callable[[], None], on_unlock_actions: Callable[[], None], **kwargs: Any) -> None:
         """Initialise la fenêtre d'exécution Playwright.
 
         Args:
             parent (tk.Misc): L'enveloppe parente Tkinter (par exemple, `MultiTabsPanel`).
-            app_config (ConfigAspirabotModel): Accès à la config pour le dépôt JSON.
+            controller (ScrapingController): Le contrôleur injecté.
             on_lock_actions (Callable[[], None]): Callback gelant les interactions globales.
             on_unlock_actions (Callable[[], None]): Callback rétablissant les interactions.
             **kwargs (Any): Les options héritées liées au composant ttk.Frame.
             
         Exemples d'utilisation:
-            >>> self._panel_scraping = ScrapingPanelView(self, conf, defL, defUl)
+            >>> self._panel_scraping = ScrapingPanelView(self, controller, defL, defUl)
         """
         super().__init__(parent, **kwargs)
         self.logger = logging.getLogger(__name__)
@@ -57,7 +56,7 @@ class ScrapingPanelView(ttk.Frame):
         self.on_unlock_actions = on_unlock_actions
         
         self.view_model = ScrapingViewModel()
-        self.controller = ScrapingController(app_config)
+        self.controller = controller
         
         self._init_ui()
 

@@ -31,7 +31,7 @@ class UpdateViewModel:
         automation_obfuscated (tk.BooleanVar): Désactive les arguments Playwright anti-bot basiques.
         steps (List[dict[str, Any]]): Instructions paramétrées (FIND_ELEMENT, CLICK, WAIT...).
     """
-    provider_filename: tk.StringVar = field(default_factory=tk.StringVar)
+    provider_guid: tk.StringVar = field(default_factory=tk.StringVar)
     provider_title: tk.StringVar = field(default_factory=tk.StringVar)
     url: tk.StringVar = field(default_factory=tk.StringVar)
     created_date: tk.StringVar = field(default_factory=tk.StringVar)
@@ -57,8 +57,6 @@ class UpdateViewModel:
         errors: List[str] = []
         if not self.provider_title.get() or not self.provider_title.get().strip() or len(self.provider_title.get().strip()) < 3:
             errors.append("Le champ 'Nom' est obligatoire (3 caractères minimum).")
-        if not self.provider_filename.get() or not self.provider_filename.get().strip():
-            errors.append("Le champ 'Nom de fichier' est obligatoire.")
         if not self.url.get() or not self.url.get().strip():
             errors.append("Le champ 'URL' est obligatoire.")
             

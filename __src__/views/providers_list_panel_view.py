@@ -15,7 +15,6 @@ import logging
 from typing import Any, Optional, Callable
 
 from controllers.providers_list_controller import ProvidersListController
-from models.config_aspirabot_model import ConfigAspirabotModel
 from view_models.providers_list_view_model import ProvidersListViewModel
 
 class ProvidersListPanelView(ttk.Frame):
@@ -35,20 +34,20 @@ class ProvidersListPanelView(ttk.Frame):
         sort_reverse (bool): Direction du tri.
     """
 
-    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, **kwargs: Any) -> None:
+    def __init__(self, parent: tk.Misc, controller: ProvidersListController, **kwargs: Any) -> None:
         """Initialise le panneau de table des fournisseurs.
 
         Args:
             parent (tk.Misc): Connecteur vers la structuration parent (Notebook).
-            app_config (ConfigAspirabotModel): Paramètres globaux permettant localiser les fichiers.
+            controller (ProvidersListController): Le contrôleur injecté.
             **kwargs (Any): Les aguments liés au Frame Tkinter.
             
         Exemples d'utilisation:
-            >>> view = ProvidersListPanelView(self, self.config_aspirabot_model)
+            >>> view = ProvidersListPanelView(self, controller)
         """
         super().__init__(parent, **kwargs)
         self.logger = logging.getLogger(__name__)
-        self.controller = ProvidersListController(app_config)
+        self.controller = controller
         self.on_provider_selected_callback: Optional[Callable[[str], None]] = None
         self.on_provider_launched_callback: Optional[Callable[[str], None]] = None
         self._view_model = ProvidersListViewModel()
@@ -165,10 +164,10 @@ class ProvidersListPanelView(ttk.Frame):
             action_frame = tk.Frame(self.list_frame, bg=bg_color, padx=5, pady=2)
             action_frame.grid(row=row, column=5, sticky="nsew")
             
-            # Note: We must bind the current stem to the callback safely inside the loop
-            ttk.Button(action_frame, text="Lancer", width=8, command=lambda s=provider.provider_filename: self._event_when_launch_clicked(s)).pack(side="left", padx=(0, 5))
-            ttk.Button(action_frame, text="Modifier", width=8, command=lambda s=provider.provider_filename: self._event_when_edit_clicked(s)).pack(side="left", padx=(0, 5))
-            ttk.Button(action_frame, text="Supprimer", width=10, command=lambda s=provider.provider_filename, n=provider.provider_title: self._event_when_delete_clicked(s, n)).pack(side="left", padx=(0, 5))
+            # Note: We must bind the current provider_guid to the callback safely inside the loop
+            ttk.Button(action_frame, text="Lancer", width=8, command=lambda s=provider.provider_guid: self._event_when_launch_clicked(s)).pack(side="left", padx=(0, 5))
+            ttk.Button(action_frame, text="Modifier", width=8, command=lambda s=provider.provider_guid: self._event_when_edit_clicked(s)).pack(side="left", padx=(0, 5))
+            ttk.Button(action_frame, text="Supprimer", width=10, command=lambda s=provider.provider_guid, n=provider.provider_title: self._event_when_delete_clicked(s, n)).pack(side="left", padx=(0, 5))
 
     def refresh_providers_list(self) -> None:
         """Recharge les données métier depuis le contrôleur et reconstruit la liste visuelle."""
@@ -191,37 +190,37 @@ class ProvidersListPanelView(ttk.Frame):
             self.logger.error(f"Erreur lors de l'ouverture du dossier: {e}")
             messagebox.showerror("Erreur", f"Impossible d'ouvrir le dossier:\n{e}")
 
-    def _event_when_launch_clicked(self, stem: str) -> None:
+    def _event_when_launch_clicked(self, provider_guid: str) -> None:
         """Lance le processus de scraping sur un fournisseur particulier.
 
         Args:
-            stem (str): Le nom de fichier cible (incluant .json).
+            provider_guid (str): L'identifiant unique du fournisseur.
         """
         self.logger.debug("_event_when_launch_clicked.")
         if self.on_provider_launched_callback:
-            self.on_provider_launched_callback(stem)
+            self.on_provider_launched_callback(provider_guid)
 
-    def _event_when_edit_clicked(self, stem: str) -> None:
+    def _event_when_edit_clicked(self, provider_guid: str) -> None:
         """Charge l'éditeur pour configurer un fournisseur existant.
 
         Args:
-            stem (str): Le nom de fichier cible de l'objet métier.
+            provider_guid (str): L'identifiant unique du fournisseur.
         """
         self.logger.debug("_event_when_edit_clicked.")
         if self.on_provider_selected_callback:
-            self.on_provider_selected_callback(stem)
+            self.on_provider_selected_callback(provider_guid)
 
-    def _event_when_delete_clicked(self, stem: str, name: str) -> None:
+    def _event_when_delete_clicked(self, provider_guid: str, provider_title: str) -> None:
         """Soulève la fenêtre de confirmation et ordonne la suppression au contrôleur.
 
         Args:
-            stem (str): Le nom du fichier JSON identifiant unique.
-            name (str): Le nom affichable du fournisseur (pour la boite de dialog).
+            provider_guid (str): L'identifiant unique du fournisseur.
+            provider_title (str): Le nom affichable du fournisseur (pour la boite de dialog).
         """
-        self.logger.debug(f"_event_when_delete_clicked. -> stem: {stem}, name: {name}")
-        if messagebox.askyesno("Confirmation", f"Voulez-vous vraiment supprimer le fournisseur '{name}' ?"):
+        self.logger.debug(f"_event_when_delete_clicked. -> provider_guid: {provider_guid}")
+        if messagebox.askyesno("Confirmation", f"Voulez-vous vraiment supprimer le fournisseur '{provider_title}' ?"):
             try:
-                self.controller.delete_provider(stem)
+                self.controller.delete_provider(provider_guid)
                 self.refresh_providers_list()
             except Exception as e:
                 self.logger.error(f"Erreur de suppression: {e}")

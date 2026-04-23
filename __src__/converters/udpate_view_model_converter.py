@@ -32,7 +32,7 @@ class UpdateViewModelConverter:
             ProviderModel: Le modèle dont les attributs correspondent dorénavant à 
                 la sauvegarde requise.
         """
-        provider_model.provider_filename = view_model.provider_filename.get()
+        provider_model.provider_guid = view_model.provider_guid.get()
         provider_model.provider_title = view_model.provider_title.get()
 
         provider_model.url = view_model.url.get()

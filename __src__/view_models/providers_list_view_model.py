@@ -20,14 +20,14 @@ class ProviderItemViewModel:
     Ceci masque ou transforme partiellement la complexité du `ProviderModel`.
     
     Attributes:
-        provider_filename (str): Nom du fichier physique porteur du fournisseur.
+        provider_guid (str): Identifiant unique du fournisseur.
         provider_title (str): Titre humain ou d'affichage.
         url (str): Lien principal du fournisseur pour le ciblage.
         created_date (str): Date d'intégration logicielle.
         modified_date (str): Dernière altération de modèle/donnée.
         version (str): Schéma de version pour rétrocompatibilité.
     """
-    provider_filename: str = ""
+    provider_guid: str = ""
     provider_title: str = ""
     url: str = ""
     created_date: str = ""
@@ -42,7 +42,7 @@ class ProvidersListViewModel:
         providers (List[ProviderItemViewModel]): Ensemble des fournisseurs préparés.
         count_text (tk.StringVar): Variable dynamique du compteur Tkinter.
     """
-    providers: List[ProviderItemViewModel] = field(default_factory=list)
+    providers: List[ProviderItemViewModel] = field(default_factory=list[ProviderItemViewModel])
     count_text: tk.StringVar = field(default_factory=tk.StringVar)
     
     def update_count(self) -> None:

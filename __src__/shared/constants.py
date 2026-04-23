@@ -19,10 +19,10 @@ class CTK_APP:
     """Constantes liées à la configuration générale de l'application.
 
     Attributes:
-        ASPIRABOT_CONFIG_FILE (str): Nom du fichier de configuration JSON.
+        ASPIRABOT_CONFIG_FILE (str): Fichier de configuration JSON.
         VERSION (str): Version actuelle de l'application.
     """
-    ASPIRABOT_CONFIG_FILE: str = "config-aspirabot.json"
+    ASPIRABOT_CONFIG_FILE: str = "./config-aspirabot.json"
     VERSION: str = "1.0.0"
 
 ## ----------------------------------------------

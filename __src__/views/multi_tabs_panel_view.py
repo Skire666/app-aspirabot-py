@@ -15,11 +15,15 @@ from tkinter import ttk
 import logging
 from typing import Any
 
-from models.config_aspirabot_model import ConfigAspirabotModel
+from controllers.providers_list_controller import ProvidersListController
+from controllers.update_controller import UpdateController
+from controllers.scraping_controller import ScrapingController
+from controllers.config_controller import ConfigController
 from views.logs_panel_view import LogsPanelView
 from views.providers_list_panel_view import ProvidersListPanelView
 from views.update_panel_view import UpdatePanelView
 from views.scraping_panel_view import ScrapingPanelView
+from views.config_panel_view import ConfigPanelView
 
 class MultiTabsPanel(ttk.Notebook):
     """Gère le système d'onglets de la fenêtre principale.
@@ -29,28 +33,34 @@ class MultiTabsPanel(ttk.Notebook):
     et l'onglet de journalisation (LogsPanel).
 
     Attributes:
-        config_aspirabot_model (ConfigAspirabotModel): La configuration de l'application.
         logger (logging.Logger): Le logger utilisé pour cette classe.
         _panel_logs (LogsPanelView): L'onglet d'affichage des journaux (logs).
         _panel_scraping (ScrapingPanelView): L'onglet affichant le scraper en cours d'exécution.
         _panel_providers_list (ProvidersListPanelView): L'onglet listant les sites disponibles.
         update_panel (UpdatePanelView): L'onglet modifiant/créant un fournisseur.
+        _panel_config (ConfigPanelView): L'onglet configurant globalement l'application.
     """
 
-    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, **kwargs: Any) -> None:
+    def __init__(self, parent: tk.Misc, providers_list_controller: ProvidersListController, update_controller: UpdateController, scraping_controller: ScrapingController, config_controller: ConfigController, **kwargs: Any) -> None:
         """Initialise le composant MultiTabsPanel.
 
         Args:
-            parent (tk.Misc): Le widget parent contenant ce Notebook (généralement la fenêtre principale).
-            app_config (ConfigAspirabotModel): La configuration globale de l'application.
-            **kwargs (Any): Arguments supplémentaires passés au constructeur de parent `ttk.Notebook`.
+            parent (tk.Misc): Le widget parent contenant ce Notebook.
+            providers_list_controller (ProvidersListController): Contrôleur pour la vue liste.
+            update_controller (UpdateController): Contrôleur pour l'édition.
+            scraping_controller (ScrapingController): Contrôleur pour le scraping.
+            config_controller (ConfigController): Contrôleur de configuration app.
+            **kwargs (Any): Arguments supplémentaires passés au constructeur.
             
         Exemples d'utilisation:
-            >>> notebook = MultiTabsPanel(root, model_config_app)
+            >>> notebook = MultiTabsPanel(root, c1, c2, c3, c4)
         """
         super().__init__(parent, **kwargs)
         self.logger = logging.getLogger(__name__)
-        self.config_aspirabot_model = app_config
+        self._providers_list_controller = providers_list_controller
+        self._update_controller = update_controller
+        self._scraping_controller = scraping_controller
+        self._config_controller = config_controller
         self._init_tabs()
 
     def _init_tabs(self) -> None:
@@ -68,6 +78,7 @@ class MultiTabsPanel(ttk.Notebook):
         self.init_tab_providers_list() # onglet : configuration des fournisseurs
         self.init_tab_update_provider() # onglet : mise à jour d'un fournisseur
         self.init_tab_scraping() # nouvel onglet pour le suivi du scraping
+        self.init_tab_config() # onglet de configuration générale
 
     def _set_tabs_state(self, tabs: list[object], state: str) -> None:
         """Modifie l'état d'une liste d'onglets."""
@@ -83,21 +94,24 @@ class MultiTabsPanel(ttk.Notebook):
         self._set_tabs_state([self._panel_providers_list, self.update_panel], "normal")
 
     def init_tab_scraping(self) -> None:
-        """Prépare et injecte l'onglet de supervision du scraping.
-        
-        S'assure que cet onglet bénéficie de callbacks capables de verrouiller
-        les autres onglets durant l'exécution, évitant les incohérences.
-        """
+        """Prépare et injecte l'onglet de supervision du scraping."""
         name_tab = "Scrapping"
             
         self._panel_scraping = ScrapingPanelView(
             self, 
-            self.config_aspirabot_model, 
+            self._scraping_controller, 
             self._lock_scraping_actions, 
             self._unlock_scraping_actions
         )
         self.add(self._panel_scraping, text=f" {name_tab} ")
         self.tab(self._panel_scraping, state="disabled") # type: ignore
+        self.logger.debug(f"Création de l'onglet '{name_tab}'.")
+
+    def init_tab_config(self) -> None:
+        """Prépare l'onglet de configuration système."""
+        name_tab: str = "Configuration"
+        self._panel_config = ConfigPanelView(self, self._config_controller)
+        self.add(self._panel_config, text=f" {name_tab} ")
         self.logger.debug(f"Création de l'onglet '{name_tab}'.")
 
     def _on_update_action_complete(self) -> None:
@@ -110,7 +124,7 @@ class MultiTabsPanel(ttk.Notebook):
 
         self.update_panel = UpdatePanelView(
             self, 
-            self.config_aspirabot_model, 
+            self._update_controller, 
             on_provider_saved=self._panel_providers_list.refresh_providers_list,
             on_action_complete=self._on_update_action_complete
         )
@@ -125,30 +139,30 @@ class MultiTabsPanel(ttk.Notebook):
         self.add(self._panel_logs, text=f" {name_tab} ")
         self.logger.debug(f"Création de l'onglet '{name_tab}'.")
 
-    def _on_providers_list_selected(self, provider_title: str) -> None:
+    def _on_providers_list_selected(self, provider_guid: str) -> None:
         """Gère la sélection d'un fournisseur dans la liste."""
-        if provider_title:
+        if provider_guid:
             self.logger.debug("on_providers_list_selected -> load_existing_provider.")
-            self.update_panel.load_existing_provider(provider_title)
+            self.update_panel.load_existing_provider(provider_guid)
         else:
             self.logger.debug("on_providers_list_selected -> load_default.")
             self.update_panel.load_default()
         # afficher l'onglet de mise à jour
         self.select(str(self.update_panel)) # type: ignore
         
-    def _on_providers_list_launched(self, provider_title: str) -> None:
+    def _on_providers_list_launched(self, provider_guid: str) -> None:
         """Gère le lancement du scraping pour un fournisseur sélectionné."""
-        if provider_title:
+        if provider_guid:
             self.logger.debug("on_providers_list_launched -> set_provider and change tab.")
             self.tab(self._panel_scraping, state="normal") # type: ignore
-            self._panel_scraping.load_provider(provider_title)
+            self._panel_scraping.load_provider(provider_guid)
             self.select(str(self._panel_scraping)) # type: ignore
             self._panel_scraping.launch_scrapping()
 
     def init_tab_providers_list(self) -> None:
         """Instancie l'onglet listant tous les fournisseurs existants dans le répertoire."""
         name_tab: str = "Fournisseurs"
-        self._panel_providers_list = ProvidersListPanelView(self, self.config_aspirabot_model)
+        self._panel_providers_list = ProvidersListPanelView(self, self._providers_list_controller)
         self.add(self._panel_providers_list, text=f" {name_tab} ")
 
         self._panel_providers_list.on_provider_selected_callback = self._on_providers_list_selected

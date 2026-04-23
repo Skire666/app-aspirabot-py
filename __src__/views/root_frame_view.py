@@ -16,8 +16,11 @@ from tkinter import ttk
 import logging
 
 from shared.constants import CTK_GUI
-from models.config_aspirabot_model import ConfigAspirabotModel
 from views.multi_tabs_panel_view import MultiTabsPanel
+from controllers.providers_list_controller import ProvidersListController
+from controllers.update_controller import UpdateController
+from controllers.scraping_controller import ScrapingController
+from controllers.config_controller import ConfigController
 
 class RootFrameView(tk.Tk):
     """Classe principale représentant la fenêtre racine de l'application.
@@ -26,26 +29,31 @@ class RootFrameView(tk.Tk):
     la fenêtre et intègre le gestionnaire d'onglets (`MultiTabsPanel`).
 
     Attributes:
-        app_config (ConfigAspirabotModel): Paramètres globaux permettant localiser les fichiers.
         logger (logging.Logger): Logger dédié à cette classe.
         _panel_multi_tabs (MultiTabsPanel): Composant gérant l'orchestration des écrans.
     """
 
-    def __init__(self, app_config: ConfigAspirabotModel) -> None:
+    def __init__(self, providers_list_controller: ProvidersListController, update_controller: UpdateController, scraping_controller: ScrapingController, config_controller: ConfigController) -> None:
         """Initialise la fenêtre principale (racine de l'UI Tkinter) et ses enfants.
 
         Args:
-            app_config (ConfigAspirabotModel): Configuration globale de
-                l'application contenant les répertoires cibles et les settings réseaux.
+            providers_list_controller (ProvidersListController): Contrôleur de liste.
+            update_controller (UpdateController): Contrôleur de màj.
+            scraping_controller (ScrapingController): Contrôleur de scraping.
+            config_controller (ConfigController): Contrôleur de config.
                 
         Exemples d'utilisation:
-            >>> fenetre = RootFrameView(config_pre_chargee)
+            >>> fenetre = RootFrameView(c1, c2, c3, c4)
             >>> fenetre.title("Aspirabot Custom")
         """
         super().__init__()
-        self.app_config = app_config
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initialisation de la fenêtre principale Tkinter...")
+
+        self._providers_list_controller = providers_list_controller
+        self._update_controller = update_controller
+        self._scraping_controller = scraping_controller
+        self._config_controller = config_controller
 
         self._init_window()
         self._init_theme()
@@ -78,5 +86,11 @@ class RootFrameView(tk.Tk):
         Crée l'instance de `MultiTabsPanel` et exécute la méthode classique `pack`
         en forçant le composant à épouser intégralement la fenêtre mère.
         """
-        self._panel_multi_tabs = MultiTabsPanel(self, self.app_config)
+        self._panel_multi_tabs = MultiTabsPanel(
+            self, 
+            self._providers_list_controller, 
+            self._update_controller, 
+            self._scraping_controller,
+            self._config_controller
+        )
         self._panel_multi_tabs.pack(fill="both", expand=True)

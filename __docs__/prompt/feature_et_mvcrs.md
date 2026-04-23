@@ -53,7 +53,7 @@ Règles de dépendances (OBLIGATOIRES) :
 - ViewModel -> utilisé uniquement par la View
 - Controller -> utilise Service OU Repository OU Model (aucune logique métier complexe)
 - Service -> utilise Repository (via interfaces) OU Model
-- Model -> peut utiliser Repository (via interfaces uniquement)
+- Model -> Utilisable uniquement par le service
 - Repository -> utilise Model
 - Converter -> transforme un objet A en objet B (nommage : A_Converter), utilisable partout
 

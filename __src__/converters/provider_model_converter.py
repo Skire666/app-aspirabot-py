@@ -36,8 +36,8 @@ class ProviderModelConverter:
         Exemples d'utilisation:
             >>> vm_update = converter.to_view_model(p_model, UpdateViewModel())
         """
+        view_model.provider_id.set(provider.provider_id)
         view_model.provider_title.set(provider.provider_title)
-        view_model.provider_filename.set(provider.provider_filename)
         view_model.url.set(provider.url)
         view_model.browser_displayed.set(provider.browser_displayed)
         view_model.automation_obfuscated.set(provider.automation_obfuscated)

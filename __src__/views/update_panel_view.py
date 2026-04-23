@@ -14,7 +14,6 @@ import logging
 from typing import Any, Optional, Callable, Dict
 
 from controllers.update_controller import UpdateController
-from models.config_aspirabot_model import ConfigAspirabotModel
 from view_models.update_view_model import UpdateViewModel
 from enum import Enum
 
@@ -90,23 +89,22 @@ class UpdatePanelView(ttk.Frame):
         workflow_frame (ttk.LabelFrame): Supportant la liste séquentielle d'instructions.
     """
 
-    def __init__(self, parent: tk.Misc, app_config: ConfigAspirabotModel, on_provider_saved: Optional[Callable[[], None]] = None, on_action_complete: Optional[Callable[[], None]] = None, **kwargs: Any) -> None:
+    def __init__(self, parent: tk.Misc, controller: UpdateController, on_provider_saved: Optional[Callable[[], None]] = None, on_action_complete: Optional[Callable[[], None]] = None, **kwargs: Any) -> None:
         """Initialise la fenêtre d'édition (UI + ViewModel).
 
         Args:
             parent (tk.Misc): Support Tkinter.
-            app_config (ConfigAspirabotModel): Accès au système de fichiers de l'application.
+            controller (UpdateController): Le contrôleur injecté.
             on_provider_saved (Optional[Callable[[], None]]): Action signalant une sauvegarde réussie (souvent un rechargement liste).
             on_action_complete (Optional[Callable[[], None]]): Action clôturant le cycle et justifiant le changement d'onglet.
             **kwargs (Any): Arguments usuels pour Frame Tk.
         """
         super().__init__(parent, **kwargs)
         self.logger = logging.getLogger(__name__)
-        self.controller = UpdateController(app_config)
+        self.controller = controller
         self._current_view_model: UpdateViewModel = UpdateViewModel()
         self._event_after_provider_was_saved = on_provider_saved
         self._event_redirect_to_tab = on_action_complete
-        self._selected_provider_title: Optional[str] = None
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -141,9 +139,8 @@ class UpdatePanelView(ttk.Frame):
         _frame_meta = ttk.LabelFrame(_top_container, text="Métadonnées")
         _frame_meta.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         
-        ttk.Label(_frame_meta, text="Fichier :").grid(row=0, column=0, sticky="e", padx=(10, 5), pady=10)
-        self._filename_entry = ttk.Entry(_frame_meta, textvariable=self._current_view_model.provider_filename, state="disabled")
-        self._filename_entry.grid(row=0, column=1, sticky="we", padx=(0, 10), pady=10)
+        ttk.Label(_frame_meta, text="Guid :").grid(row=0, column=0, sticky="e", padx=(10, 5), pady=10)
+        ttk.Entry(_frame_meta, textvariable=self._current_view_model.provider_guid).grid(row=0, column=1, sticky="we", padx=(0, 10), pady=(0, 10))
         
         ttk.Label(_frame_meta, text="Version :").grid(row=1, column=0, sticky="e", padx=(10, 5), pady=(0, 10))
         ttk.Entry(_frame_meta, textvariable=self._current_view_model.version).grid(row=1, column=1, sticky="we", padx=(0, 10), pady=(0, 10))
@@ -155,10 +152,6 @@ class UpdatePanelView(ttk.Frame):
         ttk.Entry(_frame_meta, textvariable=self._current_view_model.modified_date).grid(row=3, column=1, sticky="we", padx=(0, 10), pady=(0, 10))
 
         _frame_meta.columnconfigure(1, weight=1)
-
-        # Traces pour calculer dynamiquement le nom de fichier
-        self._current_view_model.provider_title.trace_add("write", self._on_filename_dependency_changed)
-        self._current_view_model.created_date.trace_add("write", self._on_filename_dependency_changed)
 
         # Bottom Frame: Workflow Editor
         workflow_frame = ttk.LabelFrame(self, text="Workflow")
@@ -203,13 +196,6 @@ class UpdatePanelView(ttk.Frame):
         change_state(self.form_frame)
         change_state(self.workflow_frame)
         change_state(self.action_frame)
-
-    def _on_filename_dependency_changed(self, *args: Any) -> None:
-        """Déclenché lorsque le nom ou la date changent, met à jour le nom du fichier."""
-        # On passe par le contrôleur (qui utilise le service) pour la génération
-        if hasattr(self.controller, 'update_filename_from_fields'):
-            # Utilisation d'un flag pour éviter de déclencher l'événement en boucle si jamais
-            self.controller.update_filename_from_fields(self._current_view_model)
 
     def _add_step(self) -> None:
         """Demande les informations au travers du `ActionSelectionDialog` puis ajoute une ligne."""
@@ -272,25 +258,23 @@ class UpdatePanelView(ttk.Frame):
                 display_text = f"[{action_type}] {details}" if details else f"[{action_type}]"
                 self.steps_listbox.insert(tk.END, display_text)
 
-    def load_existing_provider(self, provider_title: str) -> None:
+    def load_existing_provider(self, provider_guid: str) -> None:
         """Demande l'hydratation du `UpdateViewModel` depuis la structure logicielle JSON.
 
         Args:
-            provider_title (str): L'identifiant (titre) absolu du fournisseur visé.
+            provider_guid (str): L'identifiant unique du fournisseur visé.
         """
-        self._selected_provider_title = provider_title
         self._set_form_state("normal")
         try:
-            self.controller.get_provider_view_model(provider_title, self._current_view_model)
+            self.controller.get_provider_view_model(provider_guid, self._current_view_model)
             self._update_steps_list()
-            self.logger.debug(f"Données chargées pour {provider_title}")
+            self.logger.debug(f"Données chargées pour {provider_guid}")
         except Exception as e:
-            self.logger.error(f"Erreur au chargement de {provider_title}: {e}")
+            self.logger.error(f"Erreur au chargement de {provider_guid}: {e}")
             messagebox.showerror("Erreur", f"Erreur lors du chargement des données:\n{str(e)}")
 
     def load_default(self) -> None:
         """Active l'UI et initie des valeurs factices ou par défaut (Nouveau Profil)."""
-        self._selected_provider_title = None
         self._set_form_state("normal")
         self.controller.load_default_view_model(self._current_view_model)
         self._update_steps_list()
@@ -300,7 +284,7 @@ class UpdatePanelView(ttk.Frame):
         """Annule toutes entrées, vidant et verrouillant le mode Edition."""
         self._selected_provider_title = None
         self._current_view_model.provider_title.set("")
-        self._current_view_model.provider_filename.set("")
+        self._current_view_model.provider_guid.set("")
         self._current_view_model.url.set("")
         self._current_view_model.version.set("")
         self._current_view_model.created_date.set("")
@@ -319,45 +303,5 @@ class UpdatePanelView(ttk.Frame):
         if errors:
             messagebox.showwarning("Validation", "\n".join(errors))
             return
-            
-        try:
-            selected: str | None = self._selected_provider_title
 
-            if not selected:
-                # Vérifier si le fichier existe déjà
-                import os
-                from pathlib import Path
-                filename = self._current_view_model.provider_filename.get()
-                suggested_path = Path(self.controller.config.folder_providers) / filename
-                if os.path.exists(suggested_path):
-                    if not messagebox.askyesno("Attention", f"Le fichier '{filename}' existe déjà.\nVoulez-vous l'écraser ?"):
-                        return
-
-                # Création d'un nouveau fournisseur
-                self.create_new_provider()
-            else:
-                # Mise à jour d'un fournisseur existant
-                self.udpate_existing_provider(selected)
-
-            if self._event_after_provider_was_saved:
-                self._event_after_provider_was_saved()
-
-            self._reset_form()
-                
-            if self._event_redirect_to_tab:
-                self._event_redirect_to_tab()
-        except Exception as e:
-            self.logger.error(f"Erreur lors de la sauvegarde: {e}")
-            messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde:\n{str(e)}")
-
-    def udpate_existing_provider(self, selected: str) -> None:
-        self.logger.info(f"Mise à jour du fournisseur : {selected}")
-        self.controller.save_provider_from_view_model(selected, self._current_view_model)
-        messagebox.showinfo("Succès", f"Les données de {selected} ont été sauvegardées.")
-        self.logger.info(f"Modifications sauvegardées pour {selected}")
-
-    def create_new_provider(self):
-        new_stem = self.controller.create_new_provider_from_view_model(self._current_view_model)
-        self._selected_provider_title = new_stem
-        messagebox.showinfo("Succès", f"Le fournisseur {new_stem} a été créé avec succès.")
-        self.logger.info(f"Nouveau fournisseur créé : {new_stem}")
+        ## TODO

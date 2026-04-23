@@ -14,6 +14,7 @@ Exemples d'utilisation:
 import json
 import os
 import logging
+from pathlib import Path
 from typing import Any, Dict
 
 s_logger = logging.getLogger(__name__)
@@ -35,19 +36,19 @@ class JsonFileRepository:
         all_data (Dict[str, Any]): Les données JSON actuellement chargées en mémoire.
     """
 
-    def __init__(self, file_path: str, default_data: Dict[str, Any]) -> None:
+    def __init__(self, file_path: Path, default_data: Dict[str, Any]) -> None:
         """Initialise le dépôt de fichier JSON.
 
         Args:
-            file_path (str): Le chemin vers le fichier JSON à lire/écrire.
+            file_path (Path): Le chemin vers le fichier JSON à lire/écrire.
             default_data (Dict[str, Any]): Un dictionnaire de données par défaut. 
                 Utilisé si le fichier est corrompu ou inexistant.
 
         Exemples d'utilisation:
             >>> repo = JsonFileRepository("config.json", {"setting1": True})
         """
-        self.file_path = file_path
-        self.default_data = default_data # jamais none, doit être un dict
+        self.file_path: Path = file_path
+        self.default_data: Dict[str, Any] = default_data # jamais none, doit être un dict
         self.all_data: Dict[str, Any] = {}
         self.load_from_file()
 
