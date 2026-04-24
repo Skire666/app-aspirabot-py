@@ -22,7 +22,7 @@ class ProviderModelConverter:
     """
 
     @staticmethod
-    def to_view_model(provider: ProviderModel, view_model: UpdateViewModel) -> UpdateViewModel:
+    def to_update_view_model(provider: ProviderModel) -> UpdateViewModel:
         """Transfère les données métier en objets UI Tkinter exploitables (Variables).
 
         Args:
@@ -36,7 +36,8 @@ class ProviderModelConverter:
         Exemples d'utilisation:
             >>> vm_update = converter.to_view_model(p_model, UpdateViewModel())
         """
-        view_model.provider_id.set(provider.provider_id)
+        view_model = UpdateViewModel()
+        view_model.provider_guid.set(provider.provider_guid)
         view_model.provider_title.set(provider.provider_title)
         view_model.url.set(provider.url)
         view_model.browser_displayed.set(provider.browser_displayed)
@@ -44,8 +45,5 @@ class ProviderModelConverter:
         view_model.created_date.set(provider.created_date)
         view_model.modified_date.set(provider.modified_date)
         view_model.version.set(provider.version)
-        
-        # Deep copy pour éviter de conserver des références partagées
-        view_model.steps = copy.deepcopy(provider.steps)
-        
+        view_model.steps = copy.deepcopy(provider.steps) # Deep copy pour éviter les références partagées
         return view_model

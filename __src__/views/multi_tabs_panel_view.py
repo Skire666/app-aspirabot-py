@@ -116,6 +116,7 @@ class MultiTabsPanel(ttk.Notebook):
 
     def _on_update_action_complete(self) -> None:
         """Sélectionne l'onglet liste des fournisseurs une fois la mise à jour terminée."""
+        self.tab(self.update_panel, state="disabled") # type: ignore
         self.select(str(self._panel_providers_list)) # type: ignore
 
     def init_tab_update_provider(self) -> None:
@@ -130,6 +131,7 @@ class MultiTabsPanel(ttk.Notebook):
         )
 
         self.add(self.update_panel, text=f" {name_tab} ")
+        self.tab(self.update_panel, state="disabled") # type: ignore
         self.logger.debug(f"Création de l'onglet '{name_tab}'.")
 
     def init_tab_logs(self) -> None:
@@ -148,6 +150,7 @@ class MultiTabsPanel(ttk.Notebook):
             self.logger.debug("on_providers_list_selected -> load_default.")
             self.update_panel.load_default()
         # afficher l'onglet de mise à jour
+        self.tab(self.update_panel, state="normal") # type: ignore
         self.select(str(self.update_panel)) # type: ignore
         
     def _on_providers_list_launched(self, provider_guid: str) -> None:

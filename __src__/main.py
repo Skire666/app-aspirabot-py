@@ -75,7 +75,7 @@ def main() -> None:
     # Controllers setup
     providers_list_controller = ProvidersListController(provider_service, config)
     update_controller = UpdateController(provider_service, config)
-    scraping_controller = ScrapingController(config)
+    scraping_controller = ScrapingController(provider_service, config)
     config_controller = ConfigController(config_service)
 
     # Point d'entrée principal de l'application

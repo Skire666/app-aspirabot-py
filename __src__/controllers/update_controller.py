@@ -13,9 +13,7 @@ Exemples d'utilisation:
 
 from typing import TYPE_CHECKING
 
-from datetime import datetime
-import uuid
-from models.provider_model import ProviderModel
+from __src__.models.provider_model import ProviderModel
 from models.config_aspirabot_model import ConfigAspirabotModel
 from view_models.update_view_model import UpdateViewModel
 from converters.provider_model_converter import ProviderModelConverter
@@ -47,8 +45,19 @@ class UpdateController:
         self.provider_service = provider_service
         self.config = config
         self.converter_update = UpdateViewModelConverter()
+        
+    def exists_provider(self, name_provider: str) -> bool:
+        """Vérifie l'existence d'un fournisseur ciblé par son nom.
 
-    def get_provider_view_model(self, name_provider: str, view_model: UpdateViewModel) -> UpdateViewModel:
+        Args:
+            name_provider (str): Le nom courant ou stem à vérifier.
+
+        Returns:
+            bool: True si le fournisseur existe, False sinon.
+        """
+        return self.provider_service.exists_provider(name_provider)
+
+    def read_provider_view_model(self, provider_guid: str) -> UpdateViewModel:
         """Remplit un ViewModel d'édition avec l'état d'un fournisseur ciblé par son nom.
 
         Gère l'association entre les données conservées par le service 
@@ -56,15 +65,14 @@ class UpdateController:
 
         Args:
             name_provider (str): Le nom courant ou stem à éditer.
-            view_model (UpdateViewModel): L'instance vide ou à recycler.
 
         Returns:
             UpdateViewModel: Le ViewModel mis à jour de ses valeurs.
         """
-        provider = self.provider_service.get_provider(name_provider)
-        return ProviderModelConverter.to_view_model(provider, view_model)
+        provider = self.provider_service.read_provider(provider_guid)
+        return ProviderModelConverter.to_update_view_model(provider)
 
-    def load_default_view_model(self, view_model: UpdateViewModel) -> None:
+    def load_default_view_model(self) -> UpdateViewModel:
         """Charge de nouvelles valeurs par défaut dans un ViewModel pour la création d'un fournisseur.
 
         Args:
@@ -73,32 +81,32 @@ class UpdateController:
         Returns:
             None
         """
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        view_model.provider_guid.set(str(uuid.uuid4()))
-        view_model.provider_title.set("Nouv. Fournisseur")
-        view_model.url.set("https://example.com")
-        view_model.created_date.set(now)
-        view_model.modified_date.set(now)
-        view_model.version.set("1.0.0")
-        view_model.browser_displayed.set(True)
-        view_model.automation_obfuscated.set(True)
-        view_model.steps = []
+        provider_default: ProviderModel = ProviderModel.get_default_data()
+        return ProviderModelConverter.to_update_view_model(provider_default)
 
-    def save_provider_from_view_model(self, view_model: UpdateViewModel) -> None:
-        """Écrit les nouvelles modifications d'édition de la vue via le service métier (mise à jour existant).
+    def create_provider(self, view_model: UpdateViewModel) -> None:
+        """Crée un nouveau fournisseur à partir d'un ViewModel de création.
 
         Args:
-            name_provider (str): Le nom avant changement (souvent `stem`).
             view_model (UpdateViewModel): Le modèle contenant toutes les informations saisies à sauvegarder.
 
         Returns:
             None
         """
-        provider = ProviderModel()
-            
-        # Conversion inverse pour enregistrer
-        UpdateViewModelConverter.to_provider_model(view_model, provider)
+        provider = UpdateViewModelConverter.to_provider_model(view_model)
         
         # Sauvegarder via le service métier
+        self.provider_service.create_provider(provider)
+        
+    def update_provider(self, view_model: UpdateViewModel) -> None:
+        """Met à jour un fournisseur existant à partir d'un ViewModel.
+
+        Args:
+            view_model (UpdateViewModel): Le modèle contenant toutes les informations saisies à sauvegarder.
+
+        Returns:
+            None
+        """
+        provider = UpdateViewModelConverter.to_provider_model(view_model)
         self.provider_service.update_provider(provider)
         

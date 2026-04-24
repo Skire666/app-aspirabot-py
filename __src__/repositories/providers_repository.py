@@ -13,8 +13,10 @@ Exemples d'utilisation:
 from typing import List, Union, Dict, Any
 from pathlib import Path
 import os
+import subprocess
 import logging
 from dataclasses import asdict
+from utils.operating_system_util import OperatingSystem, detect_os
 from models.provider_model import ProviderModel
 from repositories.json_repository import JsonFileRepository
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
@@ -86,7 +88,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         # Récupère uniquement les champs présents dans ProviderModel
         provider_fields = {
             'provider_title',
-            'provider_filename',
+            'provider_guid',
             'url',
             'created_date',
             'modified_date',
@@ -108,8 +110,20 @@ class ProvidersRepository(ProviderRepositoryInterface):
             Dict[str, Any]: Le dictionnaire sérialisable en JSON.
         """
         return asdict(provider)
+    
+    def exists_provider(self, provider_guid: str) -> bool:
+        """Vérifie l'existence d'un fournisseur dans le dossier.
 
-    def get_provider(self, provider_guid: str) -> ProviderModel:
+        Args:
+            provider_guid (str): L'identifiant unique du fournisseur à vérifier.
+
+        Returns:
+            bool: `True` si un fichier correspondant existe, sinon `False`.
+        """
+        full_filepath = self._folder_path / str(provider_guid + ".json")
+        return full_filepath.exists() and full_filepath.is_file()
+
+    def read_provider(self, provider_guid: str) -> ProviderModel:
         """Charge un fichier fournisseur par son ID et l'instancie sous forme de modèle.
 
         Recherche parmi l'ensemble des fichiers disponibles celui qui correspond au
@@ -151,7 +165,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             self.logger.warning(f"Impossible de lire le fournisseur {full_filepath}: {e}")
             raise
 
-    def list_providers(self) -> List[ProviderModel]:
+    def list_all_providers(self) -> List[ProviderModel]:
         """Liste tous les fournisseurs disponibles.
 
         Parcourt le dossier des fournisseurs et retourne une liste de tous les 
@@ -184,8 +198,8 @@ class ProvidersRepository(ProviderRepositoryInterface):
         self.logger.info(f"Total de {len(providers)} provider(s) chargé(s).")
         return providers
 
-    def save_provider(self, provider: ProviderModel) -> None:
-        """Enregistre ou met à jour un fournisseur.
+    def create_provider(self, provider: ProviderModel) -> None:
+        """Enregistre un nouveau fournisseur.
 
         Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un 
         fichier JSON via JsonFileRepository.
@@ -199,15 +213,13 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         Exemples d'utilisation:
             >>> provider = ProviderModel()
-            >>> repo.save_provider(provider)
+            >>> repo.create_provider(provider)
         """
         # Construit le chemin complet du fichier
         full_filepath = self._folder_path / str(provider.provider_guid + ".json")
         
         # Crée le dossier s'il n'existe pas
-        if not self._folder_path.exists():
-            os.makedirs(self._folder_path, exist_ok=True)
-            self.logger.info(f"Dossier créé: {self._folder_path}")
+        self.create_folder_if_missing()
         
         try:
             # Convertit le modèle en dictionnaire
@@ -225,6 +237,50 @@ class ProvidersRepository(ProviderRepositoryInterface):
             self.logger.error(f"Erreur lors de la sauvegarde du fournisseur: {e}")
             raise
 
+    def update_provider(self, provider: ProviderModel) -> None:
+        """Met à jour un fournisseur existant.
+
+        Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un 
+        fichier JSON via JsonFileRepository.
+
+        Args:
+            provider (ProviderModel): L'instance du fournisseur à sauvegarder.
+
+        Raises:
+            ValueError: Si le nom du fichier du provider est invalide.
+            OSError: En cas d'erreur lors de l'écriture sur le disque.
+
+        Exemples d'utilisation:
+            >>> provider = ProviderModel()
+            >>> repo.update_provider(provider)
+        """
+        # Construit le chemin complet du fichier
+        full_filepath = self._folder_path / str(provider.provider_guid + ".json")
+        
+        # Crée le dossier s'il n'existe pas
+        self.create_folder_if_missing()
+        
+        try:
+            # Convertit le modèle en dictionnaire
+            provider_dict = self._provider_model_to_dict(provider)
+            
+            # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
+            json_repo = JsonFileRepository(full_filepath, {})
+            
+            # Met à jour toutes les données avec celles du provider
+            json_repo.all_data = provider_dict
+            json_repo.save_to_file()
+            
+            self.logger.info(f"Fournisseur sauvegardé: {full_filepath}")
+        except Exception as e:
+            self.logger.error(f"Erreur lors de la sauvegarde du fournisseur: {e}")
+            raise
+
+    def create_folder_if_missing(self):
+        if not self._folder_path.exists():
+            os.makedirs(self._folder_path, exist_ok=True)
+            self.logger.info(f"Dossier créé: {self._folder_path}")
+
     def delete_provider(self, provider_guid: str) -> None:
         """Supprime un fournisseur.
 
@@ -240,8 +296,13 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Exemples d'utilisation:
             >>> repo.delete_provider("mon_provider")
         """
+        self.logger.info("Ouverture du dossier des fournisseurs...")
+        
+        # Crée le dossier s'il n'existe pas
+        self.create_folder_if_missing()
+
         # Cherche le fichier correspondant
-        full_pathfile_to_delete = self._folder_path / (provider_guid + ".json")
+        full_pathfile_to_delete = self.compute_fullpath_from_guid(provider_guid)
         
         if not full_pathfile_to_delete.exists():
             raise FileNotFoundError(f"Fournisseur non trouvé pour suppression: {provider_guid}")        
@@ -252,6 +313,16 @@ class ProvidersRepository(ProviderRepositoryInterface):
         except Exception as e:
             self.logger.error(f"Erreur lors de la suppression du fournisseur: {e}")
             raise
+
+    def compute_fullpath_from_guid(self, provider_guid: str) -> Path:
+        """Calcule le chemin complet du fichier JSON d'un fournisseur à partir de son identifiant.
+        Args:
+            provider_guid (str): L'identifiant unique du fournisseur.
+            
+        Returns:
+            Path: Le chemin complet du fichier JSON du fournisseur.
+        """
+        return self._folder_path / (provider_guid + ".json")
 
     def open_providers_folder(self) -> None:
         """Ouvre le répertoire des fournisseurs dans l'explorateur.
@@ -268,24 +339,25 @@ class ProvidersRepository(ProviderRepositoryInterface):
         self.logger.info("Ouverture du dossier des fournisseurs...")
         
         # Crée le dossier s'il n'existe pas
-        if not self._folder_path.exists():
-            os.makedirs(self._folder_path, exist_ok=True)
-            self.logger.info(f"Dossier créé: {self._folder_path}")
+        self.create_folder_if_missing()
         
         if not self._folder_path.is_dir():
             raise NotADirectoryError(f"Le chemin spécifié n'est pas un dossier: {self._folder_path}")
         
         # Utilise le système d'exploitation pour ouvrir le dossier
         try:
-            if os.name == 'nt':  # Windows
+            enum_os: OperatingSystem = detect_os()
+            
+            if enum_os == OperatingSystem.WINDOWS:
                 os.startfile(self._folder_path)
-            elif os.name == 'posix':  # macOS et Linux
-                if os.uname().sysname == 'Darwin':  # macOS
-                    os.system(f'open "{self._folder_path}"')
-                else:  # Linux
-                    os.system(f'xdg-open "{self._folder_path}"')
+            elif enum_os == OperatingSystem.MACOS:  # macOS et Linux
+                subprocess.Popen(["open", self._folder_path])
+            elif enum_os == OperatingSystem.LINUX:  # Linux
+                subprocess.Popen(["xdg-open", self._folder_path])
+            else:
+                self.logger.warning(f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}")
+                raise OSError(f"Système d'exploitation non pris en charge: {enum_os}")
             self.logger.info(f"Dossier ouvert: {self._folder_path}")
         except Exception as e:
             self.logger.error(f"Erreur lors de l'ouverture du dossier: {e}")
             raise
-

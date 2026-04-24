@@ -266,7 +266,7 @@ class UpdatePanelView(ttk.Frame):
         """
         self._set_form_state("normal")
         try:
-            self.controller.get_provider_view_model(provider_guid, self._current_view_model)
+            self._current_view_model = self.controller.read_provider_view_model(provider_guid)
             self._update_steps_list()
             self.logger.debug(f"Données chargées pour {provider_guid}")
         except Exception as e:
@@ -276,7 +276,7 @@ class UpdatePanelView(ttk.Frame):
     def load_default(self) -> None:
         """Active l'UI et initie des valeurs factices ou par défaut (Nouveau Profil)."""
         self._set_form_state("normal")
-        self.controller.load_default_view_model(self._current_view_model)
+        self._current_view_model = self.controller.load_default_view_model()
         self._update_steps_list()
         self.logger.debug("Données par défaut chargées pour création")
 
@@ -304,4 +304,22 @@ class UpdatePanelView(ttk.Frame):
             messagebox.showwarning("Validation", "\n".join(errors))
             return
 
-        ## TODO
+        guid = self._current_view_model.provider_guid.get()
+        if self.controller.exists_provider(guid):
+            if not messagebox.askyesno("Confirmation", f"Le fournisseur existe déjà. Voulez-vous le remplacer ?"):
+                return
+        
+        try:
+            if self._current_view_model.is_a_new_provider():
+                self.controller.create_provider(self._current_view_model)
+            else:
+                self.controller.update_provider(self._current_view_model)
+
+            if self._event_after_provider_was_saved:
+                self._event_after_provider_was_saved()
+
+            self._reset_form()
+            messagebox.showinfo("Succès", "Fournisseur sauvegardé avec succès.")
+        except Exception as e:
+            self.logger.error(f"Erreur lors de la sauvegarde: {e}")
+            messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde:\n{str(e)}")

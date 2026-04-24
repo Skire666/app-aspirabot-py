@@ -93,19 +93,19 @@ class ProvidersListController:
         self.logger.info(f"Fournisseur supprimé : {provider_guid}")
         self.provider_service.delete_provider(provider_guid)
 
-    def launch_scraping(self, provider_filename: str) -> None:
+    def launch_scraping(self, provider_guid: str) -> None:
         """Lance le processus de scraping pour un fournisseur donné.
 
         Délègue entièrement au service métier qui gère l'exécution asynchrone.
 
         Args:
-            provider_filename (str): Le nom ou le stem du fournisseur à exécuter.
+            provider_guid (str): L'identifiant unique du fournisseur à exécuter.
 
         Returns:
             None
         """
-        self.logger.info(f"Lancement du scraping pour : {provider_filename}")
+        self.logger.info(f"Lancement du scraping pour : {provider_guid}")
         try:
-            self.provider_service.launch_scraping(provider_filename)
+            self.provider_service.launch_scraping(provider_guid)
         except Exception as e:
-            self.logger.error(f"Erreur lors du lancement du scraping {provider_filename}: {e}")
+            self.logger.error(f"Erreur lors du lancement du scraping {provider_guid}: {e}")

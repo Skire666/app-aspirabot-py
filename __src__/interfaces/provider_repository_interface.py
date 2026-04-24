@@ -9,16 +9,24 @@ from models.provider_model import ProviderModel
 class ProviderRepositoryInterface(Protocol):
     """Interface pour le dépôt des fournisseurs."""
 
-    def get_provider(self, provider_guid: str) -> ProviderModel:
+    def exists_provider(self, provider_guid: str) -> bool:
+        """Vérifie l'existence d'un fournisseur par son identifiant."""
+        ...
+
+    def read_provider(self, provider_guid: str) -> ProviderModel:
         """Récupère un fournisseur par son identifiant."""
         ...
 
-    def list_providers(self) -> List[ProviderModel]:
+    def list_all_providers(self) -> List[ProviderModel]:
         """Liste tous les fournisseurs disponibles."""
         ...
 
-    def save_provider(self, provider: ProviderModel) -> None:
-        """Enregistre ou met à jour un fournisseur."""
+    def create_provider(self, provider: ProviderModel) -> None:
+        """Crée un nouveau fournisseur."""
+        ...
+
+    def update_provider(self, provider: ProviderModel) -> None:
+        """Met à jour un fournisseur."""
         ...
 
     def delete_provider(self, provider_guid: str) -> None:

@@ -21,7 +21,7 @@ class UpdateViewModel:
     une liste mutable d'étapes que Playwright exécutera au moment opportun.
     
     Attributes:
-        provider_filename (tk.StringVar): Nom imposé ou lu du fichier `.json`.
+        provider_guid (tk.StringVar): Identifiant unique du fournisseur.
         provider_title (tk.StringVar): Nom métier du fournisseur.
         url (tk.StringVar): Point d'entrée scraping du fournisseur HTTP(S).
         created_date (tk.StringVar): Moment de la première initialisation.
@@ -40,6 +40,22 @@ class UpdateViewModel:
     browser_displayed: tk.BooleanVar = field(default_factory=lambda: tk.BooleanVar(value=True))
     automation_obfuscated: tk.BooleanVar = field(default_factory=lambda: tk.BooleanVar(value=True))
     steps: List[dict[str, Any]] = field(default_factory=list) # type: ignore[reportUnknownVariableType]
+
+    def is_a_new_provider(self) -> bool:
+        """Indique si le fournisseur est en cours de création (vs édition d'un existant).
+        
+        La logique métier considère qu'un fournisseur est "nouveau" si sa date de création
+        est identique à sa date de modification (jamais sauvegardé depuis sa création).
+        Returns:
+                bool: True si le fournisseur est considéré comme nouveau, False sinon.
+                
+        Exemples d'utilisation:
+            >>> vm = UpdateViewModel()
+            >>> vm.is_a_new_provider()
+            True
+        """
+        
+        return self.created_date and self.created_date.get() == self.modified_date.get()
 
     def validate(self) -> List[str]:
         """Contrôle d'intégrité métier pour l'UI Tkinter et ses bindings visuels.

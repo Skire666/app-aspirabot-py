@@ -13,6 +13,7 @@ import threading
 import logging
 from typing import Callable, Optional
 
+from __src__.services.provider_service import ProviderService
 from view_models.scraping_view_model import ScrapingViewModel
 from repositories.providers_repository import ProvidersRepository
 from models.config_aspirabot_model import ConfigAspirabotModel
@@ -29,13 +30,12 @@ class ScrapingController:
         logger (logging.Logger): Logger spécifique au module.
         repository (ProvidersRepository): Fournit un accès au fournisseur ciblé.
         service (ScrapingService): Le moteur d'exécution logique.
-        current_stem (Optional[str]): Le nom du fournisseur actuellement sélectionné.
         _stop_requested (bool): Un flag interne partagé avec le service pour interrompre l'action.
         on_start_scraping (Optional[Callable[[], None]]): Un callback décorateur facultatif (UI).
         on_stop_scraping (Optional[Callable[[], None]]): Un callback décorateur facultatif (UI).
     """
 
-    def __init__(self, config: ConfigAspirabotModel) -> None:
+    def __init__(self, provider_service: ProviderService, config: ConfigAspirabotModel) -> None:
         """S'initialise avec la configuration globale passée depuis le conteneur Root.
 
         Args:
@@ -43,8 +43,9 @@ class ScrapingController:
         """
         self.logger = logging.getLogger(__name__)
         self.repository = ProvidersRepository(config.folder_providers)
-        self.service = ScrapingService()
-        self.current_stem: Optional[str] = None
+        self.scrapping_service = ScrapingService()
+        self.provider_service = provider_service
+        self._provider_selected = None
         self._stop_requested = False
         
         self.on_start_scraping: Optional[Callable[[], None]] = None
@@ -62,25 +63,28 @@ class ScrapingController:
         self._stop_requested = True
         self.logger.info("Arrêt du scraping demandé.")
 
-    def set_provider(self, stem: str, view_model: ScrapingViewModel) -> None:
+    def set_provider(self, provider_guid: str, view_model: ScrapingViewModel) -> None:
         """Sélectionne le fournisseur sur lequel lancer le module de test et met à jour l'UI.
 
         Args:
-            stem (str): Le nom court (sans extension) du fournisseur à afficher.
-            view_model (ScrapingViewModel): L'état UI auquel lier les informations.
+            provider_guid (str): L'identifiant unique du fournisseur à charger.
+            view_model (ScrapingViewModel): Le modèle de vue à mettre à jour.
 
         Returns:
             None
         """
-        self.current_stem = stem
-        if stem:
-            provider = self.repository.read_provider_content_selected(stem)
-            view_model.provider_info_var.set(f"Sélection courant : {provider.provider_title} ({provider.url})")
-            view_model.has_provider_var.set(True)
-        else:
+        
+        if not self.provider_service.exists_provider(provider_guid):
             view_model.provider_info_var.set("Aucun fournisseur sélectionné.")
             view_model.has_provider_var.set(False)
+            self.logger.error(f"Fournisseur non trouvé: {provider_guid}")
+            return
 
+        self._provider_selected = self.provider_service.read_provider(provider_guid)
+        view_model.provider_info_var.set(f"Sélection courant : {self._provider_selected.provider_title} ({self._provider_selected.url})")
+        view_model.has_provider_var.set(True)
+        self.logger.debug(f"Fournisseur sélectionné pour scraping: {self._provider_selected.provider_title} ({self._provider_selected.url})")
+        
     def launch_scraping(self, view_model: ScrapingViewModel, update_ui_log: Callable[[str], None], finish_callback: Callable[[], None]) -> None:
         """Lance l'exécution du service de scraping dans un thread séparé.
 
@@ -96,10 +100,9 @@ class ScrapingController:
         Returns:
             None
         """
-        if not self.current_stem:
+        if not self._provider_selected:
+            self.logger.error("Aucun fournisseur sélectionné pour le scraping.")
             return
-            
-        provider = self.repository.read_provider_content_selected(self.current_stem)
         
         self._stop_requested = False
         view_model.is_running_var.set(True)
@@ -120,7 +123,7 @@ class ScrapingController:
             try:
                 # Lance l'async loop dans le thread
                 success, elapsed, count, error_msg = asyncio.run(
-                    self.service.run_and_track_scraping(provider, safe_log, check_stop)
+                    self.scrapping_service.run_and_track_scraping(self._provider_selected, safe_log, check_stop)
                 )
                 
                 safe_log("\n--- Bilan du sraping ---")

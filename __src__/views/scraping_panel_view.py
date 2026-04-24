@@ -88,19 +88,19 @@ class ScrapingPanelView(ttk.Frame):
         scrollbar.pack(side="right", fill="y")
         self.log_text.config(yscrollcommand=scrollbar.set)
 
-    def load_provider(self, stem: str) -> None:
+    def load_provider(self, provider_guid: str) -> None:
         """Indique à l'interface qu'un nouveau modèle fournisseur est prêt à démarrer.
 
         Args:
-            stem (str): Le nom du fichier JSON d'exploitation sélectionné.
-            
+            provider_guid (str): L'identifiant unique du fournisseur à charger.
+        
         Exemples d'utilisation:
             >>> onglet._panel_scraping.load_provider("mon_fichier.json")
         """
-        self.controller.set_provider(stem, self.view_model)
+        self.controller.set_provider(provider_guid, self.view_model)
         self._update_buttons_state()
         self._clear_text()
-        self._add_text_log(f"Prêt à lancer le scraping pour le fournisseur '{stem}'.")
+        self._add_text_log(f"Prêt à lancer le scraping pour le fournisseur '{provider_guid}'.")
 
     def launch_scrapping(self) -> None:
         """Signal initiateur du thread asynchrone de `WebBrowserUtil`.
