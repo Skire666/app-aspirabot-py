@@ -24,14 +24,6 @@ class ProviderView(ttk.Frame):
         self._on_launch: Optional[Callable[[str], None]] = None
         self._on_delete: Optional[Callable[[str], None]] = None
 
-        self._sort_states: Dict[str, bool] = {
-            "provider_guid": False,
-            "provider_name": False,
-            "url": False,
-            "created_date": False,
-            "modified_date": False
-        }
-
         self._create_widgets()
 
     def _create_widgets(self) -> None:
@@ -67,6 +59,7 @@ class ProviderView(ttk.Frame):
             on_sort=self._notify_sort,
             on_action=self._on_action
         )
+        self.grid.set_sort_state("provider_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None], on_launch: Callable[[str], None], on_delete: Callable[[str], None]) -> None:
@@ -105,10 +98,9 @@ class ProviderView(ttk.Frame):
         if self._on_open_folder:
             self._on_open_folder()
 
-    def _notify_sort(self, column: str) -> None:
+    def _notify_sort(self, column: str, ascending: bool) -> None:
         if self._on_sort:
-            self._sort_states[column] = not self._sort_states[column]
-            self._on_sort(column, self._sort_states[column])
+            self._on_sort(column, ascending)
 
     def render_providers(self, providers_data: List[Dict[str, Any]]) -> None:
         """Clears existing UI providers and renders the new list.

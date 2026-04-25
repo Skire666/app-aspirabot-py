@@ -19,7 +19,7 @@ class DataGrid(ttk.Frame):
         self,
         parent: tk.Widget,
         columns: List[Dict[str, Any]],
-        on_sort: Optional[Callable[[str], None]] = None,
+        on_sort: Optional[Callable[[str, bool], None]] = None,
         on_action: Optional[Callable[[str, Any], None]] = None,
     ) -> None:
         """Initializes the data grid.
@@ -27,7 +27,7 @@ class DataGrid(ttk.Frame):
         Args:
             parent: Parent Tkinter widget.
             columns: Column definitions.
-            on_sort: Called with the column id on header click.
+            on_sort: Called with (column_id, ascending) on header click.
             on_action: Called with (action_id, row_id) on action click.
         """
         super().__init__(parent)
@@ -179,7 +179,18 @@ class DataGrid(ttk.Frame):
             self._sort_ascending = True
 
         if self.on_sort:
-            self.on_sort(col_id)
+            self.on_sort(col_id, self._sort_ascending)
+        self._schedule_redraw()
+
+    def set_sort_state(self, column_id: str, ascending: bool) -> None:
+        """Sets current sort indicator without triggering callbacks.
+
+        Args:
+            column_id: Sorted column id.
+            ascending: True for ascending, False for descending.
+        """
+        self._sorted_column = column_id
+        self._sort_ascending = ascending
         self._schedule_redraw()
 
     def _on_mouse_move(self, event: tk.Event) -> None:
@@ -206,12 +217,6 @@ class DataGrid(ttk.Frame):
         """Sets hover row from embedded button events."""
         if row_index != self._hover_row:
             self._hover_row = row_index
-            self._schedule_redraw()
-
-    def _clear_hover_row(self) -> None:
-        """Clears hover row when leaving an action button."""
-        if self._hover_row is not None:
-            self._hover_row = None
             self._schedule_redraw()
 
     def _column_index_from_x(self, x_coord: float) -> Optional[int]:
@@ -342,8 +347,6 @@ class DataGrid(ttk.Frame):
                     btn = self._acquire_button(col_id, str(col.get("button_text", "Action")))
                     btn.configure(command=lambda action=col_id, rid=row_id: self._handle_action(action, rid))
                     btn.bind("<Enter>", lambda _event, idx=row_index: self._set_hover_row(idx))
-                    btn.bind("<Leave>", lambda _event: self._clear_hover_row())
-                    btn.bind("<Motion>", lambda _event, idx=row_index: self._set_hover_row(idx))
 
                     window_id = self.body_canvas.create_window(
                         (x0 + x1) / 2,

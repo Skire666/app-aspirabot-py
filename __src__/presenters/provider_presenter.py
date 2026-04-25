@@ -22,6 +22,8 @@ class ProviderPresenter:
         self._view = view
         self._service = service
         self._providers: List[ProviderModel] = []
+        self._current_sort_column = "provider_name"
+        self._current_sort_ascending = True
         
         # Hooks optionnels injectés depuis le main
         self.on_request_create_provider = None
@@ -51,7 +53,32 @@ class ProviderPresenter:
             self._providers = self._service.list_providers()
         except FileNotFoundError:
             self._providers = []
+
+        self._sort_providers(self._current_sort_column, self._current_sort_ascending)
         self._update_view()
+
+    @staticmethod
+    def _text_key(value: str) -> str:
+        """Normalizes text values for stable, case-insensitive sorting."""
+        return (value or "").lower()
+
+    def _sort_providers(self, column: str, ascending: bool) -> None:
+        """Sorts providers in place according to the selected column.
+
+        Args:
+            column: Column id used as sort key.
+            ascending: True for ascending order.
+        """
+        if column == "provider_guid":
+            self._providers.sort(key=lambda p: self._text_key(p.provider_guid), reverse=not ascending)
+        elif column == "provider_name":
+            self._providers.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
+        elif column == "url":
+            self._providers.sort(key=lambda p: self._text_key(p.url), reverse=not ascending)
+        elif column == "created_date":
+            self._providers.sort(key=lambda p: self._text_key(p.created_date), reverse=not ascending)
+        elif column == "modified_date":
+            self._providers.sort(key=lambda p: self._text_key(p.modified_date), reverse=not ascending)
 
     def _update_view(self) -> None:
         """Transforme les modèles en structures de données simples et rafraîchit la vue."""
@@ -126,15 +153,7 @@ class ProviderPresenter:
             column (str): La colonne sur laquelle trier.
             ascending (bool): Si True le tri est ascendant, sinon descendant.
         """
-        if column == "provider_guid":
-            self._providers.sort(key=lambda p: p.provider_guid, reverse=not ascending)
-        elif column == "provider_name":
-            self._providers.sort(key=lambda p: p.provider_name, reverse=not ascending)
-        elif column == "url":
-            self._providers.sort(key=lambda p: p.url, reverse=not ascending)
-        elif column == "created_date":
-            self._providers.sort(key=lambda p: p.created_date, reverse=not ascending)
-        elif column == "modified_date":
-            self._providers.sort(key=lambda p: p.modified_date, reverse=not ascending)
-        
+        self._current_sort_column = column
+        self._current_sort_ascending = ascending
+        self._sort_providers(column, ascending)
         self._update_view()
