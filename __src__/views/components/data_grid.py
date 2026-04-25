@@ -255,9 +255,7 @@ class DataGrid(ttk.Frame):
 
         # Keep button hover priority while pointer is on an action button.
         if self._button_hover_row is not None:
-            if self._hover_row != self._button_hover_row:
-                self._hover_row = self._button_hover_row
-                self._schedule_redraw()
+            self._set_hover_row_state(self._button_hover_row)
             return
 
         row_index = int(self.body_canvas.canvasy(event.y) // self._row_height)
@@ -265,26 +263,19 @@ class DataGrid(ttk.Frame):
             row_index = -1
 
         new_hover = None if row_index < 0 else row_index
-        if new_hover != self._hover_row:
-            self._hover_row = new_hover
-            self._schedule_redraw()
+        self._set_hover_row_state(new_hover)
 
     def _on_mouse_leave(self, _event: tk.Event) -> None:
         """Resets hover when cursor leaves the table body."""
         # Ignore synthetic canvas leave when pointer enters an embedded button.
         if self._button_hover_row is not None:
             return
-
-        if self._hover_row is not None:
-            self._hover_row = None
-            self._schedule_redraw()
+        self._set_hover_row_state(None)
 
     def _set_hover_row(self, row_index: int) -> None:
         """Sets hover row from embedded button events."""
         self._button_hover_row = row_index
-        if row_index != self._hover_row:
-            self._hover_row = row_index
-            self._schedule_redraw()
+        self._set_hover_row_state(row_index)
 
     def _release_button_hover_row(self, row_index: int) -> None:
         """Releases button hover lock and restores row hover from pointer."""
@@ -297,9 +288,7 @@ class DataGrid(ttk.Frame):
     def _sync_hover_row_from_pointer(self) -> None:
         """Sets current hover row from pointer position in the body canvas."""
         if not self._data:
-            if self._hover_row is not None:
-                self._hover_row = None
-                self._schedule_redraw()
+            self._set_hover_row_state(None)
             return
 
         pointer_x = self.winfo_pointerx()
@@ -313,9 +302,31 @@ class DataGrid(ttk.Frame):
             row_index = int(self.body_canvas.canvasy(local_y) // self._row_height)
             new_hover = row_index if 0 <= row_index < len(self._data) else None
 
-        if new_hover != self._hover_row:
-            self._hover_row = new_hover
-            self._schedule_redraw()
+        self._set_hover_row_state(new_hover)
+
+    def _set_hover_row_state(self, new_hover: Optional[int]) -> None:
+        """Updates hover state without forcing a full table redraw."""
+        if new_hover == self._hover_row:
+            return
+
+        old_hover = self._hover_row
+        self._hover_row = new_hover
+
+        # Only repaint row backgrounds in place to avoid button flicker.
+        self._refresh_row_background(old_hover)
+        self._refresh_row_background(new_hover)
+
+    def _refresh_row_background(self, row_index: Optional[int]) -> None:
+        """Refreshes the background color of a visible row."""
+        if row_index is None:
+            return
+
+        row_start, row_end = self._visible_row_range()
+        if row_index < row_start or row_index >= row_end:
+            return
+
+        row_bg = self._bg_hover if self._hover_row == row_index else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
+        self.body_canvas.itemconfigure(f"row-bg-{row_index}", fill=row_bg)
 
     def _column_index_from_x(self, x_coord: float) -> Optional[int]:
         """Returns the column index at a given x coordinate."""
@@ -438,7 +449,7 @@ class DataGrid(ttk.Frame):
                     y1,
                     fill=row_bg,
                     outline=self._grid_line,
-                    tags=("cell",),
+                    tags=("cell", f"row-bg-{row_index}"),
                 )
 
                 if col_type == "button":
@@ -506,6 +517,7 @@ class DataGrid(ttk.Frame):
         """
         self._data = data
         self._hover_row = None
+        self._button_hover_row = None
         self._update_scroll_regions()
         self._schedule_redraw()
 
