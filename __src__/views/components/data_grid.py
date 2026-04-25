@@ -36,8 +36,8 @@ class DataGrid(ttk.Frame):
         self.on_sort = on_sort
         self.on_action = on_action
 
-        self._row_height = 30
-        self._header_height = 32
+        self._row_height = 36
+        self._header_height = 36
         self._data: List[Dict[str, Any]] = []
 
         self._bg_header = "#d9d9d9"

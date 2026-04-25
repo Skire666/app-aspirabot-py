@@ -51,14 +51,14 @@ class ProviderView(ttk.Frame):
 
         # Main DataGrid for providers
         columns_def = [
-            {"id": "provider_guid", "title": "Guid", "width": 100, "type": "text"},
+            {"id": "provider_guid", "title": "Guid", "width": 250, "type": "text"},
             {"id": "provider_name", "title": "Nom", "width": 150, "type": "text"},
             {"id": "url", "title": "Url", "width": 200, "type": "text"},
             {"id": "created_date", "title": "Création", "width": 120, "type": "text"},
             {"id": "modified_date", "title": "Modification", "width": 120, "type": "text"},
-            {"id": "action_launch", "title": "Lancer", "width": 70, "type": "button", "button_text": "Lancer"},
-            {"id": "action_edit", "title": "Modifier", "width": 70, "type": "button", "button_text": "Modifier"},
-            {"id": "action_delete", "title": "Supprimer", "width": 70, "type": "button", "button_text": "Supprimer"}
+            {"id": "action_launch", "title": "Lancer", "width": 100, "type": "button", "button_text": "Lancer"},
+            {"id": "action_edit", "title": "Modifier", "width": 100, "type": "button", "button_text": "Modifier"},
+            {"id": "action_delete", "title": "Supprimer", "width": 100, "type": "button", "button_text": "Supprimer"}
         ]
 
         self.grid = DataGrid(
