@@ -1,90 +1,91 @@
-"""Point d'entrée principal de l'application Scraper Configurator.
+"""Point d'entrée principal de l'application."""
 
-Ce module contient la fonction principale qui sert de point d'entrée pour l'application.
-Il est responsable de l'initialisation du gestionnaire de logs, du chargement de la 
-configuration, et du lancement de l'interface graphique Tkinter.
-
-Exemples:
-    Pour lancer l'application, exécutez ce script depuis le terminal racine :
-        $ python __src__/main.py
-"""
-
-from shared.constants import CTK_APP
-from views.root_frame_view import RootFrameView
-from utils.logging_util import setup_logger, update_logger_level
-
-# Repositories & Services import
+import os
+import tkinter as tk
+import logging
+from views.log_view import LogView
+from views.config_view import ConfigView
+from views.provider_view import ProviderView
+from views.main_view import MainView
+from views.provider_edit_view import ProviderEditView
+from repositories.log_repository import LogRepository
 from repositories.json_config_repository import JsonConfigRepository
 from repositories.providers_repository import ProvidersRepository
+from services.logging_service import LoggingService
 from services.config_service import ConfigService
 from services.provider_service import ProviderService
-
-# Controllers import
-from controllers.providers_list_controller import ProvidersListController
-from controllers.update_controller import UpdateController
-from controllers.scraping_controller import ScrapingController
-from controllers.config_controller import ConfigController
+from presenters.log_presenter import LogPresenter
+from presenters.config_presenter import ConfigPresenter
+from presenters.provider_presenter import ProviderPresenter
+from presenters.provider_edit_presenter import ProviderEditPresenter
 
 def main() -> None:
-    """Initialise les composants principaux et démarre l'application.
-
-    Cette fonction configure le logger initial, charge la configuration de 
-    l'application depuis le fichier de configuration défini, met à jour 
-    le niveau de log en fonction des préférences de l'utilisateur, 
-    et démarre la boucle principale de l'interface graphique (Tkinter).
-
-    Args:
-        None
-
-    Returns:
-        None
-
-    Raises:
-        FileNotFoundError: Si le fichier de configuration est introuvable (géré par le modèle).
-        KeyError: Si une clé de configuration essentielle est manquante.
-
-    Exemple d'utilisation:
-        >>> main()
-    """
-    # Initialisation du Logger principal au démarrage avec un niveau par défaut (DEBUG)
-    logger = setup_logger(name="app", level="DEBUG")
-    logger.info(" ---------------- Démarrage de l'application ----------------")
-
-    # Chargement de la configuration
-    logger.info("Chargement des configurations.")
-    
-    # Configuration Repository & Service Setup
-    config_repository = JsonConfigRepository(CTK_APP.ASPIRABOT_CONFIG_FILE)
-    config_service = ConfigService(config_repository)
-
-    # Récupération et vérification de la configuration
-    config = config_service.get_config()
-    config_service.verify_configuration()
-    logger.debug("Configuration chargée et validée.")
-    
-    # Mise à jour dynamique du niveau de log selon la configuration
-    log_level_str = config.log_level
-    update_logger_level(logger, log_level_str)
-
-    logger.debug("Chargement des configurations et initialisation terminés.")
-    
-    # Providers Repository & Service Setup
-    providers_repository = ProvidersRepository(config.folder_providers)
-    provider_service = ProviderService(providers_repository)
-    
-    # Controllers setup
-    providers_list_controller = ProvidersListController(provider_service, config)
-    update_controller = UpdateController(provider_service, config)
-    scraping_controller = ScrapingController(provider_service, config)
-    config_controller = ConfigController(config_service)
+    """Initialise les composants principaux et démarre l'application."""
 
     # Point d'entrée principal de l'application
-    app = RootFrameView(
-        providers_list_controller, 
-        update_controller, 
-        scraping_controller, 
-        config_controller
-    )
+    app = tk.Tk()
+    app.title("Aspirabot")
+    app.geometry("800x600")
+    root_container = tk.Frame(app)
+    root_container.pack(fill=tk.BOTH, expand=True)
+
+    # Créer la vue principale avec les onglets verticaux
+    main_view = MainView(root_container)
+    main_view.pack(fill=tk.BOTH, expand=True)
+
+    # Create Logging Component
+    logging_service = LoggingService()
+    log_repository = LogRepository()
+    log_view = LogView(main_view.content_area)
+    log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
+
+    # Create Configuration Component
+    # Resolving path based on the structure (JSON at the root of the workspace)
+    config_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config-aspirabot.json")
+    config_repo = JsonConfigRepository(config_file_path)
+    config_service = ConfigService(config_repo)
+    config_view = ConfigView(main_view.content_area)
+    config_presenter = ConfigPresenter(view=config_view, service=config_service)
+
+    # Create Provider Component
+    provider_folder_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "user_folder_providers")
+    provider_repo = ProvidersRepository(provider_folder_path)
+    provider_service = ProviderService(provider_repo)
+    provider_view = ProviderView(main_view.content_area)
+    provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)
+
+    provider_edit_view = ProviderEditView(main_view.content_area)
+    provider_edit_presenter = ProviderEditPresenter(view=provider_edit_view, service=provider_service)
+
+    # Wire events for transition between view providers and edit providers
+    def on_request_create_provider():
+        provider_edit_presenter.create_new()
+        main_view.set_tab_state("Modification", tk.NORMAL)
+        main_view.show_view("Modification")
+
+    def on_request_edit_provider(provider_guid: str):
+        provider_edit_presenter.load_provider(provider_guid)
+        main_view.set_tab_state("Modification", tk.NORMAL)
+        main_view.show_view("Modification")
+
+    def on_edit_done():
+        provider_presenter.refresh()
+        main_view.set_tab_state("Modification", tk.DISABLED)
+        main_view.show_view("Fournisseurs")
+
+    provider_presenter.on_request_create_provider = on_request_create_provider
+    provider_presenter.on_request_edit_provider = on_request_edit_provider
+    provider_edit_presenter.set_on_done_callback(on_edit_done)
+
+    # Register Views to MainView
+    main_view.add_view("Journal", log_view)
+    main_view.add_view("Configuration", config_view)
+    main_view.add_view("Fournisseurs", provider_view)
+    main_view.add_view("Modification", provider_edit_view)
+
+    # Default View on startup
+    main_view.show_view("Fournisseurs")
+    
     app.mainloop()
 
 if __name__ == "__main__":

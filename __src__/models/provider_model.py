@@ -18,7 +18,7 @@ class ProviderModel:
     """
     
     provider_guid: str
-    provider_title: str
+    provider_name: str
     url: str
     created_date: str
     modified_date: str
@@ -33,7 +33,7 @@ class ProviderModel:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return cls(
             provider_guid=str(uuid.uuid4()).lower(),
-            provider_title="Nouv. Fournisseur",
+            provider_name="Nouv. Fournisseur",
             url="https://example.com",
             version="1.0.0",
             browser_displayed=True,

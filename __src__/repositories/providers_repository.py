@@ -87,8 +87,8 @@ class ProvidersRepository(ProviderRepositoryInterface):
         """
         # Récupère uniquement les champs présents dans ProviderModel
         provider_fields = {
-            'provider_title',
             'provider_guid',
+            'provider_name',
             'url',
             'created_date',
             'modified_date',
@@ -178,7 +178,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Exemples d'utilisation:
             >>> providers = repo.list_providers()
             >>> for provider in providers:
-            ...     print(provider.provider_title)
+            ...     print(provider.provider_name)
         """
         providers: List[ProviderModel] = []
         

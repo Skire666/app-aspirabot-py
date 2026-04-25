@@ -64,7 +64,7 @@ class ScrapingService:
         success = True
         error_msg = None
 
-        on_log(f"D\u00e9marrage du scraping pour '{provider.provider_title}' ...")
+        on_log(f"D\u00e9marrage du scraping pour '{provider.provider_name}' ...")
         
         # Adaptation personnalis\u00e9e : au lieu d'appeler directement `run_scraping_task(provider)`,
         # on peut r\u00e9utiliser la classe pour faire des retours plus fins.
