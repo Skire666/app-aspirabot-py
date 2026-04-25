@@ -32,8 +32,10 @@ class ObservableLogHandler(logging.Handler):
 class LoggingService:
     """Configures centralized logging system."""
 
-    def __init__(self, log_file: str = "app.log"):
+    def __init__(self, log_file: str):
         """Configures file-based rotating logger and sets root logger to DEBUG."""
+        
+        
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
 

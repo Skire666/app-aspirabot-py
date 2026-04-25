@@ -52,3 +52,27 @@ class ProviderModel:
         """Met à jour la date de modification à l'instant présent."""
         self.modified_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    @staticmethod
+    def is_valid_guid(value: str) -> bool:
+        """Checks whether a value is a canonical UUID string.
+
+        Args:
+            value: Candidate GUID value.
+
+        Returns:
+            True when the value is a valid lowercase UUID string, otherwise False.
+        """
+        if not value:
+            return False
+
+        normalized_value = value.strip().lower()
+        if not normalized_value:
+            return False
+
+        try:
+            parsed_uuid = uuid.UUID(normalized_value)
+        except (AttributeError, ValueError, TypeError):
+            return False
+
+        return str(parsed_uuid) == normalized_value
+

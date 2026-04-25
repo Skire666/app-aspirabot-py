@@ -88,4 +88,5 @@ python -m pyclean ./ -v
 Dossier généré :
 ./tmp_logs
 ./tmp_chromium_session
-./user_folder_providers
+./user_providers
+./user_brokens

@@ -53,10 +53,10 @@ class CTK_BROWSER:
     """Constantes liées à la configuration du navigateur pour le scraping.
 
     Attributes:
-        DEFAULT_USER_DATA_DIR (str): Dossier local par défaut pour stocker
+        DEFAULT_FOLDER_TMP_CHROMIUM (str): Dossier local par défaut pour stocker
             les données utilisateurs Chromium (sessions, cookies, cache).
     """
-    DEFAULT_USER_DATA_DIR: str = "./tmp_chromium_session"
+    DEFAULT_FOLDER_TMP_CHROMIUM: str = "./tmp_chromium_session"
 
 ## ----------------------------------------------
 ## Interface graphique (GUI)
@@ -70,6 +70,6 @@ class CTK_GUI:
         DEFAULT_SIZE_ROOT_FRAME (str): Dimensions par défaut de la fenêtre principale.
     """
     APP_NAME: str = "Aspirabot"
-    DEFAULT_SIZE_ROOT_FRAME: str = "900x600"
+    DEFAULT_SIZE_ROOT_FRAME: str = "950x600"
 
 ## END

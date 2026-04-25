@@ -1,7 +1,11 @@
 """Service pour la gestion des fournisseurs de scraping."""
 
+import logging
+from pathlib import Path
 from typing import List
 from models.provider_model import ProviderModel
+from models.provider_validation_issue_model import ProviderValidationIssue
+from models.provider_validation_report_model import ProviderValidationReport
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
 
 class ProviderService:
@@ -14,6 +18,7 @@ class ProviderService:
             repository: Le dépôt pour la persistance des fournisseurs.
         """
         self._repository = repository
+        self._logger = logging.getLogger(__name__)
 
     def list_providers(self) -> List[ProviderModel]:
         """Liste tous les fournisseurs.
@@ -74,3 +79,96 @@ class ProviderService:
     def open_providers_folder(self) -> None:
         """Ouvre le répertoire des fournisseurs dans l'explorateur du système."""
         self._repository.open_providers_folder()
+
+    def validate_providers(self) -> ProviderValidationReport:
+        """Validates every provider file and moves broken files away.
+
+        Returns:
+            The summary of the validation run.
+        """
+        provider_files = self._repository.list_provider_files()
+        self._repository.ensure_broken_folder()
+
+        valid_files = 0
+        issues: List[ProviderValidationIssue] = []
+
+        self._logger.info("Démarrage de la validation des fournisseurs pour %s fichier(s).", len(provider_files))
+
+        for file_path in provider_files:
+            reasons = self._collect_validation_reasons(file_path)
+
+            if reasons:
+                broken_path = ""
+                try:
+                    moved_path = self._repository.move_invalid_provider_file(file_path, "; ".join(reasons))
+                    broken_path = str(moved_path)
+                except Exception as exc:
+                    move_reason = f"Unable to move invalid file: {exc}"
+                    reasons.append(move_reason)
+                    self._logger.exception("Failed to move invalid file %s.", file_path)
+
+                issues.append(
+                    ProviderValidationIssue(
+                        file_name=file_path.name,
+                        original_path=str(file_path),
+                        broken_path=broken_path,
+                        reasons=reasons,
+                    )
+                )
+                self._logger.warning("Invalid provider file %s: %s", file_path.name, "; ".join(reasons))
+                continue
+
+            valid_files += 1
+
+        report = ProviderValidationReport(
+            total_files=len(provider_files),
+            valid_files=valid_files,
+            invalid_files=len(issues),
+            issues=issues,
+        )
+        self._logger.info(
+            "Providers validation completed: %s total, %s valid, %s invalid.",
+            report.total_files,
+            report.valid_files,
+            report.invalid_files,
+        )
+        return report
+
+    def _collect_validation_reasons(self, file_path: Path) -> List[str]:
+        """Collects validation issues for a provider file.
+
+        Args:
+            file_path: File to validate.
+
+        Returns:
+            A list of validation reasons. An empty list means the file is valid.
+        """
+        reasons: List[str] = []
+
+        try:
+            if file_path.stat().st_size == 0:
+                reasons.append("Fichier vide")
+                return reasons
+        except OSError as exc:
+            reasons.append(f"Fichier illisible: {exc}")
+            return reasons
+
+        try:
+            provider_data = self._repository.read_provider_file_data(file_path)
+        except Exception as exc:
+            reasons.append(f"Contenu corrompu ou illisible: {exc}")
+            return reasons
+
+        provider_guid = provider_data.get("provider_guid")
+        if not isinstance(provider_guid, str) or not provider_guid.strip():
+            reasons.append("Champ GUID manquant")
+            return reasons
+
+        normalized_guid = provider_guid.strip().lower()
+        if not ProviderModel.is_valid_guid(normalized_guid):
+            reasons.append("Format GUID invalide")
+
+        if file_path.stem.lower() != normalized_guid:
+            reasons.append("Nom de fichier non conforme au GUID")
+
+        return reasons

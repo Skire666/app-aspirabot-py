@@ -33,7 +33,7 @@ class WebBrowserUtil:
         _provider (ProviderModel): Le modèle de configuration du scraping à utiliser.
         url_of_website (str): L'URL cible principale pour lancer le processus.
         _headless (bool): Détermine si le navigateur s'exécute en arrière-plan (True) ou s'il est visible.
-        user_data_dir (str): Le chemin vers le répertoire stockant la session Chromium du bot.
+        folder_tmp_chromium (str): Le chemin vers le répertoire stockant la session Chromium du bot.
     """
     _provider: ProviderModel
     url_of_website: str
@@ -60,7 +60,7 @@ class WebBrowserUtil:
         self._headless = not self._provider.browser_displayed # Inverse logique: affiché dans GUI == not headless
         
         # Dossier local pour sauvegarder la session, cookies et cache
-        self.user_data_dir = CTK_BROWSER.DEFAULT_USER_DATA_DIR
+        self.folder_tmp_chromium = CTK_BROWSER.DEFAULT_FOLDER_TMP_CHROMIUM
 
     async def start(self) -> None:
         """Lance l'ensemble du processus de scraping de manière asynchrone.
@@ -104,7 +104,7 @@ class WebBrowserUtil:
         """
         logger.info(f"Lancement Chromium Persistant (headless={self._headless})...")
         return await playwright_instance.chromium.launch_persistent_context(
-            user_data_dir=self.user_data_dir,
+            folder_tmp_chromium=self.folder_tmp_chromium,
             headless=self._headless,
             args=["--disable-blink-features=AutomationControlled"] # Réduit détection bot
         )

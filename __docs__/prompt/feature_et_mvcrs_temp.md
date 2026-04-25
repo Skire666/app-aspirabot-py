@@ -1,4 +1,4 @@
-Je suis développeur python, et j'ai besoin d'un prompt agentique (markdown brut, copier collable). 
+Je suis développeur python, et j'ai besoin d'un prompt agentique (affichage brut, en ascii, copier collable). 
 Renseigne le prompt que je vais te donner avec les informations suivantes :
 
 - Dans l'interface, ajouter un nouveau module 'Modification' dont les onglets verticaux.
@@ -13,6 +13,7 @@ Renseigne le prompt que je vais te donner avec les informations suivantes :
 - La zone footer contient 2 boutons :
 	-- "Annuler" : Annule les modifications, vide l'IHM des valeurs, et retourne sur l'onglet 'Fournisseurs', et grise le module "Modifications".
 	-- "Sauvegarder" : Sauvegarde les données JSON, vide l'IHM des valeurs, et retourne sur l'onglet 'Fournisseurs', et grise le module "Modifications". Cas spécial : Si nouveau fichier, mais qu'il existe déjà un fichier, demander la confirmation à l'utilisateur.
+
 
 Voici le prompt d'exemple (remplace les XXXX et extrapole les consignes) :
 

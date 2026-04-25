@@ -32,7 +32,7 @@ class ConfigView(ttk.Frame):
         form_frame = ttk.LabelFrame(self, text="Configuration Settings", padding=(10, 10))
         form_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
-        fields = ["log_level", "folder_providers", "folder_logs", "user_data_dir"]
+        fields = ["log_level", "folder_logs", "folder_providers", "folder_brokens", "folder_tmp_chromium"]
         for idx, field in enumerate(fields):
             ttk.Label(form_frame, text=field.replace("_", " ").title() + ":").grid(
                 row=idx, column=0, padx=5, pady=5, sticky=tk.W

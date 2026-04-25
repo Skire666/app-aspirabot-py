@@ -3,7 +3,8 @@
 Définit le contrat que doit respecter toute implémentation de dépôt pour les
 fournisseurs, conformément à l'architecture propre."""
 
-from typing import List, Protocol
+from pathlib import Path
+from typing import Any, Dict, List, Protocol
 from models.provider_model import ProviderModel
 
 class ProviderRepositoryInterface(Protocol):
@@ -19,6 +20,22 @@ class ProviderRepositoryInterface(Protocol):
 
     def list_all_providers(self) -> List[ProviderModel]:
         """Liste tous les fournisseurs disponibles."""
+        ...
+
+    def list_provider_files(self) -> List[Path]:
+        """Liste tous les fichiers présents dans le dossier des fournisseurs."""
+        ...
+
+    def read_provider_file_data(self, file_path: Path) -> Dict[str, Any]:
+        """Lit et retourne le contenu JSON brut d'un fichier fournisseur."""
+        ...
+
+    def ensure_broken_folder(self) -> Path:
+        """Crée le dossier des fichiers invalides si nécessaire."""
+        ...
+
+    def move_invalid_provider_file(self, file_path: Path, reason: str) -> Path:
+        """Déplace un fichier invalide vers le dossier des fichiers cassés."""
         ...
 
     def create_provider(self, provider: ProviderModel) -> None:

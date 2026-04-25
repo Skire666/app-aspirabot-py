@@ -2,7 +2,7 @@
 
 import os
 import tkinter as tk
-import logging
+from shared.constants import CTK_GUI
 from views.log_view import LogView
 from views.config_view import ConfigView
 from views.provider_view import ProviderView
@@ -25,31 +25,37 @@ def main() -> None:
     # Point d'entrée principal de l'application
     app = tk.Tk()
     app.title("Aspirabot")
-    app.geometry("800x600")
+    app.geometry(CTK_GUI.DEFAULT_SIZE_ROOT_FRAME)
     root_container = tk.Frame(app)
     root_container.pack(fill=tk.BOTH, expand=True)
+
+    
 
     # Créer la vue principale avec les onglets verticaux
     main_view = MainView(root_container)
     main_view.pack(fill=tk.BOTH, expand=True)
 
-    # Create Logging Component
-    logging_service = LoggingService()
-    log_repository = LogRepository()
-    log_view = LogView(main_view.content_area)
-    log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
-
     # Create Configuration Component
     # Resolving path based on the structure (JSON at the root of the workspace)
     config_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config-aspirabot.json")
     config_repo = JsonConfigRepository(config_file_path)
+    config_model = config_repo.load_config()
     config_service = ConfigService(config_repo)
     config_view = ConfigView(main_view.content_area)
     config_presenter = ConfigPresenter(view=config_view, service=config_service)
 
+    # Create Logging Component
+    log_file_path = os.path.join(str(config_model.folder_logs), "Aspirabot.log")
+    if not os.path.exists(config_model.folder_logs):
+        os.makedirs(config_model.folder_logs)
+    
+    logging_service = LoggingService(log_file_path)
+    log_repository = LogRepository()
+    log_view = LogView(main_view.content_area)
+    log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
+
     # Create Provider Component
-    provider_folder_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "user_folder_providers")
-    provider_repo = ProvidersRepository(provider_folder_path)
+    provider_repo = ProvidersRepository(config_model.folder_providers, config_model.folder_brokens)
     provider_service = ProviderService(provider_repo)
     provider_view = ProviderView(main_view.content_area)
     provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)

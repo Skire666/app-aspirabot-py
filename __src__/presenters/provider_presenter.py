@@ -2,6 +2,7 @@
 
 from typing import Dict, List
 from models.provider_model import ProviderModel
+from models.provider_validation_report_model import ProviderValidationReport
 from services.provider_service import ProviderService
 from views.provider_view import ProviderView
 
@@ -45,7 +46,8 @@ class ProviderPresenter:
             on_sort=self._on_sort,
             on_edit=self._on_edit_provider,
             on_launch=self._on_launch_provider,
-            on_delete=self._on_delete_provider
+            on_delete=self._on_delete_provider,
+            on_validate=self._on_validate_providers,
         )
 
     def _load_providers(self) -> None:
@@ -150,6 +152,19 @@ class ProviderPresenter:
     def _on_refresh(self) -> None:
         """Gère l'événement de rafraîchissement de la liste des fournisseurs."""
         self._load_providers()
+
+    def _on_validate_providers(self) -> None:
+        """Validates provider files and displays the validation summary."""
+        self._view.set_validation_state(True, "Validation en cours...")
+
+        try:
+            report: ProviderValidationReport = self._service.validate_providers()
+            self._load_providers()
+            self._view.show_validation_report(report)
+        except Exception as exc:
+            self._view.show_error(f"La validation des fournisseurs a échoué: {exc}")
+        finally:
+            self._view.set_validation_state(False)
 
     def _on_sort(self, column: str, ascending: bool) -> None:
         """Trie la liste des fournisseurs et met à jour la vue.

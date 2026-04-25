@@ -32,12 +32,14 @@ class ConfigAspirabotModel:
         log_level (str): Le niveau de log (ex: "INFO", "DEBUG", "WARNING").
         folder_logs (str): Dossier pour les fichiers de logs.
         folder_providers (str): Dossier local pour stocker les providers personnalisés.
-        user_data_dir (str): Dossier local pour sauvegarder la session, cookies et cache de Chromium.
+        folder_brokens (str): Dossier local pour stocker les fournisseurs cassés.
+        folder_tmp_chromium (str): Dossier local pour sauvegarder la session, cookies et cache de Chromium.
     """
     log_level: str = "INFO"
     folder_logs: str = "./tmp_logs"
-    folder_providers: str = "./user_folder_providers"
-    user_data_dir: str = "./tmp_chromium_session"
+    folder_providers: str = "./user_providers"
+    folder_brokens: str = "./user_brokens"
+    folder_tmp_chromium: str = "./tmp_chromium_session"
 
     @classmethod
     def get_default_data(cls) -> Dict[str, Any]:
@@ -51,8 +53,9 @@ class ConfigAspirabotModel:
         return {
             "log_level": "INFO",
             "folder_logs": "./tmp_logs",
-            "folder_providers": "./user_folder_providers",
-            "user_data_dir": "./tmp_chromium_session"
+            "folder_providers": "./user_providers",
+            "folder_brokens": "./user_brokens",
+            "folder_tmp_chromium": "./tmp_chromium_session"
         }
 
     def verify_keys_exist(self) -> bool:
@@ -65,7 +68,8 @@ class ConfigAspirabotModel:
             "log_level": self.log_level,
             "folder_logs": self.folder_logs,
             "folder_providers": self.folder_providers,
-            "user_data_dir": self.user_data_dir,
+            "folder_brokens": self.folder_brokens,
+            "folder_tmp_chromium": self.folder_tmp_chromium,
         }
         
         missing_keys = [key for key in ConfigAspirabotModel.get_default_data() if key not in all_data]
@@ -81,7 +85,8 @@ class ConfigAspirabotModel:
             "log_level": self.log_level,
             "folder_logs": self.folder_logs,
             "folder_providers": self.folder_providers,
-            "user_data_dir": self.user_data_dir,
+            "folder_brokens": self.folder_brokens,
+            "folder_tmp_chromium": self.folder_tmp_chromium,
         }
 
 ## END

@@ -81,8 +81,9 @@ class JsonConfigRepository(ConfigRepositoryInterface):
         return ConfigAspirabotModel(
             log_level=data.get("log_level", "INFO"),
             folder_logs=data.get("folder_logs", "./tmp_logs"),
-            folder_providers=data.get("folder_providers", "./user_folder_providers"),
-            user_data_dir=data.get("user_data_dir", "./tmp_chromium_session")
+            folder_providers=data.get("folder_providers", "./user_providers"),
+            folder_brokens=data.get("folder_brokens", "./user_brokens"),
+            folder_tmp_chromium=data.get("folder_tmp_chromium", "./tmp_chromium_session")
         )
 
     def save_config(self, config: ConfigAspirabotModel) -> None:

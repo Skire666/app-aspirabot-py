@@ -41,9 +41,10 @@ JSON file for configuration :
 
 {
     "log_level": "DEBUG",
-    "folder_providers": "./user_folder_providers",
     "folder_logs": "./tmp_logs",
-    "user_data_dir": "./tmp_chromium_session"
+    "folder_providers": "./user_providers",
+    "folder_brokens": "./user_brokens",
+    "folder_tmp_chromium": "./tmp_chromium_session"
 }
 
 ## Architecture (Strict MVP)

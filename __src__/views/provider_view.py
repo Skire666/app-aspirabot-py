@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
 
 from views.components.data_grid import DataGrid
+from models.provider_validation_report_model import ProviderValidationReport
 
 class ProviderView(ttk.Frame):
     """View component that renders the list of providers."""
@@ -24,6 +25,7 @@ class ProviderView(ttk.Frame):
         self._on_edit: Optional[Callable[[str], None]] = None
         self._on_launch: Optional[Callable[[str], None]] = None
         self._on_delete: Optional[Callable[[str], None]] = None
+        self._on_validate: Optional[Callable[[], None]] = None
 
         self._create_widgets()
 
@@ -41,6 +43,9 @@ class ProviderView(ttk.Frame):
 
         self._btn_refresh = ttk.Button(top_frame, text="Rafraîchir", command=self._notify_refresh)
         self._btn_refresh.pack(side=tk.LEFT, padx=5)
+
+        self._btn_validate = ttk.Button(top_frame, text="Valider les fournisseurs", command=self._notify_validate)
+        self._btn_validate.pack(side=tk.LEFT, padx=5)
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun fournisseur")
         self._lbl_counter.pack(side=tk.RIGHT, padx=10)
@@ -66,7 +71,7 @@ class ProviderView(ttk.Frame):
         self.grid.set_sort_state("provider_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_refresh: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None], on_launch: Callable[[str], None], on_delete: Callable[[str], None]) -> None:
+    def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_refresh: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None], on_launch: Callable[[str], None], on_delete: Callable[[str], None], on_validate: Callable[[], None]) -> None:
         """Sets the callbacks for UI interactions.
         
         Args:
@@ -77,6 +82,7 @@ class ProviderView(ttk.Frame):
             on_edit: Callback for executing the edit action.
             on_launch: Callback for executing the launch action.
             on_delete: Callback for executing the delete action.
+            on_validate: Callback for validating provider files.
         """
         self._on_create_provider = on_create
         self._on_open_folder = on_open_folder
@@ -85,6 +91,7 @@ class ProviderView(ttk.Frame):
         self._on_edit = on_edit
         self._on_launch = on_launch
         self._on_delete = on_delete
+        self._on_validate = on_validate
 
     def _on_action(self, action_id: str, row_id: str) -> None:
         """Handles actions from the DataGrid."""
@@ -108,9 +115,23 @@ class ProviderView(ttk.Frame):
         if self._on_refresh:
             self._on_refresh()
 
+    def _notify_validate(self) -> None:
+        if self._on_validate:
+            self._on_validate()
+
     def _notify_sort(self, column: str, ascending: bool) -> None:
         if self._on_sort:
             self._on_sort(column, ascending)
+
+    def set_validation_state(self, is_running: bool, status_text: str = "") -> None:
+        """Enables or disables the validation button and updates the status label."""
+        if is_running:
+            self._btn_validate.config(state=tk.DISABLED)
+            self._lbl_counter.config(text=status_text or "Validation en cours...")
+            self.update_idletasks()
+            return
+
+        self._btn_validate.config(state=tk.NORMAL)
 
     def render_providers(self, providers_data: List[Dict[str, Any]]) -> None:
         """Clears existing UI providers and renders the new list.
@@ -135,6 +156,39 @@ class ProviderView(ttk.Frame):
             message: The message to be displayed.
         """
         messagebox.showinfo("Information", message)
+
+    def show_error(self, message: str) -> None:
+        """Shows an error message box.
+
+        Args:
+            message: The message to be displayed.
+        """
+        messagebox.showerror("Erreur", message)
+
+    def show_validation_report(self, report: ProviderValidationReport) -> None:
+        """Displays a validation summary to the user."""
+        lines = [
+            "Validation terminée.",
+            f"Total traités : {report.total_files}",
+            f"Valides : {report.valid_files}",
+            f"Invalides : {report.invalid_files}",
+        ]
+
+        if report.invalid_files > 0:
+            lines.append("")
+            lines.append("Erreurs :")
+            for issue in report.issues:
+                reason_text = "; ".join(issue.reasons)
+                lines.append(f"{reason_text} ({issue.file_name}).")
+                if issue.broken_path:
+                    lines.append(f"Fichier déplacé : {issue.broken_path}\n")
+
+            messagebox.showerror("Validation des fournisseurs", "\n".join(lines))
+            return
+
+        lines.append("")
+        lines.append("Aucun fichier fournisseur invalide n'a été détecté.")
+        messagebox.showinfo("Validation des fournisseurs", "\n".join(lines))
 
     def ask_delete_confirmation(self) -> bool:
         """Prompts the user for deletion confirmation.

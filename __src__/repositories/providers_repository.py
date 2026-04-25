@@ -10,11 +10,14 @@ Exemples d'utilisation:
     >>> liste_providers = repo.list_providers()
 """
 
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, cast
 from pathlib import Path
 import os
+import json
+import shutil
 import subprocess
 import logging
+from datetime import datetime
 from dataclasses import asdict
 from utils.operating_system_util import OperatingSystem, detect_os
 from models.provider_model import ProviderModel
@@ -38,16 +41,18 @@ class ProvidersRepository(ProviderRepositoryInterface):
         logger (logging.Logger): Le journaliseur interne défini pour tracer les exécutions.
     """
 
-    def __init__(self, path_folder: Union[str, Path]) -> None:
+    def __init__(self, folder_providers: Union[str, Path], folder_brokens: Union[str, Path]) -> None:
         """Initialise le dépôt en pointant vers un dossier local contenant les fournisseurs.
 
         Args:
-            path_folder (Union[str, Path]): Le chemin vers le dossier où chercher les fichiers JSON.
+            folder_providers (Union[str, Path]): Le chemin vers le dossier où chercher les fichiers JSON.
+            folder_brokens (Union[str, Path]): Le chemin vers le dossier où stocker les fichiers cassés.
 
         Exemples d'utilisation:
-            >>> repo = ProvidersRepository("/chemin/vers/providers")
+            >>> repo = ProvidersRepository("/chemin/vers/providers", "/chemin/vers/brokens")
         """
-        self._folder_path: Path = Path(path_folder)
+        self._folder_path: Path = Path(folder_providers)
+        self._folder_brokens: Path = Path(folder_brokens)
         self.logger = logging.getLogger(__name__)
 
     @property
@@ -73,6 +78,71 @@ class ProvidersRepository(ProviderRepositoryInterface):
         if self._folder_path.exists() and self._folder_path.is_dir():
             return list(self._folder_path.glob("*.json"))
         return []
+
+    def list_provider_files(self) -> List[Path]:
+        """Lists all files in the providers directory.
+
+        Returns:
+            The sorted list of files found in the providers folder.
+        """
+        if not self._folder_path.exists() or not self._folder_path.is_dir():
+            return []
+
+        return sorted(
+            [path for path in self._folder_path.iterdir() if path.is_file()],
+            key=lambda path: path.name.lower(),
+        )
+
+    def read_provider_file_data(self, file_path: Path) -> Dict[str, Any]:
+        """Reads a provider file and returns the decoded JSON content.
+
+        Args:
+            file_path: File to read.
+
+        Returns:
+            The decoded JSON payload.
+
+        Raises:
+            OSError: When the file cannot be read.
+            json.JSONDecodeError: When the content is not valid JSON.
+        """
+        with file_path.open("r", encoding="utf-8") as file_handle:
+            content = json.load(file_handle)
+
+        if not isinstance(content, dict):
+            raise ValueError(f"Contenu JSON invalide dans {file_path.name}")
+
+        return cast(Dict[str, Any], content)
+
+    def ensure_broken_folder(self) -> Path:
+        """Ensures the broken-folder exists and returns its path."""
+        broken_folder = self._folder_brokens
+        broken_folder.mkdir(parents=True, exist_ok=True)
+        return broken_folder
+
+    def move_invalid_provider_file(self, file_path: Path, reason: str) -> Path:
+        """Moves an invalid provider file to the broken folder.
+
+        Args:
+            file_path: The invalid file to move.
+            reason: The reason for the move, used for logging.
+
+        Returns:
+            The destination path of the moved file.
+        """
+        broken_folder = self.ensure_broken_folder()
+        mini_timestamp = datetime.now().strftime("%H%M%S%f")
+        destination_name = f"{mini_timestamp}{file_path.suffix}"
+        destination_path = broken_folder / destination_name
+
+        self.logger.warning(
+            "Déplacement du fichier invalide %s vers %s (%s)",
+            file_path,
+            destination_path,
+            reason,
+        )
+        shutil.move(str(file_path), str(destination_path))
+        return destination_path
 
     def _dict_to_provider_model(self, data: Dict[str, Any]) -> ProviderModel:
         """Convertit un dictionnaire JSON en instance ProviderModel.
