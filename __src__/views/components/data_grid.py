@@ -1,16 +1,19 @@
-"""Generic Tkinter DataGrid component.
+"""Generic, virtualized Tkinter table component.
 
-Provides a table-like view using only basic Tkinter widgets (Canvas, Frame, Label, Button).
-Supports sorting, alternating row colors, hover highlighting, and horizontal/vertical scrolling.
+This module provides a reusable table built only with Tkinter widgets.
+It avoids ttk.Treeview and keeps rendering fast by drawing only visible cells.
 """
 
+from __future__ import annotations
+
+import bisect
 import tkinter as tk
 from tkinter import ttk
-from typing import List, Dict, Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 class DataGrid(ttk.Frame):
-    """A generic data grid component built with Tkinter Canvas and Frames."""
+    """Reusable table widget with sorting, actions, and hover support."""
 
     def __init__(
         self,
@@ -19,14 +22,13 @@ class DataGrid(ttk.Frame):
         on_sort: Optional[Callable[[str], None]] = None,
         on_action: Optional[Callable[[str, Any], None]] = None,
     ) -> None:
-        """Initializes the DataGrid.
+        """Initializes the data grid.
 
         Args:
-            parent: The parent widget.
-            columns: A list of dictionaries defining the columns.
-                Example: {"id": "uid", "title": "UID", "width": 100, "type": "text"|"button", "button_text": "Click"}
-            on_sort: Callback when a header is clicked, passing the column id.
-            on_action: Callback when a button type column is clicked, passing (action_id, row_id).
+            parent: Parent Tkinter widget.
+            columns: Column definitions.
+            on_sort: Called with the column id on header click.
+            on_action: Called with (action_id, row_id) on action click.
         """
         super().__init__(parent)
 
@@ -34,166 +36,379 @@ class DataGrid(ttk.Frame):
         self.on_sort = on_sort
         self.on_action = on_action
 
-        self._create_layout()
+        self._row_height = 30
+        self._header_height = 32
+        self._data: List[Dict[str, Any]] = []
 
-        self._row_widgets: List[List[tk.Widget]] = []
-        self._bg_even = "#f9f9f9"
+        self._bg_header = "#d9d9d9"
+        self._bg_even = "#f7f7f7"
         self._bg_odd = "#ffffff"
-        self._bg_hover = "#e6f7ff"
+        self._bg_hover = "#dff0ff"
+        self._grid_line = "#d0d0d0"
+        self._text_color = "#222222"
+
+        self._hover_row: Optional[int] = None
+        self._sorted_column: Optional[str] = None
+        self._sort_ascending = True
+        self._redraw_job: Optional[str] = None
+
+        self._column_widths: List[int] = [max(40, int(col.get("width", 120))) for col in self.columns]
+        self._column_offsets: List[int] = self._build_offsets(self._column_widths)
+        self._total_width = self._column_offsets[-1] if self._column_offsets else 0
+
+        self._button_pool: Dict[str, List[ttk.Button]] = {}
+        self._active_buttons: List[Tuple[str, ttk.Button, int]] = []
+
+        self._create_layout()
+        self._update_scroll_regions()
+        self._schedule_redraw()
+
+    @staticmethod
+    def _build_offsets(widths: List[int]) -> List[int]:
+        """Builds cumulative x offsets from column widths."""
+        offsets = [0]
+        for width in widths:
+            offsets.append(offsets[-1] + width)
+        return offsets
 
     def _create_layout(self) -> None:
-        """Sets up the canvas and scrollbars for the grid."""
-        # Scrollbars
-        self.v_scroll = ttk.Scrollbar(self, orient=tk.VERTICAL)
-        self.v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        """Creates canvases and scrollbars."""
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
 
-        self.h_scroll = ttk.Scrollbar(self, orient=tk.HORIZONTAL)
-        self.h_scroll.pack(side=tk.BOTTOM, fill=tk.X)
-
-        # Canvas
-        self.canvas = tk.Canvas(
+        self.header_canvas = tk.Canvas(
             self,
-            yscrollcommand=self.v_scroll.set,
-            xscrollcommand=self.h_scroll.set,
-            bg="white",
-            highlightthickness=0
+            height=self._header_height,
+            bg=self._bg_header,
+            highlightthickness=0,
         )
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.header_canvas.grid(row=0, column=0, sticky="nsew")
 
-        self.v_scroll.config(command=self.canvas.yview)
-        self.h_scroll.config(command=self.canvas.xview)
+        self.body_canvas = tk.Canvas(
+            self,
+            bg="white",
+            highlightthickness=0,
+            xscrollcommand=self._on_body_xscroll,
+            yscrollcommand=self._on_body_yscroll,
+        )
+        self.body_canvas.grid(row=1, column=0, sticky="nsew")
 
-        # Inner frame to hold the grid content
-        self.inner_frame = tk.Frame(self.canvas, bg="white")
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
+        self.v_scroll = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self._on_vertical_scroll)
+        self.v_scroll.grid(row=1, column=1, sticky="ns")
 
-        self.inner_frame.bind("<Configure>", self._on_frame_configure)
-        self.canvas.bind("<Configure>", self._on_canvas_configure)
+        self.h_scroll = ttk.Scrollbar(self, orient=tk.HORIZONTAL, command=self._on_horizontal_scroll)
+        self.h_scroll.grid(row=2, column=0, sticky="ew")
 
-        # Bind mouse wheel
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.header_canvas.bind("<Button-1>", self._on_header_click)
+        self.header_canvas.bind("<Configure>", self._on_resize)
 
-        self._render_headers()
+        self.body_canvas.bind("<Configure>", self._on_resize)
+        self.body_canvas.bind("<Motion>", self._on_mouse_move)
+        self.body_canvas.bind("<Leave>", self._on_mouse_leave)
+        self.body_canvas.bind("<MouseWheel>", self._on_mouse_wheel)
+        self.body_canvas.bind("<Shift-MouseWheel>", self._on_shift_mouse_wheel)
+        self.body_canvas.bind("<Button-4>", self._on_mouse_wheel_linux_up)
+        self.body_canvas.bind("<Button-5>", self._on_mouse_wheel_linux_down)
 
-    def _on_frame_configure(self, event: tk.Event) -> None:
-        """Updates canvas scrollregion when inner frame changes size."""
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+    def _on_resize(self, _event: tk.Event) -> None:
+        """Triggers a redraw after a widget size change."""
+        self._schedule_redraw()
 
-    def _on_canvas_configure(self, event: tk.Event) -> None:
-        """Adjusts the inner frame width if canvas is wider."""
-        min_width = self.inner_frame.winfo_reqwidth()
-        if event.width > min_width:
-            self.canvas.itemconfigure(self.canvas_window, width=event.width)
+    def _on_vertical_scroll(self, *args: str) -> None:
+        """Scrolls the body vertically and refreshes visible rows."""
+        self.body_canvas.yview(*args)
+        self._schedule_redraw()
 
-    def _on_mousewheel(self, event: tk.Event) -> None:
-        """Handles mouse wheel scrolling."""
-        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    def _on_horizontal_scroll(self, *args: str) -> None:
+        """Scrolls header/body horizontally in sync."""
+        self.body_canvas.xview(*args)
+        self.header_canvas.xview(*args)
+        self._schedule_redraw()
 
-    def _render_headers(self) -> None:
-        """Renders the header row."""
-        for col_idx, col in enumerate(self.columns):
-            w = col.get("width", 100)
-            title = col.get("title", "")
-            col_id = col["id"]
+    def _on_body_xscroll(self, first: str, last: str) -> None:
+        """Updates horizontal scrollbar and keeps header aligned."""
+        self.h_scroll.set(first, last)
+        self.header_canvas.xview_moveto(first)
+        self._schedule_redraw()
 
-            self.inner_frame.grid_columnconfigure(col_idx, weight=w, minsize=w)
+    def _on_body_yscroll(self, first: str, last: str) -> None:
+        """Updates vertical scrollbar."""
+        self.v_scroll.set(first, last)
+        self._schedule_redraw()
 
-            lbl = tk.Label(
-                self.inner_frame,
-                text=title,
-                bg="#d0d0d0",
-                relief=tk.RAISED,
-                font=("Arial", 9, "bold"),
-                cursor="hand2"
-            )
-            # Row 0 is for headers
-            lbl.grid(row=0, column=col_idx, sticky="nsew", padx=1, pady=1)
+    def _on_mouse_wheel(self, event: tk.Event) -> str:
+        """Handles vertical wheel scrolling on Windows/macOS."""
+        self.body_canvas.yview_scroll(int(-event.delta / 120), "units")
+        self._schedule_redraw()
+        return "break"
 
-            # Bind sorting click
-            lbl.bind("<Button-1>", lambda e, cid=col_id: self._handle_sort(cid))
+    def _on_shift_mouse_wheel(self, event: tk.Event) -> str:
+        """Handles horizontal wheel scrolling with Shift."""
+        self.body_canvas.xview_scroll(int(-event.delta / 120), "units")
+        self.header_canvas.xview_moveto(self.body_canvas.xview()[0])
+        self._schedule_redraw()
+        return "break"
 
-    def _handle_sort(self, col_id: str) -> None:
-        """Triggers the sort callback."""
+    def _on_mouse_wheel_linux_up(self, _event: tk.Event) -> str:
+        """Handles vertical wheel up on Linux."""
+        self.body_canvas.yview_scroll(-1, "units")
+        self._schedule_redraw()
+        return "break"
+
+    def _on_mouse_wheel_linux_down(self, _event: tk.Event) -> str:
+        """Handles vertical wheel down on Linux."""
+        self.body_canvas.yview_scroll(1, "units")
+        self._schedule_redraw()
+        return "break"
+
+    def _on_header_click(self, event: tk.Event) -> None:
+        """Handles sort clicks on a header cell."""
+        column_index = self._column_index_from_x(self.header_canvas.canvasx(event.x))
+        if column_index is None:
+            return
+
+        column = self.columns[column_index]
+        if column.get("type", "text") == "button":
+            return
+
+        col_id = str(column["id"])
+        if self._sorted_column == col_id:
+            self._sort_ascending = not self._sort_ascending
+        else:
+            self._sorted_column = col_id
+            self._sort_ascending = True
+
         if self.on_sort:
             self.on_sort(col_id)
+        self._schedule_redraw()
 
-    def render_data(self, data: List[Dict[str, Any]]) -> None:
-        """Renders the data rows.
+    def _on_mouse_move(self, event: tk.Event) -> None:
+        """Updates hovered row for row highlight."""
+        if not self._data:
+            return
 
-        Args:
-            data: A list of dictionaries containing row data.
-        """
-        # Clear all elements from inner frame
-        for widget in self.inner_frame.winfo_children():
-            widget.destroy()
+        row_index = int(self.body_canvas.canvasy(event.y) // self._row_height)
+        if row_index < 0 or row_index >= len(self._data):
+            row_index = -1
 
-        # Re-render headers (row 0)
-        self._render_headers()
+        new_hover = None if row_index < 0 else row_index
+        if new_hover != self._hover_row:
+            self._hover_row = new_hover
+            self._schedule_redraw()
 
-        self._row_widgets.clear()
+    def _on_mouse_leave(self, _event: tk.Event) -> None:
+        """Resets hover when cursor leaves the table body."""
+        if self._hover_row is not None:
+            self._hover_row = None
+            self._schedule_redraw()
 
-        for i, row in enumerate(data):
-            bg_color = self._bg_even if i % 2 == 0 else self._bg_odd
-            row_idx = i + 1  # Row 0 is header
-            row_id = row.get("id", str(i))  # Assume "id" field is the unique identifier
-            widgets_in_row = []
+    def _set_hover_row(self, row_index: int) -> None:
+        """Sets hover row from embedded button events."""
+        if row_index != self._hover_row:
+            self._hover_row = row_index
+            self._schedule_redraw()
 
-            for col_idx, col in enumerate(self.columns):
-                col_id = col["id"]
-                col_type = col.get("type", "text")
+    def _clear_hover_row(self) -> None:
+        """Clears hover row when leaving an action button."""
+        if self._hover_row is not None:
+            self._hover_row = None
+            self._schedule_redraw()
 
-                cell_frame = tk.Frame(self.inner_frame, bg=bg_color)
-                cell_frame.grid(row=row_idx, column=col_idx, sticky="nsew", padx=1, pady=1)
+    def _column_index_from_x(self, x_coord: float) -> Optional[int]:
+        """Returns the column index at a given x coordinate."""
+        if not self._column_offsets or x_coord < 0 or x_coord >= self._total_width:
+            return None
+        index = bisect.bisect_right(self._column_offsets, x_coord) - 1
+        if index < 0 or index >= len(self.columns):
+            return None
+        return index
 
-                if col_type == "text":
-                    lbl = tk.Label(
-                        cell_frame,
-                        text=str(row.get(col_id, "")),
-                        bg=bg_color,
-                        anchor=tk.W,
-                        padx=5
+    def _visible_column_range(self) -> Tuple[int, int]:
+        """Computes visible [start, end) column indexes."""
+        if not self.columns:
+            return 0, 0
+
+        x0 = self.body_canvas.canvasx(0)
+        x1 = self.body_canvas.canvasx(self.body_canvas.winfo_width())
+
+        start = max(0, bisect.bisect_right(self._column_offsets, x0) - 1)
+        end = max(start + 1, bisect.bisect_left(self._column_offsets, x1))
+        return start, min(end, len(self.columns))
+
+    def _visible_row_range(self) -> Tuple[int, int]:
+        """Computes visible [start, end) row indexes."""
+        if not self._data:
+            return 0, 0
+
+        y0 = max(0, self.body_canvas.canvasy(0))
+        y1 = max(0, self.body_canvas.canvasy(self.body_canvas.winfo_height()))
+
+        start = max(0, int(y0 // self._row_height) - 1)
+        end = min(len(self._data), int(y1 // self._row_height) + 2)
+        return start, end
+
+    def _schedule_redraw(self) -> None:
+        """Schedules one redraw on idle to avoid duplicated paint work."""
+        if self._redraw_job is not None:
+            return
+        self._redraw_job = self.after_idle(self._redraw)
+
+    def _redraw(self) -> None:
+        """Redraws only currently visible headers/cells."""
+        self._redraw_job = None
+        self._draw_headers()
+        self._draw_rows()
+
+    def _draw_headers(self) -> None:
+        """Draws header cells for the visible columns."""
+        self.header_canvas.delete("header")
+        if not self.columns:
+            return
+
+        col_start, col_end = self._visible_column_range()
+
+        for col_index in range(col_start, col_end):
+            x0 = self._column_offsets[col_index]
+            x1 = self._column_offsets[col_index + 1]
+            col = self.columns[col_index]
+
+            self.header_canvas.create_rectangle(
+                x0,
+                0,
+                x1,
+                self._header_height,
+                fill=self._bg_header,
+                outline=self._grid_line,
+                tags=("header",),
+            )
+
+            title = str(col.get("title", ""))
+            if col.get("type", "text") != "button" and self._sorted_column == str(col["id"]):
+                arrow = "▲" if self._sort_ascending else "▼"
+                title = f"{title} {arrow}"
+
+            self.header_canvas.create_text(
+                x0 + 8,
+                self._header_height / 2,
+                text=title,
+                anchor="w",
+                fill=self._text_color,
+                width=max(1, (x1 - x0) - 14),
+                font=("Segoe UI", 9, "bold"),
+                tags=("header",),
+            )
+
+    def _draw_rows(self) -> None:
+        """Draws visible table rows and action buttons."""
+        self.body_canvas.delete("cell")
+        self._recycle_active_buttons()
+
+        if not self._data or not self.columns:
+            return
+
+        col_start, col_end = self._visible_column_range()
+        row_start, row_end = self._visible_row_range()
+
+        for row_index in range(row_start, row_end):
+            y0 = row_index * self._row_height
+            y1 = y0 + self._row_height
+
+            if self._hover_row == row_index:
+                row_bg = self._bg_hover
+            else:
+                row_bg = self._bg_even if row_index % 2 == 0 else self._bg_odd
+
+            row_data = self._data[row_index]
+            row_id = str(row_data.get("id", row_index))
+
+            for col_index in range(col_start, col_end):
+                x0 = self._column_offsets[col_index]
+                x1 = self._column_offsets[col_index + 1]
+                col = self.columns[col_index]
+                col_id = str(col["id"])
+                col_type = str(col.get("type", "text"))
+
+                self.body_canvas.create_rectangle(
+                    x0,
+                    y0,
+                    x1,
+                    y1,
+                    fill=row_bg,
+                    outline=self._grid_line,
+                    tags=("cell",),
+                )
+
+                if col_type == "button":
+                    btn = self._acquire_button(col_id, str(col.get("button_text", "Action")))
+                    btn.configure(command=lambda action=col_id, rid=row_id: self._handle_action(action, rid))
+                    btn.bind("<Enter>", lambda _event, idx=row_index: self._set_hover_row(idx))
+                    btn.bind("<Leave>", lambda _event: self._clear_hover_row())
+                    btn.bind("<Motion>", lambda _event, idx=row_index: self._set_hover_row(idx))
+
+                    window_id = self.body_canvas.create_window(
+                        (x0 + x1) / 2,
+                        (y0 + y1) / 2,
+                        window=btn,
+                        width=max(56, (x1 - x0) - 10),
+                        height=max(22, self._row_height - 8),
+                        tags=("cell",),
                     )
-                    lbl.pack(fill=tk.BOTH, expand=True)
-                    widgets_in_row.extend([cell_frame, lbl])
-                elif col_type == "button":
-                    btn_text = col.get("button_text", "Click")
-                    btn = tk.Button(
-                        cell_frame,
-                        text=btn_text,
-                        command=lambda cid=col_id, rid=row_id: self._handle_action(cid, rid)
+                    self._active_buttons.append((col_id, btn, window_id))
+                else:
+                    self.body_canvas.create_text(
+                        x0 + 8,
+                        y0 + (self._row_height / 2),
+                        text=str(row_data.get(col_id, "")),
+                        anchor="w",
+                        width=max(1, (x1 - x0) - 14),
+                        fill=self._text_color,
+                        font=("Segoe UI", 9),
+                        tags=("cell",),
                     )
-                    btn.pack(fill=tk.BOTH, expand=True, padx=5, pady=2)
-                    widgets_in_row.extend([cell_frame, btn])
 
-            self._bind_hover(widgets_in_row, self._bg_hover, bg_color)
-            self._row_widgets.append(widgets_in_row)
+    def _acquire_button(self, action_id: str, text: str) -> ttk.Button:
+        """Reuses or creates an action button."""
+        pool = self._button_pool.setdefault(action_id, [])
+        if pool:
+            button = pool.pop()
+        else:
+            button = ttk.Button(self.body_canvas, takefocus=False)
+
+        button.configure(text=text)
+        return button
+
+    def _recycle_active_buttons(self) -> None:
+        """Returns visible buttons to their pool before repaint."""
+        for action_id, button, window_id in self._active_buttons:
+            self.body_canvas.delete(window_id)
+            self._button_pool.setdefault(action_id, []).append(button)
+        self._active_buttons.clear()
+
+    def _update_scroll_regions(self) -> None:
+        """Updates canvas scroll extents from current data and columns."""
+        total_height = len(self._data) * self._row_height
+        self.body_canvas.configure(scrollregion=(0, 0, self._total_width, total_height))
+        self.header_canvas.configure(scrollregion=(0, 0, self._total_width, self._header_height))
 
     def _handle_action(self, action_id: str, row_id: str) -> None:
-        """Triggers the action callback."""
+        """Forwards action button events to the presenter callback."""
         if self.on_action:
             self.on_action(action_id, row_id)
 
-    def _bind_hover(self, widgets: List[tk.Widget], hover_bg: str, default_bg: str) -> None:
-        """Binds hover events to change background color.
+    def render_data(self, data: List[Dict[str, Any]]) -> None:
+        """Renders a new dataset.
 
         Args:
-            widgets: List of widgets in the row (Frame + Labels).
-            hover_bg: Background color on hover.
-            default_bg: Original background color.
+            data: Rows where keys match column ids.
         """
-        def on_enter(event):
-            for w in widgets:
-                if isinstance(w, tk.Label) or isinstance(w, tk.Frame):
-                    w.config(bg=hover_bg)
+        self._data = data
+        self._hover_row = None
+        self._update_scroll_regions()
+        self._schedule_redraw()
 
-        def on_leave(event):
-            for w in widgets:
-                if isinstance(w, tk.Label) or isinstance(w, tk.Frame):
-                    w.config(bg=default_bg)
-
-        for w in widgets:
-            # We don't bind hover effect to the button itself, 
-            # otherwise hovering the button triggers the inner event.
-            if not isinstance(w, tk.Button):
-                w.bind("<Enter>", on_enter)
-                w.bind("<Leave>", on_leave)
+    def destroy(self) -> None:
+        """Cleans pending redraws and disposes Tk resources."""
+        if self._redraw_job is not None:
+            self.after_cancel(self._redraw_job)
+            self._redraw_job = None
+        super().destroy()
