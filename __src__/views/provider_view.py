@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
 
+from views.components.data_grid import DataGrid
+
 class ProviderView(ttk.Frame):
     """View component that renders the list of providers."""
 
@@ -47,39 +49,25 @@ class ProviderView(ttk.Frame):
         self._lbl_counter = ttk.Label(top_frame, text="Aucun fournisseur")
         self._lbl_counter.pack(side=tk.RIGHT, padx=10)
 
-        # Main table for providers
-        columns = ("provider_guid", "provider_name", "url", "created_date", "modified_date", "action_launch", "action_edit", "action_delete")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings")
-        
-        self.tree.heading("provider_guid", text="Guid", command=lambda: self._notify_sort("provider_guid"))
-        self.tree.heading("provider_name", text="Nom", command=lambda: self._notify_sort("provider_name"))
-        self.tree.heading("url", text="Url", command=lambda: self._notify_sort("url"))
-        self.tree.heading("created_date", text="Création", command=lambda: self._notify_sort("created_date"))
-        self.tree.heading("modified_date", text="Modification", command=lambda: self._notify_sort("modified_date"))
-        self.tree.heading("action_launch", text="")
-        self.tree.heading("action_edit", text="Actions")
-        self.tree.heading("action_delete", text="")
+        # Main DataGrid for providers
+        columns_def = [
+            {"id": "provider_guid", "title": "Guid", "width": 100, "type": "text"},
+            {"id": "provider_name", "title": "Nom", "width": 150, "type": "text"},
+            {"id": "url", "title": "Url", "width": 200, "type": "text"},
+            {"id": "created_date", "title": "Création", "width": 120, "type": "text"},
+            {"id": "modified_date", "title": "Modification", "width": 120, "type": "text"},
+            {"id": "action_launch", "title": "Lancer", "width": 70, "type": "button", "button_text": "Lancer"},
+            {"id": "action_edit", "title": "Modifier", "width": 70, "type": "button", "button_text": "Modifier"},
+            {"id": "action_delete", "title": "Supprimer", "width": 70, "type": "button", "button_text": "Supprimer"}
+        ]
 
-        self.tree.column("provider_guid", width=100, anchor=tk.W)
-        self.tree.column("provider_name", width=150, anchor=tk.W)
-        self.tree.column("url", width=200, anchor=tk.W)
-        self.tree.column("created_date", width=120, anchor=tk.CENTER)
-        self.tree.column("modified_date", width=120, anchor=tk.CENTER)
-        self.tree.column("action_launch", width=70, anchor=tk.CENTER)
-        self.tree.column("action_edit", width=70, anchor=tk.CENTER)
-        self.tree.column("action_delete", width=70, anchor=tk.CENTER)
-
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.tree.tag_configure("evenrow", background="#f0f0ff")
-        self.tree.tag_configure("oddrow", background="#ffffff")
-        
-        self.tree.bind("<ButtonRelease-1>", self._on_click)
+        self.grid = DataGrid(
+            self,
+            columns=columns_def,
+            on_sort=self._notify_sort,
+            on_action=self._on_action
+        )
+        self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None] = None, on_launch: Callable[[str], None] = None, on_delete: Callable[[str], None] = None) -> None:
         """Sets the callbacks for UI interactions.
@@ -99,19 +87,15 @@ class ProviderView(ttk.Frame):
         self._on_launch = on_launch
         self._on_delete = on_delete
 
-    def _on_click(self, event: tk.Event) -> None:
-        item = self.tree.identify("item", event.x, event.y)
-        column = self.tree.identify_column(event.x)
-        if item:
-            values = self.tree.item(item, "values")
-            if values:
-                guid = values[0]
-                if column == "#6" and self._on_launch:  # action_launch column
-                    self._on_launch(guid)
-                elif column == "#7" and self._on_edit:  # action_edit column
-                    self._on_edit(guid)
-                elif column == "#8" and self._on_delete:  # action_delete column
-                    self._on_delete(guid)
+    def _on_action(self, action_id: str, row_id: str) -> None:
+        """Handles actions from the DataGrid."""
+        guid = row_id
+        if action_id == "action_launch" and self._on_launch:
+            self._on_launch(guid)
+        elif action_id == "action_edit" and self._on_edit:
+            self._on_edit(guid)
+        elif action_id == "action_delete" and self._on_delete:
+            self._on_delete(guid)
 
     def _notify_create_provider(self) -> None:
         if self._on_create_provider:
@@ -126,15 +110,12 @@ class ProviderView(ttk.Frame):
             self._sort_states[column] = not self._sort_states[column]
             self._on_sort(column, self._sort_states[column])
 
-    def render_providers(self, providers_data: List[tuple]) -> None:
+    def render_providers(self, providers_data: List[Dict[str, Any]]) -> None:
         """Clears existing UI providers and renders the new list.
 
         Args:
-            providers_data: A list of tuples, each corresponding to (provider_guid, provider_name, url, created_date, modified_date, actions)
+            providers_data: A list of dictionaries mapping to the DataGrid columns.
         """
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
         count = len(providers_data)
         if count == 0:
             self._lbl_counter.config(text="Aucun fournisseur")
@@ -143,9 +124,7 @@ class ProviderView(ttk.Frame):
         else:
             self._lbl_counter.config(text=f"{count} fournisseurs")
 
-        for index, data in enumerate(providers_data):
-            tag = "evenrow" if index % 2 == 0 else "oddrow"
-            self.tree.insert("", tk.END, values=data, tags=(tag,))
+        self.grid.render_data(providers_data)
 
     def show_info(self, message: str) -> None:
         """Shows an info message box.

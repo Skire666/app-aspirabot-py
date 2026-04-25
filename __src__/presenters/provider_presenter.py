@@ -58,27 +58,25 @@ class ProviderPresenter:
         providers_data = self._format_providers(self._providers)
         self._view.render_providers(providers_data)
 
-    def _format_providers(self, providers: List[ProviderModel]) -> List[Tuple[str, str, str, str, str, str, str, str]]:
+    def _format_providers(self, providers: List[ProviderModel]) -> List[Dict[str, str]]:
         """Formate une liste de modèles en données tabulaires pour la vue.
 
         Args:
             providers (List[ProviderModel]): Liste des modèles de fournisseurs.
 
         Returns:
-            List[Tuple[str, str, str, str, str, str, str, str]]: Liste formatée pour affichage.
+            List[Dict[str, str]]: Liste formatée pour affichage.
         """
         formatted = []
         for p in providers:
-            formatted.append((
-                p.provider_guid,
-                p.provider_name,
-                p.url,
-                p.created_date,
-                p.modified_date,
-                " [ Lancer ] ",
-                " [ Modifier ] ",
-                " [ Supprimer ] "
-            ))
+            formatted.append({
+                "id": p.provider_guid,
+                "provider_guid": p.provider_guid,
+                "provider_name": p.provider_name,
+                "url": p.url,
+                "created_date": p.created_date,
+                "modified_date": p.modified_date
+            })
         return formatted
 
     def _on_create_provider(self) -> None:
