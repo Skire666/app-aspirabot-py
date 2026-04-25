@@ -48,6 +48,7 @@ class DataGrid(ttk.Frame):
         self._text_color = "#222222"
 
         self._hover_row: Optional[int] = None
+        self._button_hover_row: Optional[int] = None
         self._sorted_column: Optional[str] = None
         self._sort_ascending = True
         self._redraw_job: Optional[str] = None
@@ -112,38 +113,64 @@ class DataGrid(ttk.Frame):
 
     def _on_resize(self, _event: tk.Event) -> None:
         """Triggers a redraw after a widget size change."""
+        self._ensure_scroll_in_bounds()
         self._schedule_redraw()
 
     def _on_vertical_scroll(self, *args: str) -> None:
         """Scrolls the body vertically and refreshes visible rows."""
+        if not self._has_vertical_overflow():
+            self._ensure_scroll_in_bounds()
+            return
         self.body_canvas.yview(*args)
         self._schedule_redraw()
 
     def _on_horizontal_scroll(self, *args: str) -> None:
         """Scrolls header/body horizontally in sync."""
+        if not self._has_horizontal_overflow():
+            self._ensure_scroll_in_bounds()
+            return
         self.body_canvas.xview(*args)
         self.header_canvas.xview(*args)
         self._schedule_redraw()
 
     def _on_body_xscroll(self, first: str, last: str) -> None:
         """Updates horizontal scrollbar and keeps header aligned."""
+        if not self._has_horizontal_overflow():
+            self.h_scroll.set(0.0, 1.0)
+            self.header_canvas.xview_moveto(0.0)
+            self._schedule_redraw()
+            return
+
         self.h_scroll.set(first, last)
         self.header_canvas.xview_moveto(first)
         self._schedule_redraw()
 
     def _on_body_yscroll(self, first: str, last: str) -> None:
         """Updates vertical scrollbar."""
+        if not self._has_vertical_overflow():
+            self.v_scroll.set(0.0, 1.0)
+            self._schedule_redraw()
+            return
+
         self.v_scroll.set(first, last)
         self._schedule_redraw()
 
     def _on_mouse_wheel(self, event: tk.Event) -> str:
         """Handles vertical wheel scrolling on Windows/macOS."""
+        if not self._has_vertical_overflow():
+            self._ensure_scroll_in_bounds()
+            return "break"
+
         self.body_canvas.yview_scroll(int(-event.delta / 120), "units")
         self._schedule_redraw()
         return "break"
 
     def _on_shift_mouse_wheel(self, event: tk.Event) -> str:
         """Handles horizontal wheel scrolling with Shift."""
+        if not self._has_horizontal_overflow():
+            self._ensure_scroll_in_bounds()
+            return "break"
+
         self.body_canvas.xview_scroll(int(-event.delta / 120), "units")
         self.header_canvas.xview_moveto(self.body_canvas.xview()[0])
         self._schedule_redraw()
@@ -151,15 +178,43 @@ class DataGrid(ttk.Frame):
 
     def _on_mouse_wheel_linux_up(self, _event: tk.Event) -> str:
         """Handles vertical wheel up on Linux."""
+        if not self._has_vertical_overflow():
+            self._ensure_scroll_in_bounds()
+            return "break"
+
         self.body_canvas.yview_scroll(-1, "units")
         self._schedule_redraw()
         return "break"
 
     def _on_mouse_wheel_linux_down(self, _event: tk.Event) -> str:
         """Handles vertical wheel down on Linux."""
+        if not self._has_vertical_overflow():
+            self._ensure_scroll_in_bounds()
+            return "break"
+
         self.body_canvas.yview_scroll(1, "units")
         self._schedule_redraw()
         return "break"
+
+    def _has_vertical_overflow(self) -> bool:
+        """Returns True when rows overflow the visible body height."""
+        viewport_height = max(1, self.body_canvas.winfo_height())
+        total_height = len(self._data) * self._row_height
+        return total_height > viewport_height
+
+    def _has_horizontal_overflow(self) -> bool:
+        """Returns True when columns overflow the visible body width."""
+        viewport_width = max(1, self.body_canvas.winfo_width())
+        return self._total_width > viewport_width
+
+    def _ensure_scroll_in_bounds(self) -> None:
+        """Keeps views pinned when there is no overflow in an axis."""
+        if not self._has_vertical_overflow():
+            self.body_canvas.yview_moveto(0.0)
+
+        if not self._has_horizontal_overflow():
+            self.body_canvas.xview_moveto(0.0)
+            self.header_canvas.xview_moveto(0.0)
 
     def _on_header_click(self, event: tk.Event) -> None:
         """Handles sort clicks on a header cell."""
@@ -198,6 +253,13 @@ class DataGrid(ttk.Frame):
         if not self._data:
             return
 
+        # Keep button hover priority while pointer is on an action button.
+        if self._button_hover_row is not None:
+            if self._hover_row != self._button_hover_row:
+                self._hover_row = self._button_hover_row
+                self._schedule_redraw()
+            return
+
         row_index = int(self.body_canvas.canvasy(event.y) // self._row_height)
         if row_index < 0 or row_index >= len(self._data):
             row_index = -1
@@ -209,14 +271,50 @@ class DataGrid(ttk.Frame):
 
     def _on_mouse_leave(self, _event: tk.Event) -> None:
         """Resets hover when cursor leaves the table body."""
+        # Ignore synthetic canvas leave when pointer enters an embedded button.
+        if self._button_hover_row is not None:
+            return
+
         if self._hover_row is not None:
             self._hover_row = None
             self._schedule_redraw()
 
     def _set_hover_row(self, row_index: int) -> None:
         """Sets hover row from embedded button events."""
+        self._button_hover_row = row_index
         if row_index != self._hover_row:
             self._hover_row = row_index
+            self._schedule_redraw()
+
+    def _release_button_hover_row(self, row_index: int) -> None:
+        """Releases button hover lock and restores row hover from pointer."""
+        if self._button_hover_row != row_index:
+            return
+
+        self._button_hover_row = None
+        self._sync_hover_row_from_pointer()
+
+    def _sync_hover_row_from_pointer(self) -> None:
+        """Sets current hover row from pointer position in the body canvas."""
+        if not self._data:
+            if self._hover_row is not None:
+                self._hover_row = None
+                self._schedule_redraw()
+            return
+
+        pointer_x = self.winfo_pointerx()
+        pointer_y = self.winfo_pointery()
+        local_x = pointer_x - self.body_canvas.winfo_rootx()
+        local_y = pointer_y - self.body_canvas.winfo_rooty()
+
+        if local_x < 0 or local_y < 0 or local_x >= self.body_canvas.winfo_width() or local_y >= self.body_canvas.winfo_height():
+            new_hover = None
+        else:
+            row_index = int(self.body_canvas.canvasy(local_y) // self._row_height)
+            new_hover = row_index if 0 <= row_index < len(self._data) else None
+
+        if new_hover != self._hover_row:
+            self._hover_row = new_hover
             self._schedule_redraw()
 
     def _column_index_from_x(self, x_coord: float) -> Optional[int]:
@@ -347,6 +445,7 @@ class DataGrid(ttk.Frame):
                     btn = self._acquire_button(col_id, str(col.get("button_text", "Action")))
                     btn.configure(command=lambda action=col_id, rid=row_id: self._handle_action(action, rid))
                     btn.bind("<Enter>", lambda _event, idx=row_index: self._set_hover_row(idx))
+                    btn.bind("<Leave>", lambda _event, idx=row_index: self._release_button_hover_row(idx))
 
                     window_id = self.body_canvas.create_window(
                         (x0 + x1) / 2,
@@ -392,6 +491,7 @@ class DataGrid(ttk.Frame):
         total_height = len(self._data) * self._row_height
         self.body_canvas.configure(scrollregion=(0, 0, self._total_width, total_height))
         self.header_canvas.configure(scrollregion=(0, 0, self._total_width, self._header_height))
+        self._ensure_scroll_in_bounds()
 
     def _handle_action(self, action_id: str, row_id: str) -> None:
         """Forwards action button events to the presenter callback."""
