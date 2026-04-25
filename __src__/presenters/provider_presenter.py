@@ -1,6 +1,6 @@
 """Module contenant le présentateur pour la gestion des fournisseurs."""
 
-from typing import List, Tuple
+from typing import Dict, List
 from models.provider_model import ProviderModel
 from services.provider_service import ProviderService
 from views.provider_view import ProviderView
@@ -67,7 +67,7 @@ class ProviderPresenter:
         Returns:
             List[Dict[str, str]]: Liste formatée pour affichage.
         """
-        formatted = []
+        formatted: List[Dict[str, str]] = []
         for p in providers:
             formatted.append({
                 "id": p.provider_guid,

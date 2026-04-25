@@ -69,7 +69,7 @@ class ProviderView(ttk.Frame):
         )
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None] = None, on_launch: Callable[[str], None] = None, on_delete: Callable[[str], None] = None) -> None:
+    def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None], on_launch: Callable[[str], None], on_delete: Callable[[str], None]) -> None:
         """Sets the callbacks for UI interactions.
         
         Args:
