@@ -121,7 +121,7 @@ class DataGrid(ttk.Frame):
         if not self._has_vertical_overflow():
             self._ensure_scroll_in_bounds()
             return
-        self.body_canvas.yview(*args)
+        self.body_canvas.yview(*args)  # type: ignore[arg-type]
         self._schedule_redraw()
 
     def _on_horizontal_scroll(self, *args: str) -> None:
@@ -129,11 +129,11 @@ class DataGrid(ttk.Frame):
         if not self._has_horizontal_overflow():
             self._ensure_scroll_in_bounds()
             return
-        self.body_canvas.xview(*args)
-        self.header_canvas.xview(*args)
+        self.body_canvas.xview(*args)  # type: ignore[arg-type]
+        self.header_canvas.xview(*args)  # type: ignore[arg-type]
         self._schedule_redraw()
 
-    def _on_body_xscroll(self, first: str, last: str) -> None:
+    def _on_body_xscroll(self, first: float, last: float) -> None:
         """Updates horizontal scrollbar and keeps header aligned."""
         if not self._has_horizontal_overflow():
             self.h_scroll.set(0.0, 1.0)
@@ -142,10 +142,10 @@ class DataGrid(ttk.Frame):
             return
 
         self.h_scroll.set(first, last)
-        self.header_canvas.xview_moveto(first)
+        self.header_canvas.xview_moveto(float(first))
         self._schedule_redraw()
 
-    def _on_body_yscroll(self, first: str, last: str) -> None:
+    def _on_body_yscroll(self, first: float, last: float) -> None:
         """Updates vertical scrollbar."""
         if not self._has_vertical_overflow():
             self.v_scroll.set(0.0, 1.0)
@@ -172,7 +172,8 @@ class DataGrid(ttk.Frame):
             return "break"
 
         self.body_canvas.xview_scroll(int(-event.delta / 120), "units")
-        self.header_canvas.xview_moveto(self.body_canvas.xview()[0])
+        xview_result: tuple[float, float] = self.body_canvas.xview()  # type: ignore[assignment]
+        self.header_canvas.xview_moveto(xview_result[0])
         self._schedule_redraw()
         return "break"
 
@@ -218,7 +219,8 @@ class DataGrid(ttk.Frame):
 
     def _on_header_click(self, event: tk.Event) -> None:
         """Handles sort clicks on a header cell."""
-        column_index = self._column_index_from_x(self.header_canvas.canvasx(event.x))
+        canvas_x: float = float(self.header_canvas.canvasx(event.x))  # type: ignore[arg-type, assignment]
+        column_index = self._column_index_from_x(canvas_x)  # type: ignore[arg-type]
         if column_index is None:
             return
 
@@ -258,11 +260,12 @@ class DataGrid(ttk.Frame):
             self._set_hover_row_state(self._button_hover_row)
             return
 
-        row_index = int(self.body_canvas.canvasy(event.y) // self._row_height)
+        canvas_y: float = float(self.body_canvas.canvasy(event.y))  # type: ignore[assignment]
+        row_index = int(canvas_y // self._row_height)
         if row_index < 0 or row_index >= len(self._data):
             row_index = -1
 
-        new_hover = None if row_index < 0 else row_index
+        new_hover: Optional[int] = None if row_index < 0 else row_index
         self._set_hover_row_state(new_hover)
 
     def _on_mouse_leave(self, _event: tk.Event) -> None:
@@ -291,15 +294,16 @@ class DataGrid(ttk.Frame):
             self._set_hover_row_state(None)
             return
 
-        pointer_x = self.winfo_pointerx()
-        pointer_y = self.winfo_pointery()
-        local_x = pointer_x - self.body_canvas.winfo_rootx()
-        local_y = pointer_y - self.body_canvas.winfo_rooty()
+        pointer_x: int = self.winfo_pointerx()
+        pointer_y: int = self.winfo_pointery()
+        local_x: int = pointer_x - self.body_canvas.winfo_rootx()
+        local_y: int = pointer_y - self.body_canvas.winfo_rooty()
 
         if local_x < 0 or local_y < 0 or local_x >= self.body_canvas.winfo_width() or local_y >= self.body_canvas.winfo_height():
-            new_hover = None
+            new_hover: Optional[int] = None
         else:
-            row_index = int(self.body_canvas.canvasy(local_y) // self._row_height)
+            canvas_y: float = float(self.body_canvas.canvasy(local_y))  # type: ignore[assignment]
+            row_index = int(canvas_y // self._row_height)
             new_hover = row_index if 0 <= row_index < len(self._data) else None
 
         self._set_hover_row_state(new_hover)
@@ -332,7 +336,7 @@ class DataGrid(ttk.Frame):
         """Returns the column index at a given x coordinate."""
         if not self._column_offsets or x_coord < 0 or x_coord >= self._total_width:
             return None
-        index = bisect.bisect_right(self._column_offsets, x_coord) - 1
+        index: int = bisect.bisect_right(self._column_offsets, x_coord) - 1  # type: ignore[assignment]
         if index < 0 or index >= len(self.columns):
             return None
         return index
@@ -342,11 +346,11 @@ class DataGrid(ttk.Frame):
         if not self.columns:
             return 0, 0
 
-        x0 = self.body_canvas.canvasx(0)
-        x1 = self.body_canvas.canvasx(self.body_canvas.winfo_width())
+        x0: float = float(self.body_canvas.canvasx(0))  # type: ignore[assignment]
+        x1: float = float(self.body_canvas.canvasx(self.body_canvas.winfo_width()))  # type: ignore[assignment]
 
-        start = max(0, bisect.bisect_right(self._column_offsets, x0) - 1)
-        end = max(start + 1, bisect.bisect_left(self._column_offsets, x1))
+        start = max(0, bisect.bisect_right(self._column_offsets, x0) - 1)  # type: ignore[arg-type]
+        end = max(start + 1, bisect.bisect_left(self._column_offsets, x1))  # type: ignore[arg-type]
         return start, min(end, len(self.columns))
 
     def _visible_row_range(self) -> Tuple[int, int]:
@@ -354,8 +358,8 @@ class DataGrid(ttk.Frame):
         if not self._data:
             return 0, 0
 
-        y0 = max(0, self.body_canvas.canvasy(0))
-        y1 = max(0, self.body_canvas.canvasy(self.body_canvas.winfo_height()))
+        y0: float = max(0.0, float(self.body_canvas.canvasy(0)))  # type: ignore[assignment]
+        y1: float = max(0.0, float(self.body_canvas.canvasy(self.body_canvas.winfo_height())))  # type: ignore[assignment]
 
         start = max(0, int(y0 // self._row_height) - 1)
         end = min(len(self._data), int(y1 // self._row_height) + 2)

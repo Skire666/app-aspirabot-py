@@ -41,6 +41,7 @@ class ProviderPresenter:
         self._view.set_callbacks(
             on_create=self._on_create_provider,
             on_open_folder=self._on_open_folder,
+            on_refresh=self._on_refresh,
             on_sort=self._on_sort,
             on_edit=self._on_edit_provider,
             on_launch=self._on_launch_provider,
@@ -145,6 +146,10 @@ class ProviderPresenter:
     def _on_open_folder(self) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
         self._service.open_providers_folder()
+
+    def _on_refresh(self) -> None:
+        """Gère l'événement de rafraîchissement de la liste des fournisseurs."""
+        self._load_providers()
 
     def _on_sort(self, column: str, ascending: bool) -> None:
         """Trie la liste des fournisseurs et met à jour la vue.

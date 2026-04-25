@@ -19,6 +19,7 @@ class ProviderView(ttk.Frame):
 
         self._on_create_provider: Optional[Callable[[], None]] = None
         self._on_open_folder: Optional[Callable[[], None]] = None
+        self._on_refresh: Optional[Callable[[], None]] = None
         self._on_sort: Optional[Callable[[str, bool], None]] = None
         self._on_edit: Optional[Callable[[str], None]] = None
         self._on_launch: Optional[Callable[[str], None]] = None
@@ -37,6 +38,9 @@ class ProviderView(ttk.Frame):
 
         self._btn_open_folder = ttk.Button(top_frame, text="Ouvrir le dossier des fournisseurs", command=self._notify_open_folder)
         self._btn_open_folder.pack(side=tk.LEFT, padx=5)
+
+        self._btn_refresh = ttk.Button(top_frame, text="Rafraîchir", command=self._notify_refresh)
+        self._btn_refresh.pack(side=tk.LEFT, padx=5)
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun fournisseur")
         self._lbl_counter.pack(side=tk.RIGHT, padx=10)
@@ -62,12 +66,13 @@ class ProviderView(ttk.Frame):
         self.grid.set_sort_state("provider_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None], on_launch: Callable[[str], None], on_delete: Callable[[str], None]) -> None:
+    def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_refresh: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None], on_launch: Callable[[str], None], on_delete: Callable[[str], None]) -> None:
         """Sets the callbacks for UI interactions.
         
         Args:
             on_create: Callback for creating a new provider.
             on_open_folder: Callback for opening the providers folder.
+            on_refresh: Callback for refreshing the providers list.
             on_sort: Callback for sorting columns.
             on_edit: Callback for executing the edit action.
             on_launch: Callback for executing the launch action.
@@ -75,6 +80,7 @@ class ProviderView(ttk.Frame):
         """
         self._on_create_provider = on_create
         self._on_open_folder = on_open_folder
+        self._on_refresh = on_refresh
         self._on_sort = on_sort
         self._on_edit = on_edit
         self._on_launch = on_launch
@@ -97,6 +103,10 @@ class ProviderView(ttk.Frame):
     def _notify_open_folder(self) -> None:
         if self._on_open_folder:
             self._on_open_folder()
+
+    def _notify_refresh(self) -> None:
+        if self._on_refresh:
+            self._on_refresh()
 
     def _notify_sort(self, column: str, ascending: bool) -> None:
         if self._on_sort:
