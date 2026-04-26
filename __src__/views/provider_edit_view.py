@@ -43,6 +43,7 @@ class ProviderEditView(ttk.Frame):
         self._on_clear_all: Optional[Callable[[], None]] = None
 
         self._workflow_items: list[Dict[str, Any]] = []
+        self._instruction_form_vars: dict[str, Any] = {}
 
         self._create_widgets()
 
@@ -82,7 +83,7 @@ class ProviderEditView(ttk.Frame):
         self._chk_obfuscated = ttk.Checkbutton(info_lf, text="Automatisation obfusqué", variable=self._var_obfuscated)
         self._chk_obfuscated.grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=5)
 
-        info_lf.columnconfigure(1, weight=1)
+        info_lf.columnconfigure(1, weight=1) # pour avoir toute la larguer
 
         # 2. Métadonnées (Top-right)
         meta_lf = ttk.LabelFrame(top_frame, text="Métadonnées")
@@ -110,10 +111,15 @@ class ProviderEditView(ttk.Frame):
 
         meta_lf.columnconfigure(1, weight=1)
 
-        # 3. Workflow
-        workflow_lf = ttk.LabelFrame(main_container, text="Workflow")
-        workflow_lf.pack(fill=tk.BOTH, expand=True, pady=10)
+        # 3. Workflow + Instruction (50/50)
+        workflow_instruction_frame = ttk.Frame(main_container)
+        workflow_instruction_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        workflow_instruction_frame.columnconfigure(0, weight=1, uniform="workflow_instruction")
+        workflow_instruction_frame.columnconfigure(1, weight=1, uniform="workflow_instruction")
+        workflow_instruction_frame.rowconfigure(0, weight=1)
 
+        workflow_lf = ttk.LabelFrame(workflow_instruction_frame, text="Workflow")
+        workflow_lf.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
         workflow_lf.columnconfigure(0, weight=1)
         workflow_lf.rowconfigure(0, weight=1)
 
@@ -142,20 +148,6 @@ class ProviderEditView(ttk.Frame):
         left_controls = ttk.Frame(controls_frame)
         left_controls.grid(row=0, column=0, sticky="w")
 
-        self._btn_add = ttk.Button(left_controls, text="Ajouter", command=self._notify_add_step)
-        self._btn_add.pack(side=tk.LEFT, padx=(0, 6))
-
-        self._var_step_type = tk.StringVar(value="Sélectionner...")
-        step_type_options = ["Sélectionner..."] + list(self._ADD_OPTIONS.keys())
-        self._cmb_step_type = ttk.Combobox(
-            left_controls,
-            textvariable=self._var_step_type,
-            values=step_type_options,
-            state="readonly",
-            width=22,
-        )
-        self._cmb_step_type.pack(side=tk.LEFT, padx=(0, 10))
-
         self._btn_edit_step = ttk.Button(left_controls, text="Modifier", command=self._notify_edit_step, state=tk.DISABLED)
         self._btn_edit_step.pack(side=tk.LEFT, padx=(0, 6))
 
@@ -173,6 +165,39 @@ class ProviderEditView(ttk.Frame):
 
         self._btn_clear_all = ttk.Button(right_controls, text="Effacer tout", command=self._notify_clear_all)
         self._btn_clear_all.pack(side=tk.RIGHT)
+
+        instruction_lf = ttk.LabelFrame(workflow_instruction_frame, text="Instruction")
+        instruction_lf.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+        instruction_lf.columnconfigure(0, weight=1)
+        instruction_lf.rowconfigure(1, weight=1)
+
+        instruction_header = ttk.Frame(instruction_lf)
+        instruction_header.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        instruction_header.columnconfigure(1, weight=1)
+
+        ttk.Label(instruction_header, text="Type:").grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self._var_step_type = tk.StringVar(value="Sélectionner...")
+        step_type_options = ["Sélectionner..."] + list(self._ADD_OPTIONS.keys())
+        self._cmb_step_type = ttk.Combobox(
+            instruction_header,
+            textvariable=self._var_step_type,
+            values=step_type_options,
+            state="readonly",
+            width=28,
+        )
+        self._cmb_step_type.grid(row=0, column=1, sticky="ew")
+        self._cmb_step_type.bind("<<ComboboxSelected>>", self._on_instruction_type_changed)
+
+        self._instruction_form_frame = ttk.Frame(instruction_lf)
+        self._instruction_form_frame.grid(row=1, column=0, sticky="nsew", padx=8, pady=4)
+        self._instruction_form_frame.columnconfigure(0, weight=1)
+
+        instruction_footer = ttk.Frame(instruction_lf)
+        instruction_footer.grid(row=2, column=0, sticky="ew", padx=8, pady=(4, 8))
+        self._btn_add = ttk.Button(instruction_footer, text="Ajouter", command=self._notify_add_step)
+        self._btn_add.pack(side=tk.RIGHT)
+
+        self._render_instruction_form()
 
         # 4. Footer
         footer_frame = ttk.Frame(main_container)
@@ -338,13 +363,335 @@ class ProviderEditView(ttk.Frame):
             self.show_error("Veuillez sélectionner un type d'étape avant d'ajouter.")
             return
 
-        submitted, dialog_value = self._open_step_dialog(step_type=step_type)
-        if not submitted:
+        is_valid, step_value = self._collect_instruction_value(step_type)
+        if not is_valid:
             return
 
         if self._on_add_step:
-            self._on_add_step(step_type, dialog_value)
-        self._var_step_type.set("Sélectionner...")
+            self._on_add_step(step_type, step_value)
+
+    def _on_instruction_type_changed(self, _event: tk.Event[tk.Widget]) -> None:
+        """Updates inline instruction form based on selected step type."""
+        self._render_instruction_form()
+
+    def _render_instruction_form(self) -> None:
+        """Renders in-place controls for the currently selected add-step type."""
+        for child in self._instruction_form_frame.winfo_children():
+            child.destroy()
+
+        self._instruction_form_vars = {}
+        selected_label = self._var_step_type.get()
+        step_type = self._ADD_OPTIONS.get(selected_label)
+
+        if step_type is None:
+            ttk.Label(
+                self._instruction_form_frame,
+                text="Sélectionnez un type d'étape pour afficher ses paramètres.",
+            ).grid(row=0, column=0, sticky="w")
+            return
+
+        form = self._instruction_form_frame
+        form.columnconfigure(1, weight=1)
+
+        if step_type == "open_url":
+            ttk.Label(form, text="URL:").grid(row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 8))
+            url_var = tk.StringVar()
+            ttk.Entry(form, textvariable=url_var).grid(row=0, column=1, sticky="ew", pady=(0, 8))
+            self._instruction_form_vars = {"url": url_var}
+
+        elif step_type == "wait_seconds":
+            ttk.Label(form, text="Durée:").grid(row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 8))
+            amount_var = tk.StringVar(value="")
+            ttk.Entry(form, textvariable=amount_var, width=20).grid(row=0, column=1, sticky="w", pady=(0, 8))
+
+            ttk.Label(form, text="Unité:").grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 8))
+            unit_var = tk.StringVar(value="seconde")
+            ttk.Combobox(
+                form,
+                textvariable=unit_var,
+                values=["heure", "minute", "seconde", "milli-sec"],
+                state="readonly",
+                width=18,
+            ).grid(row=1, column=1, sticky="w", pady=(0, 8))
+
+            self._instruction_form_vars = {
+                "amount": amount_var,
+                "unit": unit_var,
+            }
+
+        elif step_type == "refresh_page":
+            ttk.Label(form, text="Cette étape rafraîchira la page active.").grid(
+                row=0, column=0, columnspan=2, sticky="w", pady=(0, 8)
+            )
+            clear_cache_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(
+                form,
+                text="Vider le cache avant rafraîchissement",
+                variable=clear_cache_var,
+            ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 8))
+
+            self._instruction_form_vars = {"clear_cache": clear_cache_var}
+
+        elif step_type == "download_image":
+            ttk.Label(form, text="Mode de téléchargement:").grid(
+                row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 8)
+            )
+
+            mode_var = tk.StringVar(value="largest")
+            min_width_var = tk.StringVar(value="0")
+            min_height_var = tk.StringVar(value="0")
+            max_width_var = tk.StringVar(value="0")
+            max_height_var = tk.StringVar(value="0")
+
+            ttk.Radiobutton(form, text="La plus grande image", variable=mode_var, value="largest").grid(
+                row=0, column=1, sticky="w", pady=(0, 4)
+            )
+            ttk.Radiobutton(form, text="La première image", variable=mode_var, value="first").grid(
+                row=1, column=1, sticky="w", pady=(0, 4)
+            )
+            ttk.Radiobutton(form, text="Toutes les images", variable=mode_var, value="all").grid(
+                row=2, column=1, sticky="w", pady=(0, 8)
+            )
+
+            ttk.Label(form, text="Largeur min (W):").grid(
+                row=3, column=0, sticky="w", padx=(0, 8), pady=(0, 8)
+            )
+            ttk.Entry(form, textvariable=min_width_var, width=16).grid(row=3, column=1, sticky="w", pady=(0, 8))
+
+            ttk.Label(form, text="Hauteur min (H):").grid(
+                row=4, column=0, sticky="w", padx=(0, 8), pady=(0, 8)
+            )
+            ttk.Entry(form, textvariable=min_height_var, width=16).grid(row=4, column=1, sticky="w", pady=(0, 8))
+
+            ttk.Label(form, text="Largeur max (W):").grid(
+                row=5, column=0, sticky="w", padx=(0, 8), pady=(0, 8)
+            )
+            ttk.Entry(form, textvariable=max_width_var, width=16).grid(row=5, column=1, sticky="w", pady=(0, 8))
+
+            ttk.Label(form, text="Hauteur max (H):").grid(
+                row=6, column=0, sticky="w", padx=(0, 8), pady=(0, 8)
+            )
+            ttk.Entry(form, textvariable=max_height_var, width=16).grid(row=6, column=1, sticky="w", pady=(0, 8))
+
+            self._instruction_form_vars = {
+                "mode": mode_var,
+                "min_width": min_width_var,
+                "min_height": min_height_var,
+                "max_width": max_width_var,
+                "max_height": max_height_var,
+            }
+
+        elif step_type == "check_if_image_here":
+            ttk.Label(form, text="W1:").grid(row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 8))
+            ttk.Label(form, text="W2:").grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 8))
+            ttk.Label(form, text="H1:").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(0, 8))
+            ttk.Label(form, text="H2:").grid(row=3, column=0, sticky="w", padx=(0, 8), pady=(0, 8))
+
+            w1_var = tk.StringVar(value="0")
+            w2_var = tk.StringVar(value="0")
+            h1_var = tk.StringVar(value="0")
+            h2_var = tk.StringVar(value="0")
+
+            ttk.Entry(form, textvariable=w1_var, width=16).grid(row=0, column=1, sticky="w", pady=(0, 8))
+            ttk.Entry(form, textvariable=w2_var, width=16).grid(row=1, column=1, sticky="w", pady=(0, 8))
+            ttk.Entry(form, textvariable=h1_var, width=16).grid(row=2, column=1, sticky="w", pady=(0, 8))
+            ttk.Entry(form, textvariable=h2_var, width=16).grid(row=3, column=1, sticky="w", pady=(0, 8))
+
+            ttk.Label(form, text="Condition: W1 < X < W2 et H1 < Y < H2").grid(
+                row=4, column=0, columnspan=2, sticky="w", pady=(0, 8)
+            )
+
+            self._instruction_form_vars = {
+                "w1": w1_var,
+                "w2": w2_var,
+                "h1": h1_var,
+                "h2": h2_var,
+            }
+
+        elif step_type == "click_element":
+            ttk.Label(form, text="Sélecteur CSS:").grid(
+                row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 8)
+            )
+
+            selector_var = tk.StringVar(value="")
+            ttk.Entry(form, textvariable=selector_var).grid(row=0, column=1, sticky="ew", pady=(0, 8))
+
+            normal_var = tk.BooleanVar(value=True)
+            forced_var = tk.BooleanVar(value=False)
+            js_direct_var = tk.BooleanVar(value=False)
+            verify_present_var = tk.BooleanVar(value=False)
+
+            ttk.Checkbutton(form, text="Normal", variable=normal_var).grid(
+                row=1, column=0, columnspan=2, sticky="w", pady=(0, 4)
+            )
+            ttk.Checkbutton(form, text="Forced", variable=forced_var).grid(
+                row=2, column=0, columnspan=2, sticky="w", pady=(0, 4)
+            )
+            ttk.Checkbutton(form, text="JS Direct", variable=js_direct_var).grid(
+                row=3, column=0, columnspan=2, sticky="w", pady=(0, 4)
+            )
+            ttk.Checkbutton(form, text="Vérifier présent du bouton", variable=verify_present_var).grid(
+                row=4, column=0, columnspan=2, sticky="w", pady=(0, 8)
+            )
+
+            self._instruction_form_vars = {
+                "selector": selector_var,
+                "normal": normal_var,
+                "forced": forced_var,
+                "js_direct": js_direct_var,
+                "verify_present": verify_present_var,
+            }
+
+    def _collect_instruction_value(self, step_type: str) -> tuple[bool, Any]:
+        """Reads and validates inline form values for selected add-step type."""
+        if step_type == "open_url":
+            url_var = cast(tk.StringVar, self._instruction_form_vars.get("url"))
+            value = url_var.get().strip()
+            if not value:
+                self.show_error("La valeur URL est obligatoire.")
+                return False, None
+            return True, value
+
+        if step_type == "wait_seconds":
+            amount_var = cast(tk.StringVar, self._instruction_form_vars.get("amount"))
+            unit_var = cast(tk.StringVar, self._instruction_form_vars.get("unit"))
+            amount_raw = amount_var.get().strip()
+            if not amount_raw:
+                self.show_error("La durée est obligatoire.")
+                return False, None
+            if not amount_raw.isdigit() or int(amount_raw) <= 0:
+                self.show_error("La durée doit être un entier positif.")
+                return False, None
+
+            unit_display_to_token = {
+                "heure": "hours",
+                "minute": "minutes",
+                "seconde": "seconds",
+                "milli-sec": "milliseconds",
+            }
+            selected_unit_display = unit_var.get()
+            selected_unit_token = unit_display_to_token.get(selected_unit_display, "seconds")
+
+            return True, {
+                "amount": int(amount_raw),
+                "unit": selected_unit_token,
+            }
+
+        if step_type == "refresh_page":
+            clear_cache_var = cast(tk.BooleanVar, self._instruction_form_vars.get("clear_cache"))
+            return True, clear_cache_var.get()
+
+        if step_type == "download_image":
+            mode_var = cast(tk.StringVar, self._instruction_form_vars.get("mode"))
+            min_width_var = cast(tk.StringVar, self._instruction_form_vars.get("min_width"))
+            min_height_var = cast(tk.StringVar, self._instruction_form_vars.get("min_height"))
+            max_width_var = cast(tk.StringVar, self._instruction_form_vars.get("max_width"))
+            max_height_var = cast(tk.StringVar, self._instruction_form_vars.get("max_height"))
+
+            min_width = self._parse_non_negative_int(min_width_var.get(), "La largeur minimale")
+            if min_width is None:
+                return False, None
+            min_height = self._parse_non_negative_int(min_height_var.get(), "La hauteur minimale")
+            if min_height is None:
+                return False, None
+            max_width = self._parse_non_negative_int(max_width_var.get(), "La largeur maximale")
+            if max_width is None:
+                return False, None
+            max_height = self._parse_non_negative_int(max_height_var.get(), "La hauteur maximale")
+            if max_height is None:
+                return False, None
+
+            return True, {
+                "mode": mode_var.get(),
+                "min_width": min_width,
+                "min_height": min_height,
+                "max_width": max_width,
+                "max_height": max_height,
+            }
+
+        if step_type == "check_if_image_here":
+            w1_var = cast(tk.StringVar, self._instruction_form_vars.get("w1"))
+            w2_var = cast(tk.StringVar, self._instruction_form_vars.get("w2"))
+            h1_var = cast(tk.StringVar, self._instruction_form_vars.get("h1"))
+            h2_var = cast(tk.StringVar, self._instruction_form_vars.get("h2"))
+
+            w1 = self._parse_int(w1_var.get(), "W1")
+            if w1 is None:
+                return False, None
+            w2 = self._parse_int(w2_var.get(), "W2")
+            if w2 is None:
+                return False, None
+            h1 = self._parse_int(h1_var.get(), "H1")
+            if h1 is None:
+                return False, None
+            h2 = self._parse_int(h2_var.get(), "H2")
+            if h2 is None:
+                return False, None
+
+            if w1 >= w2:
+                self.show_error("W1 doit être strictement inférieur à W2.")
+                return False, None
+            if h1 >= h2:
+                self.show_error("H1 doit être strictement inférieur à H2.")
+                return False, None
+
+            return True, {"w1": w1, "w2": w2, "h1": h1, "h2": h2}
+
+        if step_type == "click_element":
+            selector_var = cast(tk.StringVar, self._instruction_form_vars.get("selector"))
+            normal_var = cast(tk.BooleanVar, self._instruction_form_vars.get("normal"))
+            forced_var = cast(tk.BooleanVar, self._instruction_form_vars.get("forced"))
+            js_direct_var = cast(tk.BooleanVar, self._instruction_form_vars.get("js_direct"))
+            verify_present_var = cast(tk.BooleanVar, self._instruction_form_vars.get("verify_present"))
+
+            selector = selector_var.get().strip()
+            if not selector:
+                self.show_error("Le sélecteur CSS est obligatoire.")
+                return False, None
+
+            normal = normal_var.get()
+            forced = forced_var.get()
+            js_direct = js_direct_var.get()
+            if not (normal or forced or js_direct):
+                self.show_error("Sélectionnez au moins un mode de clic (Normal, Forced ou JS Direct).")
+                return False, None
+
+            return True, {
+                "selector": selector,
+                "normal": normal,
+                "forced": forced,
+                "js_direct": js_direct,
+                "verify_present": verify_present_var.get(),
+            }
+
+        self.show_error("Type d'étape invalide.")
+        return False, None
+
+    def _parse_non_negative_int(self, raw: str, label: str) -> Optional[int]:
+        """Parses an integer >= 0 from user input string."""
+        value = raw.strip()
+        if not value:
+            self.show_error(f"{label} est obligatoire.")
+            return None
+        if not value.isdigit():
+            self.show_error(f"{label} doit être un entier >= 0.")
+            return None
+        return int(value)
+
+    def _parse_int(self, raw: str, label: str) -> Optional[int]:
+        """Parses a signed integer from user input string."""
+        value = raw.strip()
+        if not value:
+            self.show_error(f"{label} est obligatoire.")
+            return None
+        if value.startswith("-"):
+            if not value[1:].isdigit():
+                self.show_error(f"{label} doit être un entier.")
+                return None
+        elif not value.isdigit():
+            self.show_error(f"{label} doit être un entier.")
+            return None
+        return int(value)
 
     def _notify_edit_step(self) -> None:
         """Opens the selected step in an edit dialog."""
