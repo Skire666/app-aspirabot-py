@@ -19,7 +19,7 @@ import subprocess
 import logging
 from datetime import datetime
 from dataclasses import asdict
-from utils.operating_system_util import OperatingSystem, detect_os
+from shared.operating_system_util import OperatingSystem, detect_os
 from models.provider_model import ProviderModel
 from repositories.json_repository import JsonFileRepository
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
