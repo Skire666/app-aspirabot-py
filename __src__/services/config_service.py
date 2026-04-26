@@ -18,13 +18,17 @@ class ConfigService:
         """Initialisation avec injection du repository."""
         self._repository = config_repository
 
-    def get_config(self) -> ConfigAspirabotModel:
+    def ensure_configuration_exists(self) -> None:
+        """S'assure que le fichier de configuration existe, sinon le crée."""
+        self._repository.ensure_file_exists()
+
+    def read_config(self) -> ConfigAspirabotModel:
         """Récupère la configuration en cours.
         
         Returns:
             ConfigAspirabotModel: L'entité de configuration.
         """
-        return self._repository.load_config()
+        return self._repository.read_config()
 
     def update_config(self, new_config: ConfigAspirabotModel) -> None:
         """Met à jour unitairement la configuration et la sauvegarde.
@@ -34,11 +38,3 @@ class ConfigService:
         """
         self._repository.save_config(new_config)
 
-    def verify_configuration(self) -> bool:
-        """Vérifie l'intégrité de la configuration.
-        
-        Returns:
-            bool: True si la configuration est correcte, False sinon.
-        """
-        config = self.get_config()
-        return config.verify_keys_exist()

@@ -29,30 +29,31 @@ def main() -> None:
     root_container = tk.Frame(app)
     root_container.pack(fill=tk.BOTH, expand=True)
 
-    
-
     # Créer la vue principale avec les onglets verticaux
     main_view = MainView(root_container)
     main_view.pack(fill=tk.BOTH, expand=True)
 
-    # Create Configuration Component
+    # Read configuration
     # Resolving path based on the structure (JSON at the root of the workspace)
     config_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config-aspirabot.json")
     config_repo = JsonConfigRepository(config_file_path)
-    config_model = config_repo.load_config()
-    config_service = ConfigService(config_repo)
-    config_view = ConfigView(main_view.content_area)
-    config_presenter = ConfigPresenter(view=config_view, service=config_service)
+    config_repo.ensure_file_exists()  # Ensure the config file exists before reading
+    config_model = config_repo.read_config()
 
     # Create Logging Component
-    log_file_path = os.path.join(str(config_model.folder_logs), "Aspirabot.log")
     if not os.path.exists(config_model.folder_logs):
         os.makedirs(config_model.folder_logs)
+    log_file_path = os.path.join(str(config_model.folder_logs), "Aspirabot.log")
     
-    logging_service = LoggingService(log_file_path)
+    logging_service = LoggingService(log_file_path, config_model.log_level)
     log_repository = LogRepository()
     log_view = LogView(main_view.content_area)
     log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
+
+    # Create Configuration Component
+    config_service = ConfigService(config_repo)
+    config_view = ConfigView(main_view.content_area)
+    config_presenter = ConfigPresenter(view=config_view, service=config_service)
 
     # Create Provider Component
     provider_repo = ProvidersRepository(config_model.folder_providers, config_model.folder_brokens)

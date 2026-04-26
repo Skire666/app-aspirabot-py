@@ -3,11 +3,13 @@
 ------------- PROMPT -------------
 ------------- PROMPT -------------
 
-Documente en français ce code Python en suivant les bonnes pratiques actuelles (PEP 8, annotations de type, structure claire).Utilise 'Google Python Style' comme référence.
+Documente en anglais ce code Python en suivant les bonnes pratiques actuelles (PEP 8, annotations de type, structure claire).
+Utilise 'Google Python Style' comme référence.
 Ajoute des docstrings claires et complètes pour toutes les fonctions, classes et modules.
 Expliquez les paramètres, les valeurs de retour et les exceptions levées.
 Fournis des exemples d'utilisation.
 Assure la lisibilité, la cohérence et une nomenclature explicite dans l'ensemble du code.
+Pour les blocs de code : Ajoute une ligne une commentaire toutes les 5 lignes en moyenne.
 
 ------------- NOTE PCO -------------
 

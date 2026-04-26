@@ -1,20 +1,45 @@
-"""Module contenant le modèle de données pour un fournisseur de scraping.
+"""Domain model for a scraping provider.
 
-Ce module définit la classe `ProviderModel` qui représente les données d'un
-fournisseur de manière pure, sans aucune dépendance vers l'infrastructure.
+This module defines ProviderModel, a pure data entity used by the
+application core. The model intentionally avoids any persistence, network, or
+UI dependency.
+
+Example:
+    >>> provider = ProviderModel.get_default_data()
+    >>> ProviderModel.is_valid_guid(provider.provider_guid)
+    True
 """
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, cast
 import uuid
+
+
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 @dataclass
 class ProviderModel:
-    """Modèle (entité) représentant un fournisseur.
+    """Represents a scraping provider as a domain entity.
 
-    Cette classe pure ne contient que la structure de données d'un fournisseur
-    et aucune logique de persistance ou d'infrastructure.
+    The class contains provider metadata and scraping steps. It is a simple
+    data container used by services and repositories.
+
+    Attributes:
+        provider_guid: Unique provider identifier as a canonical UUID string.
+        provider_name: Human-readable provider name.
+        url: Root URL associated with the provider.
+        created_date: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
+        modified_date: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
+        version: Provider version string (for example 1.0.0).
+        browser_displayed: Whether a browser window should be displayed.
+        automation_obfuscated: Whether automation should be obfuscated.
+        steps: Ordered list of scraping actions.
+
+    Example:
+        >>> provider = ProviderModel.get_default_data()
+        >>> provider.provider_name
+        'Nouv. Fournisseur'
     """
     
     provider_guid: str
@@ -25,12 +50,29 @@ class ProviderModel:
     version: str
     browser_displayed: bool
     automation_obfuscated: bool
-    steps: List[Dict[str, Any]] = field(default_factory=list[Dict[str, Any]])
+    steps: list[dict[str, Any]] = field(
+        default_factory=lambda: cast(list[dict[str, Any]], [])
+    )
 
     @classmethod
     def get_default_data(cls) -> "ProviderModel":
-        """Génère un nouveau fournisseur avec ses valeurs par défaut."""
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        """Builds a new provider instance with default values.
+
+        Returns:
+            ProviderModel: A fully initialized provider entity.
+
+        Raises:
+            None.
+
+        Example:
+            >>> provider = ProviderModel.get_default_data()
+            >>> provider.url
+            'https://example.com'
+        """
+        # Capture a single timestamp to keep creation and modification aligned.
+        current_timestamp = datetime.now().strftime(DATETIME_FORMAT)
+
+        # Return a ready-to-use default provider.
         return cls(
             provider_guid=str(uuid.uuid4()).lower(),
             provider_name="Nouv. Fournisseur",
@@ -38,41 +80,80 @@ class ProviderModel:
             version="1.0.0",
             browser_displayed=True,
             automation_obfuscated=True,
-            created_date=now,
-            modified_date=now
+            created_date=current_timestamp,
+            modified_date=current_timestamp,
         )
         
     def update_created_date_and_modified_date(self) -> None:
-        """Met à jour les dates de création et de modification à l'instant présent."""
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.created_date = now
-        self.modified_date = now
+        """Updates both creation and modification timestamps to now.
+
+        Use this method when reinitializing metadata for an existing instance.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+
+        Example:
+            >>> provider = ProviderModel.get_default_data()
+            >>> provider.update_created_date_and_modified_date()
+        """
+        # Use one value so both fields remain perfectly synchronized.
+        current_timestamp = datetime.now().strftime(DATETIME_FORMAT)
+        self.created_date = current_timestamp
+        self.modified_date = current_timestamp
     
     def update_modified_date(self) -> None:
-        """Met à jour la date de modification à l'instant présent."""
-        self.modified_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        """Updates the modification timestamp to the current time.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+
+        Example:
+            >>> provider = ProviderModel.get_default_data()
+            >>> provider.update_modified_date()
+        """
+        # Refresh only the modification date to preserve creation metadata.
+        self.modified_date = datetime.now().strftime(DATETIME_FORMAT)
 
     @staticmethod
     def is_valid_guid(value: str) -> bool:
-        """Checks whether a value is a canonical UUID string.
+        """Checks whether a value is a canonical lowercase UUID string.
 
         Args:
             value: Candidate GUID value.
 
         Returns:
             True when the value is a valid lowercase UUID string, otherwise False.
+
+        Raises:
+            None: Parsing errors are handled and converted to False.
+
+        Example:
+            >>> ProviderModel.is_valid_guid('550e8400-e29b-41d4-a716-446655440000')
+            True
+            >>> ProviderModel.is_valid_guid('INVALID-GUID')
+            False
         """
+        # Fast-fail on empty values before any normalization/parsing.
         if not value:
             return False
 
+        # Normalize spacing/casing so validation logic is deterministic.
         normalized_value = value.strip().lower()
         if not normalized_value:
             return False
 
+        # Parse with stdlib UUID to validate structure.
         try:
             parsed_uuid = uuid.UUID(normalized_value)
         except (AttributeError, ValueError, TypeError):
             return False
 
+        # Ensure canonical textual form exactly matches the input.
         return str(parsed_uuid) == normalized_value
 

@@ -30,7 +30,7 @@ class ConfigPresenter:
 
     def load_initial_data(self) -> None:
         """Loads configuration from service and updates the view."""
-        config = self._service.get_config()
+        config = self._service.read_config()
         self._view.display_config(config.all_data)
 
     def handle_save(self, config_data: Dict[str, str]) -> None:
@@ -40,6 +40,7 @@ class ConfigPresenter:
             config_data: The dictionary built from user inputs.
         """
         new_config = ConfigAspirabotModel(**config_data)
+        self._service.ensure_configuration_exists()
         self._service.update_config(new_config)
         self.load_initial_data()
 

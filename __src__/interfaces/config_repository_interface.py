@@ -10,7 +10,11 @@ from models.config_aspirabot_model import ConfigAspirabotModel
 class ConfigRepositoryInterface(Protocol):
     """Interface pour le dépôt de configuration."""
 
-    def load_config(self) -> ConfigAspirabotModel:
+    def ensure_file_exists(self) -> None:
+        """Vérifie que le fichier de configuration existe, sinon le crée avec les valeurs par défaut."""
+        ...
+
+    def read_config(self) -> ConfigAspirabotModel:
         """Charge la configuration depuis le dépôt.
 
         Returns:

@@ -1,92 +1,195 @@
-"""Module de gestion de la configuration de l'application.
+"""Configuration model for the Aspirabot application.
 
-Ce module fournit la classe `ConfigAspirabotModel` qui est une entité
-pure (dataclass) représentant les paramètres de l'application. Elle
-garantit l'absence de toute dépendance d'infrastructure, respectant
-les principes de Clean Architecture.
+This module centralizes configuration keys, default values, and the runtime
+representation used by the application. It follows Google Python Style and is
+designed to keep configuration access explicit and predictable.
 
-Exemples d'utilisation:
-    >>> from models.config_aspirabot_model import ConfigAspirabotModel
-    >>> config = ConfigAspirabotModel(log_level="DEBUG")
-    >>> value = config.log_level
+Example:
+    >>> model = ConfigAspirabotModel()
+    >>> model.log_level
+    'INFO'
+    >>> model.get_default_data()["folder_logs"]
+    './tmp_logs'
 """
 
 import logging
-from typing import Any, Dict
+from typing import Self
 from dataclasses import dataclass
+from enum import StrEnum
 
 s_logger = logging.getLogger(__name__)
 
 ## ----------------------------------------------
-## Classe
+## Constants
+## ----------------------------------------------
+
+class ConfigConstants(StrEnum):
+    """Centralized configuration keys with defaults and display labels.
+
+    Each member stores three values:
+    - the configuration key used in dictionaries and JSON payloads;
+    - the default value used when the configuration does not define the key;
+    - a human-readable label for UI rendering.
+
+    Example:
+        >>> ConfigConstants.LOG_LEVEL.value
+        'log_level'
+        >>> ConfigConstants.LOG_LEVEL.default
+        'INFO'
+    """
+
+    # The enum value is the configuration key.
+    default: str
+    label: str
+
+    # Define configuration constants with : key, default, and label
+    LOG_LEVEL = ("log_level", "INFO", "Niveau de log")
+    FOLDER_LOGS = ("folder_logs", "./tmp_logs", "Dossier des logs")
+    FOLDER_PROVIDERS = ("folder_providers", "./user_providers", "Dossier des providers")
+    FOLDER_BROKENS = ("folder_brokens", "./user_brokens", "Dossier des éléments cassés")
+    FOLDER_TMP_CHROMIUM = ("folder_tmp_chromium", "./tmp_chromium_session", "Session Chromium temporaire")
+
+    def __new__(cls, key: str, default: str, label: str) -> Self:
+        """Create a configuration constant.
+
+        Args:
+            key: Configuration key stored as the enum value.
+            default: Default value used when the configuration is missing.
+            label: Human-readable label suitable for UI display.
+
+        Returns:
+            A fully initialized enum member.
+
+        Raises:
+            TypeError: If the provided enum value cannot be created as a string.
+        """
+        obj = str.__new__(cls, key)
+        obj._value_ = key
+        obj.default = default
+        obj.label = label
+        return obj
+
+## ----------------------------------------------
+## Class
 ## ----------------------------------------------
 
 @dataclass
 class ConfigAspirabotModel:
-    """Entité métier de configuration de l'application.
-
-    Cette classe représente les paramètres de l'application sans
-    logique de persistance (fichier JSON, etc.). Elle est pure.
+    """Application configuration data model.
 
     Attributes:
-        log_level (str): Le niveau de log (ex: "INFO", "DEBUG", "WARNING").
-        folder_logs (str): Dossier pour les fichiers de logs.
-        folder_providers (str): Dossier local pour stocker les providers personnalisés.
-        folder_brokens (str): Dossier local pour stocker les fournisseurs cassés.
-        folder_tmp_chromium (str): Dossier local pour sauvegarder la session, cookies et cache de Chromium.
+        log_level: Logging level used by the application.
+        folder_logs: Directory where log files are stored.
+        folder_providers: Directory containing provider definitions.
+        folder_brokens: Directory containing broken or invalid items.
+        folder_tmp_chromium: Directory used for the temporary Chromium session.
+
+    Example:
+        >>> model = ConfigAspirabotModel(log_level="DEBUG")
+        >>> model.to_ui()[0]["value"]
+        'DEBUG'
     """
-    log_level: str = "INFO"
-    folder_logs: str = "./tmp_logs"
-    folder_providers: str = "./user_providers"
-    folder_brokens: str = "./user_brokens"
-    folder_tmp_chromium: str = "./tmp_chromium_session"
+
+    log_level: str = ConfigConstants.LOG_LEVEL.default
+    folder_logs: str = ConfigConstants.FOLDER_LOGS.default
+    folder_providers: str = ConfigConstants.FOLDER_PROVIDERS.default
+    folder_brokens: str = ConfigConstants.FOLDER_BROKENS.default
+    folder_tmp_chromium: str = ConfigConstants.FOLDER_TMP_CHROMIUM.default
+
+    ## ------------------------------------------
+    ## Publics
+    ## ------------------------------------------
 
     @classmethod
-    def get_default_data(cls) -> Dict[str, Any]:
-        """Retourne les données par défaut pour la configuration de l'application.
-
-        Fournit un dictionnaire contenant les valeurs par défaut.
+    def get_default_data(cls) -> dict[str, str]:
+        """Build the default configuration mapping.
 
         Returns:
-            Dict[str, Any]: Dictionnaire contenant les paramètres par défaut.
+            A dictionary that maps each configuration key to its default value.
+
+        Raises:
+            None: The mapping is derived from static enum metadata.
+
+        Example:
+            >>> ConfigAspirabotModel.get_default_data()["folder_providers"]
+            './user_providers'
         """
         return {
-            "log_level": "INFO",
-            "folder_logs": "./tmp_logs",
-            "folder_providers": "./user_providers",
-            "folder_brokens": "./user_brokens",
-            "folder_tmp_chromium": "./tmp_chromium_session"
+            key.value: key.default
+            for key in ConfigConstants
         }
 
-    def verify_keys_exist(self) -> bool:
-        """Vérifie si tous les attributs par défaut existent et sont valides.
+    def to_ui(self) -> list[dict[str, str]]:
+        """Serialize the model into a UI-friendly list of rows.
 
         Returns:
-            bool: True si toutes les clés requises sont présentes, False sinon.
+            A list of dictionaries ready to bind to a table or form.
+
+        Raises:
+            None: The output is derived directly from the model attributes.
+
+        Example:
+            >>> rows = ConfigAspirabotModel().to_ui()
+            >>> rows[0]["key"]
+            'log_level'
         """
-        all_data = {
-            "log_level": self.log_level,
-            "folder_logs": self.folder_logs,
-            "folder_providers": self.folder_providers,
-            "folder_brokens": self.folder_brokens,
-            "folder_tmp_chromium": self.folder_tmp_chromium,
-        }
-        
-        missing_keys = [key for key in ConfigAspirabotModel.get_default_data() if key not in all_data]
+        return [
+            {
+                "key": key.value,
+                "label": key.label,
+                "value": getattr(self, key.value),
+                "default": key.default,
+            }
+            for key in ConfigConstants
+        ]
+
+    ## ------------------------------------------
+    ## Validation
+    ## ------------------------------------------
+
+    def verify_keys_exist(self) -> bool:
+        """Check whether all required configuration keys are present.
+
+        Returns:
+            True when every expected key is available in the model data,
+            otherwise False.
+
+        Raises:
+            None: Missing keys are reported through the return value and the
+            module logger.
+        """
+        all_data = self.all_data
+
+        # Collect only the keys that are missing from the current model state.
+        missing_keys = [
+            key.value for key in ConfigConstants
+            if key.value not in all_data
+        ]
+
         if missing_keys:
             s_logger.warning(f"Clés de configuration manquantes : {missing_keys}")
             return False
+
         return True
 
+    ## ------------------------------------------
+    ## Properties
+    ## ------------------------------------------
+
     @property
-    def all_data(self) -> Dict[str, Any]:
-        """Dictionnaire de toutes les données du modèle."""
+    def all_data(self) -> dict[str, str]:
+        """Return the full configuration payload as a dictionary.
+
+        Returns:
+            A dictionary containing every configuration key and its current
+            value.
+
+        Raises:
+            None: Accessing the dataclass attributes is deterministic.
+        """
         return {
-            "log_level": self.log_level,
-            "folder_logs": self.folder_logs,
-            "folder_providers": self.folder_providers,
-            "folder_brokens": self.folder_brokens,
-            "folder_tmp_chromium": self.folder_tmp_chromium,
+            key.value: getattr(self, key.value)
+            for key in ConfigConstants
         }
 
 ## END
