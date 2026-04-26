@@ -52,14 +52,14 @@ class ProviderView(ttk.Frame):
 
         # Main DataGrid for providers
         columns_def = [
-            {"id": "provider_guid", "title": "Guid", "width": 250, "type": "text"},
+            {"id": "action_launch", "title": "RUN", "width": 60, "type": "button", "button_text": "RUN"},
+            {"id": "action_edit", "title": "EDIT", "width": 60, "type": "button", "button_text": "EDIT"},
+            {"id": "action_delete", "title": "DEL.", "width": 60, "type": "button", "button_text": "DEL."},
             {"id": "provider_name", "title": "Nom", "width": 150, "type": "text"},
             {"id": "url", "title": "Url", "width": 200, "type": "text"},
             {"id": "created_date", "title": "Création", "width": 120, "type": "text"},
             {"id": "modified_date", "title": "Modification", "width": 120, "type": "text"},
-            {"id": "action_launch", "title": "Lancer", "width": 100, "type": "button", "button_text": "Lancer"},
-            {"id": "action_edit", "title": "Modifier", "width": 100, "type": "button", "button_text": "Modifier"},
-            {"id": "action_delete", "title": "Supprimer", "width": 100, "type": "button", "button_text": "Supprimer"}
+            {"id": "provider_guid", "title": "Guid", "width": 250, "type": "text"}
         ]
 
         self.grid = DataGrid(

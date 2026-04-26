@@ -21,6 +21,7 @@ from datetime import datetime
 from dataclasses import asdict
 from shared.operating_system_util import OperatingSystem, detect_os
 from models.provider_model import ProviderModel
+from services.step_service import StepService
 from repositories.json_repository import JsonFileRepository
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
 
@@ -53,6 +54,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         """
         self._folder_path: Path = Path(folder_providers)
         self._folder_brokens: Path = Path(folder_brokens)
+        self._step_service = StepService()
         self.logger = logging.getLogger(__name__)
 
     @property
@@ -168,6 +170,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             'steps'
         }
         filtered_data = {k: v for k, v in data.items() if k in provider_fields}
+        filtered_data['steps'] = self._step_service.deserialize_steps(filtered_data.get('steps', []))
         return ProviderModel(**filtered_data)
 
     def _provider_model_to_dict(self, provider: ProviderModel) -> Dict[str, Any]:
@@ -179,7 +182,9 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Returns:
             Dict[str, Any]: Le dictionnaire sérialisable en JSON.
         """
-        return asdict(provider)
+        payload = asdict(provider)
+        payload['steps'] = self._step_service.serialize_steps(provider.steps)
+        return payload
     
     def exists_provider(self, provider_guid: str) -> bool:
         """Vérifie l'existence d'un fournisseur dans le dossier.

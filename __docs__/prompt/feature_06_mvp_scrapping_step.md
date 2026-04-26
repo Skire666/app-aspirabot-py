@@ -25,7 +25,7 @@ Each step must store its type and associated value (e.g., URL or duration).
   - Reorder steps (move up / move down).
   - Clear all steps with confirmation.
 
-- The "Modify", "Delete", "Move Up", and "Move Down" buttons are only enabled when a step is selected.
+- The "Modifier", "Supprimer", "Monter", and "Descendre" buttons are only enabled when a step is selected.
 
 - When adding or modifying a step:
   - A modal window opens.
@@ -39,7 +39,7 @@ Each step must store its type and associated value (e.g., URL or duration).
 
 ## GUI
 
-In `ProviderView`:
+In `ProviderEditView`:
 
 - In the "Workflow" section:
   - Add a full-width list displaying steps in order.

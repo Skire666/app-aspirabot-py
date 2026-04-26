@@ -1,0 +1,60 @@
+{
+    "provider_guid": "b14eb9d2-dd06-4ab0-9970-26cd2824e14c",
+    "provider_name": "Nouv. Fournisseur",
+    "url": "https://example.com",
+    "created_date": "2026-04-26 18:45:17",
+    "modified_date": "2026-04-26 19:16:10",
+    "version": "1.0.0",
+    "browser_displayed": true,
+    "automation_obfuscated": true,
+    "steps": [
+        {
+            "type": "download_image",
+            "value": {
+                "mode": "first",
+                "min_width": 0,
+                "min_height": 0,
+                "max_width": 0,
+                "max_height": 0
+            }
+        },
+        {
+            "type": "check_if_image_here",
+            "value": {
+                "w1": 100,
+                "w2": 200,
+                "h1": 100,
+                "h2": 200
+            }
+        },
+        {
+            "type": "click_element",
+            "value": {
+                "selector": "gggggggggggggg",
+                "normal": true,
+                "forced": false,
+                "js_direct": false,
+                "verify_present": false
+            }
+        },
+        {
+            "type": "click_element",
+            "value": {
+                "selector": "vvvvvvvvv",
+                "normal": true,
+                "forced": true,
+                "js_direct": true,
+                "verify_present": true
+            }
+        },
+        {
+            "type": "check_if_image_here",
+            "value": {
+                "w1": 10,
+                "w2": 20,
+                "h1": 10,
+                "h2": 20
+            }
+        }
+    ]
+}

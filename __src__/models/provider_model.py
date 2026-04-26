@@ -12,8 +12,10 @@ Example:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, cast
+from typing import cast
 import uuid
+
+from models.step_scrapping_model import StepScrappingModel
 
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -50,8 +52,8 @@ class ProviderModel:
     version: str
     browser_displayed: bool
     automation_obfuscated: bool
-    steps: list[dict[str, Any]] = field(
-        default_factory=lambda: cast(list[dict[str, Any]], [])
+    steps: list[StepScrappingModel] = field(
+        default_factory=lambda: cast(list[StepScrappingModel], [])
     )
 
     @classmethod

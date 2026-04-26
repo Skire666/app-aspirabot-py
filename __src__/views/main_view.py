@@ -24,7 +24,8 @@ class MainView(ttk.Frame):
 
     def _create_widgets(self) -> None:
         """Constructs the sidebar and content structural elements."""
-        self.sidebar = ttk.Frame(self, width=150, relief=tk.SUNKEN)
+        ## TODO PCO améliorer le style du sidebar (couleur de fond, espacement, etc.)
+        self.sidebar = ttk.Frame(self, width=100, relief=tk.SUNKEN)
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         
         # Prevent the sidebar from shrinking if empty
@@ -36,22 +37,22 @@ class MainView(ttk.Frame):
         self._btn_journal = ttk.Button(
             self.sidebar, text="Journal", command=lambda: self.show_view("Journal")
         )
-        self._btn_journal.pack(fill=tk.X, padx=5, pady=10)
+        self._btn_journal.pack(fill=tk.X, padx=5, pady=5, ipady=5)
 
         self._btn_config = ttk.Button(
             self.sidebar, text="Configuration", command=lambda: self.show_view("Configuration")
         )
-        self._btn_config.pack(fill=tk.X, padx=5, pady=5)
+        self._btn_config.pack(fill=tk.X, padx=5, pady=5, ipady=5)
 
         self._btn_providers = ttk.Button(
             self.sidebar, text="Fournisseurs", command=lambda: self.show_view("Fournisseurs")
         )
-        self._btn_providers.pack(fill=tk.X, padx=5, pady=5)
+        self._btn_providers.pack(fill=tk.X, padx=5, pady=5, ipady=5)
 
         self._btn_modification = ttk.Button(
             self.sidebar, text="Modification", command=lambda: self.show_view("Modification")
         )
-        self._btn_modification.pack(fill=tk.X, padx=5, pady=5)
+        self._btn_modification.pack(fill=tk.X, padx=5, pady=5, ipady=5)
         self.set_tab_state("Modification", tk.DISABLED)
 
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
