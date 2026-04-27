@@ -2,26 +2,27 @@
 
 import os
 import tkinter as tk
+
+from presenters.config_presenter import ConfigPresenter
+from presenters.log_presenter import LogPresenter
+from presenters.provider_edit_presenter import ProviderEditPresenter
+from presenters.provider_presenter import ProviderPresenter
+from repositories.json_config_repository import JsonConfigRepository
+from repositories.log_repository import LogRepository
+from repositories.providers_repository import ProvidersRepository
+from services.config_service import ConfigService
+from services.logging_service import LoggingService
+from services.provider_service import ProviderService
 from shared.constants import CTK_GUI
-from views.log_view import LogView
 from views.config_view import ConfigView
-from views.provider_view import ProviderView
+from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
-from repositories.log_repository import LogRepository
-from repositories.json_config_repository import JsonConfigRepository
-from repositories.providers_repository import ProvidersRepository
-from services.logging_service import LoggingService
-from services.config_service import ConfigService
-from services.provider_service import ProviderService
-from presenters.log_presenter import LogPresenter
-from presenters.config_presenter import ConfigPresenter
-from presenters.provider_presenter import ProviderPresenter
-from presenters.provider_edit_presenter import ProviderEditPresenter
+from views.provider_view import ProviderView
+
 
 def main() -> None:
     """Initialise les composants principaux et démarre l'application."""
-
     # Point d'entrée principal de l'application
     app = tk.Tk()
     app.title("Aspirabot")
@@ -35,7 +36,9 @@ def main() -> None:
 
     # Read configuration
     # Resolving path based on the structure (JSON at the root of the workspace)
-    config_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config-aspirabot.json")
+    config_file_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config-aspirabot.json"
+    )
     config_repo = JsonConfigRepository(config_file_path)
     config_repo.ensure_file_exists()  # Ensure the config file exists before reading
     config_model = config_repo.read_config()
@@ -44,7 +47,7 @@ def main() -> None:
     if not os.path.exists(config_model.folder_logs):
         os.makedirs(config_model.folder_logs)
     log_file_path = os.path.join(str(config_model.folder_logs), "Aspirabot.log")
-    
+
     logging_service = LoggingService(log_file_path, config_model.log_level)
     log_repository = LogRepository()
     log_view = LogView(main_view.content_area)
@@ -92,8 +95,9 @@ def main() -> None:
 
     # Default View on startup
     main_view.show_view("Fournisseurs")
-    
+
     app.mainloop()
+
 
 if __name__ == "__main__":
     main()

@@ -12,6 +12,11 @@ https://chatgpt.com/c/69e3835e-b140-83eb-99e3-2a2f6bb733ba
 
 E:\app-py-life-selector\src_python_2026_03_sushi_scan
 
+
+commit (URL changée), domcontentloaded (DOM prêt), load (ressources chargées), networkidle (réseau calme)
+
+
+
 open url, rajouter quoi surveiller :
   ↓ commit (URL changée)
   ↓ domcontentloaded (DOM prêt)  
