@@ -2,10 +2,9 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import Callable, List, Dict, Any, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from views.components.data_grid import DataGrid
-from models.provider_validation_report_model import ProviderValidationReport
 
 class ProviderView(ttk.Frame):
     """View component that renders the list of providers."""
@@ -165,23 +164,31 @@ class ProviderView(ttk.Frame):
         """
         messagebox.showerror("Erreur", message)
 
-    def show_validation_report(self, report: ProviderValidationReport) -> None:
-        """Displays a validation summary to the user."""
+    def show_validation_report(self, report_data: Dict[str, Any]) -> None:
+        """Displays a validation summary to the user.
+
+        Args:
+            report_data: Flat dict produced by the presenter with keys
+                ``total_files``, ``valid_files``, ``invalid_files``, and
+                ``issues`` (list of dicts with ``file_name``, ``broken_path``,
+                ``reasons``).
+        """
         lines = [
             "Validation terminée.",
-            f"Total traités : {report.total_files}",
-            f"Valides : {report.valid_files}",
-            f"Invalides : {report.invalid_files}",
+            f"Total traités : {report_data.get('total_files', 0)}",
+            f"Valides : {report_data.get('valid_files', 0)}",
+            f"Invalides : {report_data.get('invalid_files', 0)}",
         ]
 
-        if report.invalid_files > 0:
+        # Show per-issue errors when any file was invalid
+        if report_data.get("invalid_files", 0) > 0:
             lines.append("")
             lines.append("Erreurs :")
-            for issue in report.issues:
-                reason_text = "; ".join(issue.reasons)
-                lines.append(f"{reason_text} ({issue.file_name}).")
-                if issue.broken_path:
-                    lines.append(f"Fichier déplacé : {issue.broken_path}\n")
+            for issue in report_data.get("issues", []):
+                reason_text = "; ".join(issue.get("reasons", []))
+                lines.append(f"{reason_text} ({issue.get('file_name', '')}).")
+                if issue.get("broken_path"):
+                    lines.append(f"Fichier déplacé : {issue['broken_path']}\n")
 
             messagebox.showerror("Validation des fournisseurs", "\n".join(lines))
             return

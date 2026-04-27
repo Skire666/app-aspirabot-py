@@ -5,18 +5,9 @@ This module defines a strongly typed step entity used by providers.
 """
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 
-
-StepType = Literal[
-    "open_url",
-    "wait_seconds",
-    "refresh_page",
-    "download_image",
-    "check_if_image_here",
-    "click_element",
-]
-StepValue = str | int | bool | dict[str, int | str | bool] | None
+from shared.step_types import StepType, StepValue
 
 
 @dataclass

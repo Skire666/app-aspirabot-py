@@ -3,8 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Any, Callable, Optional
-from models.step_catalog import STEP_TYPE_TO_LABEL
-from models.step_scrapping_model import StepType
+from shared.step_types import STEP_TYPE_TO_LABEL, StepType
 from views.provider_steps_edit_view import ProviderStepsEditView
 from views.provider_steps_creator_view import ProviderStepsCreatorView
 

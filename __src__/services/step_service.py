@@ -2,8 +2,8 @@
 
 from typing import Any, cast
 
-from models.step_catalog import STEP_TYPE_TO_LABEL
-from models.step_scrapping_model import StepScrappingModel, StepType, StepValue
+from models.step_scrapping_model import StepScrappingModel
+from shared.step_types import STEP_TYPE_TO_LABEL, StepType, StepValue
 
 
 class StepService:

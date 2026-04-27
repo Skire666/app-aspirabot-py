@@ -11,7 +11,7 @@ from tkinter import messagebox, ttk
 from typing import Any
 
 from interfaces.base_step_form_interface import BaseStepFormInterface
-from models.step_scrapping_model import StepType
+from shared.step_types import StepType
 from views.step_forms.step_form_view_factory import StepFormViewFactory
 
 

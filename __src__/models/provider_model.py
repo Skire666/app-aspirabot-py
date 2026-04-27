@@ -10,15 +10,15 @@ Example:
     True
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import cast
-import uuid
 
 from models.step_scrapping_model import StepScrappingModel
 
-
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 @dataclass
 class ProviderModel:
@@ -43,7 +43,7 @@ class ProviderModel:
         >>> provider.provider_name
         'Nouv. Fournisseur'
     """
-    
+
     provider_guid: str
     provider_name: str
     url: str
@@ -52,9 +52,7 @@ class ProviderModel:
     version: str
     browser_displayed: bool
     automation_obfuscated: bool
-    steps: list[StepScrappingModel] = field(
-        default_factory=lambda: cast(list[StepScrappingModel], [])
-    )
+    steps: list[StepScrappingModel] = field(default_factory=lambda: cast(list[StepScrappingModel], []))
 
     @classmethod
     def get_default_data(cls) -> "ProviderModel":
@@ -85,7 +83,7 @@ class ProviderModel:
             created_date=current_timestamp,
             modified_date=current_timestamp,
         )
-        
+
     def update_created_date_and_modified_date(self) -> None:
         """Updates both creation and modification timestamps to now.
 
@@ -105,7 +103,7 @@ class ProviderModel:
         current_timestamp = datetime.now().strftime(DATETIME_FORMAT)
         self.created_date = current_timestamp
         self.modified_date = current_timestamp
-    
+
     def update_modified_date(self) -> None:
         """Updates the modification timestamp to the current time.
 
@@ -158,4 +156,3 @@ class ProviderModel:
 
         # Ensure canonical textual form exactly matches the input.
         return str(parsed_uuid) == normalized_value
-

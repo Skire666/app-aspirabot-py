@@ -8,8 +8,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from models.step_catalog import WAIT_UNIT_LABEL_TO_TOKEN
-from models.step_scrapping_model import StepType, StepValue
+from shared.step_types import StepType, StepValue, WAIT_UNIT_LABEL_TO_TOKEN
 
 
 class StepFormValidationError(ValueError):

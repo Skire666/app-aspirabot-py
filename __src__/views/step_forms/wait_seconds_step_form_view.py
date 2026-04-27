@@ -6,8 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
-from models.step_catalog import WAIT_UNIT_LABEL_TO_TOKEN
-from models.step_scrapping_model import StepValue
+from shared.step_types import StepValue, WAIT_UNIT_LABEL_TO_TOKEN
 
 class WaitSecondsStepFormView(ttk.Frame):
     """Collects amount and unit for a wait_seconds step."""

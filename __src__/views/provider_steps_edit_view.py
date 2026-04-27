@@ -15,7 +15,7 @@ from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, Optional, cast
 
 from interfaces.base_step_form_interface import BaseStepFormInterface
-from models.step_catalog import STEP_TYPE_TO_LABEL
+from shared.step_types import STEP_TYPE_TO_LABEL
 from views.step_forms.step_form_view_factory import StepFormViewFactory
 
 

@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
-from models.step_scrapping_model import StepValue
+from shared.step_types import StepValue
 
 
 class RefreshPageStepFormView(ttk.Frame):

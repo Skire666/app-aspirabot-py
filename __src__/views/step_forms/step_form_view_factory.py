@@ -6,7 +6,7 @@ import tkinter as tk
 from typing import Callable, TypeGuard
 
 from interfaces.base_step_form_interface import BaseStepFormInterface
-from models.step_scrapping_model import StepType, StepValue
+from shared.step_types import StepType, StepValue
 from views.step_forms.check_if_image_here_step_form_view import CheckIfImageHereStepFormView
 from views.step_forms.click_element_step_form_view import ClickElementStepFormView
 from views.step_forms.download_image_step_form_view import DownloadImageStepFormView

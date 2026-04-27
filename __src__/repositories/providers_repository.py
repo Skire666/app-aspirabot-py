@@ -10,25 +10,26 @@ Exemples d'utilisation:
     >>> liste_providers = repo.list_providers()
 """
 
-from typing import List, Union, Dict, Any, cast
-from pathlib import Path
-import os
 import json
+import logging
+import os
 import shutil
 import subprocess
-import logging
-from datetime import datetime
 from dataclasses import asdict
-from shared.operating_system_util import OperatingSystem, detect_os
-from models.provider_model import ProviderModel
-from services.step_service import StepService
-from repositories.json_repository import JsonFileRepository
-from interfaces.provider_repository_interface import ProviderRepositoryInterface
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Union, cast
 
+from interfaces.provider_repository_interface import ProviderRepositoryInterface
+from models.provider_model import ProviderModel
+from models.step_scrapping_model import StepScrappingModel
+from repositories.json_repository import JsonFileRepository
+from shared.operating_system_util import OperatingSystem, detect_os
 
 ## ----------------------------------------------
 ## Classe
 ## ----------------------------------------------
+
 
 class ProvidersRepository(ProviderRepositoryInterface):
     """Gère l'accès aux données des fournisseurs stockées sur le système de fichiers.
@@ -54,7 +55,6 @@ class ProvidersRepository(ProviderRepositoryInterface):
         """
         self._folder_path: Path = Path(folder_providers)
         self._folder_brokens: Path = Path(folder_brokens)
-        self._step_service = StepService()
         self.logger = logging.getLogger(__name__)
 
     @property
@@ -70,7 +70,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
     def _list_provider_files(self) -> List[Path]:
         """Examine le dossier sélectionné et retourne tous les fichiers .json présents.
 
-        Vérifie l'existence du chemin spécifié et parcourt son contenu pour retenir 
+        Vérifie l'existence du chemin spécifié et parcourt son contenu pour retenir
         exclusivement ceux avec l'extension `.json`.
 
         Returns:
@@ -159,18 +159,18 @@ class ProvidersRepository(ProviderRepositoryInterface):
         """
         # Récupère uniquement les champs présents dans ProviderModel
         provider_fields = {
-            'provider_guid',
-            'provider_name',
-            'url',
-            'created_date',
-            'modified_date',
-            'version',
-            'browser_displayed',
-            'automation_obfuscated',
-            'steps'
+            "provider_guid",
+            "provider_name",
+            "url",
+            "created_date",
+            "modified_date",
+            "version",
+            "browser_displayed",
+            "automation_obfuscated",
+            "steps",
         }
         filtered_data = {k: v for k, v in data.items() if k in provider_fields}
-        filtered_data['steps'] = self._step_service.deserialize_steps(filtered_data.get('steps', []))
+        filtered_data["steps"] = self._deserialize_steps(filtered_data.get("steps", []))
         return ProviderModel(**filtered_data)
 
     def _provider_model_to_dict(self, provider: ProviderModel) -> Dict[str, Any]:
@@ -183,9 +183,34 @@ class ProvidersRepository(ProviderRepositoryInterface):
             Dict[str, Any]: Le dictionnaire sérialisable en JSON.
         """
         payload = asdict(provider)
-        payload['steps'] = self._step_service.serialize_steps(provider.steps)
+        payload["steps"] = [step.to_dict() for step in provider.steps]
         return payload
-    
+
+    def _deserialize_steps(self, steps_data: object) -> list[StepScrappingModel]:
+        """Converts a raw JSON list into validated step model instances.
+
+        Silently skips entries that are not dicts or carry an unknown step type.
+
+        Args:
+            steps_data: Raw value loaded from the JSON file.
+
+        Returns:
+            A list of step models; empty when the input is missing or malformed.
+        """
+        if not isinstance(steps_data, list):
+            return []
+
+        # Map each raw dict to a StepScrappingModel, skipping invalid entries
+        result: list[StepScrappingModel] = []
+        for raw_step in steps_data:
+            if not isinstance(raw_step, dict):
+                continue
+            try:
+                result.append(StepScrappingModel.from_dict(raw_step))
+            except ValueError:
+                continue
+        return result
+
     def exists_provider(self, provider_guid: str) -> bool:
         """Vérifie l'existence d'un fournisseur dans le dossier.
 
@@ -212,7 +237,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         Raises:
             FileNotFoundError: Si le fournisseur recherché est introuvable après balayage.
-            
+
         Exemples d'utilisation:
             >>> modele = repo.get_provider("mon_provider.json")
             >>> print(modele.url)
@@ -224,15 +249,15 @@ class ProvidersRepository(ProviderRepositoryInterface):
         try:
             if not full_filepath.exists():
                 raise FileNotFoundError(f"Fournisseur non trouvé: {provider_guid}")
-            
+
             # Charge le fichier JSON via JsonFileRepository
             json_repo = JsonFileRepository(full_filepath, {})
             provider_data = json_repo.all_data
-            
+
             if not provider_data:
                 self.logger.warning(f"Le fichier {full_filepath} est vide.")
                 raise ValueError(f"Données manquantes pour {provider_guid}")
-            
+
             provider_model = self._dict_to_provider_model(provider_data)
             self.logger.info(f"Fournisseur chargé: {full_filepath}")
             return provider_model
@@ -243,7 +268,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
     def list_all_providers(self) -> List[ProviderModel]:
         """Liste tous les fournisseurs disponibles.
 
-        Parcourt le dossier des fournisseurs et retourne une liste de tous les 
+        Parcourt le dossier des fournisseurs et retourne une liste de tous les
         ProviderModel chargés avec succès.
 
         Returns:
@@ -256,12 +281,12 @@ class ProvidersRepository(ProviderRepositoryInterface):
             ...     print(provider.provider_name)
         """
         providers: List[ProviderModel] = []
-        
+
         for file_path in self._list_provider_files():
             try:
                 json_repo = JsonFileRepository(file_path, {})
                 provider_data = json_repo.all_data
-                
+
                 if provider_data:
                     provider_model = self._dict_to_provider_model(provider_data)
                     providers.append(provider_model)
@@ -269,14 +294,14 @@ class ProvidersRepository(ProviderRepositoryInterface):
             except Exception as e:
                 self.logger.warning(f"Impossible de charger le provider {file_path.name}: {e}")
                 continue
-        
+
         self.logger.info(f"Total de {len(providers)} provider(s) chargé(s).")
         return providers
 
     def create_provider(self, provider: ProviderModel) -> None:
         """Enregistre un nouveau fournisseur.
 
-        Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un 
+        Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un
         fichier JSON via JsonFileRepository.
 
         Args:
@@ -292,21 +317,21 @@ class ProvidersRepository(ProviderRepositoryInterface):
         """
         # Construit le chemin complet du fichier
         full_filepath = self._folder_path / str(provider.provider_guid + ".json")
-        
+
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
-        
+
         try:
             # Convertit le modèle en dictionnaire
             provider_dict = self._provider_model_to_dict(provider)
-            
+
             # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
             json_repo = JsonFileRepository(full_filepath, {})
-            
+
             # Met à jour toutes les données avec celles du provider
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
-            
+
             self.logger.info(f"Fournisseur sauvegardé: {full_filepath}")
         except Exception as e:
             self.logger.error(f"Erreur lors de la sauvegarde du fournisseur: {e}")
@@ -315,7 +340,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
     def update_provider(self, provider: ProviderModel) -> None:
         """Met à jour un fournisseur existant.
 
-        Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un 
+        Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un
         fichier JSON via JsonFileRepository.
 
         Args:
@@ -331,21 +356,21 @@ class ProvidersRepository(ProviderRepositoryInterface):
         """
         # Construit le chemin complet du fichier
         full_filepath = self._folder_path / str(provider.provider_guid + ".json")
-        
+
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
-        
+
         try:
             # Convertit le modèle en dictionnaire
             provider_dict = self._provider_model_to_dict(provider)
-            
+
             # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
             json_repo = JsonFileRepository(full_filepath, {})
-            
+
             # Met à jour toutes les données avec celles du provider
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
-            
+
             self.logger.info(f"Fournisseur sauvegardé: {full_filepath}")
         except Exception as e:
             self.logger.error(f"Erreur lors de la sauvegarde du fournisseur: {e}")
@@ -372,16 +397,16 @@ class ProvidersRepository(ProviderRepositoryInterface):
             >>> repo.delete_provider("mon_provider")
         """
         self.logger.info("Ouverture du dossier des fournisseurs...")
-        
+
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
 
         # Cherche le fichier correspondant
         full_pathfile_to_delete = self.compute_fullpath_from_guid(provider_guid)
-        
+
         if not full_pathfile_to_delete.exists():
-            raise FileNotFoundError(f"Fournisseur non trouvé pour suppression: {provider_guid}")        
-        
+            raise FileNotFoundError(f"Fournisseur non trouvé pour suppression: {provider_guid}")
+
         try:
             os.remove(full_pathfile_to_delete)
             self.logger.info(f"Fournisseur supprimé: {full_pathfile_to_delete}")
@@ -391,9 +416,10 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
     def compute_fullpath_from_guid(self, provider_guid: str) -> Path:
         """Calcule le chemin complet du fichier JSON d'un fournisseur à partir de son identifiant.
+
         Args:
             provider_guid (str): L'identifiant unique du fournisseur.
-            
+
         Returns:
             Path: Le chemin complet du fichier JSON du fournisseur.
         """
@@ -412,17 +438,17 @@ class ProvidersRepository(ProviderRepositoryInterface):
             >>> repo.open_providers_folder()
         """
         self.logger.info("Ouverture du dossier des fournisseurs...")
-        
+
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
-        
+
         if not self._folder_path.is_dir():
             raise NotADirectoryError(f"Le chemin spécifié n'est pas un dossier: {self._folder_path}")
-        
+
         # Utilise le système d'exploitation pour ouvrir le dossier
         try:
             enum_os: OperatingSystem = detect_os()
-            
+
             if enum_os == OperatingSystem.WINDOWS:
                 os.startfile(self._folder_path)
             elif enum_os == OperatingSystem.MACOS:  # macOS et Linux
@@ -430,7 +456,9 @@ class ProvidersRepository(ProviderRepositoryInterface):
             elif enum_os == OperatingSystem.LINUX:  # Linux
                 subprocess.Popen(["xdg-open", self._folder_path])
             else:
-                self.logger.warning(f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}")
+                self.logger.warning(
+                    f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}"
+                )
                 raise OSError(f"Système d'exploitation non pris en charge: {enum_os}")
             self.logger.info(f"Dossier ouvert: {self._folder_path}")
         except Exception as e:

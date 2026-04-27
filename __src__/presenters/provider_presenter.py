@@ -1,6 +1,7 @@
 """Module contenant le présentateur pour la gestion des fournisseurs."""
 
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
+
 from models.provider_model import ProviderModel
 from models.provider_validation_report_model import ProviderValidationReport
 from services.provider_service import ProviderService
@@ -160,11 +161,34 @@ class ProviderPresenter:
         try:
             report: ProviderValidationReport = self._service.validate_providers()
             self._load_providers()
-            self._view.show_validation_report(report)
+            self._view.show_validation_report(self._format_validation_report(report))
         except Exception as exc:
             self._view.show_error(f"La validation des fournisseurs a échoué: {exc}")
         finally:
             self._view.set_validation_state(False)
+
+    def _format_validation_report(self, report: ProviderValidationReport) -> Dict[str, Any]:
+        """Converts a domain validation report into a view-friendly dict.
+
+        Args:
+            report: Domain model produced by the service.
+
+        Returns:
+            Flat dict safe to pass to the view layer.
+        """
+        return {
+            "total_files": report.total_files,
+            "valid_files": report.valid_files,
+            "invalid_files": report.invalid_files,
+            "issues": [
+                {
+                    "file_name": issue.file_name,
+                    "broken_path": issue.broken_path,
+                    "reasons": issue.reasons,
+                }
+                for issue in report.issues
+            ],
+        }
 
     def _on_sort(self, column: str, ascending: bool) -> None:
         """Trie la liste des fournisseurs et met à jour la vue.
