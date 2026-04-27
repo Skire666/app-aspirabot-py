@@ -7,9 +7,10 @@ from models.provider_validation_report_model import ProviderValidationReport
 from services.provider_service import ProviderService
 from views.provider_view import ProviderView
 
+
 class ProviderPresenter:
     """Présentateur (Presenter) pour coordonner la vue et le service des fournisseurs.
-    
+
     Ce présentateur écoute les interactions de la vue, exécute la logique
     métier via le service et met à jour la vue avec les nouvelles données.
     """
@@ -26,7 +27,7 @@ class ProviderPresenter:
         self._providers: List[ProviderModel] = []
         self._current_sort_column = "provider_name"
         self._current_sort_ascending = True
-        
+
         # Hooks optionnels injectés depuis le main
         self.on_request_create_provider: Optional[Callable[[], None]] = None
         self.on_request_edit_provider: Optional[Callable[[str], None]] = None
@@ -73,8 +74,8 @@ class ProviderPresenter:
             column: Column id used as sort key.
             ascending: True for ascending order.
         """
-        if column == "provider_guid":
-            self._providers.sort(key=lambda p: self._text_key(p.provider_guid), reverse=not ascending)
+        if column == "id_file":
+            self._providers.sort(key=lambda p: self._text_key(p.id_file), reverse=not ascending)
         elif column == "provider_name":
             self._providers.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
         elif column == "url":
@@ -100,14 +101,16 @@ class ProviderPresenter:
         """
         formatted: List[Dict[str, str]] = []
         for p in providers:
-            formatted.append({
-                "id": p.provider_guid,
-                "provider_guid": p.provider_guid,
-                "provider_name": p.provider_name,
-                "url": p.url,
-                "created_date": p.created_date,
-                "modified_date": p.modified_date
-            })
+            formatted.append(
+                {
+                    "id": p.id_file,
+                    "id_file": p.id_file,
+                    "provider_name": p.provider_name,
+                    "url": p.url,
+                    "created_date": p.created_date,
+                    "modified_date": p.modified_date,
+                }
+            )
         return formatted
 
     def _on_create_provider(self) -> None:
@@ -118,32 +121,32 @@ class ProviderPresenter:
             new_provider = ProviderModel.get_default_data()
             self._service.create_provider(new_provider)
             self._load_providers()
-            
-    def _on_edit_provider(self, provider_guid: str) -> None:
+
+    def _on_edit_provider(self, id_file: str) -> None:
         """Gère l'événement de modification d'un fournisseur.
-        
+
         Args:
-            provider_guid: Le GUID du fournisseur à éditer.
+            id_file: L'ID fichier du fournisseur à éditer.
         """
         if self.on_request_edit_provider:
-            self.on_request_edit_provider(provider_guid)
+            self.on_request_edit_provider(id_file)
 
-    def _on_launch_provider(self, provider_guid: str) -> None:
+    def _on_launch_provider(self, id_file: str) -> None:
         """Gère l'événement de lancement d'un fournisseur.
-        
-        Args:
-            provider_guid: Le GUID du fournisseur.
-        """
-        self._view.show_info('lancement...')
 
-    def _on_delete_provider(self, provider_guid: str) -> None:
-        """Gère l'événement de suppression d'un fournisseur.
-        
         Args:
-            provider_guid: Le GUID du fournisseur à supprimer.
+            id_file: Le fichierID du fournisseur.
+        """
+        self._view.show_info("lancement...")
+
+    def _on_delete_provider(self, id_file: str) -> None:
+        """Gère l'événement de suppression d'un fournisseur.
+
+        Args:
+            id_file: L'ID fichier du fournisseur à supprimer.
         """
         if self._view.ask_delete_confirmation():
-            self._service.delete_provider(provider_guid)
+            self._service.delete_provider(id_file)
             self._load_providers()
 
     def _on_open_folder(self) -> None:

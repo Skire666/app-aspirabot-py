@@ -2,6 +2,7 @@
 
 import os
 import tkinter as tk
+from pathlib import Path
 
 from presenters.config_presenter import ConfigPresenter
 from presenters.log_presenter import LogPresenter
@@ -10,9 +11,11 @@ from presenters.provider_presenter import ProviderPresenter
 from repositories.json_config_repository import JsonConfigRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
+from repositories.workflow_repository import WorkflowRepository
 from services.config_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
+from services.workflow_service import WorkflowService
 from shared.constants import CTK_GUI
 from views.config_view import ConfigView
 from views.log_view import LogView
@@ -34,13 +37,13 @@ def main() -> None:
     main_view = MainView(root_container)
     main_view.pack(fill=tk.BOTH, expand=True)
 
-    # Read configuration
-    # Resolving path based on the structure (JSON at the root of the workspace)
+    # Read configuration — resolve JSON path relative to workspace root
     config_file_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config-aspirabot.json"
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "config-aspirabot.json",
     )
     config_repo = JsonConfigRepository(config_file_path)
-    config_repo.ensure_file_exists()  # Ensure the config file exists before reading
+    config_repo.ensure_file_exists()
     config_model = config_repo.read_config()
 
     # Create Logging Component
@@ -64,21 +67,31 @@ def main() -> None:
     provider_view = ProviderView(main_view.content_area)
     provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)
 
-    provider_edit_view = ProviderEditView(main_view.content_area)
-    provider_edit_presenter = ProviderEditPresenter(view=provider_edit_view, service=provider_service)
+    # Create Workflow components — repository reads from the providers folder
+    workflow_service = WorkflowService()
+    workflow_repository = WorkflowRepository(Path(config_model.folder_providers))
 
-    # Wire events for transition between view providers and edit providers
-    def on_request_create_provider():
+    # Create Provider Edit Component with workflow sub-presenter
+    provider_edit_view = ProviderEditView(main_view.content_area)
+    provider_edit_presenter = ProviderEditPresenter(
+        view=provider_edit_view,
+        service=provider_service,
+        workflow_service=workflow_service,
+        workflow_repository=workflow_repository,
+    )
+
+    # Wire navigation between provider list and edit views
+    def on_request_create_provider() -> None:
         provider_edit_presenter.create_new()
         main_view.set_tab_state("Modification", tk.NORMAL)
         main_view.show_view("Modification")
 
-    def on_request_edit_provider(provider_guid: str):
-        provider_edit_presenter.load_provider(provider_guid)
+    def on_request_edit_provider(id_file: str) -> None:
+        provider_edit_presenter.load_provider(id_file)
         main_view.set_tab_state("Modification", tk.NORMAL)
         main_view.show_view("Modification")
 
-    def on_edit_done():
+    def on_edit_done() -> None:
         provider_presenter.refresh()
         main_view.set_tab_state("Modification", tk.DISABLED)
         main_view.show_view("Fournisseurs")
@@ -87,13 +100,13 @@ def main() -> None:
     provider_presenter.on_request_edit_provider = on_request_edit_provider
     provider_edit_presenter.set_on_done_callback(on_edit_done)
 
-    # Register Views to MainView
+    # Register views to MainView tabs
     main_view.add_view("Journal", log_view)
     main_view.add_view("Configuration", config_view)
     main_view.add_view("Fournisseurs", provider_view)
     main_view.add_view("Modification", provider_edit_view)
 
-    # Default View on startup
+    # Default view on startup
     main_view.show_view("Fournisseurs")
 
     app.mainloop()

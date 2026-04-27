@@ -1,10 +1,11 @@
 """Tkinter view for managing providers."""
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional
 
 from views.components.data_grid import DataGrid
+
 
 class ProviderView(ttk.Frame):
     """View component that renders the list of providers."""
@@ -34,16 +35,22 @@ class ProviderView(ttk.Frame):
         top_frame = ttk.Frame(self)
         top_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
-        self._btn_create = ttk.Button(top_frame, text="Créer un nouveau fournisseur", command=self._notify_create_provider)
+        self._btn_create = ttk.Button(
+            top_frame, text="Créer un nouveau fournisseur", command=self._notify_create_provider
+        )
         self._btn_create.pack(side=tk.LEFT, padx=5)
 
-        self._btn_open_folder = ttk.Button(top_frame, text="Ouvrir le dossier des fournisseurs", command=self._notify_open_folder)
+        self._btn_open_folder = ttk.Button(
+            top_frame, text="Ouvrir le dossier des fournisseurs", command=self._notify_open_folder
+        )
         self._btn_open_folder.pack(side=tk.LEFT, padx=5)
 
         self._btn_refresh = ttk.Button(top_frame, text="Rafraîchir", command=self._notify_refresh)
         self._btn_refresh.pack(side=tk.LEFT, padx=5)
 
-        self._btn_validate = ttk.Button(top_frame, text="Valider les fournisseurs", command=self._notify_validate)
+        self._btn_validate = ttk.Button(
+            top_frame, text="Valider les fournisseurs", command=self._notify_validate
+        )
         self._btn_validate.pack(side=tk.LEFT, padx=5)
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun fournisseur")
@@ -53,26 +60,39 @@ class ProviderView(ttk.Frame):
         columns_def = [
             {"id": "action_launch", "title": "RUN", "width": 60, "type": "button", "button_text": "RUN"},
             {"id": "action_edit", "title": "EDIT", "width": 60, "type": "button", "button_text": "EDIT"},
-            {"id": "action_delete", "title": "DEL.", "width": 60, "type": "button", "button_text": "DEL."},
+            {
+                "id": "action_delete",
+                "title": "DEL.",
+                "width": 60,
+                "type": "button",
+                "button_text": "DEL.",
+            },
             {"id": "provider_name", "title": "Nom", "width": 150, "type": "text"},
             {"id": "url", "title": "Url", "width": 200, "type": "text"},
             {"id": "created_date", "title": "Création", "width": 120, "type": "text"},
             {"id": "modified_date", "title": "Modification", "width": 120, "type": "text"},
-            {"id": "provider_guid", "title": "Guid", "width": 250, "type": "text"}
+            {"id": "id_file", "title": "ID Fichier", "width": 200, "type": "text"},
         ]
 
         self.grid = DataGrid(
-            self,
-            columns=columns_def,
-            on_sort=self._notify_sort,
-            on_action=self._on_action
+            self, columns=columns_def, on_sort=self._notify_sort, on_action=self._on_action
         )
         self.grid.set_sort_state("provider_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    def set_callbacks(self, on_create: Callable[[], None], on_open_folder: Callable[[], None], on_refresh: Callable[[], None], on_sort: Callable[[str, bool], None], on_edit: Callable[[str], None], on_launch: Callable[[str], None], on_delete: Callable[[str], None], on_validate: Callable[[], None]) -> None:
+    def set_callbacks(
+        self,
+        on_create: Callable[[], None],
+        on_open_folder: Callable[[], None],
+        on_refresh: Callable[[], None],
+        on_sort: Callable[[str, bool], None],
+        on_edit: Callable[[str], None],
+        on_launch: Callable[[str], None],
+        on_delete: Callable[[str], None],
+        on_validate: Callable[[], None],
+    ) -> None:
         """Sets the callbacks for UI interactions.
-        
+
         Args:
             on_create: Callback for creating a new provider.
             on_open_folder: Callback for opening the providers folder.
@@ -150,7 +170,7 @@ class ProviderView(ttk.Frame):
 
     def show_info(self, message: str) -> None:
         """Shows an info message box.
-        
+
         Args:
             message: The message to be displayed.
         """
@@ -199,7 +219,7 @@ class ProviderView(ttk.Frame):
 
     def ask_delete_confirmation(self) -> bool:
         """Prompts the user for deletion confirmation.
-        
+
         Returns:
             True if user confirmed the deletion, False otherwise.
         """

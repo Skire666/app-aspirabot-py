@@ -159,7 +159,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         """
         # Récupère uniquement les champs présents dans ProviderModel
         provider_fields = {
-            "provider_guid",
+            "id_file",
             "provider_name",
             "url",
             "created_date",
@@ -211,26 +211,26 @@ class ProvidersRepository(ProviderRepositoryInterface):
                 continue
         return result
 
-    def exists_provider(self, provider_guid: str) -> bool:
+    def exists_provider(self, id_file: str) -> bool:
         """Vérifie l'existence d'un fournisseur dans le dossier.
 
         Args:
-            provider_guid (str): L'identifiant unique du fournisseur à vérifier.
+            id_file (str): L'identifiant unique du fournisseur à vérifier.
 
         Returns:
             bool: `True` si un fichier correspondant existe, sinon `False`.
         """
-        full_filepath = self._folder_path / str(provider_guid + ".json")
+        full_filepath = self._folder_path / str(id_file + ".json")
         return full_filepath.exists() and full_filepath.is_file()
 
-    def read_provider(self, provider_guid: str) -> ProviderModel:
+    def read_provider(self, id_file: str) -> ProviderModel:
         """Charge un fichier fournisseur par son ID et l'instancie sous forme de modèle.
 
         Recherche parmi l'ensemble des fichiers disponibles celui qui correspond au
         nom complet (avec extension) ou de base (sans extension) fourni en paramètre.
 
         Args:
-            provider_guid (str): L'identifiant unique du fournisseur à charger.
+            id_file (str): L'identifiant unique du fournisseur à charger.
 
         Returns:
             ProviderModel: L'instance instanciée du fichier de configuration choisi.
@@ -244,11 +244,11 @@ class ProvidersRepository(ProviderRepositoryInterface):
             'https://example.com'
         """
         # Construit le chemin complet du fichier
-        full_filepath = self._folder_path / str(provider_guid + ".json")
+        full_filepath = self._folder_path / str(id_file + ".json")
 
         try:
             if not full_filepath.exists():
-                raise FileNotFoundError(f"Fournisseur non trouvé: {provider_guid}")
+                raise FileNotFoundError(f"Fournisseur non trouvé: {id_file}")
 
             # Charge le fichier JSON via JsonFileRepository
             json_repo = JsonFileRepository(full_filepath, {})
@@ -256,7 +256,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
             if not provider_data:
                 self.logger.warning(f"Le fichier {full_filepath} est vide.")
-                raise ValueError(f"Données manquantes pour {provider_guid}")
+                raise ValueError(f"Données manquantes pour {id_file}")
 
             provider_model = self._dict_to_provider_model(provider_data)
             self.logger.info(f"Fournisseur chargé: {full_filepath}")
@@ -316,7 +316,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             >>> repo.create_provider(provider)
         """
         # Construit le chemin complet du fichier
-        full_filepath = self._folder_path / str(provider.provider_guid + ".json")
+        full_filepath = self._folder_path / str(provider.id_file + ".json")
 
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
@@ -355,7 +355,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             >>> repo.update_provider(provider)
         """
         # Construit le chemin complet du fichier
-        full_filepath = self._folder_path / str(provider.provider_guid + ".json")
+        full_filepath = self._folder_path / str(provider.id_file + ".json")
 
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
@@ -381,13 +381,13 @@ class ProvidersRepository(ProviderRepositoryInterface):
             os.makedirs(self._folder_path, exist_ok=True)
             self.logger.info(f"Dossier créé: {self._folder_path}")
 
-    def delete_provider(self, provider_guid: str) -> None:
+    def delete_provider(self, id_file: str) -> None:
         """Supprime un fournisseur.
 
         Supprime définitivement le fichier JSON correspondant au fournisseur du système de fichiers.
 
         Args:
-            provider_guid (str): L'identifiant unique du fournisseur à supprimer.
+            id_file (str): L'identifiant unique du fournisseur à supprimer.
 
         Raises:
             FileNotFoundError: Si le fichier cible n'existe pas.
@@ -402,10 +402,10 @@ class ProvidersRepository(ProviderRepositoryInterface):
         self.create_folder_if_missing()
 
         # Cherche le fichier correspondant
-        full_pathfile_to_delete = self.compute_fullpath_from_guid(provider_guid)
+        full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_file)
 
         if not full_pathfile_to_delete.exists():
-            raise FileNotFoundError(f"Fournisseur non trouvé pour suppression: {provider_guid}")
+            raise FileNotFoundError(f"Fournisseur non trouvé pour suppression: {id_file}")
 
         try:
             os.remove(full_pathfile_to_delete)
@@ -413,17 +413,6 @@ class ProvidersRepository(ProviderRepositoryInterface):
         except Exception as e:
             self.logger.error(f"Erreur lors de la suppression du fournisseur: {e}")
             raise
-
-    def compute_fullpath_from_guid(self, provider_guid: str) -> Path:
-        """Calcule le chemin complet du fichier JSON d'un fournisseur à partir de son identifiant.
-
-        Args:
-            provider_guid (str): L'identifiant unique du fournisseur.
-
-        Returns:
-            Path: Le chemin complet du fichier JSON du fournisseur.
-        """
-        return self._folder_path / (provider_guid + ".json")
 
     def open_providers_folder(self) -> None:
         """Ouvre le répertoire des fournisseurs dans l'explorateur.
@@ -464,3 +453,14 @@ class ProvidersRepository(ProviderRepositoryInterface):
         except Exception as e:
             self.logger.error(f"Erreur lors de l'ouverture du dossier: {e}")
             raise
+
+    def _compute_fullpath_from_id_file(self, id_file: str) -> Path:
+        """Calcule le chemin complet du fichier JSON d'un fournisseur à partir de son identifiant.
+
+        Args:
+            id_file (str): L'identifiant unique du fournisseur.
+
+        Returns:
+            Path: Le chemin complet du fichier JSON du fournisseur.
+        """
+        return self._folder_path / (id_file + ".json")

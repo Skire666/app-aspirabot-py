@@ -10,7 +10,7 @@ Aspirabot allows users to create, configure, and execute data extraction or web 
 
 Before getting started, make sure you have the following installed on your machine:
 
-- **Python 3.12** — [python.org](https://www.python.org/downloads/)
+- **Python 3.14** — [python.org](https://www.python.org/downloads/)
 - **Git** — [git-scm.com](https://git-scm.com/)
 - **VS Code** (recommended) — [code.visualstudio.com](https://code.visualstudio.com/)
 - **Terminal** — PowerShell, Command Prompt, bash, zsh, ...

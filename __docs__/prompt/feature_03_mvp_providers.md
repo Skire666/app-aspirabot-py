@@ -51,7 +51,7 @@ Main content:
 * Table displaying providers
 
 Table columns (sortable headers): Label	-> Field name
-* Guid	-> provider_guid
+* Guid	-> id_file
 * Nom	-> provider_name
 * Url	-> url
 * Création	-> created_date

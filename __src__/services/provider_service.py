@@ -3,10 +3,12 @@
 import logging
 from pathlib import Path
 from typing import List
+
+from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
 from models.provider_validation_issue_model import ProviderValidationIssue
 from models.provider_validation_report_model import ProviderValidationReport
-from interfaces.provider_repository_interface import ProviderRepositoryInterface
+
 
 class ProviderService:
     """Service contenant la logique métier pour les fournisseurs."""
@@ -22,37 +24,37 @@ class ProviderService:
 
     def list_providers(self) -> List[ProviderModel]:
         """Liste tous les fournisseurs.
-        
+
         Returns:
             Liste des modèles de fournisseurs.
         """
         return self._repository.list_all_providers()
 
-    def get_provider(self, provider_guid: str) -> ProviderModel:
+    def get_provider(self, id_file: str) -> ProviderModel:
         """Récupère un fournisseur par son GUID.
-        
+
         Args:
-            provider_guid: L'identifiant unique du fournisseur.
-            
+            id_file: L'identifiant unique du fournisseur.
+
         Returns:
             Le modèle du fournisseur.
         """
-        return self._repository.read_provider(provider_guid)
+        return self._repository.read_provider(id_file)
 
-    def exists_provider(self, provider_guid: str) -> bool:
+    def exists_provider(self, id_file: str) -> bool:
         """Vérifie l'existence d'un fournisseur.
-        
+
         Args:
-            provider_guid: L'identifiant unique à vérifier.
-            
+            id_file: L'identifiant unique à vérifier.
+
         Returns:
             True si le fournisseur existe, False sinon.
         """
-        return self._repository.exists_provider(provider_guid)
+        return self._repository.exists_provider(id_file)
 
     def create_provider(self, provider: ProviderModel) -> None:
         """Crée un nouveau fournisseur avec ses timestamps mis à jour.
-        
+
         Args:
             provider: Le modèle du fournisseur à créer.
         """
@@ -61,20 +63,20 @@ class ProviderService:
 
     def update_provider(self, provider: ProviderModel) -> None:
         """Met à jour un fournisseur existant.
-        
+
         Args:
             provider: Le modèle du fournisseur à mettre à jour.
         """
         provider.update_modified_date()
         self._repository.update_provider(provider)
 
-    def delete_provider(self, provider_guid: str) -> None:
+    def delete_provider(self, id_file: str) -> None:
         """Supprime un fournisseur existant.
-        
+
         Args:
-            provider_guid: Le GUID du fournisseur à supprimer.
+            id_file: Le GUID du fournisseur à supprimer.
         """
-        self._repository.delete_provider(provider_guid)
+        self._repository.delete_provider(id_file)
 
     def open_providers_folder(self) -> None:
         """Ouvre le répertoire des fournisseurs dans l'explorateur du système."""
@@ -92,7 +94,9 @@ class ProviderService:
         valid_files = 0
         issues: List[ProviderValidationIssue] = []
 
-        self._logger.info("Démarrage de la validation des fournisseurs pour %s fichier(s).", len(provider_files))
+        self._logger.info(
+            "Démarrage de la validation des fournisseurs pour %s fichier(s).", len(provider_files)
+        )
 
         for file_path in provider_files:
             reasons = self._collect_validation_reasons(file_path)
@@ -100,7 +104,9 @@ class ProviderService:
             if reasons:
                 broken_path = ""
                 try:
-                    moved_path = self._repository.move_invalid_provider_file(file_path, "; ".join(reasons))
+                    moved_path = self._repository.move_invalid_provider_file(
+                        file_path, "; ".join(reasons)
+                    )
                     broken_path = str(moved_path)
                 except Exception as exc:
                     move_reason = f"Unable to move invalid file: {exc}"
@@ -159,16 +165,16 @@ class ProviderService:
             reasons.append(f"Contenu corrompu ou illisible: {exc}")
             return reasons
 
-        provider_guid = provider_data.get("provider_guid")
-        if not isinstance(provider_guid, str) or not provider_guid.strip():
-            reasons.append("Champ GUID manquant")
+        id_file = provider_data.get("id_file")
+        if not isinstance(id_file, str) or not id_file.strip():
+            reasons.append("Champ ID manquant")
             return reasons
 
-        normalized_guid = provider_guid.strip().lower()
-        if not ProviderModel.is_valid_guid(normalized_guid):
-            reasons.append("Format GUID invalide")
+        normalized_id = id_file.strip().lower()
+        if not ProviderModel.is_valid_id(normalized_id):
+            reasons.append("Format ID invalide")
 
-        if file_path.stem.lower() != normalized_guid:
-            reasons.append("Nom de fichier non conforme au GUID")
+        if file_path.stem.lower() != normalized_id:
+            reasons.append("Nom de fichier non conforme au ID")
 
         return reasons

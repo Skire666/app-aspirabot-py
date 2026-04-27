@@ -51,7 +51,7 @@ Fields:
 ### 2. Métadonnées (Top-right, 50% width)
 
 Fields:
-- "Guid" → read-only text (`provider_guid`)
+- "Guid" → read-only text (`id_file`)
 - "Version" → editable text (`version`)
 - "Création" → read-only date (`created_date`)
 - "Modification" → read-only date (`modified_date`)

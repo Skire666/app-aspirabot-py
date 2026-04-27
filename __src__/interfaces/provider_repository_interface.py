@@ -1,20 +1,23 @@
 """Protocole pour le dépôt des fournisseurs.
 
 Définit le contrat que doit respecter toute implémentation de dépôt pour les
-fournisseurs, conformément à l'architecture propre."""
+fournisseurs, conformément à l'architecture propre.
+"""
 
 from pathlib import Path
 from typing import Any, Dict, List, Protocol
+
 from models.provider_model import ProviderModel
+
 
 class ProviderRepositoryInterface(Protocol):
     """Interface pour le dépôt des fournisseurs."""
 
-    def exists_provider(self, provider_guid: str) -> bool:
+    def exists_provider(self, id_file: str) -> bool:
         """Vérifie l'existence d'un fournisseur par son identifiant."""
         ...
 
-    def read_provider(self, provider_guid: str) -> ProviderModel:
+    def read_provider(self, id_file: str) -> ProviderModel:
         """Récupère un fournisseur par son identifiant."""
         ...
 
@@ -46,11 +49,10 @@ class ProviderRepositoryInterface(Protocol):
         """Met à jour un fournisseur."""
         ...
 
-    def delete_provider(self, provider_guid: str) -> None:
+    def delete_provider(self, id_file: str) -> None:
         """Supprime un fournisseur."""
         ...
 
     def open_providers_folder(self) -> None:
         """Ouvre le répertoire des fournisseurs dans l'explorateur."""
         ...
-

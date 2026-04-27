@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Optional
 
+from views.workflow_builder_view import WorkflowBuilderView
+
 
 class ProviderEditView(ttk.Frame):
     """View component that renders the provider modification form."""
@@ -66,9 +68,9 @@ class ProviderEditView(ttk.Frame):
         meta_lf.grid(row=0, column=1, sticky="nwes", padx=(5, 0))
 
         ttk.Label(meta_lf, text="Guid:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        self._var_guid = tk.StringVar()
-        self._entry_guid = ttk.Entry(meta_lf, textvariable=self._var_guid, state="readonly")
-        self._entry_guid.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        self._var_id_file = tk.StringVar()
+        self._entry_id_file = ttk.Entry(meta_lf, textvariable=self._var_id_file, state="readonly")
+        self._entry_id_file.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
         ttk.Label(meta_lf, text="Version:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
         self._var_version = tk.StringVar()
@@ -87,9 +89,12 @@ class ProviderEditView(ttk.Frame):
 
         meta_lf.columnconfigure(1, weight=1)
 
-        # 3. Workflow & Instructions
+        # 3. Workflow & Instructions — embed the builder widget directly
         workflow_lf = ttk.LabelFrame(main_container, text="Workflow & Instructions")
         workflow_lf.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        self._workflow_builder_view = WorkflowBuilderView(workflow_lf)
+        self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # 4. Footer
         footer_frame = ttk.Frame(main_container)
@@ -100,6 +105,15 @@ class ProviderEditView(ttk.Frame):
 
         self._btn_cancel = ttk.Button(footer_frame, text="Annuler", command=self._notify_cancel)
         self._btn_cancel.pack(side=tk.RIGHT, padx=5)
+
+    @property
+    def workflow_builder_view(self) -> WorkflowBuilderView:
+        """Returns the embedded WorkflowBuilderView widget.
+
+        Returns:
+            The WorkflowBuilderView instance inside the Workflow frame.
+        """
+        return self._workflow_builder_view
 
     def set_callbacks(
         self,
@@ -121,7 +135,7 @@ class ProviderEditView(ttk.Frame):
         Args:
             data: Dictionary of values to load.
         """
-        self._var_guid.set(data.get("provider_guid", ""))
+        self._var_id_file.set(data.get("id_file", ""))
         self._var_name.set(data.get("provider_name", ""))
         self._var_url.set(data.get("url", ""))
         self._var_version.set(data.get("version", ""))
@@ -137,7 +151,7 @@ class ProviderEditView(ttk.Frame):
             Dictionary containing the current values in the form.
         """
         return {
-            "provider_guid": self._var_guid.get(),
+            "id_file": self._var_id_file.get(),
             "provider_name": self._var_name.get(),
             "url": self._var_url.get(),
             "version": self._var_version.get(),
@@ -149,7 +163,7 @@ class ProviderEditView(ttk.Frame):
 
     def clear_data(self) -> None:
         """Clears all UI fields."""
-        self._var_guid.set("")
+        self._var_id_file.set("")
         self._var_name.set("")
         self._var_url.set("")
         self._var_version.set("")
@@ -165,7 +179,7 @@ class ProviderEditView(ttk.Frame):
             True if the user confirmed, False otherwise.
         """
         return messagebox.askyesno(
-            "Écraser?", "Un fournisseur avec ce GUID existe déjà. Voulez-vous l'écraser ?"
+            "Écraser?", "Un fournisseur avec cette ID existe déjà. Voulez-vous l'écraser ?"
         )
 
     def show_error(self, message: str) -> None:

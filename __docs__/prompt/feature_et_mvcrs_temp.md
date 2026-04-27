@@ -8,7 +8,7 @@ Renseigne le prompt que je vais te donner avec les informations suivantes :
 - Un fournisseur est basé sur le model 'provider_model.py' et utilise le repository 'providers_repository.py'
 - Cette interface contient 4 zones : "Informations", "Métadonnées", "Workflow", et "Footer"
 - La zone "Informations" est en haut à gauche, et occupe 50% de la largeur. Il contient 4 champs 'Nom' (texte éditable 'provider_name'), 'URL' (texte éditable 'url'), 'Browser affiché' (case à cocher 'browser_displayed'), Automatisation obfusqué (case à cocher 'automation_obfuscated').
-- La zone 'Métadonnées', située à droite de la zone 'Informations'. Occupe 50% de la largeur. Il contient 4 champs 'Guid' (texte en lecture seule 'provider_guid'), 'Version' (texte éditable 'version'), 'Création' (date en lecture seule 'created_date'), 'Modification' (date en lecture seul 'modified_date').
+- La zone 'Métadonnées', située à droite de la zone 'Informations'. Occupe 50% de la largeur. Il contient 4 champs 'Guid' (texte en lecture seule 'id_file'), 'Version' (texte éditable 'version'), 'Création' (date en lecture seule 'created_date'), 'Modification' (date en lecture seul 'modified_date').
 - La zone 'Workflow'. Pour l'instant, laisse un cadre vide (placeholder).
 - La zone footer contient 2 boutons :
 	-- "Annuler" : Annule les modifications, vide l'IHM des valeurs, et retourne sur l'onglet 'Fournisseurs', et grise le module "Modifications".

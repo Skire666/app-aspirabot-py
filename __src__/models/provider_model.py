@@ -6,7 +6,7 @@ UI dependency.
 
 Example:
     >>> provider = ProviderModel.get_default_data()
-    >>> ProviderModel.is_valid_guid(provider.provider_guid)
+    >>> ProviderModel.is_valid_id(provider.id_file)
     True
 """
 
@@ -28,7 +28,7 @@ class ProviderModel:
     data container used by services and repositories.
 
     Attributes:
-        provider_guid: Unique provider identifier as a canonical UUID string.
+        id_file: Unique provider identifier as a canonical timestamp in milliseconds.
         provider_name: Human-readable provider name.
         url: Root URL associated with the provider.
         created_date: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
@@ -44,7 +44,7 @@ class ProviderModel:
         'Nouv. Fournisseur'
     """
 
-    provider_guid: str
+    id_file: str
     provider_name: str
     url: str
     created_date: str
@@ -74,7 +74,7 @@ class ProviderModel:
 
         # Return a ready-to-use default provider.
         return cls(
-            provider_guid=str(uuid.uuid4()).lower(),
+            id_file=str(uuid.uuid7().time),
             provider_name="Nouv. Fournisseur",
             url="https://example.com",
             version="1.0.0",
@@ -121,22 +121,22 @@ class ProviderModel:
         self.modified_date = datetime.now().strftime(DATETIME_FORMAT)
 
     @staticmethod
-    def is_valid_guid(value: str) -> bool:
-        """Checks whether a value is a canonical lowercase UUID string.
+    def is_valid_id(value: str) -> bool:
+        """Checks whether a value is a number.
 
         Args:
-            value: Candidate GUID value.
+            value: Candidate ID value.
 
         Returns:
-            True when the value is a valid lowercase UUID string, otherwise False.
+            True when the value is a valid number, otherwise False.
 
         Raises:
             None: Parsing errors are handled and converted to False.
 
         Example:
-            >>> ProviderModel.is_valid_guid('550e8400-e29b-41d4-a716-446655440000')
+            >>> ProviderModel.is_valid_id('123456789')
             True
-            >>> ProviderModel.is_valid_guid('INVALID-GUID')
+            >>> ProviderModel.is_valid_id('INVALID-ID')
             False
         """
         # Fast-fail on empty values before any normalization/parsing.
@@ -150,9 +150,9 @@ class ProviderModel:
 
         # Parse with stdlib UUID to validate structure.
         try:
-            parsed_uuid = uuid.UUID(normalized_value)
+            is_number = normalized_value.isnumeric()
         except (AttributeError, ValueError, TypeError):
             return False
 
         # Ensure canonical textual form exactly matches the input.
-        return str(parsed_uuid) == normalized_value
+        return is_number
