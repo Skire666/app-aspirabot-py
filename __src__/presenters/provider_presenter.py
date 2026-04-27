@@ -1,6 +1,6 @@
 """Module contenant le présentateur pour la gestion des fournisseurs."""
 
-from typing import Dict, List
+from typing import Callable, Dict, List, Optional
 from models.provider_model import ProviderModel
 from models.provider_validation_report_model import ProviderValidationReport
 from services.provider_service import ProviderService
@@ -27,8 +27,8 @@ class ProviderPresenter:
         self._current_sort_ascending = True
         
         # Hooks optionnels injectés depuis le main
-        self.on_request_create_provider = None
-        self.on_request_edit_provider = None
+        self.on_request_create_provider: Optional[Callable[[], None]] = None
+        self.on_request_edit_provider: Optional[Callable[[str], None]] = None
 
         self._bind_view_events()
         self._load_providers()

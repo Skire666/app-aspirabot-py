@@ -6,6 +6,10 @@ from typing import List
 from models.provider_validation_issue_model import ProviderValidationIssue
 
 
+def _default_issues() -> list[ProviderValidationIssue]:
+    return []
+
+
 @dataclass
 class ProviderValidationReport:
     """Represents the aggregated outcome of a providers validation pass."""
@@ -13,4 +17,4 @@ class ProviderValidationReport:
     total_files: int
     valid_files: int
     invalid_files: int
-    issues: List[ProviderValidationIssue] = field(default_factory=list)
+    issues: List[ProviderValidationIssue] = field(default_factory=_default_issues)

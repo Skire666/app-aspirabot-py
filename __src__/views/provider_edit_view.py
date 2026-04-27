@@ -2,21 +2,16 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import Callable, Dict, Any, Optional
+from typing import Any, Callable, Optional
+from models.step_catalog import STEP_TYPE_TO_LABEL
+from models.step_scrapping_model import StepType
 from views.provider_steps_edit_view import ProviderStepsEditView
 from views.provider_steps_creator_view import ProviderStepsCreatorView
 
 class ProviderEditView(ttk.Frame):
     """View component that renders the provider modification form."""
 
-    _TYPE_TO_LABEL: dict[str, str] = {
-        "open_url": "Ouvrir une URL",
-        "wait_seconds": "Attendre X secondes",
-        "refresh_page": "Rafraichir page",
-        "download_image": "Télécharger une image",
-        "check_if_image_here": "Vérifier présence image",
-        "click_element": "Cliquer sur un élément",
-    }
+    _TYPE_TO_LABEL: dict[StepType, str] = dict(STEP_TYPE_TO_LABEL)
 
     def __init__(self, parent: tk.Widget) -> None:
         """Initializes the ProviderEditView component in Tkinter.
@@ -26,7 +21,7 @@ class ProviderEditView(ttk.Frame):
         """
         super().__init__(parent)
 
-        self._on_save: Optional[Callable[[Dict[str, Any]], None]] = None
+        self._on_save: Optional[Callable[[dict[str, Any]], None]] = None
         self._on_cancel: Optional[Callable[[], None]] = None
         self._on_add_step: Optional[Callable[[str, Any], None]] = None
         self._on_edit_step: Optional[Callable[[int, str, Any], None]] = None
@@ -35,7 +30,7 @@ class ProviderEditView(ttk.Frame):
         self._on_move_down: Optional[Callable[[int], None]] = None
         self._on_clear_all: Optional[Callable[[], None]] = None
 
-        self._workflow_items: list[Dict[str, Any]] = []
+        self._workflow_items: list[dict[str, Any]] = []
         self._step_dialog = ProviderStepsCreatorView(parent=self, type_to_label=self._TYPE_TO_LABEL)
 
         self._create_widgets()
@@ -128,7 +123,7 @@ class ProviderEditView(ttk.Frame):
 
     def set_callbacks(
         self,
-        on_save: Callable[[Dict[str, Any]], None],
+        on_save: Callable[[dict[str, Any]], None],
         on_cancel: Callable[[], None],
         on_add_step: Callable[[str, Any], None],
         on_edit_step: Callable[[int, str, Any], None],
@@ -152,7 +147,7 @@ class ProviderEditView(ttk.Frame):
         self._on_move_down = on_move_down
         self._on_clear_all = on_clear_all
 
-    def load_data(self, data: Dict[str, Any]) -> None:
+    def load_data(self, data: dict[str, Any]) -> None:
         """Loads data into the interface fields.
 
         Args:
@@ -167,7 +162,7 @@ class ProviderEditView(ttk.Frame):
         self._var_created.set(data.get("created_date", ""))
         self._var_modified.set(data.get("modified_date", ""))
 
-    def get_data(self) -> Dict[str, Any]:
+    def get_data(self) -> dict[str, Any]:
         """Reads data from the interface fields.
 
         Returns:
@@ -196,7 +191,7 @@ class ProviderEditView(ttk.Frame):
         self._var_modified.set("")
         self.render_steps([])
 
-    def render_steps(self, workflow_items: list[Dict[str, Any]]) -> None:
+    def render_steps(self, workflow_items: list[dict[str, Any]]) -> None:
         """Renders workflow steps in the ordered list component.
 
         Args:
@@ -253,12 +248,18 @@ class ProviderEditView(ttk.Frame):
             self.show_error("Type d'étape invalide.")
             return
 
-        submitted, dialog_value = self._open_step_dialog(step_type=raw_type, initial_value=item.get("value"))
+        if raw_type not in self._TYPE_TO_LABEL:
+            self.show_error("Type d'étape invalide.")
+            return
+
+        step_type = raw_type
+
+        submitted, dialog_value = self._open_step_dialog(step_type=step_type, initial_value=item.get("value"))
         if not submitted:
             return
 
         if self._on_edit_step:
-            self._on_edit_step(selected_index, raw_type, dialog_value)
+            self._on_edit_step(selected_index, step_type, dialog_value)
 
     def _notify_delete_step(self) -> None:
         """Deletes the currently selected workflow step."""
@@ -289,7 +290,7 @@ class ProviderEditView(ttk.Frame):
         if self._on_clear_all:
             self._on_clear_all()
 
-    def _open_step_dialog(self, step_type: str, initial_value: Any = None) -> tuple[bool, Any]:
+    def _open_step_dialog(self, step_type: StepType, initial_value: Any = None) -> tuple[bool, Any]:
         """Opens a modal dialog adapted to the specified step type.
 
         Args:

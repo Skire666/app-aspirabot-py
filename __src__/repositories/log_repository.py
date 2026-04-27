@@ -1,6 +1,6 @@
 """Repository for storing and retrieving log entries in memory."""
 
-from typing import List, Callable
+from typing import List
 from models.log_entry_model import LogEntryModel
 
 class LogRepository:

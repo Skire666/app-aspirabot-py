@@ -3,6 +3,7 @@
 from typing import Dict, Any, Optional, Callable
 from models.provider_model import ProviderModel
 from models.step_scrapping_model import StepScrappingModel
+from models.step_form_validator import StepFormValidationError, normalize_step_form_value
 from services.provider_service import ProviderService
 from services.step_service import StepService
 from views.provider_edit_view import ProviderEditView
@@ -137,10 +138,11 @@ class ProviderEditPresenter:
     def _on_add_step(self, step_type: str, value: Any) -> None:
         """Adds a validated step to the workflow."""
         try:
-            step = self._step_service.create_step(step_type=step_type, value=value)
+            normalized_value = normalize_step_form_value(step_type=step_type, raw_data=value)
+            step = self._step_service.create_step(step_type=step_type, value=normalized_value)
             self._steps.append(step)
             self._sync_steps_to_view()
-        except ValueError as exc:
+        except (StepFormValidationError, ValueError) as exc:
             self._view.show_error(str(exc))
 
     def _on_edit_step(self, index: int, step_type: str, value: Any) -> None:
@@ -150,10 +152,11 @@ class ProviderEditPresenter:
             return
 
         try:
-            step = self._step_service.create_step(step_type=step_type, value=value)
+            normalized_value = normalize_step_form_value(step_type=step_type, raw_data=value)
+            step = self._step_service.create_step(step_type=step_type, value=normalized_value)
             self._steps[index] = step
             self._sync_steps_to_view()
-        except ValueError as exc:
+        except (StepFormValidationError, ValueError) as exc:
             self._view.show_error(str(exc))
 
     def _on_delete_step(self, index: int) -> None:

@@ -1,7 +1,5 @@
 """Central Presenter module linking Model log items to the View."""
 
-import logging
-from typing import List, Tuple
 from views.log_view import LogView
 from models.log_entry_model import LogEntryModel
 from repositories.log_repository import LogRepository
@@ -38,7 +36,7 @@ class LogPresenter:
     def _update_view(self) -> None:
         """Fetches logs from repository, applies filters, and renders to the View."""
         active_filters = self._view.get_active_filters()
-        logs_data = []
+        logs_data: list[tuple[str, str, str, str]] = []
 
         all_logs = self._repository.get_all()
         for log in all_logs:

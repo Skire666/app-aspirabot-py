@@ -2,20 +2,14 @@
 
 from typing import Any, cast
 
+from models.step_catalog import STEP_TYPE_TO_LABEL
 from models.step_scrapping_model import StepScrappingModel, StepType, StepValue
 
 
 class StepService:
     """Handles workflow-step validation and transformation logic."""
 
-    _TYPE_LABELS: dict[StepType, str] = {
-        "open_url": "Ouvrir une URL",
-        "wait_seconds": "Attendre X temps",
-        "refresh_page": "Rafraichir page",
-        "download_image": "Télécharger une image",
-        "check_if_image_here": "Vérifier présence image",
-        "click_element": "Cliquer sur un élément",
-    }
+    _TYPE_LABELS: dict[StepType, str] = dict(STEP_TYPE_TO_LABEL)
 
     def get_supported_types(self) -> list[StepType]:
         """Returns step types supported by the application."""

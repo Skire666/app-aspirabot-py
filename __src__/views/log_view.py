@@ -23,7 +23,7 @@ class LogView(ttk.Frame):
             "DEBUG": tk.BooleanVar(value=True),
         }
 
-        self._on_filter_changed: Optional[Callable] = None
+        self._on_filter_changed: Optional[Callable[[], None]] = None
 
         self._create_widgets()
 
@@ -56,7 +56,10 @@ class LogView(ttk.Frame):
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Scrollbar
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(
+            self, orient=tk.VERTICAL,
+            command=self.tree.yview,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+        )
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -73,7 +76,7 @@ class LogView(ttk.Frame):
         """
         return [level for level, var in self._filter_vars.items() if var.get()]
 
-    def set_filter_callback(self, callback: Callable) -> None:
+    def set_filter_callback(self, callback: Callable[[], None]) -> None:
         """Sets the callback to invoke on filter change events.
 
         Args:
@@ -86,7 +89,7 @@ class LogView(ttk.Frame):
         if self._on_filter_changed:
             self._on_filter_changed()
 
-    def render_logs(self, logs_data: List[tuple]) -> None:
+    def render_logs(self, logs_data: list[tuple[str, str, str, str]]) -> None:
         """Clears existing UI logs and renders the new list.
 
         Args:

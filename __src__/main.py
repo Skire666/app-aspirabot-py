@@ -48,12 +48,12 @@ def main() -> None:
     logging_service = LoggingService(log_file_path, config_model.log_level)
     log_repository = LogRepository()
     log_view = LogView(main_view.content_area)
-    log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
+    _log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
 
     # Create Configuration Component
     config_service = ConfigService(config_repo)
     config_view = ConfigView(main_view.content_area)
-    config_presenter = ConfigPresenter(view=config_view, service=config_service)
+    _config_presenter = ConfigPresenter(view=config_view, service=config_service)
 
     # Create Provider Component
     provider_repo = ProvidersRepository(config_model.folder_providers, config_model.folder_brokens)
