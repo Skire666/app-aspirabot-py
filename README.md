@@ -1,92 +1,203 @@
-# Projet de Web Scraping avec Playwright (Python)
+# Aspirabot
 
-But : Web scraping ou de l'automatisation de navigateur en utilisant Playwright avec Python.
+> Web scraping tool with a visual Tkinter GUI, powered by Playwright (Chromium).
 
-## Prérequis
+Aspirabot allows users to create, configure, and execute data extraction or web automation workflows visually, without writing code. It uses a real browser engine to bypass standard antibot detection.
 
-- [Python 3.8+](https://www.python.org/downloads/) installé sur votre machine.
-- Un terminal (PowerShell, Command Prompt, bash, ou zsh).
+---
 
-## Installation et Configuration
+## Prerequisites
 
-Pour éviter de polluer votre système avec des dépendances globales, il est recommandé de tout installer dans un environnement virtuel.
+Before getting started, make sure you have the following installed on your machine:
 
-*Ce mettre à la racine du projet (dossier 'src' visible)*
+- **Python 3.12** — [python.org](https://www.python.org/downloads/)
+- **Git** — [git-scm.com](https://git-scm.com/)
+- **VS Code** (recommended) — [code.visualstudio.com](https://code.visualstudio.com/)
+- **Terminal** — PowerShell, Command Prompt, bash, zsh, ...
 
-### 1. Créer l'environnement virtuel
+---
 
-Ouvrez votre terminal, placez-vous dans le dossier du projet, puis exécutez :
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd app-aspirabot
+```
+
+### 2. Create the virtual environment
+
+/!\ The folder '__src__/' must be visible. /!\
 
 ```bash
 python -m venv venv
 ```
 
-### 2. Activer l'environnement virtuel
+### 3. Activate the virtual environment
 
-L'activation varie selon votre système d'exploitation.
-
-IMPORTANT :
-Ce mettre à la racine du projet (dossier 'src' visible)
-
-
-**Sur Windows (PowerShell / Invite de commandes) :**
+** On Windows (with PowerShell)**
 ```powershell
 .\venv\Scripts\activate
 ```
-*(Note : Si PowerShell bloque l'exécution des scripts avec un message d'erreur rouge, utilisez la commande `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` au préalable).*
 
-**Sur macOS et Linux :**
+> If PowerShell blocks script execution with a red error message, use `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
+** On macOS & Linux**
 ```bash
 source venv/bin/activate
 ```
 
-Une fois activé, vous devriez voir `(venv)` apparaître au début de votre ligne de commande.
+> You should see `(venv)` appear at the start of your terminal prompt.
 
-### 3. Installer les dépendances Python
-
-Installez `playwright` (et autres paquets éventuels) à l'aide du fichier `requirements.txt` :
+### 4. Install dependencies
 
 ```bash
 pip install -r './__src__/requirements.txt'
 ```
 
-### 4. Installer les navigateurs pour Playwright
+### 5. Install Chromium for Playwright
 
-Contrairement à d'autres outils (comme Selenium ou BeautifulSoup), Playwright télécharge et utilise ses propres binaires pour garantir la compatibilité.
-
-Pour installer uniquement **Chromium** (le moteur utilisé dans le code d'exemple) :
 ```bash
 playwright install chromium
 ```
 
-*(Si vous souhaitez installer tous les moteurs (Webkit, Firefox, Chromium), tapez juste `playwright install`)*.
+### 6. Deploy the project in editable mode
 
-### 5. Déployer avec toml
-
+```bash
 pip install -e .
-
-*(N'oubliez pas le point . à la fin, qui signifie "installer le projet situé dans le répertoire courant" en mode "editable" -e).*
-*Execution depuis n'importe où : Une fois installé dans le venv, vous pouvez lancer python __src__/main.py ou python -m __src__.main sans erreurs ModuleNotFoundError.*
+```
 
 ---
 
-## Utilisation
+## Run the Application
 
-Pour lancer le script de scraping, assurez-vous que votre environnement virtuel est toujours activé `(venv)`, puis lancez :
+Make sure the virtual environment is activated, then:
 
 ```bash
 python __src__/main.py
 ```
 
-## Nettoyage du projet
+---
+
+## VS Code Setup
+
+### Recommended extensions
+
+Install the following extensions from the VS Code marketplace (`Ctrl+Shift+X`):
+
+| Extension | Publisher | Purpose |
+|-----------|-----------|---------|
+| **Python** | Microsoft | Python language support |
+| **Ruff** | Astral Software | Linter & formatter |
+| **Mypy Type Checker** | Microsoft | Static type checking |
+| **Pytest** | Little Fox Team | Test runner integration |
+
+### Settings
+
+Open your user settings (`Ctrl+Shift+P` → *Open User Settings JSON*) and add:
+
+```json
+"[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.ruff": "explicit",
+        "source.organizeImports.ruff": "explicit"
+    }
+}
+```
+
+Ruff will now automatically lint and format your code on every save (`Ctrl+S`).
+
+---
+
+## Project Structure
+
+```
+app-aspirabot/
+├── __src__/
+│   ├── interfaces/     # Abstract base classes — contract-based programming
+│   ├── models/         # Business entities and data structures (domain)
+│   ├── views/          # Tkinter GUI components (no business logic)
+│   ├── presenters/     # Orchestration: connects views to services
+│   ├── repositories/   # Data read/write layer
+│   ├── services/       # Business logic and domain rules
+│   ├── shared/         # Contains common utilities and base code
+│   └── main.py         # Application entry point
+├── __tests__/          # Test files (mirrors __src__/ structure)
+├── venv/               # Virtual environment (not versioned)
+├── AGENTS.md           # Instructions for AI coding agents
+├── pyproject.toml      # Project configuration (Ruff, Mypy, Pytest)
+└── README.md           # This file
+```
+
+The project follows the **MVP (Model-View-Presenter)** pattern strictly.
+See `AGENTS.md` for architecture rules.
+
+---
+
+## Code Quality Tools
+
+The project enforces a high standard of code quality.
+All tools are configured in `pyproject.toml`.
+
+### Ruff — linter & formatter
+
+```bash
+# Check for issues
+ruff check ./__src__/
+
+# Auto-fix what can be fixed
+ruff check --fix ./__src__/
+
+# Format code
+ruff format ./__src__/
+```
+
+### Mypy — static type checking
+
+```bash
+pip install mypy
+mypy ./__src__/
+```
+
+---
+
+### Test — Pytest
+
+```bash
+pytest __tests__/ -v
+```
+
+---
+
+## Runtime-Generated Files
+
+These are created automatically when the app runs. **Do not version them** (already listed in `.gitignore`):
+
+```
+./tmp_app_logs/
+./tmp_app_chromium_session/
+./tmp_user_brokens/
+./tmp_user_providers/
+./config-aspirabot.json
+```
+
+---
+
+## Project Cleanup
+
+Remove compiled Python files (`__pycache__`, `.pyc`, etc.):
 
 ```bash
 python -m pip install pyclean
 python -m pyclean ./ -v
 ```
 
-Dossier généré :
-./tmp_logs
-./tmp_chromium_session
-./user_providers
-./user_brokens
+---
+
+## Further Reading
+
+- `AGENTS.md` — architecture rules, code conventions, and AI agent instructions
+- `pyproject.toml` — full configuration for Ruff, Mypy, and Pytest

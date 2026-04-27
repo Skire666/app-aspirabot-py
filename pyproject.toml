@@ -4,8 +4,6 @@
 
 [build-system]
 
-# -----------------------------------
-
 # Minimum version of setuptools required to build the project.
 requires = ["setuptools>=75.0"]
 
@@ -17,8 +15,6 @@ build-backend = "setuptools.build_meta"
 # ---------------------------------------------------------------------------
 
 [project]
-
-# -----------------------------------
 
 # Distribution name used by pip (e.g. pip install app-aspirabot).
 name = "app-aspirabot"
@@ -33,15 +29,13 @@ description = "Aspirabot Application"
 readme = "README.md"
 
 # Minimum Python version required to run the project.
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 
 # ---------------------------------------------------------------------------
 # Package Discovery — tells setuptools which folders to include
 # ---------------------------------------------------------------------------
 
 [tool.setuptools.packages.find]
-
-# -----------------------------------
 
 # Root directory where setuptools starts looking for packages.
 where = ["."]
@@ -92,17 +86,20 @@ ignore = [
 ]
 
 [tool.ruff.lint.mccabe]
+
 # Alert if cyclomatic complexity exceeds this threshold.
 # 10 is the widely accepted standard (McCabe's own recommendation).
 # 1-5: simple | 6-10: acceptable | 11-15: refactor | 15+: high bug risk
 max-complexity = 10
 
 [tool.ruff.lint.pydocstyle]
+
 # Enforce Google style for docstrings (Args:, Returns:, Raises:…).
 # Other possible values: "numpy" or "pep257".
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
+
 # In test files, all "D" rules (docstrings) are ignored.
 # No need to require docstrings on test_xxx() functions.
 "__tests__/**" = ["D"]
@@ -114,7 +111,7 @@ convention = "google"
 [tool.mypy]
 
 # Python version used for static type analysis.
-python_version = "3.12"
+python_version = "3.14"
 
 # Strict mode: enables all available type checks.
 # Equivalent to passing --disallow-untyped-defs, --warn-return-any, etc.
