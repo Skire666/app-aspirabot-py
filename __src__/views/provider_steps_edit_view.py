@@ -14,8 +14,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, Optional, cast
 
-from __src__.models.step_catalog import STEP_TYPE_TO_LABEL
-from interfaces.base_step_form_view import BaseStepFormView
+from interfaces.base_step_form_interface import BaseStepFormInterface
+from models.step_catalog import STEP_TYPE_TO_LABEL
 from views.step_forms.step_form_view_factory import StepFormViewFactory
 
 
@@ -34,7 +34,7 @@ class ProviderStepsEditView(ttk.Frame):
 
         self._workflow_items: list[Dict[str, Any]] = []
         self._form_factory = StepFormViewFactory()
-        self._active_step_form: Optional[BaseStepFormView] = None
+        self._active_step_form: Optional[BaseStepFormInterface] = None
 
         self._label_to_type: dict[str, str] = {
             label: step_type for step_type, label in STEP_TYPE_TO_LABEL.items()
@@ -69,7 +69,7 @@ class ProviderStepsEditView(ttk.Frame):
         scrollbar = ttk.Scrollbar(
             list_frame,
             orient=tk.VERTICAL,
-            command=cast(Callable[..., Any], getattr(self._list_steps, "yview")),
+            command=cast(Callable[..., Any], self._list_steps.yview),
         )
         scrollbar.grid(row=0, column=1, sticky="ns")
         self._list_steps.configure(yscrollcommand=scrollbar.set)
@@ -193,7 +193,7 @@ class ProviderStepsEditView(ttk.Frame):
         self._update_step_buttons_state()
 
     def get_selected_step_index(self) -> Optional[int]:
-        curselection_func = cast(Callable[[], tuple[int, ...]], getattr(self._list_steps, "curselection"))
+        curselection_func = cast(Callable[[], tuple[int, ...]], self._list_steps.curselection)
         selected = curselection_func()
         if not selected:
             return None

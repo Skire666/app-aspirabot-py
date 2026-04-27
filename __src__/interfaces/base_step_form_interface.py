@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 
-class BaseStepFormView(Protocol):
+class BaseStepFormInterface(Protocol):
     """Interface implemented by all step form widgets."""
 
     def get_data(self) -> dict[str, Any]:

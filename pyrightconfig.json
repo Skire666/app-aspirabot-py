@@ -1,6 +1,0 @@
-{
-  "typeCheckingMode": "strict",
-  "include": [
-    "__src__"
-  ]
-}

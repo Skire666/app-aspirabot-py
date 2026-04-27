@@ -1,7 +1,7 @@
 {
     "log_level": "INFO",
-    "folder_logs": "./tmp_logs",
-    "folder_providers": "./user_providers",
-    "folder_brokens": "./user_brokens",
-    "folder_tmp_chromium": "./tmp_chromium_session"
+    "folder_logs": "./tmp_app_logs",
+    "folder_providers": "./tmp_user_providers",
+    "folder_brokens": "./tmp_user_brokens",
+    "folder_tmp_chromium": "./tmp_app_chromium_session"
 }

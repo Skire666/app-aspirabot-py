@@ -1,7 +1,7 @@
 # Documentation Fonctionnelle
 
 ## 1. Présentation du projet
-Ce projet "Aspirabot" est un outil de Web Scraping disposant d'une Interface Homme-Machine (IHM) basée sur Tkinter. Il permet à un utilisateur de créer, configurer et exécuter des workflows d'extraction de données ou d'automatisation web de façon visuelle, sans recourir au code source. L'outil repose sur Playwright pour simuler un véritable navigateur afin de contourner les détections antibots standards.
+Ce projet "Aspirabot" est un outil de Web Scraping disposant d'une Interface Homme-Machine (IHM) basée sur Tkinter. Il permet à un utilisateur de créer, configurer et exécuter des workflows d'extraction de données ou d'automatisation web de façon visuelle. L'outil repose sur Playwright pour simuler un véritable navigateur afin de contourner les détections antibots standards.
 
 ## 2. Fonctionnalités principales
 

@@ -1,17 +1,142 @@
+# ---------------------------------------------------------------------------
+# Build System — packaging backend configuration
+# ---------------------------------------------------------------------------
+
 [build-system]
-requires = ["setuptools>=61.0"]
+
+# -----------------------------------
+
+# Minimum version of setuptools required to build the project.
+requires = ["setuptools>=75.0"]
+
+# Backend used by pip to build and install the package.
 build-backend = "setuptools.build_meta"
 
+# ---------------------------------------------------------------------------
+# Project Metadata
+# ---------------------------------------------------------------------------
+
 [project]
+
+# -----------------------------------
+
+# Distribution name used by pip (e.g. pip install app-aspirabot).
 name = "app-aspirabot"
+
+# Current version of the application, following semantic versioning (MAJOR.MINOR.PATCH).
 version = "1.0.0"
+
+# Short description displayed on PyPI or in pip show.
 description = "Aspirabot Application"
+
+# Path to the README file, used as the long description on PyPI.
 readme = "README.md"
-requires-python = ">=3.10"
+
+# Minimum Python version required to run the project.
+requires-python = ">=3.12"
+
+# ---------------------------------------------------------------------------
+# Package Discovery — tells setuptools which folders to include
+# ---------------------------------------------------------------------------
 
 [tool.setuptools.packages.find]
-# Indique que la recherche commence à la racine "."
-where = ["."] 
-# Demande explicitement de considérer le dossier "__src__" comme un package 
-# (ou "src" si vous aviez nommé le dossier "src")
-include = ["__src__*", "controllers*", "models*", "views*", "shared*", "utils*"]
+
+# -----------------------------------
+
+# Root directory where setuptools starts looking for packages.
+where = ["."]
+
+# Explicit list of packages to include (prevents bundling unrelated folders).
+include = ["__src__*", "interfaces*", "models*", "services*", "repositories*", "presenters*", "views*", "shared*"]
+
+# ---------------------------------------------------------------------------
+# Ruff — Linter & Formatter
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+
+# The Python version targeted by the project.
+# Ruff uses it to know which syntax features are available.
+target-version = "py312"
+
+# Maximum number of characters per line.
+# 88 is the default value used by Black, now a de facto standard.
+line-length = 105
+
+# Show the rule code and a detailed fix suggestion in the terminal output.
+output-format = "full"
+
+[tool.ruff.lint]
+
+# List of rule families to enable.
+# Each letter corresponds to a plugin built into Ruff:
+select = [
+    "E",    # pycodestyle — PEP 8 compliance (indentation, spaces, etc.)
+    "F",    # pyflakes — logical errors (unused imports, undefined names…)
+    "I",    # isort — import ordering and grouping
+    "N",    # pep8-naming — naming conventions (snake_case, PascalCase…)
+    "D",    # pydocstyle — docstring presence and format
+    "ANN",  # flake8-annotations — ensures type hints are present everywhere
+    "B",    # flake8-bugbear — detects common bugs and bad practices
+    "C90",  # mccabe — cyclomatic complexity (flags overly complex functions)
+    "SIM",  # flake8-simplify — suggests code simplifications
+    "RUF",  # Ruff-specific rules — modern Python best practices
+]
+
+# Individual rules to disable despite the families enabled above.
+ignore = [
+    "D104",   # Missing docstring in public package (empty __init__.py tolerated)
+    "D100",   # Missing docstring at module level (relaxed for simple modules)
+    "ANN101", # Missing type annotation for 'self' (unnecessary noise)
+    "ANN102", # Missing type annotation for 'cls' (unnecessary noise)
+]
+
+[tool.ruff.lint.mccabe]
+# Alert if cyclomatic complexity exceeds this threshold.
+# 10 is the widely accepted standard (McCabe's own recommendation).
+# 1-5: simple | 6-10: acceptable | 11-15: refactor | 15+: high bug risk
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+# Enforce Google style for docstrings (Args:, Returns:, Raises:…).
+# Other possible values: "numpy" or "pep257".
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# In test files, all "D" rules (docstrings) are ignored.
+# No need to require docstrings on test_xxx() functions.
+"__tests__/**" = ["D"]
+
+# ---------------------------------------------------------------------------
+# Mypy — Static Type Checking
+# ---------------------------------------------------------------------------
+
+[tool.mypy]
+
+# Python version used for static type analysis.
+python_version = "3.12"
+
+# Strict mode: enables all available type checks.
+# Equivalent to passing --disallow-untyped-defs, --warn-return-any, etc.
+strict = true
+
+# Suppresses errors on third-party libraries without type stubs.
+# Avoids false positives on Playwright, Tkinter, etc.
+ignore_missing_imports = true
+
+# Folders excluded from analysis — tests do not need to be checked by Mypy.
+exclude = ["__tests__/"]
+
+# ---------------------------------------------------------------------------
+# Pytest — Test Runner
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+
+# Folder in which Pytest looks for test files.
+testpaths = ["__tests__"]
+
+# Verbosity level (2 = detailed, displays each test individually).
+verbosity = 2
+
+## END

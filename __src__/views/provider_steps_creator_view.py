@@ -10,8 +10,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any
 
-from __src__.models.step_scrapping_model import StepType
-from interfaces.base_step_form_view import BaseStepFormView
+from interfaces.base_step_form_interface import BaseStepFormInterface
+from models.step_scrapping_model import StepType
 from views.step_forms.step_form_view_factory import StepFormViewFactory
 
 
@@ -59,7 +59,7 @@ class ProviderStepsCreatorView:
         self,
         content: ttk.Frame,
         dialog: tk.Toplevel,
-        form: BaseStepFormView,
+        form: BaseStepFormInterface,
         result: dict[str, Any],
     ) -> None:
         buttons = ttk.Frame(content)
