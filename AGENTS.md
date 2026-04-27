@@ -128,7 +128,7 @@ This project enforces a high standard of code quality. All contributions must fo
 ### General Style
 - Strict **PEP 8** compliance
 - **Docstrings** required on all public classes and functions, **Google style**
-- **Method length**: 25 lines maximum — if a method exceeds this, break it down
+- **Method length**: 30 lines maximum — if a method exceeds this, break it down
 - **Comments**: one comment per logical block, approximately every 4 lines of code
 - **Language**: English only
 
@@ -194,3 +194,121 @@ pytest __tests__/ -v
 - The MVP layer structure — never mix responsibilities between layers
 - `config-aspirabot.json` — runtime-generated file, never hardcode it
 - `tmp_*` folders — runtime-generated, never write to them manually
+
+---
+
+## Anti-patterns — Strictly Forbidden
+
+These patterns violate the MVP architecture and must never appear in the codebase.
+If you are an AI agent, treat these rules as hard constraints — no exception, no workaround.
+
+---
+
+### Layer Violations
+
+❌ Never import a `View` inside a `Service`, `Model`, or `Repository`
+```python
+# BAD — a service must never know the UI exists
+from views.main_view import MainView
+```
+
+❌ Never import a `Repository` inside a `View`
+```python
+# BAD — a view must never access persistent data directly
+from repositories.config_repository import ConfigRepository
+```
+
+❌ Never import a `Service` inside a `View`
+```python
+# BAD — a view must never call business logic directly
+from services.scraping_service import ScrapingService
+```
+
+❌ Never place business logic inside a `Presenter`
+```python
+# BAD — a presenter orchestrates, it does not compute
+def on_start_clicked(self):
+    url = self._view.get_url()
+    if not url.startswith("https://"):  # ← business rule, belongs in a service
+        ...
+```
+
+❌ Never write to persistent storage outside a `Repository`
+```python
+# BAD — only repositories are allowed to read/write data
+with open("config-aspirabot.json", "w") as f:
+    json.dump(data, f)
+```
+
+---
+
+### Design Violations
+
+❌ Never place concrete logic inside `interfaces/`
+```python
+# BAD — interfaces define contracts only, no implementation
+class IScrapingService(ABC):
+    def run(self, url: str) -> list[dict]:
+        return []  # ← must be abstract
+```
+
+❌ Never place business logic inside `shared/`
+```python
+# BAD — shared/ contains utilities only, not domain rules
+def shared_validate_provider(provider: dict) -> bool:
+    if provider["type"] == "premium":  # ← domain rule, belongs in a service
+        ...
+```
+
+❌ Never bypass the `Presenter` to connect a `View` to a `Service` directly
+```python
+# BAD — views and services must never be directly coupled
+view = MainView()
+service = ScrapingService()
+view.on_start = service.run  # ← the presenter must be the bridge
+```
+
+---
+
+### Code Quality Violations
+
+❌ Never write a method longer than 30 lines — break it down instead
+
+❌ Never omit type hints on a function or method signature
+```python
+# BAD
+def fetch(url, timeout=30):
+    ...
+
+# GOOD
+def fetch(url: str, timeout: int = 30) -> str:
+    ...
+```
+
+❌ Never omit a docstring on a public class or function
+
+❌ Never use bare `except` clauses
+```python
+# BAD — swallows all errors silently
+try:
+    ...
+except:
+    pass
+
+# GOOD
+try:
+    ...
+except PlaywrightTimeoutError as e:
+    logger.error("Page load timed out: %s", e)
+    raise
+```
+
+❌ Never commit runtime-generated files or folders
+```
+# BAD — these must stay in .gitignore
+tmp_app_logs/
+tmp_app_chromium_session/
+tmp_user_brokens/
+tmp_user_providers/
+config-aspirabot.json
+```
