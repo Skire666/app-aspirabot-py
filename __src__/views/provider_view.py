@@ -69,6 +69,7 @@ class ProviderView(ttk.Frame):
             },
             {"id": "provider_name", "title": "Nom", "width": 150, "type": "text"},
             {"id": "url", "title": "Url", "width": 200, "type": "text"},
+            {"id": "version", "title": "Version", "width": 100, "type": "text"},
             {"id": "created_date", "title": "Création", "width": 120, "type": "text"},
             {"id": "modified_date", "title": "Modification", "width": 120, "type": "text"},
             {"id": "id_file", "title": "ID Fichier", "width": 200, "type": "text"},

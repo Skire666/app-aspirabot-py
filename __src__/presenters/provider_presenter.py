@@ -31,6 +31,7 @@ class ProviderPresenter:
         # Hooks optionnels injectés depuis le main
         self.on_request_create_provider: Optional[Callable[[], None]] = None
         self.on_request_edit_provider: Optional[Callable[[str], None]] = None
+        self.on_request_launch_provider: Optional[Callable[[str], None]] = None
 
         self._bind_view_events()
         self._load_providers()
@@ -106,6 +107,7 @@ class ProviderPresenter:
                     "id": p.id_file,
                     "id_file": p.id_file,
                     "provider_name": p.provider_name,
+                    "version": p.version,
                     "url": p.url,
                     "created_date": p.created_date,
                     "modified_date": p.modified_date,
@@ -132,12 +134,14 @@ class ProviderPresenter:
             self.on_request_edit_provider(id_file)
 
     def _on_launch_provider(self, id_file: str) -> None:
-        """Gère l'événement de lancement d'un fournisseur.
+        """Delegates the launch request to the shell via the injected callback.
 
         Args:
-            id_file: Le fichierID du fournisseur.
+            id_file: The file ID of the provider to launch.
         """
-        self._view.show_info("lancement...")
+        # Fire the hook injected from main.py, identical pattern to on_request_edit_provider.
+        if self.on_request_launch_provider:
+            self.on_request_launch_provider(id_file)
 
     def _on_delete_provider(self, id_file: str) -> None:
         """Gère l'événement de suppression d'un fournisseur.

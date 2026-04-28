@@ -55,6 +55,12 @@ class MainView(ttk.Frame):
         self._btn_modification.pack(fill=tk.X, padx=5, pady=5, ipady=5)
         self.set_tab_state("Modification", tk.DISABLED)
 
+        self._btn_scrapping = ttk.Button(
+            self.sidebar, text="Scrapping", command=lambda: self.show_view("Scrapping")
+        )
+        self._btn_scrapping.pack(fill=tk.X, padx=5, pady=5, ipady=5)
+        self.set_tab_state("Scrapping", tk.DISABLED)
+
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a menu tab.
 
@@ -92,3 +98,5 @@ class MainView(ttk.Frame):
             self._btn_providers.config(state=state)
         elif name == "Modification":
             self._btn_modification.config(state=state)
+        elif name == "Scrapping":
+            self._btn_scrapping.config(state=state)

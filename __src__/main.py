@@ -8,6 +8,7 @@ from presenters.config_presenter import ConfigPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.provider_edit_presenter import ProviderEditPresenter
 from presenters.provider_presenter import ProviderPresenter
+from presenters.scrapping_presenter import ScrappingPresenter
 from repositories.json_config_repository import JsonConfigRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
@@ -15,6 +16,7 @@ from repositories.workflow_repository import WorkflowRepository
 from services.config_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
+from services.scrapping_service import ScrappingService
 from services.workflow_service import WorkflowService
 from shared.constants import CTK_GUI
 from views.config_view import ConfigView
@@ -22,6 +24,7 @@ from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
 from views.provider_view import ProviderView
+from views.scrapping_panel_view import ScrappingPanelView
 
 
 def main() -> None:
@@ -100,11 +103,28 @@ def main() -> None:
     provider_presenter.on_request_edit_provider = on_request_edit_provider
     provider_edit_presenter.set_on_done_callback(on_edit_done)
 
+    # Create Scrapping component — view lives in the content area like all other tabs
+    scrapping_service = ScrappingService()
+    scrapping_panel_view = ScrappingPanelView(main_view.content_area)
+    scrapping_presenter = ScrappingPresenter(
+        view=scrapping_panel_view,
+        service=scrapping_service,
+    )
+
+    def on_request_launch_provider(id_file: str) -> None:
+        provider = provider_service.get_provider(id_file)
+        scrapping_presenter.load_provider(provider)
+        main_view.set_tab_state("Scrapping", tk.NORMAL)
+        main_view.show_view("Scrapping")
+
+    provider_presenter.on_request_launch_provider = on_request_launch_provider
+
     # Register views to MainView tabs
     main_view.add_view("Journal", log_view)
     main_view.add_view("Configuration", config_view)
     main_view.add_view("Fournisseurs", provider_view)
     main_view.add_view("Modification", provider_edit_view)
+    main_view.add_view("Scrapping", scrapping_panel_view)
 
     # Default view on startup
     main_view.show_view("Fournisseurs")
