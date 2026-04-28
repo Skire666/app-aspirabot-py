@@ -10,7 +10,6 @@ Example:
 
 import logging
 import threading
-import time
 from typing import Optional
 
 from interfaces.workflow_repository_interface import WorkflowRepositoryInterface
@@ -66,7 +65,6 @@ class WorkflowBuilderPresenter:
         self._view.on_edit_step = self._on_edit_step
         self._view.on_delete_step = self._on_delete_step
         self._view.on_move_step = self._on_move_step
-        self._view.on_run_workflow = self._on_run_workflow
 
     # ---------------------------------------------------------------
     # Public API called by ProviderEditPresenter
@@ -172,80 +170,3 @@ class WorkflowBuilderPresenter:
     def _refresh_view(self) -> None:
         """Updates the view step list and run button state."""
         self._view.render_steps(self._steps)
-        self._view.set_run_button_state(bool(self._steps))
-
-    # ---------------------------------------------------------------
-    # Workflow execution (background thread)
-    # ---------------------------------------------------------------
-
-    def _on_run_workflow(self) -> None:
-        """Validates and starts workflow execution in a background thread."""
-        workflow = WorkflowModel(provider_id_file=self._provider_id_file or "", steps=list(self._steps))
-        errors = self._service.validate(workflow)
-        if errors:
-            self._view.show_toast(errors[0], "error")
-            return
-
-        # Cancel any running execution before starting a new one.
-        self._cancel_event.set()
-        self._cancel_event.clear()
-
-        # Disable the run button and show progress during execution.
-        self._view.set_run_button_state(False)
-        self._view.show_progress(True)
-
-        self._run_thread = threading.Thread(
-            target=self._execute_workflow,
-            args=(workflow,),
-            daemon=True,
-        )
-        self._run_thread.start()
-
-    def _execute_workflow(self, workflow: WorkflowModel) -> None:
-        """Runs all steps sequentially; must be called from a background thread.
-
-        Args:
-            workflow: The workflow snapshot to execute.
-        """
-        total = len(workflow.steps)
-        try:
-            for i, step in enumerate(workflow.steps):
-                if self._cancel_event.is_set():
-                    self._schedule_log("⚠ Exécution annulée.")
-                    break
-                self._execute_step(step, i, total)
-            else:
-                self._schedule_log("✓ Workflow terminé avec succès.")
-        except Exception as exc:
-            self._logger.error("Workflow execution error: %s", exc)
-            self._schedule_log(f"✗ Erreur: {exc}")
-        finally:
-            # Restore UI state on the main thread.
-            self._view.after(0, lambda: self._view.show_progress(False))
-            self._view.after(0, lambda: self._view.set_run_button_state(bool(self._steps)))
-
-    def _execute_step(self, step: StepScrappingModel, index: int, total: int) -> None:
-        """Logs and simulates the execution of a single step.
-
-        Args:
-            step: The step to execute.
-            index: Zero-based position in the workflow.
-            total: Total number of steps.
-        """
-        from views.step_edit_dialog_view import STEP_TYPE_LABELS
-
-        label = STEP_TYPE_LABELS.get(step.step_type, step.step_type.value)
-        msg = f"[{index + 1}/{total}] {label} — {step.params}"
-        self._schedule_log(msg)
-
-        # Brief pause simulates step execution (placeholder for Playwright).
-        time.sleep(0.3)
-
-    def _schedule_log(self, message: str) -> None:
-        """Schedules a log line to be appended on the UI thread.
-
-        Args:
-            message: The log text to display.
-        """
-        # view.after() is safe to call from a background thread.
-        self._view.after(0, lambda m=message: self._view.append_log(m))

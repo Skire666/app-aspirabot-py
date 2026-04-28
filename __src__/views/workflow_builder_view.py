@@ -11,7 +11,7 @@ Example:
 """
 
 import tkinter as tk
-from tkinter import scrolledtext, ttk
+from tkinter import ttk
 from typing import Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
@@ -61,7 +61,6 @@ class WorkflowBuilderView(ttk.Frame):
         on_edit_step: Called with the step index when Edit is clicked.
         on_delete_step: Called with the step index when Delete is clicked.
         on_move_step: Called with (index, direction) where direction is -1 or +1.
-        on_run_workflow: Called when the user clicks 'Run'.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -82,7 +81,6 @@ class WorkflowBuilderView(ttk.Frame):
         self.on_edit_step: Optional[Callable[[int], None]] = None
         self.on_delete_step: Optional[Callable[[int], None]] = None
         self.on_move_step: Optional[Callable[[int, int], None]] = None
-        self.on_run_workflow: Optional[Callable] = None
 
     def _create_widgets(self) -> None:
         """Builds toolbar, step list, and log sections."""
@@ -97,10 +95,6 @@ class WorkflowBuilderView(ttk.Frame):
         steps_section = self._create_steps_section()
         steps_section.pack(fill=tk.BOTH, expand=True)
 
-        # Log area with progress bar at the bottom.
-        log_section = self._create_log_section()
-        log_section.pack(fill=tk.BOTH, expand=False, pady=(4, 0))
-
     def _create_toolbar(self) -> ttk.Frame:
         """Creates the toolbar frame with Add and Run buttons.
 
@@ -110,14 +104,9 @@ class WorkflowBuilderView(ttk.Frame):
         toolbar = ttk.Frame(self)
 
         # Add step button.
-        self._btn_add = ttk.Button(toolbar, text="+ Ajouter une étape", command=self._fire_add_step)
+        self._btn_add = ttk.Button(toolbar, text="Ajouter une étape", command=self._fire_add_step)
         self._btn_add.pack(side=tk.LEFT, padx=5, pady=4)
 
-        # Run button starts disabled until at least one step exists.
-        self._btn_run = ttk.Button(
-            toolbar, text="▶ Exécuter", state=tk.DISABLED, command=self._fire_run_workflow
-        )
-        self._btn_run.pack(side=tk.LEFT, padx=5, pady=4)
         return toolbar
 
     def _create_steps_section(self) -> ttk.LabelFrame:
@@ -126,7 +115,7 @@ class WorkflowBuilderView(ttk.Frame):
         Returns:
             The section container frame.
         """
-        section = ttk.LabelFrame(self, text="Étapes")
+        section = ttk.LabelFrame(self, text="Liste des étapes")
 
         # Canvas + vertical scrollbar for the step cards.
         self._steps_canvas = tk.Canvas(section, height=180, highlightthickness=0)
@@ -157,22 +146,6 @@ class WorkflowBuilderView(ttk.Frame):
             lambda e: self._steps_canvas.itemconfig(self._canvas_win, width=e.width),
         )
 
-    def _create_log_section(self) -> ttk.LabelFrame:
-        """Creates the log area (read-only ScrolledText + hidden progress bar).
-
-        Returns:
-            The section container frame.
-        """
-        section = ttk.LabelFrame(self, text="Logs")
-
-        # Read-only scrolled text for execution output.
-        self._log_text = scrolledtext.ScrolledText(section, height=5, state="disabled", wrap=tk.WORD)
-        self._log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=(4, 2))
-
-        # Progress bar — packed only during execution.
-        self._progress_bar = ttk.Progressbar(section, mode="indeterminate")
-        return section
-
     # ---------------------------------------------------------------
     # Public render interface (called by the presenter)
     # ---------------------------------------------------------------
@@ -197,14 +170,6 @@ class WorkflowBuilderView(ttk.Frame):
         self._steps_inner.update_idletasks()
         self._steps_canvas.configure(scrollregion=self._steps_canvas.bbox("all"))
 
-    def set_run_button_state(self, enabled: bool) -> None:
-        """Enables or disables the Run workflow button.
-
-        Args:
-            enabled: True to enable, False to disable.
-        """
-        self._btn_run.configure(state=tk.NORMAL if enabled else tk.DISABLED)
-
     def show_toast(self, message: str, level: str = "info") -> None:
         """Briefly displays a notification message above the toolbar.
 
@@ -217,30 +182,6 @@ class WorkflowBuilderView(ttk.Frame):
         self._toast_label.configure(text=message, foreground=colour)
         self._toast_label.pack(fill=tk.X, pady=2, before=self._btn_add.master)
         self.after(3000, self._hide_toast)
-
-    def append_log(self, line: str) -> None:
-        """Appends a line of text to the log area.
-
-        Args:
-            line: The text line to append.
-        """
-        self._log_text.configure(state="normal")
-        self._log_text.insert(tk.END, line + "\n")
-        self._log_text.see(tk.END)
-        self._log_text.configure(state="disabled")
-
-    def show_progress(self, visible: bool) -> None:
-        """Shows or hides the indeterminate progress bar.
-
-        Args:
-            visible: True to show and start, False to stop and hide.
-        """
-        if visible:
-            self._progress_bar.pack(fill=tk.X, padx=5, pady=(0, 4))
-            self._progress_bar.start(10)
-        else:
-            self._progress_bar.stop()
-            self._progress_bar.pack_forget()
 
     def open_step_editor(
         self, step: Optional[StepScrappingModel] = None
@@ -306,27 +247,27 @@ class WorkflowBuilderView(ttk.Frame):
 
         ttk.Button(
             btn_frame,
-            text="↑",
+            text="HAUT",
             width=5,
             state=up_state,
             command=lambda i=index: self.on_move_step and self.on_move_step(i, -1),
         ).pack(side=tk.LEFT, padx=2)
         ttk.Button(
             btn_frame,
-            text="↓",
+            text="BAS",
             width=5,
             state=down_state,
             command=lambda i=index: self.on_move_step and self.on_move_step(i, 1),
         ).pack(side=tk.LEFT, padx=2)
         ttk.Button(
             btn_frame,
-            text="✏",
+            text="MODIFIER",
             width=5,
             command=lambda i=index: self.on_edit_step and self.on_edit_step(i),
         ).pack(side=tk.LEFT, padx=2)
         ttk.Button(
             btn_frame,
-            text="X",
+            text="SUPPRIMER",
             width=5,
             command=lambda i=index: self.on_delete_step and self.on_delete_step(i),
         ).pack(side=tk.LEFT, padx=2)
@@ -348,11 +289,6 @@ class WorkflowBuilderView(ttk.Frame):
         """Fires the on_add_step callback."""
         if self.on_add_step:
             self.on_add_step()
-
-    def _fire_run_workflow(self) -> None:
-        """Fires the on_run_workflow callback."""
-        if self.on_run_workflow:
-            self.on_run_workflow()
 
     def _hide_toast(self) -> None:
         """Hides the toast notification label."""
