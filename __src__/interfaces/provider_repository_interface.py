@@ -29,7 +29,7 @@ class ProviderRepositoryInterface(Protocol):
         """Liste tous les fichiers présents dans le dossier des fournisseurs."""
         ...
 
-    def read_provider_file_data(self, file_path: Path) -> Dict[str, Any]:
+    def read_provider_content(self, file_path: Path) -> Dict[str, Any]:
         """Lit et retourne le contenu JSON brut d'un fichier fournisseur."""
         ...
 

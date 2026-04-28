@@ -160,7 +160,7 @@ class ProviderService:
             return reasons
 
         try:
-            provider_data = self._repository.read_provider_file_data(file_path)
+            provider_data = self._repository.read_provider_content(file_path)
         except Exception as exc:
             reasons.append(f"Contenu corrompu ou illisible: {exc}")
             return reasons

@@ -12,7 +12,7 @@ Example:
 """
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
@@ -87,22 +87,31 @@ class WorkflowBuilderView(ttk.Frame):
         self.on_move_step: Optional[Callable[[int, int], None]] = None
         self.on_confirm_inline_step: Optional[Callable[[StepScrappingModel], None]] = None
         self.on_cancel_inline_step: Optional[Callable[[], None]] = None
+        self.on_clear_all_steps: Optional[Callable[[], None]] = None
 
     def _create_widgets(self) -> None:
         """Builds toolbar, step list, and brique logique sections."""
-        # Toast notification label sits above the toolbar (hidden by default).
+        # Grid layout: row 2 (steps) expands; rows 0/1/3 are fixed-height.
+        self.rowconfigure(2, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        # Toast — row 0, hidden by default.
         self._toast_label = ttk.Label(self, text="", foreground="#0055aa")
+        self._toast_label.grid(row=0, column=0, sticky="ew", pady=2)
+        self._toast_label.grid_remove()
 
-        # Toolbar with Add button.
+        # Toolbar — row 1.
         toolbar = self._create_toolbar()
-        toolbar.pack(fill=tk.X, pady=(0, 4))
+        toolbar.grid(row=1, column=0, sticky="ew", pady=(0, 4))
 
-        # Scrollable step list in the middle — expands to fill available height.
+        # Scrollable step list — row 2, fills all available height.
         steps_section = self._create_steps_section()
-        steps_section.pack(fill=tk.BOTH, expand=True)
+        steps_section.grid(row=2, column=0, sticky="nsew")
 
-        # Bottom row (Brique logique + Aide à la saisie) — hidden by default.
+        # Bottom row (Brique logique + Aide à la saisie) — row 3, fixed 200 px, hidden by default.
         self._bottom_row = self._create_bottom_row()
+        self._bottom_row.grid(row=3, column=0, sticky="ew")
+        self._bottom_row.grid_remove()
 
     def _create_toolbar(self) -> ttk.Frame:
         """Creates the toolbar frame with the Add step button.
@@ -115,6 +124,11 @@ class WorkflowBuilderView(ttk.Frame):
         # Add step button.
         self._btn_add = ttk.Button(toolbar, text="Ajouter une étape", command=self._fire_add_step)
         self._btn_add.pack(side=tk.LEFT, padx=5, pady=4)
+
+        self._btn_clear = ttk.Button(
+            toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps
+        )
+        self._btn_clear.pack(side=tk.RIGHT, padx=5, pady=4)
 
         return toolbar
 
@@ -152,14 +166,12 @@ class WorkflowBuilderView(ttk.Frame):
         Returns:
             The row frame with both panels already gridded inside.
         """
-        row = ttk.Frame(self)
+        row = ttk.Frame(self, height=210, padding=(0, 10, 0, 0))  # Entre Workflow et Brique
+        row.grid_propagate(False)  # enforce fixed height regardless of children
 
-        # Prevent the row from shrinking to fit its children.
-        row.pack_propagate(False)
-
-        # 60 / 40 column split using grid weights.
-        row.columnconfigure(0, weight=3)
-        row.columnconfigure(1, weight=2)
+        # Brique logique : largeur fixe 400 px. Aide à la saisie : espace restant.
+        row.columnconfigure(0, weight=0, minsize=310)
+        row.columnconfigure(1, weight=1)
         row.rowconfigure(0, weight=1)
 
         # Brique logique panel — left column, 60 %.
@@ -167,11 +179,13 @@ class WorkflowBuilderView(ttk.Frame):
         self._inline_form.on_confirm = self._fire_confirm_step
         self._inline_form.on_cancel = self._fire_cancel_step
         self._inline_form.on_type_changed = self._update_help_text
-        self._inline_form.grid(row=0, column=0, sticky="nsew", padx=(0, 2))
+        self._inline_form.grid(
+            row=0, column=0, sticky="nsew", padx=(0, 5)
+        )  # entre brique logique et aide à la saisie
 
         # Aide à la saisie panel — right column, 40 %.
         self._help_panel = StepHelpPanel(row)
-        self._help_panel.grid(row=0, column=1, sticky="nsew", padx=(2, 0))
+        self._help_panel.grid(row=0, column=1, sticky="nsew")
 
         return row
 
@@ -222,7 +236,7 @@ class WorkflowBuilderView(ttk.Frame):
         colour_map = {"info": "#0055aa", "error": "#cc0000", "success": "#006600"}
         colour = colour_map.get(level, "#000000")
         self._toast_label.configure(text=message, foreground=colour)
-        self._toast_label.pack(fill=tk.X, pady=2, before=self._btn_add.master)
+        self._toast_label.grid()
         self.after(3000, self._hide_toast)
 
     def show_inline_form(self, step: Optional[StepScrappingModel] = None) -> None:
@@ -236,11 +250,11 @@ class WorkflowBuilderView(ttk.Frame):
         """
         # Load form (triggers on_type_changed → help text update).
         self._inline_form.load(step)
-        self._bottom_row.pack(fill=tk.X, pady=(4, 0))
+        self._bottom_row.grid()
 
     def hide_inline_form(self) -> None:
         """Hides both Brique logique and Aide à la saisie panels."""
-        self._bottom_row.pack_forget()
+        self._bottom_row.grid_remove()
 
     def _update_help_text(self, label: str) -> None:
         """Updates the Aide à la saisie panel when the active step type changes.
@@ -356,6 +370,15 @@ class WorkflowBuilderView(ttk.Frame):
         if self.on_cancel_inline_step:
             self.on_cancel_inline_step()
 
+    def _fire_clear_all_steps(self) -> None:
+        """Asks confirmation then notifies the presenter to clear all steps."""
+        confirmed = messagebox.askyesno(
+            "Effacer la liste",
+            "Voulez-vous vraiment supprimer toutes les étapes ?",
+        )
+        if confirmed and self.on_clear_all_steps:
+            self.on_clear_all_steps()
+
     def _hide_toast(self) -> None:
         """Hides the toast notification label."""
-        self._toast_label.pack_forget()
+        self._toast_label.grid_remove()

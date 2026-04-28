@@ -75,20 +75,23 @@ class StepInlineFormPanel(ttk.LabelFrame):
     # ---------------------------------------------------------------
 
     def _create_widgets(self) -> None:
-        """Builds type selector, dynamic form area, error label, and buttons."""
-        # Type selector at the top.
+        """Builds type selector, dynamic form area, error label, and buttons.
+
+        Pack order rule: BOTTOM widgets must be packed before TOP ones so that
+        pack reserves their space before the expanding form_frame claims the rest.
+        Visual order (top→bottom): type_selector / form_frame / error_label / buttons.
+        """
+        # --- BOTTOM zone (packed first, innermost = lowest on screen) ---
+        self._create_buttons()
+
+        self._error_label = ttk.Label(self, text="", foreground="red")
+        self._error_label.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 2))
+
+        # --- TOP zone (packed after, top→bottom order) ---
         self._create_type_selector()
 
-        # Dynamic form area rebuilt on type change.
         self._form_frame = ttk.Frame(self)
-        self._form_frame.pack(fill=tk.BOTH, padx=10, pady=5)
-
-        # Validation error display.
-        self._error_label = ttk.Label(self, text="", foreground="red")
-        self._error_label.pack(fill=tk.X, padx=10, pady=(0, 5))
-
-        # Confirm / Cancel buttons at the bottom.
-        self._create_buttons()
+        self._form_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def _create_type_selector(self) -> None:
         """Creates the step type selector Combobox at the top."""
@@ -109,7 +112,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
     def _create_buttons(self) -> None:
         """Creates the Confirm and Cancel buttons at the bottom."""
         btn_frame = ttk.Frame(self)
-        btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
 
         ttk.Button(btn_frame, text="Confirmer", command=self._confirm).pack(side=tk.RIGHT, padx=5)
         ttk.Button(btn_frame, text="Annuler", command=self._cancel).pack(side=tk.RIGHT, padx=5)
@@ -709,6 +712,7 @@ class StepHelpPanel(ttk.LabelFrame):
         self._text = tk.Text(
             self,
             wrap=tk.WORD,
+            width=1,  # let grid/pack control the width via column weights
             state=tk.DISABLED,
             relief=tk.FLAT,
             cursor="arrow",

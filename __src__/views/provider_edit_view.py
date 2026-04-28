@@ -94,7 +94,7 @@ class ProviderEditView(ttk.Frame):
 
         # 3. Workflow & Instructions — fills all remaining vertical space
         workflow_lf = ttk.LabelFrame(main_container, text="Workflow & Instructions")
-        workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 10))
+        workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5))
 
         self._workflow_builder_view = WorkflowBuilderView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)

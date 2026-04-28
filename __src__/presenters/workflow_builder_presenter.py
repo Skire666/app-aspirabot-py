@@ -68,6 +68,7 @@ class WorkflowBuilderPresenter:
         self._view.on_move_step = self._on_move_step
         self._view.on_confirm_inline_step = self._on_confirm_inline_step
         self._view.on_cancel_inline_step = self._on_cancel_inline_step
+        self._view.on_clear_all_steps = self._on_clear_all_steps
 
     # ---------------------------------------------------------------
     # Public API called by ProviderEditPresenter
@@ -153,6 +154,13 @@ class WorkflowBuilderPresenter:
         if 0 <= index < len(self._steps):
             del self._steps[index]
             self._persist_and_refresh()
+
+    def _on_clear_all_steps(self) -> None:
+        """Clears all steps and persists the empty workflow."""
+        self._steps.clear()
+        self._edit_index = None
+        self._view.hide_inline_form()
+        self._persist_and_refresh()
 
     def _on_move_step(self, index: int, direction: int) -> None:
         """Swaps a step with its neighbour in the given direction.

@@ -95,7 +95,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             key=lambda path: path.name.lower(),
         )
 
-    def read_provider_file_data(self, file_path: Path) -> Dict[str, Any]:
+    def read_provider_content(self, file_path: Path) -> Dict[str, Any]:
         """Reads a provider file and returns the decoded JSON content.
 
         Args:
