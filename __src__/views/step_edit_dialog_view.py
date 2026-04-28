@@ -81,7 +81,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
         # Dynamic form area rebuilt on type change.
         self._form_frame = ttk.Frame(self)
-        self._form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        self._form_frame.pack(fill=tk.BOTH, padx=10, pady=5)
 
         # Validation error display.
         self._error_label = ttk.Label(self, text="", foreground="red")
@@ -111,12 +111,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
         btn_frame = ttk.Frame(self)
         btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Button(btn_frame, text="Confirmer", command=self._confirm).pack(
-            side=tk.RIGHT, padx=5
-        )
-        ttk.Button(btn_frame, text="Annuler", command=self._cancel).pack(
-            side=tk.RIGHT, padx=5
-        )
+        ttk.Button(btn_frame, text="Confirmer", command=self._confirm).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="Annuler", command=self._cancel).pack(side=tk.RIGHT, padx=5)
 
     # ---------------------------------------------------------------
     # Public interface
@@ -195,11 +191,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_widgets["url"] = url_var
 
         # Wait state selector.
-        ttk.Label(self._form_frame, text="État d'attente:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+        ttk.Label(self._form_frame, text="État d'attente:").grid(
+            row=1, column=0, sticky="w", padx=5, pady=4
+        )
         ws_var = tk.StringVar(value="domcontentloaded")
-        ttk.Combobox(
-            self._form_frame, textvariable=ws_var, values=_WAIT_STATES, state="readonly"
-        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=ws_var, values=_WAIT_STATES, state="readonly").grid(
+            row=1, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["wait_state"] = ws_var
 
     def _build_form_sleep(self) -> None:
@@ -214,9 +212,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
         ttk.Label(self._form_frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         unit_var = tk.StringVar(value="second")
-        ttk.Combobox(
-            self._form_frame, textvariable=unit_var, values=_UNITS, state="readonly"
-        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=unit_var, values=_UNITS, state="readonly").grid(
+            row=1, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["unit"] = unit_var
 
     def _build_form_random_pause(self) -> None:
@@ -238,17 +236,17 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
         ttk.Label(self._form_frame, text="Unité:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
         unit_var = tk.StringVar(value="second")
-        ttk.Combobox(
-            self._form_frame, textvariable=unit_var, values=_UNITS, state="readonly"
-        ).grid(row=2, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=unit_var, values=_UNITS, state="readonly").grid(
+            row=2, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["unit"] = unit_var
 
     def _build_form_refresh_page(self) -> None:
         """Builds the REFRESH_PAGE form (clear_cache checkbox)."""
         cache_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(
-            self._form_frame, text="Vider le cache", variable=cache_var
-        ).grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        ttk.Checkbutton(self._form_frame, text="Vider le cache", variable=cache_var).grid(
+            row=0, column=0, sticky="w", padx=5, pady=4
+        )
         self._form_widgets["clear_cache"] = cache_var
 
     def _build_form_download_image(self) -> None:
@@ -306,9 +304,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
     def _build_form_scroll_down(self) -> None:
         """Builds the SCROLL_DOWN form (pixel count spinbox)."""
         self._form_frame.columnconfigure(1, weight=1)
-        ttk.Label(self._form_frame, text="Pixels:").grid(
-            row=0, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Pixels:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         px_var = tk.StringVar(value="1000")
         ttk.Spinbox(self._form_frame, from_=0, to=99999, textvariable=px_var, width=10).grid(
             row=0, column=1, sticky="w", padx=5, pady=4
@@ -338,20 +334,18 @@ class StepInlineFormPanel(ttk.LabelFrame):
             default_min: Default value for the minimum spinbox.
             default_max: Default value for the maximum spinbox.
         """
-        ttk.Label(self._form_frame, text=label).grid(
-            row=row, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=4)
         ttk.Label(self._form_frame, text="Min:").grid(row=row, column=1, sticky="w", padx=2)
         min_var = tk.StringVar(value=str(default_min))
-        ttk.Spinbox(
-            self._form_frame, from_=0, to=99999, textvariable=min_var, width=8
-        ).grid(row=row, column=2, padx=5, pady=4)
+        ttk.Spinbox(self._form_frame, from_=0, to=99999, textvariable=min_var, width=8).grid(
+            row=row, column=2, padx=5, pady=4
+        )
 
         ttk.Label(self._form_frame, text="Max:").grid(row=row, column=3, sticky="w", padx=2)
         max_var = tk.StringVar(value=str(default_max))
-        ttk.Spinbox(
-            self._form_frame, from_=0, to=99999, textvariable=max_var, width=8
-        ).grid(row=row, column=4, padx=5, pady=4)
+        ttk.Spinbox(self._form_frame, from_=0, to=99999, textvariable=max_var, width=8).grid(
+            row=row, column=4, padx=5, pady=4
+        )
 
         self._form_widgets[min_key] = min_var
         self._form_widgets[max_key] = max_var

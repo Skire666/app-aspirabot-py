@@ -97,9 +97,9 @@ class WorkflowBuilderView(ttk.Frame):
         toolbar = self._create_toolbar()
         toolbar.pack(fill=tk.X, pady=(0, 4))
 
-        # Scrollable step list in the middle.
+        # Scrollable step list in the middle — expands to fill available height.
         steps_section = self._create_steps_section()
-        steps_section.pack(fill=tk.X, expand=True)
+        steps_section.pack(fill=tk.BOTH, expand=True)
 
         # Bottom row (Brique logique + Aide à la saisie) — hidden by default.
         self._bottom_row = self._create_bottom_row()
@@ -126,8 +126,8 @@ class WorkflowBuilderView(ttk.Frame):
         """
         section = ttk.LabelFrame(self, text="Liste des étapes")
 
-        # Canvas + vertical scrollbar for the step cards.
-        # No fixed height — the canvas expands to fill all available space.
+        # Canvas + vertical scrollbar; height=80 keeps the minimum compact so
+        # the workflow frame can shrink when the window is small.
         self._steps_canvas = tk.Canvas(section, highlightthickness=0)
         scrollbar = ttk.Scrollbar(section, orient="vertical", command=self._steps_canvas.yview)
         self._steps_canvas.configure(yscrollcommand=scrollbar.set)
@@ -152,7 +152,7 @@ class WorkflowBuilderView(ttk.Frame):
         Returns:
             The row frame with both panels already gridded inside.
         """
-        row = ttk.Frame(self, height=200)
+        row = ttk.Frame(self)
 
         # Prevent the row from shrinking to fit its children.
         row.pack_propagate(False)

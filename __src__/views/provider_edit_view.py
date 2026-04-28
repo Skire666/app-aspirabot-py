@@ -32,7 +32,7 @@ class ProviderEditView(ttk.Frame):
 
         # Top Section (Informations + Metadonnees)
         top_frame = ttk.Frame(main_container)
-        top_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
+        top_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 10))
         top_frame.columnconfigure(0, weight=1)
         top_frame.columnconfigure(1, weight=1)
 
@@ -88,16 +88,16 @@ class ProviderEditView(ttk.Frame):
 
         meta_lf.columnconfigure(1, weight=1)
 
-        # 3. Workflow & Instructions — embed the builder widget directly
+        # 4. Footer — packed before workflow so side=BOTTOM reserves space correctly
+        footer_frame = ttk.Frame(main_container)
+        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+
+        # 3. Workflow & Instructions — fills all remaining vertical space
         workflow_lf = ttk.LabelFrame(main_container, text="Workflow & Instructions")
-        workflow_lf.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self._workflow_builder_view = WorkflowBuilderView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        # 4. Footer
-        footer_frame = ttk.Frame(main_container)
-        footer_frame.pack(fill=tk.X, expand=False, pady=(10, 0))
 
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
