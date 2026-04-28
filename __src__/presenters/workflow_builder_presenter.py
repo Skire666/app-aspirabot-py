@@ -1,7 +1,7 @@
 """Presenter that wires the WorkflowBuilderView to the workflow service and repository.
 
-Manages the in-memory step list, opens the step edit dialog through the
-view, and runs the workflow in a background thread with cancellation support.
+Manages the in-memory step list, opens the inline step form through the
+view, and persists changes via the repository.
 
 Example:
     >>> presenter = WorkflowBuilderPresenter(view, service, repository)
@@ -24,14 +24,14 @@ class WorkflowBuilderPresenter:
 
     Responsibilities:
     - Loads and caches workflow steps from the repository.
-    - Mediates add / edit / delete / move operations.
-    - Runs the workflow in a daemon thread.
+    - Mediates add / edit / delete / move operations via the inline form.
     - Schedules all view updates on the UI thread via view.after().
 
     Attributes:
         _view: The embedded workflow builder widget.
         _service: Validates workflows.
         _repository: Persists workflow steps.
+        _edit_index: Index of the step being edited, or None in add mode.
     """
 
     def __init__(
@@ -56,6 +56,7 @@ class WorkflowBuilderPresenter:
         self._steps: list[StepScrappingModel] = []
         self._run_thread: Optional[threading.Thread] = None
         self._cancel_event = threading.Event()
+        self._edit_index: Optional[int] = None
 
         self._bind_view_events()
 
@@ -65,6 +66,8 @@ class WorkflowBuilderPresenter:
         self._view.on_edit_step = self._on_edit_step
         self._view.on_delete_step = self._on_delete_step
         self._view.on_move_step = self._on_move_step
+        self._view.on_confirm_inline_step = self._on_confirm_inline_step
+        self._view.on_cancel_inline_step = self._on_cancel_inline_step
 
     # ---------------------------------------------------------------
     # Public API called by ProviderEditPresenter
@@ -104,28 +107,42 @@ class WorkflowBuilderPresenter:
     # ---------------------------------------------------------------
 
     def _on_add_step(self) -> None:
-        """Opens the step editor to create a new step."""
-        step = self._view.open_step_editor()
-        if step is None:
-            return
-        # Append the new step and persist.
-        self._steps.append(step)
-        self._persist_and_refresh()
+        """Shows the inline form in add mode (no pre-fill)."""
+        # Clear any pending edit index so confirm appends a new step.
+        self._edit_index = None
+        self._view.show_inline_form()
 
     def _on_edit_step(self, index: int) -> None:
-        """Opens the step editor pre-filled with an existing step.
+        """Shows the inline form pre-filled with the step at the given index.
 
         Args:
             index: Zero-based index of the step to edit.
         """
         if index < 0 or index >= len(self._steps):
             return
-        existing = self._steps[index]
-        step = self._view.open_step_editor(existing)
-        if step is None:
-            return
-        self._steps[index] = step
+        # Track the index so confirm knows which slot to update.
+        self._edit_index = index
+        self._view.show_inline_form(self._steps[index])
+
+    def _on_confirm_inline_step(self, step: StepScrappingModel) -> None:
+        """Applies the confirmed step (add or update), persists, and refreshes.
+
+        Args:
+            step: The newly created or updated step from the inline form.
+        """
+        if self._edit_index is None:
+            # Add mode: append the new step at the end.
+            self._steps.append(step)
+        else:
+            # Edit mode: replace the step at the tracked index.
+            self._steps[self._edit_index] = step
+        self._edit_index = None
+        self._view.hide_inline_form()
         self._persist_and_refresh()
+
+    def _on_cancel_inline_step(self) -> None:
+        """Clears the pending edit state after the view hides the panel."""
+        self._edit_index = None
 
     def _on_delete_step(self, index: int) -> None:
         """Removes a step by index.
@@ -168,5 +185,5 @@ class WorkflowBuilderPresenter:
         self._refresh_view()
 
     def _refresh_view(self) -> None:
-        """Updates the view step list and run button state."""
+        """Updates the view step list."""
         self._view.render_steps(self._steps)

@@ -2,7 +2,8 @@
 
 This ttk.Frame is placed inside the 'Workflow & Instructions' LabelFrame
 of ProviderEditView. It renders a scrollable list of step cards, a toolbar,
-and a log area. All user actions fire callbacks set by the presenter.
+and an inline 'Brique logique' form panel for adding and editing steps.
+All user actions fire callbacks set by the presenter.
 
 Example:
     >>> widget = WorkflowBuilderView(parent_frame)
@@ -15,6 +16,7 @@ from tkinter import ttk
 from typing import Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
+from views.step_edit_dialog_view import StepInlineFormPanel
 
 
 def _format_step_label(step: StepScrappingModel) -> str:
@@ -51,7 +53,7 @@ def _format_step_label(step: StepScrappingModel) -> str:
 
 
 class WorkflowBuilderView(ttk.Frame):
-    """Scrollable step list with toolbar and execution log, embedded in a parent frame.
+    """Scrollable step list with toolbar and inline form, embedded in a parent frame.
 
     The presenter sets callback attributes and calls render methods.
     The view never imports services or repositories.
@@ -61,6 +63,8 @@ class WorkflowBuilderView(ttk.Frame):
         on_edit_step: Called with the step index when Edit is clicked.
         on_delete_step: Called with the step index when Delete is clicked.
         on_move_step: Called with (index, direction) where direction is -1 or +1.
+        on_confirm_inline_step: Called with the confirmed StepScrappingModel.
+        on_cancel_inline_step: Called when the inline form is cancelled.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -81,22 +85,29 @@ class WorkflowBuilderView(ttk.Frame):
         self.on_edit_step: Optional[Callable[[int], None]] = None
         self.on_delete_step: Optional[Callable[[int], None]] = None
         self.on_move_step: Optional[Callable[[int, int], None]] = None
+        self.on_confirm_inline_step: Optional[Callable[[StepScrappingModel], None]] = None
+        self.on_cancel_inline_step: Optional[Callable[[], None]] = None
 
     def _create_widgets(self) -> None:
-        """Builds toolbar, step list, and log sections."""
+        """Builds toolbar, step list, and brique logique sections."""
         # Toast notification label sits above the toolbar (hidden by default).
         self._toast_label = ttk.Label(self, text="", foreground="#0055aa")
 
-        # Toolbar with Add and Run buttons.
+        # Toolbar with Add button.
         toolbar = self._create_toolbar()
         toolbar.pack(fill=tk.X, pady=(0, 4))
 
-        # Scrollable steps list in the middle.
+        # Scrollable step list in the middle.
         steps_section = self._create_steps_section()
         steps_section.pack(fill=tk.BOTH, expand=True)
 
+        # Inline form panel — hidden by default, shown on Add or Edit.
+        self._inline_form = StepInlineFormPanel(self)
+        self._inline_form.on_confirm = self._fire_confirm_step
+        self._inline_form.on_cancel = self._fire_cancel_step
+
     def _create_toolbar(self) -> ttk.Frame:
-        """Creates the toolbar frame with Add and Run buttons.
+        """Creates the toolbar frame with the Add step button.
 
         Returns:
             The fully built toolbar frame.
@@ -183,23 +194,19 @@ class WorkflowBuilderView(ttk.Frame):
         self._toast_label.pack(fill=tk.X, pady=2, before=self._btn_add.master)
         self.after(3000, self._hide_toast)
 
-    def open_step_editor(
-        self, step: Optional[StepScrappingModel] = None
-    ) -> Optional[StepScrappingModel]:
-        """Opens the step edit dialog modally and returns the result.
+    def show_inline_form(self, step: Optional[StepScrappingModel] = None) -> None:
+        """Reveals the Brique logique panel, optionally pre-filled with a step.
 
         Args:
-            step: Existing step to edit, or None to create a new one.
-
-        Returns:
-            The confirmed StepScrappingModel, or None if cancelled.
+            step: Existing step to pre-fill for editing, or None for a blank form.
         """
-        # Import here to avoid a top-level circular-import risk.
-        from views.step_edit_dialog_view import StepEditDialogView
+        # Load step data before making the panel visible.
+        self._inline_form.load(step)
+        self._inline_form.pack(fill=tk.X, pady=(4, 0))
 
-        dialog = StepEditDialogView(self.winfo_toplevel(), step)
-        self.winfo_toplevel().wait_window(dialog)
-        return dialog.result
+    def hide_inline_form(self) -> None:
+        """Hides the Brique logique panel without altering the step list."""
+        self._inline_form.pack_forget()
 
     # ---------------------------------------------------------------
     # Step card construction
@@ -289,6 +296,22 @@ class WorkflowBuilderView(ttk.Frame):
         """Fires the on_add_step callback."""
         if self.on_add_step:
             self.on_add_step()
+
+    def _fire_confirm_step(self, step: StepScrappingModel) -> None:
+        """Forwards the confirmed step to the presenter callback.
+
+        Args:
+            step: The step built from the inline form.
+        """
+        if self.on_confirm_inline_step:
+            self.on_confirm_inline_step(step)
+
+    def _fire_cancel_step(self) -> None:
+        """Hides the inline form and notifies the presenter of cancellation."""
+        # Hide immediately so the UI responds without waiting for the presenter.
+        self.hide_inline_form()
+        if self.on_cancel_inline_step:
+            self.on_cancel_inline_step()
 
     def _hide_toast(self) -> None:
         """Hides the toast notification label."""

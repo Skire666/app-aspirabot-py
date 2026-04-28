@@ -1,19 +1,19 @@
-"""Modal dialog for creating and editing a scraping step.
+"""Inline form panel for creating and editing a scraping step.
 
-This view is a tk.Toplevel that displays a type selector and a
-dynamic form area. The form is rebuilt whenever the step type
-changes. Confirmation triggers inline validation; the dialog
-stays open on error.
+This ttk.LabelFrame is embedded inside WorkflowBuilderView. It displays
+a type selector and a dynamic form area. The form is rebuilt whenever the
+step type changes. Confirmation fires on_confirm; cancellation fires on_cancel.
 
 Example:
-    >>> dialog = StepEditDialogView(parent_widget, existing_step)
-    >>> parent_widget.wait_window(dialog)
-    >>> result = dialog.result  # StepScrappingModel or None
+    >>> panel = StepInlineFormPanel(parent_frame)
+    >>> panel.on_confirm = lambda step: print(step)
+    >>> panel.on_cancel = lambda: print("cancelled")
+    >>> panel.load(existing_step)
 """
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 
@@ -42,60 +42,52 @@ _DOWNLOAD_MODES = ["largest", "first", "last", "all"]
 _CLICK_MODES = ["Normal", "Forced", "JS Direct"]
 
 
-class StepEditDialogView(tk.Toplevel):
-    """Modal dialog for creating or editing a single scraping step.
+class StepInlineFormPanel(ttk.LabelFrame):
+    """Inline form panel for creating or editing a single scraping step.
 
-    After the dialog closes, callers read `.result` for the outcome.
+    Embedded inside WorkflowBuilderView. Hidden by default.
+    After confirmation, on_confirm is fired with the built StepScrappingModel.
+    After cancellation, on_cancel is fired so the parent can hide the panel.
 
     Attributes:
-        result: The confirmed StepScrappingModel, or None if cancelled.
+        on_confirm: Callback(StepScrappingModel) fired when step is validated.
+        on_cancel: Callback fired when the user cancels without changes.
     """
 
-    def __init__(
-        self,
-        parent: tk.Widget,
-        step: Optional[StepScrappingModel] = None,
-    ) -> None:
-        """Initializes and opens the step editor dialog.
+    def __init__(self, parent: tk.Widget) -> None:
+        """Initializes the panel and builds all sub-regions.
 
         Args:
-            parent: The parent widget (used to centre the dialog).
-            step: Existing step to edit, or None to create a new one.
+            parent: The parent Tkinter widget to embed into.
         """
-        super().__init__(parent)
-        self.result: Optional[StepScrappingModel] = None
-        self._step = step
+        super().__init__(parent, text="Brique logique")
+        self.on_confirm: Optional[Callable[[StepScrappingModel], None]] = None
+        self.on_cancel: Optional[Callable[[], None]] = None
         self._type_var = tk.StringVar()
         self._form_widgets: dict[str, Any] = {}
 
         # Build all structural regions.
-        self._setup_dialog()
+        self._create_widgets()
+
+    # ---------------------------------------------------------------
+    # Widget construction
+    # ---------------------------------------------------------------
+
+    def _create_widgets(self) -> None:
+        """Builds type selector, dynamic form area, error label, and buttons."""
+        # Type selector at the top.
         self._create_type_selector()
+
+        # Dynamic form area rebuilt on type change.
         self._form_frame = ttk.Frame(self)
         self._form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # Validation error display.
         self._error_label = ttk.Label(self, text="", foreground="red")
         self._error_label.pack(fill=tk.X, padx=10, pady=(0, 5))
+
+        # Confirm / Cancel buttons at the bottom.
         self._create_buttons()
-
-        # Pre-select type and optionally fill from existing step.
-        initial_type = step.step_type if step else StepType.OPEN_URL
-        self._type_var.set(STEP_TYPE_LABELS[initial_type])
-        self._rebuild_form(initial_type)
-        if step:
-            self._load_step(step)
-
-        self.grab_set()
-
-    # ---------------------------------------------------------------
-    # Window setup
-    # ---------------------------------------------------------------
-
-    def _setup_dialog(self) -> None:
-        """Configures window properties."""
-        self.title("Éditer une étape")
-        self.resizable(False, False)
-        self.minsize(420, 250)
-        self.transient(self.master)
 
     def _create_type_selector(self) -> None:
         """Creates the step type selector Combobox at the top."""
@@ -124,6 +116,25 @@ class StepEditDialogView(tk.Toplevel):
         ttk.Button(btn_frame, text="Annuler", command=self._cancel).pack(
             side=tk.RIGHT, padx=5
         )
+
+    # ---------------------------------------------------------------
+    # Public interface
+    # ---------------------------------------------------------------
+
+    def load(self, step: Optional[StepScrappingModel] = None) -> None:
+        """Prepares the form for a new step or pre-fills it from an existing one.
+
+        Args:
+            step: Existing step to pre-fill, or None to show a blank form.
+        """
+        # Select initial step type and rebuild the form.
+        initial_type = step.step_type if step else StepType.OPEN_URL
+        self._type_var.set(STEP_TYPE_LABELS[initial_type])
+        self._rebuild_form(initial_type)
+
+        # Pre-fill widget values when editing an existing step.
+        if step:
+            self._load_step(step)
 
     # ---------------------------------------------------------------
     # Dynamic form management
@@ -561,25 +572,26 @@ class StepEditDialogView(tk.Toplevel):
     # ---------------------------------------------------------------
 
     def _confirm(self) -> None:
-        """Validates the form and sets result, or shows the first error."""
+        """Validates the form, builds the step, and fires on_confirm."""
         label = self._type_var.get()
         step_type = _LABEL_TO_TYPE.get(label)
         if step_type is None:
             return
 
-        # Validate before accepting.
+        # Show the first error if validation fails, keeping the form open.
         errors = self._validate_form(step_type)
         if errors:
             self._error_label.configure(text=errors[0])
             return
 
-        # Build and store the result step.
+        # Build and broadcast the confirmed step to the presenter.
         self._error_label.configure(text="")
         params = self._get_params(step_type)
-        self.result = StepScrappingModel(step_type=step_type, params=params)
-        self.destroy()
+        step = StepScrappingModel(step_type=step_type, params=params)
+        if self.on_confirm:
+            self.on_confirm(step)
 
     def _cancel(self) -> None:
-        """Cancels the dialog without setting a result."""
-        self.result = None
-        self.destroy()
+        """Fires the on_cancel callback without modifying the step list."""
+        if self.on_cancel:
+            self.on_cancel()
