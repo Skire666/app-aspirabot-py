@@ -4,19 +4,35 @@
 E:\app-py-life-selector\src_python_2026_03_sushi_scan
 
 
-bug :
-si créer
-et directe une step
-il save le fichier, c'est qui qui fait ça ?
-
 
 Ajouter brique fin
+
 induqer temps écoulée par étape dans le log
-compter le nombre de fois qu'une étape est RUN
 indiquer si erreur ou succès (true false), dans le code, et le log
+
 Faire un brique IF qui regarde bool et jump
 Faire un brique WHILE
 
+
+Fermer tous les onglets :
+ne garder que ceux qui match le regexp ?
+Et si crash tout, il arrete le scrapping ? (cocher uen case si fail)
+NOTE PCO : j'ai des popiuip de pub, a ferme illico apres le clique
+
+
+compter le nombre de fois qu'une étape est RUN
+
+
+
+Bouton pour vérifier le workflow.
+Affiche une erreur par erreur.
+NOTE PCO : se faire une petit ligne, avec un compteur, et l'état du workflow.
+
+
+
+brique ou code pour vérifier si redirection.
+genre les URL change
+notamment les trucs de piratage (wawacity, flemmix, zlib, etc...)
 
 Nom et URL
 a la sauvegarde
