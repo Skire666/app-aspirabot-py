@@ -35,7 +35,11 @@ def _format_step_label(step: StepScrappingModel) -> str:
     p = step.params
     t = step.step_type
     if t == StepType.OPEN_URL:
-        return f"Open URL — {p.get('url', '')}"
+        label = f"Open URL — {p.get('url', '')}"
+        td = p.get("timeout_duration", 0)
+        if td:
+            label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
+        return label
     if t == StepType.REFRESH_PAGE:
         suffix = " (vider cache)" if p.get("clear_cache") else ""
         return f"Rafraîchir la page{suffix}"
@@ -46,9 +50,17 @@ def _format_step_label(step: StepScrappingModel) -> str:
     if t == StepType.DOWNLOAD_IMAGE:
         return f"Télécharger image — {p.get('mode', 'largest')}"
     if t == StepType.WAIT_IMAGE_SIZE:
-        return f"Attendre taille image — {p.get('width_min', 0)}×{p.get('height_min', 0)}"
+        label = f"Attendre taille image — {p.get('width_min', 0)}×{p.get('height_min', 0)}"
+        td = p.get("timeout_duration", 0)
+        if td:
+            label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
+        return label
     if t == StepType.WAIT_ELEMENT:
-        return f"Attendre élément — {p.get('selector', '')}"
+        label = f"Attendre élément — {p.get('selector', '')}"
+        td = p.get("timeout_duration", 0)
+        if td:
+            label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
+        return label
     if t == StepType.CLICK_ELEMENT:
         return f"Cliquer — {p.get('selector', '')}"
     if t == StepType.SCROLL_DOWN:

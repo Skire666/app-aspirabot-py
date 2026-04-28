@@ -85,6 +85,7 @@ _PARAM_DISPLAY_REVERSE: dict[str, dict[str, str]] = {
     "target": _TARGET_REVERSE,
     "condition": _CONDITION_REVERSE,
     "wait_unit": _WAIT_UNIT_REVERSE,
+    "timeout_unit": _WAIT_UNIT_REVERSE,
 }
 
 
@@ -247,7 +248,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
     # ---------------------------------------------------------------
 
     def _build_form_open_url(self) -> None:
-        """Builds the OPEN_URL form (URL field + wait_state combobox)."""
+        """Builds the OPEN_URL form (URL field + wait_state combobox + timeout row)."""
         self._form_frame.columnconfigure(1, weight=1)
         ttk.Label(self._form_frame, text="URL:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         url_var = tk.StringVar(value="https://example.com/")
@@ -265,6 +266,22 @@ class StepInlineFormPanel(ttk.LabelFrame):
             row=1, column=1, sticky="ew", padx=5, pady=4
         )
         self._form_widgets["wait_state"] = ws_var
+
+        # Timeout row — single horizontal line: label | spinbox | combobox | hint.
+        timeout_frame = ttk.Frame(self._form_frame)
+        timeout_frame.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+        ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
+        td_var = tk.StringVar(value="0")
+        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
+        tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
+        ttk.Combobox(
+            timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
+        ).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
+        self._form_widgets["timeout_duration"] = td_var
+        self._form_widgets["timeout_unit"] = tu_var
 
     def _build_form_sleep(self) -> None:
         """Builds the SLEEP form (duration spinbox + unit combobox)."""
@@ -330,9 +347,25 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._add_dimension_row(2, "Largeur (px):", "width_min", "width_max", 0, 99999)
 
     def _build_form_wait_image_size(self) -> None:
-        """Builds the WAIT_IMAGE_SIZE form (4 dimension spinboxes, no mode)."""
+        """Builds the WAIT_IMAGE_SIZE form (4 dimension spinboxes + timeout row)."""
         self._add_dimension_row(0, "Hauteur (px):", "height_min", "height_max", 0, 99999)
         self._add_dimension_row(1, "Largeur (px):", "width_min", "width_max", 0, 99999)
+
+        # Timeout row — single horizontal line: label | spinbox | combobox | hint.
+        timeout_frame = ttk.Frame(self._form_frame)
+        timeout_frame.grid(row=2, column=0, columnspan=5, sticky="w", padx=5, pady=4)
+        ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
+        td_var = tk.StringVar(value="0")
+        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
+        tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
+        ttk.Combobox(
+            timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
+        ).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
+        self._form_widgets["timeout_duration"] = td_var
+        self._form_widgets["timeout_unit"] = tu_var
 
     def _build_form_click_element(self) -> None:
         """Builds the CLICK_ELEMENT form (CSS selector + click_mode combobox)."""
@@ -356,7 +389,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_widgets["click_mode"] = mode_var
 
     def _build_form_wait_element(self) -> None:
-        """Builds the WAIT_ELEMENT form (CSS selector entry)."""
+        """Builds the WAIT_ELEMENT form (CSS selector entry + timeout row)."""
         self._form_frame.columnconfigure(1, weight=1)
         ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(
             row=0, column=0, sticky="w", padx=5, pady=4
@@ -366,6 +399,22 @@ class StepInlineFormPanel(ttk.LabelFrame):
             row=0, column=1, sticky="ew", padx=5, pady=4
         )
         self._form_widgets["selector"] = sel_var
+
+        # Timeout row — single horizontal line: label | spinbox | combobox | hint.
+        timeout_frame = ttk.Frame(self._form_frame)
+        timeout_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+        ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
+        td_var = tk.StringVar(value="0")
+        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
+        tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
+        ttk.Combobox(
+            timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
+        ).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
+        self._form_widgets["timeout_duration"] = td_var
+        self._form_widgets["timeout_unit"] = tu_var
 
     def _build_form_scroll_down(self) -> None:
         """Builds the SCROLL_DOWN form (pixel count spinbox)."""
@@ -593,9 +642,12 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
     def _params_open_url(self) -> dict[str, Any]:
         """Reads OPEN_URL params from form widgets."""
+        unit_display = self._form_widgets["timeout_unit"].get()
         return {
             "url": self._form_widgets["url"].get().strip(),
             "wait_state": self._form_widgets["wait_state"].get(),
+            "timeout_duration": self._safe_float("timeout_duration", 0),
+            "timeout_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
         }
 
     def _params_sleep(self) -> dict[str, Any]:
@@ -629,11 +681,14 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
     def _params_wait_image_size(self) -> dict[str, Any]:
         """Reads WAIT_IMAGE_SIZE params, coercing dimensions to int."""
+        unit_display = self._form_widgets["timeout_unit"].get()
         return {
             "height_min": self._safe_int("height_min", 0),
             "height_max": self._safe_int("height_max", 99999),
             "width_min": self._safe_int("width_min", 0),
             "width_max": self._safe_int("width_max", 99999),
+            "timeout_duration": self._safe_float("timeout_duration", 0),
+            "timeout_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
         }
 
     def _params_click_element(self) -> dict[str, Any]:
@@ -645,7 +700,12 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
     def _params_wait_element(self) -> dict[str, Any]:
         """Reads WAIT_ELEMENT params."""
-        return {"selector": self._form_widgets["selector"].get().strip()}
+        unit_display = self._form_widgets["timeout_unit"].get()
+        return {
+            "selector": self._form_widgets["selector"].get().strip(),
+            "timeout_duration": self._safe_float("timeout_duration", 0),
+            "timeout_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
+        }
 
     def _params_scroll_down(self) -> dict[str, Any]:
         """Reads SCROLL_DOWN params, coercing pixels to int."""

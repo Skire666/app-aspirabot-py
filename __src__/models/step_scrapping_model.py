@@ -40,6 +40,8 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
     StepType.OPEN_URL.value: {
         "url": "https://example.com/",
         "wait_state": "domcontentloaded",
+        "timeout_duration": 0,
+        "timeout_unit": "second",
     },
     StepType.REFRESH_PAGE.value: {"clear_cache": False},
     StepType.SLEEP.value: {"duration": 0, "unit": "second"},
@@ -56,8 +58,14 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "height_max": 99999,
         "width_min": 0,
         "width_max": 99999,
+        "timeout_duration": 0,
+        "timeout_unit": "second",
     },
-    StepType.WAIT_ELEMENT.value: {"selector": ""},
+    StepType.WAIT_ELEMENT.value: {
+        "selector": "",
+        "timeout_duration": 0,
+        "timeout_unit": "second",
+    },
     StepType.CLICK_ELEMENT.value: {"selector": "", "click_mode": "Normal"},
     StepType.SCROLL_DOWN.value: {"pixels": 1000},
     StepType.EXTRACT_TEXT.value: {

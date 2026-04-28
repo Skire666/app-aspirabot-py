@@ -29,6 +29,42 @@ from models.step_scrapping_model import StepScrappingModel, StepType
 from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 
+# Conversion factors from each time unit to milliseconds.
+_UNIT_TO_MS: dict[str, int] = {
+    "hour": 3_600_000,
+    "minute": 60_000,
+    "second": 1_000,
+    "millisecond": 1,
+}
+
+
+def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
+    """Returns the configured timeout in milliseconds, or None when disabled.
+
+    A timeout_duration of 0 disables the timeout regardless of timeout_unit.
+
+    Args:
+        params: Step parameter dict containing ``timeout_duration`` and
+            ``timeout_unit`` keys.
+
+    Returns:
+        Timeout in milliseconds as an int, or None when timeout_duration is 0.
+
+    Raises:
+        None.
+
+    Example:
+        >>> _resolve_timeout_ms({"timeout_duration": 5, "timeout_unit": "second"})
+        5000
+    """
+    duration = params.get("timeout_duration", 0)
+    unit = params.get("timeout_unit", "second")
+
+    # Zero duration means no timeout regardless of unit.
+    if not duration:
+        return None
+    return int(duration * _UNIT_TO_MS.get(unit, 1_000))
+
 
 class ScrappingService:
     """Executes a provider workflow step by step via Playwright Chromium.
@@ -291,6 +327,8 @@ class ScrappingService:
         Args:
             page: Active Playwright page.
             params: Must contain ``url`` (str) and ``wait_state`` (str).
+                Optional ``timeout_duration`` and ``timeout_unit`` override
+                Playwright's default navigation timeout.
 
         Returns:
             None.
@@ -300,9 +338,13 @@ class ScrappingService:
         """
         url: str = params.get("url", "")
         wait_state: str = params.get("wait_state", "domcontentloaded")
+        timeout_ms = _resolve_timeout_ms(params)
 
-        # Block until the requested load state is reached before returning.
-        page.goto(url, wait_until=wait_state)
+        # Pass an explicit timeout only when one is configured.
+        if timeout_ms is not None:
+            page.goto(url, wait_until=wait_state, timeout=timeout_ms)
+        else:
+            page.goto(url, wait_until=wait_state)
 
     def _handle_sleep(self, page: Page, params: dict[str, Any]) -> None:
         """Pauses execution for a fixed duration.
@@ -403,16 +445,21 @@ class ScrappingService:
         Args:
             page: Active Playwright page.
             params: Must contain ``height_min``, ``height_max``,
-                ``width_min``, ``width_max``.
+                ``width_min``, ``width_max``. Optional ``timeout_duration``
+                and ``timeout_unit`` override the default 30-second deadline.
 
         Returns:
             None.
 
         Raises:
-            TimeoutError: When no matching image appears within 30 seconds.
+            TimeoutError: When no matching image appears before the deadline.
         """
         bounds = self._extract_bounds(params)
-        deadline = time.time() + 30
+        timeout_ms = _resolve_timeout_ms(params)
+
+        # Fall back to the default 30-second wait when no timeout is configured.
+        wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 30
+        deadline = time.time() + wait_seconds
 
         # Poll at 1-second intervals until a matching image appears or deadline passes.
         while time.time() < deadline:
@@ -420,7 +467,9 @@ class ScrappingService:
                 return
             time.sleep(1)
 
-        raise TimeoutError("No image matching the size constraints appeared within 30 seconds.")
+        raise TimeoutError(
+            f"No image matching the size constraints appeared within {wait_seconds} seconds."
+        )
 
     def _handle_click_element(self, page: Page, params: dict[str, Any]) -> None:
         """Clicks an element identified by a CSS selector.
@@ -452,19 +501,25 @@ class ScrappingService:
 
         Args:
             page: Active Playwright page.
-            params: Must contain ``selector`` (str).
+            params: Must contain ``selector`` (str). Optional
+                ``timeout_duration`` and ``timeout_unit`` override
+                Playwright's default timeout.
 
         Returns:
             None.
 
         Raises:
-            PlaywrightError: If the element does not appear within Playwright's
-                default timeout.
+            PlaywrightError: If the element does not appear within the
+                configured timeout.
         """
         selector: str = params.get("selector", "")
+        timeout_ms = _resolve_timeout_ms(params)
 
-        # Block until the element is attached to the DOM.
-        page.wait_for_selector(selector)
+        # Pass an explicit timeout only when one is configured.
+        if timeout_ms is not None:
+            page.wait_for_selector(selector, timeout=timeout_ms)
+        else:
+            page.wait_for_selector(selector)
 
     def _handle_scroll_down(self, page: Page, params: dict[str, Any]) -> None:
         """Scrolls the page down by the specified number of pixels.

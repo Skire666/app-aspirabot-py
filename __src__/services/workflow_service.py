@@ -100,8 +100,19 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
+        allowed_units = {"hour", "minute", "second", "millisecond"}
+        timeout_duration = params.get("timeout_duration", 0)
+        timeout_unit = params.get("timeout_unit", "second")
+
+        # URL is mandatory.
         if not params.get("url", "").strip():
             errors.append("OPEN_URL : l'URL est obligatoire.")
+
+        # Timeout constraints.
+        if timeout_duration < 0:
+            errors.append("OPEN_URL : timeout_duration doit être >= 0.")
+        if timeout_duration > 0 and timeout_unit not in allowed_units:
+            errors.append(f"OPEN_URL : timeout_unit invalide — {timeout_unit!r}.")
         return errors
 
     def _validate_sleep(self, params: dict[str, Any], step_index: int) -> list[str]:
@@ -155,7 +166,7 @@ class WorkflowService:
         return errors
 
     def _validate_wait_image_size(self, params: dict[str, Any], step_index: int) -> list[str]:
-        """Validates WAIT_IMAGE_SIZE params by delegating to download image check.
+        """Validates WAIT_IMAGE_SIZE params including dimension and timeout checks.
 
         Args:
             params: Step parameter dict.
@@ -164,7 +175,17 @@ class WorkflowService:
         Returns:
             List of error messages.
         """
-        return self._validate_download_image(params, step_index)
+        errors = list(self._validate_download_image(params, step_index))
+        allowed_units = {"hour", "minute", "second", "millisecond"}
+        timeout_duration = params.get("timeout_duration", 0)
+        timeout_unit = params.get("timeout_unit", "second")
+
+        # Timeout constraints.
+        if timeout_duration < 0:
+            errors.append("WAIT_IMAGE_SIZE : timeout_duration doit être >= 0.")
+        if timeout_duration > 0 and timeout_unit not in allowed_units:
+            errors.append(f"WAIT_IMAGE_SIZE : timeout_unit invalide — {timeout_unit!r}.")
+        return errors
 
     def _validate_click_element(self, params: dict[str, Any], step_index: int) -> list[str]:
         """Validates CLICK_ELEMENT params.
@@ -192,8 +213,19 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
+        allowed_units = {"hour", "minute", "second", "millisecond"}
+        timeout_duration = params.get("timeout_duration", 0)
+        timeout_unit = params.get("timeout_unit", "second")
+
+        # Selector is mandatory.
         if not params.get("selector", "").strip():
             errors.append("WAIT_ELEMENT : le sélecteur CSS est obligatoire.")
+
+        # Timeout constraints.
+        if timeout_duration < 0:
+            errors.append("WAIT_ELEMENT : timeout_duration doit être >= 0.")
+        if timeout_duration > 0 and timeout_unit not in allowed_units:
+            errors.append(f"WAIT_ELEMENT : timeout_unit invalide — {timeout_unit!r}.")
         return errors
 
     # ------------------------------------------------------------------
