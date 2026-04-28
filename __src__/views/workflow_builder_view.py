@@ -16,7 +16,7 @@ from tkinter import ttk
 from typing import Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
-from views.step_edit_dialog_view import StepInlineFormPanel
+from views.step_edit_dialog_view import StepHelpPanel, StepHelpTexts, StepInlineFormPanel
 
 
 def _format_step_label(step: StepScrappingModel) -> str:
@@ -99,12 +99,10 @@ class WorkflowBuilderView(ttk.Frame):
 
         # Scrollable step list in the middle.
         steps_section = self._create_steps_section()
-        steps_section.pack(fill=tk.BOTH, expand=True)
+        steps_section.pack(fill=tk.X, expand=True)
 
-        # Inline form panel — hidden by default, shown on Add or Edit.
-        self._inline_form = StepInlineFormPanel(self)
-        self._inline_form.on_confirm = self._fire_confirm_step
-        self._inline_form.on_cancel = self._fire_cancel_step
+        # Bottom row (Brique logique + Aide à la saisie) — hidden by default.
+        self._bottom_row = self._create_bottom_row()
 
     def _create_toolbar(self) -> ttk.Frame:
         """Creates the toolbar frame with the Add step button.
@@ -129,7 +127,8 @@ class WorkflowBuilderView(ttk.Frame):
         section = ttk.LabelFrame(self, text="Liste des étapes")
 
         # Canvas + vertical scrollbar for the step cards.
-        self._steps_canvas = tk.Canvas(section, height=180, highlightthickness=0)
+        # No fixed height — the canvas expands to fill all available space.
+        self._steps_canvas = tk.Canvas(section, highlightthickness=0)
         scrollbar = ttk.Scrollbar(section, orient="vertical", command=self._steps_canvas.yview)
         self._steps_canvas.configure(yscrollcommand=scrollbar.set)
 
@@ -143,6 +142,38 @@ class WorkflowBuilderView(ttk.Frame):
         )
         self._setup_canvas_bindings()
         return section
+
+    def _create_bottom_row(self) -> ttk.Frame:
+        """Creates the fixed-height row containing Brique logique and Aide à la saisie.
+
+        Both panels are placed side by side: 60 % for the form, 40 % for help.
+        The row is not packed on creation — call show_inline_form() to reveal it.
+
+        Returns:
+            The row frame with both panels already gridded inside.
+        """
+        row = ttk.Frame(self, height=200)
+
+        # Prevent the row from shrinking to fit its children.
+        row.pack_propagate(False)
+
+        # 60 / 40 column split using grid weights.
+        row.columnconfigure(0, weight=3)
+        row.columnconfigure(1, weight=2)
+        row.rowconfigure(0, weight=1)
+
+        # Brique logique panel — left column, 60 %.
+        self._inline_form = StepInlineFormPanel(row)
+        self._inline_form.on_confirm = self._fire_confirm_step
+        self._inline_form.on_cancel = self._fire_cancel_step
+        self._inline_form.on_type_changed = self._update_help_text
+        self._inline_form.grid(row=0, column=0, sticky="nsew", padx=(0, 2))
+
+        # Aide à la saisie panel — right column, 40 %.
+        self._help_panel = StepHelpPanel(row)
+        self._help_panel.grid(row=0, column=1, sticky="nsew", padx=(2, 0))
+
+        return row
 
     def _setup_canvas_bindings(self) -> None:
         """Wires resize and scrollregion events to the canvas."""
@@ -195,18 +226,30 @@ class WorkflowBuilderView(ttk.Frame):
         self.after(3000, self._hide_toast)
 
     def show_inline_form(self, step: Optional[StepScrappingModel] = None) -> None:
-        """Reveals the Brique logique panel, optionally pre-filled with a step.
+        """Reveals both Brique logique and Aide à la saisie panels.
+
+        Loading the form fires on_type_changed, which in turn updates the
+        help panel content before the row becomes visible.
 
         Args:
             step: Existing step to pre-fill for editing, or None for a blank form.
         """
-        # Load step data before making the panel visible.
+        # Load form (triggers on_type_changed → help text update).
         self._inline_form.load(step)
-        self._inline_form.pack(fill=tk.X, pady=(4, 0))
+        self._bottom_row.pack(fill=tk.X, pady=(4, 0))
 
     def hide_inline_form(self) -> None:
-        """Hides the Brique logique panel without altering the step list."""
-        self._inline_form.pack_forget()
+        """Hides both Brique logique and Aide à la saisie panels."""
+        self._bottom_row.pack_forget()
+
+    def _update_help_text(self, label: str) -> None:
+        """Updates the Aide à la saisie panel when the active step type changes.
+
+        Args:
+            label: French display label of the newly selected step type.
+        """
+        text = StepHelpTexts.BY_LABEL.get(label, StepHelpTexts.FALLBACK)
+        self._help_panel.set_help_text(text)
 
     # ---------------------------------------------------------------
     # Step card construction

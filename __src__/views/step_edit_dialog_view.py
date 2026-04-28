@@ -13,7 +13,7 @@ Example:
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Callable, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 
@@ -63,6 +63,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         super().__init__(parent, text="Brique logique")
         self.on_confirm: Optional[Callable[[StepScrappingModel], None]] = None
         self.on_cancel: Optional[Callable[[], None]] = None
+        self.on_type_changed: Optional[Callable[[str], None]] = None
         self._type_var = tk.StringVar()
         self._form_widgets: dict[str, Any] = {}
 
@@ -129,12 +130,17 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """
         # Select initial step type and rebuild the form.
         initial_type = step.step_type if step else StepType.OPEN_URL
-        self._type_var.set(STEP_TYPE_LABELS[initial_type])
+        label = STEP_TYPE_LABELS[initial_type]
+        self._type_var.set(label)
         self._rebuild_form(initial_type)
 
         # Pre-fill widget values when editing an existing step.
         if step:
             self._load_step(step)
+
+        # Notify the parent so the help panel reflects the current type.
+        if self.on_type_changed:
+            self.on_type_changed(label)
 
     # ---------------------------------------------------------------
     # Dynamic form management
@@ -146,6 +152,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         step_type = _LABEL_TO_TYPE.get(label)
         if step_type is not None:
             self._rebuild_form(step_type)
+        # Notify the parent so it can update the help panel.
+        if self.on_type_changed and label:
+            self.on_type_changed(label)
 
     def _rebuild_form(self, step_type: StepType) -> None:
         """Clears and rebuilds the dynamic form for the given step type."""
@@ -595,3 +604,133 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """Fires the on_cancel callback without modifying the step list."""
         if self.on_cancel:
             self.on_cancel()
+
+
+# ---------------------------------------------------------------------------
+# Contextual help content
+# ---------------------------------------------------------------------------
+
+
+class StepHelpTexts:
+    """Centralised help strings displayed in the 'Aide à la saisie' panel.
+
+    Update values in BY_LABEL to customise guidance without touching layout
+    or logic code.  Keys must match the values in STEP_TYPE_LABELS exactly.
+
+    Attributes:
+        FALLBACK: Text shown when no step type is selected.
+        BY_LABEL: Mapping from French step-type label to its help string.
+    """
+
+    FALLBACK: ClassVar[str] = "Sélectionnez un type de brique pour afficher l'aide."
+
+    BY_LABEL: ClassVar[dict[str, str]] = {
+        "Ouvrir une URL": (
+            "Navigue vers l'URL indiquée et attend que la page soit dans "
+            "l'état choisi.\n\n"
+            "• URL : adresse complète incluant https://\n"
+            "• État d'attente :\n"
+            "  -load : attend l'événement window.load\n"
+            "  -domcontentloaded : attend le DOM (plus rapide)\n"
+            "  -networkidle : attend la fin des requêtes réseau\n"
+            "  -commit : attend la première réponse HTTP"
+        ),
+        "Pause fixe": (
+            "Attend un délai fixe avant de passer à l'étape suivante.\n\n"
+            "• Durée : valeur numérique (entier ou décimal)\n"
+            "• Unité : millisecond, second, minute ou hour"
+        ),
+        "Pause aléatoire": (
+            "Attend un délai aléatoire compris entre Min et Max.\n"
+            "Utile pour simuler un comportement humain.\n\n"
+            "• Min : borne inférieure (strictement < Max)\n"
+            "• Max : borne supérieure\n"
+            "• Unité : millisecond, second, minute ou hour"
+        ),
+        "Rafraîchir la page": (
+            "Recharge la page courante du navigateur.\n\n"
+            "• Vider le cache : si coché, force un rechargement complet\n"
+            "  sans utiliser le cache du navigateur."
+        ),
+        "Télécharger une image": (
+            "Capture et sauvegarde une image présente sur la page.\n\n"
+            "• Mode :\n"
+            "  -largest : image la plus grande (surface en pixels)\n"
+            "  -first / last : première ou dernière image du DOM\n"
+            "  -all : toutes les images de la page\n"
+            "• Hauteur / Largeur : filtres optionnels sur les dimensions (px)"
+        ),
+        "Attendre une taille d'image": (
+            "Attend qu'une image atteigne les dimensions minimales indiquées.\n"
+            "Utile pour les images chargées en progressive ou lazy-load.\n\n"
+            "• Hauteur min / max : intervalle de hauteur attendue (px)\n"
+            "• Largeur min / max : intervalle de largeur attendue (px)"
+        ),
+        "Cliquer sur un élément": (
+            "Localise un élément via son sélecteur CSS et le clique.\n\n"
+            "• Sélecteur CSS : ex. #submit-btn, .card:first-child\n"
+            "• Mode de clic :\n"
+            "  -Normal : clic standard Playwright\n"
+            "  -Forced : clic même si l'élément est masqué\n"
+            "  -JS Direct : exécute element.click() via JavaScript"
+        ),
+        "Attendre un élément": (
+            "Attend qu'un élément CSS soit présent dans le DOM avant de "
+            "continuer.\n\n"
+            "• Sélecteur CSS : ex. .results-loaded, #content\n"
+            "  L'exécution est bloquée jusqu'à ce que l'élément soit visible."
+        ),
+        "Défiler vers le bas": (
+            "Fait défiler la page vers le bas d'un nombre de pixels donné.\n"
+            "Utile pour déclencher le chargement en infinite scroll.\n\n"
+            "• Pixels : distance de défilement en pixels (ex. 1000)"
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Help panel widget
+# ---------------------------------------------------------------------------
+
+
+class StepHelpPanel(ttk.LabelFrame):
+    """Read-only help panel showing contextual guidance for the active step type.
+
+    Displayed beside StepInlineFormPanel inside WorkflowBuilderView.
+    Call set_help_text() to update the displayed content.
+    """
+
+    def __init__(self, parent: tk.Widget) -> None:
+        """Initializes the panel with a read-only text widget.
+
+        Args:
+            parent: The parent Tkinter widget to embed into.
+        """
+        super().__init__(parent, text="Aide à la saisie")
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Builds the read-only scrollable text area."""
+        # Text widget with word-wrap; locked to prevent user edits.
+        self._text = tk.Text(
+            self,
+            wrap=tk.WORD,
+            state=tk.DISABLED,
+            relief=tk.FLAT,
+            cursor="arrow",
+            padx=8,
+            pady=6,
+        )
+        self._text.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+    def set_help_text(self, text: str) -> None:
+        """Replaces the displayed help content.
+
+        Args:
+            text: New help string to display.
+        """
+        # Re-enable momentarily to allow insertion, then lock again.
+        self._text.configure(state=tk.NORMAL)
+        self._text.delete("1.0", tk.END)
+        self._text.insert("1.0", text)
+        self._text.configure(state=tk.DISABLED)

@@ -24,7 +24,6 @@ class ProviderEditView(ttk.Frame):
         self._create_widgets()
 
     def _create_widgets(self) -> None:
-        """Constructs UI elements based on the 4 zones specification."""
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
