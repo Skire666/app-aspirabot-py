@@ -15,7 +15,6 @@ from typing import Optional
 from models.provider_model import ProviderModel
 from models.step_scrapping_model import StepScrappingModel
 from services.provider_service import ProviderService
-from services.workflow_service import WorkflowService
 from views.workflow_builder_view import WorkflowBuilderView
 
 
@@ -29,7 +28,6 @@ class WorkflowBuilderPresenter:
 
     Attributes:
         _view: The embedded workflow builder widget.
-        _service_workflow: Validates workflows.
         _service_provider: Manages provider-related operations.
         _edit_index: Index of the step being edited, or None in add mode.
     """
@@ -37,18 +35,15 @@ class WorkflowBuilderPresenter:
     def __init__(
         self,
         view: WorkflowBuilderView,
-        service_workflow: WorkflowService,
         service_provider: ProviderService,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
         Args:
             view: The WorkflowBuilderView instance.
-            service_workflow: WorkflowService for validation.
             service_provider: ProviderService for provider-related operations.
         """
         self._view = view
-        self._service_workflow: WorkflowService = service_workflow
         self._service_provider: ProviderService = service_provider
         self._logger = logging.getLogger(__name__)
 
@@ -84,7 +79,7 @@ class WorkflowBuilderPresenter:
         self._provider_id_file = provider_id_file
         self._is_new_provider = False
         self._provider_content: ProviderModel = self._service_provider.get_provider(provider_id_file)
-        self._service_provider.get_provider(provider_id_file)
+        self._steps = list(self._provider_content.steps)
         self._refresh_view()
 
     def init_new(self, provider_id_file: str) -> None:

@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, Optional
 from models.provider_model import ProviderModel
 from presenters.workflow_builder_presenter import WorkflowBuilderPresenter
 from services.provider_service import ProviderService
-from services.workflow_service import WorkflowService
 from views.provider_edit_view import ProviderEditView
 
 
@@ -19,8 +18,6 @@ class ProviderEditPresenter:
     def __init__(
         self,
         view: ProviderEditView,
-        service: ProviderService,
-        workflow_service: WorkflowService,
         provider_service: ProviderService,
     ) -> None:
         """Initialise le présentateur.
@@ -28,11 +25,10 @@ class ProviderEditPresenter:
         Args:
             view: L'interface utilisateur de modification.
             service: Le service gérant la logique métier des fournisseurs.
-            workflow_service: Service de validation du workflow.
             provider_service: Service de gestion des fournisseurs.
         """
         self._view = view
-        self._service = service
+        self._service = provider_service
         self._is_creation_mode = False
         self._current_provider: Optional[ProviderModel] = None
         self._on_done: Optional[Callable[[], None]] = None
@@ -40,7 +36,6 @@ class ProviderEditPresenter:
         # Sub-presenter that owns the step list and workflow execution.
         self._workflow_presenter = WorkflowBuilderPresenter(
             view=view.workflow_builder_view,
-            service_workflow=workflow_service,
             service_provider=provider_service,
         )
 

@@ -15,7 +15,6 @@ from services.config_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scrapping_service import ScrappingService
-from services.workflow_service import WorkflowService
 from shared.constants import CTK_GUI
 from views.config_view import ConfigView
 from views.log_view import LogView
@@ -68,15 +67,10 @@ def main() -> None:
     provider_view = ProvidersListView(main_view.content_area)
     provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)
 
-    # Create Workflow components — repository reads from the providers folder
-    workflow_service = WorkflowService()
-
     # Create Provider Edit Component with workflow sub-presenter
     provider_edit_view = ProviderEditView(main_view.content_area)
     provider_edit_presenter = ProviderEditPresenter(
         view=provider_edit_view,
-        service=provider_service,
-        workflow_service=workflow_service,
         provider_service=provider_service,
     )
 
