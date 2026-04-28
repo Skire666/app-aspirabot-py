@@ -15,7 +15,6 @@ Example:
 import logging
 
 from models.step_scrapping_model import StepScrappingModel, StepType
-from models.workflow_model import WorkflowModel
 
 # Allowed values for constrained fields.
 _VALID_WAIT_STATES = frozenset({"commit", "domcontentloaded", "load", "networkidle"})

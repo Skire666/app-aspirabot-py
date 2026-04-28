@@ -4,10 +4,20 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict
 
+# Sidebar button color constants
+_SIDEBAR_ACTIVE_BG = "#016dbf"
+_SIDEBAR_ACTIVE_FG = "#ffffff"
+_SIDEBAR_ACTIVE_HOVER_BG = "#1a88e0"
+_SIDEBAR_NORMAL_BG = "#e8e8e8"
+_SIDEBAR_NORMAL_FG = "#191919"
+_SIDEBAR_HOVER_BG = "#d0d0d0"
+_SIDEBAR_HOVER_FG = "#000000"
+_SIDEBAR_WIDTH = 120
+
 
 class MainView(ttk.Frame):
     """Main container with a vertical tab menu on the left and dynamic content area on the right.
-    
+
     Strictly follows MVP pattern by only managing UI state (active tab)
     without knowing business logic.
     """
@@ -20,83 +30,156 @@ class MainView(ttk.Frame):
         """
         super().__init__(parent)
         self._views: Dict[str, tk.Widget] = {}
+        self._buttons: Dict[str, tk.Button] = {}
+        self._active_view: str | None = None
         self._create_widgets()
 
     def _create_widgets(self) -> None:
         """Constructs the sidebar and content structural elements."""
-        ## TODO PCO améliorer le style du sidebar (couleur de fond, espacement, etc.)
-        self.sidebar = ttk.Frame(self, width=100, relief=tk.SUNKEN)
+        self.sidebar = ttk.Frame(self, width=_SIDEBAR_WIDTH)
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
-        
-        # Prevent the sidebar from shrinking if empty
+
+        # Prevent the sidebar from shrinking if its content is empty
         self.sidebar.pack_propagate(False)
 
         self.content_area = ttk.Frame(self)
         self.content_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        self._btn_journal = ttk.Button(
-            self.sidebar, text="Journal", command=lambda: self.show_view("Journal")
-        )
-        self._btn_journal.pack(fill=tk.X, padx=5, pady=5, ipady=5)
+        # Build sidebar header and navigation buttons
+        self._build_sidebar_header()
+        self._build_sidebar_buttons()
 
-        self._btn_config = ttk.Button(
-            self.sidebar, text="Configuration", command=lambda: self.show_view("Configuration")
+    def _build_sidebar_header(self) -> None:
+        """Builds the 'Modules' title label and separator at the top of the sidebar."""
+        # Title label
+        header = tk.Label(
+            self.sidebar,
+            text="Modules",
+            font=("Segoe UI", 10, "bold"),
+            anchor=tk.CENTER,
+            pady=6,
         )
-        self._btn_config.pack(fill=tk.X, padx=5, pady=5, ipady=5)
+        header.pack(fill=tk.X, padx=6, pady=(10, 8))
 
-        self._btn_providers = ttk.Button(
-            self.sidebar, text="Fournisseurs", command=lambda: self.show_view("Fournisseurs")
-        )
-        self._btn_providers.pack(fill=tk.X, padx=5, pady=5, ipady=5)
+        # Visual separator below the title
+        separator = ttk.Separator(self.sidebar, orient=tk.HORIZONTAL)
+        separator.pack(fill=tk.X, padx=6, pady=(0, 10))
 
-        self._btn_modification = ttk.Button(
-            self.sidebar, text="Modification", command=lambda: self.show_view("Modification")
-        )
-        self._btn_modification.pack(fill=tk.X, padx=5, pady=5, ipady=5)
+    def _build_sidebar_buttons(self) -> None:
+        """Creates and registers all module navigation buttons in the sidebar."""
+        button_labels = [
+            "Journal",
+            "Configuration",
+            "Fournisseurs",
+            "Modification",
+            "Scrapping",
+        ]
+
+        # Build each button and store it by name for later highlight management
+        for name in button_labels:
+            btn = tk.Button(
+                self.sidebar,
+                text=name,
+                command=lambda n=name: self.show_view(n),
+                bg=_SIDEBAR_NORMAL_BG,
+                fg=_SIDEBAR_NORMAL_FG,
+                relief=tk.FLAT,
+                bd=0,
+                font=("Segoe UI", 10),
+                disabledforeground="#8f8f8f",
+            )
+            btn.pack(fill=tk.X, padx=6, pady=3, ipady=7)
+            self._buttons[name] = btn
+
+            # Hover bindings — use default-argument capture to avoid late-binding closure
+            btn.bind("<Enter>", lambda _e, n=name: self._on_button_enter(n))
+            btn.bind("<Leave>", lambda _e, n=name: self._on_button_leave(n))
+
+        # Some modules are disabled until explicitly enabled by the presenter
         self.set_tab_state("Modification", tk.DISABLED)
-
-        self._btn_scrapping = ttk.Button(
-            self.sidebar, text="Scrapping", command=lambda: self.show_view("Scrapping")
-        )
-        self._btn_scrapping.pack(fill=tk.X, padx=5, pady=5, ipady=5)
         self.set_tab_state("Scrapping", tk.DISABLED)
 
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
-        """Registers a view corresponding to a menu tab.
+        """Registers a view corresponding to a sidebar module button.
 
         Args:
-            name: The display name of the tab.
+            name: The display name of the module.
             view_widget: The Tkinter widget to display in the content area.
         """
         self._views[name] = view_widget
         view_widget.pack_forget()
 
     def show_view(self, name: str) -> None:
-        """Displays the specified view and hides the others.
+        """Displays the specified view, hides all others, and highlights the active button.
 
         Args:
-            name: The name of the tab/view to show.
+            name: The name of the module/view to show.
         """
+        # Switch content area to the requested view
         for view_name, widget in self._views.items():
             if view_name == name:
                 widget.pack(in_=self.content_area, fill=tk.BOTH, expand=True)
             else:
                 widget.pack_forget()
 
-    def set_tab_state(self, name: str, state: str) -> None:
-        """Sets the state of a sidebar tab button (e.g., tk.NORMAL or tk.DISABLED).
+        # Reflect active state on the sidebar buttons
+        self._update_button_highlights(name)
+        self._active_view = name
+
+    def _update_button_highlights(self, active_name: str) -> None:
+        """Applies highlight color to the active button and resets all others.
 
         Args:
-            name: The name of the tab.
-            state: The Tkinter state string.
+            active_name: The name of the currently active module.
         """
-        if name == "Journal":
-            self._btn_journal.config(state=state)
-        elif name == "Configuration":
-            self._btn_config.config(state=state)
-        elif name == "Fournisseurs":
-            self._btn_providers.config(state=state)
-        elif name == "Modification":
-            self._btn_modification.config(state=state)
-        elif name == "Scrapping":
-            self._btn_scrapping.config(state=state)
+        for name, btn in self._buttons.items():
+            if name == active_name:
+                btn.config(bg=_SIDEBAR_ACTIVE_BG, fg=_SIDEBAR_ACTIVE_FG)
+            else:
+                btn.config(bg=_SIDEBAR_NORMAL_BG, fg=_SIDEBAR_NORMAL_FG)
+
+    def _on_button_enter(self, name: str) -> None:
+        """Applies hover highlight when the cursor enters a sidebar button.
+
+        Args:
+            name: The name of the button being hovered.
+        """
+        btn = self._buttons[name]
+
+        # Skip disabled buttons — hover has no meaning for them
+        if str(btn.cget("state")) == tk.DISABLED:
+            return
+
+        # Lighten the active button on hover; darken inactive ones
+        if name == self._active_view:
+            btn.config(bg=_SIDEBAR_ACTIVE_HOVER_BG)
+        else:
+            btn.config(bg=_SIDEBAR_HOVER_BG, fg=_SIDEBAR_HOVER_FG)
+
+    def _on_button_leave(self, name: str) -> None:
+        """Restores the button's resting color when the cursor leaves it.
+
+        Args:
+            name: The name of the button that was hovered.
+        """
+        btn = self._buttons[name]
+
+        # Skip disabled buttons — they were untouched on enter
+        if str(btn.cget("state")) == tk.DISABLED:
+            return
+
+        # Restore active or normal appearance depending on current state
+        if name == self._active_view:
+            btn.config(bg=_SIDEBAR_ACTIVE_BG, fg=_SIDEBAR_ACTIVE_FG)
+        else:
+            btn.config(bg=_SIDEBAR_NORMAL_BG, fg=_SIDEBAR_NORMAL_FG)
+
+    def set_tab_state(self, name: str, state: str) -> None:
+        """Sets the enabled/disabled state of a sidebar module button.
+
+        Args:
+            name: The name of the module tab.
+            state: The Tkinter state string (tk.NORMAL or tk.DISABLED).
+        """
+        if name in self._buttons:
+            self._buttons[name].config(state=state)

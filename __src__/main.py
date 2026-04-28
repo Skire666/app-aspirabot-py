@@ -2,7 +2,6 @@
 
 import os
 import tkinter as tk
-from pathlib import Path
 
 from presenters.config_presenter import ConfigPresenter
 from presenters.log_presenter import LogPresenter
@@ -12,7 +11,6 @@ from presenters.scrapping_presenter import ScrappingPresenter
 from repositories.json_config_repository import JsonConfigRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
-from repositories.workflow_repository import WorkflowRepository
 from services.config_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
@@ -23,7 +21,7 @@ from views.config_view import ConfigView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
-from views.provider_view import ProviderView
+from views.providers_list_view import ProvidersListView
 from views.scrapping_panel_view import ScrappingPanelView
 
 
@@ -67,12 +65,11 @@ def main() -> None:
     # Create Provider Component
     provider_repo = ProvidersRepository(config_model.folder_providers, config_model.folder_brokens)
     provider_service = ProviderService(provider_repo)
-    provider_view = ProviderView(main_view.content_area)
+    provider_view = ProvidersListView(main_view.content_area)
     provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)
 
     # Create Workflow components — repository reads from the providers folder
     workflow_service = WorkflowService()
-    workflow_repository = WorkflowRepository(Path(config_model.folder_providers))
 
     # Create Provider Edit Component with workflow sub-presenter
     provider_edit_view = ProviderEditView(main_view.content_area)
@@ -80,7 +77,7 @@ def main() -> None:
         view=provider_edit_view,
         service=provider_service,
         workflow_service=workflow_service,
-        workflow_repository=workflow_repository,
+        provider_service=provider_service,
     )
 
     # Wire navigation between provider list and edit views

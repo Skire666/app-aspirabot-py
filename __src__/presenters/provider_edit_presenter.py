@@ -2,7 +2,6 @@
 
 from typing import Any, Callable, Dict, Optional
 
-from interfaces.workflow_repository_interface import WorkflowRepositoryInterface
 from models.provider_model import ProviderModel
 from presenters.workflow_builder_presenter import WorkflowBuilderPresenter
 from services.provider_service import ProviderService
@@ -22,7 +21,7 @@ class ProviderEditPresenter:
         view: ProviderEditView,
         service: ProviderService,
         workflow_service: WorkflowService,
-        workflow_repository: WorkflowRepositoryInterface,
+        provider_service: ProviderService,
     ) -> None:
         """Initialise le présentateur.
 
@@ -30,7 +29,7 @@ class ProviderEditPresenter:
             view: L'interface utilisateur de modification.
             service: Le service gérant la logique métier des fournisseurs.
             workflow_service: Service de validation du workflow.
-            workflow_repository: Dépôt de persistance du workflow.
+            provider_service: Service de gestion des fournisseurs.
         """
         self._view = view
         self._service = service
@@ -41,8 +40,8 @@ class ProviderEditPresenter:
         # Sub-presenter that owns the step list and workflow execution.
         self._workflow_presenter = WorkflowBuilderPresenter(
             view=view.workflow_builder_view,
-            service=workflow_service,
-            repository=workflow_repository,
+            service_workflow=workflow_service,
+            service_provider=provider_service,
         )
 
         self._bind_view_events()

@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional
 from views.components.data_grid import DataGrid
 
 
-class ProviderView(ttk.Frame):
+class ProvidersListView(ttk.Frame):
     """View component that renders the list of providers."""
 
     def __init__(self, parent: tk.Widget) -> None:

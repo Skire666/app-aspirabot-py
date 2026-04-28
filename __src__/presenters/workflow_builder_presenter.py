@@ -12,9 +12,9 @@ import logging
 import threading
 from typing import Optional
 
-from interfaces.workflow_repository_interface import WorkflowRepositoryInterface
+from models.provider_model import ProviderModel
 from models.step_scrapping_model import StepScrappingModel
-from models.workflow_model import WorkflowModel
+from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
 from views.workflow_builder_view import WorkflowBuilderView
 
@@ -29,27 +29,27 @@ class WorkflowBuilderPresenter:
 
     Attributes:
         _view: The embedded workflow builder widget.
-        _service: Validates workflows.
-        _repository: Persists workflow steps.
+        _service_workflow: Validates workflows.
+        _service_provider: Manages provider-related operations.
         _edit_index: Index of the step being edited, or None in add mode.
     """
 
     def __init__(
         self,
         view: WorkflowBuilderView,
-        service: WorkflowService,
-        repository: WorkflowRepositoryInterface,
+        service_workflow: WorkflowService,
+        service_provider: ProviderService,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
         Args:
             view: The WorkflowBuilderView instance.
-            service: WorkflowService for validation.
-            repository: Repository for load/save.
+            service_workflow: WorkflowService for validation.
+            service_provider: ProviderService for provider-related operations.
         """
         self._view = view
-        self._service = service
-        self._repository = repository
+        self._service_workflow: WorkflowService = service_workflow
+        self._service_provider: ProviderService = service_provider
         self._logger = logging.getLogger(__name__)
 
         self._provider_id_file: Optional[str] = None
@@ -57,6 +57,7 @@ class WorkflowBuilderPresenter:
         self._run_thread: Optional[threading.Thread] = None
         self._cancel_event = threading.Event()
         self._edit_index: Optional[int] = None
+        self._is_new_provider: bool = False
 
         self._bind_view_events()
 
@@ -81,8 +82,9 @@ class WorkflowBuilderPresenter:
             provider_id_file: GUID of the provider to load.
         """
         self._provider_id_file = provider_id_file
-        workflow = self._repository.load(provider_id_file)
-        self._steps = list(workflow.steps)
+        self._is_new_provider = False
+        self._provider_content: ProviderModel = self._service_provider.get_provider(provider_id_file)
+        self._service_provider.get_provider(provider_id_file)
         self._refresh_view()
 
     def init_new(self, provider_id_file: str) -> None:
@@ -92,6 +94,7 @@ class WorkflowBuilderPresenter:
             provider_id_file: GUID of the new provider.
         """
         self._provider_id_file = provider_id_file
+        self._is_new_provider = True
         self._steps = []
         self._refresh_view()
 
@@ -139,7 +142,7 @@ class WorkflowBuilderPresenter:
             self._steps[self._edit_index] = step
         self._edit_index = None
         self._view.hide_inline_form()
-        self._persist_and_refresh()
+        self._refresh_view()
 
     def _on_cancel_inline_step(self) -> None:
         """Clears the pending edit state after the view hides the panel."""
@@ -153,14 +156,14 @@ class WorkflowBuilderPresenter:
         """
         if 0 <= index < len(self._steps):
             del self._steps[index]
-            self._persist_and_refresh()
+            self._refresh_view()
 
     def _on_clear_all_steps(self) -> None:
         """Clears all steps and persists the empty workflow."""
         self._steps.clear()
         self._edit_index = None
         self._view.hide_inline_form()
-        self._persist_and_refresh()
+        self._refresh_view()
 
     def _on_move_step(self, index: int, direction: int) -> None:
         """Swaps a step with its neighbour in the given direction.
@@ -175,22 +178,11 @@ class WorkflowBuilderPresenter:
                 self._steps[new_index],
                 self._steps[index],
             )
-            self._persist_and_refresh()
+            self._refresh_view()
 
     # ---------------------------------------------------------------
     # Persist and refresh helpers
     # ---------------------------------------------------------------
-
-    def _persist_and_refresh(self) -> None:
-        """Saves steps to the repository (edit mode only) and refreshes view."""
-        if self._provider_id_file:
-            workflow = WorkflowModel(provider_id_file=self._provider_id_file, steps=self._steps)
-            try:
-                self._repository.save(self._provider_id_file, workflow)
-            except OSError as exc:
-                self._logger.error("Failed to save workflow: %s", exc)
-                self._view.show_toast("Erreur de sauvegarde du workflow.", "error")
-        self._refresh_view()
 
     def _refresh_view(self) -> None:
         """Updates the view step list."""

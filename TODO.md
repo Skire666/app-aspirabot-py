@@ -1,30 +1,31 @@
 
-déployé avec toml (à découvrir)
-https://realpython.com/python-toml/
-https://stackoverflow.com/questions/62983756/what-is-pyproject-toml-file-for
-
-
-
-converters, pour mapper du viewmodel sur du model
-https://chatgpt.com/c/69e3835e-b140-83eb-99e3-2a2f6bb733ba
-
 
 
 E:\app-py-life-selector\src_python_2026_03_sushi_scan
 
 
-
-Optimiser IHM
-A voir, mais le logs et le truc d'éxécuter servent à rien.
-Même si en vrai, on pourrait faire module, et tout simplement refaire mon exécution, avec un vrai chromium ?
-En tout cas, l'espace dispnible, on pourrait s'en servir pour faire tenir les fenetres
-Rajouter un bouton : effacer toute la lsite (avec confiramtion)
-
-
-qwuelque bug :
+bug :
 si créer
 et directe une step
 il save le fichier, c'est qui qui fait ça ?
+
+
+Ajouter brique fin
+induqer temps écoulée par étape dans le log
+compter le nombre de fois qu'une étape est RUN
+indiquer si erreur ou succès (true false), dans le code, et le log
+Faire un brique IF qui regarde bool et jump
+Faire un brique WHILE
+
+
+Nom et URL
+a la sauvegarde
+vérifier longueur (c'est à titre indicatif)
+
+plus tard
+dispatcher en fonction de l'URL
+Pouvoir faire plusieurs workflow selon le dispatch
+pouvoir process un fihcier text avec toute les URL en input (faire une regle spéciale ?)
 
 
 Documenter l'usage des briques que l'on peut ajoute au worlflow.

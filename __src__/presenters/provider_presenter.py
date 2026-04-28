@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional
 from models.provider_model import ProviderModel
 from models.provider_validation_report_model import ProviderValidationReport
 from services.provider_service import ProviderService
-from views.provider_view import ProviderView
+from views.providers_list_view import ProvidersListView
 
 
 class ProviderPresenter:
@@ -15,7 +15,7 @@ class ProviderPresenter:
     métier via le service et met à jour la vue avec les nouvelles données.
     """
 
-    def __init__(self, view: ProviderView, service: ProviderService) -> None:
+    def __init__(self, view: ProvidersListView, service: ProviderService) -> None:
         """Initialise le présentateur avec sa vue et son service affiliés.
 
         Args:
