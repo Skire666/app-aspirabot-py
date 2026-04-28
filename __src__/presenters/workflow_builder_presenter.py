@@ -109,6 +109,8 @@ class WorkflowBuilderPresenter:
         """Shows the inline form in add mode (no pre-fill)."""
         # Clear any pending edit index so confirm appends a new step.
         self._edit_index = None
+        # Provide the current step list for JUMP_TO_STEP target population.
+        self._view.set_available_steps(self._steps)
         self._view.show_inline_form()
 
     def _on_edit_step(self, index: int) -> None:
@@ -121,6 +123,8 @@ class WorkflowBuilderPresenter:
             return
         # Track the index so confirm knows which slot to update.
         self._edit_index = index
+        # Provide the current step list for JUMP_TO_STEP target population.
+        self._view.set_available_steps(self._steps)
         self._view.show_inline_form(self._steps[index])
 
     def _on_confirm_inline_step(self, step: StepScrappingModel) -> None:

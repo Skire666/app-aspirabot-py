@@ -18,6 +18,10 @@ from typing import Callable, Optional
 from models.step_scrapping_model import StepScrappingModel, StepType
 from views.step_edit_dialog_view import StepHelpPanel, StepHelpTexts, StepInlineFormPanel
 
+# constants for layout
+_HEIGHT_FRAME_LOGICAL_BLOCK = 215  # Fixed height
+_WIDTH_FRAME_LOGICAL_BLOCK = 320  # Fixed width
+
 
 def _format_step_label(step: StepScrappingModel) -> str:
     """Returns a concise human-readable description of a step.
@@ -32,23 +36,39 @@ def _format_step_label(step: StepScrappingModel) -> str:
     t = step.step_type
     if t == StepType.OPEN_URL:
         return f"Open URL — {p.get('url', '')}"
+    if t == StepType.REFRESH_PAGE:
+        suffix = " (vider cache)" if p.get("clear_cache") else ""
+        return f"Rafraîchir la page{suffix}"
     if t == StepType.SLEEP:
         return f"Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}"
     if t == StepType.RANDOM_PAUSE:
         return f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
-    if t == StepType.REFRESH_PAGE:
-        suffix = " (vider cache)" if p.get("clear_cache") else ""
-        return f"Rafraîchir la page{suffix}"
     if t == StepType.DOWNLOAD_IMAGE:
         return f"Télécharger image — {p.get('mode', 'largest')}"
     if t == StepType.WAIT_IMAGE_SIZE:
         return f"Attendre taille image — {p.get('width_min', 0)}×{p.get('height_min', 0)}"
-    if t == StepType.CLICK_ELEMENT:
-        return f"Cliquer — {p.get('selector', '')}"
     if t == StepType.WAIT_ELEMENT:
         return f"Attendre élément — {p.get('selector', '')}"
+    if t == StepType.CLICK_ELEMENT:
+        return f"Cliquer — {p.get('selector', '')}"
     if t == StepType.SCROLL_DOWN:
         return f"Défiler — {p.get('pixels', 0)} px"
+    if t == StepType.EXTRACT_TEXT:
+        mode = p.get("extract_mode", "innerText")
+        target = p.get("target", "first")
+        selector = p.get("selector", "")
+        return f"Extraire texte — {selector} [{mode} / {target}]"
+    if t == StepType.JUMP_TO_STEP:
+        cond = p.get("condition", "success")
+        target = p.get("target_index", 0)
+        return f"Sauter à l'étape {target + 1} — si {cond}"
+    if t == StepType.CLOSE_TABS:
+        f = p.get("url_filter", "")
+        max_t = p.get("max_tabs", 0)
+        filter_str = f" (filtre : {f})" if f else ""
+        return f"Fermer onglets — max {max_t}{filter_str}"
+    if t == StepType.END_PROCESS:
+        return f"Fin du processus — attendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
     return t.value
 
 
@@ -166,11 +186,13 @@ class WorkflowBuilderView(ttk.Frame):
         Returns:
             The row frame with both panels already gridded inside.
         """
-        row = ttk.Frame(self, height=210, padding=(0, 10, 0, 0))  # Entre Workflow et Brique
+        row = ttk.Frame(
+            self, height=_HEIGHT_FRAME_LOGICAL_BLOCK, padding=(0, 10, 0, 0)
+        )  # Entre Workflow et Brique logique
         row.grid_propagate(False)  # enforce fixed height regardless of children
 
         # Brique logique : largeur fixe 400 px. Aide à la saisie : espace restant.
-        row.columnconfigure(0, weight=0, minsize=310)
+        row.columnconfigure(0, weight=0, minsize=_WIDTH_FRAME_LOGICAL_BLOCK)
         row.columnconfigure(1, weight=1)
         row.rowconfigure(0, weight=1)
 
@@ -255,6 +277,16 @@ class WorkflowBuilderView(ttk.Frame):
     def hide_inline_form(self) -> None:
         """Hides both Brique logique and Aide à la saisie panels."""
         self._bottom_row.grid_remove()
+
+    def set_available_steps(self, steps: list[StepScrappingModel]) -> None:
+        """Forwards the step list to the inline form for JUMP_TO_STEP target population.
+
+        Must be called before show_inline_form() whenever JUMP_TO_STEP may be used.
+
+        Args:
+            steps: Current ordered workflow step list.
+        """
+        self._inline_form.set_available_steps(steps)
 
     def _update_help_text(self, label: str) -> None:
         """Updates the Aide à la saisie panel when the active step type changes.

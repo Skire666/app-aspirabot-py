@@ -4,35 +4,52 @@
 E:\app-py-life-selector\src_python_2026_03_sushi_scan
 
 
+A rajouer :
+true false à la fin d'une étape
+Garder le last state dans playwright
 
-Ajouter brique fin
+recacbler le JUMP TO pour lui dire de regarder ce que fait l'étape d'avant.
+indiquer si erreur ou succès (true false), dans le code, ET DANS le log
 
-induqer temps écoulée par étape dans le log
-indiquer si erreur ou succès (true false), dans le code, et le log
-
-Faire un brique IF qui regarde bool et jump
-Faire un brique WHILE
-
+indiquer temps écoulée par étape dans le log : informatif
 
 Fermer tous les onglets :
-ne garder que ceux qui match le regexp ?
-Et si crash tout, il arrete le scrapping ? (cocher uen case si fail)
+confirmer le comportement qui match le regexp ?
++ nom d'onglet max (est à 0 par défaut, il faudrait 1)
+SI fail, retourne false AVANT de crasher.
+Faire un JUMP TO...
 NOTE PCO : j'ai des popiuip de pub, a ferme illico apres le clique
 
 
-compter le nombre de fois qu'une étape est RUN
 
+Modifier briques qui peuvent vérifer la présence d'un truc :
+- resneigner un timeout
+Continu, par contre,  si timeout à l'origine ,retour false
 
 
 Bouton pour vérifier le workflow.
 Affiche une erreur par erreur.
 NOTE PCO : se faire une petit ligne, avec un compteur, et l'état du workflow.
+Pas grave si rogne espace
 
 
+brique qui s'apelle TEST :
+Recycler ouverture URL et vérifier si URL entré == URL sortie.
+genre les URL change, notamment les trucs de piratage (wawacity, flemmix, zlib, etc...)
 
-brique ou code pour vérifier si redirection.
-genre les URL change
-notamment les trucs de piratage (wawacity, flemmix, zlib, etc...)
+Brique en plus : (PAS PRIORITAIRE)
+Faire un brique WHILE ? Compteur ?
+Compter le nombre de truc (CSS/SLEECTOR et retourne X, X étant le nombre de noeud qui match)
+
+
+Lire un état dans le logger ?
+Genre compter le nombre de fois qu'une étape est RUN ? Nombre de clique
+On pourrait le combiner à la boucle WHILE (genre sa consition lit une varaible).
+
+
+pour une brique logique
+une case à cocher pour désactiver, sans supprimer ?
+
 
 Nom et URL
 a la sauvegarde
@@ -42,6 +59,10 @@ plus tard
 dispatcher en fonction de l'URL
 Pouvoir faire plusieurs workflow selon le dispatch
 pouvoir process un fihcier text avec toute les URL en input (faire une regle spéciale ?)
+NOTE PCO : Mon fournisseurs, en réalité c'est juste un workflow unitaire pour une URL donnée.
+Je peux avoir plusieurs workflow sur le même domaine. C'est un genre de "URL pattern"
+Il me faudrait un module "Domaine" qui dedans regroupe des "URL pattern"
+Le domaine et l'URL sont intimement liés, mais ils ne sont pas interchangeables. Le domaine constitue une partie de l'URL, mais une URL contient bien plus que cela. Il est crucial de comprendre que le domaine est une sous-partie de l'URL
 
 
 Documenter l'usage des briques que l'on peut ajoute au worlflow.
@@ -49,13 +70,14 @@ Documenter l'usage des briques que l'on peut ajoute au worlflow.
 Playwright propose plusieurs états de chargement lors de la navigation entre les pages, tels que `load` , `domcontentloaded` et `networkidle` . Avec `domcontentloaded` , votre script s'exécutera plus rapidement s'il n'a besoin que de la structure HTML principale et du DOM. Attendez d'avoir besoin de tous vos fichiers multimédias avant d'utiliser ` load` . Si l'activité réseau affecte votre processus, veillez à utiliser `networkidle` une fois que tout est terminé. Étant donné que `networkidle` ralentit les tests, il est préférable d'adapter la stratégie de délai à l'activité de chargement en arrière-plan de la page plutôt que d'utiliser systématiquement `networkidle` .
 
 
-D'une manière général, les trucs qui nécessite un rendu, alors il faudrait que les briques compatibles soit filtrée en conséquences (à confirmer, mais le scroll il faut quoi ? rien ? un bug ? marche parmagie ?)
+D'une manière général : Si webbrowser masqué :
+ya des trucs qui nécessite un rendu visuelle ?
+car faudrait que les briques compatibles soit filtrée en conséquences
+(à confirmer, mais le scroll il faut quoi ? rien ? un bug ? marche parmagie ?)
 
 
-Modifier briques qui peuvent vérifer la présence d'un truc :
-- resneigner un timeout
-Continu, par contre,  si timeout à l'origine ,retour false
-
+Faire un assistant pour débile, genre un module nwizard
+qui aide à setup par étape un fournisseurs.
 
 
 Brique spécial :
@@ -69,26 +91,9 @@ Pratique, je pourrais le combiner avec jump to.
 Genre si j'ai fait tel étape X fois, il quitte, ou avance.
 
 
-Brique spéical :
-délcncher la fin (genre juste FIN)
-
-
-Brique spécial
-What if... -> En gros, prends le "false" de la dernière étape, et soit il s'arrête définitivement, soit il relance une step existante.
-NOTE PCO : PAS besoin, c'est jump to + FIN
-
-
-D'une manière générale :
 Les jump fait les steps
 penser à vérifier tout le temps l'intégrité du truc (le step est un id, et il doit être valide, donc doit exister).
 Le but : Faire un truc genre, vérifier la fin, sinon relance à partir d'une certaine étapes ?
-
-
-
-Autre brique tout simple : Jump à une étape, et renseigner le nombre de fois qu'il doit faire ça.
-concernant le goto special
-si succès, déroule la suite
-
 
 
 Faire du validators

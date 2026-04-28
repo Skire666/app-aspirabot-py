@@ -13,22 +13,21 @@ Example:
     True
 """
 
+import logging
 import os
 import random
 import tempfile
 import threading
 import time
-import urllib.error
 import urllib.request
 from datetime import datetime
-from typing import Any, Callable
-
-from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
-from playwright.sync_api import Error as PlaywrightError
+from typing import Any, Callable, Optional
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
 from models.scrapping_report_model import ScrappingReportModel, StepResultModel
 from models.step_scrapping_model import StepScrappingModel, StepType
+from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
+from playwright.sync_api import Error as PlaywrightError
 
 
 class ScrappingService:
@@ -43,6 +42,14 @@ class ScrappingService:
         >>> isinstance(report, ScrappingReportModel)
         True
     """
+
+    def __init__(self) -> None:
+        """Initializes the service and its per-run execution state."""
+        self._logger = logging.getLogger(__name__)
+        # Per-run state reset at the start of each _run_steps call.
+        self._prev_step_success: bool = True
+        self._pending_jump: Optional[int] = None
+        self._end_process_requested: bool = False
 
     def run_workflow(
         self,
@@ -74,9 +81,7 @@ class ScrappingService:
         with sync_playwright() as pw:
             browser, page = self._launch_browser(pw, provider)
             try:
-                results, steps_failed = self._run_steps(
-                    page, provider.steps, on_step_done, cancel_event
-                )
+                results, steps_failed = self._run_steps(page, provider.steps, on_step_done, cancel_event)
             finally:
                 browser.close()
 
@@ -143,6 +148,9 @@ class ScrappingService:
     ) -> tuple[list[StepResultModel], int]:
         """Iterates over steps, executes each one, and notifies the caller.
 
+        Supports non-sequential execution via JUMP_TO_STEP and early
+        termination via END_PROCESS.
+
         Args:
             page: Active Playwright page.
             steps: Ordered list of steps to execute.
@@ -157,20 +165,58 @@ class ScrappingService:
         """
         results: list[StepResultModel] = []
         steps_failed = 0
+        # Reset per-run state before iterating.
+        self._prev_step_success = True
+        self._pending_jump = None
+        self._end_process_requested = False
+        i = 0
 
-        for i, step in enumerate(steps):
-            # Abort cleanly when the user has requested cancellation.
+        while i < len(steps):
             if cancel_event.is_set():
                 break
-
-            success, message = self._execute_step(page, step)
-            on_step_done(i, step, success, message)
-            results.append(StepResultModel(i, step.step_type.value, success, message))
-
-            if not success:
+            i, result = self._run_one_step(page, steps[i], i, on_step_done)
+            results.append(result)
+            if not result.success:
                 steps_failed += 1
+            if self._end_process_requested:
+                break
 
         return results, steps_failed
+
+    def _run_one_step(
+        self,
+        page: Page,
+        step: StepScrappingModel,
+        index: int,
+        on_step_done: Callable[[int, StepScrappingModel, bool, str], None],
+    ) -> tuple[int, StepResultModel]:
+        """Executes one step, fires the callback, and returns (next_index, result).
+
+        Updates _prev_step_success and consumes _pending_jump if set.
+
+        Args:
+            page: Active Playwright page.
+            step: The step to execute.
+            index: Zero-based position of the step in the workflow.
+            on_step_done: Fired with the step outcome.
+
+        Returns:
+            A tuple of (next_index, StepResultModel).
+
+        Raises:
+            None.
+        """
+        success, message = self._execute_step(page, step)
+        on_step_done(index, step, success, message)
+        result = StepResultModel(index, step.step_type.value, success, message)
+
+        # Apply pending jump (set by JUMP_TO_STEP handler) or advance by one.
+        if self._pending_jump is not None:
+            next_index, self._pending_jump = self._pending_jump, None
+        else:
+            next_index = index + 1
+        self._prev_step_success = success
+        return next_index, result
 
     def _execute_step(
         self,
@@ -197,7 +243,7 @@ class ScrappingService:
             return False, f"Playwright error: {exc}"
         except (ValueError, TimeoutError) as exc:
             return False, f"Step error: {exc}"
-        except Exception as exc:  # noqa: BLE001 — catch-all for unexpected failures
+        except Exception as exc:
             return False, f"Unexpected error: {exc}"
 
     def _get_handler(
@@ -217,14 +263,18 @@ class ScrappingService:
         """
         handlers: dict[StepType, Callable[[Page, dict[str, Any]], None]] = {
             StepType.OPEN_URL: self._handle_open_url,
+            StepType.REFRESH_PAGE: self._handle_refresh_page,
             StepType.SLEEP: self._handle_sleep,
             StepType.RANDOM_PAUSE: self._handle_random_pause,
-            StepType.REFRESH_PAGE: self._handle_refresh_page,
             StepType.DOWNLOAD_IMAGE: self._handle_download_image,
             StepType.WAIT_IMAGE_SIZE: self._handle_wait_image_size,
-            StepType.CLICK_ELEMENT: self._handle_click_element,
             StepType.WAIT_ELEMENT: self._handle_wait_element,
+            StepType.CLICK_ELEMENT: self._handle_click_element,
             StepType.SCROLL_DOWN: self._handle_scroll_down,
+            StepType.EXTRACT_TEXT: self._handle_extract_text,
+            StepType.JUMP_TO_STEP: self._handle_jump_to_step,
+            StepType.CLOSE_TABS: self._handle_close_tabs,
+            StepType.END_PROCESS: self._handle_end_process,
         }
         handler = handlers.get(step_type)
         if handler is None:
@@ -434,9 +484,147 @@ class ScrappingService:
         # Evaluate scrollBy in the page's JS context; pixels is always an int.
         page.evaluate(f"window.scrollBy(0, {pixels})")
 
+    def _handle_close_tabs(self, page: Page, params: dict[str, Any]) -> None:
+        """Closes browser tabs, keeping those matching url_filter up to max_tabs.
+
+        The current active page is never closed.
+
+        Args:
+            page: Active Playwright page (protected from closure).
+            params: Must contain ``url_filter`` (str) and ``max_tabs`` (int).
+
+        Returns:
+            None.
+
+        Raises:
+            PlaywrightError: If a tab close operation fails.
+        """
+        url_filter: str = params.get("url_filter", "")
+        max_tabs: int = int(params.get("max_tabs", 0))
+
+        # Close non-current pages that do not match the URL filter.
+        for p in list(page.context.pages):
+            if p is not page and url_filter and url_filter not in p.url:
+                p.close()
+
+        # Enforce max_tabs threshold on remaining non-current pages.
+        if max_tabs > 0:
+            others = [p for p in page.context.pages if p is not page]
+            for p in others[max_tabs - 1 :]:
+                p.close()
+
+    def _handle_extract_text(self, page: Page, params: dict[str, Any]) -> None:
+        """Extracts text or markup from DOM elements and logs the result.
+
+        Logs a warning if no element matches; does not raise.
+
+        Args:
+            page: Active Playwright page.
+            params: Must contain ``selector`` (str), ``extract_mode`` (str),
+                ``target`` (``'first'`` | ``'last'`` | ``'all'``).
+
+        Returns:
+            None.
+
+        Raises:
+            PlaywrightError: If a JS evaluation fails during extraction.
+        """
+        selector: str = params.get("selector", "")
+        mode: str = params.get("extract_mode", "innerText")
+        target: str = params.get("target", "first")
+
+        elements = page.query_selector_all(selector)
+        if not elements:
+            self._logger.warning("EXTRACT_TEXT: no element matches selector %r", selector)
+            return
+
+        # Select the target subset then extract and log.
+        selected = (
+            [elements[0]] if target == "first" else [elements[-1]] if target == "last" else elements
+        )
+        texts = [self._extract_from_element(el, mode) for el in selected]
+        self._logger.info("EXTRACT_TEXT [%s]: %s", selector, "\n".join(texts)[:500])
+
+    def _handle_jump_to_step(self, page: Page, params: dict[str, Any]) -> None:
+        """Conditionally jumps to a target step by setting _pending_jump.
+
+        The jump is resolved in _run_one_step after this handler returns.
+
+        Args:
+            page: Active Playwright page (unused; required by dispatch signature).
+            params: Must contain ``condition`` (str) and ``target_index`` (int).
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        condition: str = params.get("condition", "success")
+        target_index: int = int(params.get("target_index", 0))
+
+        # Evaluate condition against the previous step's result.
+        should_jump = (
+            condition == "always"
+            or (condition == "success" and self._prev_step_success)
+            or (condition == "failure" and not self._prev_step_success)
+        )
+        if should_jump:
+            self._pending_jump = target_index
+
+    def _handle_end_process(self, page: Page, params: dict[str, Any]) -> None:
+        """Waits the configured delay then signals the step loop to stop.
+
+        Args:
+            page: Active Playwright page (unused; required by dispatch signature).
+            params: Must contain ``wait_duration`` (int | float) and
+                ``wait_unit`` (``'hour'`` | ``'minute'`` | ``'second'`` |
+                ``'millisecond'``).
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        wait_duration: float = float(params.get("wait_duration", 0))
+        wait_unit: str = params.get("wait_unit", "second")
+
+        # Convert wait duration to seconds using unit multipliers.
+        multipliers = {"hour": 3600.0, "minute": 60.0, "second": 1.0, "millisecond": 0.001}
+        delay = wait_duration * multipliers.get(wait_unit, 1.0)
+        if delay > 0:
+            time.sleep(delay)
+        self._end_process_requested = True
+
     # ------------------------------------------------------------------
     # Shared helpers used by multiple handlers
     # ------------------------------------------------------------------
+
+    def _extract_from_element(self, element: ElementHandle, mode: str) -> str:
+        """Reads a property from a Playwright ElementHandle.
+
+        Args:
+            element: A Playwright ElementHandle instance.
+            mode: One of ``innerText``, ``textContent``, ``outerHTML``,
+                ``innerHTML``, ``value``.
+
+        Returns:
+            The extracted string value.
+
+        Raises:
+            PlaywrightError: If the JS evaluation fails.
+        """
+        if mode == "textContent":
+            return element.text_content() or ""
+        if mode == "outerHTML":
+            return element.evaluate("el => el.outerHTML") or ""
+        if mode == "innerHTML":
+            return element.inner_html()
+        if mode == "value":
+            return element.input_value()
+        # Default: innerText — visible rendered text.
+        return element.inner_text()
 
     def _extract_bounds(self, params: dict[str, Any]) -> dict[str, int]:
         """Extracts image dimension bounds from step params into a typed dict.
@@ -491,8 +679,7 @@ class ScrappingService:
 
         # Keep only images that satisfy every dimension constraint.
         return [
-            img for img in all_imgs
-            if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max
+            img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max
         ]
 
     def _select_image_by_mode(

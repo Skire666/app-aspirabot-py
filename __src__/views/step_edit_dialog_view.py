@@ -20,14 +20,18 @@ from models.step_scrapping_model import StepScrappingModel, StepType
 # French display labels for each step type (Combobox values).
 STEP_TYPE_LABELS: dict[StepType, str] = {
     StepType.OPEN_URL: "Ouvrir une URL",
+    StepType.REFRESH_PAGE: "Rafraîchir la page",
     StepType.SLEEP: "Pause fixe",
     StepType.RANDOM_PAUSE: "Pause aléatoire",
-    StepType.REFRESH_PAGE: "Rafraîchir la page",
     StepType.DOWNLOAD_IMAGE: "Télécharger une image",
     StepType.WAIT_IMAGE_SIZE: "Attendre une taille d'image",
-    StepType.CLICK_ELEMENT: "Cliquer sur un élément",
     StepType.WAIT_ELEMENT: "Attendre un élément",
+    StepType.CLICK_ELEMENT: "Cliquer sur un élément",
     StepType.SCROLL_DOWN: "Défiler vers le bas",
+    StepType.EXTRACT_TEXT: "Extraire le texte (CSS)",
+    StepType.JUMP_TO_STEP: "Sauter à une étape",
+    StepType.CLOSE_TABS: "Fermer les onglets",
+    StepType.END_PROCESS: "Fin du processus",
 }
 
 # Reverse mapping for label → StepType lookup.
@@ -40,6 +44,48 @@ _WAIT_STATES = ["commit", "domcontentloaded", "load", "networkidle"]
 _UNITS = ["hour", "minute", "second", "millisecond"]
 _DOWNLOAD_MODES = ["largest", "first", "last", "all"]
 _CLICK_MODES = ["Normal", "Forced", "JS Direct"]
+
+# --- EXTRACT_TEXT display/value mappings ---
+_EXTRACT_MODE_DISPLAY: list[str] = [
+    "innerText — Texte visible",
+    "textContent — Texte brut complet",
+    "outerHTML — HTML complet de l'élément",
+    "innerHTML — HTML interne",
+    "value — Valeur du champ (input/textarea)",
+]
+_EXTRACT_MODE_VALUES: list[str] = ["innerText", "textContent", "outerHTML", "innerHTML", "value"]
+_EXTRACT_MODE_MAP: dict[str, str] = dict(zip(_EXTRACT_MODE_DISPLAY, _EXTRACT_MODE_VALUES))
+_EXTRACT_MODE_REVERSE: dict[str, str] = dict(zip(_EXTRACT_MODE_VALUES, _EXTRACT_MODE_DISPLAY))
+
+# --- EXTRACT_TEXT target display/value mappings ---
+_TARGET_DISPLAY: list[str] = [
+    "Premier élément uniquement",
+    "Dernier élément uniquement",
+    "Tous les éléments",
+]
+_TARGET_VALUES: list[str] = ["first", "last", "all"]
+_TARGET_MAP: dict[str, str] = dict(zip(_TARGET_DISPLAY, _TARGET_VALUES))
+_TARGET_REVERSE: dict[str, str] = dict(zip(_TARGET_VALUES, _TARGET_DISPLAY))
+
+# --- JUMP_TO_STEP condition display/value mappings ---
+_CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]
+_CONDITION_VALUES: list[str] = ["success", "failure", "always"]
+_CONDITION_MAP: dict[str, str] = dict(zip(_CONDITION_DISPLAY, _CONDITION_VALUES))
+_CONDITION_REVERSE: dict[str, str] = dict(zip(_CONDITION_VALUES, _CONDITION_DISPLAY))
+
+# --- END_PROCESS wait_unit display/value mappings ---
+_WAIT_UNIT_DISPLAY: list[str] = ["heure", "minute", "seconde", "milli-sec"]
+_WAIT_UNIT_VALUES: list[str] = ["hour", "minute", "second", "millisecond"]
+_WAIT_UNIT_MAP: dict[str, str] = dict(zip(_WAIT_UNIT_DISPLAY, _WAIT_UNIT_VALUES))
+_WAIT_UNIT_REVERSE: dict[str, str] = dict(zip(_WAIT_UNIT_VALUES, _WAIT_UNIT_DISPLAY))
+
+# Combined reverse map used by _load_step for display-mapped param keys.
+_PARAM_DISPLAY_REVERSE: dict[str, dict[str, str]] = {
+    "extract_mode": _EXTRACT_MODE_REVERSE,
+    "target": _TARGET_REVERSE,
+    "condition": _CONDITION_REVERSE,
+    "wait_unit": _WAIT_UNIT_REVERSE,
+}
 
 
 class StepInlineFormPanel(ttk.LabelFrame):
@@ -66,6 +112,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self.on_type_changed: Optional[Callable[[str], None]] = None
         self._type_var = tk.StringVar()
         self._form_widgets: dict[str, Any] = {}
+        # Step list for JUMP_TO_STEP target combobox; set via set_available_steps().
+        self._available_steps: list[StepScrappingModel] = []
+        self._jump_target_displays: list[str] = []
 
         # Build all structural regions.
         self._create_widgets()
@@ -121,6 +170,16 @@ class StepInlineFormPanel(ttk.LabelFrame):
     # Public interface
     # ---------------------------------------------------------------
 
+    def set_available_steps(self, steps: list[StepScrappingModel]) -> None:
+        """Stores the workflow step list for JUMP_TO_STEP target population.
+
+        Must be called before load() when the user may select JUMP_TO_STEP.
+
+        Args:
+            steps: Current ordered workflow step list.
+        """
+        self._available_steps = list(steps)
+
     def load(self, step: Optional[StepScrappingModel] = None) -> None:
         """Prepares the form for a new step or pre-fills it from an existing one.
 
@@ -166,14 +225,18 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Dispatch to the matching form builder.
         builders = {
             StepType.OPEN_URL: self._build_form_open_url,
+            StepType.REFRESH_PAGE: self._build_form_refresh_page,
             StepType.SLEEP: self._build_form_sleep,
             StepType.RANDOM_PAUSE: self._build_form_random_pause,
-            StepType.REFRESH_PAGE: self._build_form_refresh_page,
             StepType.DOWNLOAD_IMAGE: self._build_form_download_image,
             StepType.WAIT_IMAGE_SIZE: self._build_form_wait_image_size,
-            StepType.CLICK_ELEMENT: self._build_form_click_element,
             StepType.WAIT_ELEMENT: self._build_form_wait_element,
+            StepType.CLICK_ELEMENT: self._build_form_click_element,
             StepType.SCROLL_DOWN: self._build_form_scroll_down,
+            StepType.EXTRACT_TEXT: self._build_form_extract_text,
+            StepType.JUMP_TO_STEP: self._build_form_jump_to_step,
+            StepType.CLOSE_TABS: self._build_form_close_tabs,
+            StepType.END_PROCESS: self._build_form_end_process,
         }
         builder = builders.get(step_type)
         if builder:
@@ -314,6 +377,117 @@ class StepInlineFormPanel(ttk.LabelFrame):
         )
         self._form_widgets["pixels"] = px_var
 
+    def _build_form_close_tabs(self) -> None:
+        """Builds the CLOSE_TABS form (url_filter entry + max_tabs spinbox)."""
+        self._form_frame.columnconfigure(1, weight=1)
+
+        # Optional URL substring filter field.
+        ttk.Label(self._form_frame, text="Filtre URL:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        filter_var = tk.StringVar()
+        ttk.Entry(self._form_frame, textvariable=filter_var).grid(
+            row=0, column=1, sticky="ew", padx=5, pady=4
+        )
+        ttk.Label(self._form_frame, text="Laisser vide pour ne pas filtrer", foreground="gray").grid(
+            row=1, column=1, sticky="w", padx=5
+        )
+        self._form_widgets["url_filter"] = filter_var
+
+        # Maximum tabs to keep open.
+        ttk.Label(self._form_frame, text="Max onglets:").grid(
+            row=2, column=0, sticky="w", padx=5, pady=4
+        )
+        tabs_var = tk.StringVar(value="0")
+        ttk.Spinbox(self._form_frame, from_=0, to=9999, textvariable=tabs_var, width=10).grid(
+            row=2, column=1, sticky="w", padx=5, pady=4
+        )
+        self._form_widgets["max_tabs"] = tabs_var
+
+    def _build_form_extract_text(self) -> None:
+        """Builds the EXTRACT_TEXT form (selector, extract_mode, target comboboxes)."""
+        self._form_frame.columnconfigure(1, weight=1)
+
+        # CSS selector entry.
+        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(
+            row=0, column=0, sticky="w", padx=5, pady=4
+        )
+        sel_var = tk.StringVar()
+        ttk.Entry(self._form_frame, textvariable=sel_var).grid(
+            row=0, column=1, sticky="ew", padx=5, pady=4
+        )
+        self._form_widgets["selector"] = sel_var
+
+        # Extraction mode combobox.
+        ttk.Label(self._form_frame, text="Mode d'extraction:").grid(
+            row=1, column=0, sticky="w", padx=5, pady=4
+        )
+        mode_var = tk.StringVar(value=_EXTRACT_MODE_DISPLAY[0])
+        ttk.Combobox(
+            self._form_frame, textvariable=mode_var, values=_EXTRACT_MODE_DISPLAY, state="readonly"
+        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        self._form_widgets["extract_mode"] = mode_var
+
+        # Target elements combobox.
+        ttk.Label(self._form_frame, text="Éléments ciblés:").grid(
+            row=2, column=0, sticky="w", padx=5, pady=4
+        )
+        target_var = tk.StringVar(value=_TARGET_DISPLAY[0])
+        ttk.Combobox(
+            self._form_frame, textvariable=target_var, values=_TARGET_DISPLAY, state="readonly"
+        ).grid(row=2, column=1, sticky="ew", padx=5, pady=4)
+        self._form_widgets["target"] = target_var
+
+    def _build_form_jump_to_step(self) -> None:
+        """Builds the JUMP_TO_STEP form (condition + dynamic target step combobox)."""
+        self._form_frame.columnconfigure(1, weight=1)
+
+        # Condition selector.
+        ttk.Label(self._form_frame, text="Condition:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        cond_var = tk.StringVar(value=_CONDITION_DISPLAY[0])
+        ttk.Combobox(
+            self._form_frame, textvariable=cond_var, values=_CONDITION_DISPLAY, state="readonly"
+        ).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        self._form_widgets["condition"] = cond_var
+
+        # Build display strings from the available steps list.
+        self._jump_target_displays = [
+            f"Étape {i + 1} — {STEP_TYPE_LABELS.get(s.step_type, s.step_type.value)}"
+            for i, s in enumerate(self._available_steps)
+        ]
+        default_target = self._jump_target_displays[0] if self._jump_target_displays else ""
+        target_var = tk.StringVar(value=default_target)
+        ttk.Label(self._form_frame, text="Étape cible:").grid(
+            row=1, column=0, sticky="w", padx=5, pady=4
+        )
+        ttk.Combobox(
+            self._form_frame,
+            textvariable=target_var,
+            values=self._jump_target_displays,
+            state="readonly",
+        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        self._form_widgets["target_index"] = target_var
+
+    def _build_form_end_process(self) -> None:
+        """Builds the END_PROCESS form (wait_duration spinbox + wait_unit combobox)."""
+        self._form_frame.columnconfigure(1, weight=1)
+
+        # Duration spinbox.
+        ttk.Label(self._form_frame, text="Durée d'attente:").grid(
+            row=0, column=0, sticky="w", padx=5, pady=4
+        )
+        dur_var = tk.StringVar(value="0")
+        ttk.Spinbox(self._form_frame, from_=0, to=99999, textvariable=dur_var, width=10).grid(
+            row=0, column=1, sticky="w", padx=5, pady=4
+        )
+        self._form_widgets["wait_duration"] = dur_var
+
+        # Unit combobox — default "seconde" maps to internal "second".
+        ttk.Label(self._form_frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+        unit_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
+        ttk.Combobox(
+            self._form_frame, textvariable=unit_var, values=_WAIT_UNIT_DISPLAY, state="readonly"
+        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        self._form_widgets["wait_unit"] = unit_var
+
     # ---------------------------------------------------------------
     # Shared form helpers
     # ---------------------------------------------------------------
@@ -360,6 +534,10 @@ class StepInlineFormPanel(ttk.LabelFrame):
     def _load_step(self, step: StepScrappingModel) -> None:
         """Pre-fills form widgets from an existing step's params.
 
+        Applies display reverse-maps for keys whose combobox shows translated
+        labels (extract_mode, target, condition, wait_unit). Handles
+        target_index via the dynamic jump target display list.
+
         Args:
             step: The step whose params will populate the form.
         """
@@ -367,10 +545,20 @@ class StepInlineFormPanel(ttk.LabelFrame):
             if key not in self._form_widgets:
                 continue
             widget_var = self._form_widgets[key]
+
+            # JUMP_TO_STEP target_index maps int → display string.
+            if key == "target_index":
+                idx = int(value) if str(value).lstrip("-").isdigit() else 0
+                if 0 <= idx < len(self._jump_target_displays):
+                    widget_var.set(self._jump_target_displays[idx])
+                continue
+
             if isinstance(widget_var, tk.BooleanVar):
                 widget_var.set(bool(value))
             else:
-                widget_var.set(str(value))
+                # Use display reverse-map when available, fall back to raw string.
+                display = _PARAM_DISPLAY_REVERSE.get(key, {}).get(str(value), str(value))
+                widget_var.set(display)
 
     def _get_params(self, step_type: StepType) -> dict[str, Any]:
         """Reads form widget values and returns the params dict for the step.
@@ -383,14 +571,18 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """
         readers = {
             StepType.OPEN_URL: self._params_open_url,
+            StepType.REFRESH_PAGE: self._params_refresh_page,
             StepType.SLEEP: self._params_sleep,
             StepType.RANDOM_PAUSE: self._params_random_pause,
-            StepType.REFRESH_PAGE: self._params_refresh_page,
             StepType.DOWNLOAD_IMAGE: self._params_download_image,
             StepType.WAIT_IMAGE_SIZE: self._params_wait_image_size,
-            StepType.CLICK_ELEMENT: self._params_click_element,
             StepType.WAIT_ELEMENT: self._params_wait_element,
+            StepType.CLICK_ELEMENT: self._params_click_element,
             StepType.SCROLL_DOWN: self._params_scroll_down,
+            StepType.EXTRACT_TEXT: self._params_extract_text,
+            StepType.JUMP_TO_STEP: self._params_jump_to_step,
+            StepType.CLOSE_TABS: self._params_close_tabs,
+            StepType.END_PROCESS: self._params_end_process,
         }
         reader = readers.get(step_type)
         return reader() if reader else {}
@@ -459,6 +651,44 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """Reads SCROLL_DOWN params, coercing pixels to int."""
         return {"pixels": self._safe_int("pixels", 1000)}
 
+    def _params_close_tabs(self) -> dict[str, Any]:
+        """Reads CLOSE_TABS params."""
+        return {
+            "url_filter": self._form_widgets["url_filter"].get().strip(),
+            "max_tabs": self._safe_int("max_tabs", 0),
+        }
+
+    def _params_extract_text(self) -> dict[str, Any]:
+        """Reads EXTRACT_TEXT params, translating display labels to internal values."""
+        mode_display = self._form_widgets["extract_mode"].get()
+        target_display = self._form_widgets["target"].get()
+        return {
+            "selector": self._form_widgets["selector"].get().strip(),
+            "extract_mode": _EXTRACT_MODE_MAP.get(mode_display, "innerText"),
+            "target": _TARGET_MAP.get(target_display, "first"),
+        }
+
+    def _params_jump_to_step(self) -> dict[str, Any]:
+        """Reads JUMP_TO_STEP params, resolving display labels to internal values."""
+        condition_display = self._form_widgets["condition"].get()
+        condition = _CONDITION_MAP.get(condition_display, "success")
+
+        # Derive zero-based index from the selected display string.
+        target_display = self._form_widgets["target_index"].get()
+        if target_display in self._jump_target_displays:
+            target_idx = self._jump_target_displays.index(target_display)
+        else:
+            target_idx = 0
+        return {"condition": condition, "target_index": target_idx}
+
+    def _params_end_process(self) -> dict[str, Any]:
+        """Reads END_PROCESS params, translating display unit label to internal value."""
+        unit_display = self._form_widgets["wait_unit"].get()
+        return {
+            "wait_duration": self._safe_float("wait_duration", 0),
+            "wait_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
+        }
+
     # ---------------------------------------------------------------
     # Type-safe widget reads
     # ---------------------------------------------------------------
@@ -508,14 +738,18 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """
         validators = {
             StepType.OPEN_URL: self._validate_open_url_form,
+            StepType.REFRESH_PAGE: lambda: [],
             StepType.SLEEP: self._validate_sleep_form,
             StepType.RANDOM_PAUSE: self._validate_random_pause_form,
-            StepType.REFRESH_PAGE: lambda: [],
             StepType.DOWNLOAD_IMAGE: self._validate_download_image_form,
             StepType.WAIT_IMAGE_SIZE: self._validate_wait_image_size_form,
-            StepType.CLICK_ELEMENT: self._validate_click_element_form,
             StepType.WAIT_ELEMENT: self._validate_wait_element_form,
+            StepType.CLICK_ELEMENT: self._validate_click_element_form,
             StepType.SCROLL_DOWN: lambda: [],
+            StepType.EXTRACT_TEXT: self._validate_extract_text_form,
+            StepType.JUMP_TO_STEP: self._validate_jump_to_step_form,
+            StepType.CLOSE_TABS: self._validate_close_tabs_form,
+            StepType.END_PROCESS: lambda: [],
         }
         validator = validators.get(step_type)
         return validator() if validator else []
@@ -572,6 +806,28 @@ class StepInlineFormPanel(ttk.LabelFrame):
         if not self._form_widgets.get("selector", tk.StringVar()).get().strip():
             return ["Le sélecteur CSS est obligatoire."]
         return []
+
+    def _validate_close_tabs_form(self) -> list[str]:
+        """Validates CLOSE_TABS fields."""
+        errors: list[str] = []
+        if self._safe_int("max_tabs", -1) < 0:
+            errors.append("Max onglets doit être >= 0.")
+        return errors
+
+    def _validate_extract_text_form(self) -> list[str]:
+        """Validates EXTRACT_TEXT fields."""
+        errors: list[str] = []
+        if not self._form_widgets.get("selector", tk.StringVar()).get().strip():
+            errors.append("Le sélecteur CSS est obligatoire.")
+        return errors
+
+    def _validate_jump_to_step_form(self) -> list[str]:
+        """Validates JUMP_TO_STEP fields."""
+        errors: list[str] = []
+        target_display = self._form_widgets.get("target_index", tk.StringVar()).get()
+        if target_display not in self._jump_target_displays:
+            errors.append("Sélectionnez une étape cible valide.")
+        return errors
 
     # ---------------------------------------------------------------
     # Button handlers
@@ -681,6 +937,48 @@ class StepHelpTexts:
             "Fait défiler la page vers le bas d'un nombre de pixels donné.\n"
             "Utile pour déclencher le chargement en infinite scroll.\n\n"
             "• Pixels : distance de défilement en pixels (ex. 1000)"
+        ),
+        "Fermer les onglets": (
+            "Ferme les onglets du navigateur selon les critères définis.\n\n"
+            "• Filtre URL : chaîne recherchée dans l'adresse des onglets\n"
+            "  Si vide, tous les onglets correspondants sont fermés.\n"
+            "  Si renseigné, seuls les onglets dont l'URL contient cette\n"
+            "  chaîne sont conservés — les autres sont fermés.\n"
+            "• Max onglets : nombre maximum d'onglets à conserver (0 = tous)"
+        ),
+        "Extraire le texte (CSS)": (
+            "Extrait du contenu depuis des éléments DOM via un sélecteur CSS.\n\n"
+            "• Sélecteur CSS : ex. h1, .title, #price, div.card:first-child\n"
+            "• Mode d'extraction :\n"
+            "  - innerText : texte visible selon le CSS (recommandé)\n"
+            "  - textContent : texte brut incluant les nœuds masqués\n"
+            "  - outerHTML : HTML complet incluant la balise elle-même\n"
+            "  - innerHTML : HTML interne à l'élément\n"
+            "  - value : valeur d'un <input> ou <textarea>\n"
+            "• Éléments ciblés :\n"
+            "  - Premier / Dernier : un seul résultat extrait\n"
+            "  - Tous : résultats joints par un saut de ligne\n\n"
+            "Si aucun élément ne correspond, un avertissement est consigné\n"
+            "sans interrompre l'exécution."
+        ),
+        "Sauter à une étape": (
+            "Redirige l'exécution vers une autre étape selon le résultat\n"
+            "de l'étape précédente.\n\n"
+            "• Condition :\n"
+            "  - Si succès : saut si l'étape précédente a réussi\n"
+            "  - Si échec : saut si l'étape précédente a échoué\n"
+            "  - Toujours : saut inconditionnel\n"
+            "• Étape cible : étape vers laquelle rediriger l'exécution\n\n"
+            "Une étape ne peut pas pointer vers elle-même\n"
+            "(boucle infinie interdite)."
+        ),
+        "Fin du processus": (
+            "Marque la fin du flux de scraping et attend un délai fixe\n"
+            "avant de libérer les ressources du navigateur.\n\n"
+            "• Durée d'attente : délai à respecter avant la fin\n"
+            "• Unité : milli-sec, seconde, minute ou heure\n\n"
+            "Utile pour laisser les actions asynchrones se terminer\n"
+            "avant la fermeture du navigateur."
         ),
     }
 

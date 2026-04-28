@@ -21,14 +21,18 @@ class StepType(Enum):
     """
 
     OPEN_URL = "OPEN_URL"
+    REFRESH_PAGE = "REFRESH_PAGE"
     SLEEP = "SLEEP"
     RANDOM_PAUSE = "RANDOM_PAUSE"
-    REFRESH_PAGE = "REFRESH_PAGE"
     DOWNLOAD_IMAGE = "DOWNLOAD_IMAGE"
     WAIT_IMAGE_SIZE = "WAIT_IMAGE_SIZE"
-    CLICK_ELEMENT = "CLICK_ELEMENT"
     WAIT_ELEMENT = "WAIT_ELEMENT"
+    CLICK_ELEMENT = "CLICK_ELEMENT"
     SCROLL_DOWN = "SCROLL_DOWN"
+    EXTRACT_TEXT = "EXTRACT_TEXT"
+    JUMP_TO_STEP = "JUMP_TO_STEP"
+    CLOSE_TABS = "CLOSE_TABS"
+    END_PROCESS = "END_PROCESS"
 
 
 # Default param values keyed by StepType value string.
@@ -37,9 +41,9 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "url": "https://example.com/",
         "wait_state": "domcontentloaded",
     },
+    StepType.REFRESH_PAGE.value: {"clear_cache": False},
     StepType.SLEEP.value: {"duration": 0, "unit": "second"},
     StepType.RANDOM_PAUSE.value: {"min": 0, "max": 1, "unit": "second"},
-    StepType.REFRESH_PAGE.value: {"clear_cache": False},
     StepType.DOWNLOAD_IMAGE.value: {
         "mode": "largest",
         "height_min": 0,
@@ -53,9 +57,26 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "width_min": 0,
         "width_max": 99999,
     },
-    StepType.CLICK_ELEMENT.value: {"selector": "", "click_mode": "Normal"},
     StepType.WAIT_ELEMENT.value: {"selector": ""},
+    StepType.CLICK_ELEMENT.value: {"selector": "", "click_mode": "Normal"},
     StepType.SCROLL_DOWN.value: {"pixels": 1000},
+    StepType.EXTRACT_TEXT.value: {
+        "selector": "",
+        "extract_mode": "innerText",
+        "target": "first",
+    },
+    StepType.JUMP_TO_STEP.value: {
+        "condition": "success",
+        "target_index": 0,
+    },
+    StepType.CLOSE_TABS.value: {
+        "url_filter": "",
+        "max_tabs": 1,
+    },
+    StepType.END_PROCESS.value: {
+        "wait_duration": 1,
+        "wait_unit": "second",
+    },
 }
 
 
