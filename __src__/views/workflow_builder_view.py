@@ -26,7 +26,6 @@ from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowSte
 _HEIGHT_FRAME_LOGICAL_BLOCK = 215
 _WIDTH_FRAME_LOGICAL_BLOCK = 320
 _DND_ITEM_H = 48
-_DND_ITEM_W = 440
 
 
 def _format_step_label(step: StepScrappingModel) -> str:
@@ -205,17 +204,17 @@ class WorkflowBuilderView(ttk.Frame):
             on_delete=self._on_dnd_delete,
             on_reorder=self._on_dnd_reorder,
             item_height=_DND_ITEM_H,
-            item_width=_DND_ITEM_W,
         )
-        win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
+        self._scroll_win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
 
         # Frame-level Enter/Leave guards the 16 px padding zone around the internal canvas.
         self._dnd_list.bind("<Enter>", lambda _: outer.bind_all("<MouseWheel>", self._scroll_fn))
         self._dnd_list.bind("<Leave>", lambda _: outer.unbind_all("<MouseWheel>"))
 
-        # Keep scroll region and window width in sync with their containers.
+        # Both events must update the window geometry so the DragDropList always
+        # fills the outer canvas height and the scrollregion stays accurate.
         self._dnd_list.bind("<Configure>", self._on_dnd_configure)
-        outer.bind("<Configure>", lambda e: outer.itemconfig(win, width=e.width))
+        outer.bind("<Configure>", self._on_scroll_canvas_configure)
 
         # Initial canvas-level binding (complement to the frame-level binding above).
         self._bind_dnd_canvas_scroll()
@@ -275,6 +274,9 @@ class WorkflowBuilderView(ttk.Frame):
         self._dnd_list.rebuild()
         # Rebind scroll: rebuild() recreates the internal canvas object.
         self._bind_dnd_canvas_scroll()
+        # Defer geometry update: rebuild() queues its layout asynchronously,
+        # so winfo_reqheight() is only accurate after the event loop processes it.
+        self.after_idle(self._update_dnd_window_geometry)
 
     def show_toast(self, message: str, level: str = "info") -> None:
         """Briefly displays a notification message above the toolbar.
@@ -333,6 +335,7 @@ class WorkflowBuilderView(ttk.Frame):
         self,
         canvas: tk.Canvas,
         step: StepScrappingModel,
+        idx: int,
         x: int,
         y: int,
         w: int,
@@ -341,12 +344,6 @@ class WorkflowBuilderView(ttk.Frame):
     ) -> None:
         if state == "ghost":
             return
-
-        # Resolve display index from current list order.
-        try:
-            idx = self._dnd_list.items.index(step)
-        except ValueError:
-            idx = -1
 
         is_selected = idx == self._selected_index
 
@@ -444,15 +441,47 @@ class WorkflowBuilderView(ttk.Frame):
         # Defer rebind: DragDropList calls rebuild() AFTER this callback returns,
         # so the new internal canvas is not yet available at this point.
         self.after(0, self._bind_dnd_canvas_scroll)
+        # Double-deferred geometry: this callback fires before rebuild(), which
+        # queues pack's layout idle callback. A single after_idle would run before
+        # pack, reading stale winfo_reqheight(). The second after_idle fires after
+        # pack's layout idle, so the frame height is accurate.
+        self.after_idle(self._defer_geometry_update)
+
+    def _defer_geometry_update(self) -> None:
+        """Schedules a second idle geometry update.
+
+        Called as the first after_idle from _on_dnd_reorder (which fires before
+        rebuild()). By the time this runs, rebuild() has queued pack's layout as
+        an idle callback. Scheduling another after_idle here ensures
+        _update_dnd_window_geometry runs after pack's layout, so winfo_reqheight()
+        reflects the new canvas height.
+        """
+        self.after_idle(self._update_dnd_window_geometry)
 
     # ---------------------------------------------------------------
     # Scroll helpers
     # ---------------------------------------------------------------
 
     def _on_dnd_configure(self, _: tk.Event) -> None:
-        # Updates the scroll region and rebinds wheel scroll after any resize.
-        self._scroll_canvas.configure(scrollregion=self._scroll_canvas.bbox("all"))
+        # DragDropList resized (rebuild): update geometry then rebind scroll.
+        self._update_dnd_window_geometry()
         self._bind_dnd_canvas_scroll()
+
+    def _on_scroll_canvas_configure(self, _: tk.Event) -> None:
+        # Outer canvas resized: ensure DragDropList window fills the new dimensions.
+        self._update_dnd_window_geometry()
+
+    def _update_dnd_window_geometry(self) -> None:
+        # The window width always matches the outer canvas.
+        # The window height is at least the outer canvas height so there is no
+        # empty gap below the DragDropList when the step list is short.
+        # When content overflows, the scrollregion grows to reveal all items.
+        w = self._scroll_canvas.winfo_width()
+        dnd_h = self._dnd_list.winfo_reqheight()
+        canvas_h = self._scroll_canvas.winfo_height()
+        h = max(dnd_h, canvas_h)
+        self._scroll_canvas.itemconfig(self._scroll_win, width=w, height=h)
+        self._scroll_canvas.configure(scrollregion=(0, 0, w, h))
 
     def _bind_dnd_canvas_scroll(self) -> None:
         # Binds Enter/Leave on the DragDropList's internal canvas so the global

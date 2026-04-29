@@ -11,7 +11,8 @@ MINIMAL USAGE
 
 render_item SIGNATURE
 ─────────────────────
-    def render_item(canvas, item, x, y, w, h, state):
+    def render_item(canvas, item, idx, x, y, w, h, state):
+        # idx   : current position of the item in the list
         # state : "normal" | "ghost" | "floating"
         # Draw whatever you want in the area (x, y, x+w, y+h)
 
@@ -80,9 +81,8 @@ class DragDropList(tk.Frame, Generic[T]):
     ----------
     parent       : parent tkinter widget
     items        : list of arbitrary objects (modified IN-PLACE)
-    render_item  : fn(canvas, item, x, y, w, h, state) — required
+    render_item  : fn(canvas, item, idx, x, y, w, h, state) — required
     item_height  : height in px of each item (default 56)
-    item_width   : total width in px (default 520)
     pad          : vertical spacing between items (default 6)
     btn_size     : button size in px (default 28)
     theme        : color dict (merged with DEFAULT_THEME)
@@ -98,10 +98,9 @@ class DragDropList(tk.Frame, Generic[T]):
         self,
         parent: tk.Misc,
         items: list[T],
-        render_item: Callable[[tk.Canvas, T, int, int, int, int, str], None],
+        render_item: Callable[[tk.Canvas, T, int, int, int, int, int, str], None],
         *,
         item_height: int = 56,
-        item_width: int = 520,
         pad: int = 6,
         btn_size: int = 28,
         theme: Optional[dict[str, str]] = None,
@@ -116,11 +115,11 @@ class DragDropList(tk.Frame, Generic[T]):
         super().__init__(parent, bg=self._theme["bg"])
 
         self.items: list[T] = items
-        self._render_item: Callable[[tk.Canvas, T, int, int, int, int, str], None] = render_item
+        self._render_item: Callable[[tk.Canvas, T, int, int, int, int, int, str], None] = render_item
         self.ITEM_H: int = item_height
-        self.ITEM_W: int = item_width
         self.PAD: int = pad
         self.BTN_SIZE: int = btn_size
+        self._canvas_w: int = 0  # updated by <Configure>; 0 until first layout
 
         # Callbacks stored by action key
         self._cbs: dict[str, Callable[..., Any] | None] = {
@@ -153,25 +152,32 @@ class DragDropList(tk.Frame, Generic[T]):
             self.canvas.destroy()
         self.canvas = tk.Canvas(
             self,
-            width=self.ITEM_W + self.PAD * 2,
             height=self._total_h(),
             bg=self._theme["bg"],
             highlightthickness=0,
             cursor="hand2",
         )
-        self.canvas.pack(padx=5, pady=5)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas.bind("<Configure>", self._on_canvas_configure)
         self.canvas.bind("<ButtonPress-1>", self._on_press)
         self.canvas.bind("<B1-Motion>", self._on_drag)
         self.canvas.bind("<ButtonRelease-1>", self._on_release)
         self.canvas.bind("<Motion>", self._on_hover)
         self.canvas.bind("<Leave>", self._on_leave)
-        self.redraw()
 
     def rebuild(self) -> None:
         """Call this when items have been added or removed externally."""
         self._build_canvas()
 
     # ─── Geometry ────────────────────────────────────────────────────────────
+
+    def _item_w(self) -> int:
+        """Current drawable item width, derived from the canvas size."""
+        return max(self._canvas_w - self.PAD * 2, 1)
+
+    def _on_canvas_configure(self, event: tk.Event) -> None:  # type: ignore[type-arg]
+        self._canvas_w = event.width
+        self.redraw()
 
     def _item_y(self, idx: int) -> int:
         return self.PAD + idx * (self.ITEM_H + self.PAD)
@@ -180,7 +186,7 @@ class DragDropList(tk.Frame, Generic[T]):
         """Return {btn_key: (x1, y1, x2, y2)} for the visible buttons of item at idx."""
         y = self._item_y(idx)
         cy = y + self.ITEM_H // 2
-        x_r = self.PAD + self.ITEM_W - 4
+        x_r = self.PAD + self._item_w() - 4
         out: dict[str, tuple[int, int, int, int]] = {}
         for i, btn in enumerate(self._visible_btns):
             x2 = x_r - i * (self.BTN_SIZE + 4)
@@ -217,24 +223,24 @@ class DragDropList(tk.Frame, Generic[T]):
 
     def _draw_ghost(self, idx: int) -> None:
         y = self._item_y(idx)
-        self._rounded_rect(self.PAD, y, self.PAD + self.ITEM_W, y + self.ITEM_H, 8, self._theme["ghost"])
+        self._rounded_rect(self.PAD, y, self.PAD + self._item_w(), y + self.ITEM_H, 8, self._theme["ghost"])
 
     def _draw_floating(self, idx: int, y_top: int) -> None:
         """Draw the item being dragged: blue background, render_item called with state 'floating'."""
-        x, w, h = self.PAD, self.ITEM_W, self.ITEM_H
+        x, w, h = self.PAD, self._item_w(), self.ITEM_H
         self._rounded_rect(x, y_top, x + w, y_top + h, 8, self._theme["drag_bg"])
         render_w = w - self._btn_zone_width()
-        self._render_item(self.canvas, self.items[idx], x, y_top, render_w, h, "floating")
+        self._render_item(self.canvas, self.items[idx], idx, x, y_top, render_w, h, "floating")
 
     def _draw_normal(self, idx: int) -> None:
         y = self._item_y(idx)
         x = self.PAD
-        w = self.ITEM_W
+        w = self._item_w()
         h = self.ITEM_H
         bw = self._btn_zone_width()
 
         render_w = w - bw
-        self._render_item(self.canvas, self.items[idx], x, y, render_w, h, "normal")
+        self._render_item(self.canvas, self.items[idx], idx, x, y, render_w, h, "normal")
 
         # Buttons
         rects = self._btn_rects(idx)
@@ -253,7 +259,7 @@ class DragDropList(tk.Frame, Generic[T]):
 
     def _draw_insert_line(self, pos: int) -> None:
         y = self._item_y(pos) - self.PAD // 2
-        self.canvas.create_line(self.PAD, y, self.PAD + self.ITEM_W, y, fill=self._theme["insert"], width=3)
+        self.canvas.create_line(self.PAD, y, self.PAD + self._item_w(), y, fill=self._theme["insert"], width=3)
 
     def redraw(self, floating_idx: Optional[int] = None, floating_y: Optional[int] = None) -> None:
         """Redraw the entire canvas. May be called externally."""
