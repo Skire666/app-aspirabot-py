@@ -51,6 +51,11 @@ DEFAULT_THEME: dict[str, str] = {
     "btn_fg": "#ffffff",
 }
 
+_MINORED_RECT_FROM_COLLIDER = 4
+_DEFAULT_ITEM_HEIGHT = 50
+_DEFAULT_PAD_BETWEEN_ITEMS = 8
+_DEFAULT_GAP_EXPAND_WHEN_FLOATING = 10
+_DEFAULT_SIZE_BTN = 32
 
 # ── Button config ─────────────────────────────────────────────────────────────
 
@@ -100,9 +105,10 @@ class DragDropList(tk.Frame, Generic[T]):
         items: list[T],
         render_item: Callable[[tk.Canvas, T, int, int, int, int, int, str], None],
         *,
-        item_height: int = 50,
-        pad: int = 8,
-        btn_size: int = 30,
+        item_height: int = _DEFAULT_ITEM_HEIGHT,
+        pad: int = _DEFAULT_PAD_BETWEEN_ITEMS,
+        gap_expand: int = _DEFAULT_GAP_EXPAND_WHEN_FLOATING,
+        btn_size: int = _DEFAULT_SIZE_BTN,
         theme: Optional[dict[str, str]] = None,
         on_reorder: Optional[Callable[[list[T]], None]] = None,
         on_move_up: Optional[Callable[[T, int], None]] = None,
@@ -118,6 +124,7 @@ class DragDropList(tk.Frame, Generic[T]):
         self._render_item: Callable[[tk.Canvas, T, int, int, int, int, int, str], None] = render_item
         self.ITEM_H: int = item_height
         self.PAD: int = pad
+        self._gap_expand: int = gap_expand
         self.BTN_SIZE: int = btn_size
         self._canvas_w: int = 0  # updated by <Configure>; 0 until first layout
 
@@ -138,6 +145,7 @@ class DragDropList(tk.Frame, Generic[T]):
         self._drag_idx: Optional[int] = None
         self._drag_offset: int = 0
         self._insert_pos: Optional[int] = None
+        self._expand_gap: Optional[int] = None  # index of the gap currently expanded
         self._hovered_btn: Optional[tuple[int, str]] = None
 
         self._build_canvas()
@@ -145,7 +153,10 @@ class DragDropList(tk.Frame, Generic[T]):
     # ─── Canvas ──────────────────────────────────────────────────────────────
 
     def _total_h(self) -> int:
-        return max(1, len(self.items)) * (self.ITEM_H + self.PAD) + self.PAD
+        base = max(1, len(self.items)) * (self.ITEM_H + self.PAD) + self.PAD
+        if self._expand_gap is not None:
+            base += self._gap_expand
+        return base
 
     def _build_canvas(self) -> None:
         if hasattr(self, "canvas"):
@@ -180,7 +191,10 @@ class DragDropList(tk.Frame, Generic[T]):
         self.redraw()
 
     def _item_y(self, idx: int) -> int:
-        return self.PAD + idx * (self.ITEM_H + self.PAD)
+        base = self.PAD + idx * (self.ITEM_H + self.PAD)
+        if self._expand_gap is not None and idx >= self._expand_gap:
+            base += self._gap_expand
+        return base
 
     def _btn_rects(self, idx: int) -> dict[str, tuple[int, int, int, int]]:
         """Return {btn_key: (x1, y1, x2, y2)} for the visible buttons of item at idx."""
@@ -234,7 +248,14 @@ class DragDropList(tk.Frame, Generic[T]):
     def _draw_floating(self, idx: int, y_top: int) -> None:
         """Draw the item being dragged: blue background, render_item called with state 'floating'."""
         x, w, h = self.PAD, self._item_w(), self.ITEM_H
-        self._rounded_rect(x, y_top, x + w, y_top + h, 8, self._theme["drag_bg"])
+        self._rounded_rect(
+            x,
+            y_top + _MINORED_RECT_FROM_COLLIDER,
+            x + w,
+            y_top + h - _MINORED_RECT_FROM_COLLIDER,
+            8,
+            self._theme["drag_bg"],
+        )
         render_w = w - self._btn_zone_width()
         self._render_item(self.canvas, self.items[idx], idx, x, y_top, render_w, h, "floating")
 
@@ -264,7 +285,8 @@ class DragDropList(tk.Frame, Generic[T]):
             )
 
     def _draw_insert_line(self, pos: int) -> None:
-        y = self._item_y(pos) - self.PAD // 2
+        gap_h = self.PAD + (self._gap_expand if self._expand_gap == pos else 0)
+        y = self._item_y(pos) - gap_h // 2
         self.canvas.create_line(self.PAD, y, self.PAD + self._item_w(), y, fill=self._theme["insert"], width=3)
 
     def redraw(self, floating_idx: Optional[int] = None, floating_y: Optional[int] = None) -> None:
@@ -300,6 +322,7 @@ class DragDropList(tk.Frame, Generic[T]):
         raw = (fy + self.ITEM_H / 2 - self.PAD) / (self.ITEM_H + self.PAD)
         pos = max(0, min(len(self.items), round(raw)))
         self._insert_pos = None if pos in (self._drag_idx, self._drag_idx + 1) else pos
+        self._expand_gap = self._insert_pos
         self.redraw(floating_idx=self._drag_idx, floating_y=fy)
 
     def _on_release(self, event: tk.Event[tk.Canvas]) -> None:
@@ -314,6 +337,7 @@ class DragDropList(tk.Frame, Generic[T]):
         self.items.insert(new_pos, item)
         self._drag_idx = None
         self._insert_pos = None
+        self._expand_gap = None
         self.redraw()
         if self._on_reorder:
             self._on_reorder(self.items)
