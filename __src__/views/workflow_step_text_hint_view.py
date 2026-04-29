@@ -1,0 +1,175 @@
+import tkinter as tk
+from tkinter import ttk
+from typing import ClassVar
+
+# ---------------------------------------------------------------------------
+# Contextual help content
+# ---------------------------------------------------------------------------
+
+
+class WorkflowStepTextHint:
+    """Centralised help strings displayed in the 'Aide à la saisie' panel.
+
+    Update values in BY_LABEL to customise guidance without touching layout
+    or logic code.  Keys must match the values in STEP_TYPE_LABELS exactly.
+
+    Attributes:
+        FALLBACK: Text shown when no step type is selected.
+        BY_LABEL: Mapping from French step-type label to its help string.
+    """
+
+    FALLBACK: ClassVar[str] = "Sélectionnez un type de brique pour afficher l'aide."
+
+    BY_LABEL: ClassVar[dict[str, str]] = {
+        "Ouvrir une URL": (
+            "Navigue vers l'URL indiquée et attend que la page soit dans "
+            "l'état choisi.\n\n"
+            "• URL : adresse complète incluant https://\n"
+            "• État d'attente :\n"
+            "  -load : attend l'événement window.load\n"
+            "  -domcontentloaded : attend le DOM (plus rapide)\n"
+            "  -networkidle : attend la fin des requêtes réseau\n"
+            "  -commit : attend la première réponse HTTP"
+        ),
+        "Pause fixe": (
+            "Attend un délai fixe avant de passer à l'étape suivante.\n\n"
+            "• Durée : valeur numérique (entier ou décimal)\n"
+            "• Unité : millisecond, second, minute ou hour"
+        ),
+        "Pause aléatoire": (
+            "Attend un délai aléatoire compris entre Min et Max.\n"
+            "Utile pour simuler un comportement humain.\n\n"
+            "• Min : borne inférieure (strictement < Max)\n"
+            "• Max : borne supérieure\n"
+            "• Unité : millisecond, second, minute ou hour"
+        ),
+        "Rafraîchir la page": (
+            "Recharge la page courante du navigateur.\n\n"
+            "• Vider le cache : si coché, force un rechargement complet\n"
+            "  sans utiliser le cache du navigateur."
+        ),
+        "Télécharger une image": (
+            "Capture et sauvegarde une image présente sur la page.\n\n"
+            "• Mode :\n"
+            "  -largest : image la plus grande (surface en pixels)\n"
+            "  -first / last : première ou dernière image du DOM\n"
+            "  -all : toutes les images de la page\n"
+            "• Hauteur / Largeur : filtres optionnels sur les dimensions (px)"
+        ),
+        "Attendre une taille d'image": (
+            "Attend qu'une image atteigne les dimensions minimales indiquées.\n"
+            "Utile pour les images chargées en progressive ou lazy-load.\n\n"
+            "• Hauteur min / max : intervalle de hauteur attendue (px)\n"
+            "• Largeur min / max : intervalle de largeur attendue (px)"
+        ),
+        "Cliquer sur un élément": (
+            "Localise un élément via son sélecteur CSS et le clique.\n\n"
+            "• Sélecteur CSS : ex. #submit-btn, .card:first-child\n"
+            "• Mode de clic :\n"
+            "  -Normal : clic standard Playwright\n"
+            "  -Forced : clic même si l'élément est masqué\n"
+            "  -JS Direct : exécute element.click() via JavaScript"
+        ),
+        "Attendre un élément": (
+            "Attend qu'un élément CSS soit présent dans le DOM avant de "
+            "continuer.\n\n"
+            "• Sélecteur CSS : ex. .results-loaded, #content\n"
+            "  L'exécution est bloquée jusqu'à ce que l'élément soit visible."
+        ),
+        "Défiler vers le bas": (
+            "Fait défiler la page vers le bas d'un nombre de pixels donné.\n"
+            "Utile pour déclencher le chargement en infinite scroll.\n\n"
+            "• Pixels : distance de défilement en pixels (ex. 1000)"
+        ),
+        "Fermer les onglets": (
+            "Ferme les onglets du navigateur selon les critères définis.\n\n"
+            "• Filtre URL : chaîne recherchée dans l'adresse des onglets\n"
+            "  Si vide, tous les onglets correspondants sont fermés.\n"
+            "  Si renseigné, seuls les onglets dont l'URL contient cette\n"
+            "  chaîne sont conservés — les autres sont fermés.\n"
+            "• Max onglets : nombre maximum d'onglets à conserver (0 = tous)"
+        ),
+        "Extraire le texte (CSS)": (
+            "Extrait du contenu depuis des éléments DOM via un sélecteur CSS.\n\n"
+            "• Sélecteur CSS : ex. h1, .title, #price, div.card:first-child\n"
+            "• Mode d'extraction :\n"
+            "  - innerText : texte visible selon le CSS (recommandé)\n"
+            "  - textContent : texte brut incluant les nœuds masqués\n"
+            "  - outerHTML : HTML complet incluant la balise elle-même\n"
+            "  - innerHTML : HTML interne à l'élément\n"
+            "  - value : valeur d'un <input> ou <textarea>\n"
+            "• Éléments ciblés :\n"
+            "  - Premier / Dernier : un seul résultat extrait\n"
+            "  - Tous : résultats joints par un saut de ligne\n\n"
+            "Si aucun élément ne correspond, un avertissement est consigné\n"
+            "sans interrompre l'exécution."
+        ),
+        "Sauter à une étape": (
+            "Redirige l'exécution vers une autre étape selon le résultat\n"
+            "de l'étape précédente.\n\n"
+            "• Condition :\n"
+            "  - Si succès : saut si l'étape précédente a réussi\n"
+            "  - Si échec : saut si l'étape précédente a échoué\n"
+            "  - Toujours : saut inconditionnel\n"
+            "• Étape cible : étape vers laquelle rediriger l'exécution\n\n"
+            "Une étape ne peut pas pointer vers elle-même\n"
+            "(boucle infinie interdite)."
+        ),
+        "Fin du processus": (
+            "Marque la fin du flux de scraping et attend un délai fixe\n"
+            "avant de libérer les ressources du navigateur.\n\n"
+            "• Durée d'attente : délai à respecter avant la fin\n"
+            "• Unité : milli-sec, seconde, minute ou heure\n\n"
+            "Utile pour laisser les actions asynchrones se terminer\n"
+            "avant la fermeture du navigateur."
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Help panel widget
+# ---------------------------------------------------------------------------
+
+
+class WorkflowStepTextHintView(ttk.LabelFrame):
+    """Read-only help panel showing contextual guidance for the active step type.
+
+    Displayed beside StepInlineFormPanel inside WorkflowBuilderView.
+    Call set_help_text() to update the displayed content.
+    """
+
+    def __init__(self, parent: tk.Widget) -> None:
+        """Initializes the panel with a read-only text widget.
+
+        Args:
+            parent: The parent Tkinter widget to embed into.
+        """
+        super().__init__(parent, text="Aide à la saisie")
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Builds the read-only scrollable text area."""
+        # Text widget with word-wrap; locked to prevent user edits.
+        self._text = tk.Text(
+            self,
+            wrap=tk.WORD,
+            width=1,  # let grid/pack control the width via column weights
+            state=tk.DISABLED,
+            relief=tk.FLAT,
+            cursor="arrow",
+            padx=8,
+            pady=6,
+        )
+        self._text.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+    def set_help_text(self, text: str) -> None:
+        """Replaces the displayed help content.
+
+        Args:
+            text: New help string to display.
+        """
+        # Re-enable momentarily to allow insertion, then lock again.
+        self._text.configure(state=tk.NORMAL)
+        self._text.delete("1.0", tk.END)
+        self._text.insert("1.0", text)
+        self._text.configure(state=tk.DISABLED)

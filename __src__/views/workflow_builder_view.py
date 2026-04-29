@@ -16,7 +16,8 @@ from tkinter import messagebox, ttk
 from typing import Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
-from views.step_edit_dialog_view import StepHelpPanel, StepHelpTexts, StepInlineFormPanel
+from views.step_edit_dialog_view import StepInlineFormPanel
+from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowStepTextHintView
 
 # constants for layout
 _HEIGHT_FRAME_LOGICAL_BLOCK = 215  # Fixed height
@@ -157,9 +158,7 @@ class WorkflowBuilderView(ttk.Frame):
         self._btn_add = ttk.Button(toolbar, text="Ajouter une étape", command=self._fire_add_step)
         self._btn_add.pack(side=tk.LEFT, padx=5, pady=4)
 
-        self._btn_clear = ttk.Button(
-            toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps
-        )
+        self._btn_clear = ttk.Button(toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps)
         self._btn_clear.pack(side=tk.RIGHT, padx=5, pady=4)
 
         return toolbar
@@ -183,9 +182,7 @@ class WorkflowBuilderView(ttk.Frame):
 
         # Inner frame that holds the actual step cards.
         self._steps_inner = ttk.Frame(self._steps_canvas)
-        self._canvas_win = self._steps_canvas.create_window(
-            (0, 0), window=self._steps_inner, anchor="nw"
-        )
+        self._canvas_win = self._steps_canvas.create_window((0, 0), window=self._steps_inner, anchor="nw")
         self._setup_canvas_bindings()
         return section
 
@@ -218,7 +215,7 @@ class WorkflowBuilderView(ttk.Frame):
         )  # entre brique logique et aide à la saisie
 
         # Aide à la saisie panel — right column, 40 %.
-        self._help_panel = StepHelpPanel(row)
+        self._help_panel = WorkflowStepTextHintView(row)
         self._help_panel.grid(row=0, column=1, sticky="nsew")
 
         return row
@@ -306,7 +303,7 @@ class WorkflowBuilderView(ttk.Frame):
         Args:
             label: French display label of the newly selected step type.
         """
-        text = StepHelpTexts.BY_LABEL.get(label, StepHelpTexts.FALLBACK)
+        text = WorkflowStepTextHint.BY_LABEL.get(label, WorkflowStepTextHint.FALLBACK)
         self._help_panel.set_help_text(text)
 
     # ---------------------------------------------------------------

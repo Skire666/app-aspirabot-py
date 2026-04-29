@@ -169,6 +169,7 @@ class ScrappingPresenter:
             step: The step that was executed.
             success: True when the step completed without error.
             message: Outcome or error description.
+            time_elapsed: Duration of the step execution in seconds.
 
         Returns:
             None.

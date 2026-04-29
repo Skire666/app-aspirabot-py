@@ -55,7 +55,7 @@ target-version = "py312"
 
 # Maximum number of characters per line.
 # 88 is the default value used by Black, now a de facto standard.
-line-length = 105
+line-length = 115
 
 # Show the rule code and a detailed fix suggestion in the terminal output.
 output-format = "full"

@@ -281,7 +281,7 @@ class ScrappingService:
             return True, "OK"
         except PlaywrightError as exc:
             return False, f"Playwright error: {exc}"
-        except (ValueError, TimeoutError) as exc:
+        except (ValueError, TimeoutError) as exc:  # timeout here...
             return False, f"Step error: {exc}"
         except FileNotFoundError as exc:
             return False, f"File error: {exc}"

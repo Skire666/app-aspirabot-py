@@ -13,7 +13,7 @@ Example:
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Callable, ClassVar, Optional
+from typing import Any, Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 
@@ -252,15 +252,11 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_frame.columnconfigure(1, weight=1)
         ttk.Label(self._form_frame, text="URL:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         url_var = tk.StringVar(value="https://example.com/")
-        ttk.Entry(self._form_frame, textvariable=url_var).grid(
-            row=0, column=1, sticky="ew", padx=5, pady=4
-        )
+        ttk.Entry(self._form_frame, textvariable=url_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
         self._form_widgets["url"] = url_var
 
         # Wait state selector.
-        ttk.Label(self._form_frame, text="État d'attente:").grid(
-            row=1, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="État d'attente:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         ws_var = tk.StringVar(value="domcontentloaded")
         ttk.Combobox(self._form_frame, textvariable=ws_var, values=_WAIT_STATES, state="readonly").grid(
             row=1, column=1, sticky="ew", padx=5, pady=4
@@ -272,9 +268,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         timeout_frame.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=4)
         ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value="0")
-        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4)
-        )
+        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
         tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
@@ -337,9 +331,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_frame.columnconfigure(2, weight=1)
         ttk.Label(self._form_frame, text="Mode:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         mode_var = tk.StringVar(value="largest")
-        ttk.Combobox(
-            self._form_frame, textvariable=mode_var, values=_DOWNLOAD_MODES, state="readonly"
-        ).grid(row=0, column=1, columnspan=4, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=mode_var, values=_DOWNLOAD_MODES, state="readonly").grid(
+            row=0, column=1, columnspan=4, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["mode"] = mode_var
 
         # Height and width dimension rows share the same helper.
@@ -356,9 +350,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         timeout_frame.grid(row=2, column=0, columnspan=5, sticky="w", padx=5, pady=4)
         ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value="0")
-        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4)
-        )
+        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
         tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
@@ -370,34 +362,24 @@ class StepInlineFormPanel(ttk.LabelFrame):
     def _build_form_click_element(self) -> None:
         """Builds the CLICK_ELEMENT form (CSS selector + click_mode combobox)."""
         self._form_frame.columnconfigure(1, weight=1)
-        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(
-            row=0, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         sel_var = tk.StringVar()
-        ttk.Entry(self._form_frame, textvariable=sel_var).grid(
-            row=0, column=1, sticky="ew", padx=5, pady=4
-        )
+        ttk.Entry(self._form_frame, textvariable=sel_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
         self._form_widgets["selector"] = sel_var
 
-        ttk.Label(self._form_frame, text="Mode de clic:").grid(
-            row=1, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Mode de clic:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         mode_var = tk.StringVar(value="Normal")
-        ttk.Combobox(
-            self._form_frame, textvariable=mode_var, values=_CLICK_MODES, state="readonly"
-        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=mode_var, values=_CLICK_MODES, state="readonly").grid(
+            row=1, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["click_mode"] = mode_var
 
     def _build_form_wait_element(self) -> None:
         """Builds the WAIT_ELEMENT form (CSS selector entry + timeout row)."""
         self._form_frame.columnconfigure(1, weight=1)
-        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(
-            row=0, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         sel_var = tk.StringVar()
-        ttk.Entry(self._form_frame, textvariable=sel_var).grid(
-            row=0, column=1, sticky="ew", padx=5, pady=4
-        )
+        ttk.Entry(self._form_frame, textvariable=sel_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
         self._form_widgets["selector"] = sel_var
 
         # Timeout row — single horizontal line: label | spinbox | combobox | hint.
@@ -405,9 +387,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         timeout_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
         ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value="0")
-        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4)
-        )
+        ttk.Spinbox(timeout_frame, from_=0, to=99999, textvariable=td_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
         tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
@@ -433,18 +413,14 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Optional URL substring filter field.
         ttk.Label(self._form_frame, text="Filtre URL:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         filter_var = tk.StringVar()
-        ttk.Entry(self._form_frame, textvariable=filter_var).grid(
-            row=0, column=1, sticky="ew", padx=5, pady=4
-        )
+        ttk.Entry(self._form_frame, textvariable=filter_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
         ttk.Label(self._form_frame, text="Laisser vide pour ne pas filtrer", foreground="gray").grid(
             row=1, column=1, sticky="w", padx=5
         )
         self._form_widgets["url_filter"] = filter_var
 
         # Maximum tabs to keep open.
-        ttk.Label(self._form_frame, text="Max onglets:").grid(
-            row=2, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Max onglets:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
         tabs_var = tk.StringVar(value="0")
         ttk.Spinbox(self._form_frame, from_=0, to=9999, textvariable=tabs_var, width=10).grid(
             row=2, column=1, sticky="w", padx=5, pady=4
@@ -456,33 +432,25 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_frame.columnconfigure(1, weight=1)
 
         # CSS selector entry.
-        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(
-            row=0, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         sel_var = tk.StringVar()
-        ttk.Entry(self._form_frame, textvariable=sel_var).grid(
-            row=0, column=1, sticky="ew", padx=5, pady=4
-        )
+        ttk.Entry(self._form_frame, textvariable=sel_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
         self._form_widgets["selector"] = sel_var
 
         # Extraction mode combobox.
-        ttk.Label(self._form_frame, text="Mode d'extraction:").grid(
-            row=1, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Mode d'extraction:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         mode_var = tk.StringVar(value=_EXTRACT_MODE_DISPLAY[0])
-        ttk.Combobox(
-            self._form_frame, textvariable=mode_var, values=_EXTRACT_MODE_DISPLAY, state="readonly"
-        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=mode_var, values=_EXTRACT_MODE_DISPLAY, state="readonly").grid(
+            row=1, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["extract_mode"] = mode_var
 
         # Target elements combobox.
-        ttk.Label(self._form_frame, text="Éléments ciblés:").grid(
-            row=2, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Éléments ciblés:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
         target_var = tk.StringVar(value=_TARGET_DISPLAY[0])
-        ttk.Combobox(
-            self._form_frame, textvariable=target_var, values=_TARGET_DISPLAY, state="readonly"
-        ).grid(row=2, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=target_var, values=_TARGET_DISPLAY, state="readonly").grid(
+            row=2, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["target"] = target_var
 
     def _build_form_jump_to_step(self) -> None:
@@ -492,9 +460,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Condition selector.
         ttk.Label(self._form_frame, text="Condition:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         cond_var = tk.StringVar(value=_CONDITION_DISPLAY[0])
-        ttk.Combobox(
-            self._form_frame, textvariable=cond_var, values=_CONDITION_DISPLAY, state="readonly"
-        ).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=cond_var, values=_CONDITION_DISPLAY, state="readonly").grid(
+            row=0, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["condition"] = cond_var
 
         # Build display strings from the available steps list.
@@ -504,9 +472,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         ]
         default_target = self._jump_target_displays[0] if self._jump_target_displays else ""
         target_var = tk.StringVar(value=default_target)
-        ttk.Label(self._form_frame, text="Étape cible:").grid(
-            row=1, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Étape cible:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         ttk.Combobox(
             self._form_frame,
             textvariable=target_var,
@@ -520,9 +486,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_frame.columnconfigure(1, weight=1)
 
         # Duration spinbox.
-        ttk.Label(self._form_frame, text="Durée d'attente:").grid(
-            row=0, column=0, sticky="w", padx=5, pady=4
-        )
+        ttk.Label(self._form_frame, text="Durée d'attente:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         dur_var = tk.StringVar(value="0")
         ttk.Spinbox(self._form_frame, from_=0, to=99999, textvariable=dur_var, width=10).grid(
             row=0, column=1, sticky="w", padx=5, pady=4
@@ -532,9 +496,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Unit combobox — default "seconde" maps to internal "second".
         ttk.Label(self._form_frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         unit_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
-        ttk.Combobox(
-            self._form_frame, textvariable=unit_var, values=_WAIT_UNIT_DISPLAY, state="readonly"
-        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(self._form_frame, textvariable=unit_var, values=_WAIT_UNIT_DISPLAY, state="readonly").grid(
+            row=1, column=1, sticky="ew", padx=5, pady=4
+        )
         self._form_widgets["wait_unit"] = unit_var
 
     # ---------------------------------------------------------------
@@ -936,176 +900,3 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """Fires the on_cancel callback without modifying the step list."""
         if self.on_cancel:
             self.on_cancel()
-
-
-# ---------------------------------------------------------------------------
-# Contextual help content
-# ---------------------------------------------------------------------------
-
-
-class StepHelpTexts:
-    """Centralised help strings displayed in the 'Aide à la saisie' panel.
-
-    Update values in BY_LABEL to customise guidance without touching layout
-    or logic code.  Keys must match the values in STEP_TYPE_LABELS exactly.
-
-    Attributes:
-        FALLBACK: Text shown when no step type is selected.
-        BY_LABEL: Mapping from French step-type label to its help string.
-    """
-
-    FALLBACK: ClassVar[str] = "Sélectionnez un type de brique pour afficher l'aide."
-
-    BY_LABEL: ClassVar[dict[str, str]] = {
-        "Ouvrir une URL": (
-            "Navigue vers l'URL indiquée et attend que la page soit dans "
-            "l'état choisi.\n\n"
-            "• URL : adresse complète incluant https://\n"
-            "• État d'attente :\n"
-            "  -load : attend l'événement window.load\n"
-            "  -domcontentloaded : attend le DOM (plus rapide)\n"
-            "  -networkidle : attend la fin des requêtes réseau\n"
-            "  -commit : attend la première réponse HTTP"
-        ),
-        "Pause fixe": (
-            "Attend un délai fixe avant de passer à l'étape suivante.\n\n"
-            "• Durée : valeur numérique (entier ou décimal)\n"
-            "• Unité : millisecond, second, minute ou hour"
-        ),
-        "Pause aléatoire": (
-            "Attend un délai aléatoire compris entre Min et Max.\n"
-            "Utile pour simuler un comportement humain.\n\n"
-            "• Min : borne inférieure (strictement < Max)\n"
-            "• Max : borne supérieure\n"
-            "• Unité : millisecond, second, minute ou hour"
-        ),
-        "Rafraîchir la page": (
-            "Recharge la page courante du navigateur.\n\n"
-            "• Vider le cache : si coché, force un rechargement complet\n"
-            "  sans utiliser le cache du navigateur."
-        ),
-        "Télécharger une image": (
-            "Capture et sauvegarde une image présente sur la page.\n\n"
-            "• Mode :\n"
-            "  -largest : image la plus grande (surface en pixels)\n"
-            "  -first / last : première ou dernière image du DOM\n"
-            "  -all : toutes les images de la page\n"
-            "• Hauteur / Largeur : filtres optionnels sur les dimensions (px)"
-        ),
-        "Attendre une taille d'image": (
-            "Attend qu'une image atteigne les dimensions minimales indiquées.\n"
-            "Utile pour les images chargées en progressive ou lazy-load.\n\n"
-            "• Hauteur min / max : intervalle de hauteur attendue (px)\n"
-            "• Largeur min / max : intervalle de largeur attendue (px)"
-        ),
-        "Cliquer sur un élément": (
-            "Localise un élément via son sélecteur CSS et le clique.\n\n"
-            "• Sélecteur CSS : ex. #submit-btn, .card:first-child\n"
-            "• Mode de clic :\n"
-            "  -Normal : clic standard Playwright\n"
-            "  -Forced : clic même si l'élément est masqué\n"
-            "  -JS Direct : exécute element.click() via JavaScript"
-        ),
-        "Attendre un élément": (
-            "Attend qu'un élément CSS soit présent dans le DOM avant de "
-            "continuer.\n\n"
-            "• Sélecteur CSS : ex. .results-loaded, #content\n"
-            "  L'exécution est bloquée jusqu'à ce que l'élément soit visible."
-        ),
-        "Défiler vers le bas": (
-            "Fait défiler la page vers le bas d'un nombre de pixels donné.\n"
-            "Utile pour déclencher le chargement en infinite scroll.\n\n"
-            "• Pixels : distance de défilement en pixels (ex. 1000)"
-        ),
-        "Fermer les onglets": (
-            "Ferme les onglets du navigateur selon les critères définis.\n\n"
-            "• Filtre URL : chaîne recherchée dans l'adresse des onglets\n"
-            "  Si vide, tous les onglets correspondants sont fermés.\n"
-            "  Si renseigné, seuls les onglets dont l'URL contient cette\n"
-            "  chaîne sont conservés — les autres sont fermés.\n"
-            "• Max onglets : nombre maximum d'onglets à conserver (0 = tous)"
-        ),
-        "Extraire le texte (CSS)": (
-            "Extrait du contenu depuis des éléments DOM via un sélecteur CSS.\n\n"
-            "• Sélecteur CSS : ex. h1, .title, #price, div.card:first-child\n"
-            "• Mode d'extraction :\n"
-            "  - innerText : texte visible selon le CSS (recommandé)\n"
-            "  - textContent : texte brut incluant les nœuds masqués\n"
-            "  - outerHTML : HTML complet incluant la balise elle-même\n"
-            "  - innerHTML : HTML interne à l'élément\n"
-            "  - value : valeur d'un <input> ou <textarea>\n"
-            "• Éléments ciblés :\n"
-            "  - Premier / Dernier : un seul résultat extrait\n"
-            "  - Tous : résultats joints par un saut de ligne\n\n"
-            "Si aucun élément ne correspond, un avertissement est consigné\n"
-            "sans interrompre l'exécution."
-        ),
-        "Sauter à une étape": (
-            "Redirige l'exécution vers une autre étape selon le résultat\n"
-            "de l'étape précédente.\n\n"
-            "• Condition :\n"
-            "  - Si succès : saut si l'étape précédente a réussi\n"
-            "  - Si échec : saut si l'étape précédente a échoué\n"
-            "  - Toujours : saut inconditionnel\n"
-            "• Étape cible : étape vers laquelle rediriger l'exécution\n\n"
-            "Une étape ne peut pas pointer vers elle-même\n"
-            "(boucle infinie interdite)."
-        ),
-        "Fin du processus": (
-            "Marque la fin du flux de scraping et attend un délai fixe\n"
-            "avant de libérer les ressources du navigateur.\n\n"
-            "• Durée d'attente : délai à respecter avant la fin\n"
-            "• Unité : milli-sec, seconde, minute ou heure\n\n"
-            "Utile pour laisser les actions asynchrones se terminer\n"
-            "avant la fermeture du navigateur."
-        ),
-    }
-
-
-# ---------------------------------------------------------------------------
-# Help panel widget
-# ---------------------------------------------------------------------------
-
-
-class StepHelpPanel(ttk.LabelFrame):
-    """Read-only help panel showing contextual guidance for the active step type.
-
-    Displayed beside StepInlineFormPanel inside WorkflowBuilderView.
-    Call set_help_text() to update the displayed content.
-    """
-
-    def __init__(self, parent: tk.Widget) -> None:
-        """Initializes the panel with a read-only text widget.
-
-        Args:
-            parent: The parent Tkinter widget to embed into.
-        """
-        super().__init__(parent, text="Aide à la saisie")
-        self._create_widgets()
-
-    def _create_widgets(self) -> None:
-        """Builds the read-only scrollable text area."""
-        # Text widget with word-wrap; locked to prevent user edits.
-        self._text = tk.Text(
-            self,
-            wrap=tk.WORD,
-            width=1,  # let grid/pack control the width via column weights
-            state=tk.DISABLED,
-            relief=tk.FLAT,
-            cursor="arrow",
-            padx=8,
-            pady=6,
-        )
-        self._text.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-
-    def set_help_text(self, text: str) -> None:
-        """Replaces the displayed help content.
-
-        Args:
-            text: New help string to display.
-        """
-        # Re-enable momentarily to allow insertion, then lock again.
-        self._text.configure(state=tk.NORMAL)
-        self._text.delete("1.0", tk.END)
-        self._text.insert("1.0", text)
-        self._text.configure(state=tk.DISABLED)
