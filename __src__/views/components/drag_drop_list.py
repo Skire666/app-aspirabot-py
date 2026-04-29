@@ -26,6 +26,7 @@ OPTIONAL CALLBACKS  (None = button hidden)
     on_delete(item, idx)        → ✕   returns True to confirm deletion
                                        (None hides the button)
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -158,7 +159,7 @@ class DragDropList(tk.Frame, Generic[T]):
             highlightthickness=0,
             cursor="hand2",
         )
-        self.canvas.pack(padx=16, pady=16)
+        self.canvas.pack(padx=5, pady=5)
         self.canvas.bind("<ButtonPress-1>", self._on_press)
         self.canvas.bind("<B1-Motion>", self._on_drag)
         self.canvas.bind("<ButtonRelease-1>", self._on_release)

@@ -66,6 +66,7 @@ class WorkflowBuilderPresenter:
         self._view.on_edit_step = self._on_edit_step
         self._view.on_delete_step = self._on_delete_step
         self._view.on_move_step = self._on_move_step
+        self._view.on_reorder_steps = self._on_reorder_steps
         self._view.on_confirm_inline_step = self._on_confirm_inline_step
         self._view.on_cancel_inline_step = self._on_cancel_inline_step
         self._view.on_clear_all_steps = self._on_clear_all_steps
@@ -178,6 +179,17 @@ class WorkflowBuilderPresenter:
         self._edit_index = None
         self._view.hide_inline_form()
         self._refresh_view()
+
+    def _on_reorder_steps(self, steps: list[StepScrappingModel]) -> None:
+        """Syncs the in-memory step list after a DragDropList reorder.
+
+        Called after every DragDropList mutation (drag, move, delete, duplicate).
+        Does NOT call _refresh_view — the view has already applied the change.
+
+        Args:
+            steps: The new complete step list as reordered by the widget.
+        """
+        self._steps = list(steps)
 
     def _on_move_step(self, index: int, direction: int) -> None:
         """Swaps a step with its neighbour in the given direction.

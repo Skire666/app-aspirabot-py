@@ -1,7 +1,7 @@
 """Embedded workflow builder widget.
 
 This ttk.Frame is placed inside the 'Workflow & Instructions' LabelFrame
-of ProviderEditView. It renders a scrollable list of step cards, a toolbar,
+of ProviderEditView. It renders a drag-and-drop step list, a toolbar,
 and an inline 'Brique logique' form panel for adding and editing steps.
 All user actions fire callbacks set by the presenter.
 
@@ -11,17 +11,22 @@ Example:
     >>> widget.render_steps([])
 """
 
+from __future__ import annotations
+
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
+from views.components.drag_drop_list import DragDropList
 from views.step_edit_dialog_view import StepInlineFormPanel
 from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowStepTextHintView
 
-# constants for layout
-_HEIGHT_FRAME_LOGICAL_BLOCK = 215  # Fixed height
-_WIDTH_FRAME_LOGICAL_BLOCK = 320  # Fixed width
+# Layout constants
+_HEIGHT_FRAME_LOGICAL_BLOCK = 215
+_WIDTH_FRAME_LOGICAL_BLOCK = 320
+_DND_ITEM_H = 48
+_DND_ITEM_W = 440
 
 
 def _format_step_label(step: StepScrappingModel) -> str:
@@ -86,7 +91,7 @@ def _format_step_label(step: StepScrappingModel) -> str:
 
 
 class WorkflowBuilderView(ttk.Frame):
-    """Scrollable step list with toolbar and inline form, embedded in a parent frame.
+    """Drag-and-drop step list with toolbar and inline form, embedded in a parent frame.
 
     The presenter sets callback attributes and calls render methods.
     The view never imports services or repositories.
@@ -94,10 +99,12 @@ class WorkflowBuilderView(ttk.Frame):
     Attributes:
         on_add_step: Called when the user clicks 'Add step'.
         on_edit_step: Called with the step index when Edit is clicked.
-        on_delete_step: Called with the step index when Delete is clicked.
+        on_delete_step: Called with the step index when Delete is confirmed.
         on_move_step: Called with (index, direction) where direction is -1 or +1.
+        on_reorder_steps: Called with the full reordered list after any list mutation.
         on_confirm_inline_step: Called with the confirmed StepScrappingModel.
         on_cancel_inline_step: Called when the inline form is cancelled.
+        on_clear_all_steps: Called when the user clears the full step list.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -110,14 +117,18 @@ class WorkflowBuilderView(ttk.Frame):
         self._init_callbacks()
         self._selected_index: Optional[int] = None
         self._last_steps: list[StepScrappingModel] = []
+        # Guard: True while a DragDropList callback is executing, so that
+        # re-entrant render_steps calls from the presenter are deferred.
+        self._dnd_busy: bool = False
         self._create_widgets()
 
     def _init_callbacks(self) -> None:
         """Sets all callback attributes to None."""
-        self.on_add_step: Optional[Callable] = None
+        self.on_add_step: Optional[Callable[[], None]] = None
         self.on_edit_step: Optional[Callable[[int], None]] = None
         self.on_delete_step: Optional[Callable[[int], None]] = None
         self.on_move_step: Optional[Callable[[int, int], None]] = None
+        self.on_reorder_steps: Optional[Callable[[list[StepScrappingModel]], None]] = None
         self.on_confirm_inline_step: Optional[Callable[[StepScrappingModel], None]] = None
         self.on_cancel_inline_step: Optional[Callable[[], None]] = None
         self.on_clear_all_steps: Optional[Callable[[], None]] = None
@@ -137,7 +148,7 @@ class WorkflowBuilderView(ttk.Frame):
         toolbar = self._create_toolbar()
         toolbar.grid(row=1, column=0, sticky="ew", pady=(0, 4))
 
-        # Scrollable step list — row 2, fills all available height.
+        # DragDropList step list — row 2, fills all available height.
         steps_section = self._create_steps_section()
         steps_section.grid(row=2, column=0, sticky="nsew")
 
@@ -164,26 +175,51 @@ class WorkflowBuilderView(ttk.Frame):
         return toolbar
 
     def _create_steps_section(self) -> ttk.LabelFrame:
-        """Creates the scrollable step list inside a LabelFrame.
+        """Creates the DragDropList step list inside a scrollable LabelFrame.
 
         Returns:
             The section container frame.
         """
         section = ttk.LabelFrame(self, text="Liste des étapes")
 
-        # Canvas + vertical scrollbar; height=80 keeps the minimum compact so
-        # the workflow frame can shrink when the window is small.
-        self._steps_canvas = tk.Canvas(section, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(section, orient="vertical", command=self._steps_canvas.yview)
-        self._steps_canvas.configure(yscrollcommand=scrollbar.set)
+        # Vertical scroll wrapper keeps the list accessible with many steps.
+        outer = tk.Canvas(section, highlightthickness=0)
+        sb = ttk.Scrollbar(section, orient="vertical", command=outer.yview)
+        outer.configure(yscrollcommand=sb.set)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        outer.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._steps_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Save references needed by the scroll helpers.
+        self._scroll_canvas = outer
+        self._scroll_fn = lambda e: outer.yview_scroll(int(-1 * e.delta / 120), "units")
 
-        # Inner frame that holds the actual step cards.
-        self._steps_inner = ttk.Frame(self._steps_canvas)
-        self._canvas_win = self._steps_canvas.create_window((0, 0), window=self._steps_inner, anchor="nw")
-        self._setup_canvas_bindings()
+        # DragDropList embedded as a scrolled child.
+        self._dnd_list: DragDropList[StepScrappingModel] = DragDropList(
+            outer,
+            items=[],
+            render_item=self._render_step_item,
+            on_move_up=self._on_dnd_move_up,
+            on_move_down=self._on_dnd_move_down,
+            on_duplicate=self._on_dnd_duplicate,
+            on_edit=self._on_dnd_edit,
+            on_delete=self._on_dnd_delete,
+            on_reorder=self._on_dnd_reorder,
+            item_height=_DND_ITEM_H,
+            item_width=_DND_ITEM_W,
+        )
+        win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
+
+        # Frame-level Enter/Leave guards the 16 px padding zone around the internal canvas.
+        self._dnd_list.bind("<Enter>", lambda _: outer.bind_all("<MouseWheel>", self._scroll_fn))
+        self._dnd_list.bind("<Leave>", lambda _: outer.unbind_all("<MouseWheel>"))
+
+        # Keep scroll region and window width in sync with their containers.
+        self._dnd_list.bind("<Configure>", self._on_dnd_configure)
+        outer.bind("<Configure>", lambda e: outer.itemconfig(win, width=e.width))
+
+        # Initial canvas-level binding (complement to the frame-level binding above).
+        self._bind_dnd_canvas_scroll()
+
         return section
 
     def _create_bottom_row(self) -> ttk.Frame:
@@ -205,33 +241,18 @@ class WorkflowBuilderView(ttk.Frame):
         row.columnconfigure(1, weight=1)
         row.rowconfigure(0, weight=1)
 
-        # Brique logique panel — left column, 60 %.
+        # Brique logique panel — left column.
         self._inline_form = StepInlineFormPanel(row)
         self._inline_form.on_confirm = self._fire_confirm_step
         self._inline_form.on_cancel = self._fire_cancel_step
         self._inline_form.on_type_changed = self._update_help_text
-        self._inline_form.grid(
-            row=0, column=0, sticky="nsew", padx=(0, 5)
-        )  # entre brique logique et aide à la saisie
+        self._inline_form.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
-        # Aide à la saisie panel — right column, 40 %.
+        # Aide à la saisie panel — right column.
         self._help_panel = WorkflowStepTextHintView(row)
         self._help_panel.grid(row=0, column=1, sticky="nsew")
 
         return row
-
-    def _setup_canvas_bindings(self) -> None:
-        """Wires resize and scrollregion events to the canvas."""
-        # Resize scroll region when inner frame changes size.
-        self._steps_inner.bind(
-            "<Configure>",
-            lambda e: self._steps_canvas.configure(scrollregion=self._steps_canvas.bbox("all")),
-        )
-        # Stretch inner frame to fill the canvas width.
-        self._steps_canvas.bind(
-            "<Configure>",
-            lambda e: self._steps_canvas.itemconfig(self._canvas_win, width=e.width),
-        )
 
     # ---------------------------------------------------------------
     # Public render interface (called by the presenter)
@@ -243,19 +264,17 @@ class WorkflowBuilderView(ttk.Frame):
         Args:
             steps: Current ordered list of steps to display.
         """
-        # Cache for selection re-renders triggered by card clicks.
+        # Always cache the latest step list for future refreshes.
         self._last_steps = list(steps)
 
-        # Remove all previous cards before rebuilding.
-        for widget in self._steps_inner.winfo_children():
-            widget.destroy()
-
-        for i, step in enumerate(steps):
-            self._create_step_card(i, step, len(steps))
-
-        # Force layout update then refresh scroll region.
-        self._steps_inner.update_idletasks()
-        self._steps_canvas.configure(scrollregion=self._steps_canvas.bbox("all"))
+        # Skip the DragDropList update while it is mid-callback to prevent
+        # re-entrant mutations (presenter calling render_steps via _refresh_view).
+        if self._dnd_busy:
+            return
+        self._dnd_list.items = self._last_steps
+        self._dnd_list.rebuild()
+        # Rebind scroll: rebuild() recreates the internal canvas object.
+        self._bind_dnd_canvas_scroll()
 
     def show_toast(self, message: str, level: str = "info") -> None:
         """Briefly displays a notification message above the toolbar.
@@ -307,84 +326,146 @@ class WorkflowBuilderView(ttk.Frame):
         self._help_panel.set_help_text(text)
 
     # ---------------------------------------------------------------
-    # Step card construction
+    # DragDropList render callback
     # ---------------------------------------------------------------
 
-    def _create_step_card(self, index: int, step: StepScrappingModel, total: int) -> None:
-        """Creates and packs a single step card.
+    def _render_step_item(
+        self,
+        canvas: tk.Canvas,
+        step: StepScrappingModel,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        state: str,
+    ) -> None:
+        if state == "ghost":
+            return
 
-        Args:
-            index: Zero-based position of the step.
-            step: The step to represent.
-            total: Total number of steps (used to disable edge buttons).
-        """
-        is_selected = index == self._selected_index
-        relief = "sunken" if is_selected else "raised"
+        # Resolve display index from current list order.
+        try:
+            idx = self._dnd_list.items.index(step)
+        except ValueError:
+            idx = -1
 
-        # tk.Frame allows direct background styling unlike ttk.Frame.
-        card = tk.Frame(self._steps_inner, relief=relief, borderwidth=1, padx=4, pady=3)
-        card.pack(fill=tk.X, padx=4, pady=2)
+        is_selected = idx == self._selected_index
 
-        # Click anywhere on the card to select it.
-        card.bind("<Button-1>", lambda e, i=index: self._select_step(i))
+        # Draw card background for static (non-floating) items.
+        if state == "normal":
+            bg = "#dbeafe" if is_selected else "#ffffff"
+            border = "#3b82f6" if is_selected else "#e2e8f0"
+            canvas.create_rectangle(x, y + 1, x + w, y + h - 1, fill=bg, outline=border)
 
-        label_text = f"{index + 1}.  {_format_step_label(step)}"
-        lbl = tk.Label(card, text=label_text, anchor="w")
-        lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        lbl.bind("<Button-1>", lambda e, i=index: self._select_step(i))
+        # Text colour: white on the blue drag background, accent when selected, default otherwise.
+        if state == "floating":
+            fg = "#ffffff"
+        elif is_selected:
+            fg = "#1d4ed8"
+        else:
+            fg = "#334155"
 
-        self._add_card_buttons(card, index, total)
+        # Draw label; width enables text wrapping within the render area.
+        label = f"{idx + 1}.  {_format_step_label(step)}"
+        canvas.create_text(
+            x + 10,
+            y + h // 2,
+            text=label,
+            anchor="w",
+            fill=fg,
+            font=("Segoe UI", 10),
+            width=w - 14,
+        )
 
-    def _add_card_buttons(self, card: tk.Frame, index: int, total: int) -> None:
-        """Attaches navigation and action buttons to a step card.
+    # ---------------------------------------------------------------
+    # DragDropList action callbacks
+    # ---------------------------------------------------------------
 
-        Args:
-            card: The card frame to place buttons into.
-            index: Step index for callbacks.
-            total: Total step count to compute disabled states.
-        """
-        btn_frame = tk.Frame(card)
-        btn_frame.pack(side=tk.RIGHT)
+    def _on_dnd_move_up(self, _: StepScrappingModel, idx: int) -> None:
+        # Keep selection index aligned with the moved step.
+        if self._selected_index == idx:
+            self._selected_index = max(0, idx - 1)
 
-        # Disable Up on first step, Down on last step.
-        up_state = tk.NORMAL if index > 0 else tk.DISABLED
-        down_state = tk.NORMAL if index < total - 1 else tk.DISABLED
+        # Notify the presenter; guard prevents re-entrant render_steps from
+        # corrupting the DragDropList's already-updated item list.
+        self._dnd_busy = True
+        try:
+            if self.on_move_step:
+                self.on_move_step(idx, -1)
+        finally:
+            self._dnd_busy = False
 
-        ttk.Button(
-            btn_frame,
-            text="HAUT",
-            width=5,
-            state=up_state,
-            command=lambda i=index: self.on_move_step and self.on_move_step(i, -1),
-        ).pack(side=tk.LEFT, padx=2)
-        ttk.Button(
-            btn_frame,
-            text="BAS",
-            width=5,
-            state=down_state,
-            command=lambda i=index: self.on_move_step and self.on_move_step(i, 1),
-        ).pack(side=tk.LEFT, padx=2)
-        ttk.Button(
-            btn_frame,
-            text="MODIFIER",
-            width=5,
-            command=lambda i=index: self.on_edit_step and self.on_edit_step(i),
-        ).pack(side=tk.LEFT, padx=2)
-        ttk.Button(
-            btn_frame,
-            text="SUPPRIMER",
-            width=5,
-            command=lambda i=index: self.on_delete_step and self.on_delete_step(i),
-        ).pack(side=tk.LEFT, padx=2)
+    def _on_dnd_move_down(self, _: StepScrappingModel, idx: int) -> None:
+        if self._selected_index == idx:
+            self._selected_index = min(len(self._dnd_list.items) - 1, idx + 1)
 
-    def _select_step(self, index: int) -> None:
-        """Updates the selected step and redraws cards.
+        self._dnd_busy = True
+        try:
+            if self.on_move_step:
+                self.on_move_step(idx, 1)
+        finally:
+            self._dnd_busy = False
 
-        Args:
-            index: Index of the step that was clicked.
-        """
-        self._selected_index = index
-        self.render_steps(self._last_steps)
+    def _on_dnd_edit(self, _: StepScrappingModel, idx: int) -> None:
+        # Mark the step as selected and open the inline form via the presenter.
+        self._selected_index = idx
+        if self.on_edit_step:
+            self.on_edit_step(idx)
+
+    def _on_dnd_delete(self, step: StepScrappingModel, idx: int) -> bool:
+        # Include the step label in the prompt for clarity.
+        label = _format_step_label(step)
+        confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape {idx + 1} — {label} ?")
+        if not confirmed:
+            return False
+
+        # Clear stale selection before the presenter refreshes.
+        if self._selected_index == idx:
+            self._selected_index = None
+
+        # Guard against re-entrant render_steps while on_delete_step fires.
+        self._dnd_busy = True
+        try:
+            if self.on_delete_step:
+                self.on_delete_step(idx)
+        finally:
+            self._dnd_busy = False
+
+        return True
+
+    def _on_dnd_duplicate(self, step: StepScrappingModel, _: int) -> StepScrappingModel:
+        # Serialise then deserialise to produce an independent deep copy.
+        return StepScrappingModel.from_dict(step.to_dict())
+
+    def _on_dnd_reorder(self, steps: list[StepScrappingModel]) -> None:
+        # Fires after every DragDropList mutation (move, delete, duplicate, drag).
+        # Gives the presenter a chance to sync its own step list without refreshing.
+        if self.on_reorder_steps:
+            self.on_reorder_steps(list(steps))
+        # Defer rebind: DragDropList calls rebuild() AFTER this callback returns,
+        # so the new internal canvas is not yet available at this point.
+        self.after(0, self._bind_dnd_canvas_scroll)
+
+    # ---------------------------------------------------------------
+    # Scroll helpers
+    # ---------------------------------------------------------------
+
+    def _on_dnd_configure(self, _: tk.Event) -> None:
+        # Updates the scroll region and rebinds wheel scroll after any resize.
+        self._scroll_canvas.configure(scrollregion=self._scroll_canvas.bbox("all"))
+        self._bind_dnd_canvas_scroll()
+
+    def _bind_dnd_canvas_scroll(self) -> None:
+        # Binds Enter/Leave on the DragDropList's internal canvas so the global
+        # <MouseWheel> binding is active exactly while the mouse is over it.
+        # Uses add="+" for <Leave> to preserve DragDropList's own _on_leave handler.
+        def enable(_: tk.Event) -> None:
+            self._scroll_canvas.bind_all("<MouseWheel>", self._scroll_fn)
+
+        def disable(_: tk.Event) -> None:
+            self._scroll_canvas.unbind_all("<MouseWheel>")
+
+        self._dnd_list.canvas.bind("<Enter>", enable)
+        self._dnd_list.canvas.bind("<Leave>", disable, add="+")
 
     # ---------------------------------------------------------------
     # Callback fires
