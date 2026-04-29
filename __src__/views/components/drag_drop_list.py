@@ -1,9 +1,7 @@
-"""drag_drop_list.py
-─────────────────
-Widget Drag & Drop générique pour tkinter.
-Fonctionne avec n'importe quel type d'item (dataclass, dict, objet…).
+"""Generic drag-and-drop list widget for tkinter.
+Works with any item type (dataclass, dict, object…).
 
-USAGE MINIMAL
+MINIMAL USAGE
 ─────────────
     list_widget = DragDropList(
         parent,
@@ -11,31 +9,34 @@ USAGE MINIMAL
         render_item = my_render_fn,
     )
 
-SIGNATURE render_item
+render_item SIGNATURE
 ─────────────────────
     def render_item(canvas, item, x, y, w, h, state):
         # state : "normal" | "ghost" | "floating"
-        # Dessinez ce que vous voulez dans la zone (x, y, x+w, y+h)
+        # Draw whatever you want in the area (x, y, x+w, y+h)
 
-CALLBACKS OPTIONNELS  (None = bouton masqué)
-────────────────────
-    on_reorder(items)           → appelé après tout changement d'ordre
-    on_move_up(item, idx)       → ↑   (None cache le bouton)
-    on_move_down(item, idx)     → ↓   (None cache le bouton)
-    on_duplicate(item, idx)     → ⧉   doit retourner le clone à insérer
-                                       (None cache le bouton)
-    on_edit(item, idx)          → ✎   (None cache le bouton)
-    on_delete(item, idx)        → ✕   retourne True pour confirmer la suppression
-                                       (None cache le bouton)
+OPTIONAL CALLBACKS  (None = button hidden)
+──────────────────
+    on_reorder(items)           → called after any reorder
+    on_move_up(item, idx)       → ↑   (None hides the button)
+    on_move_down(item, idx)     → ↓   (None hides the button)
+    on_duplicate(item, idx)     → ⧉   must return the clone to insert
+                                       (None hides the button)
+    on_edit(item, idx)          → ✎   (None hides the button)
+    on_delete(item, idx)        → ✕   returns True to confirm deletion
+                                       (None hides the button)
 """
+from __future__ import annotations
 
 import tkinter as tk
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Generic, Optional, TypeVar
 
-# ── Palette par défaut (remplaçable) ─────────────────────────────────────────
+T = TypeVar("T")
 
-DEFAULT_THEME = {
+# ── Default palette (replaceable) ─────────────────────────────────────────────
+
+DEFAULT_THEME: dict[str, str] = {
     "bg": "#f0f4f8",
     "ghost": "#e2e8f0",
     "drag_bg": "#3b82f6",
@@ -49,17 +50,17 @@ DEFAULT_THEME = {
 }
 
 
-# ── Config d'un bouton ────────────────────────────────────────────────────────
+# ── Button config ─────────────────────────────────────────────────────────────
 
 
 @dataclass
 class _BtnDef:
     key: str
     symbol: str
-    color_key: str  # clé dans le thème
+    color_key: str  # key in the theme dict
 
 
-_BUTTONS: List[_BtnDef] = [  # ordre d'affichage (droite → gauche)
+_BUTTONS: list[_BtnDef] = [  # display order (right → left)
     _BtnDef("delete", "✕", "btn_del"),
     _BtnDef("edit", "✎", "btn_edit"),
     _BtnDef("duplicate", "⧉", "btn_dup"),
@@ -71,82 +72,82 @@ _BUTTONS: List[_BtnDef] = [  # ordre d'affichage (droite → gauche)
 # ── Widget ────────────────────────────────────────────────────────────────────
 
 
-class DragDropList(tk.Frame):
-    """Liste réordonnables par drag & drop.
+class DragDropList(tk.Frame, Generic[T]):
+    """Reorderable list with drag-and-drop support.
 
-    Paramètres
+    Parameters
     ----------
-    parent       : widget parent tkinter
-    items        : liste d'objets quelconques (modifiée IN-PLACE)
-    render_item  : fn(canvas, item, x, y, w, h, state) — obligatoire
-    item_height  : hauteur en px de chaque item (défaut 56)
-    item_width   : largeur totale en px (défaut 520)
-    pad          : espacement vertical entre items (défaut 6)
-    btn_size     : taille des boutons en px (défaut 28)
-    theme        : dict de couleurs (fusionne avec DEFAULT_THEME)
+    parent       : parent tkinter widget
+    items        : list of arbitrary objects (modified IN-PLACE)
+    render_item  : fn(canvas, item, x, y, w, h, state) — required
+    item_height  : height in px of each item (default 56)
+    item_width   : total width in px (default 520)
+    pad          : vertical spacing between items (default 6)
+    btn_size     : button size in px (default 28)
+    theme        : color dict (merged with DEFAULT_THEME)
     on_reorder   : fn(items)
-    on_move_up   : fn(item, idx)  | None → bouton masqué
-    on_move_down : fn(item, idx)  | None → bouton masqué
-    on_duplicate : fn(item, idx) → clone | None → bouton masqué
-    on_edit      : fn(item, idx)  | None → bouton masqué
-    on_delete    : fn(item, idx) → bool  | None → bouton masqué
+    on_move_up   : fn(item, idx)  | None → button hidden
+    on_move_down : fn(item, idx)  | None → button hidden
+    on_duplicate : fn(item, idx) → clone | None → button hidden
+    on_edit      : fn(item, idx)  | None → button hidden
+    on_delete    : fn(item, idx) → bool  | None → button hidden
     """
 
     def __init__(
         self,
-        parent,
-        items: List[Any],
-        render_item: Callable,
+        parent: tk.Misc,
+        items: list[T],
+        render_item: Callable[[tk.Canvas, T, int, int, int, int, str], None],
         *,
         item_height: int = 56,
         item_width: int = 520,
         pad: int = 6,
         btn_size: int = 28,
-        theme: Optional[dict] = None,
-        on_reorder: Optional[Callable] = None,
-        on_move_up: Optional[Callable] = None,
-        on_move_down: Optional[Callable] = None,
-        on_duplicate: Optional[Callable] = None,
-        on_edit: Optional[Callable] = None,
-        on_delete: Optional[Callable] = None,
-    ):
-        self._theme = {**DEFAULT_THEME, **(theme or {})}
+        theme: Optional[dict[str, str]] = None,
+        on_reorder: Optional[Callable[[list[T]], None]] = None,
+        on_move_up: Optional[Callable[[T, int], None]] = None,
+        on_move_down: Optional[Callable[[T, int], None]] = None,
+        on_duplicate: Optional[Callable[[T, int], T]] = None,
+        on_edit: Optional[Callable[[T, int], None]] = None,
+        on_delete: Optional[Callable[[T, int], bool]] = None,
+    ) -> None:
+        self._theme: dict[str, str] = {**DEFAULT_THEME, **(theme or {})}
         super().__init__(parent, bg=self._theme["bg"])
 
-        self.items = items
-        self._render_item = render_item
-        self.ITEM_H = item_height
-        self.ITEM_W = item_width
-        self.PAD = pad
-        self.BTN_SIZE = btn_size
+        self.items: list[T] = items
+        self._render_item: Callable[[tk.Canvas, T, int, int, int, int, str], None] = render_item
+        self.ITEM_H: int = item_height
+        self.ITEM_W: int = item_width
+        self.PAD: int = pad
+        self.BTN_SIZE: int = btn_size
 
-        # Callbacks → dict interne
-        self._cbs = {
+        # Callbacks stored by action key
+        self._cbs: dict[str, Callable[..., Any] | None] = {
             "move_up": on_move_up,
             "move_down": on_move_down,
             "duplicate": on_duplicate,
             "edit": on_edit,
             "delete": on_delete,
         }
-        self._on_reorder = on_reorder
+        self._on_reorder: Optional[Callable[[list[T]], None]] = on_reorder
 
-        # Boutons visibles (ceux dont le callback n'est pas None)
-        self._visible_btns = [b for b in _BUTTONS if self._cbs.get(b.key) is not None]
+        # Only buttons whose callback is not None are shown
+        self._visible_btns: list[_BtnDef] = [b for b in _BUTTONS if self._cbs.get(b.key) is not None]
 
-        # État interne drag
-        self._drag_idx = None
-        self._drag_offset = 0
-        self._insert_pos = None
-        self._hovered_btn = None  # (item_idx, btn_key) | None
+        # Internal drag state
+        self._drag_idx: Optional[int] = None
+        self._drag_offset: int = 0
+        self._insert_pos: Optional[int] = None
+        self._hovered_btn: Optional[tuple[int, str]] = None
 
         self._build_canvas()
 
     # ─── Canvas ──────────────────────────────────────────────────────────────
 
-    def _total_h(self):
+    def _total_h(self) -> int:
         return max(1, len(self.items)) * (self.ITEM_H + self.PAD) + self.PAD
 
-    def _build_canvas(self):
+    def _build_canvas(self) -> None:
         if hasattr(self, "canvas"):
             self.canvas.destroy()
         self.canvas = tk.Canvas(
@@ -165,44 +166,44 @@ class DragDropList(tk.Frame):
         self.canvas.bind("<Leave>", self._on_leave)
         self.redraw()
 
-    def rebuild(self):
-        """À appeler si vous avez ajouté / supprimé des items depuis l'extérieur."""
+    def rebuild(self) -> None:
+        """Call this when items have been added or removed externally."""
         self._build_canvas()
 
-    # ─── Géométrie ───────────────────────────────────────────────────────────
+    # ─── Geometry ────────────────────────────────────────────────────────────
 
-    def _item_y(self, idx):
+    def _item_y(self, idx: int) -> int:
         return self.PAD + idx * (self.ITEM_H + self.PAD)
 
-    def _btn_rects(self, idx):
-        """→ {btn_key: (x1, y1, x2, y2)} pour les boutons visibles de l'item idx."""
+    def _btn_rects(self, idx: int) -> dict[str, tuple[int, int, int, int]]:
+        """Return {btn_key: (x1, y1, x2, y2)} for the visible buttons of item at idx."""
         y = self._item_y(idx)
         cy = y + self.ITEM_H // 2
         x_r = self.PAD + self.ITEM_W - 4
-        out = {}
+        out: dict[str, tuple[int, int, int, int]] = {}
         for i, btn in enumerate(self._visible_btns):
             x2 = x_r - i * (self.BTN_SIZE + 4)
             x1 = x2 - self.BTN_SIZE
             out[btn.key] = (x1, cy - self.BTN_SIZE // 2, x2, cy + self.BTN_SIZE // 2)
         return out
 
-    def _btn_zone_width(self):
+    def _btn_zone_width(self) -> int:
         n = len(self._visible_btns)
         return n * (self.BTN_SIZE + 4) + 8 if n else 0
 
-    def _hit_btn(self, mx, my, idx):
+    def _hit_btn(self, mx: int, my: int, idx: int) -> Optional[str]:
         for key, (x1, y1, x2, y2) in self._btn_rects(idx).items():
             if x1 <= mx <= x2 and y1 <= my <= y2:
                 return key
         return None
 
-    def _idx_at(self, y):
+    def _idx_at(self, y: int) -> Optional[int]:
         idx = (y - self.PAD) // (self.ITEM_H + self.PAD)
         return idx if 0 <= idx < len(self.items) else None
 
-    # ─── Dessin ──────────────────────────────────────────────────────────────
+    # ─── Drawing ─────────────────────────────────────────────────────────────
 
-    def _rounded_rect(self, x1, y1, x2, y2, r, fill, outline=""):
+    def _rounded_rect(self, x1: int, y1: int, x2: int, y2: int, r: int, fill: str, outline: str = "") -> None:
         cv = self.canvas
         cv.create_arc(x1, y1, x1 + 2 * r, y1 + 2 * r, start=90, extent=90, fill=fill, outline=fill)
         cv.create_arc(x2 - 2 * r, y1, x2, y1 + 2 * r, start=0, extent=90, fill=fill, outline=fill)
@@ -213,29 +214,28 @@ class DragDropList(tk.Frame):
         if outline and outline != fill:
             cv.create_rectangle(x1, y1, x2, y2, outline=outline, fill="")
 
-    def _draw_ghost(self, idx):
+    def _draw_ghost(self, idx: int) -> None:
         y = self._item_y(idx)
         self._rounded_rect(self.PAD, y, self.PAD + self.ITEM_W, y + self.ITEM_H, 8, self._theme["ghost"])
 
-    def _draw_floating(self, idx, y_top):
-        """Item en cours de drag : fond bleu, render_item appelé en état 'floating'."""
+    def _draw_floating(self, idx: int, y_top: int) -> None:
+        """Draw the item being dragged: blue background, render_item called with state 'floating'."""
         x, w, h = self.PAD, self.ITEM_W, self.ITEM_H
         self._rounded_rect(x, y_top, x + w, y_top + h, 8, self._theme["drag_bg"])
         render_w = w - self._btn_zone_width()
         self._render_item(self.canvas, self.items[idx], x, y_top, render_w, h, "floating")
 
-    def _draw_normal(self, idx):
+    def _draw_normal(self, idx: int) -> None:
         y = self._item_y(idx)
         x = self.PAD
         w = self.ITEM_W
         h = self.ITEM_H
         bw = self._btn_zone_width()
 
-        # Fond de l'item (géré par render_item ou laissé transparent)
         render_w = w - bw
         self._render_item(self.canvas, self.items[idx], x, y, render_w, h, "normal")
 
-        # Boutons
+        # Buttons
         rects = self._btn_rects(idx)
         for btn in self._visible_btns:
             x1, y1, x2, y2 = rects[btn.key]
@@ -250,12 +250,12 @@ class DragDropList(tk.Frame):
                 font=("Segoe UI", 11, "bold"),
             )
 
-    def _draw_insert_line(self, pos):
+    def _draw_insert_line(self, pos: int) -> None:
         y = self._item_y(pos) - self.PAD // 2
         self.canvas.create_line(self.PAD, y, self.PAD + self.ITEM_W, y, fill=self._theme["insert"], width=3)
 
-    def redraw(self, floating_idx=None, floating_y=None):
-        """Redessine tout le canvas. Peut être appelé depuis l'extérieur."""
+    def redraw(self, floating_idx: Optional[int] = None, floating_y: Optional[int] = None) -> None:
+        """Redraw the entire canvas. May be called externally."""
         self.canvas.delete("all")
         for i in range(len(self.items)):
             if i == floating_idx:
@@ -267,9 +267,9 @@ class DragDropList(tk.Frame):
             if self._insert_pos is not None:
                 self._draw_insert_line(self._insert_pos)
 
-    # ─── Événements ──────────────────────────────────────────────────────────
+    # ─── Events ──────────────────────────────────────────────────────────────
 
-    def _on_press(self, event):
+    def _on_press(self, event: tk.Event[tk.Canvas]) -> None:
         idx = self._idx_at(event.y)
         if idx is None:
             return
@@ -280,7 +280,7 @@ class DragDropList(tk.Frame):
             self._drag_idx = idx
             self._drag_offset = event.y - self._item_y(idx)
 
-    def _on_drag(self, event):
+    def _on_drag(self, event: tk.Event[tk.Canvas]) -> None:
         if self._drag_idx is None:
             return
         fy = event.y - self._drag_offset
@@ -289,7 +289,7 @@ class DragDropList(tk.Frame):
         self._insert_pos = None if pos in (self._drag_idx, self._drag_idx + 1) else pos
         self.redraw(floating_idx=self._drag_idx, floating_y=fy)
 
-    def _on_release(self, event):
+    def _on_release(self, event: tk.Event[tk.Canvas]) -> None:
         if self._drag_idx is None:
             return
         fy = event.y - self._drag_offset
@@ -305,21 +305,25 @@ class DragDropList(tk.Frame):
         if self._on_reorder:
             self._on_reorder(self.items)
 
-    def _on_hover(self, event):
+    def _on_hover(self, event: tk.Event[tk.Canvas]) -> None:
         idx = self._idx_at(event.y)
         prev = self._hovered_btn
-        self._hovered_btn = (idx, self._hit_btn(event.x, event.y, idx)) if idx is not None else None
+        if idx is not None:
+            hit = self._hit_btn(event.x, event.y, idx)
+            self._hovered_btn = (idx, hit) if hit is not None else None
+        else:
+            self._hovered_btn = None
         if self._hovered_btn != prev:
             self.redraw()
 
-    def _on_leave(self, event):
+    def _on_leave(self, event: tk.Event[tk.Canvas]) -> None:
         if self._hovered_btn:
             self._hovered_btn = None
             self.redraw()
 
-    # ─── Dispatch boutons ─────────────────────────────────────────────────────
+    # ─── Button dispatch ──────────────────────────────────────────────────────
 
-    def _dispatch_btn(self, idx, key):
+    def _dispatch_btn(self, idx: int, key: str) -> None:
         cb = self._cbs.get(key)
         if cb is None:
             return
@@ -338,22 +342,22 @@ class DragDropList(tk.Frame):
             self.rebuild()
 
         elif key == "duplicate":
-            clone = cb(item, idx)  # l'appelant fabrique le clone
+            clone = cb(item, idx)  # caller is responsible for creating the clone
             if clone is not None:
                 self.items.insert(idx + 1, clone)
                 self._notify_reorder()
                 self.rebuild()
 
         elif key == "edit":
-            cb(item, idx)  # l'appelant gère la popup/panneau
+            cb(item, idx)  # caller is responsible for showing the edit dialog
 
         elif key == "delete":
-            confirmed = cb(item, idx)  # l'appelant gère la confirmation
+            confirmed = cb(item, idx)  # caller is responsible for confirmation
             if confirmed:
                 self.items.pop(idx)
                 self._notify_reorder()
                 self.rebuild()
 
-    def _notify_reorder(self):
+    def _notify_reorder(self) -> None:
         if self._on_reorder:
             self._on_reorder(self.items)
