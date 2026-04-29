@@ -819,6 +819,10 @@ class StepInlineFormPanel(ttk.LabelFrame):
         errors: list[str] = []
         if not self._form_widgets.get("url", tk.StringVar()).get().strip():
             errors.append("L'URL est obligatoire.")
+        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
+            errors.append("Unité de timeout invalide.")
+        if self._safe_float("timeout_duration", -1) < 0:
+            errors.append("Durée de timeout doit être un nombre positif.")
         return errors
 
     def _validate_sleep_form(self) -> list[str]:
@@ -853,7 +857,17 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
     def _validate_wait_image_size_form(self) -> list[str]:
         """Validates WAIT_IMAGE_SIZE dimension fields."""
-        return self._validate_download_image_form()
+        errors: list[str] = []
+        for key in ("height_min", "height_max", "width_min", "width_max"):
+            try:
+                int(self._form_widgets[key].get())
+            except (ValueError, KeyError):
+                errors.append(f"{key} doit être un entier.")
+        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
+            errors.append("Unité de timeout invalide.")
+        if self._safe_float("timeout_duration", -1) < 0:
+            errors.append("Durée de timeout doit être un nombre positif.")
+        return errors
 
     def _validate_click_element_form(self) -> list[str]:
         """Validates CLICK_ELEMENT fields."""
@@ -863,9 +877,14 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
     def _validate_wait_element_form(self) -> list[str]:
         """Validates WAIT_ELEMENT fields."""
+        errors: list[str] = []
         if not self._form_widgets.get("selector", tk.StringVar()).get().strip():
-            return ["Le sélecteur CSS est obligatoire."]
-        return []
+            errors.append("Le sélecteur CSS est obligatoire.")
+        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
+            errors.append("Unité de timeout invalide.")
+        if self._safe_float("timeout_duration", -1) < 0:
+            errors.append("Durée de timeout doit être un nombre positif.")
+        return errors
 
     def _validate_close_tabs_form(self) -> list[str]:
         """Validates CLOSE_TABS fields."""

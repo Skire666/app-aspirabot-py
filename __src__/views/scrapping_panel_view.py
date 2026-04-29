@@ -284,6 +284,7 @@ class ScrappingPanelView(ttk.Frame):
         step_type: str,
         success: bool,
         message: str,
+        time_elapsed: float,
     ) -> None:
         """Appends a step outcome line to the scrollable log.
 
@@ -295,6 +296,7 @@ class ScrappingPanelView(ttk.Frame):
             step_type: String label of the step type.
             success: True when the step succeeded.
             message: Outcome or error message.
+            time_elapsed: Duration of the step execution in seconds.
 
         Returns:
             None.
@@ -302,8 +304,8 @@ class ScrappingPanelView(ttk.Frame):
         Raises:
             None.
         """
-        icon = "✓" if success else "✗"
-        line = f"{icon} Étape {index + 1}: {step_type} — {message}\n"
+        icon = "[OK]" if success else "[ERR]"
+        line = f"{icon} - Étape {index + 1}: {step_type} — {message} - [ {time_elapsed:.3f}s ]\n"
 
         # Capture 'line' in the lambda default to avoid late-binding issues.
         self.after(0, lambda ln=line: self._append_log_line(ln))

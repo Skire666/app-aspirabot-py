@@ -146,7 +146,7 @@ class ScrappingPresenter:
                 self._on_step_done,
                 self._cancel_event,
             )
-        except Exception as exc:  # noqa: BLE001 — convert fatal errors to a report
+        except Exception as exc:
             report = self._build_error_report(str(exc))
 
         self._on_workflow_finished(report)
@@ -157,6 +157,7 @@ class ScrappingPresenter:
         step: StepScrappingModel,
         success: bool,
         message: str,
+        time_elapsed: float,
     ) -> None:
         """Forwards a completed step result to the view.
 
@@ -180,7 +181,7 @@ class ScrappingPresenter:
 
         # Update the progress indicator then append the result to the log below.
         self._view.show_step_progress(index, total, step_type)
-        self._view.append_step_result(index, step_type, success, message)
+        self._view.append_step_result(index, step_type, success, message, time_elapsed)
 
     def _on_workflow_finished(self, report: ScrappingReportModel) -> None:
         """Restores idle state and displays the final report in the view.
@@ -221,5 +222,5 @@ class ScrappingPresenter:
             cancelled=False,
             started_at=now,
             finished_at=now,
-            step_results=[StepResultModel(0, "N/A", False, error_message)],
+            step_results=[StepResultModel(0, "N/A", False, error_message, time_elapsed=0.0)],
         )

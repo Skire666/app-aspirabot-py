@@ -13,15 +13,18 @@ Example:
 """
 
 import logging
-from typing import Self
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Self
+
+from shared.constants import CTK_BROWSER, CTK_LOGGING, CTK_USER
 
 s_logger = logging.getLogger(__name__)
 
 ## ----------------------------------------------
 ## Constants
 ## ----------------------------------------------
+
 
 class ConfigConstants(StrEnum):
     """Centralized configuration keys with defaults and display labels.
@@ -44,10 +47,27 @@ class ConfigConstants(StrEnum):
 
     # Define configuration constants with : key, default, and label
     LOG_LEVEL = ("log_level", "INFO", "Niveau de log")
-    FOLDER_LOGS = ("folder_logs", "./tmp_logs", "Dossier des logs")
-    FOLDER_PROVIDERS = ("folder_providers", "./user_providers", "Dossier des providers")
-    FOLDER_BROKENS = ("folder_brokens", "./user_brokens", "Dossier des éléments cassés")
-    FOLDER_TMP_CHROMIUM = ("folder_tmp_chromium", "./tmp_chromium_session", "Session Chromium temporaire")
+    FOLDER_LOGS = ("folder_logs", CTK_LOGGING.DEFAULT_FOLDER_LOGS, "Dossier des logs")
+    FOLDER_PROVIDERS = (
+        "folder_providers",
+        CTK_USER.DEFAULT_USER_PROVIDER,
+        "Dossier des providers",
+    )
+    FOLDER_BROKENS = (
+        "folder_brokens",
+        CTK_USER.DEFAULT_USER_BROKENS,
+        "Dossier des éléments cassés",
+    )
+    FOLDER_OUTPUT = (
+        "folder_output",
+        CTK_USER.DEFAULT_USER_OUTPUT,
+        "Dossier du scrapping",
+    )
+    FOLDER_TMP_CHROMIUM = (
+        "folder_tmp_chromium",
+        CTK_BROWSER.DEFAULT_FOLDER_TMP_CHROMIUM,
+        "Session Chromium temporaire",
+    )
 
     def __new__(cls, key: str, default: str, label: str) -> Self:
         """Create a configuration constant.
@@ -69,9 +89,11 @@ class ConfigConstants(StrEnum):
         obj.label = label
         return obj
 
+
 ## ----------------------------------------------
 ## Class
 ## ----------------------------------------------
+
 
 @dataclass
 class ConfigAspirabotModel:
@@ -82,6 +104,7 @@ class ConfigAspirabotModel:
         folder_logs: Directory where log files are stored.
         folder_providers: Directory containing provider definitions.
         folder_brokens: Directory containing broken or invalid items.
+        folder_output: Directory for storing the scraped output.
         folder_tmp_chromium: Directory used for the temporary Chromium session.
 
     Example:
@@ -94,6 +117,7 @@ class ConfigAspirabotModel:
     folder_logs: str = ConfigConstants.FOLDER_LOGS.default
     folder_providers: str = ConfigConstants.FOLDER_PROVIDERS.default
     folder_brokens: str = ConfigConstants.FOLDER_BROKENS.default
+    folder_output: str = ConfigConstants.FOLDER_OUTPUT.default
     folder_tmp_chromium: str = ConfigConstants.FOLDER_TMP_CHROMIUM.default
 
     ## ------------------------------------------
@@ -114,10 +138,7 @@ class ConfigAspirabotModel:
             >>> ConfigAspirabotModel.get_default_data()["folder_providers"]
             './user_providers'
         """
-        return {
-            key.value: key.default
-            for key in ConfigConstants
-        }
+        return {key.value: key.default for key in ConfigConstants}
 
     def to_ui(self) -> list[dict[str, str]]:
         """Serialize the model into a UI-friendly list of rows.
@@ -161,10 +182,7 @@ class ConfigAspirabotModel:
         all_data = self.all_data
 
         # Collect only the keys that are missing from the current model state.
-        missing_keys = [
-            key.value for key in ConfigConstants
-            if key.value not in all_data
-        ]
+        missing_keys = [key.value for key in ConfigConstants if key.value not in all_data]
 
         if missing_keys:
             s_logger.warning(f"Clés de configuration manquantes : {missing_keys}")
@@ -187,9 +205,7 @@ class ConfigAspirabotModel:
         Raises:
             None: Accessing the dataclass attributes is deterministic.
         """
-        return {
-            key.value: getattr(self, key.value)
-            for key in ConfigConstants
-        }
+        return {key.value: getattr(self, key.value) for key in ConfigConstants}
+
 
 ## END

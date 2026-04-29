@@ -48,9 +48,9 @@ def _format_step_label(step: StepScrappingModel) -> str:
     if t == StepType.RANDOM_PAUSE:
         return f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
     if t == StepType.DOWNLOAD_IMAGE:
-        return f"Télécharger image — {p.get('mode', 'largest')}"
+        return f"Télécharger image — {p.get('mode', 'largest')} — {p.get('width_min', 0)}×{p.get('height_min', 0)} -> {p.get('width_max', 0)}×{p.get('height_max', 0)}"
     if t == StepType.WAIT_IMAGE_SIZE:
-        label = f"Attendre taille image — {p.get('width_min', 0)}×{p.get('height_min', 0)}"
+        label = f"Attendre taille image — {p.get('width_min', 0)}×{p.get('height_min', 0)} -> {p.get('width_max', 0)}×{p.get('height_max', 0)}"
         td = p.get("timeout_duration", 0)
         if td:
             label += f" [timeout: {td} {p.get('timeout_unit', '')}]"

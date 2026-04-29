@@ -15,6 +15,7 @@ from typing import Optional
 from models.provider_model import ProviderModel
 from models.step_scrapping_model import StepScrappingModel
 from services.provider_service import ProviderService
+from services.workflow_service import WorkflowService
 from views.workflow_builder_view import WorkflowBuilderView
 
 
@@ -36,15 +37,18 @@ class WorkflowBuilderPresenter:
         self,
         view: WorkflowBuilderView,
         service_provider: ProviderService,
+        workflow_service: WorkflowService,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
         Args:
             view: The WorkflowBuilderView instance.
             service_provider: ProviderService for provider-related operations.
+            workflow_service: WorkflowService used to validate each step on confirm.
         """
         self._view = view
         self._service_provider: ProviderService = service_provider
+        self._workflow_service: WorkflowService = workflow_service
         self._logger = logging.getLogger(__name__)
 
         self._provider_id_file: Optional[str] = None
@@ -128,11 +132,22 @@ class WorkflowBuilderPresenter:
         self._view.show_inline_form(self._steps[index])
 
     def _on_confirm_inline_step(self, step: StepScrappingModel) -> None:
-        """Applies the confirmed step (add or update), persists, and refreshes.
+        """Validates then applies the confirmed step (add or update).
+
+        Shows a toast and keeps the form open when validation fails.
 
         Args:
             step: The newly created or updated step from the inline form.
         """
+        # Target index: future position for add mode, current slot for edit mode.
+        target_index = len(self._steps) if self._edit_index is None else self._edit_index
+        errors = self._workflow_service.validate_step(target_index, step)
+
+        # Abort and surface the first error without closing the form.
+        if errors:
+            self._view.show_toast(errors[0], level="error")
+            return
+
         if self._edit_index is None:
             # Add mode: append the new step at the end.
             self._steps.append(step)

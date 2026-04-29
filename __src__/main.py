@@ -15,7 +15,7 @@ from services.config_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scrapping_service import ScrappingService
-from shared.constants import CTK_GUI
+from shared.constants import CTK_APP, CTK_GUI, CTK_LOGGING, CTK_USER
 from views.config_view import ConfigView
 from views.log_view import LogView
 from views.main_view import MainView
@@ -40,16 +40,19 @@ def main() -> None:
     # Read configuration — resolve JSON path relative to workspace root
     config_file_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "config-aspirabot.json",
+        CTK_APP.ASPIRABOT_CONFIG_FILE,
     )
     config_repo = JsonConfigRepository(config_file_path)
     config_repo.ensure_file_exists()
     config_model = config_repo.read_config()
 
+    # Create required directories
+    os.makedirs(CTK_USER.DEFAULT_USER_OUTPUT, exist_ok=True)
+
     # Create Logging Component
     if not os.path.exists(config_model.folder_logs):
         os.makedirs(config_model.folder_logs)
-    log_file_path = os.path.join(str(config_model.folder_logs), "Aspirabot.log")
+    log_file_path = os.path.join(str(config_model.folder_logs), CTK_LOGGING.BASE_NAME_LOGFILE + ".log")
 
     logging_service = LoggingService(log_file_path, config_model.log_level)
     log_repository = LogRepository()

@@ -3,14 +3,6 @@
 
 E:\app-py-life-selector\src_python_2026_03_sushi_scan
 
-
-A rajouer :
-true false à la fin d'une étape
-Garder le last state dans playwright
-
-recacbler le JUMP TO pour lui dire de regarder ce que fait l'étape d'avant.
-indiquer si erreur ou succès (true false), dans le code, ET DANS le log
-
 indiquer temps écoulée par étape dans le log : informatif
 
 Fermer tous les onglets :
@@ -21,16 +13,65 @@ Faire un JUMP TO...
 NOTE PCO : j'ai des popiuip de pub, a ferme illico apres le clique
 
 
+apres un clique
+pouvoir rentrer une pause
+parfois le contexte n'est pas pret, et il spam trop vite
+lui mettre un try catch, et retry
+AVIS PCO : en fait je crois que comme l'asynchone me rends la main, je vais trop vite.
+Sinon pause 50 ms ?
+En vrai, faudrait try/catch si evaluate fail
+
+
+
+téléchargment d'image
+la taille est OK
+mais il faudrait pouvoir éliminer des candidats
+notammetn sushiscan a un logo enorme en 3500 pixel
+et potentiellement, mon algo peut le confondre avec un autre
+De plus on en reviens au débat, si fail, je fais warning, ou erreur fatal ?
+
+
+le log s'efface
+il faudriat pouvoir tout récuéprer.
+
+
 
 Modifier briques qui peuvent vérifer la présence d'un truc :
 - resneigner un timeout
 Continu, par contre,  si timeout à l'origine ,retour false
 
 
+
+eviter les export en double
+genre une case à cocher pour les iamges mais sans doublons ?
+Quid encore une fois d'arreter, hsitoire que les boucles inif te bouffe pas tout.
+
+
+
+
+
+Abort urgence si condition XXX
+Nombre d'image, ou nombre de clique, ou compter le nom d'élément
+Apres tout la fin, c'est du linéaire, pas safe pour boucle.
+
+
+
+Brique qui compte ?
+Mais pour faire quoi ?
+comment décider si 6 ligenrs trouvé est un succès ou une erreur ?
+
+
 Bouton pour vérifier le workflow.
 Affiche une erreur par erreur.
 NOTE PCO : se faire une petit ligne, avec un compteur, et l'état du workflow.
 Pas grave si rogne espace
+
+
+si fin, va en 9
+j'ajoute si sauter, il est cablé sur fin en 10 (car bas)
+je le monte il passe en 9, alorsq ue je voudrais que le sauter cable sur 10
+comment résoudre ça ?
+
 
 
 brique qui s'apelle TEST :

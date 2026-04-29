@@ -16,18 +16,18 @@ Example:
 import logging
 import os
 import random
-import tempfile
 import threading
 import time
-import urllib.request
 from datetime import datetime
 from typing import Any, Callable, Optional
+from urllib.parse import urljoin
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
 from models.scrapping_report_model import ScrappingReportModel, StepResultModel
 from models.step_scrapping_model import StepScrappingModel, StepType
 from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
+from shared.constants import CTK_BROWSER, CTK_USER
 
 # Conversion factors from each time unit to milliseconds.
 _UNIT_TO_MS: dict[str, int] = {
@@ -141,10 +141,12 @@ class ScrappingService:
             PlaywrightError: If the browser fails to start.
         """
         headless = not provider.browser_displayed
+        user_dir = CTK_BROWSER.DEFAULT_FOLDER_TMP_CHROMIUM  ## TODO PCO : make this configurable
 
         # Standard arguments to suppress automation detection hints.
         args = ["--no-sandbox", "--disable-blink-features=AutomationControlled"]
 
+        # browser: Browser = pw.chromium.launch(headless=headless, args=args, user_data_dir=user_dir)
         browser: Browser = pw.chromium.launch(headless=headless, args=args)
         context: BrowserContext = browser.new_context()
         page: Page = context.new_page()
@@ -242,9 +244,11 @@ class ScrappingService:
         Raises:
             None.
         """
+        start = time.time()
         success, message = self._execute_step(page, step)
-        on_step_done(index, step, success, message)
-        result = StepResultModel(index, step.step_type.value, success, message)
+        end = time.time()
+        on_step_done(index, step, success, message, end - start)
+        result = StepResultModel(index, step.step_type.value, success, message, time_elapsed=end - start)
 
         # Apply pending jump (set by JUMP_TO_STEP handler) or advance by one.
         if self._pending_jump is not None:
@@ -279,6 +283,8 @@ class ScrappingService:
             return False, f"Playwright error: {exc}"
         except (ValueError, TimeoutError) as exc:
             return False, f"Step error: {exc}"
+        except FileNotFoundError as exc:
+            return False, f"File error: {exc}"
         except Exception as exc:
             return False, f"Unexpected error: {exc}"
 
@@ -437,7 +443,7 @@ class ScrappingService:
 
         # Choose target image and persist it to a temporary file.
         target = self._select_image_by_mode(images, mode)
-        self._fetch_and_save_image(target["src"])
+        self._fetch_and_save_image(page, target["src"])
 
     def _handle_wait_image_size(self, page: Page, params: dict[str, Any]) -> None:
         """Polls the page until a visible image matches the dimension bounds.
@@ -446,7 +452,7 @@ class ScrappingService:
             page: Active Playwright page.
             params: Must contain ``height_min``, ``height_max``,
                 ``width_min``, ``width_max``. Optional ``timeout_duration``
-                and ``timeout_unit`` override the default 30-second deadline.
+                and ``timeout_unit`` override the default 10-second deadline.
 
         Returns:
             None.
@@ -457,15 +463,15 @@ class ScrappingService:
         bounds = self._extract_bounds(params)
         timeout_ms = _resolve_timeout_ms(params)
 
-        # Fall back to the default 30-second wait when no timeout is configured.
-        wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 30
+        # Fall back to the default 15-second wait when no timeout is configured.
+        wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 15
         deadline = time.time() + wait_seconds
 
-        # Poll at 1-second intervals until a matching image appears or deadline passes.
+        # Poll at 400 millisecond intervals until a matching image appears or deadline passes.
         while time.time() < deadline:
             if self._get_filtered_images(page, bounds):
                 return
-            time.sleep(1)
+            time.sleep(0.4)  # 400 ms
 
         raise TimeoutError(
             f"No image matching the size constraints appeared within {wait_seconds} seconds."
@@ -489,12 +495,34 @@ class ScrappingService:
         click_mode: str = params.get("click_mode", "Normal")
 
         # Dispatch the correct click variant based on the configured mode.
-        if click_mode == "Double":
-            page.dblclick(selector)
-        elif click_mode == "Right":
-            page.click(selector, button="right")
+
+        # Tentative 1 : click normal
+        try:
+            if click_mode == "Normal":
+                page.click(selector, timeout=1000)
+                return
+        except:
+            pass
+
+        if click_mode == "Normal":
+            raise PlaywrightError(f"Element with selector {selector} not found for normal click.")
+
+        # Tentative 2 : click forcé
+        try:
+            if click_mode == "Forced":
+                page.click(selector, force=True, timeout=1000)
+        except:
+            pass
+
+        if click_mode == "Forced":
+            raise PlaywrightError(f"Element with selector {selector} not found for forced click.")
+
+        # Tentative 3 : click JS direct
+        if click_mode == "JS Direct":
+            script = f"document.querySelector('{selector}')?.click();"
+            self.evaluate_script_with_safe_retry(page, script, 5)
         else:
-            page.click(selector)
+            raise ValueError(f"Unsupported click mode: {click_mode}")
 
     def _handle_wait_element(self, page: Page, params: dict[str, Any]) -> None:
         """Waits for an element to appear in the DOM.
@@ -537,7 +565,7 @@ class ScrappingService:
         pixels: int = params.get("pixels", 1000)
 
         # Evaluate scrollBy in the page's JS context; pixels is always an int.
-        page.evaluate(f"window.scrollBy(0, {pixels})")
+        self.evaluate_script_with_safe_retry(page, f"window.scrollBy(0, {pixels})", 5)
 
     def _handle_close_tabs(self, page: Page, params: dict[str, Any]) -> None:
         """Closes browser tabs, keeping those matching url_filter up to max_tabs.
@@ -559,8 +587,11 @@ class ScrappingService:
 
         # Close non-current pages that do not match the URL filter.
         for p in list(page.context.pages):
-            if p is not page and url_filter and url_filter not in p.url:
+            if url_filter and p.url.find(url_filter) == -1:
                 p.close()
+
+        if page.context.pages.count(page) == 0:
+            raise PlaywrightError("Current page was closed, but it should have been protected.")
 
         # Enforce max_tabs threshold on remaining non-current pages.
         if max_tabs > 0:
@@ -730,12 +761,40 @@ class ScrappingService:
                     height: img.naturalHeight
                 }))
         """
-        all_imgs: list[dict[str, Any]] = page.evaluate(script)
+        all_imgs: list[dict[str, Any]] = self.evaluate_script_with_safe_retry(page, script, 5)
 
         # Keep only images that satisfy every dimension constraint.
         return [
             img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max
         ]
+
+    def evaluate_script_with_safe_retry(
+        self, page: Page, script: str, retries: int, delay: float = 0.300
+    ) -> Any:
+        """Evaluates a JavaScript snippet with retries on failure.
+
+        Args:
+            page: Active Playwright page.
+            script: The JavaScript code to evaluate in the page context.
+            retries: Number of retry attempts before giving up.
+            delay: Delay in seconds between retry attempts.
+
+        Returns:
+            The result of the script evaluation if successful.
+
+        Raises:
+            PlaywrightError: If all retry attempts fail.
+        """
+        for attempt in range(1, retries + 1):
+            try:
+                return page.evaluate(script)
+            except PlaywrightError as exc:
+                self._logger.warning(
+                    "Script evaluation failed on attempt %d/%d: %s", attempt, retries, exc
+                )
+                if attempt == retries:
+                    raise
+                time.sleep(delay)
 
     def _select_image_by_mode(
         self,
@@ -755,14 +814,23 @@ class ScrappingService:
         Raises:
             None.
         """
-        # Default to largest area regardless of mode value for MVP.
+        # cf. _DOWNLOAD_MODES
+        if mode == "first":
+            return images[0]
+        if mode == "last":
+            return images[-1]
+        if mode == "all":
+            ## TODO PCO
+            raise NotImplementedError("Mode 'all' is not implemented yet.")
+        # 'largest' -> Default to largest area regardless of mode value for MVP.
         return max(images, key=lambda img: img["width"] * img["height"])
 
-    def _fetch_and_save_image(self, url: str) -> str:
+    def _fetch_and_save_image(self, page: Page, img_src_url: str) -> str:
         """Downloads an image from a URL and saves it to a temporary file.
 
         Args:
-            url: Absolute URL of the image to download.
+            page: The active Playwright page.
+            img_src_url: The URL of the image to download.
 
         Returns:
             The absolute filesystem path where the file was saved.
@@ -770,14 +838,38 @@ class ScrappingService:
         Raises:
             urllib.error.URLError: On network or HTTP failure.
         """
-        # Derive a clean filename from the URL, falling back to a safe default.
-        raw_name = url.split("/")[-1].split("?")[0]
-        filename = raw_name if raw_name else "image.jpg"
-        dest = os.path.join(tempfile.gettempdir(), filename)
+        # prendre image inplace, fonctionne avec cloudflare
+        full_url = urljoin(page.url, img_src_url)
+        ext = os.path.splitext(full_url.split("?")[0])[1] or ".jpg"
+        filename = (
+            os.path.basename(full_url.split("?")[0]) + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + ext
+        )
+        dest = os.path.join(CTK_USER.DEFAULT_USER_OUTPUT, filename)
 
-        # Stream the image bytes directly to disk.
-        urllib.request.urlretrieve(url, dest)
-        return dest
+        # Utilisation du réseau du navigateur pour récupérer l'image
+        response = page.context.request.get(
+            full_url,
+            headers={
+                "Referer": page.url,  # Referer = page actuelle
+                "User-Agent": page.evaluate("() => navigator.userAgent"),  # Même user-agent
+            },
+        )  ## TODO PCO : gérer les erreurs réseau et HTTP, notamment les 403 de Cloudflare
+        if response.ok:
+            if not os.path.exists(CTK_USER.DEFAULT_USER_OUTPUT):
+                os.makedirs(CTK_USER.DEFAULT_USER_OUTPUT)
+            with open(dest, "wb") as f:
+                f.write(response.body())
+        else:
+            raise PlaywrightError(f"Failed to download image: HTTP {response.status}")
+
+        # OLD : prends l'image, et tente de l'ouvrir (fonctionne pas avec cloudflare)
+        # Derive a clean filename from the URL, falling back to a safe default.
+        ## TODO PCO : plante sur cloduflare (image sur un autre serveur)
+        # raw_name = url.split("/")[-1].split("?")[0]
+        # filename = raw_name if raw_name else "image.jpg"
+        # dest = os.path.join(CTK_USER.DEFAULT_USER_OUTPUT, filename)  ##TODO PCO
+        # urllib.request.urlretrieve(url, dest) # Stream the image bytes directly to disk.
+        # return dest
 
     def _build_report(
         self,

@@ -7,7 +7,7 @@ from typing import Callable, Dict, Optional
 
 class ConfigView(ttk.Frame):
     """View component that renders the configuration form.
-    
+
     Provides inputs for configuration settings and buttons
     for saving or resetting the values. Strictly follows MVP pattern.
     """
@@ -32,7 +32,14 @@ class ConfigView(ttk.Frame):
         form_frame = ttk.LabelFrame(self, text="Configuration Settings", padding=(10, 10))
         form_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
-        fields = ["log_level", "folder_logs", "folder_providers", "folder_brokens", "folder_tmp_chromium"]
+        fields = [
+            "log_level",
+            "folder_logs",
+            "folder_brokens",
+            "folder_output",
+            "folder_providers",
+            "folder_tmp_chromium",
+        ]
         for idx, field in enumerate(fields):
             ttk.Label(form_frame, text=field.replace("_", " ").title() + ":").grid(
                 row=idx, column=0, padx=5, pady=5, sticky=tk.W

@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Optional
 from models.provider_model import ProviderModel
 from presenters.workflow_builder_presenter import WorkflowBuilderPresenter
 from services.provider_service import ProviderService
+from services.workflow_service import WorkflowService
 from views.provider_edit_view import ProviderEditView
 
 
@@ -37,6 +38,7 @@ class ProviderEditPresenter:
         self._workflow_presenter = WorkflowBuilderPresenter(
             view=view.workflow_builder_view,
             service_provider=provider_service,
+            workflow_service=WorkflowService(),
         )
 
         self._bind_view_events()

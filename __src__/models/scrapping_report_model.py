@@ -36,6 +36,7 @@ class StepResultModel:
     step_type: str
     success: bool
     message: str
+    time_elapsed: float = 0.0  # Optional duration of the step execution in seconds.
 
 
 @dataclass
