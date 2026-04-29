@@ -25,7 +25,7 @@ from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowSte
 # Layout constants
 _HEIGHT_FRAME_LOGICAL_BLOCK = 215
 _WIDTH_FRAME_LOGICAL_BLOCK = 320
-_DND_ITEM_H = 48
+_DND_ITEM_H = 50
 
 
 def _format_step_label(step: StepScrappingModel) -> str:
@@ -204,6 +204,7 @@ class WorkflowBuilderView(ttk.Frame):
             on_delete=self._on_dnd_delete,
             on_reorder=self._on_dnd_reorder,
             item_height=_DND_ITEM_H,
+            pad=8,
         )
         self._scroll_win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
 

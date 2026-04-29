@@ -40,9 +40,9 @@ T = TypeVar("T")
 
 DEFAULT_THEME: dict[str, str] = {
     "bg": "#f0f4f8",
-    "ghost": "#e2e8f0",
-    "drag_bg": "#3b82f6",
-    "insert": "#3b82f6",
+    "ghost": "#f7f9fd",
+    "drag_bg": "#5286d9",
+    "insert": "#8fb1e8",
     "btn_move": "#64748b",
     "btn_dup": "#0ea5e9",
     "btn_edit": "#f59e0b",
@@ -100,9 +100,9 @@ class DragDropList(tk.Frame, Generic[T]):
         items: list[T],
         render_item: Callable[[tk.Canvas, T, int, int, int, int, int, str], None],
         *,
-        item_height: int = 56,
-        pad: int = 6,
-        btn_size: int = 28,
+        item_height: int = 50,
+        pad: int = 8,
+        btn_size: int = 30,
         theme: Optional[dict[str, str]] = None,
         on_reorder: Optional[Callable[[list[T]], None]] = None,
         on_move_up: Optional[Callable[[T, int], None]] = None,
@@ -211,6 +211,12 @@ class DragDropList(tk.Frame, Generic[T]):
     # ─── Drawing ─────────────────────────────────────────────────────────────
 
     def _rounded_rect(self, x1: int, y1: int, x2: int, y2: int, r: int, fill: str, outline: str = "") -> None:
+        """Draw a filled rounded rectangle on the canvas.
+
+        (x1, y1) and (x2, y2) are the top-left and bottom-right corners of the bounding box.
+        r is the radius of the corner arcs.
+        fill is the fill color, outline is the border color (optional).
+        """
         cv = self.canvas
         cv.create_arc(x1, y1, x1 + 2 * r, y1 + 2 * r, start=90, extent=90, fill=fill, outline=fill)
         cv.create_arc(x2 - 2 * r, y1, x2, y1 + 2 * r, start=0, extent=90, fill=fill, outline=fill)
