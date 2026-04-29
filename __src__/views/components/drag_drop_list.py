@@ -39,7 +39,7 @@ T = TypeVar("T")
 # ── Default palette (replaceable) ─────────────────────────────────────────────
 
 DEFAULT_THEME: dict[str, str] = {
-    "bg": "#f0f4f8",
+    "bg": "#F0F0F0",  # background global of the canvas
     "ghost": "#f7f9fd",
     "drag_bg": "#5286d9",
     "insert": "#8fb1e8",
@@ -51,10 +51,10 @@ DEFAULT_THEME: dict[str, str] = {
     "btn_fg": "#ffffff",
 }
 
-_MINORED_RECT_FROM_COLLIDER = 4
+_MINORED_RECT_FROM_COLLIDER = 6
 _DEFAULT_ITEM_HEIGHT = 50
-_DEFAULT_PAD_BETWEEN_ITEMS = 8
-_DEFAULT_GAP_EXPAND_WHEN_FLOATING = 10
+_DEFAULT_PAD_BETWEEN_ITEMS = 4
+_DEFAULT_GAP_EXPAND_WHEN_FLOATING = 8
 _DEFAULT_SIZE_BTN = 32
 
 # ── Button config ─────────────────────────────────────────────────────────────
@@ -75,6 +75,8 @@ _BUTTONS: list[_BtnDef] = [  # display order (right → left)
     _BtnDef("move_up", "↑", "btn_move"),
 ]
 
+_DEFAULT_FONT_BUTTONS_TEXT = "Segoe UI"
+_DEFAULT_SIZE_BUTTONS_TEXT = 14
 
 # ── Widget ────────────────────────────────────────────────────────────────────
 
@@ -153,10 +155,10 @@ class DragDropList(tk.Frame, Generic[T]):
     # ─── Canvas ──────────────────────────────────────────────────────────────
 
     def _total_h(self) -> int:
-        base = max(1, len(self.items)) * (self.ITEM_H + self.PAD) + self.PAD
+        base = len(self.items) * (self.ITEM_H + self.PAD) + self.PAD
         if self._expand_gap is not None:
             base += self._gap_expand
-        return base
+        return max(base, self.PAD)
 
     def _build_canvas(self) -> None:
         if hasattr(self, "canvas"):
@@ -281,7 +283,7 @@ class DragDropList(tk.Frame, Generic[T]):
                 (y1 + y2) // 2,
                 text=btn.symbol,
                 fill=self._theme["btn_fg"],
-                font=("Segoe UI", 11, "bold"),
+                font=(_DEFAULT_FONT_BUTTONS_TEXT, _DEFAULT_SIZE_BUTTONS_TEXT, "bold"),
             )
 
     def _draw_insert_line(self, pos: int) -> None:
