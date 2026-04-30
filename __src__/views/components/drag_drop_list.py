@@ -173,6 +173,7 @@ class DragDropList(tk.Frame, Generic[T]):
         return max(base, self.PAD)
 
     def _build_canvas(self) -> None:
+        self._canvas_w = 0  # force redraw on first <Configure> of the new canvas
         if hasattr(self, "canvas"):
             self.canvas.destroy()
         self.canvas = tk.Canvas(
@@ -201,6 +202,8 @@ class DragDropList(tk.Frame, Generic[T]):
         return max(self._canvas_w - self.PAD * 2, 1)
 
     def _on_canvas_configure(self, event: tk.Event) -> None:  # type: ignore[type-arg]
+        if event.width == self._canvas_w:
+            return  # height-only change: item positions are width-derived, skip redraw
         self._canvas_w = event.width
         self.redraw()
 

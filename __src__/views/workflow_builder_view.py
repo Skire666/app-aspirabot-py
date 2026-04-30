@@ -13,6 +13,7 @@ Example:
 
 from __future__ import annotations
 
+import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable, Optional
@@ -21,6 +22,8 @@ from models.step_scrapping_model import StepScrappingModel, StepType
 from views.components.drag_drop_list import DragDropList
 from views.step_edit_dialog_view import StepInlineFormPanel
 from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowStepTextHintView
+
+s_logger = logging.getLogger(__name__)
 
 # Layout constants
 _HEIGHT_FRAME_LOGICAL_BLOCK = 215
@@ -342,6 +345,7 @@ class WorkflowBuilderView(ttk.Frame):
         h: int,
         state: str,
     ) -> None:
+        print(f"Rendering step {idx} at ({x}, {y}, {w}, {h}) with state '{state}'")
         if state == "ghost":
             return
 
@@ -403,8 +407,8 @@ class WorkflowBuilderView(ttk.Frame):
             self._dnd_busy = False
 
     def _on_dnd_edit(self, _: StepScrappingModel, idx: int) -> None:
-        # Mark the step as selected and open the inline form via the presenter.
         self._selected_index = idx
+        self._dnd_list.redraw()  # show highlight immediately without requiring a full rebuild
         if self.on_edit_step:
             self.on_edit_step(idx)
 
@@ -502,6 +506,7 @@ class WorkflowBuilderView(ttk.Frame):
 
     def _fire_add_step(self) -> None:
         """Fires the on_add_step callback."""
+        self._selected_index = None
         if self.on_add_step:
             self.on_add_step()
 
@@ -511,13 +516,15 @@ class WorkflowBuilderView(ttk.Frame):
         Args:
             step: The step built from the inline form.
         """
+        self._selected_index = None
         if self.on_confirm_inline_step:
             self.on_confirm_inline_step(step)
 
     def _fire_cancel_step(self) -> None:
         """Hides the inline form and notifies the presenter of cancellation."""
-        # Hide immediately so the UI responds without waiting for the presenter.
+        self._selected_index = None
         self.hide_inline_form()
+        self._dnd_list.redraw()
         if self.on_cancel_inline_step:
             self.on_cancel_inline_step()
 

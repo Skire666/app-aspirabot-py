@@ -1,8 +1,8 @@
 {
-    "log_level": "INFO",
-    "folder_logs": "./tmp_app_logs",
-    "folder_providers": "./tmp_user_providers",
-    "folder_brokens": "./tmp_user_brokens",
-    "folder_output": "./tmp_user_output",
-    "folder_tmp_chromium": "./tmp_app_chromium_session"
+    "log_level": "DEBUG",
+    "folder_logs": "E:\\app-aspirabot-py\\tmp_logs",
+    "folder_providers": "E:\\app-aspirabot-py\\tmp_user_providers",
+    "folder_brokens": "E:\\app-aspirabot-py\\tmp_user_brokens",
+    "folder_output": "E:\\app-aspirabot-py\\tmp_user_output",
+    "folder_tmp_chromium": "E:\\app-aspirabot-py\\tmp_chromium_session"
 }

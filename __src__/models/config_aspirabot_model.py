@@ -9,7 +9,7 @@ Example:
     >>> model.log_level
     'INFO'
     >>> model.get_default_data()["folder_logs"]
-    './tmp_logs'
+    './tmp_app_logs'
 """
 
 import logging
@@ -46,7 +46,7 @@ class ConfigConstants(StrEnum):
     label: str
 
     # Define configuration constants with : key, default, and label
-    LOG_LEVEL = ("log_level", "INFO", "Niveau de log")
+    LOG_LEVEL = ("log_level", "DEBUG", "Niveau de log")
     FOLDER_LOGS = ("folder_logs", CTK_LOGGING.DEFAULT_FOLDER_LOGS, "Dossier des logs")
     FOLDER_PROVIDERS = (
         "folder_providers",

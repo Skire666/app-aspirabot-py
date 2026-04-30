@@ -50,7 +50,7 @@ class CTK_LOGGING:
     """
 
     BASE_NAME_LOGFILE: str = "aspirabot"
-    DEFAULT_FOLDER_LOGS: str = os.path.join(_BASE_DIR, "tmp_logs")
+    DEFAULT_FOLDER_LOGS: str = os.path.join(_BASE_DIR, "tmp_app_logs")
     LOG_MAX_BYTES: int = 10 * 1024 * 1024  # 10 MB
     BACKUP_LOG_COUNT: int = 5
 
