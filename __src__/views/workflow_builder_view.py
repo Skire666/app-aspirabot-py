@@ -17,10 +17,10 @@ import logging
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
-from typing import Any
 
-from models.step_scrapping_model import StepScrappingModel, StepType
+from models.step_scrapping_model import StepScrappingModel
 from views.components.drag_drop_list import DragDropList
+from views.components.step_item_renderer import StepItemRenderer
 from views.step_edit_dialog_view import StepInlineFormPanel
 from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowStepTextHintView
 
@@ -30,122 +30,6 @@ s_logger = logging.getLogger(__name__)
 _HEIGHT_FRAME_LOGICAL_BLOCK = 315  # TODO PCO: make this dynamic based on the actual form content, or at least add some padding for future fields
 _WIDTH_FRAME_LOGICAL_BLOCK = 320
 _DND_ITEM_H = 50
-
-
-def _fmt_open_url(p: dict[str, Any]) -> str:
-    """Formats an OPEN_URL step label."""
-    label = f"Open URL — {p.get('url', '')}"
-    td = p.get("timeout_duration", 0)
-    if td:
-        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-    return label
-
-
-def _fmt_wait_image_size(p: dict[str, Any]) -> str:
-    """Formats a WAIT_IMAGE_SIZE step label."""
-    label = (
-        f"Attendre taille image — "
-        f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
-        f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
-    )
-    td = p.get("timeout_duration", 0)
-    if td:
-        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-    return label
-
-
-def _fmt_wait_element(p: dict[str, Any]) -> str:
-    """Formats a WAIT_ELEMENT step label."""
-    label = f"Attendre élément — {p.get('selector', '')}"
-    td = p.get("timeout_duration", 0)
-    if td:
-        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-    return label
-
-
-def _fmt_count_element(p: dict[str, Any]) -> str:
-    """Formats a COUNT_ELEMENT step label."""
-    op_labels = {
-        "between": "compris entre",
-        "not_between": "non compris entre",
-        "equal": "=",
-        "not_equal": "≠",
-        "greater_than": ">",
-        "less_than": "<",
-        "greater_or_equal": "≥",
-        "less_or_equal": "≤",
-    }
-    op = op_labels.get(p.get("operator", "equal"), "?")
-    selector = p.get("selector", "")
-    if p.get("operator") in {"between", "not_between"}:
-        val_str = f"{p.get('value_min', 0)} et {p.get('value_max', 0)}"
-    else:
-        val_str = str(p.get("value", 0))
-    return f"Compter — {selector} [{op} {val_str}]"
-
-
-def _fmt_extract_text(p: dict[str, Any]) -> str:
-    """Formats an EXTRACT_TEXT step label."""
-    selector = p.get("selector", "")
-    mode = p.get("extract_mode", "innerText")
-    target = p.get("target", "first")
-    return f"Extraire texte — {selector} [{mode} / {target}]"
-
-
-def _fmt_jump_to_step(p: dict[str, Any]) -> str:
-    """Formats a JUMP_TO_STEP step label."""
-    target = p.get("target_index", 0)
-    cond = p.get("condition", "success")
-    return f"Sauter à l'étape {target + 1} — si {cond}"
-
-
-def _fmt_close_tabs(p: dict[str, Any]) -> str:
-    """Formats a CLOSE_TABS step label."""
-    url_filter = p.get("url_filter", "")
-    max_t = p.get("max_tabs", 0)
-    filter_str = f" (filtre : {url_filter})" if url_filter else ""
-    return f"Fermer onglets — max {max_t}{filter_str}"
-
-
-def _fmt_end_process(p: dict[str, Any]) -> str:
-    """Formats an END_PROCESS step label."""
-    return f"Fin du processus — attendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
-
-
-# Dispatch table mapping each StepType to its label formatter.
-_STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any]], str]] = {
-    StepType.OPEN_URL: _fmt_open_url,
-    StepType.REFRESH_PAGE: lambda p: f"Rafraîchir la page{' (vider cache)' if p.get('clear_cache') else ''}",
-    StepType.SLEEP: lambda p: f"Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}",
-    StepType.RANDOM_PAUSE: lambda p: f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}",
-    StepType.DOWNLOAD_IMAGE: lambda p: (
-        f"Télécharger image — {p.get('mode', 'largest')} — "
-        f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
-        f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
-    ),
-    StepType.WAIT_IMAGE_SIZE: _fmt_wait_image_size,
-    StepType.WAIT_ELEMENT: _fmt_wait_element,
-    StepType.COUNT_ELEMENT: _fmt_count_element,
-    StepType.CLICK_ELEMENT: lambda p: f"Cliquer — {p.get('selector', '')}",
-    StepType.SCROLL_DOWN: lambda p: f"Défiler — {p.get('pixels', 0)} px",
-    StepType.EXTRACT_TEXT: _fmt_extract_text,
-    StepType.JUMP_TO_STEP: _fmt_jump_to_step,
-    StepType.CLOSE_TABS: _fmt_close_tabs,
-    StepType.END_PROCESS: _fmt_end_process,
-}
-
-
-def _format_step_label(step: StepScrappingModel) -> str:
-    """Returns a concise human-readable description of a step.
-
-    Args:
-        step: The step to describe.
-
-    Returns:
-        A short string combining the step type and its key parameter.
-    """
-    fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
-    return fmt(step.params) if fmt else step.step_type.value
 
 
 class WorkflowBuilderView(ttk.Frame):
@@ -178,6 +62,8 @@ class WorkflowBuilderView(ttk.Frame):
         # Guard: True while a DragDropList callback is executing, so that
         # re-entrant render_steps calls from the presenter are deferred.
         self._dnd_busy: bool = False
+        # Renderer instance is created here so _create_widgets can pass it to DragDropList.
+        self._step_renderer = StepItemRenderer(get_selected_index=lambda: self._selected_index)
         self._create_widgets()
 
     def _init_callbacks(self) -> None:
@@ -255,7 +141,7 @@ class WorkflowBuilderView(ttk.Frame):
         self._dnd_list: DragDropList[StepScrappingModel] = DragDropList(
             outer,
             items=[],
-            render_item=self._render_step_item,
+            render_item=self._step_renderer,
             on_move_up=self._on_dnd_move_up,
             on_move_down=self._on_dnd_move_down,
             on_duplicate=self._on_dnd_duplicate,
@@ -387,52 +273,6 @@ class WorkflowBuilderView(ttk.Frame):
         self._help_panel.set_help_text(text)
 
     # ---------------------------------------------------------------
-    # DragDropList render callback
-    # ---------------------------------------------------------------
-
-    def _render_step_item(
-        self,
-        canvas: tk.Canvas,
-        step: StepScrappingModel,
-        idx: int,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        state: str,
-    ) -> None:
-        if state == "ghost":
-            return
-
-        is_selected = idx == self._selected_index
-
-        # Draw card background for static (non-floating) items.
-        if state == "normal":
-            bg = "#dbeafe" if is_selected else "#ffffff"
-            border = "#3b82f6" if is_selected else "#e2e8f0"
-            canvas.create_rectangle(x, y + 1, x + w, y + h - 1, fill=bg, outline=border)
-
-        # Text colour: white on the blue drag background, accent when selected, default otherwise.
-        if state == "floating":
-            fg = "#ffffff"
-        elif is_selected:
-            fg = "#1d4ed8"
-        else:
-            fg = "#334155"
-
-        # Draw label; width enables text wrapping within the render area.
-        label = f"{idx + 1}.  {_format_step_label(step)}"
-        canvas.create_text(
-            x + 10,
-            y + h // 2,
-            text=label,
-            anchor="w",
-            fill=fg,
-            font=("Segoe UI", 10),
-            width=w - 14,
-        )
-
-    # ---------------------------------------------------------------
     # DragDropList action callbacks
     # ---------------------------------------------------------------
 
@@ -469,7 +309,7 @@ class WorkflowBuilderView(ttk.Frame):
 
     def _on_dnd_delete(self, step: StepScrappingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
-        label = _format_step_label(step)
+        label = StepItemRenderer.format_label(step)
         confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape {idx + 1} — {label} ?")
         if not confirmed:
             return False
