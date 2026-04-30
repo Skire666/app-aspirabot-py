@@ -101,22 +101,47 @@ def _fmt_end_process(p: dict[str, Any]) -> str:
     return f"Fin du processus — attendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
 
 
-# Dispatch table: each StepType maps to its label formatter function.
-_STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any]], str]] = {
-    StepType.OPEN_URL: _fmt_open_url,
-    StepType.REFRESH_PAGE: lambda p: f"Rafraîchir la page{' (vider cache)' if p.get('clear_cache') else ''}",
-    StepType.SLEEP: lambda p: f"Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}",
-    StepType.RANDOM_PAUSE: lambda p: f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}",
-    StepType.DOWNLOAD_IMAGE: lambda p: (
+def _fmt_scroll_down(p: dict[str, Any]) -> str:
+    return f"Défiler — {p.get('pixels', 0)} px"
+
+
+def _fmt_click_element(p: dict[str, Any]) -> str:
+    return f"Cliquer — {p.get('selector', '')}"
+
+
+def _fmt_refresh_page(p: dict[str, Any]) -> str:
+    return f"Rafraîchir la page{' (vider cache)' if p.get('clear_cache') else ''}"
+
+
+def _fmt_sleep(p: dict[str, Any]) -> str:
+    return "Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}"
+
+
+def _fmt_random_pause(p: dict[str, Any]) -> str:
+    return f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
+
+
+def _fmt_download_image(p: dict[str, Any]) -> str:
+    return (
         f"Télécharger image — {p.get('mode', 'largest')} — "
         f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
         f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
-    ),
+    )
+
+
+# Dispatch table: each StepType maps to its label formatter function.
+
+_STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any]], str]] = {
+    StepType.OPEN_URL: _fmt_open_url,
+    StepType.REFRESH_PAGE: _fmt_refresh_page,
+    StepType.SLEEP: _fmt_sleep,
+    StepType.RANDOM_PAUSE: _fmt_random_pause,
+    StepType.DOWNLOAD_IMAGE: _fmt_download_image,
     StepType.WAIT_IMAGE_SIZE: _fmt_wait_image_size,
     StepType.WAIT_ELEMENT: _fmt_wait_element,
     StepType.COUNT_ELEMENT: _fmt_count_element,
-    StepType.CLICK_ELEMENT: lambda p: f"Cliquer — {p.get('selector', '')}",
-    StepType.SCROLL_DOWN: lambda p: f"Défiler — {p.get('pixels', 0)} px",
+    StepType.CLICK_ELEMENT: _fmt_click_element,
+    StepType.SCROLL_DOWN: _fmt_scroll_down,
     StepType.EXTRACT_TEXT: _fmt_extract_text,
     StepType.JUMP_TO_STEP: _fmt_jump_to_step,
     StepType.CLOSE_TABS: _fmt_close_tabs,

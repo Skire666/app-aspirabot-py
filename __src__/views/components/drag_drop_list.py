@@ -105,9 +105,6 @@ _DEFAULT_SIZE_BTN = 32
 # thickness of the insert-position indicator line
 _DEFAULT_HEIGHT_LINE_INSERT = 2
 
-# redraw budget in ms; exceeding it logs a warning to stderr (≈ 60 fps threshold)
-_REDRAW_BUDGET_MS = 16
-
 # resize optimization and tracing defaults
 _DEFAULT_RESIZE_MIN_DELTA_PX = 4
 _DEFAULT_RESIZE_FINALIZE_MS = 250
@@ -184,7 +181,7 @@ class DragDropList(tk.Frame, Generic[T]):
     on_delete           : fn(item, idx) → bool  | None → button hidden
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         parent: tk.Misc,
         items: list[T],
@@ -633,12 +630,6 @@ class DragDropList(tk.Frame, Generic[T]):
         self._last_redraw_elapsed_ms = _elapsed
         if self._drag_idx is not None:
             self._drag_redraw_elapsed_total += _elapsed
-        if _elapsed > _REDRAW_BUDGET_MS:
-            print(
-                f"[DragDropList] redraw {_elapsed:.1f}ms "
-                f"(_draw_normal cumul {self._draw_normal_total:.1f}ms, {len(self.items)} items)",
-                file=sys.stderr,
-            )
         self._last_redraw_w = self._canvas_w
 
     def redraw_visible(self, force: bool = False) -> None:
