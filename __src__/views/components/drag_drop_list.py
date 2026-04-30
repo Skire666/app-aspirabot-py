@@ -368,6 +368,15 @@ class DragDropList(tk.Frame, Generic[T]):
         if self._on_reorder:
             self._on_reorder(self.items)
 
+    def _redraw_item(self, idx: int) -> None:
+        """Redraw a single item without touching the rest of the canvas."""
+        y = self._item_y(idx)
+        x = self.PAD
+        w = self._item_w()
+        for cid in self.canvas.find_overlapping(x, y, x + w, y + self.ITEM_H):
+            self.canvas.delete(cid)
+        self._draw_normal(idx)
+
     def _on_hover(self, event: tk.Event[tk.Canvas]) -> None:
         idx = self._idx_at(event.y)
         prev = self._hovered_btn
@@ -376,13 +385,21 @@ class DragDropList(tk.Frame, Generic[T]):
             self._hovered_btn = (idx, hit) if hit is not None else None
         else:
             self._hovered_btn = None
-        if self._hovered_btn != prev:
-            self.redraw()
+        if self._hovered_btn == prev or self._drag_idx is not None:
+            return
+        affected: set[int] = set()
+        if prev is not None:
+            affected.add(prev[0])
+        if self._hovered_btn is not None:
+            affected.add(self._hovered_btn[0])
+        for i in affected:
+            self._redraw_item(i)
 
     def _on_leave(self, event: tk.Event[tk.Canvas]) -> None:
-        if self._hovered_btn:
+        if self._hovered_btn and self._drag_idx is None:
+            prev_idx = self._hovered_btn[0]
             self._hovered_btn = None
-            self.redraw()
+            self._redraw_item(prev_idx)
 
     # ─── Button dispatch ──────────────────────────────────────────────────────
 
