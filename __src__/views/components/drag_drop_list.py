@@ -51,11 +51,23 @@ DEFAULT_THEME: dict[str, str] = {
     "btn_fg": "#ffffff",
 }
 
+# to create a gap between the floating item and the ghost rectangle (which represents the original position)
 _MINORED_RECT_FROM_COLLIDER = 6
+
+# height of each item in px
 _DEFAULT_ITEM_HEIGHT = 50
+
+# vertical spacing between items; also used to calculate the position of the insert line during dragging
 _DEFAULT_PAD_BETWEEN_ITEMS = 4
+
+# additional space around the floating item when it's being dragged
 _DEFAULT_GAP_EXPAND_WHEN_FLOATING = 8
+
+# width and height of the action buttons (move, duplicate, edit, delete)
 _DEFAULT_SIZE_BTN = 32
+
+# thickness of the line indicating the potential new position during dragging
+_DEFAULT_HEIGHT_LINE_INSERT = 2
 
 # ── Button config ─────────────────────────────────────────────────────────────
 
@@ -288,8 +300,17 @@ class DragDropList(tk.Frame, Generic[T]):
 
     def _draw_insert_line(self, pos: int) -> None:
         gap_h = self.PAD + (self._gap_expand if self._expand_gap == pos else 0)
-        y = self._item_y(pos) - gap_h // 2
-        self.canvas.create_line(self.PAD, y, self.PAD + self._item_w(), y, fill=self._theme["insert"], width=3)
+        y_center_line = self._item_y(pos) - gap_h // 2
+
+        # Draw a horizontal line across the item area to indicate where the dragged item would be inserted.
+        self.canvas.create_line(
+            self.PAD,
+            y_center_line,
+            self.PAD + self._item_w(),
+            y_center_line,
+            fill=self._theme["insert"],
+            width=_DEFAULT_HEIGHT_LINE_INSERT,
+        )
 
     def redraw(self, floating_idx: Optional[int] = None, floating_y: Optional[int] = None) -> None:
         """Redraw the entire canvas. May be called externally."""
