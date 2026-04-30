@@ -307,7 +307,23 @@ class StepItemRenderer:
             anchor="w",
             fill=colors["fg"],
             font=self._C_FONT,
-            width=w - 14,
+        )
+        self._draw_overflow_mask(canvas, x, y, w, h)
+
+    def _draw_overflow_mask(self, canvas: tk.Canvas, x: int, y: int, w: int, h: int) -> None:
+        """Masks any label overflow to the right of the item area."""
+        clip_x = x + w
+        canvas_w = canvas.winfo_width()
+        if canvas_w <= clip_x:
+            return
+        bg = canvas.cget("bg")
+        canvas.create_rectangle(
+            clip_x,
+            y + 1,
+            canvas_w,
+            y + h - 1,
+            fill=bg,
+            outline=bg,
         )
 
     # ── ItemRenderer protocol entry point ─────────────────────────────────────

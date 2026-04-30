@@ -77,7 +77,6 @@ class ItemRenderer(Protocol[T]):
 
 DEFAULT_THEME: dict[str, str] = {
     "bg": "#F0F0F0",  # canvas background
-    "ghost": "#f7f9fd",  # placeholder at original position during drag
     "drag_bg": "#5286d9",  # floating item background while dragging
     "insert": "#8fb1e8",  # insert-position indicator line
     "btn_move": "#64748b",  # move-up / move-down button background
@@ -196,7 +195,7 @@ class DragDropList(tk.Frame, Generic[T]):
         gap_expand: int = _DEFAULT_GAP_EXPAND_WHEN_FLOATING,
         btn_size: int = _DEFAULT_SIZE_BTN,
         theme: dict[str, str] | None = None,
-        resize_debounce_ms: int = 20,  ##TODO PCO
+        resize_debounce_ms: int = 0,  ##TODO PCO
         resize_min_delta_px: int = _DEFAULT_RESIZE_MIN_DELTA_PX,
         resize_finalize_ms: int = _DEFAULT_RESIZE_FINALIZE_MS,
         drag_redraw_min_interval_ms: int = _DEFAULT_DRAG_REDRAW_MIN_INTERVAL_MS,
@@ -551,17 +550,13 @@ class DragDropList(tk.Frame, Generic[T]):
         if outline and outline != fill:
             cv.create_rectangle(x1, y1, x2, y2, outline=outline, fill="")
 
-    def _draw_ghost(self, idx: int) -> None:
-        y = self._item_y(idx)
-        self._rounded_rect(self.PAD, y, self.PAD + self._item_w(), y + self.ITEM_H, 8, self._theme["ghost"])
-
     def _draw_floating(self, idx: int, y_top: int) -> None:
         """Draw the item being dragged: colored background, state='floating'."""
         x, w, h = self.PAD, self._item_w(), self.ITEM_H
         self._rounded_rect(
             x,
             y_top + _MINORED_RECT_FROM_COLLIDER,
-            x + w,
+            x + w - (self._btn_zone_width()),
             y_top + h - _MINORED_RECT_FROM_COLLIDER,
             8,
             self._theme["drag_bg"],
@@ -623,9 +618,7 @@ class DragDropList(tk.Frame, Generic[T]):
             self._last_visible_range = (start, end)
             self._last_buttons_range = (btn_start, btn_end)
         for i in range(start, end):
-            if i == floating_idx:
-                self._draw_ghost(i)
-            else:
+            if i != floating_idx:
                 draw_buttons = btn_start <= i < btn_end
                 self._draw_normal(i, draw_buttons=draw_buttons)
         if floating_idx is not None and floating_y is not None:
