@@ -558,11 +558,10 @@ class DragDropList(tk.Frame, Generic[T]):
             y_top + _MINORED_RECT_FROM_COLLIDER,
             x + w - (self._btn_zone_width()),
             y_top + h - _MINORED_RECT_FROM_COLLIDER,
-            8,
+            4,
             self._theme["drag_bg"],
         )
-        render_w = w - self._btn_zone_width()
-        self._render_item(self.canvas, self.items[idx], idx, x, y_top, render_w, h, "floating")
+        self._render_item(self.canvas, self.items[idx], idx, x, y_top, w, h, "floating")
 
     def _draw_normal(self, idx: int, draw_buttons: bool = True) -> None:
         _t0 = time.perf_counter()
