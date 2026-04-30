@@ -114,7 +114,7 @@ def _fmt_refresh_page(p: dict[str, Any]) -> str:
 
 
 def _fmt_sleep(p: dict[str, Any]) -> str:
-    return "Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}"
+    return f"Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}"
 
 
 def _fmt_random_pause(p: dict[str, Any]) -> str:

@@ -18,6 +18,9 @@ from typing import Any
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 
+_CONSTANT_MISSING_FLOAT = -16736452  # Arbitrary value used to detect missing float
+_CONSTANT_INVALID_FLOAT = -16736451  # Arbitrary value used to detect invalid float
+
 # French display labels for each step type (Combobox values).
 STEP_TYPE_LABELS: dict[StepType, str] = {
     StepType.OPEN_URL: "Ouvrir une URL",
@@ -83,12 +86,24 @@ _WAIT_UNIT_REVERSE: dict[str, str] = dict(zip(_WAIT_UNIT_VALUES, _WAIT_UNIT_DISP
 
 # --- COUNT_ELEMENT operator display/value mappings ---
 _COUNT_OP_DISPLAY: list[str] = [
-    "compris entre", "non compris entre", "égale à", "différent de",
-    "supérieur à", "inférieur à", "supérieur ou égal à", "inférieur ou égal à",
+    "compris entre",
+    "non compris entre",
+    "égale à",
+    "différent de",
+    "supérieur à",
+    "inférieur à",
+    "supérieur ou égal à",
+    "inférieur ou égal à",
 ]
 _COUNT_OP_VALUES: list[str] = [
-    "between", "not_between", "equal", "not_equal",
-    "greater_than", "less_than", "greater_or_equal", "less_or_equal",
+    "between",
+    "not_between",
+    "equal",
+    "not_equal",
+    "greater_than",
+    "less_than",
+    "greater_or_equal",
+    "less_or_equal",
 ]
 _COUNT_OP_MAP: dict[str, str] = dict(zip(_COUNT_OP_DISPLAY, _COUNT_OP_VALUES))
 _COUNT_OP_REVERSE: dict[str, str] = dict(zip(_COUNT_OP_VALUES, _COUNT_OP_DISPLAY))
@@ -466,9 +481,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
         # Operator combobox defaults to "égale à".
         op_var = tk.StringVar(value=_COUNT_OP_DISPLAY[2])
-        op_cb = ttk.Combobox(
-            cond_frame, textvariable=op_var, values=_COUNT_OP_DISPLAY, state="readonly", width=18
-        )
+        op_cb = ttk.Combobox(cond_frame, textvariable=op_var, values=_COUNT_OP_DISPLAY, state="readonly", width=18)
         op_cb.pack(side=tk.LEFT, padx=(0, 6))
         self._form_widgets["operator"] = op_var
 
@@ -1049,6 +1062,10 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """Validates COUNT_ELEMENT fields."""
         errors: list[str] = []
 
+        # Validate wait before
+        if self._safe_float("wait_duration", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
+            errors.append("Durée d'attente doit être un nombre positif.")
+
         # Selector is mandatory.
         if not self._form_widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Le sélecteur CSS est obligatoire.")
@@ -1056,11 +1073,18 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Range operators: value_min must not exceed value_max.
         op_display = self._form_widgets.get("operator", tk.StringVar()).get()
         op_value = _COUNT_OP_MAP.get(op_display, "equal")
-        range_invalid = op_value in {"between", "not_between"} and (
-            self._safe_int("value_min", 0) > self._safe_int("value_max", 0)
-        )
-        if range_invalid:
-            errors.append("value_min doit être inférieur ou égal à value_max.")
+        has_ranged_mode = op_value in {"between", "not_between"}
+
+        if has_ranged_mode:
+            if self._safe_float("value_min", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
+                errors.append("La valeur minimale doit être un nombre positif.")
+            if self._safe_float("value_max", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
+                errors.append("La valeur maximale doit être un nombre positif.")
+            if self._safe_int("value_min", 0) > self._safe_int("value_max", 0):
+                errors.append("value_min doit être inférieur ou égal à value_max.")
+        elif self._safe_float("value", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
+            errors.append("La valeur doit être un nombre positif.")
+
         return errors
 
     def _validate_close_tabs_form(self) -> list[str]:

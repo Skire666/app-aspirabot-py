@@ -27,7 +27,7 @@ from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowSte
 s_logger = logging.getLogger(__name__)
 
 # Layout constants
-_HEIGHT_FRAME_LOGICAL_BLOCK = 315  # TODO PCO: make this dynamic based on the actual form content, or at least add some padding for future fields
+_HEIGHT_FRAME_LOGICAL_BLOCK = 250  # TODO PCO: le bloc 'brique logique est trop petit
 _WIDTH_FRAME_LOGICAL_BLOCK = 320
 _DND_ITEM_H = 50
 _DND_RESIZE_MIN_DELTA_PX = 8
@@ -36,8 +36,6 @@ _DND_DRAG_REDRAW_MIN_INTERVAL_MS = 16
 _DND_DRAG_REDRAW_MIN_DELTA_PX = 3
 _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
-_DND_TRACE_REDRAWS = True
-_DND_TRACE_EVERY = 25
 
 
 class WorkflowBuilderView(ttk.Frame):
@@ -164,8 +162,6 @@ class WorkflowBuilderView(ttk.Frame):
             virtualize=_DND_VIRTUALIZE,
             viewport_provider=self._get_dnd_viewport,
             virtualize_buffer=_DND_VIRTUALIZE_BUFFER,
-            trace_redraws=_DND_TRACE_REDRAWS,
-            trace_every=_DND_TRACE_EVERY,
         )
         self._scroll_win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
 

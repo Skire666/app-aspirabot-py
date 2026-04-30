@@ -36,7 +36,6 @@ OPTIONAL CALLBACKS  (None = button hidden)
 
 from __future__ import annotations
 
-import sys
 import time
 import tkinter as tk
 from collections.abc import Callable
@@ -108,7 +107,6 @@ _DEFAULT_HEIGHT_LINE_INSERT = 2
 # resize optimization and tracing defaults
 _DEFAULT_RESIZE_MIN_DELTA_PX = 4
 _DEFAULT_RESIZE_FINALIZE_MS = 250
-_DEFAULT_TRACE_EVERY = 25
 
 # drag redraw throttling defaults
 _DEFAULT_DRAG_REDRAW_MIN_INTERVAL_MS = 16
@@ -171,8 +169,6 @@ class DragDropList(tk.Frame, Generic[T]):
     viewport_provider   : callback returning (top_y, bottom_y) in list coords
                           used when virtualize=True
     virtualize_buffer   : extra items drawn above/below the viewport (default 2)
-    trace_redraws       : enable drag/resize/redraw counters to stderr (default False)
-    trace_every         : emit trace summary every N events (default 25)
     on_reorder          : fn(items)
     on_move_up          : fn(item, idx)  | None → button hidden
     on_move_down        : fn(item, idx)  | None → button hidden
@@ -192,7 +188,7 @@ class DragDropList(tk.Frame, Generic[T]):
         gap_expand: int = _DEFAULT_GAP_EXPAND_WHEN_FLOATING,
         btn_size: int = _DEFAULT_SIZE_BTN,
         theme: dict[str, str] | None = None,
-        resize_debounce_ms: int = 0,  ##TODO PCO
+        resize_debounce_ms: int = 0,
         resize_min_delta_px: int = _DEFAULT_RESIZE_MIN_DELTA_PX,
         resize_finalize_ms: int = _DEFAULT_RESIZE_FINALIZE_MS,
         drag_redraw_min_interval_ms: int = _DEFAULT_DRAG_REDRAW_MIN_INTERVAL_MS,
@@ -200,8 +196,6 @@ class DragDropList(tk.Frame, Generic[T]):
         virtualize: bool = False,
         viewport_provider: Callable[[], tuple[int, int]] | None = None,
         virtualize_buffer: int = _DEFAULT_VIRTUALIZE_BUFFER,
-        trace_redraws: bool = False,
-        trace_every: int = _DEFAULT_TRACE_EVERY,
         on_reorder: Callable[[list[T]], None] | None = None,
         on_move_up: Callable[[T, int], None] | None = None,
         on_move_down: Callable[[T, int], None] | None = None,
@@ -235,28 +229,8 @@ class DragDropList(tk.Frame, Generic[T]):
         self._last_visible_range: tuple[int, int] | None = None
         self._last_buttons_range: tuple[int, int] | None = None
 
-        # Optional redraw trace counters
-        self._trace_enabled: bool = trace_redraws
-        self._trace_every: int = max(trace_every, 1)
-        self._trace_counts: dict[str, int] = {
-            "redraw_calls": 0,
-            "resize_events": 0,
-            "resize_redraws": 0,
-            "resize_skips_same_width": 0,
-            "resize_skips_small_delta": 0,
-            "final_redraws": 0,
-            "final_skips_same_width": 0,
-            "drag_starts": 0,
-            "drag_moves": 0,
-            "drag_redraws": 0,
-            "drag_skips": 0,
-            "drag_ends": 0,
-        }
-
         # Instrumentation accumulator (reset at the start of each redraw())
         self._draw_normal_total: float = 0.0
-        self._last_redraw_elapsed_ms: float = 0.0
-        self._drag_redraw_elapsed_total: float = 0.0
 
         # Callbacks stored by action key
         self._cbs: dict[str, Callable[..., Any] | None] = {
@@ -277,7 +251,6 @@ class DragDropList(tk.Frame, Generic[T]):
         self._insert_pos: int | None = None
         self._expand_gap: int | None = None  # index of the gap currently expanded
         self._hovered_btn: tuple[int, str] | None = None
-        self._drag_start_ts: float | None = None
         self._drag_move_count: int = 0
         self._drag_redraw_count: int = 0
         self._drag_skip_count: int = 0
@@ -340,7 +313,6 @@ class DragDropList(tk.Frame, Generic[T]):
         # Update _canvas_w immediately so _on_drag sees the correct width even
         # before the debounce fires and triggers a full redraw.
         self._canvas_w = event.width
-        self._trace_tick("resize_events")
         if self._resize_job is not None:
             self.after_cancel(self._resize_job)
         self._resize_job = self.after(self._resize_debounce_ms, self._on_resize_debounced)
@@ -357,13 +329,10 @@ class DragDropList(tk.Frame, Generic[T]):
             # pointer frequency, so a redundant full redraw here would stutter.
             return
         if self._last_redraw_w == self._canvas_w:
-            self._trace_tick("resize_skips_same_width")
             return
         if self._should_skip_resize_redraw():
-            self._trace_tick("resize_skips_small_delta")
             return
         self.redraw()
-        self._trace_tick("resize_redraws")
 
     def _on_resize_finalize(self) -> None:
         """Forces a final redraw after resize settles."""
@@ -371,10 +340,8 @@ class DragDropList(tk.Frame, Generic[T]):
         if self._drag_idx is not None:
             return
         if self._last_redraw_w == self._canvas_w:
-            self._trace_tick("final_skips_same_width")
             return
         self.redraw()
-        self._trace_tick("final_redraws")
 
     def _item_y(self, idx: int) -> int:
         base = self.PAD + idx * (self.ITEM_H + self.PAD)
@@ -456,52 +423,6 @@ class DragDropList(tk.Frame, Generic[T]):
         if not blocks:
             return False
         return all(blocks)
-
-    def _trace_drag_summary(self) -> None:
-        """Logs a per-drag summary to stderr when tracing is enabled."""
-        if not self._trace_enabled or self._drag_start_ts is None:
-            return
-        duration_ms = (time.perf_counter() - self._drag_start_ts) * 1000
-        avg_redraw = 0.0
-        if self._drag_redraw_count:
-            avg_redraw = self._drag_redraw_elapsed_total / self._drag_redraw_count
-        print(
-            "[DragDropList] drag "
-            f"ms={duration_ms:.1f} "
-            f"moves={self._drag_move_count} "
-            f"redraws={self._drag_redraw_count} "
-            f"skips={self._drag_skip_count} "
-            f"avg_redraw={avg_redraw:.1f}ms",
-            file=sys.stderr,
-        )
-
-    def _trace_tick(self, key: str) -> None:
-        """Increments a trace counter and emits summaries periodically."""
-        if not self._trace_enabled:
-            return
-        self._trace_counts[key] = self._trace_counts.get(key, 0) + 1
-        if self._trace_counts[key] % self._trace_every == 0:
-            self._trace_log()
-
-    def _trace_log(self) -> None:
-        """Prints trace counters to stderr when tracing is enabled."""
-        if not self._trace_enabled:
-            return
-        counts = self._trace_counts
-        print(
-            "[DragDropList] trace "
-            f"resize={counts.get('resize_events', 0)} "
-            f"redraw={counts.get('redraw_calls', 0)} "
-            f"resize_redraw={counts.get('resize_redraws', 0)} "
-            f"resize_skip_small={counts.get('resize_skips_small_delta', 0)} "
-            f"resize_skip_same={counts.get('resize_skips_same_width', 0)} "
-            f"drag_moves={counts.get('drag_moves', 0)} "
-            f"drag_redraw={counts.get('drag_redraws', 0)} "
-            f"drag_skip={counts.get('drag_skips', 0)} "
-            f"final_redraw={counts.get('final_redraws', 0)} "
-            f"final_skip={counts.get('final_skips_same_width', 0)}",
-            file=sys.stderr,
-        )
 
     def _btn_rects(self, idx: int) -> dict[str, tuple[int, int, int, int]]:
         """Return {btn_key: (x1, y1, x2, y2)} for the visible buttons of item at idx."""
@@ -603,9 +524,7 @@ class DragDropList(tk.Frame, Generic[T]):
 
     def redraw(self, floating_idx: int | None = None, floating_y: int | None = None) -> None:
         """Redraw the entire canvas. May be called externally."""
-        _t0 = time.perf_counter()
         self._draw_normal_total = 0.0  # reset per-redraw accumulator
-        self._trace_tick("redraw_calls")
 
         self.canvas.delete("all")
         start, end = self._visible_range()
@@ -626,10 +545,6 @@ class DragDropList(tk.Frame, Generic[T]):
                 if self._is_y_visible(line_y, _DEFAULT_HEIGHT_LINE_INSERT):
                     self._draw_insert_line(self._insert_pos)
 
-        _elapsed = (time.perf_counter() - _t0) * 1000
-        self._last_redraw_elapsed_ms = _elapsed
-        if self._drag_idx is not None:
-            self._drag_redraw_elapsed_total += _elapsed
         self._last_redraw_w = self._canvas_w
 
     def redraw_visible(self, force: bool = False) -> None:
@@ -658,16 +573,13 @@ class DragDropList(tk.Frame, Generic[T]):
         else:
             self._drag_idx = idx
             self._drag_offset = event.y - self._item_y(idx)
-            self._drag_start_ts = time.perf_counter()
             self._drag_move_count = 0
             self._drag_redraw_count = 0
             self._drag_skip_count = 0
-            self._drag_redraw_elapsed_total = 0.0
             self._drag_last_redraw_ts = None
             self._drag_last_y = None
             self._drag_last_insert_pos = None
             self._drag_did_redraw = False
-            self._trace_tick("drag_starts")
 
     def _on_drag(self, event: tk.Event[tk.Canvas]) -> None:
         if self._drag_idx is None:
@@ -678,14 +590,11 @@ class DragDropList(tk.Frame, Generic[T]):
         self._insert_pos = None if pos in (self._drag_idx, self._drag_idx + 1) else pos
         self._expand_gap = self._insert_pos
         self._drag_move_count += 1
-        self._trace_tick("drag_moves")
         if self._should_skip_drag_redraw(fy, self._insert_pos):
             self._drag_skip_count += 1
-            self._trace_tick("drag_skips")
             return
         self.redraw(floating_idx=self._drag_idx, floating_y=fy)
         self._drag_redraw_count += 1
-        self._trace_tick("drag_redraws")
         self._drag_last_redraw_ts = time.perf_counter()
         self._drag_last_y = fy
         self._drag_last_insert_pos = self._insert_pos
@@ -702,9 +611,6 @@ class DragDropList(tk.Frame, Generic[T]):
             self._drag_idx = None
             self._insert_pos = None
             self._expand_gap = None
-            self._trace_tick("drag_ends")
-            self._trace_drag_summary()
-            self._drag_start_ts = None
             self._drag_did_redraw = False
             return
         item = self.items.pop(self._drag_idx)
@@ -715,8 +621,6 @@ class DragDropList(tk.Frame, Generic[T]):
         self._insert_pos = None
         self._expand_gap = None
         self.redraw()
-        self._trace_tick("drag_ends")
-        self._trace_drag_summary()
         self._drag_start_ts = None
         self._drag_did_redraw = False
         if self._on_reorder:

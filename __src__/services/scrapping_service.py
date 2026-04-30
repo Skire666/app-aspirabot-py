@@ -14,12 +14,12 @@ Example:
 """
 
 import logging
-import os
 import random
 import threading
 import time
 from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
 
@@ -39,9 +39,7 @@ _UNIT_TO_MS: dict[str, int] = {
 }
 
 
-def _evaluate_count_condition(
-    count: int, operator: str, value: int, value_min: int, value_max: int
-) -> bool:
+def _evaluate_count_condition(count: int, operator: str, value: int, value_min: int, value_max: int) -> bool:
     """Evaluates a COUNT_ELEMENT operator expression against the actual element count.
 
     Args:
@@ -62,15 +60,24 @@ def _evaluate_count_condition(
         True
     """
     match operator:
-        case "between":          return value_min <= count <= value_max
-        case "not_between":      return not (value_min <= count <= value_max)
-        case "equal":            return count == value
-        case "not_equal":        return count != value
-        case "greater_than":     return count > value
-        case "less_than":        return count < value
-        case "greater_or_equal": return count >= value
-        case "less_or_equal":    return count <= value
-        case _:                  return False
+        case "between":
+            return value_min <= count <= value_max
+        case "not_between":
+            return not (value_min <= count <= value_max)
+        case "equal":
+            return count == value
+        case "not_equal":
+            return count != value
+        case "greater_than":
+            return count > value
+        case "less_than":
+            return count < value
+        case "greater_or_equal":
+            return count >= value
+        case "less_or_equal":
+            return count <= value
+        case _:
+            return False
 
 
 def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
@@ -179,7 +186,9 @@ class ScrappingService:
         user_dir = CTK_BROWSER.DEFAULT_FOLDER_TMP_CHROMIUM  ## TODO PCO : make this configurable
 
         # Standard arguments to suppress automation detection hints.
-        args = ["--no-sandbox", "--disable-blink-features=AutomationControlled"]
+        args = []
+        if provider.automation_obfuscated:
+            args = ["--no-sandbox", "--disable-blink-features=AutomationControlled"]
 
         # browser: Browser = pw.chromium.launch(headless=headless, args=args, user_data_dir=user_dir)
         browser: Browser = pw.chromium.launch(headless=headless, args=args)
@@ -509,9 +518,7 @@ class ScrappingService:
                 return
             time.sleep(0.4)  # 400 ms
 
-        raise TimeoutError(
-            f"No image matching the size constraints appeared within {wait_seconds} seconds."
-        )
+        raise TimeoutError(f"No image matching the size constraints appeared within {wait_seconds} seconds.")
 
     def _handle_click_element(self, page: Page, params: dict[str, Any]) -> None:
         """Clicks an element identified by a CSS selector.
@@ -556,7 +563,7 @@ class ScrappingService:
         # Tentative 3 : click JS direct
         if click_mode == "JS Direct":
             script = f"document.querySelector('{selector}')?.click();"
-            self.evaluate_script_with_safe_retry(page, script, 5)
+            _ = self.evaluate_script_with_safe_retry(page, script, 5)
         else:
             raise ValueError(f"Unsupported click mode: {click_mode}")
 
@@ -623,10 +630,12 @@ class ScrappingService:
         # Evaluate condition and resolve the step outcome.
         condition_met = _evaluate_count_condition(count, operator, value, value_min, value_max)
         step_success = condition_met if success_if == "success" else not condition_met
-        val_desc = f"{value_min}–{value_max}" if operator in {"between", "not_between"} else str(value)
+        val_desc = f"{value_min}-{value_max}" if operator in {"between", "not_between"} else str(value)
         self._logger.info(
             "COUNT_ELEMENT : %s (condition: COUNT %s %s)",
-            "succès" if step_success else "échec", operator, val_desc,
+            "succès" if step_success else "échec",
+            operator,
+            val_desc,
         )
 
         # Raise on failure to mark the step as failed.
@@ -649,7 +658,7 @@ class ScrappingService:
         pixels: int = params.get("pixels", 1000)
 
         # Evaluate scrollBy in the page's JS context; pixels is always an int.
-        self.evaluate_script_with_safe_retry(page, f"window.scrollBy(0, {pixels})", 5)
+        _ = self.evaluate_script_with_safe_retry(page, f"window.scrollBy(0, {pixels})", 5)
 
     def _handle_close_tabs(self, page: Page, params: dict[str, Any]) -> None:
         """Closes browser tabs, keeping those matching url_filter up to max_tabs.
@@ -709,9 +718,7 @@ class ScrappingService:
             return
 
         # Select the target subset then extract and log.
-        selected = (
-            [elements[0]] if target == "first" else [elements[-1]] if target == "last" else elements
-        )
+        selected = [elements[0]] if target == "first" else [elements[-1]] if target == "last" else elements
         texts = [self._extract_from_element(el, mode) for el in selected]
         self._logger.info("EXTRACT_TEXT [%s]: %s", selector, "\n".join(texts)[:500])
 
@@ -848,13 +855,9 @@ class ScrappingService:
         all_imgs: list[dict[str, Any]] = self.evaluate_script_with_safe_retry(page, script, 5)
 
         # Keep only images that satisfy every dimension constraint.
-        return [
-            img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max
-        ]
+        return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
-    def evaluate_script_with_safe_retry(
-        self, page: Page, script: str, retries: int, delay: float = 0.300
-    ) -> Any:
+    def evaluate_script_with_safe_retry(self, page: Page, script: str, retries: int, delay: float = 0.300) -> Any:
         """Evaluates a JavaScript snippet with retries on failure.
 
         Args:
@@ -873,12 +876,11 @@ class ScrappingService:
             try:
                 return page.evaluate(script)
             except PlaywrightError as exc:
-                self._logger.warning(
-                    "Script evaluation failed on attempt %d/%d: %s", attempt, retries, exc
-                )
+                self._logger.warning("Script evaluation failed on attempt %d/%d: %s", attempt, retries, exc)
                 if attempt == retries:
                     raise
                 time.sleep(delay)
+        return None  # This line should never be reached due to the raise in the except block.
 
     def _select_image_by_mode(
         self,
@@ -924,11 +926,9 @@ class ScrappingService:
         """
         # prendre image inplace, fonctionne avec cloudflare
         full_url = urljoin(page.url, img_src_url)
-        ext = os.path.splitext(full_url.split("?")[0])[1] or ".jpg"
-        filename = (
-            os.path.basename(full_url.split("?")[0]) + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + ext
-        )
-        dest = os.path.join(CTK_USER.DEFAULT_USER_OUTPUT, filename)
+        ext = Path.splitext(full_url.split("?")[0])[1] or ".jpg"
+        filename = Path(full_url.split("?")[0]).name + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + ext
+        dest = Path(CTK_USER.DEFAULT_USER_OUTPUT) / filename
 
         # Utilisation du réseau du navigateur pour récupérer l'image
         response = page.context.request.get(
@@ -939,8 +939,8 @@ class ScrappingService:
             },
         )  ## TODO PCO : gérer les erreurs réseau et HTTP, notamment les 403 de Cloudflare
         if response.ok:
-            if not os.path.exists(CTK_USER.DEFAULT_USER_OUTPUT):
-                os.makedirs(CTK_USER.DEFAULT_USER_OUTPUT)
+            if not Path.exists(CTK_USER.DEFAULT_USER_OUTPUT):
+                Path.makedirs(CTK_USER.DEFAULT_USER_OUTPUT)
             with open(dest, "wb") as f:
                 f.write(response.body())
         else:
