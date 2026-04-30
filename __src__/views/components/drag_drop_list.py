@@ -236,6 +236,8 @@ class DragDropList(tk.Frame, Generic[T]):
         self._virtualize: bool = virtualize and viewport_provider is not None
         self._viewport_provider: Callable[[], tuple[int, int]] | None = viewport_provider
         self._virtualize_buffer: int = max(virtualize_buffer, 0)
+        self._last_visible_range: tuple[int, int] | None = None
+        self._last_buttons_range: tuple[int, int] | None = None
 
         # Optional redraw trace counters
         self._trace_enabled: bool = trace_redraws
@@ -300,6 +302,8 @@ class DragDropList(tk.Frame, Generic[T]):
 
     def _build_canvas(self) -> None:
         self._canvas_w = 0  # force redraw on first <Configure> of the new canvas
+        self._last_visible_range = None
+        self._last_buttons_range = None
         if hasattr(self, "canvas"):
             self.canvas.destroy()
         self.canvas = tk.Canvas(
@@ -382,6 +386,11 @@ class DragDropList(tk.Frame, Generic[T]):
             base += self._gap_expand
         return base
 
+    def _update_canvas_height(self) -> None:
+        """Refreshes the internal canvas height after list length changes."""
+        if hasattr(self, "canvas"):
+            self.canvas.configure(height=self._total_h())
+
     def _get_viewport_bounds(self) -> tuple[int, int]:
         """Returns (top, bottom) visible bounds in list coordinates."""
         if not self._virtualize or self._viewport_provider is None:
@@ -389,19 +398,26 @@ class DragDropList(tk.Frame, Generic[T]):
         top, bottom = self._viewport_provider()
         return (int(top), int(bottom))
 
-    def _visible_range(self) -> tuple[int, int]:
+    def _visible_range(self, buffer: int | None = None) -> tuple[int, int]:
         """Returns the visible index range [start, end) for rendering."""
         if not self._virtualize or self._viewport_provider is None:
             return (0, len(self.items))
 
+        buf = self._virtualize_buffer if buffer is None else max(buffer, 0)
         top, bottom = self._get_viewport_bounds()
         step = self.ITEM_H + self.PAD
-        start = max(0, int((top - self.PAD) // step) - self._virtualize_buffer)
-        end = min(len(self.items), int((bottom - self.PAD) // step) + 1 + self._virtualize_buffer)
+        start = max(0, int((top - self.PAD) // step) - buf)
+        end = min(len(self.items), int((bottom - self.PAD) // step) + 1 + buf)
         if self._expand_gap is not None:
             start = max(0, start - 1)
             end = min(len(self.items), end + 1)
         return (start, end)
+
+    def _buttons_range(self) -> tuple[int, int]:
+        """Returns the index range where buttons should be rendered."""
+        if not self._virtualize or self._viewport_provider is None:
+            return (0, len(self.items))
+        return self._visible_range(buffer=0)
 
     def _is_item_visible(self, idx: int) -> bool:
         """Returns True when the item intersects the visible viewport."""
@@ -553,7 +569,7 @@ class DragDropList(tk.Frame, Generic[T]):
         render_w = w - self._btn_zone_width()
         self._render_item(self.canvas, self.items[idx], idx, x, y_top, render_w, h, "floating")
 
-    def _draw_normal(self, idx: int) -> None:
+    def _draw_normal(self, idx: int, draw_buttons: bool = True) -> None:
         _t0 = time.perf_counter()
 
         y = self._item_y(idx)
@@ -565,19 +581,20 @@ class DragDropList(tk.Frame, Generic[T]):
         render_w = w - bw
         self._render_item(self.canvas, self.items[idx], idx, x, y, render_w, h, "normal")
 
-        rects = self._btn_rects(idx)
-        for btn in self._visible_btns:
-            x1, y1, x2, y2 = rects[btn.key]
-            hovered = self._hovered_btn == (idx, btn.key)
-            col = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
-            self._rounded_rect(x1, y1, x2, y2, 5, col)
-            self.canvas.create_text(
-                (x1 + x2) // 2,
-                (y1 + y2) // 2,
-                text=btn.symbol,
-                fill=self._theme["btn_fg"],
-                font=(_DEFAULT_FONT_BUTTONS_TEXT, _DEFAULT_SIZE_BUTTONS_TEXT, "bold"),
-            )
+        if draw_buttons:
+            rects = self._btn_rects(idx)
+            for btn in self._visible_btns:
+                x1, y1, x2, y2 = rects[btn.key]
+                hovered = self._hovered_btn == (idx, btn.key)
+                col = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
+                self._rounded_rect(x1, y1, x2, y2, 5, col)
+                self.canvas.create_text(
+                    (x1 + x2) // 2,
+                    (y1 + y2) // 2,
+                    text=btn.symbol,
+                    fill=self._theme["btn_fg"],
+                    font=(_DEFAULT_FONT_BUTTONS_TEXT, _DEFAULT_SIZE_BUTTONS_TEXT, "bold"),
+                )
 
         self._draw_normal_total += (time.perf_counter() - _t0) * 1000
 
@@ -601,11 +618,16 @@ class DragDropList(tk.Frame, Generic[T]):
 
         self.canvas.delete("all")
         start, end = self._visible_range()
+        btn_start, btn_end = self._buttons_range()
+        if self._virtualize:
+            self._last_visible_range = (start, end)
+            self._last_buttons_range = (btn_start, btn_end)
         for i in range(start, end):
             if i == floating_idx:
                 self._draw_ghost(i)
             else:
-                self._draw_normal(i)
+                draw_buttons = btn_start <= i < btn_end
+                self._draw_normal(i, draw_buttons=draw_buttons)
         if floating_idx is not None and floating_y is not None:
             if self._is_y_visible(floating_y, self.ITEM_H):
                 self._draw_floating(floating_idx, floating_y)
@@ -627,12 +649,18 @@ class DragDropList(tk.Frame, Generic[T]):
             )
         self._last_redraw_w = self._canvas_w
 
-    def redraw_visible(self) -> None:
+    def redraw_visible(self, force: bool = False) -> None:
         """Redraws only the visible range when virtualization is enabled."""
         if not self._virtualize:
             return
         if self._drag_idx is not None:
             return
+        current = self._visible_range()
+        current_buttons = self._buttons_range()
+        if not force and self._last_visible_range == current and self._last_buttons_range == current_buttons:
+            return
+        self._last_visible_range = current
+        self._last_buttons_range = current_buttons
         self.redraw()
 
     # ─── Events ──────────────────────────────────────────────────────────────
@@ -720,7 +748,7 @@ class DragDropList(tk.Frame, Generic[T]):
         w = self._item_w()
         for cid in self.canvas.find_overlapping(x, y, x + w, y + self.ITEM_H):
             self.canvas.delete(cid)
-        self._draw_normal(idx)
+        self._draw_normal(idx, draw_buttons=True)
 
     def _on_hover(self, event: tk.Event[tk.Canvas]) -> None:
         idx = self._idx_at(event.y)
@@ -780,11 +808,21 @@ class DragDropList(tk.Frame, Generic[T]):
             if result is not None:
                 self.items.insert(idx + 1, result)
                 self._notify_reorder()
-                self.rebuild()
+                self._hovered_btn = None
+                self._update_canvas_height()
+                if self._virtualize:
+                    self.redraw_visible(force=True)
+                else:
+                    self.redraw()
         elif key == "delete" and result:
             self.items.pop(idx)
             self._notify_reorder()
-            self.rebuild()
+            self._hovered_btn = None
+            self._update_canvas_height()
+            if self._virtualize:
+                self.redraw_visible(force=True)
+            else:
+                self.redraw()
         # "edit": no list mutation; the callback owns all side-effects
 
     def _notify_reorder(self) -> None:
