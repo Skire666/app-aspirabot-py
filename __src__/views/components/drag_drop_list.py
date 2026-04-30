@@ -118,6 +118,9 @@ _DEFAULT_TRACE_EVERY = 25
 _DEFAULT_DRAG_REDRAW_MIN_INTERVAL_MS = 16
 _DEFAULT_DRAG_REDRAW_MIN_DELTA_PX = 3
 
+# virtualization defaults
+_DEFAULT_VIRTUALIZE_BUFFER = 2
+
 # ── Button config ─────────────────────────────────────────────────────────────
 
 
@@ -168,6 +171,10 @@ class DragDropList(tk.Frame, Generic[T]):
                                   (default 16). Set to 0 to disable throttling.
     drag_redraw_min_delta_px    : minimum Y delta (px) before drag redraw
                                   (default 3). Set to 0 to disable throttling.
+    virtualize          : only draw items in the visible viewport (default False)
+    viewport_provider   : callback returning (top_y, bottom_y) in list coords
+                          used when virtualize=True
+    virtualize_buffer   : extra items drawn above/below the viewport (default 2)
     trace_redraws       : enable drag/resize/redraw counters to stderr (default False)
     trace_every         : emit trace summary every N events (default 25)
     on_reorder          : fn(items)
@@ -194,6 +201,9 @@ class DragDropList(tk.Frame, Generic[T]):
         resize_finalize_ms: int = _DEFAULT_RESIZE_FINALIZE_MS,
         drag_redraw_min_interval_ms: int = _DEFAULT_DRAG_REDRAW_MIN_INTERVAL_MS,
         drag_redraw_min_delta_px: int = _DEFAULT_DRAG_REDRAW_MIN_DELTA_PX,
+        virtualize: bool = False,
+        viewport_provider: Callable[[], tuple[int, int]] | None = None,
+        virtualize_buffer: int = _DEFAULT_VIRTUALIZE_BUFFER,
         trace_redraws: bool = False,
         trace_every: int = _DEFAULT_TRACE_EVERY,
         on_reorder: Callable[[list[T]], None] | None = None,
@@ -223,6 +233,9 @@ class DragDropList(tk.Frame, Generic[T]):
         self._last_redraw_w: int | None = None
         self._drag_redraw_min_interval_ms: int = max(drag_redraw_min_interval_ms, 0)
         self._drag_redraw_min_delta_px: int = max(drag_redraw_min_delta_px, 0)
+        self._virtualize: bool = virtualize and viewport_provider is not None
+        self._viewport_provider: Callable[[], tuple[int, int]] | None = viewport_provider
+        self._virtualize_buffer: int = max(virtualize_buffer, 0)
 
         # Optional redraw trace counters
         self._trace_enabled: bool = trace_redraws
@@ -368,6 +381,42 @@ class DragDropList(tk.Frame, Generic[T]):
         if self._expand_gap is not None and idx >= self._expand_gap:
             base += self._gap_expand
         return base
+
+    def _get_viewport_bounds(self) -> tuple[int, int]:
+        """Returns (top, bottom) visible bounds in list coordinates."""
+        if not self._virtualize or self._viewport_provider is None:
+            return (0, self._total_h())
+        top, bottom = self._viewport_provider()
+        return (int(top), int(bottom))
+
+    def _visible_range(self) -> tuple[int, int]:
+        """Returns the visible index range [start, end) for rendering."""
+        if not self._virtualize or self._viewport_provider is None:
+            return (0, len(self.items))
+
+        top, bottom = self._get_viewport_bounds()
+        step = self.ITEM_H + self.PAD
+        start = max(0, int((top - self.PAD) // step) - self._virtualize_buffer)
+        end = min(len(self.items), int((bottom - self.PAD) // step) + 1 + self._virtualize_buffer)
+        if self._expand_gap is not None:
+            start = max(0, start - 1)
+            end = min(len(self.items), end + 1)
+        return (start, end)
+
+    def _is_item_visible(self, idx: int) -> bool:
+        """Returns True when the item intersects the visible viewport."""
+        if not self._virtualize or self._viewport_provider is None:
+            return True
+        top, bottom = self._get_viewport_bounds()
+        y = self._item_y(idx)
+        return (y + self.ITEM_H) >= (top - self.PAD) and y <= (bottom + self.PAD)
+
+    def _is_y_visible(self, y: int, h: int) -> bool:
+        """Returns True when a y-range intersects the visible viewport."""
+        if not self._virtualize or self._viewport_provider is None:
+            return True
+        top, bottom = self._get_viewport_bounds()
+        return (y + h) >= (top - self.PAD) and y <= (bottom + self.PAD)
 
     def _should_skip_resize_redraw(self) -> bool:
         """Returns True when resize delta is too small for a redraw."""
@@ -551,15 +600,20 @@ class DragDropList(tk.Frame, Generic[T]):
         self._trace_tick("redraw_calls")
 
         self.canvas.delete("all")
-        for i in range(len(self.items)):
+        start, end = self._visible_range()
+        for i in range(start, end):
             if i == floating_idx:
                 self._draw_ghost(i)
             else:
                 self._draw_normal(i)
         if floating_idx is not None and floating_y is not None:
-            self._draw_floating(floating_idx, floating_y)
+            if self._is_y_visible(floating_y, self.ITEM_H):
+                self._draw_floating(floating_idx, floating_y)
             if self._insert_pos is not None:
-                self._draw_insert_line(self._insert_pos)
+                gap_h = self.PAD + (self._gap_expand if self._expand_gap == self._insert_pos else 0)
+                line_y = self._item_y(self._insert_pos) - gap_h // 2
+                if self._is_y_visible(line_y, _DEFAULT_HEIGHT_LINE_INSERT):
+                    self._draw_insert_line(self._insert_pos)
 
         _elapsed = (time.perf_counter() - _t0) * 1000
         self._last_redraw_elapsed_ms = _elapsed
@@ -572,6 +626,14 @@ class DragDropList(tk.Frame, Generic[T]):
                 file=sys.stderr,
             )
         self._last_redraw_w = self._canvas_w
+
+    def redraw_visible(self) -> None:
+        """Redraws only the visible range when virtualization is enabled."""
+        if not self._virtualize:
+            return
+        if self._drag_idx is not None:
+            return
+        self.redraw()
 
     # ─── Events ──────────────────────────────────────────────────────────────
 
@@ -651,6 +713,8 @@ class DragDropList(tk.Frame, Generic[T]):
 
     def _redraw_item(self, idx: int) -> None:
         """Redraw a single item without touching the rest of the canvas."""
+        if not self._is_item_visible(idx):
+            return
         y = self._item_y(idx)
         x = self.PAD
         w = self._item_w()
@@ -702,12 +766,16 @@ class DragDropList(tk.Frame, Generic[T]):
             if idx > 0:
                 self.items.insert(idx - 1, self.items.pop(idx))
                 self._notify_reorder()
-                self.rebuild()
+                self._hovered_btn = None
+                self._redraw_item(idx)
+                self._redraw_item(idx - 1)
         elif key == "move_down":
             if idx < len(self.items) - 1:
                 self.items.insert(idx + 1, self.items.pop(idx))
                 self._notify_reorder()
-                self.rebuild()
+                self._hovered_btn = None
+                self._redraw_item(idx)
+                self._redraw_item(idx + 1)
         elif key == "duplicate":
             if result is not None:
                 self.items.insert(idx + 1, result)

@@ -34,6 +34,8 @@ _DND_RESIZE_MIN_DELTA_PX = 8
 _DND_RESIZE_FINALIZE_MS = 250
 _DND_DRAG_REDRAW_MIN_INTERVAL_MS = 16
 _DND_DRAG_REDRAW_MIN_DELTA_PX = 3
+_DND_VIRTUALIZE = True
+_DND_VIRTUALIZE_BUFFER = 2
 _DND_TRACE_REDRAWS = True
 _DND_TRACE_EVERY = 25
 
@@ -134,14 +136,14 @@ class WorkflowBuilderView(ttk.Frame):
 
         # Vertical scroll wrapper keeps the list accessible with many steps.
         outer = tk.Canvas(section, highlightthickness=0)
-        sb = ttk.Scrollbar(section, orient="vertical", command=outer.yview)
+        sb = ttk.Scrollbar(section, orient="vertical", command=self._on_scrollbar)
         outer.configure(yscrollcommand=sb.set)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         outer.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Save references needed by the scroll helpers.
         self._scroll_canvas = outer
-        self._scroll_fn = lambda e: outer.yview_scroll(int(-1 * e.delta / 120), "units")
+        self._scroll_fn = self._on_mousewheel_scroll
 
         # DragDropList embedded as a scrolled child.
         self._dnd_list: DragDropList[StepScrappingModel] = DragDropList(
@@ -159,6 +161,9 @@ class WorkflowBuilderView(ttk.Frame):
             resize_finalize_ms=_DND_RESIZE_FINALIZE_MS,
             drag_redraw_min_interval_ms=_DND_DRAG_REDRAW_MIN_INTERVAL_MS,
             drag_redraw_min_delta_px=_DND_DRAG_REDRAW_MIN_DELTA_PX,
+            virtualize=_DND_VIRTUALIZE,
+            viewport_provider=self._get_dnd_viewport,
+            virtualize_buffer=_DND_VIRTUALIZE_BUFFER,
             trace_redraws=_DND_TRACE_REDRAWS,
             trace_every=_DND_TRACE_EVERY,
         )
@@ -393,6 +398,23 @@ class WorkflowBuilderView(ttk.Frame):
         h = max(dnd_h, canvas_h)
         self._scroll_canvas.itemconfig(self._scroll_win, width=w, height=h)
         self._scroll_canvas.configure(scrollregion=(0, 0, w, h))
+        self._dnd_list.redraw_visible()
+
+    def _get_dnd_viewport(self) -> tuple[int, int]:
+        """Returns the visible viewport bounds in DragDropList coordinates."""
+        top = self._scroll_canvas.canvasy(0)
+        bottom = self._scroll_canvas.canvasy(self._scroll_canvas.winfo_height())
+        return (int(top), int(bottom))
+
+    def _on_mousewheel_scroll(self, event: tk.Event) -> None:
+        """Scrolls the outer canvas and refreshes the visible DnD range."""
+        self._scroll_canvas.yview_scroll(int(-1 * event.delta / 120), "units")
+        self._dnd_list.redraw_visible()
+
+    def _on_scrollbar(self, *args: object) -> None:
+        """Scrolls via the scrollbar and refreshes the visible DnD range."""
+        self._scroll_canvas.yview(*args)
+        self._dnd_list.redraw_visible()
 
     def _bind_dnd_canvas_scroll(self) -> None:
         # Binds Enter/Leave on the DragDropList's internal canvas so the global
