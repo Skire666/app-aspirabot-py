@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
+from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import Callable, Optional
 
@@ -345,7 +346,7 @@ class WorkflowBuilderView(ttk.Frame):
         h: int,
         state: str,
     ) -> None:
-        print(f"Rendering step {idx} at ({x}, {y}, {w}, {h}) with state '{state}'")
+        print(f"Rendering step {idx} at ({x}, {y}, {w}, {h}) with state '{state}' at {datetime.now()}")
         if state == "ghost":
             return
 
@@ -507,6 +508,7 @@ class WorkflowBuilderView(ttk.Frame):
     def _fire_add_step(self) -> None:
         """Fires the on_add_step callback."""
         self._selected_index = None
+        self._dnd_list.redraw()
         if self.on_add_step:
             self.on_add_step()
 
