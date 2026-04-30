@@ -21,18 +21,18 @@ Example:
 
     >>> from repositories.json_config_repository import JsonConfigRepository
     >>> from models.config_aspirabot_model import ConfigAspirabotModel
-    >>> 
+    >>>
     >>> # Initialize the repository
     >>> repo = JsonConfigRepository("config-aspirabot.json")
     >>> repo.ensure_file_exists()
-    >>> 
+    >>>
     >>> # Read current configuration
     >>> config = repo.read_config()
-    >>> 
+    >>>
     >>> # Modify configuration
     >>> config.window_title = "Aspirabot - Enhanced"
     >>> config.theme = "dark"
-    >>> 
+    >>>
     >>> # Persist changes
     >>> repo.save_config(config)
 """
@@ -40,10 +40,10 @@ Example:
 import json
 import logging
 import os
-from typing import Any, Dict
+from typing import Any
 
-from models.config_aspirabot_model import ConfigAspirabotModel
 from interfaces.config_repository_interface import ConfigRepositoryInterface
+from models.config_aspirabot_model import ConfigAspirabotModel
 
 
 class JsonConfigRepository(ConfigRepositoryInterface):
@@ -128,7 +128,7 @@ class JsonConfigRepository(ConfigRepositoryInterface):
             # Write the default configuration to disk.
             self._write_json(default_data)
 
-    def _read_json(self) -> Dict[str, Any]:
+    def _read_json(self) -> dict[str, Any]:
         """Read and deserialize JSON content from the configuration file.
 
         Attempts to load JSON from the configured file path. If the file cannot
@@ -150,20 +150,16 @@ class JsonConfigRepository(ConfigRepositoryInterface):
         """
         # Attempt to load persisted data from disk.
         try:
-            with open(self._file_path, "r", encoding="utf-8") as file:
+            with open(self._file_path, encoding="utf-8") as file:
                 # Parse JSON with UTF-8 encoding to handle special characters.
                 return json.load(file)
-        except (json.JSONDecodeError, IOError) as error:
+        except (OSError, json.JSONDecodeError) as error:
             # Log the error for debugging and monitoring.
-            self._logger.error(
-                "Failed to read configuration file '%s': %s",
-                self._file_path,
-                error,
-            )
+            self._logger.exception(f"Failed to read configuration file '{self._file_path}'", error)
             # Return defaults as a safe fallback.
             return ConfigAspirabotModel.get_default_data()
 
-    def _write_json(self, data: Dict[str, Any]) -> None:
+    def _write_json(self, data: dict[str, Any]) -> None:
         """Serialize and write configuration data to the JSON file.
 
         Converts a dictionary to formatted JSON and writes it to the configured
@@ -198,7 +194,7 @@ class JsonConfigRepository(ConfigRepositoryInterface):
                 json.dump(data, file, indent=4, ensure_ascii=False)
             # Log successful completion at debug level.
             self._logger.debug("Configuration file saved successfully.")
-        except IOError as error:
+        except OSError as error:
             # Log write errors for troubleshooting.
             self._logger.error(
                 "Failed to write configuration file '%s': %s",

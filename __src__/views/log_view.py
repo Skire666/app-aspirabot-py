@@ -1,8 +1,8 @@
 """Tkinter view for rendering application logs."""
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
-from typing import Dict, List, Optional, Callable
 
 
 class LogView(ttk.Frame):
@@ -16,14 +16,14 @@ class LogView(ttk.Frame):
         """
         super().__init__(parent)
 
-        self._filter_vars: Dict[str, tk.BooleanVar] = {
+        self._filter_vars: dict[str, tk.BooleanVar] = {
             "ERROR": tk.BooleanVar(value=True),
             "WARNING": tk.BooleanVar(value=True),
             "INFO": tk.BooleanVar(value=True),
             "DEBUG": tk.BooleanVar(value=True),
         }
 
-        self._on_filter_changed: Optional[Callable[[], None]] = None
+        self._on_filter_changed: Callable[[], None] | None = None
 
         self._create_widgets()
 
@@ -32,7 +32,7 @@ class LogView(ttk.Frame):
         # Top panel for filters
         filter_frame = ttk.Frame(self)
         filter_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
-        
+
         ttk.Label(filter_frame, text="Filters:").pack(side=tk.LEFT, padx=2)
 
         for level, var in self._filter_vars.items():
@@ -68,7 +68,7 @@ class LogView(ttk.Frame):
         self.tree.tag_configure("INFO", foreground="black")
         self.tree.tag_configure("DEBUG", foreground="gray")
 
-    def get_active_filters(self) -> List[str]:
+    def get_active_filters(self) -> list[str]:
         """Gets currently enabled log levels.
 
         Returns:

@@ -27,9 +27,9 @@ Example:
 """
 
 import logging
-from logging.handlers import RotatingFileHandler
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, Optional
+from logging.handlers import RotatingFileHandler
 
 from models.log_entry_model import LogEntryModel
 
@@ -181,7 +181,7 @@ class LoggingService:
         self.logger.setLevel(self.log_level)
 
         # Initialize UI handler slot (initially None; set via attach_ui_callback).
-        self._handler: Optional[ObservableLogHandler] = None
+        self._handler: ObservableLogHandler | None = None
 
         # Create a consistent formatter for all log output.
         formatter = logging.Formatter(

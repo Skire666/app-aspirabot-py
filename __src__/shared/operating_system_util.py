@@ -1,5 +1,6 @@
-from enum import Enum, auto
 import platform
+from enum import Enum, auto
+
 
 class OperatingSystem(Enum):
     """Enumération pour les systèmes d'exploitation."""
@@ -12,7 +13,6 @@ class OperatingSystem(Enum):
 
 def detect_os() -> OperatingSystem:
     """Détecte le système d'exploitation actuel."""
-
     # Détecter le système d'exploitation au runtime (ni compilé ni à l'importation)
     os_name = platform.system()
 
@@ -21,9 +21,8 @@ def detect_os() -> OperatingSystem:
 
     if os_name == "Windows":
         return OperatingSystem.WINDOWS
-    elif os_name == "Linux":
+    if os_name == "Linux":
         return OperatingSystem.LINUX
-    elif os_name == "Darwin":
+    if os_name == "Darwin":
         return OperatingSystem.MACOS
-    else:
-        return OperatingSystem.UNKNOWN
+    return OperatingSystem.UNKNOWN

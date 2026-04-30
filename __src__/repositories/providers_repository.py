@@ -18,7 +18,7 @@ import subprocess
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Union, cast
+from typing import Any, cast
 
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
@@ -43,7 +43,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         logger (logging.Logger): Le journaliseur interne défini pour tracer les exécutions.
     """
 
-    def __init__(self, folder_providers: Union[str, Path], folder_brokens: Union[str, Path]) -> None:
+    def __init__(self, folder_providers: str | Path, folder_brokens: str | Path) -> None:
         """Initialise le dépôt en pointant vers un dossier local contenant les fournisseurs.
 
         Args:
@@ -63,11 +63,11 @@ class ProvidersRepository(ProviderRepositoryInterface):
         return self._folder_path
 
     @folder_path.setter
-    def folder_path(self, value: Union[str, Path]) -> None:
+    def folder_path(self, value: str | Path) -> None:
         """Définit le chemin du dossier des JSON."""
         self._folder_path = Path(value)
 
-    def _list_provider_files(self) -> List[Path]:
+    def _list_provider_files(self) -> list[Path]:
         """Examine le dossier sélectionné et retourne tous les fichiers .json présents.
 
         Vérifie l'existence du chemin spécifié et parcourt son contenu pour retenir
@@ -81,7 +81,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             return list(self._folder_path.glob("*.json"))
         return []
 
-    def list_provider_files(self) -> List[Path]:
+    def list_provider_files(self) -> list[Path]:
         """Lists all files in the providers directory.
 
         Returns:
@@ -95,7 +95,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             key=lambda path: path.name.lower(),
         )
 
-    def read_provider_content(self, file_path: Path) -> Dict[str, Any]:
+    def read_provider_content(self, file_path: Path) -> dict[str, Any]:
         """Reads a provider file and returns the decoded JSON content.
 
         Args:
@@ -114,7 +114,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         if not isinstance(content, dict):
             raise ValueError(f"Contenu JSON invalide dans {file_path.name}")
 
-        return cast(Dict[str, Any], content)
+        return cast(dict[str, Any], content)
 
     def ensure_broken_folder(self) -> Path:
         """Ensures the broken-folder exists and returns its path."""
@@ -146,7 +146,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         shutil.move(str(file_path), str(destination_path))
         return destination_path
 
-    def _dict_to_provider_model(self, data: Dict[str, Any]) -> ProviderModel:
+    def _dict_to_provider_model(self, data: dict[str, Any]) -> ProviderModel:
         """Convertit un dictionnaire JSON en instance ProviderModel.
 
         Filtre les clés du dictionnaire pour ne garder que celles définies dans ProviderModel.
@@ -173,7 +173,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         filtered_data["steps"] = self._deserialize_steps(filtered_data.get("steps", []))
         return ProviderModel(**filtered_data)
 
-    def _provider_model_to_dict(self, provider: ProviderModel) -> Dict[str, Any]:
+    def _provider_model_to_dict(self, provider: ProviderModel) -> dict[str, Any]:
         """Convertit une instance ProviderModel en dictionnaire pour la sérialisation JSON.
 
         Args:
@@ -265,7 +265,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             self.logger.warning(f"Impossible de lire le fournisseur {full_filepath}: {e}")
             raise
 
-    def list_all_providers(self) -> List[ProviderModel]:
+    def list_all_providers(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs disponibles.
 
         Parcourt le dossier des fournisseurs et retourne une liste de tous les
@@ -280,7 +280,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             >>> for provider in providers:
             ...     print(provider.provider_name)
         """
-        providers: List[ProviderModel] = []
+        providers: list[ProviderModel] = []
 
         for file_path in self._list_provider_files():
             try:

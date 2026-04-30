@@ -2,7 +2,6 @@
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Dict
 
 # Sidebar button color constants
 _SIDEBAR_ACTIVE_BG = "#016dbf"
@@ -29,8 +28,8 @@ class MainView(ttk.Frame):
             parent: The parent Tkinter widget (usually RootFrameView).
         """
         super().__init__(parent)
-        self._views: Dict[str, tk.Widget] = {}
-        self._buttons: Dict[str, tk.Button] = {}
+        self._views: dict[str, tk.Widget] = {}
+        self._buttons: dict[str, tk.Button] = {}
         self._active_view: str | None = None
         self._create_widgets()
 

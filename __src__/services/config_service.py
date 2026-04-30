@@ -4,8 +4,9 @@ Ce module orchestre les appels entre le domaine de configuration
 et l'infrastructure d'accès aux données, respectant le principe de la Clean Architecture.
 """
 
-from models.config_aspirabot_model import ConfigAspirabotModel
 from interfaces.config_repository_interface import ConfigRepositoryInterface
+from models.config_aspirabot_model import ConfigAspirabotModel
+
 
 class ConfigService:
     """Service gérant la configuration de l'application.

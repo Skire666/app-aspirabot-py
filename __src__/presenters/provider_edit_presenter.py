@@ -1,6 +1,7 @@
 """Module contenant le presentateur pour la modification de fournisseur."""
 
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 from models.provider_model import ProviderModel
 from presenters.workflow_builder_presenter import WorkflowBuilderPresenter
@@ -31,8 +32,8 @@ class ProviderEditPresenter:
         self._view = view
         self._service = provider_service
         self._is_creation_mode = False
-        self._current_provider: Optional[ProviderModel] = None
-        self._on_done: Optional[Callable[[], None]] = None
+        self._current_provider: ProviderModel | None = None
+        self._on_done: Callable[[], None] | None = None
 
         # Sub-presenter that owns the step list and workflow execution.
         self._workflow_presenter = WorkflowBuilderPresenter(
@@ -80,7 +81,7 @@ class ProviderEditPresenter:
         self._workflow_presenter.load(self._current_provider.id_file)
         self._view.load_data(self._provider_to_dict(self._current_provider))
 
-    def _provider_to_dict(self, provider: ProviderModel) -> Dict[str, Any]:
+    def _provider_to_dict(self, provider: ProviderModel) -> dict[str, Any]:
         """Converts provider model fields to a form-data dictionary.
 
         Args:
@@ -100,7 +101,7 @@ class ProviderEditPresenter:
             "modified_date": provider.modified_date,
         }
 
-    def _on_save(self, form_data: Dict[str, Any]) -> None:
+    def _on_save(self, form_data: dict[str, Any]) -> None:
         """Valide et sauvegarde le fournisseur.
 
         Args:

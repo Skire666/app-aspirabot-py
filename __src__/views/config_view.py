@@ -1,8 +1,8 @@
 """Tkinter view for rendering the configuration form."""
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
-from typing import Callable, Dict, Optional
 
 
 class ConfigView(ttk.Frame):
@@ -20,10 +20,10 @@ class ConfigView(ttk.Frame):
         """
         super().__init__(parent)
 
-        self._on_save_clicked: Optional[Callable[[Dict[str, str]], None]] = None
-        self._on_reset_clicked: Optional[Callable[[], None]] = None
+        self._on_save_clicked: Callable[[dict[str, str]], None] | None = None
+        self._on_reset_clicked: Callable[[], None] | None = None
 
-        self._entries: Dict[str, ttk.Entry] = {}
+        self._entries: dict[str, ttk.Entry] = {}
 
         self._create_widgets()
 
@@ -56,7 +56,7 @@ class ConfigView(ttk.Frame):
         ttk.Button(btn_frame, text="Save", command=self._notify_save).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Reset", command=self._notify_reset).pack(side=tk.LEFT, padx=5)
 
-    def set_save_callback(self, callback: Callable[[Dict[str, str]], None]) -> None:
+    def set_save_callback(self, callback: Callable[[dict[str, str]], None]) -> None:
         """Sets the callback to invoke on Save button click.
 
         Args:
@@ -72,7 +72,7 @@ class ConfigView(ttk.Frame):
         """
         self._on_reset_clicked = callback
 
-    def display_config(self, config_data: Dict[str, str]) -> None:
+    def display_config(self, config_data: dict[str, str]) -> None:
         """Updates the input fields with the provided configuration data.
 
         Args:

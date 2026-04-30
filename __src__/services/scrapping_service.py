@@ -18,8 +18,9 @@ import os
 import random
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
@@ -118,7 +119,7 @@ class ScrappingService:
         self._logger = logging.getLogger(__name__)
         # Per-run state reset at the start of each _run_steps call.
         self._prev_step_success: bool = True
-        self._pending_jump: Optional[int] = None
+        self._pending_jump: int | None = None
         self._end_process_requested: bool = False
 
     def run_workflow(

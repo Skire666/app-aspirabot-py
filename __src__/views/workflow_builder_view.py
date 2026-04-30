@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Optional
+from typing import Any
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 from views.components.drag_drop_list import DragDropList
@@ -172,7 +173,7 @@ class WorkflowBuilderView(ttk.Frame):
         """
         super().__init__(parent)
         self._init_callbacks()
-        self._selected_index: Optional[int] = None
+        self._selected_index: int | None = None
         self._last_steps: list[StepScrappingModel] = []
         # Guard: True while a DragDropList callback is executing, so that
         # re-entrant render_steps calls from the presenter are deferred.
@@ -181,14 +182,14 @@ class WorkflowBuilderView(ttk.Frame):
 
     def _init_callbacks(self) -> None:
         """Sets all callback attributes to None."""
-        self.on_add_step: Optional[Callable[[], None]] = None
-        self.on_edit_step: Optional[Callable[[int], None]] = None
-        self.on_delete_step: Optional[Callable[[int], None]] = None
-        self.on_move_step: Optional[Callable[[int, int], None]] = None
-        self.on_reorder_steps: Optional[Callable[[list[StepScrappingModel]], None]] = None
-        self.on_confirm_inline_step: Optional[Callable[[StepScrappingModel], None]] = None
-        self.on_cancel_inline_step: Optional[Callable[[], None]] = None
-        self.on_clear_all_steps: Optional[Callable[[], None]] = None
+        self.on_add_step: Callable[[], None] | None = None
+        self.on_edit_step: Callable[[int], None] | None = None
+        self.on_delete_step: Callable[[int], None] | None = None
+        self.on_move_step: Callable[[int, int], None] | None = None
+        self.on_reorder_steps: Callable[[list[StepScrappingModel]], None] | None = None
+        self.on_confirm_inline_step: Callable[[StepScrappingModel], None] | None = None
+        self.on_cancel_inline_step: Callable[[], None] | None = None
+        self.on_clear_all_steps: Callable[[], None] | None = None
 
     def _create_widgets(self) -> None:
         """Builds toolbar, step list, and brique logique sections."""
@@ -349,7 +350,7 @@ class WorkflowBuilderView(ttk.Frame):
         self._toast_label.grid()
         self.after(3000, self._hide_toast)
 
-    def show_inline_form(self, step: Optional[StepScrappingModel] = None) -> None:
+    def show_inline_form(self, step: StepScrappingModel | None = None) -> None:
         """Reveals both Brique logique and Aide à la saisie panels.
 
         Loading the form fires on_type_changed, which in turn updates the

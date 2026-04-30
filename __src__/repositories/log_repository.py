@@ -1,7 +1,8 @@
 """Repository for storing and retrieving log entries in memory."""
 
-from typing import List
+
 from models.log_entry_model import LogEntryModel
+
 
 class LogRepository:
     """Stores logs in memory and notifies observers on change.
@@ -9,11 +10,11 @@ class LogRepository:
     Attributes:
         _logs (List[LogEntryModel]): The internal list of log entries.
     """
-    
+
     def __init__(self):
         """Initializes an empty log repository."""
-        self._logs: List[LogEntryModel] = []
-        
+        self._logs: list[LogEntryModel] = []
+
     def add(self, log_entry: LogEntryModel) -> None:
         """Appends a new log entry to the repository.
         
@@ -21,8 +22,8 @@ class LogRepository:
             log_entry (LogEntryModel): The log entry to add.
         """
         self._logs.append(log_entry)
-        
-    def get_all(self) -> List[LogEntryModel]:
+
+    def get_all(self) -> list[LogEntryModel]:
         """Returns all stored log entries.
         
         Returns:

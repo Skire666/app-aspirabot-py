@@ -1,8 +1,9 @@
 """Tkinter view for creating and editing a provider."""
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Optional
+from typing import Any
 
 from views.workflow_builder_view import WorkflowBuilderView
 
@@ -18,8 +19,8 @@ class ProviderEditView(ttk.Frame):
         """
         super().__init__(parent)
 
-        self._on_save: Optional[Callable[[dict[str, Any]], None]] = None
-        self._on_cancel: Optional[Callable[[], None]] = None
+        self._on_save: Callable[[dict[str, Any]], None] | None = None
+        self._on_cancel: Callable[[], None] | None = None
 
         self._create_widgets()
 

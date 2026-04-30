@@ -5,7 +5,9 @@ de l'application, indépendamment de son support de stockage physique.
 """
 
 from typing import Protocol
+
 from models.config_aspirabot_model import ConfigAspirabotModel
+
 
 class ConfigRepositoryInterface(Protocol):
     """Interface pour le dépôt de configuration."""

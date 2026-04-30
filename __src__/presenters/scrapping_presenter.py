@@ -12,7 +12,6 @@ Example:
 
 import threading
 from datetime import datetime
-from typing import Optional
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
 from models.scrapping_report_model import ScrappingReportModel, StepResultModel
@@ -45,7 +44,7 @@ class ScrappingPresenter:
         self,
         view: ScrappingPanelView,
         service: ScrappingService,
-        provider: Optional[ProviderModel] = None,
+        provider: ProviderModel | None = None,
     ) -> None:
         """Initializes the presenter and registers callbacks on the view.
 
@@ -57,9 +56,9 @@ class ScrappingPresenter:
         """
         self._view = view
         self._service = service
-        self._provider: Optional[ProviderModel] = provider
+        self._provider: ProviderModel | None = provider
         self._cancel_event = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
 
         # Wire view buttons to presenter handlers once at construction time.
         view.set_on_launch(self._on_launch)

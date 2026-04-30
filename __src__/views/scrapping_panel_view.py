@@ -12,8 +12,8 @@ Example:
 """
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
-from typing import Callable, Optional
 
 from models.scrapping_report_model import ScrappingReportModel
 
@@ -45,8 +45,8 @@ class ScrappingPanelView(ttk.Frame):
         super().__init__(parent)
 
         # Callback slots — populated once by the presenter via set_on_*.
-        self._on_launch: Optional[Callable[[], None]] = None
-        self._on_cancel: Optional[Callable[[], None]] = None
+        self._on_launch: Callable[[], None] | None = None
+        self._on_cancel: Callable[[], None] | None = None
 
         self._create_widgets()
 

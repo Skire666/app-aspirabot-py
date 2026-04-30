@@ -1,6 +1,7 @@
 """Module contenant le présentateur pour la gestion des fournisseurs."""
 
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from models.provider_model import ProviderModel
 from models.provider_validation_report_model import ProviderValidationReport
@@ -24,14 +25,14 @@ class ProviderPresenter:
         """
         self._view = view
         self._service = service
-        self._providers: List[ProviderModel] = []
+        self._providers: list[ProviderModel] = []
         self._current_sort_column = "provider_name"
         self._current_sort_ascending = True
 
         # Hooks optionnels injectés depuis le main
-        self.on_request_create_provider: Optional[Callable[[], None]] = None
-        self.on_request_edit_provider: Optional[Callable[[str], None]] = None
-        self.on_request_launch_provider: Optional[Callable[[str], None]] = None
+        self.on_request_create_provider: Callable[[], None] | None = None
+        self.on_request_edit_provider: Callable[[str], None] | None = None
+        self.on_request_launch_provider: Callable[[str], None] | None = None
 
         self._bind_view_events()
         self._load_providers()
@@ -91,7 +92,7 @@ class ProviderPresenter:
         providers_data = self._format_providers(self._providers)
         self._view.render_providers(providers_data)
 
-    def _format_providers(self, providers: List[ProviderModel]) -> List[Dict[str, str]]:
+    def _format_providers(self, providers: list[ProviderModel]) -> list[dict[str, str]]:
         """Formate une liste de modèles en données tabulaires pour la vue.
 
         Args:
@@ -100,7 +101,7 @@ class ProviderPresenter:
         Returns:
             List[Dict[str, str]]: Liste formatée pour affichage.
         """
-        formatted: List[Dict[str, str]] = []
+        formatted: list[dict[str, str]] = []
         for p in providers:
             formatted.append(
                 {
@@ -174,7 +175,7 @@ class ProviderPresenter:
         finally:
             self._view.set_validation_state(False)
 
-    def _format_validation_report(self, report: ProviderValidationReport) -> Dict[str, Any]:
+    def _format_validation_report(self, report: ProviderValidationReport) -> dict[str, Any]:
         """Converts a domain validation report into a view-friendly dict.
 
         Args:

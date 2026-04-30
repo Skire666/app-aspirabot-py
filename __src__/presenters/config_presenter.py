@@ -1,6 +1,6 @@
 """Presenter for the configuration module."""
 
-from typing import Dict
+
 from models.config_aspirabot_model import ConfigAspirabotModel
 from services.config_service import ConfigService
 from views.config_view import ConfigView
@@ -33,7 +33,7 @@ class ConfigPresenter:
         config = self._service.read_config()
         self._view.display_config(config.all_data)
 
-    def handle_save(self, config_data: Dict[str, str]) -> None:
+    def handle_save(self, config_data: dict[str, str]) -> None:
         """Processes the Save event from the form view.
 
         Args:

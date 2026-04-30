@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+
 @dataclass
 class LogEntryModel:
     """Represents a single log event.

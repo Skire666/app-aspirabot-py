@@ -10,7 +10,6 @@ Example:
 
 import logging
 import threading
-from typing import Optional
 
 from models.provider_model import ProviderModel
 from models.step_scrapping_model import StepScrappingModel
@@ -51,11 +50,11 @@ class WorkflowBuilderPresenter:
         self._workflow_service: WorkflowService = workflow_service
         self._logger = logging.getLogger(__name__)
 
-        self._provider_id_file: Optional[str] = None
+        self._provider_id_file: str | None = None
         self._steps: list[StepScrappingModel] = []
-        self._run_thread: Optional[threading.Thread] = None
+        self._run_thread: threading.Thread | None = None
         self._cancel_event = threading.Event()
-        self._edit_index: Optional[int] = None
+        self._edit_index: int | None = None
         self._is_new_provider: bool = False
 
         self._bind_view_events()

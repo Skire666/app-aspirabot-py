@@ -1,7 +1,6 @@
 """Model describing the result of a provider validation run."""
 
 from dataclasses import dataclass, field
-from typing import List
 
 from models.provider_validation_issue_model import ProviderValidationIssue
 
@@ -17,4 +16,4 @@ class ProviderValidationReport:
     total_files: int
     valid_files: int
     invalid_files: int
-    issues: List[ProviderValidationIssue] = field(default_factory=_default_issues)
+    issues: list[ProviderValidationIssue] = field(default_factory=_default_issues)

@@ -11,7 +11,8 @@ Example:
     []
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 

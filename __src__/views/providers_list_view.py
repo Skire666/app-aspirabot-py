@@ -1,8 +1,9 @@
 """Tkinter view for managing providers."""
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from views.components.data_grid import DataGrid
 
@@ -18,14 +19,14 @@ class ProvidersListView(ttk.Frame):
         """
         super().__init__(parent)
 
-        self._on_create_provider: Optional[Callable[[], None]] = None
-        self._on_open_folder: Optional[Callable[[], None]] = None
-        self._on_refresh: Optional[Callable[[], None]] = None
-        self._on_sort: Optional[Callable[[str, bool], None]] = None
-        self._on_edit: Optional[Callable[[str], None]] = None
-        self._on_launch: Optional[Callable[[str], None]] = None
-        self._on_delete: Optional[Callable[[str], None]] = None
-        self._on_validate: Optional[Callable[[], None]] = None
+        self._on_create_provider: Callable[[], None] | None = None
+        self._on_open_folder: Callable[[], None] | None = None
+        self._on_refresh: Callable[[], None] | None = None
+        self._on_sort: Callable[[str, bool], None] | None = None
+        self._on_edit: Callable[[str], None] | None = None
+        self._on_launch: Callable[[str], None] | None = None
+        self._on_delete: Callable[[str], None] | None = None
+        self._on_validate: Callable[[], None] | None = None
 
         self._create_widgets()
 
@@ -153,7 +154,7 @@ class ProvidersListView(ttk.Frame):
 
         self._btn_validate.config(state=tk.NORMAL)
 
-    def render_providers(self, providers_data: List[Dict[str, Any]]) -> None:
+    def render_providers(self, providers_data: list[dict[str, Any]]) -> None:
         """Clears existing UI providers and renders the new list.
 
         Args:
@@ -185,7 +186,7 @@ class ProvidersListView(ttk.Frame):
         """
         messagebox.showerror("Erreur", message)
 
-    def show_validation_report(self, report_data: Dict[str, Any]) -> None:
+    def show_validation_report(self, report_data: dict[str, Any]) -> None:
         """Displays a validation summary to the user.
 
         Args:

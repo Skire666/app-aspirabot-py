@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List
 
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
@@ -22,7 +21,7 @@ class ProviderService:
         self._repository = repository
         self._logger = logging.getLogger(__name__)
 
-    def list_providers(self) -> List[ProviderModel]:
+    def list_providers(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs.
 
         Returns:
@@ -92,7 +91,7 @@ class ProviderService:
         self._repository.ensure_broken_folder()
 
         valid_files = 0
-        issues: List[ProviderValidationIssue] = []
+        issues: list[ProviderValidationIssue] = []
 
         self._logger.info(
             "Démarrage de la validation des fournisseurs pour %s fichier(s).", len(provider_files)
@@ -140,7 +139,7 @@ class ProviderService:
         )
         return report
 
-    def _collect_validation_reasons(self, file_path: Path) -> List[str]:
+    def _collect_validation_reasons(self, file_path: Path) -> list[str]:
         """Collects validation issues for a provider file.
 
         Args:
@@ -149,7 +148,7 @@ class ProviderService:
         Returns:
             A list of validation reasons. An empty list means the file is valid.
         """
-        reasons: List[str] = []
+        reasons: list[str] = []
 
         try:
             if file_path.stat().st_size == 0:

@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import bisect
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class DataGrid(ttk.Frame):
@@ -18,9 +19,9 @@ class DataGrid(ttk.Frame):
     def __init__(
         self,
         parent: tk.Widget,
-        columns: List[Dict[str, Any]],
-        on_sort: Optional[Callable[[str, bool], None]] = None,
-        on_action: Optional[Callable[[str, Any], None]] = None,
+        columns: list[dict[str, Any]],
+        on_sort: Callable[[str, bool], None] | None = None,
+        on_action: Callable[[str, Any], None] | None = None,
     ) -> None:
         """Initializes the data grid.
 
@@ -38,7 +39,7 @@ class DataGrid(ttk.Frame):
 
         self._row_height = 36
         self._header_height = 36
-        self._data: List[Dict[str, Any]] = []
+        self._data: list[dict[str, Any]] = []
 
         self._bg_header = "#d9d9d9"
         self._bg_even = "#f7f7f7"
@@ -47,25 +48,25 @@ class DataGrid(ttk.Frame):
         self._grid_line = "#d0d0d0"
         self._text_color = "#222222"
 
-        self._hover_row: Optional[int] = None
-        self._button_hover_row: Optional[int] = None
-        self._sorted_column: Optional[str] = None
+        self._hover_row: int | None = None
+        self._button_hover_row: int | None = None
+        self._sorted_column: str | None = None
         self._sort_ascending = True
-        self._redraw_job: Optional[str] = None
+        self._redraw_job: str | None = None
 
-        self._column_widths: List[int] = [max(40, int(col.get("width", 120))) for col in self.columns]
-        self._column_offsets: List[int] = self._build_offsets(self._column_widths)
+        self._column_widths: list[int] = [max(40, int(col.get("width", 120))) for col in self.columns]
+        self._column_offsets: list[int] = self._build_offsets(self._column_widths)
         self._total_width = self._column_offsets[-1] if self._column_offsets else 0
 
-        self._button_pool: Dict[str, List[ttk.Button]] = {}
-        self._active_buttons: List[Tuple[str, ttk.Button, int]] = []
+        self._button_pool: dict[str, list[ttk.Button]] = {}
+        self._active_buttons: list[tuple[str, ttk.Button, int]] = []
 
         self._create_layout()
         self._update_scroll_regions()
         self._schedule_redraw()
 
     @staticmethod
-    def _build_offsets(widths: List[int]) -> List[int]:
+    def _build_offsets(widths: list[int]) -> list[int]:
         """Builds cumulative x offsets from column widths."""
         offsets = [0]
         for width in widths:
@@ -265,7 +266,7 @@ class DataGrid(ttk.Frame):
         if row_index < 0 or row_index >= len(self._data):
             row_index = -1
 
-        new_hover: Optional[int] = None if row_index < 0 else row_index
+        new_hover: int | None = None if row_index < 0 else row_index
         self._set_hover_row_state(new_hover)
 
     def _on_mouse_leave(self, _event: tk.Event) -> None:
@@ -300,7 +301,7 @@ class DataGrid(ttk.Frame):
         local_y: int = pointer_y - self.body_canvas.winfo_rooty()
 
         if local_x < 0 or local_y < 0 or local_x >= self.body_canvas.winfo_width() or local_y >= self.body_canvas.winfo_height():
-            new_hover: Optional[int] = None
+            new_hover: int | None = None
         else:
             canvas_y: float = float(self.body_canvas.canvasy(local_y))  # type: ignore[assignment]
             row_index = int(canvas_y // self._row_height)
@@ -308,7 +309,7 @@ class DataGrid(ttk.Frame):
 
         self._set_hover_row_state(new_hover)
 
-    def _set_hover_row_state(self, new_hover: Optional[int]) -> None:
+    def _set_hover_row_state(self, new_hover: int | None) -> None:
         """Updates hover state without forcing a full table redraw."""
         if new_hover == self._hover_row:
             return
@@ -320,7 +321,7 @@ class DataGrid(ttk.Frame):
         self._refresh_row_background(old_hover)
         self._refresh_row_background(new_hover)
 
-    def _refresh_row_background(self, row_index: Optional[int]) -> None:
+    def _refresh_row_background(self, row_index: int | None) -> None:
         """Refreshes the background color of a visible row."""
         if row_index is None:
             return
@@ -332,7 +333,7 @@ class DataGrid(ttk.Frame):
         row_bg = self._bg_hover if self._hover_row == row_index else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
         self.body_canvas.itemconfigure(f"row-bg-{row_index}", fill=row_bg)
 
-    def _column_index_from_x(self, x_coord: float) -> Optional[int]:
+    def _column_index_from_x(self, x_coord: float) -> int | None:
         """Returns the column index at a given x coordinate."""
         if not self._column_offsets or x_coord < 0 or x_coord >= self._total_width:
             return None
@@ -341,7 +342,7 @@ class DataGrid(ttk.Frame):
             return None
         return index
 
-    def _visible_column_range(self) -> Tuple[int, int]:
+    def _visible_column_range(self) -> tuple[int, int]:
         """Computes visible [start, end) column indexes."""
         if not self.columns:
             return 0, 0
@@ -353,7 +354,7 @@ class DataGrid(ttk.Frame):
         end = max(start + 1, bisect.bisect_left(self._column_offsets, x1))  # type: ignore[arg-type]
         return start, min(end, len(self.columns))
 
-    def _visible_row_range(self) -> Tuple[int, int]:
+    def _visible_row_range(self) -> tuple[int, int]:
         """Computes visible [start, end) row indexes."""
         if not self._data:
             return 0, 0
@@ -513,7 +514,7 @@ class DataGrid(ttk.Frame):
         if self.on_action:
             self.on_action(action_id, row_id)
 
-    def render_data(self, data: List[Dict[str, Any]]) -> None:
+    def render_data(self, data: list[dict[str, Any]]) -> None:
         """Renders a new dataset.
 
         Args:

@@ -5,7 +5,7 @@ fournisseurs, conformément à l'architecture propre.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol
 
 from models.provider_model import ProviderModel
 
@@ -21,15 +21,15 @@ class ProviderRepositoryInterface(Protocol):
         """Récupère un fournisseur par son identifiant."""
         ...
 
-    def list_all_providers(self) -> List[ProviderModel]:
+    def list_all_providers(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs disponibles."""
         ...
 
-    def list_provider_files(self) -> List[Path]:
+    def list_provider_files(self) -> list[Path]:
         """Liste tous les fichiers présents dans le dossier des fournisseurs."""
         ...
 
-    def read_provider_content(self, file_path: Path) -> Dict[str, Any]:
+    def read_provider_content(self, file_path: Path) -> dict[str, Any]:
         """Lit et retourne le contenu JSON brut d'un fichier fournisseur."""
         ...
 

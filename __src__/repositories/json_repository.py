@@ -12,10 +12,10 @@ Exemples d'utilisation:
 """
 
 import json
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 s_logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class JsonFileRepository:
         all_data (Dict[str, Any]): Les données JSON actuellement chargées en mémoire.
     """
 
-    def __init__(self, file_path: Path, default_data: Dict[str, Any]) -> None:
+    def __init__(self, file_path: Path, default_data: dict[str, Any]) -> None:
         """Initialise le dépôt de fichier JSON.
 
         Args:
@@ -48,8 +48,8 @@ class JsonFileRepository:
             >>> repo = JsonFileRepository("config.json", {"setting1": True})
         """
         self.file_path: Path = file_path
-        self.default_data: Dict[str, Any] = default_data # jamais none, doit être un dict
-        self.all_data: Dict[str, Any] = {}
+        self.default_data: dict[str, Any] = default_data # jamais none, doit être un dict
+        self.all_data: dict[str, Any] = {}
         self.load_from_file()
 
     def load_from_file(self) -> None:
@@ -68,7 +68,7 @@ class JsonFileRepository:
             self.save_to_file()
         else:
             try:
-                with open(self.file_path, "r", encoding="utf-8") as f:
+                with open(self.file_path, encoding="utf-8") as f:
                     self.all_data = json.load(f)
                 s_logger.info(f"Données chargées depuis '{self.file_path}'.")
             except json.JSONDecodeError as e:
@@ -88,7 +88,7 @@ class JsonFileRepository:
         """
         try:
             s_logger.debug(f"Sauvegarde des données dans '{self.file_path}'...")
-            
+
             dir_name = os.path.dirname(self.file_path)
             if dir_name:
                 os.makedirs(dir_name, exist_ok=True)

@@ -1,9 +1,9 @@
 """Central Presenter module linking Model log items to the View."""
 
-from views.log_view import LogView
 from models.log_entry_model import LogEntryModel
 from repositories.log_repository import LogRepository
 from services.logging_service import LoggingService
+from views.log_view import LogView
 
 
 class LogPresenter:

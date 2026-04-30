@@ -12,8 +12,9 @@ Example:
 """
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
-from typing import Any, Callable, Optional
+from typing import Any
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 
@@ -127,16 +128,16 @@ class StepInlineFormPanel(ttk.LabelFrame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent, text="Brique logique")
-        self.on_confirm: Optional[Callable[[StepScrappingModel], None]] = None
-        self.on_cancel: Optional[Callable[[], None]] = None
-        self.on_type_changed: Optional[Callable[[str], None]] = None
+        self.on_confirm: Callable[[StepScrappingModel], None] | None = None
+        self.on_cancel: Callable[[], None] | None = None
+        self.on_type_changed: Callable[[str], None] | None = None
         self._type_var = tk.StringVar()
         self._form_widgets: dict[str, Any] = {}
         # Step list for JUMP_TO_STEP target combobox; set via set_available_steps().
         self._available_steps: list[StepScrappingModel] = []
         self._jump_target_displays: list[str] = []
         # Container frame for the COUNT_ELEMENT dynamic value area (rebuilt on operator change).
-        self._count_value_area_frame: Optional[ttk.Frame] = None
+        self._count_value_area_frame: ttk.Frame | None = None
 
         # Build all structural regions.
         self._create_widgets()
@@ -202,7 +203,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """
         self._available_steps = list(steps)
 
-    def load(self, step: Optional[StepScrappingModel] = None) -> None:
+    def load(self, step: StepScrappingModel | None = None) -> None:
         """Prepares the form for a new step or pre-fills it from an existing one.
 
         Args:
@@ -955,7 +956,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """
         validators = {
             StepType.OPEN_URL: self._validate_open_url_form,
-            StepType.REFRESH_PAGE: lambda: [],
+            StepType.REFRESH_PAGE: list,
             StepType.SLEEP: self._validate_sleep_form,
             StepType.RANDOM_PAUSE: self._validate_random_pause_form,
             StepType.DOWNLOAD_IMAGE: self._validate_download_image_form,
@@ -963,11 +964,11 @@ class StepInlineFormPanel(ttk.LabelFrame):
             StepType.WAIT_ELEMENT: self._validate_wait_element_form,
             StepType.COUNT_ELEMENT: self._validate_count_element_form,
             StepType.CLICK_ELEMENT: self._validate_click_element_form,
-            StepType.SCROLL_DOWN: lambda: [],
+            StepType.SCROLL_DOWN: list,
             StepType.EXTRACT_TEXT: self._validate_extract_text_form,
             StepType.JUMP_TO_STEP: self._validate_jump_to_step_form,
             StepType.CLOSE_TABS: self._validate_close_tabs_form,
-            StepType.END_PROCESS: lambda: [],
+            StepType.END_PROCESS: list,
         }
         validator = validators.get(step_type)
         return validator() if validator else []
