@@ -65,16 +65,26 @@ output-format = "full"
 # List of rule families to enable.
 # Each letter corresponds to a plugin built into Ruff:
 select = [
-    "E",    # pycodestyle — PEP 8 compliance (indentation, spaces, etc.)
+    "B",    # flake8-bugbear — detects common bugs and bad practices
+    "D",    # pydocstyle — docstring presence and format
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
     "F",    # pyflakes — logical errors (unused imports, undefined names…)
     "I",    # isort — import ordering and grouping
+    "UP",   # Warn if certain things can changed due to newer Python versions
     "N",    # pep8-naming — naming conventions (snake_case, PascalCase…)
-    "D",    # pydocstyle — docstring presence and format
+    "C4",   # Catch incorrect use of comprehensions, dict, list, etc
     "ANN",  # flake8-annotations — ensures type hints are present everywhere
-    "B",    # flake8-bugbear — detects common bugs and bad practices
+    "ERA",  # dead code
     "C90",  # mccabe — cyclomatic complexity (flags overly complex functions)
     "SIM",  # flake8-simplify — suggests code simplifications
     "RUF",  # Ruff-specific rules — modern Python best practices
+    "RET",  # Good return practices
+    "PIE",  # useless patterns
+    "PLR",  # do refactor
+    "TRY",  # exceptions
+    "BLE",  # exceptions larges
+    "PTH",  # Use pathlib instead of os.path
 ]
 
 # Individual rules to disable despite the families enabled above.
@@ -90,13 +100,20 @@ ignore = [
 # Alert if cyclomatic complexity exceeds this threshold.
 # 10 is the widely accepted standard (McCabe's own recommendation).
 # 1-5: simple | 6-10: acceptable | 11-15: refactor | 15+: high bug risk
-max-complexity = 10
+max-complexity = 9
 
 [tool.ruff.lint.pydocstyle]
 
 # Enforce Google style for docstrings (Args:, Returns:, Raises:…).
 # Other possible values: "numpy" or "pep257".
 convention = "google"
+
+[tool.ruff.lint.pylint]
+
+# for PLR -> refactoring (recommanded : 6 / 12 / 50)
+max-args = 15
+max-branches = 15
+max-statements = 60
 
 [tool.ruff.lint.per-file-ignores]
 

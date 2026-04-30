@@ -77,6 +77,7 @@ class WorkflowService:
             StepType.DOWNLOAD_IMAGE: self._validate_download_image,
             StepType.WAIT_IMAGE_SIZE: self._validate_wait_image_size,
             StepType.WAIT_ELEMENT: self._validate_wait_element,
+            StepType.COUNT_ELEMENT: self._validate_count_element,
             StepType.CLICK_ELEMENT: self._validate_click_element,
             StepType.SCROLL_DOWN: lambda p, i: [],
             StepType.EXTRACT_TEXT: self._validate_extract_text,
@@ -226,6 +227,46 @@ class WorkflowService:
             errors.append("WAIT_ELEMENT : timeout_duration doit être >= 0.")
         if timeout_duration > 0 and timeout_unit not in allowed_units:
             errors.append(f"WAIT_ELEMENT : timeout_unit invalide — {timeout_unit!r}.")
+        return errors
+
+    def _validate_count_element(self, params: dict[str, Any], step_index: int) -> list[str]:
+        """Validates COUNT_ELEMENT params including operator, condition, and range.
+
+        Args:
+            params: Step parameter dict.
+            step_index: Zero-based step index (unused).
+
+        Returns:
+            List of error messages.
+        """
+        allowed_units = {"hour", "minute", "second", "millisecond"}
+        allowed_operators = {
+            "between", "not_between", "equal", "not_equal",
+            "greater_than", "less_than", "greater_or_equal", "less_or_equal",
+        }
+        allowed_success_if = {"success", "failure"}
+        errors: list[str] = []
+
+        # Selector is mandatory.
+        if not params.get("selector", "").strip():
+            errors.append("COUNT_ELEMENT : le sélecteur CSS est obligatoire.")
+
+        # Wait duration and unit constraints.
+        if params.get("wait_duration", 0) < 0:
+            errors.append("COUNT_ELEMENT : wait_duration doit être >= 0.")
+        if params.get("wait_duration", 0) > 0 and params.get("wait_unit") not in allowed_units:
+            errors.append(f"COUNT_ELEMENT : wait_unit invalide — {params.get('wait_unit')!r}.")
+
+        # Enum checks for success_if and operator.
+        if params.get("success_if") not in allowed_success_if:
+            errors.append(f"COUNT_ELEMENT : success_if invalide — {params.get('success_if')!r}.")
+        if params.get("operator") not in allowed_operators:
+            errors.append(f"COUNT_ELEMENT : operator invalide — {params.get('operator')!r}.")
+
+        # Range operator: value_min must not exceed value_max.
+        op = params.get("operator")
+        if op in {"between", "not_between"} and params.get("value_min", 0) > params.get("value_max", 0):
+            errors.append("COUNT_ELEMENT : value_min doit être <= value_max.")
         return errors
 
     # ------------------------------------------------------------------

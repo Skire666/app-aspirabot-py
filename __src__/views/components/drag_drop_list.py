@@ -1,4 +1,5 @@
 """Generic drag-and-drop list widget for tkinter.
+
 Works with any item type (dataclass, dict, object…).
 
 MINIMAL USAGE
@@ -31,8 +32,9 @@ OPTIONAL CALLBACKS  (None = button hidden)
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -123,13 +125,13 @@ class DragDropList(tk.Frame, Generic[T]):
         pad: int = _DEFAULT_PAD_BETWEEN_ITEMS,
         gap_expand: int = _DEFAULT_GAP_EXPAND_WHEN_FLOATING,
         btn_size: int = _DEFAULT_SIZE_BTN,
-        theme: Optional[dict[str, str]] = None,
-        on_reorder: Optional[Callable[[list[T]], None]] = None,
-        on_move_up: Optional[Callable[[T, int], None]] = None,
-        on_move_down: Optional[Callable[[T, int], None]] = None,
-        on_duplicate: Optional[Callable[[T, int], T]] = None,
-        on_edit: Optional[Callable[[T, int], None]] = None,
-        on_delete: Optional[Callable[[T, int], bool]] = None,
+        theme: dict[str, str] | None = None,
+        on_reorder: Callable[[list[T]], None] | None = None,
+        on_move_up: Callable[[T, int], None] | None = None,
+        on_move_down: Callable[[T, int], None] | None = None,
+        on_duplicate: Callable[[T, int], T] | None = None,
+        on_edit: Callable[[T, int], None] | None = None,
+        on_delete: Callable[[T, int], bool] | None = None,
     ) -> None:
         self._theme: dict[str, str] = {**DEFAULT_THEME, **(theme or {})}
         super().__init__(parent, bg=self._theme["bg"])
@@ -150,17 +152,17 @@ class DragDropList(tk.Frame, Generic[T]):
             "edit": on_edit,
             "delete": on_delete,
         }
-        self._on_reorder: Optional[Callable[[list[T]], None]] = on_reorder
+        self._on_reorder: Callable[[list[T]], None] | None = on_reorder
 
         # Only buttons whose callback is not None are shown
         self._visible_btns: list[_BtnDef] = [b for b in _BUTTONS if self._cbs.get(b.key) is not None]
 
         # Internal drag state
-        self._drag_idx: Optional[int] = None
+        self._drag_idx: int | None = None
         self._drag_offset: int = 0
-        self._insert_pos: Optional[int] = None
-        self._expand_gap: Optional[int] = None  # index of the gap currently expanded
-        self._hovered_btn: Optional[tuple[int, str]] = None
+        self._insert_pos: int | None = None
+        self._expand_gap: int | None = None  # index of the gap currently expanded
+        self._hovered_btn: tuple[int, str] | None = None
 
         self._build_canvas()
 
@@ -229,13 +231,13 @@ class DragDropList(tk.Frame, Generic[T]):
         n = len(self._visible_btns)
         return n * (self.BTN_SIZE + 4) + 8 if n else 0
 
-    def _hit_btn(self, mx: int, my: int, idx: int) -> Optional[str]:
+    def _hit_btn(self, mx: int, my: int, idx: int) -> str | None:
         for key, (x1, y1, x2, y2) in self._btn_rects(idx).items():
             if x1 <= mx <= x2 and y1 <= my <= y2:
                 return key
         return None
 
-    def _idx_at(self, y: int) -> Optional[int]:
+    def _idx_at(self, y: int) -> int | None:
         idx = (y - self.PAD) // (self.ITEM_H + self.PAD)
         return idx if 0 <= idx < len(self.items) else None
 
@@ -315,7 +317,7 @@ class DragDropList(tk.Frame, Generic[T]):
             width=_DEFAULT_HEIGHT_LINE_INSERT,
         )
 
-    def redraw(self, floating_idx: Optional[int] = None, floating_y: Optional[int] = None) -> None:
+    def redraw(self, floating_idx: int | None = None, floating_y: int | None = None) -> None:
         """Redraw the entire canvas. May be called externally."""
         self.canvas.delete("all")
         for i in range(len(self.items)):

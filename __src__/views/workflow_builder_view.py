@@ -15,9 +15,8 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from datetime import datetime
 from tkinter import messagebox, ttk
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 from views.components.drag_drop_list import DragDropList
@@ -27,9 +26,112 @@ from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowSte
 s_logger = logging.getLogger(__name__)
 
 # Layout constants
-_HEIGHT_FRAME_LOGICAL_BLOCK = 215
+_HEIGHT_FRAME_LOGICAL_BLOCK = 315  # TODO PCO: make this dynamic based on the actual form content, or at least add some padding for future fields
 _WIDTH_FRAME_LOGICAL_BLOCK = 320
 _DND_ITEM_H = 50
+
+
+def _fmt_open_url(p: dict[str, Any]) -> str:
+    """Formats an OPEN_URL step label."""
+    label = f"Open URL — {p.get('url', '')}"
+    td = p.get("timeout_duration", 0)
+    if td:
+        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
+    return label
+
+
+def _fmt_wait_image_size(p: dict[str, Any]) -> str:
+    """Formats a WAIT_IMAGE_SIZE step label."""
+    label = (
+        f"Attendre taille image — "
+        f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
+        f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
+    )
+    td = p.get("timeout_duration", 0)
+    if td:
+        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
+    return label
+
+
+def _fmt_wait_element(p: dict[str, Any]) -> str:
+    """Formats a WAIT_ELEMENT step label."""
+    label = f"Attendre élément — {p.get('selector', '')}"
+    td = p.get("timeout_duration", 0)
+    if td:
+        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
+    return label
+
+
+def _fmt_count_element(p: dict[str, Any]) -> str:
+    """Formats a COUNT_ELEMENT step label."""
+    op_labels = {
+        "between": "compris entre",
+        "not_between": "non compris entre",
+        "equal": "=",
+        "not_equal": "≠",
+        "greater_than": ">",
+        "less_than": "<",
+        "greater_or_equal": "≥",
+        "less_or_equal": "≤",
+    }
+    op = op_labels.get(p.get("operator", "equal"), "?")
+    selector = p.get("selector", "")
+    if p.get("operator") in {"between", "not_between"}:
+        val_str = f"{p.get('value_min', 0)} et {p.get('value_max', 0)}"
+    else:
+        val_str = str(p.get("value", 0))
+    return f"Compter — {selector} [{op} {val_str}]"
+
+
+def _fmt_extract_text(p: dict[str, Any]) -> str:
+    """Formats an EXTRACT_TEXT step label."""
+    selector = p.get("selector", "")
+    mode = p.get("extract_mode", "innerText")
+    target = p.get("target", "first")
+    return f"Extraire texte — {selector} [{mode} / {target}]"
+
+
+def _fmt_jump_to_step(p: dict[str, Any]) -> str:
+    """Formats a JUMP_TO_STEP step label."""
+    target = p.get("target_index", 0)
+    cond = p.get("condition", "success")
+    return f"Sauter à l'étape {target + 1} — si {cond}"
+
+
+def _fmt_close_tabs(p: dict[str, Any]) -> str:
+    """Formats a CLOSE_TABS step label."""
+    url_filter = p.get("url_filter", "")
+    max_t = p.get("max_tabs", 0)
+    filter_str = f" (filtre : {url_filter})" if url_filter else ""
+    return f"Fermer onglets — max {max_t}{filter_str}"
+
+
+def _fmt_end_process(p: dict[str, Any]) -> str:
+    """Formats an END_PROCESS step label."""
+    return f"Fin du processus — attendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
+
+
+# Dispatch table mapping each StepType to its label formatter.
+_STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any]], str]] = {
+    StepType.OPEN_URL: _fmt_open_url,
+    StepType.REFRESH_PAGE: lambda p: f"Rafraîchir la page{' (vider cache)' if p.get('clear_cache') else ''}",
+    StepType.SLEEP: lambda p: f"Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}",
+    StepType.RANDOM_PAUSE: lambda p: f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}",
+    StepType.DOWNLOAD_IMAGE: lambda p: (
+        f"Télécharger image — {p.get('mode', 'largest')} — "
+        f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
+        f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
+    ),
+    StepType.WAIT_IMAGE_SIZE: _fmt_wait_image_size,
+    StepType.WAIT_ELEMENT: _fmt_wait_element,
+    StepType.COUNT_ELEMENT: _fmt_count_element,
+    StepType.CLICK_ELEMENT: lambda p: f"Cliquer — {p.get('selector', '')}",
+    StepType.SCROLL_DOWN: lambda p: f"Défiler — {p.get('pixels', 0)} px",
+    StepType.EXTRACT_TEXT: _fmt_extract_text,
+    StepType.JUMP_TO_STEP: _fmt_jump_to_step,
+    StepType.CLOSE_TABS: _fmt_close_tabs,
+    StepType.END_PROCESS: _fmt_end_process,
+}
 
 
 def _format_step_label(step: StepScrappingModel) -> str:
@@ -41,56 +143,8 @@ def _format_step_label(step: StepScrappingModel) -> str:
     Returns:
         A short string combining the step type and its key parameter.
     """
-    p = step.params
-    t = step.step_type
-    if t == StepType.OPEN_URL:
-        label = f"Open URL — {p.get('url', '')}"
-        td = p.get("timeout_duration", 0)
-        if td:
-            label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-        return label
-    if t == StepType.REFRESH_PAGE:
-        suffix = " (vider cache)" if p.get("clear_cache") else ""
-        return f"Rafraîchir la page{suffix}"
-    if t == StepType.SLEEP:
-        return f"Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}"
-    if t == StepType.RANDOM_PAUSE:
-        return f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
-    if t == StepType.DOWNLOAD_IMAGE:
-        return f"Télécharger image — {p.get('mode', 'largest')} — {p.get('width_min', 0)}×{p.get('height_min', 0)} -> {p.get('width_max', 0)}×{p.get('height_max', 0)}"
-    if t == StepType.WAIT_IMAGE_SIZE:
-        label = f"Attendre taille image — {p.get('width_min', 0)}×{p.get('height_min', 0)} -> {p.get('width_max', 0)}×{p.get('height_max', 0)}"
-        td = p.get("timeout_duration", 0)
-        if td:
-            label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-        return label
-    if t == StepType.WAIT_ELEMENT:
-        label = f"Attendre élément — {p.get('selector', '')}"
-        td = p.get("timeout_duration", 0)
-        if td:
-            label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-        return label
-    if t == StepType.CLICK_ELEMENT:
-        return f"Cliquer — {p.get('selector', '')}"
-    if t == StepType.SCROLL_DOWN:
-        return f"Défiler — {p.get('pixels', 0)} px"
-    if t == StepType.EXTRACT_TEXT:
-        mode = p.get("extract_mode", "innerText")
-        target = p.get("target", "first")
-        selector = p.get("selector", "")
-        return f"Extraire texte — {selector} [{mode} / {target}]"
-    if t == StepType.JUMP_TO_STEP:
-        cond = p.get("condition", "success")
-        target = p.get("target_index", 0)
-        return f"Sauter à l'étape {target + 1} — si {cond}"
-    if t == StepType.CLOSE_TABS:
-        f = p.get("url_filter", "")
-        max_t = p.get("max_tabs", 0)
-        filter_str = f" (filtre : {f})" if f else ""
-        return f"Fermer onglets — max {max_t}{filter_str}"
-    if t == StepType.END_PROCESS:
-        return f"Fin du processus — attendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
-    return t.value
+    fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
+    return fmt(step.params) if fmt else step.step_type.value
 
 
 class WorkflowBuilderView(ttk.Frame):
@@ -346,7 +400,6 @@ class WorkflowBuilderView(ttk.Frame):
         h: int,
         state: str,
     ) -> None:
-        print(f"Rendering step {idx} at ({x}, {y}, {w}, {h}) with state '{state}' at {datetime.now()}")
         if state == "ghost":
             return
 

@@ -76,6 +76,20 @@ class WorkflowStepTextHint:
             "• Sélecteur CSS : ex. .results-loaded, #content\n"
             "  L'exécution est bloquée jusqu'à ce que l'élément soit visible."
         ),
+        "Compter les éléments": (
+            "Compte les éléments du DOM correspondant à un sélecteur CSS,\n"
+            "puis évalue une condition sur ce nombre. L'exécution est\n"
+            "bloquée jusqu'à la fin de l'évaluation.\n\n"
+            "• Sélecteur CSS : ex. .card, #results li, div.item\n"
+            "• Pré-attente : délai appliqué avant le comptage (0 = immédiat)\n\n"
+            "• Condition : lecture naturelle\n"
+            "  ex. 'C'est un succès si COUNT est supérieur à 3'\n\n"
+            "• Opérateurs de plage :\n"
+            "  - compris entre (inclus) : value_min ≤ COUNT ≤ value_max\n"
+            "  - non compris entre : COUNT hors de [value_min, value_max]\n\n"
+            "Le nombre brut d'éléments et le résultat final\n"
+            "sont tous deux consignés dans le journal d'exécution."
+        ),
         "Défiler vers le bas": (
             "Fait défiler la page vers le bas d'un nombre de pixels donné.\n"
             "Utile pour déclencher le chargement en infinite scroll.\n\n"

@@ -38,6 +38,40 @@ _UNIT_TO_MS: dict[str, int] = {
 }
 
 
+def _evaluate_count_condition(
+    count: int, operator: str, value: int, value_min: int, value_max: int
+) -> bool:
+    """Evaluates a COUNT_ELEMENT operator expression against the actual element count.
+
+    Args:
+        count: Number of DOM elements found by the locator.
+        operator: Comparison operator string (e.g. ``'equal'``, ``'between'``).
+        value: Expected count for single-value operators.
+        value_min: Inclusive lower bound for range operators.
+        value_max: Inclusive upper bound for range operators.
+
+    Returns:
+        True when the condition is satisfied, False otherwise.
+
+    Raises:
+        None.
+
+    Example:
+        >>> _evaluate_count_condition(3, "equal", 3, 0, 0)
+        True
+    """
+    match operator:
+        case "between":          return value_min <= count <= value_max
+        case "not_between":      return not (value_min <= count <= value_max)
+        case "equal":            return count == value
+        case "not_equal":        return count != value
+        case "greater_than":     return count > value
+        case "less_than":        return count < value
+        case "greater_or_equal": return count >= value
+        case "less_or_equal":    return count <= value
+        case _:                  return False
+
+
 def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
     """Returns the configured timeout in milliseconds, or None when disabled.
 
@@ -311,6 +345,7 @@ class ScrappingService:
             StepType.DOWNLOAD_IMAGE: self._handle_download_image,
             StepType.WAIT_IMAGE_SIZE: self._handle_wait_image_size,
             StepType.WAIT_ELEMENT: self._handle_wait_element,
+            StepType.COUNT_ELEMENT: self._handle_count_element,
             StepType.CLICK_ELEMENT: self._handle_click_element,
             StepType.SCROLL_DOWN: self._handle_scroll_down,
             StepType.EXTRACT_TEXT: self._handle_extract_text,
@@ -548,6 +583,54 @@ class ScrappingService:
             page.wait_for_selector(selector, timeout=timeout_ms)
         else:
             page.wait_for_selector(selector)
+
+    def _handle_count_element(self, page: Page, params: dict[str, Any]) -> None:
+        """Counts DOM elements matching a selector and evaluates a condition.
+
+        Optionally waits a pre-configured delay before counting. Raises
+        ValueError when the step outcome resolves to failure.
+
+        Args:
+            page: Active Playwright page.
+            params: Must contain ``selector`` (str), ``operator`` (str),
+                ``success_if`` (str), ``value`` (int), ``value_min`` (int),
+                ``value_max`` (int). Optional ``wait_duration`` and ``wait_unit``.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: When the evaluated condition marks the step as a failure.
+        """
+        wait_duration: float = float(params.get("wait_duration", 0))
+        wait_unit: str = params.get("wait_unit", "second")
+        selector: str = params.get("selector", "")
+        operator: str = params.get("operator", "equal")
+        success_if: str = params.get("success_if", "success")
+        value: int = int(params.get("value", 0))
+        value_min: int = int(params.get("value_min", 0))
+        value_max: int = int(params.get("value_max", 0))
+
+        # Apply pre-wait when configured.
+        if wait_duration > 0:
+            time.sleep((wait_duration * _UNIT_TO_MS.get(wait_unit, 1_000)) / 1_000.0)
+
+        # Count matching elements and log the raw result.
+        count: int = page.locator(selector).count()
+        self._logger.info("COUNT_ELEMENT : %d élément(s) trouvé(s) pour '%s'", count, selector)
+
+        # Evaluate condition and resolve the step outcome.
+        condition_met = _evaluate_count_condition(count, operator, value, value_min, value_max)
+        step_success = condition_met if success_if == "success" else not condition_met
+        val_desc = f"{value_min}–{value_max}" if operator in {"between", "not_between"} else str(value)
+        self._logger.info(
+            "COUNT_ELEMENT : %s (condition: COUNT %s %s)",
+            "succès" if step_success else "échec", operator, val_desc,
+        )
+
+        # Raise on failure to mark the step as failed.
+        if not step_success:
+            raise ValueError(f"COUNT_ELEMENT : condition non satisfaite (COUNT={count}, {operator} {val_desc})")
 
     def _handle_scroll_down(self, page: Page, params: dict[str, Any]) -> None:
         """Scrolls the page down by the specified number of pixels.

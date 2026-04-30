@@ -27,6 +27,7 @@ class StepType(Enum):
     DOWNLOAD_IMAGE = "DOWNLOAD_IMAGE"
     WAIT_IMAGE_SIZE = "WAIT_IMAGE_SIZE"
     WAIT_ELEMENT = "WAIT_ELEMENT"
+    COUNT_ELEMENT = "COUNT_ELEMENT"
     CLICK_ELEMENT = "CLICK_ELEMENT"
     SCROLL_DOWN = "SCROLL_DOWN"
     EXTRACT_TEXT = "EXTRACT_TEXT"
@@ -65,6 +66,16 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "selector": "",
         "timeout_duration": 0,
         "timeout_unit": "second",
+    },
+    StepType.COUNT_ELEMENT.value: {
+        "selector": "",
+        "wait_duration": 0,
+        "wait_unit": "second",
+        "success_if": "success",
+        "operator": "equal",
+        "value_min": 0,
+        "value_max": 0,
+        "value": 0,
     },
     StepType.CLICK_ELEMENT.value: {"selector": "", "click_mode": "Normal"},
     StepType.SCROLL_DOWN.value: {"pixels": 1000},
