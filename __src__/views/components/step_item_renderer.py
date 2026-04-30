@@ -10,7 +10,6 @@ Example:
 
 from __future__ import annotations
 
-import datetime
 import tkinter as tk
 from collections.abc import Callable
 from typing import Any
@@ -169,6 +168,20 @@ class StepItemRenderer:
                 reference to the full view object.
         """
         self._get_selected_index = get_selected_index
+        # Cache repeated labels during redraw storms (e.g., resize).
+        self._label_cache: dict[tuple[StepType, tuple[tuple[str, str], ...]], str] = {}
+        # Pre-resolve palette dicts to avoid per-call allocations.
+        self._colors_normal: dict[str, str] = {
+            "bg": self._C_BG_NORMAL,
+            "border": self._C_BORDER_NORMAL,
+            "fg": self._C_FG_NORMAL,
+        }
+        self._colors_selected: dict[str, str] = {
+            "bg": self._C_BG_SEL,
+            "border": self._C_BORDER_SEL,
+            "fg": self._C_FG_SEL,
+        }
+        self._colors_floating: dict[str, str] = {"fg": self._C_FG_FLOAT}
 
     # ── Public helpers ────────────────────────────────────────────────────────
 
@@ -188,6 +201,29 @@ class StepItemRenderer:
         fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
         return fmt(step.params) if fmt else step.step_type.value
 
+    def _build_label_cache_key(self, step: StepScrappingModel) -> tuple[StepType, tuple[tuple[str, str], ...]]:
+        """Builds a stable cache key from a step's type and params snapshot.
+
+        Args:
+            step: The step model to describe.
+
+        Returns:
+            A tuple key that changes when any param string representation changes.
+        """
+        # Use insertion order to avoid a sort per draw; repr() makes values hashable.
+        params_key = tuple((k, repr(v)) for k, v in step.params.items())
+        return (step.step_type, params_key)
+
+    def _format_label_cached(self, step: StepScrappingModel) -> str:
+        """Returns a cached label to avoid recomputing during redraw bursts."""
+        key = self._build_label_cache_key(step)
+        label = self._label_cache.get(key)
+        if label is not None:
+            return label
+        label = self.format_label(step)
+        self._label_cache[key] = label
+        return label
+
     # ── Private drawing helpers ───────────────────────────────────────────────
 
     def _resolve_colors(self, state: str, is_selected: bool) -> dict[str, str]:
@@ -203,12 +239,12 @@ class StepItemRenderer:
         """
         # Floating items use DragDropList's drag background; only fg matters here.
         if state == "floating":
-            return {"fg": self._C_FG_FLOAT}
+            return self._colors_floating
 
         # Normal state: full card colors based on selection.
         if is_selected:
-            return {"bg": self._C_BG_SEL, "border": self._C_BORDER_SEL, "fg": self._C_FG_SEL}
-        return {"bg": self._C_BG_NORMAL, "border": self._C_BORDER_NORMAL, "fg": self._C_FG_NORMAL}
+            return self._colors_selected
+        return self._colors_normal
 
     def _draw_background(
         self,
@@ -263,7 +299,7 @@ class StepItemRenderer:
             colors: Resolved palette dict from _resolve_colors.
         """
         # Build "N.  <description>" using the formatter dispatch table.
-        label = f"{idx + 1}.  {self.format_label(item)}"
+        label = f"{idx + 1}.  {self._format_label_cached(item)}"
         canvas.create_text(
             x + 10,
             y + h // 2,
@@ -275,8 +311,6 @@ class StepItemRenderer:
         )
 
     # ── ItemRenderer protocol entry point ─────────────────────────────────────
-
-    g_last_call_time = None
 
     # NOTE PCO  est bien call, car '_draw_label' est notifié plus bas
     def __call__(
@@ -307,13 +341,6 @@ class StepItemRenderer:
         # Ghost items are placeholders; DragDropList draws them itself.
         if state == "ghost":
             return
-
-        if idx == 1:
-            new_time = datetime.datetime.now()
-            if self.g_last_call_time is not None:
-                delta = (new_time - self.g_last_call_time).total_seconds()
-                print(f"Time since last call: {delta:.3f} seconds")
-            self.g_last_call_time = new_time
 
         # Resolve palette then delegate to specialized drawing helpers.
         is_selected = idx == self._get_selected_index()

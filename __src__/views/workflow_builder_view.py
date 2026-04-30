@@ -30,6 +30,12 @@ s_logger = logging.getLogger(__name__)
 _HEIGHT_FRAME_LOGICAL_BLOCK = 315  # TODO PCO: make this dynamic based on the actual form content, or at least add some padding for future fields
 _WIDTH_FRAME_LOGICAL_BLOCK = 320
 _DND_ITEM_H = 50
+_DND_RESIZE_MIN_DELTA_PX = 8
+_DND_RESIZE_FINALIZE_MS = 250
+_DND_DRAG_REDRAW_MIN_INTERVAL_MS = 16
+_DND_DRAG_REDRAW_MIN_DELTA_PX = 3
+_DND_TRACE_REDRAWS = True
+_DND_TRACE_EVERY = 25
 
 
 class WorkflowBuilderView(ttk.Frame):
@@ -149,6 +155,12 @@ class WorkflowBuilderView(ttk.Frame):
             on_delete=self._on_dnd_delete,
             on_reorder=self._on_dnd_reorder,
             item_height=_DND_ITEM_H,
+            resize_min_delta_px=_DND_RESIZE_MIN_DELTA_PX,
+            resize_finalize_ms=_DND_RESIZE_FINALIZE_MS,
+            drag_redraw_min_interval_ms=_DND_DRAG_REDRAW_MIN_INTERVAL_MS,
+            drag_redraw_min_delta_px=_DND_DRAG_REDRAW_MIN_DELTA_PX,
+            trace_redraws=_DND_TRACE_REDRAWS,
+            trace_every=_DND_TRACE_EVERY,
         )
         self._scroll_win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
 
