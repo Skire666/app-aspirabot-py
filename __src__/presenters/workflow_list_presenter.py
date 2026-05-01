@@ -8,6 +8,10 @@ Example:
     >>> presenter.load("some-provider-guid")
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import logging
 import threading
 
@@ -15,8 +19,11 @@ from models.provider_model import ProviderModel
 from models.step_scrapping_model import StepScrappingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
+from views.workflow_list_view import WorkflowListView
 
-from __src__.views.workflow_list_view import WorkflowListView
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class WorkflowListPresenter:

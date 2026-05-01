@@ -10,12 +10,16 @@ Example:
     True
 """
 
-import uuid
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import cast
 
 from models.step_scrapping_model import StepScrappingModel
+from shared.random_util import generate_rng_string_x8
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -74,7 +78,7 @@ class ProviderModel:
 
         # Return a ready-to-use default provider.
         return cls(
-            id_file=str(uuid.uuid7().time),
+            id_file=generate_rng_string_x8(),
             provider_name="Nouv. Fournisseur",
             url="https://example.com",
             version="1.0.0",
@@ -148,11 +152,4 @@ class ProviderModel:
         if not normalized_value:
             return False
 
-        # Parse with stdlib UUID to validate structure.
-        try:
-            is_number = normalized_value.isnumeric()
-        except (AttributeError, ValueError, TypeError):
-            return False
-
-        # Ensure canonical textual form exactly matches the input.
-        return is_number
+        return normalized_value.isalnum()

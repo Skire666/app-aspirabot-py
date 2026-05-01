@@ -1,8 +1,8 @@
 {
-    "log_level": "DEBUG",
-    "folder_logs": "E:\\app-aspirabot-py\\tmp_logs",
-    "folder_providers": "E:\\app-aspirabot-py\\tmp_user_providers",
-    "folder_brokens": "E:\\app-aspirabot-py\\tmp_user_brokens",
-    "folder_output": "E:\\app-aspirabot-py\\tmp_user_output",
-    "folder_tmp_chromium": "E:\\app-aspirabot-py\\tmp_chromium_session"
+    "log_level_enum": "DEBUG",
+    "folder_logs": "tmp_app_logs",
+    "folder_providers": "data_providers",
+    "folder_scrapping": "data_scrapping",
+    "gui_booting_size": "1000x800",
+    "gui_booting_fullscreen": false
 }

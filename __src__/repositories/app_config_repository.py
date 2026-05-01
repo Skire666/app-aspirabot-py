@@ -37,16 +37,24 @@ Example:
     >>> repo.save_config(config)
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import json
 import logging
-import os
-from typing import Any
+from pathlib import Path
 
 from interfaces.config_repository_interface import ConfigRepositoryInterface
-from models.config_aspirabot_model import ConfigAspirabotModel
+from models.app_configuration_model import AppConfigurationModel
+from shared.path_util import make_all_folders_if_not_exists
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
-class JsonConfigRepository(ConfigRepositoryInterface):
+class AppConfigRepository(ConfigRepositoryInterface):
     """Repository for storing and retrieving configuration from a JSON file.
 
     This implementation uses JSON as the persistence format, providing human-readable
@@ -74,7 +82,18 @@ class JsonConfigRepository(ConfigRepositoryInterface):
         >>> repo.save_config(current_config)
     """
 
-    def __init__(self, file_path: str) -> None:
+    ## ---------------------------------------------------------------------------
+    ## Variables
+    ## ---------------------------------------------------------------------------
+
+    _full_pathfile: Path
+    _logger: logging.Logger
+
+    ## ---------------------------------------------------------------------------
+    ## Methods
+    ## ---------------------------------------------------------------------------
+
+    def __init__(self, file_path: Path | str) -> None:
         """Initialize the repository with a target JSON file path.
 
         Args:
@@ -90,7 +109,7 @@ class JsonConfigRepository(ConfigRepositoryInterface):
             >>> repo2 = JsonConfigRepository("./data/config.json")
         """
         # Store the file path for all subsequent I/O operations.
-        self._file_path = file_path
+        self._full_pathfile = Path(file_path)
         # Obtain a logger for this repository class.
         self._logger = logging.getLogger(__name__)
 
@@ -118,17 +137,76 @@ class JsonConfigRepository(ConfigRepositoryInterface):
             >>> # File is created with defaults if it didn't exist
         """
         # Check if the configuration file already exists.
-        if not os.path.exists(self._file_path):
+        if not Path(self._full_pathfile).exists():
             self._logger.info(
                 "Configuration file not found, creating default file: %s",
-                self._file_path,
+                self._full_pathfile,
             )
-            # Use the domain model as the authoritative source for default values.
-            default_data = ConfigAspirabotModel.get_default_data()
-            # Write the default configuration to disk.
+            default_data = AppConfigurationModel()
             self._write_json(default_data)
 
-    def _read_json(self) -> dict[str, Any]:
+    def read_configuration(self) -> AppConfigurationModel:
+        """Load configuration from JSON and map it to the domain model.
+
+        This method implements a safe loading strategy: it reads persisted data,
+        merges it with current default keys, and then instantiates the domain
+        model. This approach ensures that configuration files created with older
+        versions of the application automatically gain any new fields added in
+        newer versions.
+
+        Returns:
+            AppConfigurationModel: A fully populated configuration model instance.
+                All fields are guaranteed to have values (either persisted or default).
+
+        Raises:
+            TypeError: If the merged data cannot be used to instantiate the model
+                (e.g., missing required constructor parameters).
+
+        Example:
+            Loading and inspecting configuration:
+
+            >>> repo = JsonConfigRepository("config-aspirabot.json")
+            >>> config = repo.read_configuration()
+            >>> assert isinstance(config, AppConfigurationModel)
+            >>> print(config.window_title)
+            'Aspirabot'
+        """
+        self.ensure_file_exists()
+
+        return self._read_json()
+
+    def write_configuration(self, config: AppConfigurationModel) -> None:
+        """Persist a configuration model to the JSON file.
+
+        Converts the domain model to a dictionary and delegates serialization
+        to the file writing helper. This method is the primary interface for
+        persisting configuration changes.
+
+        Args:
+            config (AppConfigurationModel): The configuration model instance to
+                serialize and persist to disk.
+
+        Returns:
+            None
+
+        Raises:
+            None: All errors are handled internally by _write_json. Errors are
+                logged but do not raise exceptions.
+
+        Example:
+            Modifying and saving configuration:
+
+            >>> repo = JsonConfigRepository("config-aspirabot.json")
+            >>> current = repo.read_configuration()
+            >>> current.debug_mode = True
+            >>> repo.write_configuration(current)
+            >>> # Changes are now persisted to disk
+        """
+        # Extract dictionary representation from the model.
+        # Delegate serialization and file writing to the helper method.
+        self._write_json(config)
+
+    def _read_json(self) -> AppConfigurationModel:
         """Read and deserialize JSON content from the configuration file.
 
         Attempts to load JSON from the configured file path. If the file cannot
@@ -150,16 +228,16 @@ class JsonConfigRepository(ConfigRepositoryInterface):
         """
         # Attempt to load persisted data from disk.
         try:
-            with open(self._file_path, encoding="utf-8") as file:
+            with open(self._full_pathfile, encoding="utf-8") as file:
                 # Parse JSON with UTF-8 encoding to handle special characters.
-                return json.load(file)
+                return AppConfigurationModel(**json.load(file))
         except (OSError, json.JSONDecodeError) as error:
             # Log the error for debugging and monitoring.
-            self._logger.exception(f"Failed to read configuration file '{self._file_path}'", error)
+            self._logger.exception(f"Failed to read configuration file '{self._full_pathfile}'", error)
             # Return defaults as a safe fallback.
-            return ConfigAspirabotModel.get_default_data()
+            return AppConfigurationModel()
 
-    def _write_json(self, data: dict[str, Any]) -> None:
+    def _write_json(self, data: AppConfigurationModel) -> None:
         """Serialize and write configuration data to the JSON file.
 
         Converts a dictionary to formatted JSON and writes it to the configured
@@ -169,8 +247,8 @@ class JsonConfigRepository(ConfigRepositoryInterface):
         configured to preserve UTF-8 characters (non-ASCII characters are not escaped).
 
         Args:
-            data (Dict[str, Any]): A dictionary containing the configuration data
-                to serialize and persist.
+            data (AppConfigurationModel): The configuration model instance to
+                serialize and persist.
 
         Returns:
             None
@@ -185,89 +263,22 @@ class JsonConfigRepository(ConfigRepositoryInterface):
         """
         # Ensure the parent directory exists before attempting to write.
         try:
-            directory = os.path.dirname(os.path.abspath(self._file_path))
-            # Create directories with exist_ok=True for idempotent behavior.
-            os.makedirs(directory, exist_ok=True)
+            make_all_folders_if_not_exists(self._full_pathfile)
+
             # Open file in write mode with UTF-8 encoding.
-            with open(self._file_path, "w", encoding="utf-8") as file:
+            with open(self._full_pathfile, "w", encoding="utf-8") as file:
                 # Write JSON with indentation and UTF-8 character preservation.
-                json.dump(data, file, indent=4, ensure_ascii=False)
+                json.dump(data.to_dict(), file, indent=4, ensure_ascii=False)
+
             # Log successful completion at debug level.
             self._logger.debug("Configuration file saved successfully.")
         except OSError as error:
             # Log write errors for troubleshooting.
             self._logger.error(
                 "Failed to write configuration file '%s': %s",
-                self._file_path,
+                self._full_pathfile,
                 error,
             )
 
-    def read_config(self) -> ConfigAspirabotModel:
-        """Load configuration from JSON and map it to the domain model.
 
-        This method implements a safe loading strategy: it reads persisted data,
-        merges it with current default keys, and then instantiates the domain
-        model. This approach ensures that configuration files created with older
-        versions of the application automatically gain any new fields added in
-        newer versions.
-
-        Returns:
-            ConfigAspirabotModel: A fully populated configuration model instance.
-                All fields are guaranteed to have values (either persisted or default).
-
-        Raises:
-            TypeError: If the merged data cannot be used to instantiate the model
-                (e.g., missing required constructor parameters).
-
-        Example:
-            Loading and inspecting configuration:
-
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> config = repo.read_config()
-            >>> assert isinstance(config, ConfigAspirabotModel)
-            >>> print(config.window_title)
-            'Aspirabot'
-        """
-        # Load persisted JSON data (falls back to defaults if file is unreadable).
-        loaded_data = self._read_json()
-
-        # Obtain the default configuration schema and values.
-        default_data = ConfigAspirabotModel.get_default_data()
-        # Merge defaults into loaded data for any missing keys.
-        for key, value in default_data.items():
-            if key not in loaded_data:
-                loaded_data[key] = value
-
-        # Build and return the strongly typed domain model.
-        return ConfigAspirabotModel(**loaded_data)
-
-    def save_config(self, config: ConfigAspirabotModel) -> None:
-        """Persist a configuration model to the JSON file.
-
-        Converts the domain model to a dictionary and delegates serialization
-        to the file writing helper. This method is the primary interface for
-        persisting configuration changes.
-
-        Args:
-            config (ConfigAspirabotModel): The configuration model instance to
-                serialize and persist to disk.
-
-        Returns:
-            None
-
-        Raises:
-            None: All errors are handled internally by _write_json. Errors are
-                logged but do not raise exceptions.
-
-        Example:
-            Modifying and saving configuration:
-
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> current = repo.read_config()
-            >>> current.debug_mode = True
-            >>> repo.save_config(current)
-            >>> # Changes are now persisted to disk
-        """
-        # Extract dictionary representation from the model.
-        # Delegate serialization and file writing to the helper method.
-        self._write_json(config.all_data)
+## END

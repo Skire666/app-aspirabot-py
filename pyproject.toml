@@ -111,7 +111,7 @@ convention = "google"
 [tool.ruff.lint.pylint]
 
 # for PLR -> refactoring (recommanded : 6 / 12 / 50)
-max-args = 15
+max-args = 10
 max-branches = 15
 max-statements = 60
 

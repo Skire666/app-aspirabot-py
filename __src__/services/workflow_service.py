@@ -11,6 +11,10 @@ Example:
     []
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from collections.abc import Callable
 from typing import Any
 
@@ -242,8 +246,14 @@ class WorkflowService:
         """
         allowed_units = {"hour", "minute", "second", "millisecond"}
         allowed_operators = {
-            "between", "not_between", "equal", "not_equal",
-            "greater_than", "less_than", "greater_or_equal", "less_or_equal",
+            "between",
+            "not_between",
+            "equal",
+            "not_equal",
+            "greater_than",
+            "less_than",
+            "greater_or_equal",
+            "less_or_equal",
         }
         allowed_success_if = {"success", "failure"}
         errors: list[str] = []

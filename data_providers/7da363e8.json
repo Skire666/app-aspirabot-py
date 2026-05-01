@@ -1,0 +1,11 @@
+{
+    "id_file": "7da363e8",
+    "provider_name": "Nouv. Fournisseur",
+    "url": "https://example.com",
+    "created_date": "2026-05-01 23:04:08",
+    "modified_date": "2026-05-01 23:04:08",
+    "version": "1.0.0",
+    "browser_displayed": true,
+    "automation_obfuscated": true,
+    "steps": []
+}

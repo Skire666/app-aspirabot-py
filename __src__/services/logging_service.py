@@ -14,17 +14,21 @@ Example:
     Basic usage with file and UI logging:
 
     >>> from logging_service import LoggingService
-    >>> 
+    >>>
     >>> def on_log_event(log_entry):
     ...     print(f"[{log_entry.level}] {log_entry.message}")
-    >>> 
+    >>>
     >>> service = LoggingService(log_file="app.log", log_level="INFO")
     >>> service.attach_ui_callback(on_log_event)
-    >>> 
+    >>>
     >>> import logging
     >>> logger = logging.getLogger("my_module")
     >>> logger.info("Application started successfully")
 """
+
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
 
 import logging
 from collections.abc import Callable
@@ -32,6 +36,10 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 from models.log_entry_model import LogEntryModel
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ObservableLogHandler(logging.Handler):
@@ -104,7 +112,7 @@ class ObservableLogHandler(logging.Handler):
             date=datetime.fromtimestamp(record.created),
             level=record.levelname,
             origin=record.name,
-            message=record.getMessage()
+            message=record.getMessage(),
         )
         # Dispatch the structured entry to all registered observers.
         self._callback(log_entry)
@@ -135,12 +143,12 @@ class LoggingService:
         ...     log_file="logs/app.log",
         ...     log_level="INFO"
         ... )
-        >>> 
+        >>>
         >>> def update_ui(entry: LogEntryModel):
         ...     ui.display_log(entry)
-        >>> 
+        >>>
         >>> service.attach_ui_callback(update_ui)
-        >>> 
+        >>>
         >>> # Now logs automatically appear in the UI
         >>> logger = logging.getLogger(__name__)
         >>> logger.info("Feature enabled successfully")
@@ -184,14 +192,10 @@ class LoggingService:
         self._handler: ObservableLogHandler | None = None
 
         # Create a consistent formatter for all log output.
-        formatter = logging.Formatter(
-            '%(asctime)s - [%(levelname)s] - %(name)s - %(message)s'
-        )
+        formatter = logging.Formatter("%(asctime)s - [%(levelname)s] - %(name)s - %(message)s")
 
         # Configure rotating file handler with size-based rotation.
-        rotating_handler = RotatingFileHandler(
-            log_file, maxBytes=8 * 1024 * 1024, backupCount=5
-        )
+        rotating_handler = RotatingFileHandler(log_file, maxBytes=8 * 1024 * 1024, backupCount=5)
         rotating_handler.setFormatter(formatter)
         rotating_handler.setLevel(self.log_level)
 
@@ -225,10 +229,10 @@ class LoggingService:
 
             >>> def display_in_widget(entry: LogEntryModel):
             ...     widget.insert("end", f"{entry.level}: {entry.message}\\n")
-            >>> 
+            >>>
             >>> service = LoggingService("app.log", "INFO")
             >>> service.attach_ui_callback(display_in_widget)
-            >>> 
+            >>>
             >>> # Subsequent logs will appear in the widget
             >>> logging.info("Feature loaded")
 

@@ -1,99 +1,57 @@
-"""Constantes globales pour l'application Aspirabot.
+"""Shared constants for Aspirabot application.
 
-Ce module regroupe l'ensemble des constantes de configuration,
-des paramètres de logs, de l'interface graphique et du navigateur.
-Il permet de centraliser les valeurs statiques pour faciliter leur
-modification et garantir la cohérence dans tout le projet.
-
-Exemples d'utilisation:
-    >>> from shared.constants import CTK_APP, CTK_LOGGING
-    >>> print(CTK_APP.VERSION)
-    '1.0.0'
+This module defines various constants used throughout the Aspirabot application, including:
+- Application metadata (name, version, default window size)
+- File paths for configuration and logs
+- Logging configuration parameters
+- Default data storage folders
+These constants are intended to centralize configuration values and make them easily maintainable.
 """
 
-import os
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
 
-# Racine du projet : __src__/shared/constants.py → shared/ → __src__/ → racine
-_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.path_util import get_current_working_directory
 
-## ----------------------------------------------
-## Configuration application
-## ----------------------------------------------
+## ---------------------------------------------------------------------------
+## Constants
+## ---------------------------------------------------------------------------
 
+# Name of the application
+C_APP_NAME: str = "Aspirabot"
 
-class CTK_APP:
-    """Constantes liées à la configuration générale de l'application.
+# Default size of the main application window (width x height)
+C_APP_DEFAULT_SIZE_GUI: str = "1000x800"
 
-    Attributes:
-        ASPIRABOT_CONFIG_FILE (str): Fichier de configuration JSON.
-        VERSION (str): Version actuelle de l'application.
-    """
+# Application version (major.minor.patch)
+C_APP_VERSION: str = "1.0.0"
 
-    ASPIRABOT_CONFIG_FILE: str = "config-aspirabot.json"
-    VERSION: str = "1.0.0"
+# Expected = './'   ('__src__' must be visible)
+C_CURRENT_WORKING_DIR = get_current_working_directory()
 
+# JSON configuration file for Aspirabot
+C_APP_CONFIG_FILE: str = "config-aspirabot.json"
 
-## ----------------------------------------------
-## Logger
-## ----------------------------------------------
+# Base name for log files
+C_LOGS_FILE_NAME_WITH_EXT: str = "aspirabot_{C_APP_VERSION}_trace.log"
 
+# size in bytes before rotating log file (e.g., 10 MB)
+C_LOGS_MAX_BYTES_PER_FILE: int = 10 * 1024 * 1024  # 10 MB
 
-class CTK_LOGGING:
-    """Constantes liées à la configuration du système de journalisation (logs).
+# Number of backup log files to keep (e.g., logs.1, logs.2, ..., logs.5)
+C_LOGS_NBR_BACKUP_FILE: int = 5
 
-    Attributes:
-        BASE_NAME_LOGFILE (str): Nom de base pour les fichiers de log.
-        DEFAULT_FOLDER_LOGS (str): Dossier par défaut pour stocker les logs.
-        FORMAT_MSG (str): Format des messages de log.
-        LOG_MAX_BYTES (int): Taille maximale d'un fichier de log (en octets) avant rotation.
-        BACKUP_LOG_COUNT (int): Nombre de fichiers de log de secours à conserver.
-    """
+# Default logging level for trace logs
+C_LOGS_DEFAULT_LEVEL_TRACE: str = "DEBUG"
 
-    BASE_NAME_LOGFILE: str = "aspirabot"
-    DEFAULT_FOLDER_LOGS: str = os.path.join(_BASE_DIR, "tmp_app_logs")
-    LOG_MAX_BYTES: int = 10 * 1024 * 1024  # 10 MB
-    BACKUP_LOG_COUNT: int = 5
+# Default folder for log files (relative to current working directory)
+C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 
+# Default folders for data storage (relative to current working directory)
+C_DATA_DEFAULT_FOLDER_PROVIDER: str = "data_providers"
 
-class CTK_USER:
-    """Constantes liées à la configuration des dossiers de travail pour les données utilisateur."""
-
-    DEFAULT_USER_PROVIDER: str = os.path.join(_BASE_DIR, "tmp_user_providers")
-    DEFAULT_USER_BROKENS: str = os.path.join(_BASE_DIR, "tmp_user_brokens")
-    DEFAULT_USER_OUTPUT: str = os.path.join(_BASE_DIR, "tmp_user_output")
-
-
-## ----------------------------------------------
-## Configuration pour le moteur de scraping (Playwright)
-## ----------------------------------------------
-
-
-class CTK_BROWSER:
-    """Constantes liées à la configuration du navigateur pour le scraping.
-
-    Attributes:
-        DEFAULT_FOLDER_TMP_CHROMIUM (str): Dossier local par défaut pour stocker
-            les données utilisateurs Chromium (sessions, cookies, cache).
-    """
-
-    DEFAULT_FOLDER_TMP_CHROMIUM: str = os.path.join(_BASE_DIR, "tmp_chromium_session")
-
-
-## ----------------------------------------------
-## Interface graphique (GUI)
-## ----------------------------------------------
-
-
-class CTK_GUI:
-    """Constantes liées à la configuration de l'interface utilisateur.
-
-    Attributes:
-        APP_NAME (str): Titre de la fenêtre principale.
-        DEFAULT_SIZE_ROOT_FRAME (str): Dimensions par défaut de la fenêtre principale.
-    """
-
-    APP_NAME: str = "Aspirabot"
-    DEFAULT_SIZE_ROOT_FRAME: str = "950x600"
-
+# Default folder for scrapping data (relative to current working directory)
+C_DATA_DEFAULT_FOLDER_SCRAPPING: str = "data_scrapping"
 
 ## END

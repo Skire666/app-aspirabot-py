@@ -8,6 +8,10 @@ Example:
     >>> renderer(canvas, step, 0, 0, 0, 300, 50, "normal")
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -16,7 +20,9 @@ from typing import Any
 
 from models.step_scrapping_model import StepScrappingModel, StepType
 
-# ── Label formatters ──────────────────────────────────────────────────────────
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 def _fmt_open_url(p: dict[str, Any]) -> str:

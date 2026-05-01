@@ -4,16 +4,34 @@ Ce module orchestre les appels entre le domaine de configuration
 et l'infrastructure d'accès aux données, respectant le principe de la Clean Architecture.
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from interfaces.config_repository_interface import ConfigRepositoryInterface
-from models.config_aspirabot_model import ConfigAspirabotModel
+from models.app_configuration_model import AppConfigurationModel
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ConfigService:
     """Service gérant la configuration de l'application.
-    
+
     Il utilise une interface de repository injectée pour isoler
     la logique métier des détails d'implémentation (comme le JSON).
     """
+
+    ## ---------------------------------------------------------------------------
+    ## Variables
+    ## ---------------------------------------------------------------------------
+
+    _repository: ConfigRepositoryInterface
+
+    ## ---------------------------------------------------------------------------
+    ## Methods
+    ## ---------------------------------------------------------------------------
 
     def __init__(self, config_repository: ConfigRepositoryInterface) -> None:
         """Initialisation avec injection du repository."""
@@ -23,19 +41,18 @@ class ConfigService:
         """S'assure que le fichier de configuration existe, sinon le crée."""
         self._repository.ensure_file_exists()
 
-    def read_config(self) -> ConfigAspirabotModel:
+    def read_configuration(self) -> AppConfigurationModel:
         """Récupère la configuration en cours.
-        
+
         Returns:
             ConfigAspirabotModel: L'entité de configuration.
         """
-        return self._repository.read_config()
+        return self._repository.read_configuration()
 
-    def update_config(self, new_config: ConfigAspirabotModel) -> None:
+    def update_configuration(self, new_config: AppConfigurationModel) -> None:
         """Met à jour unitairement la configuration et la sauvegarde.
-        
+
         Args:
             new_config (ConfigAspirabotModel): L'entité à enregistrer.
         """
-        self._repository.save_config(new_config)
-
+        self._repository.write_configuration(new_config)

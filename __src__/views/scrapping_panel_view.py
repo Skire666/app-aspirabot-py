@@ -11,11 +11,19 @@ Example:
     >>> panel.reset()
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
 from models.scrapping_report_model import ScrappingReportModel
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ScrappingPanelView(ttk.Frame):
@@ -67,9 +75,7 @@ class ScrappingPanelView(ttk.Frame):
         self._btn_launch.pack(side=tk.LEFT, padx=5)
 
         # Annuler is disabled until a workflow is running.
-        self._btn_cancel = ttk.Button(
-            bar, text="Annuler", command=self._notify_cancel, state=tk.DISABLED
-        )
+        self._btn_cancel = ttk.Button(bar, text="Annuler", command=self._notify_cancel, state=tk.DISABLED)
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
 
     def _create_provider_info_section(self) -> None:

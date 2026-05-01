@@ -1,5 +1,9 @@
 """Model describing the result of a provider validation run."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from dataclasses import dataclass, field
 
 from models.provider_validation_issue_model import ProviderValidationIssue

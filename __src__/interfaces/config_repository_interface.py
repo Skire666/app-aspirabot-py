@@ -4,9 +4,17 @@ Ce module définit le contrat pour accéder et modifier la configuration
 de l'application, indépendamment de son support de stockage physique.
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from typing import Protocol
 
-from models.config_aspirabot_model import ConfigAspirabotModel
+from models.app_configuration_model import AppConfigurationModel
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ConfigRepositoryInterface(Protocol):
@@ -16,7 +24,7 @@ class ConfigRepositoryInterface(Protocol):
         """Vérifie que le fichier de configuration existe, sinon le crée avec les valeurs par défaut."""
         ...
 
-    def read_config(self) -> ConfigAspirabotModel:
+    def read_configuration(self) -> AppConfigurationModel:
         """Charge la configuration depuis le dépôt.
 
         Returns:
@@ -24,7 +32,7 @@ class ConfigRepositoryInterface(Protocol):
         """
         ...
 
-    def save_config(self, config: ConfigAspirabotModel) -> None:
+    def write_configuration(self, config: AppConfigurationModel) -> None:
         """Sauvegarde la configuration dans le dépôt.
 
         Args:

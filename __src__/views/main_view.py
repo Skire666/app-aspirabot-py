@@ -1,10 +1,27 @@
 """Tkinter view for the main application shell with vertical tabs."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import tkinter as tk
 from tkinter import ttk
 
+from shared.resources_util import (
+    C_RESS_ICON_LOGS,
+    C_RESS_ICON_OPTIONS,
+    C_RESS_ICON_PROVIDERS,
+    C_RESS_ICON_SCRAPPING,
+    C_RESS_ICON_WORKFLOW,
+    get_resource_icon_32px,
+)
+
+## ---------------------------------------------------------------------------
+## Constants
+## ---------------------------------------------------------------------------
+
 # Sidebar button color constants
-_SIDEBAR_ACTIVE_BG = "#016dbf"
+_SIDEBAR_ACTIVE_BG = "#595DC0"
 _SIDEBAR_ACTIVE_FG = "#ffffff"
 _SIDEBAR_ACTIVE_HOVER_BG = "#1a88e0"
 _SIDEBAR_NORMAL_BG = "#e8e8e8"
@@ -67,24 +84,29 @@ class MainView(ttk.Frame):
     def _build_sidebar_buttons(self) -> None:
         """Creates and registers all module navigation buttons in the sidebar."""
         button_labels = [
-            "Journal",
-            "Configuration",
-            "Fournisseurs",
-            "Modification",
-            "Scrapping",
+            ("Journal", C_RESS_ICON_LOGS),
+            ("Configuration", C_RESS_ICON_OPTIONS),
+            ("Fournisseurs", C_RESS_ICON_PROVIDERS),
+            ("Modification", C_RESS_ICON_WORKFLOW),
+            ("Scrapping", C_RESS_ICON_SCRAPPING),
         ]
 
         # Build each button and store it by name for later highlight management
-        for name in button_labels:
+        for name, image_path in button_labels:
             btn = tk.Button(
                 self.sidebar,
                 text=name,
+                image=get_resource_icon_32px(image_path),
+                compound=tk.TOP,
                 command=lambda n=name: self.show_view(n),
                 bg=_SIDEBAR_NORMAL_BG,
                 fg=_SIDEBAR_NORMAL_FG,
                 relief=tk.FLAT,
                 bd=0,
-                font=("Segoe UI", 10),
+                font=(
+                    "Segoe UI",
+                    10,
+                ),
                 disabledforeground="#8f8f8f",
             )
             btn.pack(fill=tk.X, padx=6, pady=3, ipady=7)

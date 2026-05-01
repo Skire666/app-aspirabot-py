@@ -1,8 +1,16 @@
 """Tkinter view for rendering application logs."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class LogView(ttk.Frame):
@@ -36,8 +44,7 @@ class LogView(ttk.Frame):
         ttk.Label(filter_frame, text="Filters:").pack(side=tk.LEFT, padx=2)
 
         for level, var in self._filter_vars.items():
-            cb = ttk.Checkbutton(filter_frame, text=level, variable=var,
-                                 command=self._notify_filter_changed)
+            cb = ttk.Checkbutton(filter_frame, text=level, variable=var, command=self._notify_filter_changed)
             cb.pack(side=tk.LEFT, padx=5)
 
         # Main table for logs
@@ -57,7 +64,8 @@ class LogView(ttk.Frame):
 
         # Scrollbar
         scrollbar = ttk.Scrollbar(
-            self, orient=tk.VERTICAL,
+            self,
+            orient=tk.VERTICAL,
             command=self.tree.yview,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
         )
         self.tree.configure(yscrollcommand=scrollbar.set)

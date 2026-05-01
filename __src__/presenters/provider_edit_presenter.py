@@ -1,14 +1,21 @@
 """Module contenant le presentateur pour la modification de fournisseur."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from collections.abc import Callable
 from typing import Any
 
 from models.provider_model import ProviderModel
+from presenters.workflow_list_presenter import WorkflowListPresenter
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
 from views.provider_edit_view import ProviderEditView
 
-from __src__.presenters.workflow_list_presenter import WorkflowListPresenter
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ProviderEditPresenter:

@@ -4,6 +4,10 @@ Définit le contrat que doit respecter toute implémentation de dépôt pour les
 fournisseurs, conformément à l'architecture propre.
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -31,10 +35,6 @@ class ProviderRepositoryInterface(Protocol):
 
     def read_provider_content(self, file_path: Path) -> dict[str, Any]:
         """Lit et retourne le contenu JSON brut d'un fichier fournisseur."""
-        ...
-
-    def ensure_broken_folder(self) -> Path:
-        """Crée le dossier des fichiers invalides si nécessaire."""
         ...
 
     def move_invalid_provider_file(self, file_path: Path, reason: str) -> Path:

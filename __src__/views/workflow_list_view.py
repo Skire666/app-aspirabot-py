@@ -11,6 +11,10 @@ Example:
     >>> widget.render_steps([])
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +40,11 @@ _DND_DRAG_REDRAW_MIN_INTERVAL_MS = 16
 _DND_DRAG_REDRAW_MIN_DELTA_PX = 3
 _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
+_STEPS_SECTION_TITLE = "Liste des étapes"
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class WorkflowListView(ttk.Frame):
@@ -130,7 +139,9 @@ class WorkflowListView(ttk.Frame):
         Returns:
             The section container frame.
         """
-        section = ttk.LabelFrame(self, text="Liste des étapes")
+        section = ttk.LabelFrame(self, text=_STEPS_SECTION_TITLE)
+        self._steps_section = section
+        self._set_steps_count(0)
 
         # Vertical scroll wrapper keeps the list accessible with many steps.
         outer = tk.Canvas(section, highlightthickness=0)
@@ -223,6 +234,7 @@ class WorkflowListView(ttk.Frame):
         """
         # Always cache the latest step list for future refreshes.
         self._last_steps = list(steps)
+        self._set_steps_count(len(self._last_steps))
 
         # Skip the DragDropList update while it is mid-callback to prevent
         # re-entrant mutations (presenter calling render_steps via _refresh_view).
@@ -285,6 +297,10 @@ class WorkflowListView(ttk.Frame):
         text = WorkflowStepTextHint.BY_LABEL.get(label, WorkflowStepTextHint.FALLBACK)
         self._help_panel.set_help_text(text)
 
+    def _set_steps_count(self, count: int) -> None:
+        """Updates the step count displayed in the section header."""
+        self._steps_section.configure(text=f"{_STEPS_SECTION_TITLE} (x{count})")
+
     # ---------------------------------------------------------------
     # DragDropList action callbacks
     # ---------------------------------------------------------------
@@ -327,6 +343,8 @@ class WorkflowListView(ttk.Frame):
         if not confirmed:
             return False
 
+        self._set_steps_count(max(len(self._dnd_list.items) - 1, 0))
+
         # Clear stale selection before the presenter refreshes.
         if self._selected_index == idx:
             self._selected_index = None
@@ -343,11 +361,13 @@ class WorkflowListView(ttk.Frame):
 
     def _on_dnd_duplicate(self, step: StepScrappingModel, _: int) -> StepScrappingModel:
         # Serialise then deserialise to produce an independent deep copy.
+        self._set_steps_count(len(self._dnd_list.items) + 1)
         return StepScrappingModel.from_dict(step.to_dict())
 
     def _on_dnd_reorder(self, steps: list[StepScrappingModel]) -> None:
         # Fires after every DragDropList mutation (move, delete, duplicate, drag).
         # Gives the presenter a chance to sync its own step list without refreshing.
+        self._set_steps_count(len(steps))
         if self.on_reorder_steps:
             self.on_reorder_steps(list(steps))
         # Defer rebind: DragDropList calls rebuild() AFTER this callback returns,

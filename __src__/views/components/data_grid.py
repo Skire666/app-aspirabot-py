@@ -4,6 +4,10 @@ This module provides a reusable table built only with Tkinter widgets.
 It avoids ttk.Treeview and keeps rendering fast by drawing only visible cells.
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import bisect
@@ -11,6 +15,10 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class DataGrid(ttk.Frame):
@@ -300,7 +308,12 @@ class DataGrid(ttk.Frame):
         local_x: int = pointer_x - self.body_canvas.winfo_rootx()
         local_y: int = pointer_y - self.body_canvas.winfo_rooty()
 
-        if local_x < 0 or local_y < 0 or local_x >= self.body_canvas.winfo_width() or local_y >= self.body_canvas.winfo_height():
+        if (
+            local_x < 0
+            or local_y < 0
+            or local_x >= self.body_canvas.winfo_width()
+            or local_y >= self.body_canvas.winfo_height()
+        ):
             new_hover: int | None = None
         else:
             canvas_y: float = float(self.body_canvas.canvasy(local_y))  # type: ignore[assignment]
@@ -330,7 +343,11 @@ class DataGrid(ttk.Frame):
         if row_index < row_start or row_index >= row_end:
             return
 
-        row_bg = self._bg_hover if self._hover_row == row_index else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
+        row_bg = (
+            self._bg_hover
+            if self._hover_row == row_index
+            else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
+        )
         self.body_canvas.itemconfigure(f"row-bg-{row_index}", fill=row_bg)
 
     def _column_index_from_x(self, x_coord: float) -> int | None:

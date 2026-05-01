@@ -1,10 +1,19 @@
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import platform
 from enum import Enum, auto
+
+## ---------------------------------------------------------------------------
+## Constants
+## ---------------------------------------------------------------------------
 
 
 class OperatingSystem(Enum):
     """Enumération pour les systèmes d'exploitation."""
-    UNSET = auto()
+
+    NOTSET = auto()
     WINDOWS = auto()
     LINUX = auto()
     MACOS = auto()
@@ -17,7 +26,7 @@ def detect_os() -> OperatingSystem:
     os_name = platform.system()
 
     if not os_name:
-        return OperatingSystem.UNSET
+        return OperatingSystem.NOTSET
 
     if os_name == "Windows":
         return OperatingSystem.WINDOWS

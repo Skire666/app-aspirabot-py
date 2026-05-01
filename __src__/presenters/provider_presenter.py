@@ -1,5 +1,9 @@
 """Module contenant le présentateur pour la gestion des fournisseurs."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from collections.abc import Callable
 from typing import Any
 

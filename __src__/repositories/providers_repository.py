@@ -10,6 +10,10 @@ Exemples d'utilisation:
     >>> liste_providers = repo.list_providers()
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import json
 import logging
 import os
@@ -26,9 +30,9 @@ from models.step_scrapping_model import StepScrappingModel
 from repositories.json_repository import JsonFileRepository
 from shared.operating_system_util import OperatingSystem, detect_os
 
-## ----------------------------------------------
-## Classe
-## ----------------------------------------------
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ProvidersRepository(ProviderRepositoryInterface):
@@ -43,18 +47,16 @@ class ProvidersRepository(ProviderRepositoryInterface):
         logger (logging.Logger): Le journaliseur interne défini pour tracer les exécutions.
     """
 
-    def __init__(self, folder_providers: str | Path, folder_brokens: str | Path) -> None:
+    def __init__(self, folder_providers: str | Path) -> None:
         """Initialise le dépôt en pointant vers un dossier local contenant les fournisseurs.
 
         Args:
             folder_providers (Union[str, Path]): Le chemin vers le dossier où chercher les fichiers JSON.
-            folder_brokens (Union[str, Path]): Le chemin vers le dossier où stocker les fichiers cassés.
 
         Exemples d'utilisation:
-            >>> repo = ProvidersRepository("/chemin/vers/providers", "/chemin/vers/brokens")
+            >>> repo = ProvidersRepository("/chemin/vers/providers")
         """
         self._folder_path: Path = Path(folder_providers)
-        self._folder_brokens: Path = Path(folder_brokens)
         self.logger = logging.getLogger(__name__)
 
     @property
@@ -116,12 +118,6 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         return cast(dict[str, Any], content)
 
-    def ensure_broken_folder(self) -> Path:
-        """Ensures the broken-folder exists and returns its path."""
-        broken_folder = self._folder_brokens
-        broken_folder.mkdir(parents=True, exist_ok=True)
-        return broken_folder
-
     def move_invalid_provider_file(self, file_path: Path, reason: str) -> Path:
         """Moves an invalid provider file to the broken folder.
 
@@ -132,10 +128,9 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Returns:
             The destination path of the moved file.
         """
-        broken_folder = self.ensure_broken_folder()
         mini_timestamp = datetime.now().strftime("%H%M%S%f")
-        destination_name = f"{mini_timestamp}{file_path.suffix}"
-        destination_path = broken_folder / destination_name
+        destination_name = f"{mini_timestamp}_{file_path.stem}.broken"
+        destination_path = self._folder_path / destination_name
 
         self.logger.warning(
             "Déplacement du fichier invalide %s vers %s (%s)",

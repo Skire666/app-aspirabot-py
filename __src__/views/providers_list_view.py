@@ -1,11 +1,19 @@
 """Tkinter view for managing providers."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
 from views.components.data_grid import DataGrid
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ProvidersListView(ttk.Frame):
@@ -49,9 +57,7 @@ class ProvidersListView(ttk.Frame):
         self._btn_refresh = ttk.Button(top_frame, text="Rafraîchir", command=self._notify_refresh)
         self._btn_refresh.pack(side=tk.LEFT, padx=5)
 
-        self._btn_validate = ttk.Button(
-            top_frame, text="Valider les fournisseurs", command=self._notify_validate
-        )
+        self._btn_validate = ttk.Button(top_frame, text="Valider les fournisseurs", command=self._notify_validate)
         self._btn_validate.pack(side=tk.LEFT, padx=5)
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun fournisseur")
@@ -76,9 +82,7 @@ class ProvidersListView(ttk.Frame):
             {"id": "id_file", "title": "ID Fichier", "width": 200, "type": "text"},
         ]
 
-        self.grid = DataGrid(
-            self, columns=columns_def, on_sort=self._notify_sort, on_action=self._on_action
-        )
+        self.grid = DataGrid(self, columns=columns_def, on_sort=self._notify_sort, on_action=self._on_action)
         self.grid.set_sort_state("provider_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 

@@ -1,5 +1,9 @@
 """Service pour la gestion des fournisseurs de scraping."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import logging
 from pathlib import Path
 
@@ -7,6 +11,10 @@ from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
 from models.provider_validation_issue_model import ProviderValidationIssue
 from models.provider_validation_report_model import ProviderValidationReport
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ProviderService:
@@ -88,14 +96,11 @@ class ProviderService:
             The summary of the validation run.
         """
         provider_files = self._repository.list_provider_files()
-        self._repository.ensure_broken_folder()
 
         valid_files = 0
         issues: list[ProviderValidationIssue] = []
 
-        self._logger.info(
-            "Démarrage de la validation des fournisseurs pour %s fichier(s).", len(provider_files)
-        )
+        self._logger.info("Démarrage de la validation des fournisseurs pour %s fichier(s).", len(provider_files))
 
         for file_path in provider_files:
             reasons = self._collect_validation_reasons(file_path)
@@ -103,9 +108,7 @@ class ProviderService:
             if reasons:
                 broken_path = ""
                 try:
-                    moved_path = self._repository.move_invalid_provider_file(
-                        file_path, "; ".join(reasons)
-                    )
+                    moved_path = self._repository.move_invalid_provider_file(file_path, "; ".join(reasons))
                     broken_path = str(moved_path)
                 except Exception as exc:
                     move_reason = f"Unable to move invalid file: {exc}"

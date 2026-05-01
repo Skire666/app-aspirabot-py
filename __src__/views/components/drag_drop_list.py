@@ -34,6 +34,10 @@ OPTIONAL CALLBACKS  (None = button hidden)
                                        (None hides the button)
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -42,9 +46,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Generic, Protocol, TypeVar
 
-T = TypeVar("T")
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
-# ── Item renderer protocol ─────────────────────────────────────────────────────
+# Type variable for the generic item type handled by the list.
+T = TypeVar("T")
 
 
 class ItemRenderer(Protocol[T]):

@@ -1,27 +1,37 @@
 """Point d'entrée principal de l'application."""
 
-import os
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import tkinter as tk
 
-from presenters.config_presenter import ConfigPresenter
+from models.app_configuration_model import AppConfigurationModel
 from presenters.log_presenter import LogPresenter
 from presenters.provider_edit_presenter import ProviderEditPresenter
 from presenters.provider_presenter import ProviderPresenter
 from presenters.scrapping_presenter import ScrappingPresenter
-from repositories.json_config_repository import JsonConfigRepository
+from repositories.app_config_repository import AppConfigRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
-from services.config_service import ConfigService
+from services.app_configuration_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scrapping_service import ScrappingService
-from shared.constants import CTK_APP, CTK_GUI, CTK_LOGGING, CTK_USER
-from views.config_view import ConfigView
+from shared.constants import (
+    C_APP_CONFIG_FILE,
+    C_APP_DEFAULT_SIZE_GUI,
+    C_LOGS_FILE_NAME_WITH_EXT,
+)
+from shared.path_util import get_current_working_directory, make_all_folders_if_not_exists
+from views.config_view import AppConfigurationView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
 from views.scrapping_panel_view import ScrappingPanelView
+
+from __src__.presenters.app_configuration_presenter import AppConfigurationPresenter
 
 
 def main() -> None:
@@ -29,7 +39,7 @@ def main() -> None:
     # Point d'entrée principal de l'application
     app = tk.Tk()
     app.title("Aspirabot")
-    app.geometry(CTK_GUI.DEFAULT_SIZE_ROOT_FRAME)
+    app.geometry(C_APP_DEFAULT_SIZE_GUI)
     root_container = tk.Frame(app)
     root_container.pack(fill=tk.BOTH, expand=True)
 
@@ -38,34 +48,30 @@ def main() -> None:
     main_view.pack(fill=tk.BOTH, expand=True)
 
     # Read configuration — resolve JSON path relative to workspace root
-    config_file_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CTK_APP.ASPIRABOT_CONFIG_FILE,
-    )
-    config_repo = JsonConfigRepository(config_file_path)
+    config_file_path = get_current_working_directory() / C_APP_CONFIG_FILE
+    config_repo = AppConfigRepository(config_file_path)
     config_repo.ensure_file_exists()
-    config_model = config_repo.read_config()
+    config_model: AppConfigurationModel = config_repo.read_configuration()
 
     # Create required directories
-    os.makedirs(CTK_USER.DEFAULT_USER_OUTPUT, exist_ok=True)
+    make_all_folders_if_not_exists(config_model.folder_logs)
+    make_all_folders_if_not_exists(config_model.folder_providers)
+    make_all_folders_if_not_exists(config_model.folder_scrapping)
 
-    # Create Logging Component
-    if not os.path.exists(config_model.folder_logs):
-        os.makedirs(config_model.folder_logs)
-    log_file_path = os.path.join(str(config_model.folder_logs), CTK_LOGGING.BASE_NAME_LOGFILE + ".log")
+    log_file_path = config_model.folder_logs / C_LOGS_FILE_NAME_WITH_EXT
 
-    logging_service = LoggingService(log_file_path, config_model.log_level)
+    logging_service = LoggingService(log_file_path, config_model.log_level_enum)
     log_repository = LogRepository()
     log_view = LogView(main_view.content_area)
     _log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
 
     # Create Configuration Component
     config_service = ConfigService(config_repo)
-    config_view = ConfigView(main_view.content_area)
-    _config_presenter = ConfigPresenter(view=config_view, service=config_service)
+    config_view = AppConfigurationView(main_view.content_area)
+    _config_presenter = AppConfigurationPresenter(view=config_view, service=config_service)
 
     # Create Provider Component
-    provider_repo = ProvidersRepository(config_model.folder_providers, config_model.folder_brokens)
+    provider_repo = ProvidersRepository(config_model.folder_providers)
     provider_service = ProviderService(provider_repo)
     provider_view = ProvidersListView(main_view.content_area)
     provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)
@@ -98,7 +104,7 @@ def main() -> None:
     provider_edit_presenter.set_on_done_callback(on_edit_done)
 
     # Create Scrapping component — view lives in the content area like all other tabs
-    scrapping_service = ScrappingService()
+    scrapping_service = ScrappingService(config_model.folder_scrapping)
     scrapping_panel_view = ScrappingPanelView(main_view.content_area)
     scrapping_presenter = ScrappingPresenter(
         view=scrapping_panel_view,

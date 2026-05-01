@@ -1,11 +1,19 @@
 """Tkinter view for creating and editing a provider."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
-from __src__.views.workflow_list_view import WorkflowListView
+from views.workflow_list_view import WorkflowListView
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ProviderEditView(ttk.Frame):

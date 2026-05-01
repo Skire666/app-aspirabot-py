@@ -11,23 +11,28 @@ Exemples d'utilisation:
     >>> repo.set_value("theme", "dark")
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import json
 import logging
 import os
 from pathlib import Path
 from typing import Any
 
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
+
 s_logger = logging.getLogger(__name__)
 
-## ----------------------------------------------
-## Classe
-## ----------------------------------------------
 
 class JsonFileRepository:
     """Dépôt générique pour la gestion (lecture/écriture) de données dans un fichier JSON.
 
-    Cette classe gère le chargement et la sauvegarde de données sous forme de 
-    dictionnaire dans un fichier JSON. Si le fichier est manquant ou corrompu, 
+    Cette classe gère le chargement et la sauvegarde de données sous forme de
+    dictionnaire dans un fichier JSON. Si le fichier est manquant ou corrompu,
     elle utilise les données par défaut fournies.
 
     Attributes:
@@ -41,14 +46,14 @@ class JsonFileRepository:
 
         Args:
             file_path (Path): Le chemin vers le fichier JSON à lire/écrire.
-            default_data (Dict[str, Any]): Un dictionnaire de données par défaut. 
+            default_data (Dict[str, Any]): Un dictionnaire de données par défaut.
                 Utilisé si le fichier est corrompu ou inexistant.
 
         Exemples d'utilisation:
             >>> repo = JsonFileRepository("config.json", {"setting1": True})
         """
         self.file_path: Path = file_path
-        self.default_data: dict[str, Any] = default_data # jamais none, doit être un dict
+        self.default_data: dict[str, Any] = default_data  # jamais none, doit être un dict
         self.all_data: dict[str, Any] = {}
         self.load_from_file()
 
@@ -56,9 +61,9 @@ class JsonFileRepository:
         """Charge les données depuis le fichier JSON sur le disque vers self.all_data.
 
         Si le fichier n'existe pas, un avertissement est émis et le fichier est
-        créé avec la configuration par défaut en appelant `save_to_file`. Si le fichier 
+        créé avec la configuration par défaut en appelant `save_to_file`. Si le fichier
         est corrompu, une erreur est loggée et les données par défaut sont restaurées.
-        
+
         Returns:
             None
         """
@@ -80,7 +85,7 @@ class JsonFileRepository:
         """Sauvegarde l'état actuel de self.all_data dans le fichier JSON.
 
         Gère les exceptions liées à l'écriture de fichier (ex: permissions)
-        pour éviter les plantages ou fermetures inattendues de l'application. 
+        pour éviter les plantages ou fermetures inattendues de l'application.
         Les données sont écrites avec une indentation de 4.
 
         Returns:
@@ -103,7 +108,7 @@ class JsonFileRepository:
 
         Args:
             key (str): La clé textuelle de la valeur à récupérer.
-            default (Any, optional): La valeur de secours retournée si la clé 
+            default (Any, optional): La valeur de secours retournée si la clé
                 est absente de la configuration. Par défaut `None`.
 
         Returns:

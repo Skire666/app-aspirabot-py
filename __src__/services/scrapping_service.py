@@ -13,6 +13,10 @@ Example:
     True
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import logging
 import random
 import threading
@@ -28,7 +32,11 @@ from models.scrapping_report_model import ScrappingReportModel, StepResultModel
 from models.step_scrapping_model import StepScrappingModel, StepType
 from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
-from shared.constants import CTK_BROWSER, CTK_USER
+from shared.path_util import make_all_folders_if_not_exists
+
+## ---------------------------------------------------------------------------
+## Constants
+## ---------------------------------------------------------------------------
 
 # Conversion factors from each time unit to milliseconds.
 _UNIT_TO_MS: dict[str, int] = {
@@ -37,6 +45,10 @@ _UNIT_TO_MS: dict[str, int] = {
     "second": 1_000,
     "millisecond": 1,
 }
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 def _evaluate_count_condition(count: int, operator: str, value: int, value_min: int, value_max: int) -> bool:
@@ -121,13 +133,14 @@ class ScrappingService:
         True
     """
 
-    def __init__(self) -> None:
+    def __init__(self, folder_scrapping: Path) -> None:
         """Initializes the service and its per-run execution state."""
         self._logger = logging.getLogger(__name__)
         # Per-run state reset at the start of each _run_steps call.
         self._prev_step_success: bool = True
         self._pending_jump: int | None = None
         self._end_process_requested: bool = False
+        self._folder_scrapping = folder_scrapping
 
     def run_workflow(
         self,
@@ -183,7 +196,6 @@ class ScrappingService:
             PlaywrightError: If the browser fails to start.
         """
         headless = not provider.browser_displayed
-        user_dir = CTK_BROWSER.DEFAULT_FOLDER_TMP_CHROMIUM  ## TODO PCO : make this configurable
 
         # Standard arguments to suppress automation detection hints.
         args = []
@@ -928,7 +940,7 @@ class ScrappingService:
         full_url = urljoin(page.url, img_src_url)
         ext = Path.splitext(full_url.split("?")[0])[1] or ".jpg"
         filename = Path(full_url.split("?")[0]).name + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + ext
-        dest = Path(CTK_USER.DEFAULT_USER_OUTPUT) / filename
+        dest = self._folder_scrapping / filename
 
         # Utilisation du réseau du navigateur pour récupérer l'image
         response = page.context.request.get(
@@ -939,8 +951,7 @@ class ScrappingService:
             },
         )  ## TODO PCO : gérer les erreurs réseau et HTTP, notamment les 403 de Cloudflare
         if response.ok:
-            if not Path.exists(CTK_USER.DEFAULT_USER_OUTPUT):
-                Path.makedirs(CTK_USER.DEFAULT_USER_OUTPUT)
+            make_all_folders_if_not_exists(self._folder_scrapping)
             with open(dest, "wb") as f:
                 f.write(response.body())
         else:
@@ -951,7 +962,7 @@ class ScrappingService:
         ## TODO PCO : plante sur cloduflare (image sur un autre serveur)
         # raw_name = url.split("/")[-1].split("?")[0]
         # filename = raw_name if raw_name else "image.jpg"
-        # dest = os.path.join(CTK_USER.DEFAULT_USER_OUTPUT, filename)  ##TODO PCO
+        # dest = self._folder_scrapping / filename  ##TODO PCO
         # urllib.request.urlretrieve(url, dest) # Stream the image bytes directly to disk.
         # return dest
 

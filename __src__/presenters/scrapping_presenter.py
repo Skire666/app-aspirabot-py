@@ -10,6 +10,10 @@ Example:
     >>> # The Lancer button in the view then drives the rest.
 """
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 import threading
 from datetime import datetime
 
@@ -18,6 +22,10 @@ from models.scrapping_report_model import ScrappingReportModel, StepResultModel
 from models.step_scrapping_model import StepScrappingModel
 from services.scrapping_service import ScrappingService
 from views.scrapping_panel_view import ScrappingPanelView
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class ScrappingPresenter:
