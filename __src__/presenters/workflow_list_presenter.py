@@ -4,7 +4,7 @@ Manages the in-memory step list, opens the inline step form through the
 view, and persists changes via the repository.
 
 Example:
-    >>> presenter = WorkflowBuilderPresenter(view, service, repository)
+    >>> presenter = WorkflowListPresenter(view, service, repository)
     >>> presenter.load("some-provider-guid")
 """
 
@@ -15,11 +15,12 @@ from models.provider_model import ProviderModel
 from models.step_scrapping_model import StepScrappingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
-from views.workflow_builder_view import WorkflowBuilderView
+
+from __src__.views.workflow_list_view import WorkflowListView
 
 
-class WorkflowBuilderPresenter:
-    """Orchestrates the workflow builder view with service and repository.
+class WorkflowListPresenter:
+    """Orchestrates the workflow list view with service and repository.
 
     Responsibilities:
     - Loads and caches workflow steps from the repository.
@@ -27,21 +28,21 @@ class WorkflowBuilderPresenter:
     - Schedules all view updates on the UI thread via view.after().
 
     Attributes:
-        _view: The embedded workflow builder widget.
+        _view: The embedded workflow list widget.
         _service_provider: Manages provider-related operations.
         _edit_index: Index of the step being edited, or None in add mode.
     """
 
     def __init__(
         self,
-        view: WorkflowBuilderView,
+        view: WorkflowListView,
         service_provider: ProviderService,
         workflow_service: WorkflowService,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
         Args:
-            view: The WorkflowBuilderView instance.
+            view: The WorkflowListsView instance.
             service_provider: ProviderService for provider-related operations.
             workflow_service: WorkflowService used to validate each step on confirm.
         """

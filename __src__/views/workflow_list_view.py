@@ -6,7 +6,7 @@ and an inline 'Brique logique' form panel for adding and editing steps.
 All user actions fire callbacks set by the presenter.
 
 Example:
-    >>> widget = WorkflowBuilderView(parent_frame)
+    >>> widget = WorkflowListsView(parent_frame)
     >>> widget.on_add_step = lambda: print("add clicked")
     >>> widget.render_steps([])
 """
@@ -38,7 +38,7 @@ _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
 
 
-class WorkflowBuilderView(ttk.Frame):
+class WorkflowListView(ttk.Frame):
     """Drag-and-drop step list with toolbar and inline form, embedded in a parent frame.
 
     The presenter sets callback attributes and calls render methods.

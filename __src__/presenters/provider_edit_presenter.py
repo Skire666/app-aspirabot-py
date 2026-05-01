@@ -4,10 +4,11 @@ from collections.abc import Callable
 from typing import Any
 
 from models.provider_model import ProviderModel
-from presenters.workflow_builder_presenter import WorkflowBuilderPresenter
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
 from views.provider_edit_view import ProviderEditView
+
+from __src__.presenters.workflow_list_presenter import WorkflowListPresenter
 
 
 class ProviderEditPresenter:
@@ -36,7 +37,7 @@ class ProviderEditPresenter:
         self._on_done: Callable[[], None] | None = None
 
         # Sub-presenter that owns the step list and workflow execution.
-        self._workflow_presenter = WorkflowBuilderPresenter(
+        self._workflow_presenter = WorkflowListPresenter(
             view=view.workflow_builder_view,
             service_provider=provider_service,
             workflow_service=WorkflowService(),

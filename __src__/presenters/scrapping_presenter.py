@@ -145,7 +145,7 @@ class ScrappingPresenter:
                 self._on_step_done,
                 self._cancel_event,
             )
-        except Exception as exc:
+        except (ValueError, RuntimeError, OSError) as exc:
             report = self._build_error_report(str(exc))
 
         self._on_workflow_finished(report)

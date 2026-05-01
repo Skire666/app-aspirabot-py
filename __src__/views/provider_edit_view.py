@@ -5,7 +5,7 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
-from views.workflow_builder_view import WorkflowBuilderView
+from __src__.views.workflow_list_view import WorkflowListView
 
 
 class ProviderEditView(ttk.Frame):
@@ -97,7 +97,7 @@ class ProviderEditView(ttk.Frame):
         workflow_lf = ttk.LabelFrame(main_container, text="Workflow & Instructions")
         workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5))
 
-        self._workflow_builder_view = WorkflowBuilderView(workflow_lf)
+        self._workflow_builder_view = WorkflowListView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder", command=self._notify_save)
@@ -107,7 +107,7 @@ class ProviderEditView(ttk.Frame):
         self._btn_cancel.pack(side=tk.RIGHT, padx=5)
 
     @property
-    def workflow_builder_view(self) -> WorkflowBuilderView:
+    def workflow_builder_view(self) -> WorkflowListView:
         """Returns the embedded WorkflowBuilderView widget.
 
         Returns:
@@ -178,9 +178,7 @@ class ProviderEditView(ttk.Frame):
         Returns:
             True if the user confirmed, False otherwise.
         """
-        return messagebox.askyesno(
-            "Écraser?", "Un fournisseur avec cette ID existe déjà. Voulez-vous l'écraser ?"
-        )
+        return messagebox.askyesno("Écraser?", "Un fournisseur avec cette ID existe déjà. Voulez-vous l'écraser ?")
 
     def show_error(self, message: str) -> None:
         """Shows an error message popup.
