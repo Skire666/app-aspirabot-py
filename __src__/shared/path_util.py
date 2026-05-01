@@ -15,19 +15,42 @@ def get_current_working_directory() -> Path:
     return Path.cwd()
 
 
-def make_all_folders_if_not_exists(path: Path | str) -> None:
-    """Create all parent folders for the given path if they do not exist.
+def make_all_folders_if_not_exists(
+    path: Path | str,
+    *,
+    is_file_path: bool | None = None,
+) -> None:
+    """Create all folders for a directory path or a file path's parent.
 
     Args:
-        path (Path): The file path for which to create parent folders.
+        path: Directory path to create, or file path whose parent folders should
+            be created.
+        is_file_path: Force file or directory behavior. When None, the function
+            infers the intent from the existing path or file suffix. Set this to
+            False for directory names that include dots.
 
     Example:
-        make_all_folders_if_not_exists(Path('./data_providers/provider1.json'))
-        # This will create the 'data_providers' folder if it does not exist.
+        make_all_folders_if_not_exists(Path("./data_providers"), is_file_path=False)
+        make_all_folders_if_not_exists(
+            Path("./data_providers/provider1.json"),
+            is_file_path=True,
+        )
     """
-    path = Path(path)
-    if not path.parent.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
+    target_path = Path(path)
+    if is_file_path is True:
+        # For file paths, we want to create the parent directory, not the file itself.
+        target_path = target_path.parent
+    elif is_file_path is False:
+        # For directory paths, we use the path as-is.
+        target_path = target_path
+    elif target_path.exists():
+        # If the path exists, we can check if it's a file or directory to determine the target.
+        target_path = target_path if target_path.is_dir() else target_path.parent
+    elif target_path.suffix:
+        # If the path doesn't exist but has a suffix, we can infer it's meant to be a file.
+        target_path = target_path.parent
+    # If the path doesn't exist and has no suffix, we can infer it's meant to be a directory, so we use it as-is.
+    target_path.mkdir(parents=True, exist_ok=True)
 
 
 ## END

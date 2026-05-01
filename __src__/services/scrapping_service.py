@@ -951,7 +951,7 @@ class ScrappingService:
             },
         )  ## TODO PCO : gérer les erreurs réseau et HTTP, notamment les 403 de Cloudflare
         if response.ok:
-            make_all_folders_if_not_exists(self._folder_scrapping)
+            make_all_folders_if_not_exists(self._folder_scrapping, is_file_path=False)
             with open(dest, "wb") as f:
                 f.write(response.body())
         else:

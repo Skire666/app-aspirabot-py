@@ -53,9 +53,9 @@ def main() -> None:
     config_model: AppConfigurationModel = config_repo.read_configuration()
 
     # Create required directories
-    make_all_folders_if_not_exists(config_model.folder_logs)
-    make_all_folders_if_not_exists(config_model.folder_providers)
-    make_all_folders_if_not_exists(config_model.folder_scrapping)
+    make_all_folders_if_not_exists(config_model.folder_logs, is_file_path=False)
+    make_all_folders_if_not_exists(config_model.folder_providers, is_file_path=False)
+    make_all_folders_if_not_exists(config_model.folder_scrapping, is_file_path=False)
 
     log_file_path = config_model.folder_logs / C_LOGS_FILE_NAME_WITH_EXT
 

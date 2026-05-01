@@ -282,7 +282,7 @@ class AppConfigurationRepository(ConfigRepositoryInterface):
         """
         # Ensure the parent directory exists before attempting to write.
         try:
-            make_all_folders_if_not_exists(self._full_pathfile)
+            make_all_folders_if_not_exists(self._full_pathfile, is_file_path=True)
 
             # Open file in write mode with UTF-8 encoding.
             with open(self._full_pathfile, "w", encoding="utf-8") as file:
