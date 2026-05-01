@@ -7,11 +7,12 @@
 import tkinter as tk
 
 from models.app_configuration_model import AppConfigurationModel
+from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.provider_edit_presenter import ProviderEditPresenter
 from presenters.provider_presenter import ProviderPresenter
 from presenters.scrapping_presenter import ScrappingPresenter
-from repositories.app_config_repository import AppConfigRepository
+from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
 from services.app_configuration_service import ConfigService
@@ -24,14 +25,12 @@ from shared.constants import (
     C_LOGS_FILE_NAME_WITH_EXT,
 )
 from shared.path_util import get_current_working_directory, make_all_folders_if_not_exists
-from views.config_view import AppConfigurationView
+from views.app_configuration_view import AppConfigurationView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
 from views.scrapping_panel_view import ScrappingPanelView
-
-from __src__.presenters.app_configuration_presenter import AppConfigurationPresenter
 
 
 def main() -> None:
@@ -49,7 +48,7 @@ def main() -> None:
 
     # Read configuration — resolve JSON path relative to workspace root
     config_file_path = get_current_working_directory() / C_APP_CONFIG_FILE
-    config_repo = AppConfigRepository(config_file_path)
+    config_repo = AppConfigurationRepository(config_file_path)
     config_repo.ensure_file_exists()
     config_model: AppConfigurationModel = config_repo.read_configuration()
 

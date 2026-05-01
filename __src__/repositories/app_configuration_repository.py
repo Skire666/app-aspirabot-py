@@ -43,6 +43,7 @@ Example:
 
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from interfaces.config_repository_interface import ConfigRepositoryInterface
@@ -54,7 +55,7 @@ from shared.path_util import make_all_folders_if_not_exists
 ## ---------------------------------------------------------------------------
 
 
-class AppConfigRepository(ConfigRepositoryInterface):
+class AppConfigurationRepository(ConfigRepositoryInterface):
     """Repository for storing and retrieving configuration from a JSON file.
 
     This implementation uses JSON as the persistence format, providing human-readable
@@ -205,6 +206,24 @@ class AppConfigRepository(ConfigRepositoryInterface):
         # Extract dictionary representation from the model.
         # Delegate serialization and file writing to the helper method.
         self._write_json(config)
+
+    def get_last_write_time(self) -> datetime | None:
+        """Returns the last modification time for the configuration file.
+
+        Returns:
+            The datetime of the last write, or None if unavailable.
+        """
+        try:
+            if not self._full_pathfile.exists():
+                return None
+            return datetime.fromtimestamp(self._full_pathfile.stat().st_mtime)
+        except OSError as error:
+            self._logger.error(
+                "Failed to read configuration file timestamp '%s': %s",
+                self._full_pathfile,
+                error,
+            )
+            return None
 
     def _read_json(self) -> AppConfigurationModel:
         """Read and deserialize JSON content from the configuration file.

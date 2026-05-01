@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import cast
 
 from models.step_scrapping_model import StepScrappingModel
-from shared.random_util import generate_rng_string_x8
+from shared.random_util import generate_rng_string_x10
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -78,7 +78,7 @@ class ProviderModel:
 
         # Return a ready-to-use default provider.
         return cls(
-            id_file=generate_rng_string_x8(),
+            id_file=generate_rng_string_x10(),
             provider_name="Nouv. Fournisseur",
             url="https://example.com",
             version="1.0.0",

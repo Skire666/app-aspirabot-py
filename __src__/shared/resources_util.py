@@ -64,6 +64,20 @@ def get_resource_icon_32px(path: str) -> ImageTk.PhotoImage:
     return ResourcesIcons.get_instance("WHITE_THEME").get_icon(path, (32, 32))
 
 
+def get_resource_icon_64px(path: str) -> ImageTk.PhotoImage:
+    """Load and cache an icon image (resize to 64x64).
+
+    If the file cannot be loaded, a fallback placeholder image is returned.
+
+    Args:
+        path (str): Path to the image file.
+
+    Returns:
+        ImageTk.PhotoImage: Tkinter-compatible image.
+    """
+    return ResourcesIcons.get_instance("WHITE_THEME").get_icon(path, (64, 64))
+
+
 class ResourcesIcons:
     """Centralized resource manager with singleton instances per resource type.
 

@@ -8,6 +8,8 @@ et l'infrastructure d'accès aux données, respectant le principe de la Clean Ar
 ## Imports
 ## ---------------------------------------------------------------------------
 
+from datetime import datetime
+
 from interfaces.config_repository_interface import ConfigRepositoryInterface
 from models.app_configuration_model import AppConfigurationModel
 
@@ -56,3 +58,8 @@ class ConfigService:
             new_config (ConfigAspirabotModel): L'entité à enregistrer.
         """
         self._repository.write_configuration(new_config)
+
+    def get_last_write_time(self) -> datetime | None:
+        """Returns the last modification time of the configuration file."""
+        self.ensure_configuration_exists()
+        return self._repository.get_last_write_time()

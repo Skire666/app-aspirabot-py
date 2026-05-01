@@ -22,12 +22,12 @@ from shared.path_util import get_current_working_directory
 C_APP_NAME: str = "Aspirabot"
 
 # Default size of the main application window (width x height)
-C_APP_DEFAULT_SIZE_GUI: str = "1000x800"
+C_APP_DEFAULT_SIZE_GUI: str = "1000x700"
 
 # Application version (major.minor.patch)
 C_APP_VERSION: str = "1.0.0"
 
-# Expected = './'   ('__src__' must be visible)
+# Expected = './'   ('_src_' must be visible)
 C_CURRENT_WORKING_DIR = get_current_working_directory()
 
 # JSON configuration file for Aspirabot

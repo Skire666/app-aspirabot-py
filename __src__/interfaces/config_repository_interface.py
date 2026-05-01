@@ -8,6 +8,7 @@ de l'application, indépendamment de son support de stockage physique.
 ## Imports
 ## ---------------------------------------------------------------------------
 
+from datetime import datetime
 from typing import Protocol
 
 from models.app_configuration_model import AppConfigurationModel
@@ -38,4 +39,8 @@ class ConfigRepositoryInterface(Protocol):
         Args:
             config (ConfigAspirabotModel): L'entité de configuration à sauvegarder.
         """
+        ...
+
+    def get_last_write_time(self) -> datetime | None:
+        """Returns the last modification time of the configuration file."""
         ...

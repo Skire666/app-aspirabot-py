@@ -43,13 +43,13 @@ def generate_rng_string_x4() -> str:
     return generate_rng_string_list(size_list=1, nbr_char=4)[0]
 
 
-def generate_rng_string_x8() -> str:
-    """Generates a unique random string of 8 characters.
+def generate_rng_string_x10() -> str:
+    """Generates a unique random string of 10 characters.
 
     Returns:
-        A unique random string of 8 characters.
+        A unique random string of 10 characters.
 
     Raises:
         ValueError: If the generation fails.
     """
-    return generate_rng_string_list(size_list=1, nbr_char=8)[0]
+    return generate_rng_string_list(size_list=1, nbr_char=10)[0]
