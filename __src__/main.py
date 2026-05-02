@@ -1,4 +1,4 @@
-"""Point d'entrée principal de l'application."""
+"""Application entry point for Aspirabot."""
 
 ## ---------------------------------------------------------------------------
 ## Imports
@@ -12,6 +12,7 @@ from presenters.log_presenter import LogPresenter
 from presenters.provider_edit_presenter import ProviderEditPresenter
 from presenters.provider_presenter import ProviderPresenter
 from presenters.scrapping_presenter import ScrappingPresenter
+from presenters.splashscreen_presenter import SplashscreenPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
@@ -19,98 +20,253 @@ from services.app_configuration_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scrapping_service import ScrappingService
-from shared.constants import (
-    C_APP_CONFIG_FILE,
-    C_APP_DEFAULT_SIZE_GUI,
-    C_LOGS_FILE_NAME_WITH_EXT,
-)
-from shared.path_util import get_current_working_directory, make_all_folders_if_not_exists
+from services.startup_service import StartupService
+from shared.constants import C_APP_CONFIG_FILE
+from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
 from views.scrapping_panel_view import ScrappingPanelView
+from views.splashscreen_view import SplashscreenView
+
+## ---------------------------------------------------------------------------
+## Entry point
+## ---------------------------------------------------------------------------
 
 
 def main() -> None:
-    """Initialise les composants principaux et démarre l'application."""
-    # Point d'entrée principal de l'application
-    app = tk.Tk()
-    app.title("Aspirabot")
-    app.geometry(C_APP_DEFAULT_SIZE_GUI)
-    root_container = tk.Frame(app)
-    root_container.pack(fill=tk.BOTH, expand=True)
+    """Show the splash screen and start the Tkinter event loop.
 
-    # Créer la vue principale avec les onglets verticaux
+    The root window is hidden until startup completes successfully.
+    On failure the root is destroyed and the process exits cleanly.
+    """
+    # Hide main window — it will be revealed by _launch_main_app.
+    root = tk.Tk()
+    root.withdraw()
+
+    # Build startup service from the configuration repository.
+    config_file_path = get_current_working_directory() / C_APP_CONFIG_FILE
+    config_repo = AppConfigurationRepository(config_file_path)
+    startup_service = StartupService(config_repo)
+
+    # Display splash screen and wire success/failure outcomes.
+    splash_view = SplashscreenView(root)
+    SplashscreenPresenter(
+        view=splash_view,
+        service=startup_service,
+        on_success=lambda: _launch_main_app(root, config_repo, startup_service),
+        on_failure=root.destroy,
+    ).start()
+
+    root.mainloop()
+
+
+## ---------------------------------------------------------------------------
+## Main application wiring
+## ---------------------------------------------------------------------------
+
+
+def _launch_main_app(
+    root: tk.Tk,
+    config_repo: AppConfigurationRepository,
+    startup_service: StartupService,
+) -> None:
+    """Configure and reveal the main window after startup succeeds.
+
+    Args:
+        root: Root Tk window that was hidden during the splash screen.
+        config_repo: Repository reused by the configuration component.
+        startup_service: Completed service exposing config_model and logging_service.
+    """
+    config_model = startup_service.config_model
+    logging_service = startup_service.logging_service
+
+    # Apply window settings from the loaded configuration.
+    root.title("Aspirabot")
+    root.geometry(config_model.gui_booting_size)
+
+    # Build the main sidebar-and-content-area layout.
+    root_container = tk.Frame(root)
+    root_container.pack(fill=tk.BOTH, expand=True)
     main_view = MainView(root_container)
     main_view.pack(fill=tk.BOTH, expand=True)
 
-    # Read configuration — resolve JSON path relative to workspace root
-    config_file_path = get_current_working_directory() / C_APP_CONFIG_FILE
-    config_repo = AppConfigurationRepository(config_file_path)
-    config_repo.ensure_file_exists()
-    config_model: AppConfigurationModel = config_repo.read_configuration()
+    # Instantiate all MVP component groups.
+    log_view, log_presenter = _init_log_component(main_view, logging_service)
+    config_view, config_presenter = _init_config_component(main_view, config_repo)
+    provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service = (
+        _init_provider_components(main_view, config_model)
+    )
+    scrapping_view, scrapping_presenter = _init_scrapping_component(main_view, config_model)
 
-    # Create required directories
-    make_all_folders_if_not_exists(config_model.folder_logs, is_file_path=False)
-    make_all_folders_if_not_exists(config_model.folder_providers, is_file_path=False)
-    make_all_folders_if_not_exists(config_model.folder_scrapping, is_file_path=False)
+    # Wire inter-component navigation and launch callbacks.
+    _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
+    _wire_scrapping_launch(main_view, provider_presenter, provider_service, scrapping_presenter)
 
-    log_file_path = config_model.folder_logs / C_LOGS_FILE_NAME_WITH_EXT
+    # Register views, reveal the window, and anchor presenters against GC.
+    _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scrapping_view)
+    root._app_presenters = [  # type: ignore[attr-defined]
+        log_presenter, config_presenter,
+        provider_presenter, provider_edit_presenter, scrapping_presenter,
+    ]
+    root.deiconify()
 
-    logging_service = LoggingService(log_file_path, config_model.log_level_enum)
+
+## ---------------------------------------------------------------------------
+## Component factories
+## ---------------------------------------------------------------------------
+
+
+def _init_log_component(
+    main_view: MainView,
+    logging_service: LoggingService,
+) -> tuple[LogView, LogPresenter]:
+    """Create and wire the journal (log display) component.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+        logging_service: Service that broadcasts log events to the presenter.
+
+    Returns:
+        A (LogView, LogPresenter) tuple.
+    """
     log_repository = LogRepository()
     log_view = LogView(main_view.content_area)
-    _log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
+    # Presenter self-registers on logging_service via attach_ui_callback.
+    log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
+    return log_view, log_presenter
 
-    # Create Configuration Component
+
+def _init_config_component(
+    main_view: MainView,
+    config_repo: AppConfigurationRepository,
+) -> tuple[AppConfigurationView, AppConfigurationPresenter]:
+    """Create and wire the application configuration component.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+        config_repo: Repository used for reading and persisting configuration.
+
+    Returns:
+        A (AppConfigurationView, AppConfigurationPresenter) tuple.
+    """
     config_service = ConfigService(config_repo)
     config_view = AppConfigurationView(main_view.content_area)
-    _config_presenter = AppConfigurationPresenter(view=config_view, service=config_service)
+    config_presenter = AppConfigurationPresenter(view=config_view, service=config_service)
+    return config_view, config_presenter
 
-    # Create Provider Component
+
+def _init_provider_components(
+    main_view: MainView,
+    config_model: AppConfigurationModel,
+) -> tuple[
+    ProvidersListView, ProviderPresenter,
+    ProviderEditView, ProviderEditPresenter,
+    ProviderService,
+]:
+    """Create and wire the provider list and edit components.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+        config_model: Configuration model supplying the providers folder path.
+
+    Returns:
+        A (ProvidersListView, ProviderPresenter, ProviderEditView,
+        ProviderEditPresenter, ProviderService) tuple.
+    """
+    # Shared service and repository for both list and edit sub-components.
     provider_repo = ProvidersRepository(config_model.folder_providers)
     provider_service = ProviderService(provider_repo)
+
+    # Provider list view and presenter.
     provider_view = ProvidersListView(main_view.content_area)
     provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)
 
-    # Create Provider Edit Component with workflow sub-presenter
+    # Provider edit view and presenter.
     provider_edit_view = ProviderEditView(main_view.content_area)
-    provider_edit_presenter = ProviderEditPresenter(
-        view=provider_edit_view,
-        provider_service=provider_service,
-    )
+    provider_edit_presenter = ProviderEditPresenter(view=provider_edit_view, provider_service=provider_service)
 
-    # Wire navigation between provider list and edit views
+    return provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service
+
+
+def _init_scrapping_component(
+    main_view: MainView,
+    config_model: AppConfigurationModel,
+) -> tuple[ScrappingPanelView, ScrappingPresenter]:
+    """Create and wire the scrapping panel component.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+        config_model: Configuration model supplying the scrapping output folder.
+
+    Returns:
+        A (ScrappingPanelView, ScrappingPresenter) tuple.
+    """
+    scrapping_service = ScrappingService(config_model.folder_scrapping)
+    scrapping_view = ScrappingPanelView(main_view.content_area)
+    scrapping_presenter = ScrappingPresenter(view=scrapping_view, service=scrapping_service)
+    return scrapping_view, scrapping_presenter
+
+
+## ---------------------------------------------------------------------------
+## Navigation wiring
+## ---------------------------------------------------------------------------
+
+
+def _wire_provider_navigation(
+    main_view: MainView,
+    provider_presenter: ProviderPresenter,
+    provider_edit_presenter: ProviderEditPresenter,
+) -> None:
+    """Connect create / edit / done navigation between provider views.
+
+    Args:
+        main_view: Shell managing tab visibility and enabled states.
+        provider_presenter: Presenter for the provider list view.
+        provider_edit_presenter: Presenter for the provider edit view.
+    """
     def on_request_create_provider() -> None:
+        # Open the edit form in creation mode and navigate to it.
         provider_edit_presenter.create_new()
         main_view.set_tab_state("Modification", tk.NORMAL)
         main_view.show_view("Modification")
 
     def on_request_edit_provider(id_file: str) -> None:
+        # Load the selected provider into the edit form and navigate to it.
         provider_edit_presenter.load_provider(id_file)
         main_view.set_tab_state("Modification", tk.NORMAL)
         main_view.show_view("Modification")
 
     def on_edit_done() -> None:
+        # Return to the list and disable the edit tab after save/cancel.
         provider_presenter.refresh()
         main_view.set_tab_state("Modification", tk.DISABLED)
         main_view.show_view("Fournisseurs")
 
+    # Inject all navigation callbacks into the two presenters.
     provider_presenter.on_request_create_provider = on_request_create_provider
     provider_presenter.on_request_edit_provider = on_request_edit_provider
     provider_edit_presenter.set_on_done_callback(on_edit_done)
 
-    # Create Scrapping component — view lives in the content area like all other tabs
-    scrapping_service = ScrappingService(config_model.folder_scrapping)
-    scrapping_panel_view = ScrappingPanelView(main_view.content_area)
-    scrapping_presenter = ScrappingPresenter(
-        view=scrapping_panel_view,
-        service=scrapping_service,
-    )
 
+def _wire_scrapping_launch(
+    main_view: MainView,
+    provider_presenter: ProviderPresenter,
+    provider_service: ProviderService,
+    scrapping_presenter: ScrappingPresenter,
+) -> None:
+    """Connect the launch action from the provider list to the scrapping panel.
+
+    Args:
+        main_view: Shell managing tab visibility and enabled states.
+        provider_presenter: Presenter that fires the launch request.
+        provider_service: Service used to retrieve the full provider model by id.
+        scrapping_presenter: Presenter that loads and runs the scrapping session.
+    """
     def on_request_launch_provider(id_file: str) -> None:
+        # Resolve the full provider model before handing off to scrapping.
         provider = provider_service.get_provider(id_file)
         scrapping_presenter.load_provider(provider)
         main_view.set_tab_state("Scrapping", tk.NORMAL)
@@ -118,12 +274,43 @@ def main() -> None:
 
     provider_presenter.on_request_launch_provider = on_request_launch_provider
 
-    # Register views to MainView tabs
+
+## ---------------------------------------------------------------------------
+## View registration
+## ---------------------------------------------------------------------------
+
+
+def _register_views(
+    main_view: MainView,
+    log_view: LogView,
+    config_view: AppConfigurationView,
+    provider_view: ProvidersListView,
+    provider_edit_view: ProviderEditView,
+    scrapping_view: ScrappingPanelView,
+) -> None:
+    """Register all module views with the sidebar and display the default tab.
+
+    Args:
+        main_view: Navigation shell that controls which view is visible.
+        log_view: Journal module view.
+        config_view: Configuration module view.
+        provider_view: Providers list module view.
+        provider_edit_view: Provider edit module view.
+        scrapping_view: Scrapping panel module view.
+    """
+    # Map each sidebar label to its corresponding view widget.
     main_view.add_view("Journal", log_view)
     main_view.add_view("Configuration", config_view)
     main_view.add_view("Fournisseurs", provider_view)
     main_view.add_view("Modification", provider_edit_view)
-    main_view.add_view("Scrapping", scrapping_panel_view)
+    main_view.add_view("Scrapping", scrapping_view)
+
+    # Land on the providers list as the startup default.
+    main_view.show_view("Fournisseurs")
+
+
+## ---------------------------------------------------------------------------
+crapping", scrapping_panel_view)
 
     # Default view on startup
     main_view.show_view("Fournisseurs")
