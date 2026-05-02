@@ -5,6 +5,8 @@ This module defines various constants used throughout the Aspirabot application,
 - File paths for configuration and logs
 - Logging configuration parameters
 - Default data storage folders
+- UX/UI parameters for the splash screen and main view
+
 These constants are intended to centralize configuration values and make them easily maintainable.
 """
 
@@ -18,6 +20,11 @@ from shared.path_util import get_current_working_directory
 ## Constants
 ## ---------------------------------------------------------------------------
 
+# Expected = './'   ('_src_' must be visible)
+C_CURRENT_WORKING_DIR = get_current_working_directory()
+
+## ---------------------------------------------------------------------------
+
 # Name of the application
 C_APP_NAME: str = "Aspirabot"
 
@@ -27,14 +34,13 @@ C_APP_DEFAULT_SIZE_GUI: str = "1000x700"
 # Application version (major.minor.patch)
 C_APP_VERSION: str = "1.0.0"
 
-# Expected = './'   ('_src_' must be visible)
-C_CURRENT_WORKING_DIR = get_current_working_directory()
-
 # JSON configuration file for Aspirabot
 C_APP_CONFIG_FILE: str = "config-aspirabot.json"
 
+## ---------------------------------------------------------------------------
+
 # Base name for log files
-C_LOGS_FILE_NAME_WITH_EXT: str = "aspirabot_{C_APP_VERSION}_trace.log"
+C_LOGS_FILE_NAME_WITH_EXT: str = f"aspirabot_{C_APP_VERSION}_trace.log"
 
 # size in bytes before rotating log file (e.g., 10 MB)
 C_LOGS_MAX_BYTES_PER_FILE: int = 10 * 1024 * 1024  # 10 MB
@@ -48,10 +54,32 @@ C_LOGS_DEFAULT_LEVEL_TRACE: str = "DEBUG"
 # Default folder for log files (relative to current working directory)
 C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 
+## ---------------------------------------------------------------------------
+
 # Default folders for data storage (relative to current working directory)
 C_DATA_DEFAULT_FOLDER_PROVIDER: str = "data_providers"
 
 # Default folder for scraping data (relative to current working directory)
 C_DATA_DEFAULT_FOLDER_SCRAPPING: str = "data_scraping"
+
+## ---------------------------------------------------------------------------
+
+# Minimum time each step is displayed (milliseconds).
+C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 250  # x3 < 1000
+
+# Minimum time the splash screen should be visible (milliseconds).
+C_SPLASHSCREEN_DISPLAY_MS_TOTAL = 1000
+
+# Human-readable label shown on the status line for each step.
+C_SPLASHSCREEN_STEP_LABELS = (" ._. ", " -_- ", " o_O ", " ^_^ ")
+
+# Splash window dimensions
+C_SPLASHSCREEN_SIZE_WIDTH = 240
+C_SPLASHSCREEN_SIZE_HEIGHT = 140
+
+## ---------------------------------------------------------------------------
+
+# Main view sidebar width in pixels
+C_VIEW_SIDEBAR_LEFT_WIDTH = 110
 
 ## END

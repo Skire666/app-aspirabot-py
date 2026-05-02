@@ -46,40 +46,18 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Generic, Protocol, TypeVar
 
+from shared.resources_icons_util import (
+    C_RESS_ICON_WHITE_COPY,
+    C_RESS_ICON_WHITE_DELETE,
+    C_RESS_ICON_WHITE_DOWN,
+    C_RESS_ICON_WHITE_EDIT,
+    C_RESS_ICON_WHITE_UP,
+    get_resource_icon_24px,
+)
+
 ## ---------------------------------------------------------------------------
-## Classes
+## Constants
 ## ---------------------------------------------------------------------------
-
-# Type variable for the generic item type handled by the list.
-T = TypeVar("T")
-
-
-class ItemRenderer(Protocol[T]):
-    """Structural protocol for the render_item callable passed to DragDropList.
-
-    Implementors MUST:
-    - Never call canvas.delete("all") — DragDropList manages canvas lifetime.
-    - Only draw within the rectangle (x, y, x+w, y+h). w already excludes the
-      button zone.
-    - Accept state as exactly one of "normal", "ghost", or "floating".
-    """
-
-    def __call__(
-        self,
-        canvas: tk.Canvas,
-        item: T,
-        idx: int,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        state: str,
-    ) -> None:
-        """Render item at list position idx into the canvas area (x, y, x+w, y+h)."""
-        ...
-
-
-# ── Default palette (replaceable) ─────────────────────────────────────────────
 
 DEFAULT_THEME: dict[str, str] = {
     "bg": "#F0F0F0",  # canvas background
@@ -89,7 +67,7 @@ DEFAULT_THEME: dict[str, str] = {
     "btn_dup": "#0ea5e9",  # duplicate button background
     "btn_edit": "#f59e0b",  # edit button background
     "btn_del": "#ef4444",  # delete button background
-    "btn_hover": "#1e293b",  # any button background when hovered
+    "btn_hover": "#808080",  # any button background when hovered
     "btn_fg": "#ffffff",  # button icon/text foreground
 }
 
@@ -122,26 +100,57 @@ _DEFAULT_DRAG_REDRAW_MIN_DELTA_PX = 3
 # virtualization defaults
 _DEFAULT_VIRTUALIZE_BUFFER = 2
 
-# ── Button config ─────────────────────────────────────────────────────────────
-
 
 @dataclass
 class _BtnDef:
+    """Definition of an action button type."""
+
     key: str
-    symbol: str
+    symbol: str  # char
     color_key: str  # key in the theme dict
+    icon: str
 
 
-_BUTTONS: list[_BtnDef] = [  # display order (right → left)
-    _BtnDef("delete", "✕", "btn_del"),
-    _BtnDef("edit", "✎", "btn_edit"),
-    _BtnDef("duplicate", "⧉", "btn_dup"),
-    _BtnDef("move_down", "↓", "btn_move"),
-    _BtnDef("move_up", "↑", "btn_move"),
+C_MINI_BUTTONS_WORKFLOW: list[_BtnDef] = [  # display order (right → left)
+    _BtnDef("delete", "✕", "btn_del", C_RESS_ICON_WHITE_DELETE),
+    _BtnDef("edit", "✎", "btn_edit", C_RESS_ICON_WHITE_EDIT),
+    _BtnDef("duplicate", "⧉", "btn_dup", C_RESS_ICON_WHITE_COPY),
+    _BtnDef("move_down", "↓", "btn_move", C_RESS_ICON_WHITE_DOWN),
+    _BtnDef("move_up", "↑", "btn_move", C_RESS_ICON_WHITE_UP),
 ]
 
-_DEFAULT_FONT_BUTTONS_TEXT = "Segoe UI"
-_DEFAULT_SIZE_BUTTONS_TEXT = 14
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
+
+# Type variable for the generic item type handled by the list.
+T = TypeVar("T")
+
+
+class ItemRenderer(Protocol[T]):
+    """Structural protocol for the render_item callable passed to DragDropList.
+
+    Implementors MUST:
+    - Never call canvas.delete("all") — DragDropList manages canvas lifetime.
+    - Only draw within the rectangle (x, y, x+w, y+h). w already excludes the
+      button zone.
+    - Accept state as exactly one of "normal", "ghost", or "floating".
+    """
+
+    def __call__(
+        self,
+        canvas: tk.Canvas,
+        item: T,
+        idx: int,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        state: str,
+    ) -> None:
+        """Render item at list position idx into the canvas area (x, y, x+w, y+h)."""
+        ...
+
 
 # ── Widget ────────────────────────────────────────────────────────────────────
 
@@ -250,7 +259,9 @@ class DragDropList(tk.Frame, Generic[T]):
         self._on_reorder: Callable[[list[T]], None] | None = on_reorder
 
         # Only buttons whose callback is not None are shown
-        self._visible_btns: list[_BtnDef] = [b for b in _BUTTONS if self._cbs.get(b.key) is not None]
+        self._visible_btns: list[_BtnDef] = [
+            b for b in C_MINI_BUTTONS_WORKFLOW if self._cbs.get(b.key) is not None
+        ]
 
         # Internal drag state
         self._drag_idx: int | None = None
@@ -507,12 +518,9 @@ class DragDropList(tk.Frame, Generic[T]):
                 hovered = self._hovered_btn == (idx, btn.key)
                 col = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
                 self._rounded_rect(x1, y1, x2, y2, 5, col)
-                self.canvas.create_text(
-                    (x1 + x2) // 2,
-                    (y1 + y2) // 2,
-                    text=btn.symbol,
-                    fill=self._theme["btn_fg"],
-                    font=(_DEFAULT_FONT_BUTTONS_TEXT, _DEFAULT_SIZE_BUTTONS_TEXT, "bold"),
+                ##TODO PCO
+                self.canvas.create_image(
+                    (x1 + x2) // 2, (y1 + y2) // 2, image=get_resource_icon_24px(btn.icon), anchor="center"
                 )
 
         self._draw_normal_total += (time.perf_counter() - _t0) * 1000
@@ -686,37 +694,49 @@ class DragDropList(tk.Frame, Generic[T]):
         """
         if key == "move_up":
             if idx > 0:
-                self.items.insert(idx - 1, self.items.pop(idx))
-                self._notify_reorder()
-                self._hovered_btn = None
-                self._redraw_item(idx)
-                self._redraw_item(idx - 1)
+                self._apply_action_move_up(idx)
         elif key == "move_down":
             if idx < len(self.items) - 1:
-                self.items.insert(idx + 1, self.items.pop(idx))
-                self._notify_reorder()
-                self._hovered_btn = None
-                self._redraw_item(idx)
-                self._redraw_item(idx + 1)
+                self._apply_action_move_down(idx)
         elif key == "duplicate":
             if result is not None:
-                self.items.insert(idx + 1, result)
-                self._notify_reorder()
-                self._hovered_btn = None
-                self._update_canvas_height()
-                if self._virtualize:
-                    self.redraw_visible(force=True)
-                else:
-                    self.redraw()
+                self._apply_action_duplicate(idx, result)
         elif key == "delete" and result:
-            self.items.pop(idx)
-            self._notify_reorder()
-            self._hovered_btn = None
-            self._update_canvas_height()
-            if self._virtualize:
-                self.redraw_visible(force=True)
-            else:
-                self.redraw()
+            self._apply_action_delete(idx)
+
+    def _apply_action_delete(self, idx):
+        self.items.pop(idx)
+        self._notify_reorder()
+        self._hovered_btn = None
+        self._update_canvas_height()
+        if self._virtualize:
+            self.redraw_visible(force=True)
+        else:
+            self.redraw()
+
+    def _apply_action_duplicate(self, idx, result):
+        self.items.insert(idx + 1, result)
+        self._notify_reorder()
+        self._hovered_btn = None
+        self._update_canvas_height()
+        if self._virtualize:
+            self.redraw_visible(force=True)
+        else:
+            self.redraw()
+
+    def _apply_action_move_down(self, idx):
+        self.items.insert(idx + 1, self.items.pop(idx))
+        self._notify_reorder()
+        self._hovered_btn = None
+        self._redraw_item(idx)
+        self._redraw_item(idx + 1)
+
+    def _apply_action_move_up(self, idx):
+        self.items.insert(idx - 1, self.items.pop(idx))
+        self._notify_reorder()
+        self._hovered_btn = None
+        self._redraw_item(idx)
+        self._redraw_item(idx - 1)
         # "edit": no list mutation; the callback owns all side-effects
 
     def _notify_reorder(self) -> None:

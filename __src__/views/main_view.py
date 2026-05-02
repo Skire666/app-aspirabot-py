@@ -7,6 +7,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from __src__.shared.constants import C_VIEW_SIDEBAR_LEFT_WIDTH
 from __src__.shared.resources_icons_util import (
     C_RESS_ICON_BLACK_LOGS,
     C_RESS_ICON_BLACK_OPTIONS,
@@ -25,15 +26,29 @@ from __src__.shared.resources_icons_util import (
 ## Constants
 ## ---------------------------------------------------------------------------
 
+# Mapping of module names to their corresponding black and white icon resource names.
+# Order of modules is determined by the order of entries in this dictionary.
+_C_LISTING_MODULE: dict[str, tuple[str, str]] = {
+    "Journal": [C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
+    "Fournisseurs": [C_RESS_ICON_BLACK_PROVIDERS, C_RESS_ICON_WHITE_PROVIDERS],
+    "Modification": [C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW],
+    "Scraping": [C_RESS_ICON_BLACK_SCRAPPING, C_RESS_ICON_WHITE_SCRAPPING],
+    "Configuration": [C_RESS_ICON_BLACK_OPTIONS, C_RESS_ICON_WHITE_OPTIONS],
+}
+
+
 # Sidebar button color constants
-_SIDEBAR_ACTIVE_BG = "#595DC0"
+_SIDEBAR_ACTIVE_BG = "#6164B7"
 _SIDEBAR_ACTIVE_FG = "#ffffff"
-_SIDEBAR_ACTIVE_HOVER_BG = "#1a88e0"
-_SIDEBAR_NORMAL_BG = "#e8e8e8"
+_SIDEBAR_ACTIVE_HOVER_BG = "#6168c6"
+_SIDEBAR_NORMAL_BG = "#F0F0F0"
 _SIDEBAR_NORMAL_FG = "#191919"
 _SIDEBAR_HOVER_BG = "#d0d0d0"
 _SIDEBAR_HOVER_FG = "#000000"
-_SIDEBAR_WIDTH = 120
+
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class MainView(ttk.Frame):
@@ -57,7 +72,7 @@ class MainView(ttk.Frame):
 
     def _create_widgets(self) -> None:
         """Constructs the sidebar and content structural elements."""
-        self.sidebar = ttk.Frame(self, width=_SIDEBAR_WIDTH)
+        self.sidebar = ttk.Frame(self, width=C_VIEW_SIDEBAR_LEFT_WIDTH)
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
 
         # Prevent the sidebar from shrinking if its content is empty
@@ -88,21 +103,12 @@ class MainView(ttk.Frame):
 
     def _build_sidebar_buttons(self) -> None:
         """Creates and registers all module navigation buttons in the sidebar."""
-        button_labels = [
-            ("Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS),
-            ("Configuration", C_RESS_ICON_BLACK_OPTIONS, C_RESS_ICON_WHITE_OPTIONS),
-            ("Fournisseurs", C_RESS_ICON_BLACK_PROVIDERS, C_RESS_ICON_WHITE_PROVIDERS),
-            ("Modification", C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW),
-            ("Scraping", C_RESS_ICON_BLACK_SCRAPPING, C_RESS_ICON_WHITE_SCRAPPING),
-        ]
-
         # Build each button and store it by name for later highlight management
-        for name, black_image_path, white_image_path in button_labels:
+        for name in _C_LISTING_MODULE:
             btn = tk.Button(
                 self.sidebar,
                 text=name,
-                image=get_resource_icon_32px(black_image_path),
-                activeimage=get_resource_icon_32px(white_image_path),
+                image=get_resource_icon_32px(_C_LISTING_MODULE[name][0]),
                 compound=tk.TOP,
                 command=lambda n=name: self.show_view(n),
                 bg=_SIDEBAR_NORMAL_BG,
@@ -161,9 +167,11 @@ class MainView(ttk.Frame):
         """
         for name, btn in self._buttons.items():
             if name == active_name:
-                btn.config(bg=_SIDEBAR_ACTIVE_BG, fg=_SIDEBAR_ACTIVE_FG)
+                image_white = get_resource_icon_32px(_C_LISTING_MODULE[name][1])
+                btn.config(bg=_SIDEBAR_ACTIVE_BG, fg=_SIDEBAR_ACTIVE_FG, image=image_white)
             else:
-                btn.config(bg=_SIDEBAR_NORMAL_BG, fg=_SIDEBAR_NORMAL_FG)
+                image_black = get_resource_icon_32px(_C_LISTING_MODULE[name][0])
+                btn.config(bg=_SIDEBAR_NORMAL_BG, fg=_SIDEBAR_NORMAL_FG, image=image_black)
 
     def _on_button_enter(self, name: str) -> None:
         """Applies hover highlight when the cursor enters a sidebar button.

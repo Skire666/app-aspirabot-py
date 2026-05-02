@@ -178,10 +178,8 @@ These are created automatically when the app runs. **Do not version them** (alre
 
 ```
 ./tmp_app_logs/
-./tmp_app_chromium_session/
-./tmp_user_brokens/
-./tmp_user_output/
-./tmp_user_providers/
+./data_scraping/
+./data_providers/
 ./config-aspirabot.json
 ```
 

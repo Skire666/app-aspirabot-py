@@ -106,4 +106,19 @@ class InvalidGuiBootingSizeError(AspirabotError):
         super().__init__("Invalid GUI booting size. Must be in format 'WIDTHxHEIGHT' with numeric values.")
 
 
+class FailedToLoadConfigurationDuringRuntimeError(AspirabotError):
+    def __init__(self):
+        super().__init__("Failed to load configuration during runtime.")
+
+
+class FailedToCreateRequiredDirectoriesDuringRuntimeError(AspirabotError):
+    def __init__(self):
+        super().__init__("Failed to create required directories during runtime.")
+
+
+class FailedToInitializeLoggingDuringRuntimeError(AspirabotError):
+    def __init__(self):
+        super().__init__("Failed to initialize logging during runtime.")
+
+
 ## END

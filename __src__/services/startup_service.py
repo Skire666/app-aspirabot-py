@@ -12,6 +12,12 @@ from services.logging_service import LoggingService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
 from shared.path_util import make_all_folders_if_not_exists
 
+from __src__.shared.exception_util import (
+    FailedToCreateRequiredDirectoriesDuringRuntimeError,
+    FailedToInitializeLoggingDuringRuntimeError,
+    FailedToLoadConfigurationDuringRuntimeError,
+)
+
 ## ---------------------------------------------------------------------------
 ## Constants
 ## ---------------------------------------------------------------------------
@@ -69,8 +75,8 @@ class StartupService:
             # Ensure the config file exists before reading it.
             self._config_repo.ensure_file_exists()
             self._config_model = self._config_repo.read_configuration()
-        except Exception as exc:
-            raise RuntimeError(f"Failed to load configuration: {exc}") from exc
+        except Exception:
+            raise FailedToLoadConfigurationDuringRuntimeError()
 
     def create_required_directories(self) -> None:
         """Step 2: Create all directories required by the application.
@@ -89,7 +95,7 @@ class StartupService:
             make_all_folders_if_not_exists(self._config_model.folder_providers, is_file_path=False)
             make_all_folders_if_not_exists(self._config_model.folder_scraping, is_file_path=False)
         except OSError as exc:
-            raise RuntimeError(f"Failed to create required directories: {exc}") from exc
+            raise FailedToCreateRequiredDirectoriesDuringRuntimeError() from exc
 
     def initialize_logging(self) -> None:
         """Step 3: Configure the rotating-file logging service.
@@ -110,7 +116,7 @@ class StartupService:
                 self._config_model.log_level_enum,
             )
         except Exception as exc:
-            raise RuntimeError(f"Failed to initialize logging: {exc}") from exc
+            raise FailedToInitializeLoggingDuringRuntimeError() from exc
 
     def get_time_elapsed_when_booting(self) -> float:
         """Get the time elapsed since the startup sequence began.

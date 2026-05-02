@@ -79,7 +79,7 @@ class ResourcesFonts:
             tkfont.Font: Tkinter font instance.
 
         Example:
-            font_manager = Resources.get_instance()
+            font_manager = ResourcesFonts.get_instance()
             font = font_manager.get_font(family="Segoe UI", size=14, weight="bold")
         """
         key = (family, size, weight, slant, underline, overstrike)

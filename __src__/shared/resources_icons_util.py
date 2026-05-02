@@ -37,8 +37,8 @@ C_RESS_ICON_WHITE_UP = "./__ress__/icons/w_128_up.png"
 
 
 # super wrapper
-def get_resource_icon_16px(path: str) -> ImageTk.PhotoImage:
-    """Load and cache an icon image (resize to 16x16).
+def get_resource_icon_24px(path: str) -> ImageTk.PhotoImage:
+    """Load and cache an icon image (resize to 24x24).
 
     If the file cannot be loaded, a fallback placeholder image is returned.
 
@@ -48,7 +48,7 @@ def get_resource_icon_16px(path: str) -> ImageTk.PhotoImage:
     Returns:
         ImageTk.PhotoImage: Tkinter-compatible image.
     """
-    return ResourcesIcons.get_icon(path, (16, 16))
+    return ResourcesIcons().get_icon(path, (24, 24))
 
 
 def get_resource_icon_32px(path: str) -> ImageTk.PhotoImage:
@@ -62,21 +62,7 @@ def get_resource_icon_32px(path: str) -> ImageTk.PhotoImage:
     Returns:
         ImageTk.PhotoImage: Tkinter-compatible image.
     """
-    return ResourcesIcons.get_icon(path, (32, 32))
-
-
-def get_resource_icon_48px(path: str) -> ImageTk.PhotoImage:
-    """Load and cache an icon image (resize to 48x48).
-
-    If the file cannot be loaded, a fallback placeholder image is returned.
-
-    Args:
-        path (str): Path to the image file.
-
-    Returns:
-        ImageTk.PhotoImage: Tkinter-compatible image.
-    """
-    return ResourcesIcons.get_icon(path, (48, 48))
+    return ResourcesIcons().get_icon(path, (32, 32))
 
 
 class ResourcesIcons:
@@ -91,7 +77,6 @@ class ResourcesIcons:
     """
 
     _instance: "ResourcesIcons" | None = None
-    _cache: dict[tuple[Path, tuple[int, int]], ImageTk.PhotoImage]
 
     def __new__(cls) -> "ResourcesIcons":
         """Initialize a resource manager.

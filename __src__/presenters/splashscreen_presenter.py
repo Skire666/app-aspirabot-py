@@ -10,24 +10,11 @@ from collections.abc import Callable
 from services.startup_service import StartupService
 from views.splashscreen_view import SplashscreenView
 
-from __src__.shared.resources_icons_util import (
-    C_RESS_ICON_BLACK_PROVIDERS,
-    C_RESS_ICON_BLACK_SCRAPPING,
-    C_RESS_ICON_BLACK_WORKFLOW,
+from __src__.shared.constants import (
+    C_SPLASHSCREEN_DISPLAY_MS_BY_STEP,
+    C_SPLASHSCREEN_DISPLAY_MS_TOTAL,
+    C_SPLASHSCREEN_STEP_LABELS,
 )
-
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
-
-# Minimum time each step is displayed (milliseconds).
-_STEP_DISPLAY_MS = 100
-
-# Minimum time the splash screen should be visible (milliseconds).
-_MINIMUM_DISPLAY_TIME_MS = 1000
-
-# Human-readable label shown on the status line for each step.
-_STEP_LABELS = (" ", " ", " ", " ")
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -91,44 +78,42 @@ class SplashscreenPresenter:
 
     def _run_step_1(self) -> None:
         """Execute step 1: load configuration from persistent storage."""
-        self._view.set_status(_STEP_LABELS[0])
+        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[0])
         try:
             self._service.load_configuration()
             # Show icon and wait before moving on to keep it readable.
-            self._view.add_progress_icon(C_RESS_ICON_BLACK_PROVIDERS)
-            self._view.after(_STEP_DISPLAY_MS, self._run_step_2)
+            self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
         except Exception as exc:
             self._handle_error(str(exc))
 
     def _run_step_2(self) -> None:
         """Execute step 2: create required application directories."""
-        self._view.set_status(_STEP_LABELS[1])
+        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[1])
         try:
             self._service.create_required_directories()
             # Show icon and wait before moving on to keep it readable.
-            self._view.add_progress_icon(C_RESS_ICON_BLACK_WORKFLOW)
-            self._view.after(_STEP_DISPLAY_MS, self._run_step_3)
+            self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_3)
         except Exception as exc:
+            traceback.print_stack()
             self._handle_error(str(exc))
 
     def _run_step_3(self) -> None:
         """Execute step 3: initialize the rotating-file logging system."""
-        self._view.set_status(_STEP_LABELS[2])
+        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[2])
         try:
             self._service.initialize_logging()
             # Show icon, then wait one last second before launching the app.
-            self._view.add_progress_icon(C_RESS_ICON_BLACK_SCRAPPING)
-            self._view.after(_STEP_DISPLAY_MS, self._run_step_4)
+            self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_4)
         except Exception as exc:
             self._handle_error(str(exc))
 
     def _run_step_4(self) -> None:
         """Final step: ensure minimum display time, then trigger the success callback."""
-        self._view.set_status(_STEP_LABELS[3])
+        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[3])
         try:
             # Wait any remaining time needed to reach the minimum display duration.
             elapsed_ms = self._service.get_time_elapsed_when_booting()
-            remaining_ms = max(0, _MINIMUM_DISPLAY_TIME_MS - elapsed_ms)
+            remaining_ms = max(0, C_SPLASHSCREEN_DISPLAY_MS_TOTAL - elapsed_ms)
             self._view.after(int(remaining_ms), self._on_startup_complete)
         except Exception as exc:
             self._handle_error(str(exc))
@@ -150,7 +135,6 @@ class SplashscreenPresenter:
             message: Human-readable description of the failure cause.
         """
         # Display the error while the splash is still visible.
-        traceback.print_stack()
         self._view.show_error(message)
         self._view.destroy()
         self._on_failure()

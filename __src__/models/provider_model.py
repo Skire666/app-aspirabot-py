@@ -23,6 +23,10 @@ from shared.random_util import generate_rng_string_x10
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
+
 
 @dataclass
 class ProviderModel:

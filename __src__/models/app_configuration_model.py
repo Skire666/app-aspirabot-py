@@ -8,8 +8,6 @@ Example:
     >>> model = AppConfigurationModel()
     >>> model.log_level
     'INFO'
-    >>> model.get_default_data()["folder_logs"]
-    './tmp_app_logs'
 """
 
 ## ---------------------------------------------------------------------------

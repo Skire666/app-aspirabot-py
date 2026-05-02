@@ -107,10 +107,8 @@ These resources are created automatically at launch — **do not version them**:
 | Path | Description |
 |------|-------------|
 | `./tmp_app_logs/` | Temporary execution logs |
-| `./tmp_app_chromium_session/` | Persisted Chromium session |
-| `./tmp_user_brokens/` | Broken/errored items |
-| `./tmp_user_providers/` | User provider data |
-| `./tmp_user_output/` | Output for scraping |
+| `./data_scraping/` | User provider data |
+| `./data_providers/` | Output for scraping |
 | `./config-aspirabot.json` | Main application configuration |
 
 ---
@@ -195,6 +193,7 @@ pytest __tests__/ -v
 - The MVP layer structure — never mix responsibilities between layers
 - `config-aspirabot.json` — runtime-generated file, never hardcode it
 - `tmp_*` folders — runtime-generated, never write to them manually
+- `data_*` folders — runtime-generated, never write to them manually
 
 ---
 
@@ -308,8 +307,7 @@ except PlaywrightTimeoutError as e:
 ```
 # BAD — these must stay in .gitignore
 tmp_app_logs/
-tmp_app_chromium_session/
-tmp_user_brokens/
-tmp_user_providers/
+data_scraping/
+data_providers/
 config-aspirabot.json
 ```
