@@ -1,14 +1,14 @@
 """Domain models summarising a completed scraping workflow run.
 
 This module defines two pure data entities: StepResultModel holds the
-outcome of one step, while ScrappingReportModel aggregates the full run.
+outcome of one step, while ScrapingReportModel aggregates the full run.
 Neither class carries any UI or persistence dependency.
 
 Example:
     >>> result = StepResultModel(0, "OPEN_URL", True, "OK")
     >>> result.success
     True
-    >>> report = ScrappingReportModel("Demo", 3, 3, 0, False, "2026-01-01 00:00:00", "2026-01-01 00:00:05", [result])
+    >>> report = ScrapingReportModel("Demo", 3, 3, 0, False, "2026-01-01 00:00:00", "2026-01-01 00:00:05", [result])
     >>> report.cancelled
     False
 """
@@ -44,7 +44,7 @@ class StepResultModel:
 
 
 @dataclass
-class ScrappingReportModel:
+class ScrapingReportModel:
     """Summarises the outcome of a complete scraping workflow run.
 
     Attributes:
@@ -58,7 +58,7 @@ class ScrappingReportModel:
         step_results: Ordered list of per-step outcomes.
 
     Example:
-        >>> report = ScrappingReportModel("Demo", 3, 3, 1, False, "...", "...", [])
+        >>> report = ScrapingReportModel("Demo", 3, 3, 1, False, "...", "...", [])
         >>> report.steps_failed
         1
     """

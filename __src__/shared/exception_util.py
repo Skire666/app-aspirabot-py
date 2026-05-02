@@ -96,9 +96,9 @@ class InvalidFolderProvidersError(AspirabotError):
         super().__init__("Folder path for providers cannot be empty.")
 
 
-class InvalidFolderScrappingError(AspirabotError):
+class InvalidFolderScrapingError(AspirabotError):
     def __init__(self):
-        super().__init__("Folder path for scrapping data cannot be empty.")
+        super().__init__("Folder path for scraping data cannot be empty.")
 
 
 class InvalidGuiBootingSizeError(AspirabotError):

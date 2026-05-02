@@ -7,12 +7,17 @@
 import tkinter as tk
 from tkinter import ttk
 
-from shared.resources_util import (
-    C_RESS_ICON_LOGS,
-    C_RESS_ICON_OPTIONS,
-    C_RESS_ICON_PROVIDERS,
-    C_RESS_ICON_SCRAPPING,
-    C_RESS_ICON_WORKFLOW,
+from __src__.shared.resources_icons_util import (
+    C_RESS_ICON_BLACK_LOGS,
+    C_RESS_ICON_BLACK_OPTIONS,
+    C_RESS_ICON_BLACK_PROVIDERS,
+    C_RESS_ICON_BLACK_SCRAPPING,
+    C_RESS_ICON_BLACK_WORKFLOW,
+    C_RESS_ICON_WHITE_LOGS,
+    C_RESS_ICON_WHITE_OPTIONS,
+    C_RESS_ICON_WHITE_PROVIDERS,
+    C_RESS_ICON_WHITE_SCRAPPING,
+    C_RESS_ICON_WHITE_WORKFLOW,
     get_resource_icon_32px,
 )
 
@@ -84,19 +89,20 @@ class MainView(ttk.Frame):
     def _build_sidebar_buttons(self) -> None:
         """Creates and registers all module navigation buttons in the sidebar."""
         button_labels = [
-            ("Journal", C_RESS_ICON_LOGS),
-            ("Configuration", C_RESS_ICON_OPTIONS),
-            ("Fournisseurs", C_RESS_ICON_PROVIDERS),
-            ("Modification", C_RESS_ICON_WORKFLOW),
-            ("Scrapping", C_RESS_ICON_SCRAPPING),
+            ("Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS),
+            ("Configuration", C_RESS_ICON_BLACK_OPTIONS, C_RESS_ICON_WHITE_OPTIONS),
+            ("Fournisseurs", C_RESS_ICON_BLACK_PROVIDERS, C_RESS_ICON_WHITE_PROVIDERS),
+            ("Modification", C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW),
+            ("Scraping", C_RESS_ICON_BLACK_SCRAPPING, C_RESS_ICON_WHITE_SCRAPPING),
         ]
 
         # Build each button and store it by name for later highlight management
-        for name, image_path in button_labels:
+        for name, black_image_path, white_image_path in button_labels:
             btn = tk.Button(
                 self.sidebar,
                 text=name,
-                image=get_resource_icon_32px(image_path),
+                image=get_resource_icon_32px(black_image_path),
+                activeimage=get_resource_icon_32px(white_image_path),
                 compound=tk.TOP,
                 command=lambda n=name: self.show_view(n),
                 bg=_SIDEBAR_NORMAL_BG,
@@ -118,7 +124,7 @@ class MainView(ttk.Frame):
 
         # Some modules are disabled until explicitly enabled by the presenter
         self.set_tab_state("Modification", tk.DISABLED)
-        self.set_tab_state("Scrapping", tk.DISABLED)
+        self.set_tab_state("Scraping", tk.DISABLED)
 
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a sidebar module button.

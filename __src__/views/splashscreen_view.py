@@ -7,20 +7,19 @@
 import tkinter as tk
 from tkinter import messagebox
 
-from shared.resources_util import C_RESS_ICON_WORKFLOW, get_resource_icon_64px
+from __src__.shared.resources_icons_util import get_resource_icon_48px
 
 ## ---------------------------------------------------------------------------
 ## Constants
 ## ---------------------------------------------------------------------------
 
 # Splash window dimensions
-_SPLASH_WIDTH = 420
-_SPLASH_HEIGHT = 270
+_SPLASH_WIDTH = 350
+_SPLASH_HEIGHT = 200
 
 # Color palette
 _BG_COLOR = "#ffffff"
 _TITLE_COLOR = "#595DC0"
-_SUBTITLE_COLOR = "#888888"
 _STATUS_COLOR = "#555555"
 _BORDER_COLOR = "#e0e0e0"
 
@@ -66,8 +65,8 @@ class SplashscreenView(tk.Toplevel):
         # Internal list keeps PhotoImage refs alive — Tkinter GC quirk.
         self._icon_refs: list[tk.PhotoImage] = []
 
-        self._create_widgets()
         self._center_on_screen()
+        self._create_widgets()
 
     ## ---------------------------------------------------------------------------
     ## Widget construction
@@ -80,7 +79,7 @@ class SplashscreenView(tk.Toplevel):
         border.pack(fill=tk.BOTH, expand=True)
 
         # Inner white content area with comfortable padding.
-        inner = tk.Frame(border, bg=_BG_COLOR, padx=40, pady=28)
+        inner = tk.Frame(border, bg=_BG_COLOR, padx=16, pady=16)
         inner.pack(fill=tk.BOTH, expand=True)
 
         self._build_title(inner)
@@ -97,19 +96,10 @@ class SplashscreenView(tk.Toplevel):
         tk.Label(
             parent,
             text="Aspirabot",
-            font=("Segoe UI", 26, "bold"),
+            font=("Segoe UI", 24, "bold"),
             bg=_BG_COLOR,
             fg=_TITLE_COLOR,
         ).pack(anchor=tk.CENTER, pady=(0, 4))
-
-        # Muted subtitle beneath the title.
-        tk.Label(
-            parent,
-            text="Initializing application...",
-            font=("Segoe UI", 10),
-            bg=_BG_COLOR,
-            fg=_SUBTITLE_COLOR,
-        ).pack(anchor=tk.CENTER, pady=(0, 18))
 
     def _build_status_label(self, parent: tk.Frame) -> None:
         """Create the live status text label updated by the presenter.
@@ -165,14 +155,14 @@ class SplashscreenView(tk.Toplevel):
         self._status_label.config(text=message)
         self.update_idletasks()
 
-    def add_progress_icon(self) -> None:
+    def add_progress_icon(self, icon_path: str) -> None:
         """Append one progress icon to the left-to-right indicator row.
 
-        Uses get_resource_icon_64px to load the icon. The PhotoImage reference
+        Uses get_resource_icon_48px to load the icon. The PhotoImage reference
         is retained internally to prevent premature garbage collection.
         """
         # Load the icon and keep a reference so Tkinter does not GC it.
-        icon = get_resource_icon_64px(C_RESS_ICON_WORKFLOW)
+        icon = get_resource_icon_48px(icon_path)
         self._icon_refs.append(icon)
 
         # Place icon label to the right of any previously added icons.

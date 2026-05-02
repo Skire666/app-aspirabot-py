@@ -20,7 +20,7 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
-from models.step_scrapping_model import StepScrappingModel, StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 
 _CONSTANT_MISSING_FLOAT = -16736452  # Arbitrary value used to detect missing float
 _CONSTANT_INVALID_FLOAT = -16736451  # Arbitrary value used to detect invalid float
@@ -132,11 +132,11 @@ class StepInlineFormPanel(ttk.LabelFrame):
     """Inline form panel for creating or editing a single scraping step.
 
     Embedded inside WorkflowBuilderView. Hidden by default.
-    After confirmation, on_confirm is fired with the built StepScrappingModel.
+    After confirmation, on_confirm is fired with the built StepScrapingModel.
     After cancellation, on_cancel is fired so the parent can hide the panel.
 
     Attributes:
-        on_confirm: Callback(StepScrappingModel) fired when step is validated.
+        on_confirm: Callback(StepScrapingModel) fired when step is validated.
         on_cancel: Callback fired when the user cancels without changes.
     """
 
@@ -147,13 +147,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent, text="Brique logique")
-        self.on_confirm: Callable[[StepScrappingModel], None] | None = None
+        self.on_confirm: Callable[[StepScrapingModel], None] | None = None
         self.on_cancel: Callable[[], None] | None = None
         self.on_type_changed: Callable[[str], None] | None = None
         self._type_var = tk.StringVar()
         self._form_widgets: dict[str, Any] = {}
         # Step list for JUMP_TO_STEP target combobox; set via set_available_steps().
-        self._available_steps: list[StepScrappingModel] = []
+        self._available_steps: list[StepScrapingModel] = []
         self._jump_target_displays: list[str] = []
         # Container frame for the COUNT_ELEMENT dynamic value area (rebuilt on operator change).
         self._count_value_area_frame: ttk.Frame | None = None
@@ -212,7 +212,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
     # Public interface
     # ---------------------------------------------------------------
 
-    def set_available_steps(self, steps: list[StepScrappingModel]) -> None:
+    def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
         """Stores the workflow step list for JUMP_TO_STEP target population.
 
         Must be called before load() when the user may select JUMP_TO_STEP.
@@ -222,7 +222,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """
         self._available_steps = list(steps)
 
-    def load(self, step: StepScrappingModel | None = None) -> None:
+    def load(self, step: StepScrapingModel | None = None) -> None:
         """Prepares the form for a new step or pre-fills it from an existing one.
 
         Args:
@@ -686,7 +686,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
     # Pre-fill and read-back
     # ---------------------------------------------------------------
 
-    def _load_step(self, step: StepScrappingModel) -> None:
+    def _load_step(self, step: StepScrapingModel) -> None:
         """Pre-fills form widgets from an existing step's params.
 
         Applies display reverse-maps for keys whose combobox shows translated
@@ -1133,7 +1133,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Build and broadcast the confirmed step to the presenter.
         self._error_label.configure(text="")
         params = self._get_params(step_type)
-        step = StepScrappingModel(step_type=step_type, params=params)
+        step = StepScrapingModel(step_type=step_type, params=params)
         if self.on_confirm:
             self.on_confirm(step)
 

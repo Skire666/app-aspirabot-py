@@ -110,7 +110,7 @@ These resources are created automatically at launch — **do not version them**:
 | `./tmp_app_chromium_session/` | Persisted Chromium session |
 | `./tmp_user_brokens/` | Broken/errored items |
 | `./tmp_user_providers/` | User provider data |
-| `./tmp_user_output/` | Output for scrapping |
+| `./tmp_user_output/` | Output for scraping |
 | `./config-aspirabot.json` | Main application configuration |
 
 ---

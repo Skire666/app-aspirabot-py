@@ -26,7 +26,7 @@ from typing import Any, cast
 
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
-from models.step_scrapping_model import StepScrappingModel
+from models.step_scraping_model import StepScrapingModel
 from repositories.json_repository import JsonFileRepository
 from shared.operating_system_util import OperatingSystem, detect_os
 
@@ -181,7 +181,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         payload["steps"] = [step.to_dict() for step in provider.steps]
         return payload
 
-    def _deserialize_steps(self, steps_data: object) -> list[StepScrappingModel]:
+    def _deserialize_steps(self, steps_data: object) -> list[StepScrapingModel]:
         """Converts a raw JSON list into validated step model instances.
 
         Silently skips entries that are not dicts or carry an unknown step type.
@@ -195,13 +195,13 @@ class ProvidersRepository(ProviderRepositoryInterface):
         if not isinstance(steps_data, list):
             return []
 
-        # Map each raw dict to a StepScrappingModel, skipping invalid entries
-        result: list[StepScrappingModel] = []
+        # Map each raw dict to a StepScrapingModel, skipping invalid entries
+        result: list[StepScrapingModel] = []
         for raw_step in steps_data:
             if not isinstance(raw_step, dict):
                 continue
             try:
-                result.append(StepScrappingModel.from_dict(raw_step))
+                result.append(StepScrapingModel.from_dict(raw_step))
             except ValueError:
                 continue
         return result

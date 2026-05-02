@@ -18,7 +18,7 @@ Example:
 from collections.abc import Callable
 from typing import Any
 
-from models.step_scrapping_model import StepScrappingModel, StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 
 
 class WorkflowService:
@@ -38,7 +38,7 @@ class WorkflowService:
     def validate_step(
         self,
         step_index: int,
-        step: StepScrappingModel,
+        step: StepScrapingModel,
     ) -> list[str]:
         """Validates the parameters of a single workflow step.
 
@@ -53,7 +53,7 @@ class WorkflowService:
             None.
 
         Example:
-            >>> service.validate_step(0, StepScrappingModel.create_default(StepType.SLEEP))
+            >>> service.validate_step(0, StepScrapingModel.create_default(StepType.SLEEP))
             []
         """
         # Resolve and invoke the per-type validator.

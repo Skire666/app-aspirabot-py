@@ -1,11 +1,11 @@
-"""Presenter wiring ScrappingPanelView to ScrappingService.
+"""Presenter wiring ScrapingPanelView to ScrapingService.
 
 The presenter starts the workflow in a daemon thread, forwards step outcomes
 to the view, and exposes cancellation through a threading.Event. No business
 logic lives here — only orchestration.
 
 Example:
-    >>> presenter = ScrappingPresenter(panel, service)
+    >>> presenter = ScrapingPresenter(panel, service)
     >>> presenter.load_provider(provider)
     >>> # The Lancer button in the view then drives the rest.
 """
@@ -18,18 +18,19 @@ import threading
 from datetime import datetime
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
-from models.scrapping_report_model import ScrappingReportModel, StepResultModel
-from models.step_scrapping_model import StepScrappingModel
-from services.scrapping_service import ScrappingService
-from views.scrapping_panel_view import ScrappingPanelView
+from models.scraping_report_model import ScrapingReportModel, StepResultModel
+from models.step_scraping_model import StepScrapingModel
+from views.scraping_panel_view import ScrapingPanelView
+
+from __src__.services.scraping_service import ScrapingService
 
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
 
 
-class ScrappingPresenter:
-    """Orchestrates a scraping workflow between ScrappingPanelView and ScrappingService.
+class ScrapingPresenter:
+    """Orchestrates a scraping workflow between ScrapingPanelView and ScrapingService.
 
     The workflow runs in a daemon thread so Tkinter's event loop stays responsive.
     Cancellation is signalled to the service via a threading.Event.
@@ -37,28 +38,28 @@ class ScrappingPresenter:
     workflow is cancelled first.
 
     Attributes:
-        _view: The scrapping panel view to update.
+        _view: The scraping panel view to update.
         _service: The service that executes Playwright steps.
         _provider: The currently loaded provider model (None when idle).
         _cancel_event: Threading event passed to the service for cancellation.
         _thread: The background worker thread (None when idle).
 
     Example:
-        >>> presenter = ScrappingPresenter(panel, service)
+        >>> presenter = ScrapingPresenter(panel, service)
         >>> presenter.load_provider(my_provider)
     """
 
     def __init__(
         self,
-        view: ScrappingPanelView,
-        service: ScrappingService,
+        view: ScrapingPanelView,
+        service: ScrapingService,
         provider: ProviderModel | None = None,
     ) -> None:
         """Initializes the presenter and registers callbacks on the view.
 
         Args:
-            view: The scrapping panel view.
-            service: The scrapping service that drives Playwright execution.
+            view: The scraping panel view.
+            service: The scraping service that drives Playwright execution.
             provider: Optional initial provider model. Use load_provider() to set
                 or change it at runtime.
         """
@@ -161,7 +162,7 @@ class ScrappingPresenter:
     def _on_step_done(
         self,
         index: int,
-        step: StepScrappingModel,
+        step: StepScrapingModel,
         success: bool,
         message: str,
         time_elapsed: float,
@@ -191,11 +192,11 @@ class ScrappingPresenter:
         self._view.show_step_progress(index, total, step_type)
         self._view.append_step_result(index, step_type, success, message, time_elapsed)
 
-    def _on_workflow_finished(self, report: ScrappingReportModel) -> None:
+    def _on_workflow_finished(self, report: ScrapingReportModel) -> None:
         """Restores idle state and displays the final report in the view.
 
         Args:
-            report: The completed ScrappingReportModel to display.
+            report: The completed ScrapingReportModel to display.
 
         Returns:
             None.
@@ -207,14 +208,14 @@ class ScrappingPresenter:
         self._view.set_running_state(False)
         self._view.show_report(report)
 
-    def _build_error_report(self, error_message: str) -> ScrappingReportModel:
+    def _build_error_report(self, error_message: str) -> ScrapingReportModel:
         """Creates a synthetic report when the workflow fails catastrophically.
 
         Args:
             error_message: Description of the fatal exception.
 
         Returns:
-            A ScrappingReportModel that reflects the failure.
+            A ScrapingReportModel that reflects the failure.
 
         Raises:
             None.
@@ -222,7 +223,7 @@ class ScrappingPresenter:
         now = datetime.now().strftime(DATETIME_FORMAT)
 
         # Represent the fatal failure as a single failed step at index 0.
-        return ScrappingReportModel(
+        return ScrapingReportModel(
             provider_name=self._provider.provider_name if self._provider else "N/A",
             total_steps=len(self._provider.steps) if self._provider else 0,
             steps_done=0,

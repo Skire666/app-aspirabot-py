@@ -4,7 +4,7 @@ This module defines a strongly typed step entity used by providers.
 It includes the StepType enumeration and default parameter values for each type.
 
 Example:
-    >>> step = StepScrappingModel.create_default(StepType.OPEN_URL)
+    >>> step = StepScrapingModel.create_default(StepType.OPEN_URL)
     >>> step.params["url"]
     'https://example.com/'
 """
@@ -108,7 +108,7 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
 
 
 @dataclass
-class StepScrappingModel:
+class StepScrapingModel:
     """Represents one executable step in a scraping workflow.
 
     Attributes:
@@ -116,7 +116,7 @@ class StepScrappingModel:
         params: Type-specific parameters for the action.
 
     Example:
-        >>> step = StepScrappingModel.create_default(StepType.SLEEP)
+        >>> step = StepScrapingModel.create_default(StepType.SLEEP)
         >>> step.params["duration"]
         0
     """
@@ -125,7 +125,7 @@ class StepScrappingModel:
     params: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def create_default(cls, step_type: StepType) -> "StepScrappingModel":
+    def create_default(cls, step_type: StepType) -> "StepScrapingModel":
         """Creates a step pre-filled with default parameters for the given type.
 
         Args:
@@ -138,7 +138,7 @@ class StepScrappingModel:
             None.
 
         Example:
-            >>> step = StepScrappingModel.create_default(StepType.SCROLL_DOWN)
+            >>> step = StepScrapingModel.create_default(StepType.SCROLL_DOWN)
             >>> step.params["pixels"]
             1000
         """
@@ -147,21 +147,21 @@ class StepScrappingModel:
         return cls(step_type=step_type, params=dict(defaults))
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "StepScrappingModel":
+    def from_dict(cls, data: dict[str, Any]) -> "StepScrapingModel":
         """Deserializes a step from a raw dictionary.
 
         Args:
             data: A dict with 'step_type' (str) and 'params' (dict) keys.
 
         Returns:
-            A new StepScrappingModel instance.
+            A new StepScrapingModel instance.
 
         Raises:
             ValueError: When the step_type value is unknown.
 
         Example:
             >>> raw = {"step_type": "SCROLL_DOWN", "params": {"pixels": 500}}
-            >>> StepScrappingModel.from_dict(raw).params["pixels"]
+            >>> StepScrapingModel.from_dict(raw).params["pixels"]
             500
         """
         # Raises ValueError for unknown step_type values.
@@ -179,7 +179,7 @@ class StepScrappingModel:
             None.
 
         Example:
-            >>> step = StepScrappingModel.create_default(StepType.SLEEP)
+            >>> step = StepScrapingModel.create_default(StepType.SLEEP)
             >>> step.to_dict()["step_type"]
             'SLEEP'
         """

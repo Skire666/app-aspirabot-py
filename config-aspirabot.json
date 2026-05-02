@@ -1,8 +1,0 @@
-{
-    "log_level_enum": "INFO",
-    "folder_logs": "tmp_app_logs",
-    "folder_providers": "data_providers",
-    "folder_scrapping": "data_scrapping",
-    "gui_booting_size": "1000x700",
-    "gui_booting_fullscreen": false
-}

@@ -11,7 +11,6 @@ from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.provider_edit_presenter import ProviderEditPresenter
 from presenters.provider_presenter import ProviderPresenter
-from presenters.scrapping_presenter import ScrappingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.log_repository import LogRepository
@@ -19,7 +18,6 @@ from repositories.providers_repository import ProvidersRepository
 from services.app_configuration_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
-from services.scrapping_service import ScrappingService
 from services.startup_service import StartupService
 from shared.constants import C_APP_CONFIG_FILE
 from shared.path_util import get_current_working_directory
@@ -28,8 +26,11 @@ from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
-from views.scrapping_panel_view import ScrappingPanelView
+from views.scraping_panel_view import ScrapingPanelView
 from views.splashscreen_view import SplashscreenView
+
+from __src__.presenters.scraping_presenter import ScrapingPresenter
+from __src__.services.scraping_service import ScrapingService
 
 ## ---------------------------------------------------------------------------
 ## Entry point
@@ -99,20 +100,20 @@ def _launch_main_app(
     provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service = (
         _init_provider_components(main_view, config_model)
     )
-    scrapping_view, scrapping_presenter = _init_scrapping_component(main_view, config_model)
+    scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model)
 
     # Wire inter-component navigation and launch callbacks.
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
-    _wire_scrapping_launch(main_view, provider_presenter, provider_service, scrapping_presenter)
+    _wire_scraping_launch(main_view, provider_presenter, provider_service, scraping_presenter)
 
     # Register views, reveal the window, and anchor presenters against GC.
-    _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scrapping_view)
+    _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view)
     root._app_presenters = [  # type: ignore[attr-defined]
         log_presenter,
         config_presenter,
         provider_presenter,
         provider_edit_presenter,
-        scrapping_presenter,
+        scraping_presenter,
     ]
     root.deiconify()
 
@@ -196,23 +197,23 @@ def _init_provider_components(
     return provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service
 
 
-def _init_scrapping_component(
+def _init_scraping_component(
     main_view: MainView,
     config_model: AppConfigurationModel,
-) -> tuple[ScrappingPanelView, ScrappingPresenter]:
-    """Create and wire the scrapping panel component.
+) -> tuple[ScrapingPanelView, ScrapingPresenter]:
+    """Create and wire the scraping panel component.
 
     Args:
         main_view: Main container providing the content area as parent.
-        config_model: Configuration model supplying the scrapping output folder.
+        config_model: Configuration model supplying the scraping output folder.
 
     Returns:
-        A (ScrappingPanelView, ScrappingPresenter) tuple.
+        A (ScrapingPanelView, ScrapingPresenter) tuple.
     """
-    scrapping_service = ScrappingService(config_model.folder_scrapping)
-    scrapping_view = ScrappingPanelView(main_view.content_area)
-    scrapping_presenter = ScrappingPresenter(view=scrapping_view, service=scrapping_service)
-    return scrapping_view, scrapping_presenter
+    scraping_service = ScrapingService(config_model.folder_scraping)
+    scraping_view = ScrapingPanelView(main_view.content_area)
+    scraping_presenter = ScrapingPresenter(view=scraping_view, service=scraping_service)
+    return scraping_view, scraping_presenter
 
 
 ## ---------------------------------------------------------------------------
@@ -257,27 +258,27 @@ def _wire_provider_navigation(
     provider_edit_presenter.set_on_done_callback(on_edit_done)
 
 
-def _wire_scrapping_launch(
+def _wire_scraping_launch(
     main_view: MainView,
     provider_presenter: ProviderPresenter,
     provider_service: ProviderService,
-    scrapping_presenter: ScrappingPresenter,
+    scraping_presenter: ScrapingPresenter,
 ) -> None:
-    """Connect the launch action from the provider list to the scrapping panel.
+    """Connect the launch action from the provider list to the scraping panel.
 
     Args:
         main_view: Shell managing tab visibility and enabled states.
         provider_presenter: Presenter that fires the launch request.
         provider_service: Service used to retrieve the full provider model by id.
-        scrapping_presenter: Presenter that loads and runs the scrapping session.
+        scraping_presenter: Presenter that loads and runs the scraping session.
     """
 
     def on_request_launch_provider(id_file: str) -> None:
-        # Resolve the full provider model before handing off to scrapping.
+        # Resolve the full provider model before handing off to scraping.
         provider = provider_service.get_provider(id_file)
-        scrapping_presenter.load_provider(provider)
-        main_view.set_tab_state("Scrapping", tk.NORMAL)
-        main_view.show_view("Scrapping")
+        scraping_presenter.load_provider(provider)
+        main_view.set_tab_state("Scraping", tk.NORMAL)
+        main_view.show_view("Scraping")
 
     provider_presenter.on_request_launch_provider = on_request_launch_provider
 
@@ -293,7 +294,7 @@ def _register_views(
     config_view: AppConfigurationView,
     provider_view: ProvidersListView,
     provider_edit_view: ProviderEditView,
-    scrapping_view: ScrappingPanelView,
+    scraping_view: ScrapingPanelView,
 ) -> None:
     """Register all module views with the sidebar and display the default tab.
 
@@ -303,14 +304,14 @@ def _register_views(
         config_view: Configuration module view.
         provider_view: Providers list module view.
         provider_edit_view: Provider edit module view.
-        scrapping_view: Scrapping panel module view.
+        scraping_view: Scraping panel module view.
     """
     # Map each sidebar label to its corresponding view widget.
     main_view.add_view("Journal", log_view)
     main_view.add_view("Configuration", config_view)
     main_view.add_view("Fournisseurs", provider_view)
     main_view.add_view("Modification", provider_edit_view)
-    main_view.add_view("Scrapping", scrapping_view)
+    main_view.add_view("Scraping", scraping_view)
 
     # Land on the providers list as the startup default.
     main_view.show_view("Fournisseurs")
@@ -320,3 +321,5 @@ def _register_views(
 
 if __name__ == "__main__":
     main()
+
+## END

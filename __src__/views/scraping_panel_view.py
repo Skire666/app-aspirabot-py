@@ -6,7 +6,7 @@ All UI mutations triggered from a background thread are scheduled via
 self.after(0, ...) so Tkinter's event loop applies them on the main thread.
 
 Example:
-    >>> panel = ScrappingPanelView(content_area)
+    >>> panel = ScrapingPanelView(content_area)
     >>> panel.set_on_launch(lambda: print("launch"))
     >>> panel.reset()
 """
@@ -19,14 +19,14 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
-from models.scrapping_report_model import ScrappingReportModel
+from models.scraping_report_model import ScrapingReportModel
 
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
 
 
-class ScrappingPanelView(ttk.Frame):
+class ScrapingPanelView(ttk.Frame):
     """Display-only frame for monitoring and reporting a scraping workflow.
 
     Layout (top to bottom):
@@ -39,13 +39,13 @@ class ScrappingPanelView(ttk.Frame):
     All business logic and service calls must remain in the presenter.
 
     Example:
-        >>> panel = ScrappingPanelView(parent)
+        >>> panel = ScrapingPanelView(parent)
         >>> panel.set_on_launch(lambda: None)
         >>> panel.reset()
     """
 
     def __init__(self, parent: tk.Widget) -> None:
-        """Initializes the scrapping panel and builds all widgets.
+        """Initializes the scraping panel and builds all widgets.
 
         Args:
             parent: The parent Tkinter widget (e.g. main_view.content_area).
@@ -330,14 +330,14 @@ class ScrappingPanelView(ttk.Frame):
         # Auto-scroll so the latest entry is always visible.
         self._log_text.see(tk.END)
 
-    def show_report(self, report: ScrappingReportModel) -> None:
+    def show_report(self, report: ScrapingReportModel) -> None:
         """Renders the final workflow report in the bottom report section.
 
         Safe to call from a background thread — the render is deferred to the
         main thread via self.after(0, ...).
 
         Args:
-            report: The completed ScrappingReportModel to display.
+            report: The completed ScrapingReportModel to display.
 
         Returns:
             None.
@@ -347,7 +347,7 @@ class ScrappingPanelView(ttk.Frame):
         """
         self.after(0, lambda: self._render_report(report))
 
-    def _render_report(self, report: ScrappingReportModel) -> None:
+    def _render_report(self, report: ScrapingReportModel) -> None:
         """Applies report data to the report frame on the main thread.
 
         Args:

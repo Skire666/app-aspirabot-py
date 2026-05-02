@@ -9,19 +9,24 @@ from collections.abc import Callable
 from services.startup_service import StartupService
 from views.splashscreen_view import SplashscreenView
 
+from __src__.shared.resources_icons_util import (
+    C_RESS_ICON_BLACK_PROVIDERS,
+    C_RESS_ICON_BLACK_SCRAPPING,
+    C_RESS_ICON_BLACK_WORKFLOW,
+)
+
 ## ---------------------------------------------------------------------------
 ## Constants
 ## ---------------------------------------------------------------------------
 
 # Minimum time each step is displayed (milliseconds).
-_STEP_DISPLAY_MS = 1000
+_STEP_DISPLAY_MS = 100
+
+# Minimum time the splash screen should be visible (milliseconds).
+_MINIMUM_DISPLAY_TIME_MS = 1000
 
 # Human-readable label shown on the status line for each step.
-_STEP_LABELS = (
-    "Loading configuration...",
-    "Creating application directories...",
-    "Initializing logging system...",
-)
+_STEP_LABELS = ("◢", "◣", "◤", "◥")
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -89,7 +94,7 @@ class SplashscreenPresenter:
         try:
             self._service.load_configuration()
             # Show icon and wait before moving on to keep it readable.
-            self._view.add_progress_icon()
+            self._view.add_progress_icon(C_RESS_ICON_BLACK_PROVIDERS)
             self._view.after(_STEP_DISPLAY_MS, self._run_step_2)
         except Exception as exc:
             self._handle_error(str(exc))
@@ -100,7 +105,7 @@ class SplashscreenPresenter:
         try:
             self._service.create_required_directories()
             # Show icon and wait before moving on to keep it readable.
-            self._view.add_progress_icon()
+            self._view.add_progress_icon(C_RESS_ICON_BLACK_WORKFLOW)
             self._view.after(_STEP_DISPLAY_MS, self._run_step_3)
         except Exception as exc:
             self._handle_error(str(exc))
@@ -111,8 +116,19 @@ class SplashscreenPresenter:
         try:
             self._service.initialize_logging()
             # Show icon, then wait one last second before launching the app.
-            self._view.add_progress_icon()
-            self._view.after(_STEP_DISPLAY_MS, self._on_startup_complete)
+            self._view.add_progress_icon(C_RESS_ICON_BLACK_SCRAPPING)
+            self._view.after(_STEP_DISPLAY_MS, self._run_step_4)
+        except Exception as exc:
+            self._handle_error(str(exc))
+
+    def _run_step_4(self) -> None:
+        """Final step: ensure minimum display time, then trigger the success callback."""
+        self._view.set_status(_STEP_LABELS[3])
+        try:
+            # Wait any remaining time needed to reach the minimum display duration.
+            elapsed_ms = self._service.get_time_elapsed_when_booting()
+            remaining_ms = max(0, _MINIMUM_DISPLAY_TIME_MS - elapsed_ms)
+            self._view.after(int(remaining_ms), self._on_startup_complete)
         except Exception as exc:
             self._handle_error(str(exc))
 

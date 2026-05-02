@@ -5,8 +5,8 @@ On va rajouter une nouvelle brique logique : "COUNT_ELEMENT".
 
 Pour cela, tu vas analyser une brique logique déjà existante : "WAIT_ELEMENT".
 Voici les endroits qui la référence :
-- models\step_scrapping_[model.py](http://model.py)
-- services\scrapping_[service.py](http://service.py)
+- models\step_scraping_[model.py](http://model.py)
+- services\scraping_[service.py](http://service.py)
 - services\workflow_[service.py](http://service.py)
 - views\step_edit_dialog_[view.py](http://view.py)
 - views\workflow_builder_[view.py](http://view.py)
@@ -34,8 +34,8 @@ Réponse de claude code 4.6 Sonnet - 2026.04.30
 
 1. Read `AGENTS.md` fully and follow every instruction it contains.
 2. Read these files fully before touching anything:
-   - `models/step_scrapping_model.py`
-   - `services/scrapping_service.py`
+   - `models/step_scraping_model.py`
+   - `services/scraping_service.py`
    - `services/workflow_service.py`
    - `views/step_edit_dialog_view.py`
    - `views/workflow_builder_view.py`
@@ -112,7 +112,7 @@ Log both the raw `count` and the final `step_success` result to the execution lo
 
 ## Changes required — file by file
 
-### 1. `models/step_scrapping_model.py`
+### 1. `models/step_scraping_model.py`
 
 Add after the last existing `StepType` member:
 ```python
@@ -135,7 +135,7 @@ StepType.COUNT_ELEMENT.value: {
 
 ---
 
-### 2. `services/scrapping_service.py`
+### 2. `services/scraping_service.py`
 
 Add a `COUNT_ELEMENT` execution block following the same structure as `WAIT_ELEMENT`.
 
@@ -247,9 +247,9 @@ if t == StepType.COUNT_ELEMENT:
 - [ ] All references to `WAIT_ELEMENT` were listed before any code was written
 - [ ] `StepType.COUNT_ELEMENT` added — no existing member modified
 - [ ] `_DEFAULT_PARAMS` entry present with all 8 keys and correct defaults
-- [ ] `scrapping_service.py` — pre-wait applied when `wait_duration > 0`
-- [ ] `scrapping_service.py` — element count logged before condition evaluation
-- [ ] `scrapping_service.py` — `success_if` correctly inverts the condition result
+- [ ] `scraping_service.py` — pre-wait applied when `wait_duration > 0`
+- [ ] `scraping_service.py` — element count logged before condition evaluation
+- [ ] `scraping_service.py` — `success_if` correctly inverts the condition result
 - [ ] `workflow_service.py` — validates selector, wait, success_if, operator, and value_min <= value_max
 - [ ] Inline form has 4 rows in the correct order
 - [ ] Operator Combobox dynamically shows 1 or 2 value spinboxes depending on operator

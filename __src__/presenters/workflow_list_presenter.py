@@ -16,7 +16,7 @@ import logging
 import threading
 
 from models.provider_model import ProviderModel
-from models.step_scrapping_model import StepScrappingModel
+from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
 from views.workflow_list_view import WorkflowListView
@@ -59,7 +59,7 @@ class WorkflowListPresenter:
         self._logger = logging.getLogger(__name__)
 
         self._provider_id_file: str | None = None
-        self._steps: list[StepScrappingModel] = []
+        self._steps: list[StepScrapingModel] = []
         self._run_thread: threading.Thread | None = None
         self._cancel_event = threading.Event()
         self._edit_index: int | None = None
@@ -105,7 +105,7 @@ class WorkflowListPresenter:
         self._steps = []
         self._refresh_view()
 
-    def get_steps(self) -> list[StepScrappingModel]:
+    def get_steps(self) -> list[StepScrapingModel]:
         """Returns a copy of the current step list.
 
         Returns:
@@ -139,7 +139,7 @@ class WorkflowListPresenter:
         self._view.set_available_steps(self._steps)
         self._view.show_inline_form(self._steps[index])
 
-    def _on_confirm_inline_step(self, step: StepScrappingModel) -> None:
+    def _on_confirm_inline_step(self, step: StepScrapingModel) -> None:
         """Validates then applies the confirmed step (add or update).
 
         Shows a toast and keeps the form open when validation fails.
@@ -187,7 +187,7 @@ class WorkflowListPresenter:
         self._view.hide_inline_form()
         self._refresh_view()
 
-    def _on_reorder_steps(self, steps: list[StepScrappingModel]) -> None:
+    def _on_reorder_steps(self, steps: list[StepScrapingModel]) -> None:
         """Syncs the in-memory step list after a DragDropList reorder.
 
         Called after every DragDropList mutation (drag, move, delete, duplicate).

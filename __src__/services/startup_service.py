@@ -4,11 +4,19 @@
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import time
+
 from models.app_configuration_model import AppConfigurationModel
 from repositories.app_configuration_repository import AppConfigurationRepository
 from services.logging_service import LoggingService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
 from shared.path_util import make_all_folders_if_not_exists
+
+## ---------------------------------------------------------------------------
+## Constants
+## ---------------------------------------------------------------------------
+
+_MINIMUM_DISPLAY_TIME_MS = 800  # Minimum time the splash screen should be visible (milliseconds).
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -45,6 +53,7 @@ class StartupService:
         self._config_repo = config_repo
         self._config_model: AppConfigurationModel | None = None
         self._logging_service: LoggingService | None = None
+        self._time_starting = time.time()  # Track when the startup sequence begins for timing purposes.
 
     ## ---------------------------------------------------------------------------
     ## Startup steps
@@ -78,7 +87,7 @@ class StartupService:
             # Create each runtime folder declared in the configuration.
             make_all_folders_if_not_exists(self._config_model.folder_logs, is_file_path=False)
             make_all_folders_if_not_exists(self._config_model.folder_providers, is_file_path=False)
-            make_all_folders_if_not_exists(self._config_model.folder_scrapping, is_file_path=False)
+            make_all_folders_if_not_exists(self._config_model.folder_scraping, is_file_path=False)
         except OSError as exc:
             raise RuntimeError(f"Failed to create required directories: {exc}") from exc
 
@@ -102,6 +111,18 @@ class StartupService:
             )
         except Exception as exc:
             raise RuntimeError(f"Failed to initialize logging: {exc}") from exc
+
+    def get_time_elapsed_when_booting(self) -> float:
+        """Get the time elapsed since the startup sequence began.
+
+        This can be called at the end of the startup sequence to guarantee the splash
+        screen is visible for a reasonable amount of time, even if all steps execute
+        very quickly.
+
+        Args:
+            minimum_ms: Minimum display time in milliseconds.
+        """
+        return (time.time() - self._time_starting) * 1000
 
     ## ---------------------------------------------------------------------------
     ## Properties

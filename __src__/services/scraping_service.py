@@ -6,7 +6,7 @@ the on_step_done callback.
 
 Example:
     >>> import threading
-    >>> service = ScrappingService()
+    >>> service = ScrapingService()
     >>> event = threading.Event()
     >>> report = service.run_workflow(provider, lambda *a: None, event)
     >>> report.total_steps == len(provider.steps)
@@ -28,8 +28,8 @@ from typing import Any
 from urllib.parse import urljoin
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
-from models.scrapping_report_model import ScrappingReportModel, StepResultModel
-from models.step_scrapping_model import StepScrappingModel, StepType
+from models.scraping_report_model import ScrapingReportModel, StepResultModel
+from models.step_scraping_model import StepScrapingModel, StepType
 from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 from shared.path_util import make_all_folders_if_not_exists
@@ -120,34 +120,34 @@ def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
     return int(duration * _UNIT_TO_MS.get(unit, 1_000))
 
 
-class ScrappingService:
+class ScrapingService:
     """Executes a provider workflow step by step via Playwright Chromium.
 
     Each StepType is dispatched to a dedicated private handler. The caller
     receives progress via the on_step_done callback; no Tkinter code lives here.
 
     Example:
-        >>> service = ScrappingService()
+        >>> service = ScrapingService()
         >>> report = service.run_workflow(provider, on_step_done, threading.Event())
-        >>> isinstance(report, ScrappingReportModel)
+        >>> isinstance(report, ScrapingReportModel)
         True
     """
 
-    def __init__(self, folder_scrapping: Path) -> None:
+    def __init__(self, folder_scraping: Path) -> None:
         """Initializes the service and its per-run execution state."""
         self._logger = logging.getLogger(__name__)
         # Per-run state reset at the start of each _run_steps call.
         self._prev_step_success: bool = True
         self._pending_jump: int | None = None
         self._end_process_requested: bool = False
-        self._folder_scrapping = folder_scrapping
+        self._folder_scraping = folder_scraping
 
     def run_workflow(
         self,
         provider: ProviderModel,
-        on_step_done: Callable[[int, StepScrappingModel, bool, str], None],
+        on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
         cancel_event: threading.Event,
-    ) -> ScrappingReportModel:
+    ) -> ScrapingReportModel:
         """Executes all steps of a provider workflow sequentially.
 
         Args:
@@ -157,7 +157,7 @@ class ScrappingService:
             cancel_event: Threading event that aborts the run when set.
 
         Returns:
-            A ScrappingReportModel summarising the full run.
+            A ScrapingReportModel summarising the full run.
 
         Raises:
             None — all step-level exceptions are caught and reported per step.
@@ -236,8 +236,8 @@ class ScrappingService:
     def _run_steps(
         self,
         page: Page,
-        steps: list[StepScrappingModel],
-        on_step_done: Callable[[int, StepScrappingModel, bool, str], None],
+        steps: list[StepScrapingModel],
+        on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
         cancel_event: threading.Event,
     ) -> tuple[list[StepResultModel], int]:
         """Iterates over steps, executes each one, and notifies the caller.
@@ -280,9 +280,9 @@ class ScrappingService:
     def _run_one_step(
         self,
         page: Page,
-        step: StepScrappingModel,
+        step: StepScrapingModel,
         index: int,
-        on_step_done: Callable[[int, StepScrappingModel, bool, str], None],
+        on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
     ) -> tuple[int, StepResultModel]:
         """Executes one step, fires the callback, and returns (next_index, result).
 
@@ -317,7 +317,7 @@ class ScrappingService:
     def _execute_step(
         self,
         page: Page,
-        step: StepScrappingModel,
+        step: StepScrapingModel,
     ) -> tuple[bool, str]:
         """Dispatches a step to its handler and converts exceptions to messages.
 
@@ -940,7 +940,7 @@ class ScrappingService:
         full_url = urljoin(page.url, img_src_url)
         ext = Path.splitext(full_url.split("?")[0])[1] or ".jpg"
         filename = Path(full_url.split("?")[0]).name + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + ext
-        dest = self._folder_scrapping / filename
+        dest = self._folder_scraping / filename
 
         # Utilisation du réseau du navigateur pour récupérer l'image
         response = page.context.request.get(
@@ -951,7 +951,7 @@ class ScrappingService:
             },
         )  ## TODO PCO : gérer les erreurs réseau et HTTP, notamment les 403 de Cloudflare
         if response.ok:
-            make_all_folders_if_not_exists(self._folder_scrapping, is_file_path=False)
+            make_all_folders_if_not_exists(self._folder_scraping, is_file_path=False)
             with open(dest, "wb") as f:
                 f.write(response.body())
         else:
@@ -962,7 +962,7 @@ class ScrappingService:
         ## TODO PCO : plante sur cloduflare (image sur un autre serveur)
         # raw_name = url.split("/")[-1].split("?")[0]
         # filename = raw_name if raw_name else "image.jpg"
-        # dest = self._folder_scrapping / filename  ##TODO PCO
+        # dest = self._folder_scraping / filename  ##TODO PCO
         # urllib.request.urlretrieve(url, dest) # Stream the image bytes directly to disk.
         # return dest
 
@@ -973,8 +973,8 @@ class ScrappingService:
         steps_failed: int,
         cancelled: bool,
         started_at: str,
-    ) -> ScrappingReportModel:
-        """Assembles the final ScrappingReportModel from collected run data.
+    ) -> ScrapingReportModel:
+        """Assembles the final ScrapingReportModel from collected run data.
 
         Args:
             provider: The provider that was executed.
@@ -984,7 +984,7 @@ class ScrappingService:
             started_at: Formatted timestamp when the run started.
 
         Returns:
-            A fully populated ScrappingReportModel.
+            A fully populated ScrapingReportModel.
 
         Raises:
             None.
@@ -992,7 +992,7 @@ class ScrappingService:
         finished_at = datetime.now().strftime(DATETIME_FORMAT)
 
         # Construct the report from aggregated counters and per-step details.
-        return ScrappingReportModel(
+        return ScrapingReportModel(
             provider_name=provider.provider_name,
             total_steps=len(provider.steps),
             steps_done=len(results),

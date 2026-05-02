@@ -1,6 +1,6 @@
 """Renderer for a single workflow step item inside DragDropList.
 
-Implements ItemRenderer[StepScrappingModel] as a callable class so that
+Implements ItemRenderer[StepScrapingModel] as a callable class so that
 WorkflowBuilderView remains free of canvas calls and label-formatting logic.
 
 Example:
@@ -18,7 +18,7 @@ import tkinter as tk
 from collections.abc import Callable
 from typing import Any
 
-from models.step_scrapping_model import StepScrappingModel, StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -159,7 +159,7 @@ _STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any]], str]] = {
 
 
 class StepItemRenderer:
-    """ItemRenderer[StepScrappingModel] for DragDropList.
+    """ItemRenderer[StepScrapingModel] for DragDropList.
 
     Encapsulates all visual and label logic for a workflow step item.
     WorkflowBuilderView owns an instance and passes it as render_item.
@@ -217,7 +217,7 @@ class StepItemRenderer:
     # ── Public helpers ────────────────────────────────────────────────────────
 
     @staticmethod
-    def format_label(step: StepScrappingModel) -> str:
+    def format_label(step: StepScrapingModel) -> str:
         """Returns a concise human-readable description of a step.
 
         Falls back to the raw StepType value string when no formatter is
@@ -232,7 +232,7 @@ class StepItemRenderer:
         fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
         return fmt(step.params) if fmt else step.step_type.value
 
-    def _build_label_cache_key(self, step: StepScrappingModel) -> tuple[StepType, tuple[tuple[str, str], ...]]:
+    def _build_label_cache_key(self, step: StepScrapingModel) -> tuple[StepType, tuple[tuple[str, str], ...]]:
         """Builds a stable cache key from a step's type and params snapshot.
 
         Args:
@@ -245,7 +245,7 @@ class StepItemRenderer:
         params_key = tuple((k, repr(v)) for k, v in step.params.items())
         return (step.step_type, params_key)
 
-    def _format_label_cached(self, step: StepScrappingModel) -> str:
+    def _format_label_cached(self, step: StepScrapingModel) -> str:
         """Returns a cached label to avoid recomputing during redraw bursts."""
         key = self._build_label_cache_key(step)
         label = self._label_cache.get(key)
@@ -311,7 +311,7 @@ class StepItemRenderer:
     def _draw_label(
         self,
         canvas: tk.Canvas,
-        item: StepScrappingModel,
+        item: StepScrapingModel,
         idx: int,
         x: int,
         y: int,
@@ -363,7 +363,7 @@ class StepItemRenderer:
     def __call__(
         self,
         canvas: tk.Canvas,
-        item: StepScrappingModel,
+        item: StepScrapingModel,
         idx: int,
         x: int,
         y: int,
@@ -373,7 +373,7 @@ class StepItemRenderer:
     ) -> None:
         """Renders one step item into (x, y, x+w, y+h). Never calls canvas.delete().
 
-        Satisfies the ItemRenderer[StepScrappingModel] protocol defined in
+        Satisfies the ItemRenderer[StepScrapingModel] protocol defined in
         drag_drop_list.py.
 
         Args:

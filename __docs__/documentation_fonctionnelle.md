@@ -30,5 +30,5 @@ L'interface propose des options intégrées pour maximiser la réussite du scrap
 2. Dans l'onglet *Fournisseurs*, il clique sur "Créer un fournisseur" (ou choisit d'en modifier un existant).
 3. Via l'éditeur, il saisit un *Nom*, une *URL*, et ajoute quelques étapes dans la zone *Workflow* (ex: `WAIT` suivi d'un `EXTRACT_TEXT`). Il sauvegarde le fournisseur.
 4. L'utilisateur retourne dans *Fournisseurs*, et clique sur "Lancer" sur sa nouvelle configuration.
-5. L'application bascule sur l'onglet *Scrapping*. L'utilisateur observe l'initialisation du moteur en arrière-plan, la navigation, puis l'exécution des étapes avec le compte rendu en temps réel.
+5. L'application bascule sur l'onglet *Scraping*. L'utilisateur observe l'initialisation du moteur en arrière-plan, la navigation, puis l'exécution des étapes avec le compte rendu en temps réel.
 6. Le logiciel clôture la session proprement (succès ou erreur) et le résultat ainsi que les logs finaux s'affichent.

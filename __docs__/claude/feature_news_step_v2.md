@@ -4,7 +4,7 @@
 
 1. Read `AGENTS.md` fully and follow every instruction it contains.
 2. Read these files fully before touching anything:
-   - `src/models/step_scrapping_model.py` — contains `StepType` enum and `_DEFAULT_PARAMS`. **All additions go here.**
+   - `src/models/step_scraping_model.py` — contains `StepType` enum and `_DEFAULT_PARAMS`. **All additions go here.**
    - `src/views/workflow_builder_view.py` — contains `_format_step_label()` and `WorkflowBuilderView`. Extend, do not rewrite.
    - `src/views/step_edit_dialog_view.py` — contains `StepInlineFormPanel`, `StepHelpPanel`, `StepHelpTexts`. Extend, do not rewrite.
 
@@ -114,7 +114,7 @@ Validation: `wait_duration >= 1` and `wait_unit` is one of the four allowed valu
 
 ## Changes required — layer by layer
 
-### 1. `src/models/step_scrapping_model.py`
+### 1. `src/models/step_scraping_model.py`
 
 Add the 4 new members to the `StepType` enum after `SCROLL_DOWN`, in execution order:
 ```python
@@ -217,7 +217,7 @@ Fields in order:
 - `ttk.Combobox` for `condition` (display: `"Si succès"` / `"Si échec"` / `"Toujours"`; maps to `"success"` / `"failure"` / `"always"`; default `"Si succès"`)
 - `ttk.Combobox` for `target_index` populated dynamically from the live step list. **The presenter must call `set_available_steps(steps)` before opening this form.** Display as `"Étape N — <label>"` (1-based), store zero-based index as value.
 
-Add `set_available_steps(steps: list[StepScrappingModel])` to `StepInlineFormPanel` if it does not already exist.
+Add `set_available_steps(steps: list[StepScrapingModel])` to `StepInlineFormPanel` if it does not already exist.
 
 **`_build_form_END_PROCESS()`**
 - `ttk.Spinbox` for `wait_duration` (range 0–99999, default 0)

@@ -22,7 +22,7 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
 
-from models.step_scrapping_model import StepScrappingModel
+from models.step_scraping_model import StepScrapingModel
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
 from views.step_edit_dialog_view import StepInlineFormPanel
@@ -59,7 +59,7 @@ class WorkflowListView(ttk.Frame):
         on_delete_step: Called with the step index when Delete is confirmed.
         on_move_step: Called with (index, direction) where direction is -1 or +1.
         on_reorder_steps: Called with the full reordered list after any list mutation.
-        on_confirm_inline_step: Called with the confirmed StepScrappingModel.
+        on_confirm_inline_step: Called with the confirmed StepScrapingModel.
         on_cancel_inline_step: Called when the inline form is cancelled.
         on_clear_all_steps: Called when the user clears the full step list.
     """
@@ -73,7 +73,7 @@ class WorkflowListView(ttk.Frame):
         super().__init__(parent)
         self._init_callbacks()
         self._selected_index: int | None = None
-        self._last_steps: list[StepScrappingModel] = []
+        self._last_steps: list[StepScrapingModel] = []
         # Guard: True while a DragDropList callback is executing, so that
         # re-entrant render_steps calls from the presenter are deferred.
         self._dnd_busy: bool = False
@@ -87,8 +87,8 @@ class WorkflowListView(ttk.Frame):
         self.on_edit_step: Callable[[int], None] | None = None
         self.on_delete_step: Callable[[int], None] | None = None
         self.on_move_step: Callable[[int, int], None] | None = None
-        self.on_reorder_steps: Callable[[list[StepScrappingModel]], None] | None = None
-        self.on_confirm_inline_step: Callable[[StepScrappingModel], None] | None = None
+        self.on_reorder_steps: Callable[[list[StepScrapingModel]], None] | None = None
+        self.on_confirm_inline_step: Callable[[StepScrapingModel], None] | None = None
         self.on_cancel_inline_step: Callable[[], None] | None = None
         self.on_clear_all_steps: Callable[[], None] | None = None
 
@@ -155,7 +155,7 @@ class WorkflowListView(ttk.Frame):
         self._scroll_fn = self._on_mousewheel_scroll
 
         # DragDropList embedded as a scrolled child.
-        self._dnd_list: DragDropList[StepScrappingModel] = DragDropList(
+        self._dnd_list: DragDropList[StepScrapingModel] = DragDropList(
             outer,
             items=[],
             render_item=self._step_renderer,
@@ -226,7 +226,7 @@ class WorkflowListView(ttk.Frame):
     # Public render interface (called by the presenter)
     # ---------------------------------------------------------------
 
-    def render_steps(self, steps: list[StepScrappingModel]) -> None:
+    def render_steps(self, steps: list[StepScrapingModel]) -> None:
         """Redraws the entire step list.
 
         Args:
@@ -261,7 +261,7 @@ class WorkflowListView(ttk.Frame):
         self._toast_label.grid()
         self.after(3000, self._hide_toast)
 
-    def show_inline_form(self, step: StepScrappingModel | None = None) -> None:
+    def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
         """Reveals both Brique logique and Aide à la saisie panels.
 
         Loading the form fires on_type_changed, which in turn updates the
@@ -278,7 +278,7 @@ class WorkflowListView(ttk.Frame):
         """Hides both Brique logique and Aide à la saisie panels."""
         self._bottom_row.grid_remove()
 
-    def set_available_steps(self, steps: list[StepScrappingModel]) -> None:
+    def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
         """Forwards the step list to the inline form for JUMP_TO_STEP target population.
 
         Must be called before show_inline_form() whenever JUMP_TO_STEP may be used.
@@ -305,7 +305,7 @@ class WorkflowListView(ttk.Frame):
     # DragDropList action callbacks
     # ---------------------------------------------------------------
 
-    def _on_dnd_move_up(self, _: StepScrappingModel, idx: int) -> None:
+    def _on_dnd_move_up(self, _: StepScrapingModel, idx: int) -> None:
         # Keep selection index aligned with the moved step.
         if self._selected_index == idx:
             self._selected_index = max(0, idx - 1)
@@ -319,7 +319,7 @@ class WorkflowListView(ttk.Frame):
         finally:
             self._dnd_busy = False
 
-    def _on_dnd_move_down(self, _: StepScrappingModel, idx: int) -> None:
+    def _on_dnd_move_down(self, _: StepScrapingModel, idx: int) -> None:
         if self._selected_index == idx:
             self._selected_index = min(len(self._dnd_list.items) - 1, idx + 1)
 
@@ -330,13 +330,13 @@ class WorkflowListView(ttk.Frame):
         finally:
             self._dnd_busy = False
 
-    def _on_dnd_edit(self, _: StepScrappingModel, idx: int) -> None:
+    def _on_dnd_edit(self, _: StepScrapingModel, idx: int) -> None:
         self._selected_index = idx
         self._dnd_list.redraw()  # show highlight immediately without requiring a full rebuild
         if self.on_edit_step:
             self.on_edit_step(idx)
 
-    def _on_dnd_delete(self, step: StepScrappingModel, idx: int) -> bool:
+    def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
         label = StepItemRenderer.format_label(step)
         confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape {idx + 1} — {label} ?")
@@ -359,12 +359,12 @@ class WorkflowListView(ttk.Frame):
 
         return True
 
-    def _on_dnd_duplicate(self, step: StepScrappingModel, _: int) -> StepScrappingModel:
+    def _on_dnd_duplicate(self, step: StepScrapingModel, _: int) -> StepScrapingModel:
         # Serialise then deserialise to produce an independent deep copy.
         self._set_steps_count(len(self._dnd_list.items) + 1)
-        return StepScrappingModel.from_dict(step.to_dict())
+        return StepScrapingModel.from_dict(step.to_dict())
 
-    def _on_dnd_reorder(self, steps: list[StepScrappingModel]) -> None:
+    def _on_dnd_reorder(self, steps: list[StepScrapingModel]) -> None:
         # Fires after every DragDropList mutation (move, delete, duplicate, drag).
         # Gives the presenter a chance to sync its own step list without refreshing.
         self._set_steps_count(len(steps))
@@ -456,7 +456,7 @@ class WorkflowListView(ttk.Frame):
         if self.on_add_step:
             self.on_add_step()
 
-    def _fire_confirm_step(self, step: StepScrappingModel) -> None:
+    def _fire_confirm_step(self, step: StepScrapingModel) -> None:
         """Forwards the confirmed step to the presenter callback.
 
         Args:

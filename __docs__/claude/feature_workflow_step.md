@@ -5,7 +5,7 @@
 1. Read `AGENTS.md` fully and follow every instruction it contains.
 2. Read and understand these files before touching anything:
    - `src/models/provider_model.py` — fully implemented, source of truth for provider structure
-   - `src/models/step_scrapping_model.py` — class is a **placeholder**: defined and referenced but empty body. You will implement it.
+   - `src/models/step_scraping_model.py` — class is a **placeholder**: defined and referenced but empty body. You will implement it.
    - `src/views/provider_edit_view.py` — existing view; the Workflow Builder will be embedded inside it. Locate the frame named **"Workflow & Instructions"** — this is your insertion point.
 3. Inspect `src/interfaces/` — list all existing abstract base classes before creating new ones.
 4. Inspect `src/shared/` — identify base classes and utilities to inherit from or reuse.
@@ -22,17 +22,17 @@ The UI must be embedded **inside the existing `"Workflow & Instructions"` frame*
 
 ---
 
-## Step 1 — Implement the `StepScrapping` model
+## Step 1 — Implement the `StepScraping` model
 
-The class in `src/models/step_scrapping_model.py` is empty. Implement it now.
+The class in `src/models/step_scraping_model.py` is empty. Implement it now.
 
-- Inspect `provider_model.py` to understand how `StepScrapping` is referenced and what fields are expected.
-- Define a `StepType` enum in `step_scrapping_model.py` — do not create it elsewhere.
+- Inspect `provider_model.py` to understand how `StepScraping` is referenced and what fields are expected.
+- Define a `StepType` enum in `step_scraping_model.py` — do not create it elsewhere.
 - Use Python dataclass conventions (`@dataclass`, native type hints, no `from __future__ import annotations`).
 
 ### Step types and their parameter contracts
 
-Each `StepScrapping` instance holds a `step_type: StepType` and a `params: dict` whose keys depend on the type.
+Each `StepScraping` instance holds a `step_type: StepType` and a `params: dict` whose keys depend on the type.
 
 | `StepType` | `params` keys | Defaults | Required |
 |---|---|---|---|
@@ -58,9 +58,9 @@ Allowed values for constrained fields:
 
 File: `src/models/workflow_model.py`
 
-- Represents an ordered list of `StepScrapping` attached to a provider.
+- Represents an ordered list of `StepScraping` attached to a provider.
 - No logic, no methods beyond basic dataclass helpers.
-- Reuses `StepScrapping` — do not redefine step structure here.
+- Reuses `StepScraping` — do not redefine step structure here.
 
 ---
 
@@ -115,7 +115,7 @@ A `tk.Toplevel` modal. Layout:
 2. A dynamic form area below: when the type changes, the form area is cleared and rebuilt with the fields specific to that type.
 3. Confirm / Cancel buttons at the bottom.
 4. Pre-fills all fields when editing an existing step.
-5. Returns the result via a `.result: StepScrapping | None` attribute.
+5. Returns the result via a `.result: StepScraping | None` attribute.
 
 **Dynamic form — one sub-form per step type:**
 
@@ -172,7 +172,7 @@ view.on_move_step: Callable[[int, int], None] | None   # index, direction (-1/+1
 view.on_run_workflow: Callable | None
 
 # Render methods the Presenter calls on the view
-view.render_steps(steps: list[StepScrapping]) -> None
+view.render_steps(steps: list[StepScraping]) -> None
 view.set_run_button_state(enabled: bool) -> None
 view.show_toast(message: str, level: str = "info") -> None
 view.append_log(line: str) -> None
@@ -202,7 +202,7 @@ view.append_log(line: str) -> None
 
 1. Read `AGENTS.md`, then the four source files listed at the top
 2. Inspect `src/interfaces/` and `src/shared/`
-3. Implement `StepScrapping` model
+3. Implement `StepScraping` model
 4. Create `Workflow` model
 5. Create interfaces (only if missing)
 6. Implement `WorkflowService`

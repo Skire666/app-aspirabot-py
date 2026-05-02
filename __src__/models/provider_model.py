@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import cast
 
-from models.step_scrapping_model import StepScrappingModel
+from models.step_scraping_model import StepScrapingModel
 from shared.random_util import generate_rng_string_x10
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -56,7 +56,7 @@ class ProviderModel:
     version: str
     browser_displayed: bool
     automation_obfuscated: bool
-    steps: list[StepScrappingModel] = field(default_factory=lambda: cast(list[StepScrappingModel], []))
+    steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
 
     @classmethod
     def get_default_data(cls) -> "ProviderModel":
