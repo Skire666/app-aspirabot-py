@@ -4,6 +4,7 @@
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import traceback
 from collections.abc import Callable
 
 from services.startup_service import StartupService
@@ -26,7 +27,7 @@ _STEP_DISPLAY_MS = 100
 _MINIMUM_DISPLAY_TIME_MS = 1000
 
 # Human-readable label shown on the status line for each step.
-_STEP_LABELS = ("◢", "◣", "◤", "◥")
+_STEP_LABELS = (" ", " ", " ", " ")
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -149,6 +150,7 @@ class SplashscreenPresenter:
             message: Human-readable description of the failure cause.
         """
         # Display the error while the splash is still visible.
+        traceback.print_stack()
         self._view.show_error(message)
         self._view.destroy()
         self._on_failure()
