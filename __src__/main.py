@@ -108,8 +108,11 @@ def _launch_main_app(
     # Register views, reveal the window, and anchor presenters against GC.
     _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scrapping_view)
     root._app_presenters = [  # type: ignore[attr-defined]
-        log_presenter, config_presenter,
-        provider_presenter, provider_edit_presenter, scrapping_presenter,
+        log_presenter,
+        config_presenter,
+        provider_presenter,
+        provider_edit_presenter,
+        scrapping_presenter,
     ]
     root.deiconify()
 
@@ -162,8 +165,10 @@ def _init_provider_components(
     main_view: MainView,
     config_model: AppConfigurationModel,
 ) -> tuple[
-    ProvidersListView, ProviderPresenter,
-    ProviderEditView, ProviderEditPresenter,
+    ProvidersListView,
+    ProviderPresenter,
+    ProviderEditView,
+    ProviderEditPresenter,
     ProviderService,
 ]:
     """Create and wire the provider list and edit components.
@@ -227,6 +232,7 @@ def _wire_provider_navigation(
         provider_presenter: Presenter for the provider list view.
         provider_edit_presenter: Presenter for the provider edit view.
     """
+
     def on_request_create_provider() -> None:
         # Open the edit form in creation mode and navigate to it.
         provider_edit_presenter.create_new()
@@ -265,6 +271,7 @@ def _wire_scrapping_launch(
         provider_service: Service used to retrieve the full provider model by id.
         scrapping_presenter: Presenter that loads and runs the scrapping session.
     """
+
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scrapping.
         provider = provider_service.get_provider(id_file)
@@ -310,13 +317,6 @@ def _register_views(
 
 
 ## ---------------------------------------------------------------------------
-crapping", scrapping_panel_view)
-
-    # Default view on startup
-    main_view.show_view("Fournisseurs")
-
-    app.mainloop()
-
 
 if __name__ == "__main__":
     main()
