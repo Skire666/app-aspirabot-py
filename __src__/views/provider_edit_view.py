@@ -37,7 +37,7 @@ class ProviderEditView(ttk.Frame):
         self.rowconfigure(0, weight=1)
 
         main_container = ttk.Frame(self)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        main_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=10)
 
         # Top Section (Informations + Metadonnees)
         top_frame = ttk.Frame(main_container)

@@ -182,9 +182,9 @@ class StepItemRenderer:
     _C_BG_NORMAL: str = "#ffffff"
     _C_BG_SEL: str = "#dbeafe"
     _C_BORDER_NORMAL: str = "#e2e8f0"
-    _C_BORDER_SEL: str = "#3b82f6"
+    _C_BORDER_SEL: str = "#dbeafe"
     _C_FG_NORMAL: str = "#334155"
-    _C_FG_SEL: str = "#1d4ed8"
+    _C_FG_SEL: str = "#1d5bd8"
     _C_FG_FLOAT: str = "#ffffff"
     _C_FONT: tuple[str, int] = ("Segoe UI", 10)
 
