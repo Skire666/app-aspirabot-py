@@ -8,7 +8,7 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
-from __src__.views.components.canvas_checkbox import CanvasCheckbox
+from views.components.canvas_checkbox import CanvasCheckbox
 
 ## ---------------------------------------------------------------------------
 ## Classes

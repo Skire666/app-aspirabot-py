@@ -21,9 +21,8 @@ from tkinter import ttk
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
-
-from __src__.shared.random_util import generate_rng_string_x4
-from __src__.views.components.canvas_checkbox import CanvasCheckbox
+from shared.random_util import generate_rng_string_x4
+from views.components.canvas_checkbox import CanvasCheckbox
 
 _CONSTANT_MISSING_FLOAT = -16736452  # Arbitrary value used to detect missing float
 _CONSTANT_INVALID_FLOAT = -16736451  # Arbitrary value used to detect invalid float

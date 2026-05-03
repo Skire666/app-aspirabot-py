@@ -9,7 +9,7 @@ from collections.abc import Callable
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from __src__.views.components.canvas_checkbox import CanvasCheckbox
+from views.components.canvas_checkbox import CanvasCheckbox
 
 
 class AppConfigurationView(ttk.Frame):

@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from __src__.shared.random_util import generate_rng_string_x4
+from shared.random_util import generate_rng_string_x4
 
 ## ---------------------------------------------------------------------------
 ## Constants

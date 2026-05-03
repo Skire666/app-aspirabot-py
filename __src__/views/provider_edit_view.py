@@ -9,9 +9,8 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
+from views.components.canvas_checkbox import CanvasCheckbox
 from views.workflow_list_view import WorkflowListView
-
-from __src__.views.components.canvas_checkbox import CanvasCheckbox
 
 ## ---------------------------------------------------------------------------
 ## Classes
