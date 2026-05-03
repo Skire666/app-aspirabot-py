@@ -25,6 +25,7 @@ from services.startup_service import StartupService
 from shared.constants import (
     C_APP_CONFIG_FILE,
     C_TITLE_MODULE_CONFIG,
+    C_TITLE_MODULE_FAQ,
     C_TITLE_MODULE_LOGS,
     C_TITLE_MODULE_PROVIDER,
     C_TITLE_MODULE_SCRAPING,
@@ -32,6 +33,7 @@ from shared.constants import (
 )
 from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
+from views.faq_view import FaqView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
@@ -121,13 +123,14 @@ def _launch_main_app(
         _init_provider_components(main_view, config_model)
     )
     scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model)
+    faq_view = FaqView(main_view.content_area)
 
     # Wire inter-component navigation and launch callbacks.
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
     _wire_scraping_launch(main_view, provider_presenter, provider_service, scraping_presenter)
 
     # Register views, reveal the window, and anchor presenters against GC.
-    _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view)
+    _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view)
     root._app_presenters = [  # type: ignore[attr-defined]
         log_presenter,
         config_presenter,
@@ -315,6 +318,7 @@ def _register_views(
     provider_view: ProvidersListView,
     provider_edit_view: ProviderEditView,
     scraping_view: ScrapingPanelView,
+    faq_view: FaqView,
 ) -> None:
     """Register all module views with the sidebar and display the default tab.
 
@@ -331,6 +335,7 @@ def _register_views(
     main_view.add_view(C_TITLE_MODULE_PROVIDER, provider_view)
     main_view.add_view(C_TITLE_MODULE_WORKFLOW, provider_edit_view)
     main_view.add_view(C_TITLE_MODULE_SCRAPING, scraping_view)
+    main_view.add_view(C_TITLE_MODULE_FAQ, faq_view)
     main_view.add_view(C_TITLE_MODULE_CONFIG, config_view)
 
     # Land on the providers list as the startup default.
