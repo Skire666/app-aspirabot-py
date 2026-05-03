@@ -21,7 +21,7 @@ from tkinter import ttk
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
-from shared.random_util import generate_rng_string_x4
+from shared.random_util import generate_rng_hexastring
 from views.components.canvas_checkbox import CanvasCheckbox
 
 _CONSTANT_MISSING_FLOAT = -16736452  # Arbitrary value used to detect missing float
@@ -31,17 +31,17 @@ _CONSTANT_INVALID_FLOAT = -16736451  # Arbitrary value used to detect invalid fl
 STEP_TYPE_LABELS: dict[StepType, str] = {
     StepType.OPEN_URL: "Ouvrir une URL",
     StepType.REFRESH_PAGE: "Rafraîchir la page",
-    StepType.SLEEP: "Pause fixe",
-    StepType.RANDOM_PAUSE: "Pause aléatoire",
-    StepType.DOWNLOAD_IMAGE: "Télécharger une image",
-    StepType.WAIT_IMAGE_SIZE: "Attendre une taille d'image",
-    StepType.WAIT_ELEMENT: "Attendre un élément",
+    StepType.SLEEP: "Attendre une durée fixe",
+    StepType.RANDOM_PAUSE: "Attendre aléatoire",
+    StepType.DOWNLOAD_IMAGE: "Télécharger les images",
+    StepType.WAIT_IMAGE_SIZE: "Vérifier une taille d'image",
+    StepType.WAIT_ELEMENT: "Vérifier les éléments",
     StepType.COUNT_ELEMENT: "Compter les éléments",
     StepType.CLICK_ELEMENT: "Cliquer sur un élément",
     StepType.SCROLL_DOWN: "Défiler vers le bas",
-    StepType.EXTRACT_TEXT: "Extraire le texte (CSS)",
+    StepType.EXTRACT_TEXT: "Extraire contenu textuel",
     StepType.JUMP_TO_STEP: "Sauter à une étape",
-    StepType.CLOSE_TABS: "Fermer les onglets",
+    StepType.CLOSE_TABS: "Fermer des onglets",
     StepType.END_PROCESS: "Fin du processus",
 }
 
@@ -1137,7 +1137,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         params = self._get_params(step_type)
 
         ## TODO PCO je distingue pas les nouveaux des existants
-        step = StepScrapingModel(step_type=step_type, step_id=generate_rng_string_x4(), params=params)
+        step = StepScrapingModel(step_type=step_type, step_id=generate_rng_hexastring(10), params=params)
         if self.on_confirm:
             self.on_confirm(step)
 

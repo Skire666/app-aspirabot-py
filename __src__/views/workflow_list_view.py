@@ -28,12 +28,14 @@ from views.components.step_item_renderer import StepItemRenderer
 from views.step_edit_dialog_view import StepInlineFormPanel
 from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowStepTextHintView
 
+from __src__.shared.random_util import generate_rng_hexastring
+
 s_logger = logging.getLogger(__name__)
 
 # Layout constants
 _HEIGHT_FRAME_LOGICAL_BLOCK = 250  # TODO PCO: le bloc 'brique logique est trop petit
 _WIDTH_FRAME_LOGICAL_BLOCK = 320
-_DND_ITEM_H = 50
+_DND_ITEM_H = 46
 _DND_RESIZE_MIN_DELTA_PX = 8
 _DND_RESIZE_FINALIZE_MS = 250
 _DND_DRAG_REDRAW_MIN_INTERVAL_MS = 16
@@ -342,7 +344,7 @@ class WorkflowListView(ttk.Frame):
     def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
         label = StepItemRenderer.format_label(step)
-        confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape {idx + 1} — {label} ?")
+        confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape — {label} ?")
         if not confirmed:
             return False
 
@@ -365,7 +367,9 @@ class WorkflowListView(ttk.Frame):
     def _on_dnd_duplicate(self, step: StepScrapingModel, _: int) -> StepScrapingModel:
         # Serialise then deserialise to produce an independent deep copy.
         self._set_steps_count(len(self._dnd_list.items) + 1)
-        return StepScrapingModel.from_dict(step.to_dict())
+        new_object = StepScrapingModel.from_dict(step.to_dict())
+        new_object.step_id = generate_rng_hexastring(10)  # Ensure the duplicate has a unique ID.
+        return new_object
 
     def _on_dnd_toggle_active(self, _: StepScrapingModel, idx: int) -> None:
         """Forwards the toggle action to the presenter.

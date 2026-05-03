@@ -25,19 +25,19 @@ from models.step_scraping_model import StepScrapingModel, StepType
 ## ---------------------------------------------------------------------------
 
 
-def _fmt_open_url(p: dict[str, Any]) -> str:
+def _fmt_open_url(p: dict[str, Any], idx: int) -> str:
     """Formats an OPEN_URL step label."""
-    label = f"Open URL — {p.get('url', '')}"
+    label = f"Ouvrir une URL\n{p.get('url', '')}"
     td = p.get("timeout_duration", 0)
     if td:
         label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
     return label
 
 
-def _fmt_wait_image_size(p: dict[str, Any]) -> str:
+def _fmt_wait_image_size(p: dict[str, Any], idx: int) -> str:
     """Formats a WAIT_IMAGE_SIZE step label."""
     label = (
-        f"Attendre taille image — "
+        f"Vérifier une taille d'image\n"
         f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
         f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
     )
@@ -47,16 +47,16 @@ def _fmt_wait_image_size(p: dict[str, Any]) -> str:
     return label
 
 
-def _fmt_wait_element(p: dict[str, Any]) -> str:
+def _fmt_wait_element(p: dict[str, Any], idx: int) -> str:
     """Formats a WAIT_ELEMENT step label."""
-    label = f"Attendre élément — {p.get('selector', '')}"
+    label = f"Vérifier les éléments\n{p.get('selector', '')}"
     td = p.get("timeout_duration", 0)
     if td:
         label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
     return label
 
 
-def _fmt_count_element(p: dict[str, Any]) -> str:
+def _fmt_count_element(p: dict[str, Any], idx: int) -> str:
     """Formats a COUNT_ELEMENT step label."""
     op_labels = {
         "between": "compris entre",
@@ -76,60 +76,69 @@ def _fmt_count_element(p: dict[str, Any]) -> str:
         val_str = f"{p.get('value_min', 0)} et {p.get('value_max', 0)}"
     else:
         val_str = str(p.get("value", 0))
-    return f"Compter — {selector} [{op} {val_str}]"
+    return f"Compter les éléments\n{selector} [{op} {val_str}]"
 
 
-def _fmt_extract_text(p: dict[str, Any]) -> str:
+def _fmt_extract_text(p: dict[str, Any], idx: int) -> str:
     """Formats an EXTRACT_TEXT step label."""
     selector = p.get("selector", "")
     mode = p.get("extract_mode", "innerText")
     target = p.get("target", "first")
-    return f"Extraire texte — {selector} [{mode} / {target}]"
+    return f"Extraire les textes\n{selector} [{mode} / {target}]"
 
 
-def _fmt_jump_to_step(p: dict[str, Any]) -> str:
+def _fmt_jump_to_step(p: dict[str, Any], idx: int) -> str:
     """Formats a JUMP_TO_STEP step label."""
     target = p.get("target_index", 0)
     cond = p.get("condition", "success")
-    return f"Sauter à l'étape {target + 1} — si {cond}"
+    txt_display = (
+        f"Si l'étape [{str(idx).zfill(2)}] est un succès"
+        if cond == "success"
+        else f"Si l'étape [{str(idx).zfill(2)}] est un échec"
+        if cond == "failure"
+        else "TOUJOURS"
+    )
+    # Pad for better alignment (01, 02, etc.)
+    return f"{txt_display}\nSe rendre à l'étape {str(target + 1).zfill(2)}"
 
 
-def _fmt_close_tabs(p: dict[str, Any]) -> str:
+def _fmt_close_tabs(p: dict[str, Any], idx: int) -> str:
     """Formats a CLOSE_TABS step label."""
     url_filter = p.get("url_filter", "")
     max_t = p.get("max_tabs", 0)
-    filter_str = f" (filtre : {url_filter})" if url_filter else ""
-    return f"Fermer onglets — max {max_t}{filter_str}"
+    filter_str = f"  -  Sél. : {url_filter})" if url_filter else ""
+    return f"Fermer des onglets\nMax. ouverts : {max_t}{filter_str}"
 
 
-def _fmt_end_process(p: dict[str, Any]) -> str:
+def _fmt_end_process(p: dict[str, Any], idx: int) -> str:
     """Formats an END_PROCESS step label."""
-    return f"Fin du processus — attendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
+    return f"Fin du processus\nAttendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
 
 
-def _fmt_scroll_down(p: dict[str, Any]) -> str:
-    return f"Défiler — {p.get('pixels', 0)} px"
+def _fmt_scroll_down(p: dict[str, Any], idx: int) -> str:
+    return f"Défilement vers le bas\nLongueur: {p.get('pixels', 0)} px"
 
 
-def _fmt_click_element(p: dict[str, Any]) -> str:
-    return f"Cliquer — {p.get('selector', '')}"
+def _fmt_click_element(p: dict[str, Any], idx: int) -> str:
+    return f"Cliquer sur un élément\nSélecteur: {p.get('selector', '')}"
 
 
-def _fmt_refresh_page(p: dict[str, Any]) -> str:
-    return f"Rafraîchir la page{' (vider cache)' if p.get('clear_cache') else ''}"
+def _fmt_refresh_page(p: dict[str, Any], idx: int) -> str:
+    txt_display_cached = "Vide le cache (Ctrl+F5)" if p.get("clear_cache") else "Garde le cache (F5))"
+    return f"Rafraîchir la page\n{txt_display_cached}"
 
 
-def _fmt_sleep(p: dict[str, Any]) -> str:
-    return f"Pause fixe — {p.get('duration', 0)} {p.get('unit', '')}"
+def _fmt_sleep(p: dict[str, Any], idx: int) -> str:
+    return f"Attendre une durée fixe\n{p.get('duration', 0)} {p.get('unit', '')}"
 
 
-def _fmt_random_pause(p: dict[str, Any]) -> str:
-    return f"Pause aléatoire — {p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
+def _fmt_random_pause(p: dict[str, Any], idx: int) -> str:
+    return f"Attendre aléatoirement\n{p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
 
 
-def _fmt_download_image(p: dict[str, Any]) -> str:
+def _fmt_download_image(p: dict[str, Any], idx: int) -> str:
     return (
-        f"Télécharger image — {p.get('mode', 'largest')} — "
+        f"Télécharger les images\n{p.get('mode', 'largest')} — "
         f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
         f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
     )
@@ -137,7 +146,7 @@ def _fmt_download_image(p: dict[str, Any]) -> str:
 
 # Dispatch table: each StepType maps to its label formatter function.
 
-_STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any]], str]] = {
+_STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any], int], str]] = {
     StepType.OPEN_URL: _fmt_open_url,
     StepType.REFRESH_PAGE: _fmt_refresh_page,
     StepType.SLEEP: _fmt_sleep,
@@ -217,7 +226,7 @@ class StepItemRenderer:
     # ── Public helpers ────────────────────────────────────────────────────────
 
     @staticmethod
-    def format_label(step: StepScrapingModel) -> str:
+    def format_label(step: StepScrapingModel, idx: int) -> str:
         """Returns a concise human-readable description of a step.
 
         Falls back to the raw StepType value string when no formatter is
@@ -225,24 +234,23 @@ class StepItemRenderer:
 
         Args:
             step: The step model to describe.
+            idx: The index of the step in the list.
 
         Returns:
             A short string combining the step type and its key parameters.
         """
-        prefix = f"[{('ON' if step.is_active else 'OFF')}] - #{step.step_id} - "
+        prefix = f"[{('ON' if step.is_active else 'OFF')}] - "
         fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
 
-        print(prefix + (fmt(step.params) if fmt else step.step_type.value))  # DEBUG
+        return prefix + fmt(step.params, idx) if fmt else step.step_type.value
 
-        return prefix + fmt(step.params) if fmt else step.step_type.value
-
-    def _format_label_cached(self, step: StepScrapingModel) -> str:
+    def _format_label_cached(self, step: StepScrapingModel, idx: int) -> str:
         """Returns a cached label to avoid recomputing during redraw bursts."""
         key = step.step_id + str(step.is_active)
         label = self._label_cache.get(key)
         if label is not None:
             return label
-        label = self.format_label(step)
+        label = self.format_label(step, idx)
         self._label_cache[key] = label
         return label
 
@@ -321,7 +329,8 @@ class StepItemRenderer:
             colors: Resolved palette dict from _resolve_colors.
         """
         # Build "N.  <description>" using the formatter dispatch table.
-        label = f"{idx + 1}.  {self._format_label_cached(item)}"
+        str_index = str(idx + 1).zfill(2)  # Pad single-digit indices for better alignment (01., 02., etc.)
+        label = f"{str_index}.  {self._format_label_cached(item, idx)}"
         canvas.create_text(
             x + 10,
             y + h // 2,

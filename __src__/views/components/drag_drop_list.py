@@ -79,7 +79,7 @@ DEFAULT_THEME: dict[str, str] = {
 _MINORED_RECT_FROM_COLLIDER = 6
 
 # height of each item in px
-_DEFAULT_ITEM_HEIGHT = 50
+_DEFAULT_ITEM_HEIGHT = 48
 
 # vertical spacing between items; also used to compute the insert-line position
 _DEFAULT_PAD_BETWEEN_ITEMS = 4

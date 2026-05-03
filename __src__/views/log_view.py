@@ -27,6 +27,7 @@ class LogView(ttk.Frame):
         super().__init__(parent)
 
         self._filter_vars: dict[str, tk.BooleanVar] = {
+            "CRITICAL": tk.BooleanVar(value=True),
             "ERROR": tk.BooleanVar(value=True),
             "WARNING": tk.BooleanVar(value=True),
             "INFO": tk.BooleanVar(value=True),
