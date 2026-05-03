@@ -73,6 +73,7 @@ class WorkflowListPresenter:
         self._view.on_edit_step = self._on_edit_step
         self._view.on_delete_step = self._on_delete_step
         self._view.on_move_step = self._on_move_step
+        self._view.on_toggle_active_step = self._on_toggle_active_step
         self._view.on_reorder_steps = self._on_reorder_steps
         self._view.on_confirm_inline_step = self._on_confirm_inline_step
         self._view.on_cancel_inline_step = self._on_cancel_inline_step
@@ -212,6 +213,15 @@ class WorkflowListPresenter:
                 self._steps[index],
             )
             self._refresh_view()
+
+    def _on_toggle_active_step(self, index: int) -> None:
+        """Toggles the is_active state of a step.
+
+        Args:
+            index: Zero-based index of the step to toggle.
+        """
+        if 0 <= index < len(self._steps):
+            self._steps[index].is_active = not self._steps[index].is_active
 
     # ---------------------------------------------------------------
     # Persist and refresh helpers

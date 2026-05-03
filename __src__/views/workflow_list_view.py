@@ -58,6 +58,7 @@ class WorkflowListView(ttk.Frame):
         on_edit_step: Called with the step index when Edit is clicked.
         on_delete_step: Called with the step index when Delete is confirmed.
         on_move_step: Called with (index, direction) where direction is -1 or +1.
+        on_toggle_active_step: Called with the step index when Toggle is clicked.
         on_reorder_steps: Called with the full reordered list after any list mutation.
         on_confirm_inline_step: Called with the confirmed StepScrapingModel.
         on_cancel_inline_step: Called when the inline form is cancelled.
@@ -87,6 +88,7 @@ class WorkflowListView(ttk.Frame):
         self.on_edit_step: Callable[[int], None] | None = None
         self.on_delete_step: Callable[[int], None] | None = None
         self.on_move_step: Callable[[int, int], None] | None = None
+        self.on_toggle_active_step: Callable[[int], None] | None = None
         self.on_reorder_steps: Callable[[list[StepScrapingModel]], None] | None = None
         self.on_confirm_inline_step: Callable[[StepScrapingModel], None] | None = None
         self.on_cancel_inline_step: Callable[[], None] | None = None
@@ -164,6 +166,7 @@ class WorkflowListView(ttk.Frame):
             on_duplicate=self._on_dnd_duplicate,
             on_edit=self._on_dnd_edit,
             on_delete=self._on_dnd_delete,
+            on_toggle_active=self._on_dnd_toggle_active,
             on_reorder=self._on_dnd_reorder,
             item_height=_DND_ITEM_H,
             resize_min_delta_px=_DND_RESIZE_MIN_DELTA_PX,
@@ -363,6 +366,20 @@ class WorkflowListView(ttk.Frame):
         # Serialise then deserialise to produce an independent deep copy.
         self._set_steps_count(len(self._dnd_list.items) + 1)
         return StepScrapingModel.from_dict(step.to_dict())
+
+    def _on_dnd_toggle_active(self, _: StepScrapingModel, idx: int) -> None:
+        """Forwards the toggle action to the presenter.
+
+        Args:
+            idx: The index of the step in the list.
+        """
+        # Guard against re-entrant render_steps while on_toggle_active fires.
+        self._dnd_busy = True
+        try:
+            if self.on_toggle_active_step:
+                self.on_toggle_active_step(idx)
+        finally:
+            self._dnd_busy = False
 
     def _on_dnd_reorder(self, steps: list[StepScrapingModel]) -> None:
         # Fires after every DragDropList mutation (move, delete, duplicate, drag).

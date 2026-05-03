@@ -67,6 +67,8 @@ DEFAULT_THEME: dict[str, str] = {
     "btn_dup": "#0ea5e9",  # duplicate button background
     "btn_edit": "#f59e0b",  # edit button background
     "btn_del": "#ef4444",  # delete button background
+    "btn_toggle_on": "#10b981",  # checked state background
+    "btn_toggle_off": "#9ca3af",  # unchecked state background
     "btn_hover": "#808080",  # any button background when hovered
     "btn_fg": "#ffffff",  # button icon/text foreground
 }
@@ -112,6 +114,7 @@ class _BtnDef:
 
 
 C_MINI_BUTTONS_WORKFLOW: list[_BtnDef] = [  # display order (right → left)
+    _BtnDef("toggle_active", "✓", "btn_toggle_on", ""),
     _BtnDef("delete", "D", "btn_del", C_RESS_ICON_WHITE_DELETE),
     _BtnDef("edit", "E", "btn_edit", C_RESS_ICON_WHITE_EDIT),
     _BtnDef("duplicate", "C", "btn_dup", C_RESS_ICON_WHITE_COPY),
@@ -191,6 +194,7 @@ class DragDropList(tk.Frame, Generic[T]):
     on_duplicate        : fn(item, idx) → clone | None → button hidden
     on_edit             : fn(item, idx)  | None → button hidden
     on_delete           : fn(item, idx) → bool  | None → button hidden
+    on_toggle_active    : fn(item, idx)  | None → button hidden
     """
 
     def __init__(  # noqa: PLR0913
@@ -218,6 +222,7 @@ class DragDropList(tk.Frame, Generic[T]):
         on_duplicate: Callable[[T, int], T] | None = None,
         on_edit: Callable[[T, int], None] | None = None,
         on_delete: Callable[[T, int], bool] | None = None,
+        on_toggle_active: Callable[[T, int], None] | None = None,
     ) -> None:
         self._theme: dict[str, str] = {**DEFAULT_THEME, **(theme or {})}
         super().__init__(parent, bg=self._theme["bg"])
@@ -255,6 +260,7 @@ class DragDropList(tk.Frame, Generic[T]):
             "duplicate": on_duplicate,
             "edit": on_edit,
             "delete": on_delete,
+            "toggle_active": on_toggle_active,
         }
         self._on_reorder: Callable[[list[T]], None] | None = on_reorder
 
@@ -516,6 +522,10 @@ class DragDropList(tk.Frame, Generic[T]):
             for btn in self._visible_btns:
                 x1, y1, x2, y2 = rects[btn.key]
                 hovered = self._hovered_btn == (idx, btn.key)
+                if btn.key == "toggle_active":
+                    self._draw_toggle_checkbox(idx, x1, y1, x2, y2, hovered)
+                    continue
+
                 col = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
                 self._rounded_rect(x1, y1, x2, y2, 5, col)
                 self.canvas.create_image(
@@ -523,6 +533,40 @@ class DragDropList(tk.Frame, Generic[T]):
                 )
 
         self._draw_normal_total += (time.perf_counter() - _t0) * 1000
+
+    def _draw_toggle_checkbox(self, idx: int, x1: int, y1: int, x2: int, y2: int, hovered: bool) -> None:
+        """Draws a true checked/unchecked checkbox based on item.is_active."""
+        item = self.items[idx]
+        is_checked = bool(getattr(item, "is_active", True))
+        if hovered:
+            bg = self._theme["btn_hover"]
+        else:
+            bg_key = "btn_toggle_on" if is_checked else "btn_toggle_off"
+            bg = self._theme[bg_key]
+
+        self._rounded_rect(x1, y1, x2, y2, 5, bg)
+        pad = 7
+        self.canvas.create_rectangle(
+            x1 + pad,
+            y1 + pad,
+            x2 - pad,
+            y2 - pad,
+            outline=self._theme["btn_fg"],
+            width=2,
+        )
+        if is_checked:
+            self.canvas.create_line(
+                x1 + 10,
+                y1 + 16,
+                x1 + 15,
+                y1 + 21,
+                x1 + 20,
+                y1 + 10,
+                fill=self._theme["btn_fg"],
+                width=2,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+            )
 
     def _draw_insert_line(self, pos: int) -> None:
         gap_h = self.PAD + (self._gap_expand if self._expand_gap == pos else 0)
@@ -702,8 +746,10 @@ class DragDropList(tk.Frame, Generic[T]):
                 self._apply_action_duplicate(idx, result)
         elif key == "delete" and result:
             self._apply_action_delete(idx)
+        elif key == "toggle_active":
+            self._apply_action_toggle_active(idx)
 
-    def _apply_action_delete(self, idx):
+    def _apply_action_delete(self, idx: int) -> None:
         self.items.pop(idx)
         self._notify_reorder()
         self._hovered_btn = None
@@ -713,7 +759,7 @@ class DragDropList(tk.Frame, Generic[T]):
         else:
             self.redraw()
 
-    def _apply_action_duplicate(self, idx, result):
+    def _apply_action_duplicate(self, idx: int, result: object) -> None:
         self.items.insert(idx + 1, result)
         self._notify_reorder()
         self._hovered_btn = None
@@ -723,20 +769,29 @@ class DragDropList(tk.Frame, Generic[T]):
         else:
             self.redraw()
 
-    def _apply_action_move_down(self, idx):
+    def _apply_action_move_down(self, idx: int) -> None:
         self.items.insert(idx + 1, self.items.pop(idx))
         self._notify_reorder()
         self._hovered_btn = None
         self._redraw_item(idx)
         self._redraw_item(idx + 1)
 
-    def _apply_action_move_up(self, idx):
+    def _apply_action_move_up(self, idx: int) -> None:
         self.items.insert(idx - 1, self.items.pop(idx))
         self._notify_reorder()
         self._hovered_btn = None
         self._redraw_item(idx)
         self._redraw_item(idx - 1)
         # "edit": no list mutation; the callback owns all side-effects
+
+    def _apply_action_toggle_active(self, idx: int) -> None:
+        """Applies toggle-active action and triggers UI refresh.
+
+        The callback is responsible for mutating the item's is_active state.
+        This method just refreshes the display.
+        """
+        self._hovered_btn = None
+        self._redraw_item(idx)
 
     def _notify_reorder(self) -> None:
         if self._on_reorder:
