@@ -66,7 +66,7 @@ class ProviderEditView(ttk.Frame):
 
         self._var_obfuscated = tk.BooleanVar()
         self._chk_obfuscated = CanvasCheckbox(
-            info_lf, text="Automatisation obfusqué", variable=self._var_obfuscated
+            info_lf, text="Automatisation obfusquée", variable=self._var_obfuscated
         )
         self._chk_obfuscated.grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=5)
 

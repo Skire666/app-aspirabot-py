@@ -52,7 +52,7 @@ class ProvidersListView(ttk.Frame):
         )
         self._btn_open_folder.pack(side=tk.LEFT, padx=5)
 
-        self._btn_refresh = ttk.Button(top_frame, text="Rafraîchir", command=self._notify_refresh)
+        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=self._notify_refresh)
         self._btn_refresh.pack(side=tk.LEFT, padx=5)
 
         self._btn_validate = ttk.Button(top_frame, text="Valider les fournisseurs", command=self._notify_validate)

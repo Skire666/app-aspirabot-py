@@ -2,8 +2,6 @@
 ## Imports
 ## ---------------------------------------------------------------------------
 
-import tkinter as tk
-from tkinter import ttk
 from typing import ClassVar
 
 # ---------------------------------------------------------------------------
@@ -142,52 +140,3 @@ class WorkflowStepTextHint:
             "avant la fermeture du navigateur."
         ),
     }
-
-
-# ---------------------------------------------------------------------------
-# Help panel widget
-# ---------------------------------------------------------------------------
-
-
-class WorkflowStepTextHintView(ttk.LabelFrame):
-    """Read-only help panel showing contextual guidance for the active step type.
-
-    Displayed beside StepInlineFormPanel inside WorkflowBuilderView.
-    Call set_help_text() to update the displayed content.
-    """
-
-    def __init__(self, parent: tk.Widget) -> None:
-        """Initializes the panel with a read-only text widget.
-
-        Args:
-            parent: The parent Tkinter widget to embed into.
-        """
-        super().__init__(parent, text="Aide à la saisie")
-        self._create_widgets()
-
-    def _create_widgets(self) -> None:
-        """Builds the read-only scrollable text area."""
-        # Text widget with word-wrap; locked to prevent user edits.
-        self._text = tk.Text(
-            self,
-            wrap=tk.WORD,
-            width=1,  # let grid/pack control the width via column weights
-            state=tk.DISABLED,
-            relief=tk.FLAT,
-            cursor="arrow",
-            padx=8,
-            pady=6,
-        )
-        self._text.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-
-    def set_help_text(self, text: str) -> None:
-        """Replaces the displayed help content.
-
-        Args:
-            text: New help string to display.
-        """
-        # Re-enable momentarily to allow insertion, then lock again.
-        self._text.configure(state=tk.NORMAL)
-        self._text.delete("1.0", tk.END)
-        self._text.insert("1.0", text)
-        self._text.configure(state=tk.DISABLED)

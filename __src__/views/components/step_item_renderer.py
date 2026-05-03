@@ -239,7 +239,7 @@ class StepItemRenderer:
         Returns:
             A short string combining the step type and its key parameters.
         """
-        prefix = f"[{('ON' if step.is_active else 'OFF')}] - "
+        prefix = f"[{('ON' if step.is_active else 'OFF')}]  -  "
         fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
 
         return prefix + fmt(step.params, idx) if fmt else step.step_type.value

@@ -26,7 +26,6 @@ from models.step_scraping_model import StepScrapingModel
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
 from views.step_edit_dialog_view import StepInlineFormPanel
-from views.workflow_step_text_hint_view import WorkflowStepTextHint, WorkflowStepTextHintView
 
 from __src__.shared.random_util import generate_rng_hexastring
 
@@ -210,20 +209,14 @@ class WorkflowListView(ttk.Frame):
         row.grid_propagate(False)  # enforce fixed height regardless of children
 
         # Brique logique : largeur fixe 400 px. Aide à la saisie : espace restant.
-        row.columnconfigure(0, weight=0, minsize=_WIDTH_FRAME_LOGICAL_BLOCK)
-        row.columnconfigure(1, weight=1)
+        row.columnconfigure(0, weight=0)
         row.rowconfigure(0, weight=1)
 
         # Brique logique panel — left column.
         self._inline_form = StepInlineFormPanel(row)
         self._inline_form.on_confirm = self._fire_confirm_step
         self._inline_form.on_cancel = self._fire_cancel_step
-        self._inline_form.on_type_changed = self._update_help_text
         self._inline_form.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
-
-        # Aide à la saisie panel — right column.
-        self._help_panel = WorkflowStepTextHintView(row)
-        self._help_panel.grid(row=0, column=1, sticky="nsew")
 
         return row
 
@@ -293,15 +286,6 @@ class WorkflowListView(ttk.Frame):
         """
         self._inline_form.set_available_steps(steps)
 
-    def _update_help_text(self, label: str) -> None:
-        """Updates the Aide à la saisie panel when the active step type changes.
-
-        Args:
-            label: French display label of the newly selected step type.
-        """
-        text = WorkflowStepTextHint.BY_LABEL.get(label, WorkflowStepTextHint.FALLBACK)
-        self._help_panel.set_help_text(text)
-
     def _set_steps_count(self, count: int) -> None:
         """Updates the step count displayed in the section header."""
         self._steps_section.configure(text=f"{_STEPS_SECTION_TITLE} (x{count})")
@@ -343,8 +327,8 @@ class WorkflowListView(ttk.Frame):
 
     def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
-        label = StepItemRenderer.format_label(step)
-        confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape — {label} ?")
+        label = StepItemRenderer.format_label(step, idx)
+        confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape : {str(idx + 1).zfill(2)} ?")
         if not confirmed:
             return False
 
