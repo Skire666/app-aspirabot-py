@@ -22,6 +22,8 @@ from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
 
+from __src__.shared.random_util import generate_rng_string_x4
+
 _CONSTANT_MISSING_FLOAT = -16736452  # Arbitrary value used to detect missing float
 _CONSTANT_INVALID_FLOAT = -16736451  # Arbitrary value used to detect invalid float
 
@@ -1133,7 +1135,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Build and broadcast the confirmed step to the presenter.
         self._error_label.configure(text="")
         params = self._get_params(step_type)
-        step = StepScrapingModel(step_type=step_type, params=params)
+
+        ## TODO PCO je distingue pas les nouveaux des existants
+        step = StepScrapingModel(step_type=step_type, step_id=generate_rng_string_x4(), params=params)
         if self.on_confirm:
             self.on_confirm(step)
 

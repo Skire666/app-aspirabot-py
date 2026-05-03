@@ -17,6 +17,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from __src__.shared.random_util import generate_rng_string_x4
+
 ## ---------------------------------------------------------------------------
 ## Constants
 ## ---------------------------------------------------------------------------
@@ -122,29 +124,29 @@ class StepScrapingModel:
     """
 
     step_type: StepType
+    step_id: str
+    is_active: bool = True
     params: dict[str, Any] = field(default_factory=dict)
 
-    @classmethod
-    def create_default(cls, step_type: StepType) -> "StepScrapingModel":
-        """Creates a step pre-filled with default parameters for the given type.
+    def __init__(
+        self,
+        step_type: StepType,
+        step_id: str,
+        is_active: bool = True,
+        params: dict[str, Any] = None,
+    ) -> None:
+        """Initializes a scraping step model.
 
         Args:
-            step_type: The step type to initialize.
-
-        Returns:
-            A new instance with default params.
-
-        Raises:
-            None.
-
-        Example:
-            >>> step = StepScrapingModel.create_default(StepType.SCROLL_DOWN)
-            >>> step.params["pixels"]
-            1000
+            step_type: The type of step.
+            step_id: The unique step identifier.
+            is_active: Whether the step is enabled.
+            params: Step-specific parameters.
         """
-        # Copy defaults so callers cannot mutate the shared template.
-        defaults = _DEFAULT_PARAMS.get(step_type.value, {})
-        return cls(step_type=step_type, params=dict(defaults))
+        self.step_type = step_type
+        self.step_id = step_id
+        self.is_active = is_active
+        self.params = params if params is not None else {}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "StepScrapingModel":
@@ -164,10 +166,12 @@ class StepScrapingModel:
             >>> StepScrapingModel.from_dict(raw).params["pixels"]
             500
         """
-        # Raises ValueError for unknown step_type values.
-        step_type = StepType(data.get("step_type", ""))
-        params = dict(data.get("params", {}))
-        return cls(step_type=step_type, params=params)
+        return cls(
+            step_type=StepType(data["step_type"]),
+            step_id=data.get("step_id", generate_rng_string_x4()),
+            is_active=data.get("is_active", True),
+            params=data.get("params", {}),
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Serializes the step to a JSON-compatible dictionary.
@@ -185,5 +189,7 @@ class StepScrapingModel:
         """
         return {
             "step_type": self.step_type.value,
+            "step_id": self.step_id,
+            "is_active": self.is_active,
             "params": dict(self.params),
         }
