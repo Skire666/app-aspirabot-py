@@ -34,6 +34,8 @@ C_RESS_ICON_WHITE_DELETE = "./__ress__/icons/w_128_delete.png"
 C_RESS_ICON_WHITE_DOWN = "./__ress__/icons/w_128_down.png"
 C_RESS_ICON_WHITE_EDIT = "./__ress__/icons/w_128_edit.png"
 C_RESS_ICON_WHITE_UP = "./__ress__/icons/w_128_up.png"
+C_RESS_ICON_WHITE_TOGGLE_ON = "./__ress__/icons/w_128_toggle_on.png"
+C_RESS_ICON_WHITE_TOGGLE_OFF = "./__ress__/icons/w_128_toggle_off.png"
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -116,7 +118,7 @@ class ResourcesIcons:
         if key not in self._cache:
             try:
                 img = Image.open(resolved_path)
-                img = img.resize(size, Image.LANCZOS)
+                img = img.resize(size, Image.BILINEAR)
             except Exception:
                 img = self._create_fallback(size)
 

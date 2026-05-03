@@ -9,6 +9,8 @@ from collections.abc import Callable
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
+from __src__.views.components.canvas_checkbox import CanvasCheckbox
+
 
 class AppConfigurationView(ttk.Frame):
     """View component that renders the configuration form.
@@ -74,7 +76,7 @@ class AppConfigurationView(ttk.Frame):
     def _create_footer_section(self, parent: tk.Widget) -> ttk.Frame:
         frame = ttk.Frame(parent)
 
-        ttk.Button(frame, text="Reset", command=self._notify_reset).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame, text="Réinitialiser", command=self._notify_reset).pack(side=tk.LEFT, padx=(0, 5))
         self._btn_cancel = ttk.Button(
             frame,
             text="Annuler",
@@ -119,7 +121,7 @@ class AppConfigurationView(ttk.Frame):
 
     def _add_bool_row(self, frame: ttk.Frame, row: int, label: str, var: tk.BooleanVar) -> None:
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
-        ttk.Checkbutton(frame, variable=var).grid(row=row, column=1, sticky="w", padx=6, pady=4)
+        CanvasCheckbox(frame, variable=var).grid(row=row, column=1, sticky="w", padx=6, pady=6)
 
     def _browse_directory(self, target_var: tk.StringVar) -> None:
         current = target_var.get().strip()

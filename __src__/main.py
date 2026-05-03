@@ -5,6 +5,7 @@
 ## ---------------------------------------------------------------------------
 
 import tkinter as tk
+from tkinter import ttk
 
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
@@ -75,6 +76,17 @@ def main() -> None:
 ## ---------------------------------------------------------------------------
 
 
+def _override_style_buttons(root: tk.Tk) -> None:
+    # Override global de tous les ttk.Button
+
+    style = ttk.Style()
+
+    style.configure(
+        "TButton",
+        padding=(6, 6),  # (horizontal, vertical)
+    )
+
+
 def _launch_main_app(
     root: tk.Tk,
     config_repo: AppConfigurationRepository,
@@ -93,6 +105,8 @@ def _launch_main_app(
     # Apply window settings from the loaded configuration.
     root.title("Aspirabot")
     root.geometry(config_model.gui_booting_size)
+
+    _override_style_buttons(root)
 
     # Build the main sidebar-and-content-area layout.
     root_container = tk.Frame(root)

@@ -102,7 +102,7 @@ def test_presenter_save_updates_configuration() -> None:
         "folder_logs": "tmp_logs",
         "folder_providers": "data_providers",
         "folder_scraping": "data_scraping",
-        "gui_booting_size": "1200x900",
+        "gui_booting_size": "1250x900",
         "gui_booting_fullscreen": True,
     }
 

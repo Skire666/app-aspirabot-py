@@ -45,15 +45,15 @@ class DataGrid(ttk.Frame):
         self.on_sort = on_sort
         self.on_action = on_action
 
-        self._row_height = 36
-        self._header_height = 36
+        self._row_height = 40
+        self._header_height = 40
         self._data: list[dict[str, Any]] = []
 
-        self._bg_header = "#d9d9d9"
-        self._bg_even = "#f7f7f7"
+        self._bg_header = "#e0e0e0"
+        self._bg_even = "#f4f4f4"
         self._bg_odd = "#ffffff"
-        self._bg_hover = "#dff0ff"
-        self._grid_line = "#d0d0d0"
+        self._bg_hover = "#e6f4ff"
+        self._grid_line = "#cecece"
         self._text_color = "#222222"
 
         self._hover_row: int | None = None
@@ -423,6 +423,7 @@ class DataGrid(ttk.Frame):
                 arrow = "▲" if self._sort_ascending else "▼"
                 title = f"{title} {arrow}"
 
+            ## TODO PCO header
             self.header_canvas.create_text(
                 x0 + 8,
                 self._header_height / 2,
@@ -430,7 +431,7 @@ class DataGrid(ttk.Frame):
                 anchor="w",
                 fill=self._text_color,
                 width=max(1, (x1 - x0) - 14),
-                font=("Segoe UI", 9, "bold"),
+                font=("Segoe UI", 10, "bold"),
                 tags=("header",),
             )
 
@@ -457,6 +458,17 @@ class DataGrid(ttk.Frame):
             row_data = self._data[row_index]
             row_id = str(row_data.get("id", row_index))
 
+            ## TODO PCO background de la ligne
+            self.body_canvas.create_rectangle(
+                0,
+                y0,
+                self._total_width * 2,  ## TODO PCO ne remplit pas le reste
+                y1,
+                fill=row_bg,
+                outline=self._grid_line,
+                tags=("cell", f"row-bg-{row_index}"),
+            )
+
             for col_index in range(col_start, col_end):
                 x0 = self._column_offsets[col_index]
                 x1 = self._column_offsets[col_index + 1]
@@ -464,42 +476,38 @@ class DataGrid(ttk.Frame):
                 col_id = str(col["id"])
                 col_type = str(col.get("type", "text"))
 
-                self.body_canvas.create_rectangle(
-                    x0,
-                    y0,
-                    x1,
-                    y1,
-                    fill=row_bg,
-                    outline=self._grid_line,
-                    tags=("cell", f"row-bg-{row_index}"),
-                )
-
                 if col_type == "button":
-                    btn = self._acquire_button(col_id, str(col.get("button_text", "Action")))
-                    btn.configure(command=lambda action=col_id, rid=row_id: self._handle_action(action, rid))
-                    btn.bind("<Enter>", lambda _event, idx=row_index: self._set_hover_row(idx))
-                    btn.bind("<Leave>", lambda _event, idx=row_index: self._release_button_hover_row(idx))
-
-                    window_id = self.body_canvas.create_window(
-                        (x0 + x1) / 2,
-                        (y0 + y1) / 2,
-                        window=btn,
-                        width=max(56, (x1 - x0) - 10),
-                        height=max(22, self._row_height - 8),
-                        tags=("cell",),
-                    )
-                    self._active_buttons.append((col_id, btn, window_id))
+                    self._draw_button_in_cell(row_index, y0, y1, row_id, x0, x1, col, col_id)
                 else:
-                    self.body_canvas.create_text(
-                        x0 + 8,
-                        y0 + (self._row_height / 2),
-                        text=str(row_data.get(col_id, "")),
-                        anchor="w",
-                        width=max(1, (x1 - x0) - 14),
-                        fill=self._text_color,
-                        font=("Segoe UI", 9),
-                        tags=("cell",),
-                    )
+                    self._draw_text_in_cell(y0, row_data, x0, x1, col_id)
+
+    def _draw_text_in_cell(self, y0, row_data, x0, x1, col_id):
+        self.body_canvas.create_text(
+            x0 + 8,
+            y0 + (self._row_height / 2),
+            text=str(row_data.get(col_id, "")),
+            anchor="w",
+            width=max(1, (x1 - x0) - 14),
+            fill=self._text_color,
+            font=("Segoe UI", 9),
+            tags=("cell",),
+        )
+
+    def _draw_button_in_cell(self, row_index, y0, y1, row_id, x0, x1, col, col_id):
+        btn = self._acquire_button(col_id, str(col.get("button_text", "Action")))
+        btn.configure(command=lambda action=col_id, rid=row_id: self._handle_action(action, rid))
+        btn.bind("<Enter>", lambda _event, idx=row_index: self._set_hover_row(idx))
+        btn.bind("<Leave>", lambda _event, idx=row_index: self._release_button_hover_row(idx))
+
+        window_id = self.body_canvas.create_window(
+            (x0 + x1) / 2,
+            (y0 + y1) / 2,
+            window=btn,
+            width=max(40, (x1 - x0) - 5),
+            height=max(22, self._row_height - 4),
+            tags=("cell",),
+        )
+        self._active_buttons.append((col_id, btn, window_id))
 
     def _acquire_button(self, action_id: str, text: str) -> ttk.Button:
         """Reuses or creates an action button."""

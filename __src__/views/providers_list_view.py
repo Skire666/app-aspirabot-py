@@ -42,15 +42,13 @@ class ProvidersListView(ttk.Frame):
         """Constructs UI elements including top bar and provider list tree."""
         # Top panel
         top_frame = ttk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
+        top_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=10)
 
-        self._btn_create = ttk.Button(
-            top_frame, text="Créer un nouveau fournisseur", command=self._notify_create_provider
-        )
+        self._btn_create = ttk.Button(top_frame, text="Créer un fournisseur", command=self._notify_create_provider)
         self._btn_create.pack(side=tk.LEFT, padx=5)
 
         self._btn_open_folder = ttk.Button(
-            top_frame, text="Ouvrir le dossier des fournisseurs", command=self._notify_open_folder
+            top_frame, text="Ouvrir dossier des fournisseurs", command=self._notify_open_folder
         )
         self._btn_open_folder.pack(side=tk.LEFT, padx=5)
 
@@ -65,26 +63,26 @@ class ProvidersListView(ttk.Frame):
 
         # Main DataGrid for providers
         columns_def = [
-            {"id": "action_launch", "title": "RUN", "width": 64, "type": "button", "button_text": "RUN"},
-            {"id": "action_edit", "title": "EDIT", "width": 64, "type": "button", "button_text": "EDIT"},
+            {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
+            {"id": "action_edit", "title": "Modif.", "width": 62, "type": "button", "button_text": "Modif."},
             {
                 "id": "action_delete",
-                "title": "DEL.",
-                "width": 64,
+                "title": "Supp.",
+                "width": 62,
                 "type": "button",
-                "button_text": "DEL.",
+                "button_text": "Supp.",
             },
-            {"id": "provider_name", "title": "Nom", "width": 140, "type": "text"},
-            {"id": "url", "title": "Url", "width": 140, "type": "text"},
-            {"id": "version", "title": "Version", "width": 70, "type": "text"},
-            {"id": "created_date", "title": "Création", "width": 120, "type": "text"},
-            {"id": "modified_date", "title": "Modification", "width": 120, "type": "text"},
-            {"id": "id_file", "title": "ID Fichier", "width": 90, "type": "text"},
+            {"id": "provider_name", "title": "Nom", "width": 160, "type": "text"},
+            {"id": "url", "title": "Url", "width": 160, "type": "text"},
+            {"id": "version", "title": "Version", "width": 82, "type": "text"},
+            {"id": "created_date", "title": "Création", "width": 125, "type": "text"},
+            {"id": "modified_date", "title": "Modification", "width": 125, "type": "text"},
+            {"id": "id_file", "title": "ID Fichier", "width": 100, "type": "text"},
         ]
 
         self.grid = DataGrid(self, columns=columns_def, on_sort=self._notify_sort, on_action=self._on_action)
         self.grid.set_sort_state("provider_name", True)
-        self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def set_callbacks(
         self,

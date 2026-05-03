@@ -109,7 +109,7 @@ class SplashscreenView(tk.Toplevel):
             bg=_BG_COLOR,
             fg=_STATUS_COLOR,
         )
-        self._status_label.pack(expand=True)
+        self._status_label.pack(expand=True, pady=(0, 10))
 
     ## ---------------------------------------------------------------------------
     ## Layout helper

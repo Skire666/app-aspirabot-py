@@ -11,6 +11,8 @@ from typing import Any
 
 from views.workflow_list_view import WorkflowListView
 
+from __src__.views.components.canvas_checkbox import CanvasCheckbox
+
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
@@ -47,7 +49,7 @@ class ProviderEditView(ttk.Frame):
 
         # 1. Informations (Top-left)
         info_lf = ttk.LabelFrame(top_frame, text="Informations")
-        info_lf.grid(row=0, column=0, sticky="nwes", padx=(0, 5))
+        info_lf.grid(row=0, column=0, sticky="nwes", padx=(5, 5))
 
         ttk.Label(info_lf, text="Nom:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self._var_name = tk.StringVar()
@@ -60,11 +62,11 @@ class ProviderEditView(ttk.Frame):
         self._entry_url.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
 
         self._var_browser = tk.BooleanVar()
-        self._chk_browser = ttk.Checkbutton(info_lf, text="Browser affiché", variable=self._var_browser)
+        self._chk_browser = CanvasCheckbox(info_lf, text="Browser affiché", variable=self._var_browser)
         self._chk_browser.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=5)
 
         self._var_obfuscated = tk.BooleanVar()
-        self._chk_obfuscated = ttk.Checkbutton(
+        self._chk_obfuscated = CanvasCheckbox(
             info_lf, text="Automatisation obfusqué", variable=self._var_obfuscated
         )
         self._chk_obfuscated.grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=5)
@@ -73,7 +75,7 @@ class ProviderEditView(ttk.Frame):
 
         # 2. Métadonnées (Top-right)
         meta_lf = ttk.LabelFrame(top_frame, text="Métadonnées")
-        meta_lf.grid(row=0, column=1, sticky="nwes", padx=(5, 0))
+        meta_lf.grid(row=0, column=1, sticky="nwes", padx=(5, 5))
 
         ttk.Label(meta_lf, text="Guid:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self._var_id_file = tk.StringVar()
@@ -103,7 +105,7 @@ class ProviderEditView(ttk.Frame):
 
         # 3. Workflow & Instructions — fills all remaining vertical space
         workflow_lf = ttk.LabelFrame(main_container, text="Workflow & Instructions")
-        workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5))
+        workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5), padx=(5))
 
         self._workflow_builder_view = WorkflowListView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)

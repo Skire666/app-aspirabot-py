@@ -229,25 +229,16 @@ class StepItemRenderer:
         Returns:
             A short string combining the step type and its key parameters.
         """
+        prefix = f"[{('ON' if step.is_active else 'OFF')}] - #{step.step_id} - "
         fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
-        return fmt(step.params) if fmt else step.step_type.value
 
-    def _build_label_cache_key(self, step: StepScrapingModel) -> tuple[StepType, tuple[tuple[str, str], ...]]:
-        """Builds a stable cache key from a step's type and params snapshot.
+        print(prefix + (fmt(step.params) if fmt else step.step_type.value))  # DEBUG
 
-        Args:
-            step: The step model to describe.
-
-        Returns:
-            A tuple key that changes when any param string representation changes.
-        """
-        # Use insertion order to avoid a sort per draw; repr() makes values hashable.
-        params_key = tuple((k, repr(v)) for k, v in step.params.items())
-        return (step.step_type, params_key)
+        return prefix + fmt(step.params) if fmt else step.step_type.value
 
     def _format_label_cached(self, step: StepScrapingModel) -> str:
         """Returns a cached label to avoid recomputing during redraw bursts."""
-        key = self._build_label_cache_key(step)
+        key = step.step_id + str(step.is_active)
         label = self._label_cache.get(key)
         if label is not None:
             return label

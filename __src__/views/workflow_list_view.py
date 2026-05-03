@@ -111,7 +111,7 @@ class WorkflowListView(ttk.Frame):
 
         # DragDropList step list — row 2, fills all available height.
         steps_section = self._create_steps_section()
-        steps_section.grid(row=2, column=0, sticky="nsew")
+        steps_section.grid(row=2, column=0, sticky="nsew", padx=5)
 
         # Bottom row (Brique logique + Aide à la saisie) — row 3, fixed 200 px, hidden by default.
         self._bottom_row = self._create_bottom_row()

@@ -29,7 +29,7 @@ C_CURRENT_WORKING_DIR = get_current_working_directory()
 C_APP_NAME: str = "Aspirabot"
 
 # Default size of the main application window (width x height)
-C_APP_DEFAULT_SIZE_GUI: str = "1000x700"
+C_APP_DEFAULT_SIZE_GUI: str = "1100x700"
 
 # Application version (major.minor.patch)
 C_APP_VERSION: str = "1.0.0"
@@ -74,8 +74,8 @@ C_SPLASHSCREEN_DISPLAY_MS_TOTAL = 880
 C_SPLASHSCREEN_STEP_LABELS = (" ._. ", " -_- ", " o_O ", " ^_^ ")
 
 # Splash window dimensions
-C_SPLASHSCREEN_SIZE_WIDTH = 240
-C_SPLASHSCREEN_SIZE_HEIGHT = 140
+C_SPLASHSCREEN_SIZE_WIDTH = 280
+C_SPLASHSCREEN_SIZE_HEIGHT = 170
 
 ## ---------------------------------------------------------------------------
 

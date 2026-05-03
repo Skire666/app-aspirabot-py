@@ -332,6 +332,8 @@ class ScrapingService:
             None.
         """
         try:
+            if not step.is_active:
+                return True, "SKIP"
             handler = self._get_handler(step.step_type)
             handler(page, step.params)
             return True, "OK"

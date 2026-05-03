@@ -8,6 +8,8 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
+from __src__.views.components.canvas_checkbox import CanvasCheckbox
+
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
@@ -44,7 +46,7 @@ class LogView(ttk.Frame):
         ttk.Label(filter_frame, text="Filters:").pack(side=tk.LEFT, padx=2)
 
         for level, var in self._filter_vars.items():
-            cb = ttk.Checkbutton(filter_frame, text=level, variable=var, command=self._notify_filter_changed)
+            cb = CanvasCheckbox(filter_frame, text=level, variable=var, command=self._notify_filter_changed)
             cb.pack(side=tk.LEFT, padx=5)
 
         # Main table for logs
