@@ -16,11 +16,8 @@ class WorkflowStepTextHint:
     or logic code.  Keys must match the values in STEP_TYPE_LABELS exactly.
 
     Attributes:
-        FALLBACK: Text shown when no step type is selected.
         BY_LABEL: Mapping from French step-type label to its help string.
     """
-
-    FALLBACK: ClassVar[str] = "Sélectionnez un type de brique pour afficher l'aide."
 
     BY_LABEL: ClassVar[dict[str, str]] = {
         "Ouvrir une URL": (
