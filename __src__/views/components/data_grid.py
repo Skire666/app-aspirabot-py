@@ -64,7 +64,7 @@ class DataGrid(ttk.Frame):
 
         self._column_widths: list[int] = [max(40, int(col.get("width", 120))) for col in self.columns]
         self._column_offsets: list[int] = self._build_offsets(self._column_widths)
-        self._total_width = self._column_offsets[-1] if self._column_offsets else 0
+        self._total_width = sum(col.get("width", 0) for col in columns)
 
         self._button_pool: dict[str, list[ttk.Button]] = {}
         self._active_buttons: list[tuple[str, ttk.Button, int]] = []

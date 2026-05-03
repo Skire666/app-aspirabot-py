@@ -65,21 +65,21 @@ class ProvidersListView(ttk.Frame):
 
         # Main DataGrid for providers
         columns_def = [
-            {"id": "action_launch", "title": "RUN", "width": 60, "type": "button", "button_text": "RUN"},
-            {"id": "action_edit", "title": "EDIT", "width": 60, "type": "button", "button_text": "EDIT"},
+            {"id": "action_launch", "title": "RUN", "width": 64, "type": "button", "button_text": "RUN"},
+            {"id": "action_edit", "title": "EDIT", "width": 64, "type": "button", "button_text": "EDIT"},
             {
                 "id": "action_delete",
                 "title": "DEL.",
-                "width": 60,
+                "width": 64,
                 "type": "button",
                 "button_text": "DEL.",
             },
-            {"id": "provider_name", "title": "Nom", "width": 150, "type": "text"},
-            {"id": "url", "title": "Url", "width": 180, "type": "text"},
+            {"id": "provider_name", "title": "Nom", "width": 140, "type": "text"},
+            {"id": "url", "title": "Url", "width": 140, "type": "text"},
             {"id": "version", "title": "Version", "width": 70, "type": "text"},
             {"id": "created_date", "title": "Création", "width": 120, "type": "text"},
             {"id": "modified_date", "title": "Modification", "width": 120, "type": "text"},
-            {"id": "id_file", "title": "ID Fichier", "width": 200, "type": "text"},
+            {"id": "id_file", "title": "ID Fichier", "width": 90, "type": "text"},
         ]
 
         self.grid = DataGrid(self, columns=columns_def, on_sort=self._notify_sort, on_action=self._on_action)

@@ -10,13 +10,12 @@ from models.app_configuration_model import AppConfigurationModel
 from repositories.app_configuration_repository import AppConfigurationRepository
 from services.logging_service import LoggingService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
-from shared.path_util import make_all_folders_if_not_exists
-
-from __src__.shared.exception_util import (
+from shared.exception_util import (
     FailedToCreateRequiredDirectoriesDuringRuntimeError,
     FailedToInitializeLoggingDuringRuntimeError,
     FailedToLoadConfigurationDuringRuntimeError,
 )
+from shared.path_util import make_all_folders_if_not_exists
 
 ## ---------------------------------------------------------------------------
 ## Constants

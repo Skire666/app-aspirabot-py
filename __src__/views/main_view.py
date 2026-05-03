@@ -7,17 +7,30 @@
 import tkinter as tk
 from tkinter import ttk
 
-from __src__.shared.constants import C_VIEW_SIDEBAR_LEFT_WIDTH
-from __src__.shared.resources_icons_util import (
+from shared.constants import (
+    C_TITLE_MODULE_CONFIG,
+    C_TITLE_MODULE_FAQ,
+    C_TITLE_MODULE_LOGS,
+    C_TITLE_MODULE_PROJECTS,
+    C_TITLE_MODULE_PROVIDER,
+    C_TITLE_MODULE_SCRAPING,
+    C_TITLE_MODULE_WORKFLOW,
+    C_VIEW_SIDEBAR_LEFT_WIDTH,
+)
+from shared.resources_icons_util import (
+    C_RESS_ICON_BLACK_CONFIG,
+    C_RESS_ICON_BLACK_FAQ,
     C_RESS_ICON_BLACK_LOGS,
-    C_RESS_ICON_BLACK_OPTIONS,
-    C_RESS_ICON_BLACK_PROVIDERS,
-    C_RESS_ICON_BLACK_SCRAPPING,
+    C_RESS_ICON_BLACK_PROJECTS,
+    C_RESS_ICON_BLACK_PROVIDER,
+    C_RESS_ICON_BLACK_SCRAPING,
     C_RESS_ICON_BLACK_WORKFLOW,
+    C_RESS_ICON_WHITE_CONFIG,
+    C_RESS_ICON_WHITE_FAQ,
     C_RESS_ICON_WHITE_LOGS,
-    C_RESS_ICON_WHITE_OPTIONS,
-    C_RESS_ICON_WHITE_PROVIDERS,
-    C_RESS_ICON_WHITE_SCRAPPING,
+    C_RESS_ICON_WHITE_PROJECTS,
+    C_RESS_ICON_WHITE_PROVIDER,
+    C_RESS_ICON_WHITE_SCRAPING,
     C_RESS_ICON_WHITE_WORKFLOW,
     get_resource_icon_32px,
 )
@@ -28,23 +41,23 @@ from __src__.shared.resources_icons_util import (
 
 # Mapping of module names to their corresponding black and white icon resource names.
 # Order of modules is determined by the order of entries in this dictionary.
-_C_LISTING_MODULE: dict[str, tuple[str, str]] = {
-    "Journal": [C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
-    "Fournisseurs": [C_RESS_ICON_BLACK_PROVIDERS, C_RESS_ICON_WHITE_PROVIDERS],
-    "Modification": [C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW],
-    "Scraping": [C_RESS_ICON_BLACK_SCRAPPING, C_RESS_ICON_WHITE_SCRAPPING],
-    "Configuration": [C_RESS_ICON_BLACK_OPTIONS, C_RESS_ICON_WHITE_OPTIONS],
+C_LISTING_MODULES: dict[str, tuple[str, str]] = {
+    C_TITLE_MODULE_LOGS: [C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
+    C_TITLE_MODULE_PROJECTS: [C_RESS_ICON_BLACK_PROJECTS, C_RESS_ICON_WHITE_PROJECTS],
+    C_TITLE_MODULE_PROVIDER: [C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
+    C_TITLE_MODULE_WORKFLOW: [C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW],
+    C_TITLE_MODULE_SCRAPING: [C_RESS_ICON_BLACK_SCRAPING, C_RESS_ICON_WHITE_SCRAPING],
+    C_TITLE_MODULE_FAQ: [C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
+    C_TITLE_MODULE_CONFIG: [C_RESS_ICON_BLACK_CONFIG, C_RESS_ICON_WHITE_CONFIG],
 }
 
-
 # Sidebar button color constants
-_SIDEBAR_ACTIVE_BG = "#6164B7"
-_SIDEBAR_ACTIVE_FG = "#ffffff"
-_SIDEBAR_ACTIVE_HOVER_BG = "#6168c6"
-_SIDEBAR_NORMAL_BG = "#F0F0F0"
-_SIDEBAR_NORMAL_FG = "#191919"
-_SIDEBAR_HOVER_BG = "#d0d0d0"
-_SIDEBAR_HOVER_FG = "#000000"
+C_COLOR_SIDEBAR_ACTIVE_BG = "#6164B7"
+C_COLOR_SIDEBAR_ACTIVE_FG = "#ffffff"
+C_COLOR_SIDEBAR_NORMAL_BG = "#F0F0F0"
+C_COLOR_SIDEBAR_NORMAL_FG = "#191919"
+C_COLOR_SIDEBAR_HOVER_BG = "#d0d0d0"
+C_COLOR_SIDEBAR_HOVER_FG = "#000000"
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -79,40 +92,30 @@ class MainView(ttk.Frame):
         self.sidebar.pack_propagate(False)
 
         self.content_area = ttk.Frame(self)
-        self.content_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.content_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=5)
 
         # Build sidebar header and navigation buttons
-        self._build_sidebar_header()
         self._build_sidebar_buttons()
+        self._build_sidebar_separator_right()
 
-    def _build_sidebar_header(self) -> None:
+    def _build_sidebar_separator_right(self) -> None:
         """Builds the 'Modules' title label and separator at the top of the sidebar."""
-        # Title label
-        header = tk.Label(
-            self.sidebar,
-            text="Modules",
-            font=("Segoe UI", 10, "bold"),
-            anchor=tk.CENTER,
-            pady=6,
-        )
-        header.pack(fill=tk.X, padx=6, pady=(10, 8))
-
         # Visual separator below the title
-        separator = ttk.Separator(self.sidebar, orient=tk.HORIZONTAL)
-        separator.pack(fill=tk.X, padx=6, pady=(0, 10))
+        separator = tk.Frame(self.content_area, width=1, bg=C_COLOR_SIDEBAR_HOVER_BG)
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5))
 
     def _build_sidebar_buttons(self) -> None:
         """Creates and registers all module navigation buttons in the sidebar."""
         # Build each button and store it by name for later highlight management
-        for name in _C_LISTING_MODULE:
+        for name in C_LISTING_MODULES:
             btn = tk.Button(
                 self.sidebar,
                 text=name,
-                image=get_resource_icon_32px(_C_LISTING_MODULE[name][0]),
+                image=get_resource_icon_32px(C_LISTING_MODULES[name][0]),
                 compound=tk.TOP,
                 command=lambda n=name: self.show_view(n),
-                bg=_SIDEBAR_NORMAL_BG,
-                fg=_SIDEBAR_NORMAL_FG,
+                bg=C_COLOR_SIDEBAR_NORMAL_BG,
+                fg=C_COLOR_SIDEBAR_NORMAL_FG,
                 relief=tk.FLAT,
                 bd=0,
                 font=(
@@ -121,7 +124,7 @@ class MainView(ttk.Frame):
                 ),
                 disabledforeground="#8f8f8f",
             )
-            btn.pack(fill=tk.X, padx=6, pady=3, ipady=7)
+            btn.pack(fill=tk.X, padx=0, pady=0, ipady=6)
             self._buttons[name] = btn
 
             # Hover bindings — use default-argument capture to avoid late-binding closure
@@ -129,8 +132,8 @@ class MainView(ttk.Frame):
             btn.bind("<Leave>", lambda _e, n=name: self._on_button_leave(n))
 
         # Some modules are disabled until explicitly enabled by the presenter
-        self.set_tab_state("Modification", tk.DISABLED)
-        self.set_tab_state("Scraping", tk.DISABLED)
+        self.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
+        self.set_tab_state(C_TITLE_MODULE_SCRAPING, tk.DISABLED)
 
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a sidebar module button.
@@ -167,11 +170,11 @@ class MainView(ttk.Frame):
         """
         for name, btn in self._buttons.items():
             if name == active_name:
-                image_white = get_resource_icon_32px(_C_LISTING_MODULE[name][1])
-                btn.config(bg=_SIDEBAR_ACTIVE_BG, fg=_SIDEBAR_ACTIVE_FG, image=image_white)
+                image_white = get_resource_icon_32px(C_LISTING_MODULES[name][1])
+                btn.config(bg=C_COLOR_SIDEBAR_ACTIVE_BG, fg=C_COLOR_SIDEBAR_ACTIVE_FG, image=image_white)
             else:
-                image_black = get_resource_icon_32px(_C_LISTING_MODULE[name][0])
-                btn.config(bg=_SIDEBAR_NORMAL_BG, fg=_SIDEBAR_NORMAL_FG, image=image_black)
+                image_black = get_resource_icon_32px(C_LISTING_MODULES[name][0])
+                btn.config(bg=C_COLOR_SIDEBAR_NORMAL_BG, fg=C_COLOR_SIDEBAR_NORMAL_FG, image=image_black)
 
     def _on_button_enter(self, name: str) -> None:
         """Applies hover highlight when the cursor enters a sidebar button.
@@ -187,9 +190,9 @@ class MainView(ttk.Frame):
 
         # Lighten the active button on hover; darken inactive ones
         if name == self._active_view:
-            btn.config(bg=_SIDEBAR_ACTIVE_HOVER_BG)
+            btn.config(bg=C_COLOR_SIDEBAR_ACTIVE_BG, fg=C_COLOR_SIDEBAR_ACTIVE_FG)
         else:
-            btn.config(bg=_SIDEBAR_HOVER_BG, fg=_SIDEBAR_HOVER_FG)
+            btn.config(bg=C_COLOR_SIDEBAR_HOVER_BG, fg=C_COLOR_SIDEBAR_HOVER_FG)
 
     def _on_button_leave(self, name: str) -> None:
         """Restores the button's resting color when the cursor leaves it.
@@ -205,9 +208,9 @@ class MainView(ttk.Frame):
 
         # Restore active or normal appearance depending on current state
         if name == self._active_view:
-            btn.config(bg=_SIDEBAR_ACTIVE_BG, fg=_SIDEBAR_ACTIVE_FG)
+            btn.config(bg=C_COLOR_SIDEBAR_ACTIVE_BG, fg=C_COLOR_SIDEBAR_ACTIVE_FG)
         else:
-            btn.config(bg=_SIDEBAR_NORMAL_BG, fg=_SIDEBAR_NORMAL_FG)
+            btn.config(bg=C_COLOR_SIDEBAR_NORMAL_BG, fg=C_COLOR_SIDEBAR_NORMAL_FG)
 
     def set_tab_state(self, name: str, state: str) -> None:
         """Sets the enabled/disabled state of a sidebar module button.

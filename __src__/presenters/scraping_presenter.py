@@ -20,9 +20,8 @@ from datetime import datetime
 from models.provider_model import DATETIME_FORMAT, ProviderModel
 from models.scraping_report_model import ScrapingReportModel, StepResultModel
 from models.step_scraping_model import StepScrapingModel
+from services.scraping_service import ScrapingService
 from views.scraping_panel_view import ScrapingPanelView
-
-from __src__.services.scraping_service import ScrapingService
 
 ## ---------------------------------------------------------------------------
 ## Classes

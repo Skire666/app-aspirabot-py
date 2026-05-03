@@ -65,10 +65,10 @@ C_DATA_DEFAULT_FOLDER_SCRAPPING: str = "data_scraping"
 ## ---------------------------------------------------------------------------
 
 # Minimum time each step is displayed (milliseconds).
-C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 250  # x3 < 1000
+C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 220  # x4 < 900 ms total
 
 # Minimum time the splash screen should be visible (milliseconds).
-C_SPLASHSCREEN_DISPLAY_MS_TOTAL = 1000
+C_SPLASHSCREEN_DISPLAY_MS_TOTAL = 880
 
 # Human-readable label shown on the status line for each step.
 C_SPLASHSCREEN_STEP_LABELS = (" ._. ", " -_- ", " o_O ", " ^_^ ")
@@ -80,6 +80,15 @@ C_SPLASHSCREEN_SIZE_HEIGHT = 140
 ## ---------------------------------------------------------------------------
 
 # Main view sidebar width in pixels
-C_VIEW_SIDEBAR_LEFT_WIDTH = 110
+C_VIEW_SIDEBAR_LEFT_WIDTH = 88
+
+# All title labels for sidebar buttons
+C_TITLE_MODULE_LOGS = "Journal"
+C_TITLE_MODULE_PROJECTS = "Projets"
+C_TITLE_MODULE_PROVIDER = "Fournisseur"
+C_TITLE_MODULE_WORKFLOW = "Workflow"
+C_TITLE_MODULE_SCRAPING = "Scraping"
+C_TITLE_MODULE_FAQ = "F.A.Q."
+C_TITLE_MODULE_CONFIG = "Paramètres"
 
 ## END

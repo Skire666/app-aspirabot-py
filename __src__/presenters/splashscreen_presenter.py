@@ -8,13 +8,12 @@ import traceback
 from collections.abc import Callable
 
 from services.startup_service import StartupService
-from views.splashscreen_view import SplashscreenView
-
-from __src__.shared.constants import (
+from shared.constants import (
     C_SPLASHSCREEN_DISPLAY_MS_BY_STEP,
     C_SPLASHSCREEN_DISPLAY_MS_TOTAL,
     C_SPLASHSCREEN_STEP_LABELS,
 )
+from views.splashscreen_view import SplashscreenView
 
 ## ---------------------------------------------------------------------------
 ## Classes

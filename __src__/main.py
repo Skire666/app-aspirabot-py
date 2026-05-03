@@ -11,6 +11,7 @@ from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.provider_edit_presenter import ProviderEditPresenter
 from presenters.provider_presenter import ProviderPresenter
+from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.log_repository import LogRepository
@@ -18,8 +19,16 @@ from repositories.providers_repository import ProvidersRepository
 from services.app_configuration_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
+from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
-from shared.constants import C_APP_CONFIG_FILE
+from shared.constants import (
+    C_APP_CONFIG_FILE,
+    C_TITLE_MODULE_CONFIG,
+    C_TITLE_MODULE_LOGS,
+    C_TITLE_MODULE_PROVIDER,
+    C_TITLE_MODULE_SCRAPING,
+    C_TITLE_MODULE_WORKFLOW,
+)
 from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
 from views.log_view import LogView
@@ -28,9 +37,6 @@ from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
 from views.scraping_panel_view import ScrapingPanelView
 from views.splashscreen_view import SplashscreenView
-
-from __src__.presenters.scraping_presenter import ScrapingPresenter
-from __src__.services.scraping_service import ScrapingService
 
 ## ---------------------------------------------------------------------------
 ## Entry point
@@ -237,20 +243,20 @@ def _wire_provider_navigation(
     def on_request_create_provider() -> None:
         # Open the edit form in creation mode and navigate to it.
         provider_edit_presenter.create_new()
-        main_view.set_tab_state("Modification", tk.NORMAL)
-        main_view.show_view("Modification")
+        main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
+        main_view.show_view(C_TITLE_MODULE_WORKFLOW)
 
     def on_request_edit_provider(id_file: str) -> None:
         # Load the selected provider into the edit form and navigate to it.
         provider_edit_presenter.load_provider(id_file)
-        main_view.set_tab_state("Modification", tk.NORMAL)
-        main_view.show_view("Modification")
+        main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
+        main_view.show_view(C_TITLE_MODULE_WORKFLOW)
 
     def on_edit_done() -> None:
         # Return to the list and disable the edit tab after save/cancel.
         provider_presenter.refresh()
-        main_view.set_tab_state("Modification", tk.DISABLED)
-        main_view.show_view("Fournisseurs")
+        main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
+        main_view.show_view(C_TITLE_MODULE_PROVIDER)
 
     # Inject all navigation callbacks into the two presenters.
     provider_presenter.on_request_create_provider = on_request_create_provider
@@ -277,8 +283,8 @@ def _wire_scraping_launch(
         # Resolve the full provider model before handing off to scraping.
         provider = provider_service.get_provider(id_file)
         scraping_presenter.load_provider(provider)
-        main_view.set_tab_state("Scraping", tk.NORMAL)
-        main_view.show_view("Scraping")
+        main_view.set_tab_state(C_TITLE_MODULE_SCRAPING, tk.NORMAL)
+        main_view.show_view(C_TITLE_MODULE_SCRAPING)
 
     provider_presenter.on_request_launch_provider = on_request_launch_provider
 
@@ -307,14 +313,14 @@ def _register_views(
         scraping_view: Scraping panel module view.
     """
     # Map each sidebar label to its corresponding view widget.
-    main_view.add_view("Journal", log_view)
-    main_view.add_view("Configuration", config_view)
-    main_view.add_view("Fournisseurs", provider_view)
-    main_view.add_view("Modification", provider_edit_view)
-    main_view.add_view("Scraping", scraping_view)
+    main_view.add_view(C_TITLE_MODULE_LOGS, log_view)
+    main_view.add_view(C_TITLE_MODULE_PROVIDER, provider_view)
+    main_view.add_view(C_TITLE_MODULE_WORKFLOW, provider_edit_view)
+    main_view.add_view(C_TITLE_MODULE_SCRAPING, scraping_view)
+    main_view.add_view(C_TITLE_MODULE_CONFIG, config_view)
 
     # Land on the providers list as the startup default.
-    main_view.show_view("Fournisseurs")
+    main_view.show_view(C_TITLE_MODULE_PROVIDER)
 
 
 ## ---------------------------------------------------------------------------

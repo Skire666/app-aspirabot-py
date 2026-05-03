@@ -12,17 +12,21 @@ from PIL import Image, ImageDraw, ImageTk
 
 # black big buttons
 C_RESS_ICON_BLACK_LOGS = "./__ress__/icons/b_128_logs.png"
-C_RESS_ICON_BLACK_OPTIONS = "./__ress__/icons/b_128_options.png"
-C_RESS_ICON_BLACK_PROVIDERS = "./__ress__/icons/b_128_providers.png"
-C_RESS_ICON_BLACK_SCRAPPING = "./__ress__/icons/b_128_scraping.png"
+C_RESS_ICON_BLACK_PROJECTS = "./__ress__/icons/b_128_projects.png"
+C_RESS_ICON_BLACK_PROVIDER = "./__ress__/icons/b_128_provider.png"
 C_RESS_ICON_BLACK_WORKFLOW = "./__ress__/icons/b_128_workflow.png"
+C_RESS_ICON_BLACK_SCRAPING = "./__ress__/icons/b_128_scraping.png"
+C_RESS_ICON_BLACK_FAQ = "./__ress__/icons/b_128_faq.png"
+C_RESS_ICON_BLACK_CONFIG = "./__ress__/icons/b_128_options.png"
 
 # white big buttons
 C_RESS_ICON_WHITE_LOGS = "./__ress__/icons/w_128_logs.png"
-C_RESS_ICON_WHITE_OPTIONS = "./__ress__/icons/w_128_options.png"
-C_RESS_ICON_WHITE_PROVIDERS = "./__ress__/icons/w_128_providers.png"
-C_RESS_ICON_WHITE_SCRAPPING = "./__ress__/icons/w_128_scraping.png"
+C_RESS_ICON_WHITE_PROJECTS = "./__ress__/icons/w_128_projects.png"
+C_RESS_ICON_WHITE_PROVIDER = "./__ress__/icons/w_128_provider.png"
+C_RESS_ICON_WHITE_SCRAPING = "./__ress__/icons/w_128_scraping.png"
 C_RESS_ICON_WHITE_WORKFLOW = "./__ress__/icons/w_128_workflow.png"
+C_RESS_ICON_WHITE_FAQ = "./__ress__/icons/w_128_faq.png"
+C_RESS_ICON_WHITE_CONFIG = "./__ress__/icons/w_128_options.png"
 
 # white small icons
 C_RESS_ICON_WHITE_COPY = "./__ress__/icons/w_128_copy.png"

@@ -112,11 +112,11 @@ class _BtnDef:
 
 
 C_MINI_BUTTONS_WORKFLOW: list[_BtnDef] = [  # display order (right → left)
-    _BtnDef("delete", "✕", "btn_del", C_RESS_ICON_WHITE_DELETE),
-    _BtnDef("edit", "✎", "btn_edit", C_RESS_ICON_WHITE_EDIT),
-    _BtnDef("duplicate", "⧉", "btn_dup", C_RESS_ICON_WHITE_COPY),
-    _BtnDef("move_down", "↓", "btn_move", C_RESS_ICON_WHITE_DOWN),
-    _BtnDef("move_up", "↑", "btn_move", C_RESS_ICON_WHITE_UP),
+    _BtnDef("delete", "D", "btn_del", C_RESS_ICON_WHITE_DELETE),
+    _BtnDef("edit", "E", "btn_edit", C_RESS_ICON_WHITE_EDIT),
+    _BtnDef("duplicate", "C", "btn_dup", C_RESS_ICON_WHITE_COPY),
+    _BtnDef("move_down", "B", "btn_move", C_RESS_ICON_WHITE_DOWN),
+    _BtnDef("move_up", "T", "btn_move", C_RESS_ICON_WHITE_UP),
 ]
 
 ## ---------------------------------------------------------------------------
@@ -518,7 +518,6 @@ class DragDropList(tk.Frame, Generic[T]):
                 hovered = self._hovered_btn == (idx, btn.key)
                 col = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
                 self._rounded_rect(x1, y1, x2, y2, 5, col)
-                ##TODO PCO
                 self.canvas.create_image(
                     (x1 + x2) // 2, (y1 + y2) // 2, image=get_resource_icon_24px(btn.icon), anchor="center"
                 )

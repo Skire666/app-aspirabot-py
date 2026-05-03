@@ -80,7 +80,7 @@ class ScrapingPanelView(ttk.Frame):
 
     def _create_provider_info_section(self) -> None:
         """Creates the provider summary block displayed below the action bar."""
-        section = ttk.LabelFrame(self, text="Fournisseur", padding=(5, 5))
+        section = ttk.LabelFrame(self, text="Fournisseur sélectionné", padding=(5, 5))
         section.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(0, 5))
 
         # Each field is a (label, var) pair packed left to right in a single row.
