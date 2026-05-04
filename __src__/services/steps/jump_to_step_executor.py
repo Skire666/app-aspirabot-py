@@ -20,7 +20,7 @@ class JumpToStepExecutor(IStepExecutor):
         return JumpToStepParams.default().to_dict()
 
     def _resolve_target_step_id(self, params: dict[str, Any]) -> str:
-        raw_target = params.get("target_index", "")
+        raw_target = params.get("target_hexastring", "")
         if isinstance(raw_target, str):
             return raw_target
         if isinstance(raw_target, int):
@@ -51,7 +51,7 @@ class JumpToStepExecutor(IStepExecutor):
             errors.append(f"JUMP_TO_STEP : condition invalide — {p.condition!r}.")
         target_step_id = self._resolve_target_step_id(params)
         if not target_step_id:
-            errors.append("JUMP_TO_STEP : target_index doit référencer un step_id valide.")
+            errors.append("JUMP_TO_STEP : target_hexastring doit référencer un step_id valide.")
         if target_step_id:
             workflow_step_ids = params.get("_workflow_step_ids")
             if isinstance(workflow_step_ids, list) and target_step_id not in workflow_step_ids:

@@ -12,21 +12,27 @@ from models.step_scraping_model import StepType
 @dataclass(frozen=True)
 class JumpToStepParams(IStepParams):
     condition: str
-    target_index: str
+    target_hexastring: str
+    target_position_unsafe: int
 
     @classmethod
     def default(cls) -> Self:
-        return cls(condition="success", target_index="")
+        return cls(condition="success", target_hexastring="", target_position_unsafe=0)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"condition": self.condition, "target_index": self.target_index}
+        return {
+            "condition": self.condition,
+            "target_hexastring": self.target_hexastring,
+            "target_position_unsafe": self.target_position_unsafe,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        target_value = data.get("target_index", "")
+        target_value = data.get("target_hexastring", "")
         return cls(
             condition=data.get("condition", "success"),
-            target_index=str(target_value) if target_value is not None else "",
+            target_hexastring=str(target_value) if target_value is not None else "",
+            target_position_unsafe=int(data.get("target_position_unsafe", 0)),
         )
 
     @classmethod

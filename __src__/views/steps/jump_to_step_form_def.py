@@ -40,20 +40,12 @@ class JumpToStepFormDef(IStepFormDef):
         return "Si l'étape d'avant est un ..."
 
     @staticmethod
-    def _resolve_target_index(target_value: Any, target_ids: list[str]) -> int | None:
+    def _resolve_target_hexastring(target_value: Any, target_ids: list[str]) -> int | None:
         if isinstance(target_value, int):
-            return target_value if 0 <= target_value < len(target_ids) else None
+            raise ValueError(f"Invalid target_hexastring value: {target_value!r}")
         if isinstance(target_value, str) and target_value in target_ids:
             return target_ids.index(target_value)
         return None
-
-    @staticmethod
-    def _format_target_label(target_value: Any) -> str:
-        if isinstance(target_value, int):
-            return str(target_value + 1).zfill(2)
-        if isinstance(target_value, str) and target_value:
-            return f"#{target_value}"
-        return "??"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         frame.columnconfigure(1, weight=1)
@@ -78,23 +70,25 @@ class JumpToStepFormDef(IStepFormDef):
         ttk.Combobox(frame, textvariable=target_var, values=jump_target_displays, state="readonly").grid(
             row=1, column=1, sticky="ew", padx=5, pady=4
         )
-        widgets["target_index"] = target_var
+        widgets["target_hexastring"] = target_var
+        widgets["target_position_unsafe"] = 0
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         cond_model = params.get("condition", "success")
         widgets["condition"].set(CONDITION_MODEL_TO_VIEW.get(cond_model, CONDITION_DISPLAY[0]))
         jump_target_displays = widgets.get("_jump_target_displays", [])
         jump_target_ids = widgets.get("_jump_target_ids", [])
-        target_value = params.get("target_index", "")
-        target_idx = self._resolve_target_index(target_value, jump_target_ids)
+        target_value = params.get("target_hexastring", "")
+        target_idx = self._resolve_target_hexastring(target_value, jump_target_ids)
         if target_idx is None and jump_target_displays:
             target_idx = 0
         if target_idx is not None and jump_target_displays:
-            widgets["target_index"].set(jump_target_displays[target_idx])
+            widgets["target_hexastring"].set(jump_target_displays[target_idx])
+            widgets["target_position_unsafe"] = target_idx
 
     def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
         cond_display = widgets["condition"].get()
-        target_display = widgets["target_index"].get()
+        target_display = widgets["target_hexastring"].get()
         jump_target_displays = widgets.get("_jump_target_displays", [])
         jump_target_ids = widgets.get("_jump_target_ids", [])
         target_idx = jump_target_displays.index(target_display) if target_display in jump_target_displays else None
@@ -103,25 +97,31 @@ class JumpToStepFormDef(IStepFormDef):
         )
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(cond_display, "success"),
-            "target_index": target_id,
+            "target_hexastring": target_id,
+            "target_position_unsafe": target_idx,
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         errors: list[str] = []
-        target_display = widgets.get("target_index", tk.StringVar()).get()
+        target_display = widgets.get("target_hexastring", tk.StringVar()).get()
         jump_target_displays = widgets.get("_jump_target_displays", [])
         if target_display not in jump_target_displays:
             errors.append("L'étape cible sélectionnée est invalide.")
         return errors
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
-        target = self._format_target_label(params.get("target_index", ""))
+        target_hexastr = params.get("target_hexastring", "??")
+        target_idx = params.get("target_position_unsafe", "*****")
         cond = params.get("condition", "success")
         if cond == "success":
-            return f"Si l'étape d'avant est ...\nun succès, se rendre à l'étape [{target}]"
+            return (
+                f"Si l'étape d'avant est ...\nun succès, se rendre à l'étape {target_idx + 1}.  #{target_hexastr}"
+            )
         if cond == "failure":
-            return f"Si l'étape d'avant est ...\nun échec, se rendre à l'étape [{target}]"
-        return f"Toujour sauter à ...\nl'étape {target}"
+            return (
+                f"Si l'étape d'avant est ...\nun échec, se rendre à l'étape {target_idx + 1}.  #{target_hexastr}"
+            )
+        return f"Toujour sauter à ...\nl'étape {target_idx + 1}.  #{target_hexastr}"
 
 
 register_form(JumpToStepFormDef())

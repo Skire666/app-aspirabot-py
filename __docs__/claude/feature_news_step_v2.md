@@ -85,13 +85,13 @@ Conditionally jumps to a target step based on whether the previous step succeede
 | Key | Type | Default | Required |
 |---|---|---|---|
 | `condition` | `str` | `"success"` | yes |
-| `target_index` | `int` | `0` | yes |
+| `target_hexastring` | `int` | `0` | yes |
 
 Allowed values for `condition`: `"success"`, `"failure"`, `"always"`.
 
-`target_index` is a **zero-based** index into the current workflow steps list. It must be >= 0. It must not point to itself (no self-loop). The presenter is responsible for passing the current steps list to the inline form so the UI can populate the target selector dynamically.
+`target_hexastring` is a **zero-based** index into the current workflow steps list. It must be >= 0. It must not point to itself (no self-loop). The presenter is responsible for passing the current steps list to the inline form so the UI can populate the target selector dynamically.
 
-Validation: `condition` is one of the three allowed values, `target_index >= 0`, `target_index != current_step_index`.
+Validation: `condition` is one of the three allowed values, `target_hexastring >= 0`, `target_hexastring != current_step_index`.
 
 ---
 
@@ -137,7 +137,7 @@ StepType.EXTRACT_TEXT.value: {
 },
 StepType.JUMP_TO_STEP.value: {
     "condition": "success",
-    "target_index": 0,
+    "target_hexastring": 0,
 },
 StepType.END_PROCESS.value: {
     "wait_duration": 1,
@@ -168,7 +168,7 @@ if t == StepType.EXTRACT_TEXT:
 
 if t == StepType.JUMP_TO_STEP:
     cond = p.get("condition", "success")
-    target = p.get("target_index", 0)
+    target = p.get("target_hexastring", 0)
     return f"Sauter à l'étape {target + 1} — si {cond}"
 
 if t == StepType.END_PROCESS:
@@ -215,7 +215,7 @@ Fields in order:
 
 **`_build_form_JUMP_TO_STEP()`**
 - `ttk.Combobox` for `condition` (display: `"Si succès"` / `"Si échec"` / `"Toujours"`; maps to `"success"` / `"failure"` / `"always"`; default `"Si succès"`)
-- `ttk.Combobox` for `target_index` populated dynamically from the live step list. **The presenter must call `set_available_steps(steps)` before opening this form.** Display as `"Étape N — <label>"` (1-based), store zero-based index as value.
+- `ttk.Combobox` for `target_hexastring` populated dynamically from the live step list. **The presenter must call `set_available_steps(steps)` before opening this form.** Display as `"Étape N — <label>"` (1-based), store zero-based index as value.
 
 Add `set_available_steps(steps: list[StepScrapingModel])` to `StepInlineFormPanel` if it does not already exist.
 
@@ -260,9 +260,9 @@ if params.get("target") not in allowed_targets:
 allowed_conditions = {"success", "failure", "always"}
 if params.get("condition") not in allowed_conditions:
     errors.append(f"JUMP_TO_STEP : condition invalide — {params.get('condition')!r}.")
-if params.get("target_index", -1) < 0:
-    errors.append("JUMP_TO_STEP : target_index doit être >= 0.")
-if params.get("target_index") == step_index:
+if params.get("target_hexastring", -1) < 0:
+    errors.append("JUMP_TO_STEP : target_hexastring doit être >= 0.")
+if params.get("target_hexastring") == step_index:
     errors.append("JUMP_TO_STEP : une étape ne peut pas pointer vers elle-même.")
 
 # END_PROCESS

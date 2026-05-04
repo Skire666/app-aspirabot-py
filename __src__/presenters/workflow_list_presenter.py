@@ -114,6 +114,26 @@ class WorkflowListPresenter:
         """
         return list(self._steps)
 
+    def validate_steps(self) -> list[str]:
+        """Validates the current workflow step list.
+
+        Returns:
+            List of validation errors; empty when valid.
+        """
+        errors: list[str] = []
+        # Validate each step in its current order for cross-step consistency.
+        for index, step in enumerate(self._steps):
+            errors.extend(self._workflow_service.validate_step(index, step, self._steps))
+        return errors
+
+    def clear_steps(self) -> None:
+        """Clears all steps and refreshes the view."""
+        # Reset in-memory state and hide the inline form.
+        self._steps.clear()
+        self._edit_index = None
+        self._view.hide_inline_form()
+        self._refresh_view()
+
     # ---------------------------------------------------------------
     # View event handlers
     # ---------------------------------------------------------------
@@ -149,8 +169,8 @@ class WorkflowListPresenter:
             step: The newly created or updated step from the inline form.
         """
         # Target index: future position for add mode, current slot for edit mode.
-        target_index = len(self._steps) if self._edit_index is None else self._edit_index
-        errors = self._workflow_service.validate_step(target_index, step, self._steps)
+        target_hexastring = len(self._steps) if self._edit_index is None else self._edit_index
+        errors = self._workflow_service.validate_step(target_hexastring, step, self._steps)
 
         # Abort and surface the first error without closing the form.
         if errors:

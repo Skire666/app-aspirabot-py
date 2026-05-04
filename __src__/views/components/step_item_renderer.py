@@ -55,7 +55,6 @@ class StepItemRenderer:
                 selected item index, or None if nothing is selected.
         """
         self._get_selected_index = get_selected_index
-        self._label_cache: dict[str, str] = {}
         self._colors_normal: dict[str, str] = {
             "bg": self._C_BG_NORMAL,
             "border": self._C_BORDER_NORMAL,
@@ -94,16 +93,6 @@ class StepItemRenderer:
         except ValueError:
             body = step.step_type.value
         return prefix + body
-
-    def _format_label_cached(self, step: StepScrapingModel, idx: int) -> str:
-        """Returns a cached label to avoid recomputing during redraw bursts."""
-        key = step.step_id + str(step.is_active)
-        label = self._label_cache.get(key)
-        if label is not None:
-            return label
-        label = self.format_label(step, idx)
-        self._label_cache[key] = label
-        return label
 
     def _resolve_colors(self, state: str, is_selected: bool, is_active: bool) -> dict[str, str]:
         """Maps rendering state and selection flag to the color palette."""
@@ -151,7 +140,7 @@ class StepItemRenderer:
         """Draws the step label text centered vertically within the item area."""
         str_index = str(idx + 1).zfill(2)
         width_extra = 20 if item.step_type == StepType.JUMP_TO_STEP else 0
-        label = f"{str_index}.  {self._format_label_cached(item, idx)}"
+        label = f"{str_index}.  {self.format_label(item, idx)}"
         canvas.create_text(
             x + 10 + width_extra,
             y + h // 2,

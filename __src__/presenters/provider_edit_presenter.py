@@ -119,6 +119,12 @@ class ProviderEditPresenter:
             if not self._current_provider:
                 return
 
+            # Validate workflow steps before persisting.
+            errors = self._workflow_presenter.validate_steps()
+            if errors:
+                self._view.show_error(errors[0])
+                return
+
             # Merge form data into the provider model.
             self._current_provider.provider_name = form_data["provider_name"]
             self._current_provider.url = form_data["url"]
@@ -149,6 +155,7 @@ class ProviderEditPresenter:
             self._current_provider.update_modified_date()
             self._service.update_provider(self._current_provider)
 
+        self._workflow_presenter.clear_steps()
         self._view.clear_data()
         if self._on_done:
             self._on_done()
