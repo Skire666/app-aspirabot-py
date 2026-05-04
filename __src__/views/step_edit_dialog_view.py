@@ -873,17 +873,19 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
     def _params_sleep_x_time(self) -> dict[str, Any]:
         """Reads SLEEP_X_TIME params, coercing duration to float."""
+        unit_display = self._form_widgets["unit"].get()
         return {
             "duration": self._safe_int("duration", 0),
-            "unit": self._form_widgets["unit"].get(),
+            "unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     def _params_random_pause(self) -> dict[str, Any]:
         """Reads RANDOM_PAUSE params, coercing min/max to float."""
+        unit_display = self._form_widgets["unit"].get()
         return {
             "min": self._safe_int("min", 0),
             "max": self._safe_int("max", 1),
-            "unit": self._form_widgets["unit"].get(),
+            "unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     def _params_refresh_page(self) -> dict[str, Any]:
