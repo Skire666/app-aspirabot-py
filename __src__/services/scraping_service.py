@@ -112,7 +112,7 @@ def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
         5000
     """
     duration = params.get("timeout_duration", 0)
-    unit = params.get("timeout_unit", "second")
+    unit = params.get("timeout_unit", "s")
 
     # Zero duration means no timeout regardless of unit.
     if not duration:
@@ -426,7 +426,7 @@ class ScrapingService:
             None.
         """
         duration: int = params.get("duration", 0)
-        unit: str = params.get("unit", "second")
+        unit: str = params.get("unit", "seconde")
 
         # Convert milliseconds to seconds before calling time.sleep.
         delay = duration / 1000.0 if unit == "millisecond" else float(duration)
@@ -448,7 +448,7 @@ class ScrapingService:
         """
         min_val: float = float(params.get("min", 0))
         max_val: float = float(params.get("max", 1))
-        unit: str = params.get("unit", "second")
+        unit: str = params.get("unit", "seconde")
 
         # Sample a uniform delay then apply unit conversion when necessary.
         delay = random.uniform(min_val, max_val)
@@ -625,7 +625,7 @@ class ScrapingService:
             ValueError: When the evaluated condition marks the step as a failure.
         """
         wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", "second")
+        wait_unit: str = params.get("wait_unit", "s")
         selector: str = params.get("selector", "")
         operator: str = params.get("operator", "equal")
         success_if: str = params.get("success_if", "success")
@@ -769,8 +769,8 @@ class ScrapingService:
         Args:
             page: Active Playwright page (unused; required by dispatch signature).
             params: Must contain ``wait_duration`` (int | float) and
-                ``wait_unit`` (``'hour'`` | ``'minute'`` | ``'second'`` |
-                ``'millisecond'``).
+                ``wait_unit`` (``'h'`` | ``'m'`` | ``'s'`` |
+                ``'ms'``).
 
         Returns:
             None.
@@ -779,10 +779,10 @@ class ScrapingService:
             None.
         """
         wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", "second")
+        wait_unit: str = params.get("wait_unit", "s")
 
         # Convert wait duration to seconds using unit multipliers.
-        multipliers = {"hour": 3600.0, "minute": 60.0, "second": 1.0, "millisecond": 0.001}
+        multipliers = {"h": 3600.0, "m": 60.0, "s": 1.0, "ms": 0.001}
         delay = wait_duration * multipliers.get(wait_unit, 1.0)
         if delay > 0:
             time.sleep(delay)

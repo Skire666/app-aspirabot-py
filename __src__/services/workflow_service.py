@@ -106,9 +106,9 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
-        allowed_units = {"hour", "minute", "second", "millisecond"}
+        allowed_units = {"h", "m", "s", "ms"}
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", "second")
+        timeout_unit = params.get("timeout_unit", "s")
 
         # URL is mandatory.
         if not params.get("url", "").strip():
@@ -149,7 +149,7 @@ class WorkflowService:
         errors: list[str] = []
         min_val = params.get("min", 0)
         max_val = params.get("max", 1)
-        if float(min_val) >= float(max_val):
+        if int(min_val) >= int(max_val):
             errors.append("RANDOM_PAUSE : min doit être strictement inférieur à max.")
         return errors
 
@@ -182,9 +182,9 @@ class WorkflowService:
             List of error messages.
         """
         errors = list(self._validate_download_image(params, step_index))
-        allowed_units = {"hour", "minute", "second", "millisecond"}
+        allowed_units = {"h", "m", "s", "ms"}
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", "second")
+        timeout_unit = params.get("timeout_unit", "s")
 
         # Timeout constraints.
         if timeout_duration < 0:
@@ -219,9 +219,9 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
-        allowed_units = {"hour", "minute", "second", "millisecond"}
+        allowed_units = {"h", "m", "s", "ms"}
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", "second")
+        timeout_unit = params.get("timeout_unit", "s")
 
         # Selector is mandatory.
         if not params.get("selector", "").strip():
@@ -244,7 +244,7 @@ class WorkflowService:
         Returns:
             List of error messages.
         """
-        allowed_units = {"hour", "minute", "second", "millisecond"}
+        allowed_units = {"h", "m", "s", "ms"}
         allowed_operators = {
             "between",
             "not_between",
@@ -355,7 +355,7 @@ class WorkflowService:
         Returns:
             List of error messages.
         """
-        allowed_units = {"hour", "minute", "second", "millisecond"}
+        allowed_units = {"h", "m", "s", "ms"}
         errors: list[str] = []
 
         # Duration must be non-negative.

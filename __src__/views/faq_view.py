@@ -10,7 +10,6 @@ Right: displays the help text for the selected key.
 
 import tkinter as tk
 from tkinter import ttk
-from typing import List
 
 from views.workflow_step_text_hint_view import WorkflowStepTextHint
 
@@ -24,7 +23,7 @@ class FaqView(ttk.Frame):
 
     def __init__(self, parent: tk.Widget) -> None:
         super().__init__(parent)
-        self._keys: List[str] = list(WorkflowStepTextHint.BY_LABEL.keys())
+        self._keys: list[str] = list(WorkflowStepTextHint.BY_LABEL.keys())
         self._create_widgets()
 
     def _create_widgets(self) -> None:

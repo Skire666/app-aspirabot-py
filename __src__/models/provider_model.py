@@ -21,6 +21,8 @@ from typing import cast
 from models.step_scraping_model import StepScrapingModel
 from shared.random_util import generate_rng_hexastring
 
+from __src__.shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
+
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 ## ---------------------------------------------------------------------------
@@ -82,7 +84,7 @@ class ProviderModel:
 
         # Return a ready-to-use default provider.
         return cls(
-            id_file=generate_rng_hexastring(12),
+            id_file=generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID),
             provider_name="Nouv. Fournisseur",
             url="https://example.com",
             version="1.0.0",

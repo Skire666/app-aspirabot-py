@@ -62,6 +62,10 @@ C_DATA_DEFAULT_FOLDER_PROVIDER: str = "data_providers"
 # Default folder for scraping data (relative to current working directory)
 C_DATA_DEFAULT_FOLDER_SCRAPPING: str = "data_scraping"
 
+# size of the hex string used for generating unique IDs (e.g., for workflow items)
+C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 6  # must be even (aka % 2 == 0)
+C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
+
 ## ---------------------------------------------------------------------------
 
 # Minimum time each step is displayed (milliseconds).

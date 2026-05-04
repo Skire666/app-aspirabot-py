@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
 from shared.random_util import generate_rng_hexastring
 
 ## ---------------------------------------------------------------------------
@@ -168,7 +169,7 @@ class StepScrapingModel:
         """
         return cls(
             step_type=StepType(data["step_type"]),
-            step_id=data.get("step_id", generate_rng_hexastring(10)),
+            step_id=data.get("step_id", generate_rng_hexastring(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID)),
             is_active=data.get("is_active", True),
             params=data.get("params", {}),
         )

@@ -23,17 +23,17 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 
 from models.step_scraping_model import StepScrapingModel
+from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
+from shared.random_util import generate_rng_hexastring
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
-from views.step_edit_dialog_view import StepInlineFormPanel
-
-from __src__.shared.random_util import generate_rng_hexastring
+from views.step_edit_dialog_view import _ALL_LABELS, StepInlineFormPanel
 
 s_logger = logging.getLogger(__name__)
 
 # Layout constants
-_HEIGHT_FRAME_LOGICAL_BLOCK = 250  # TODO PCO: le bloc 'brique logique est trop petit
-_WIDTH_FRAME_LOGICAL_BLOCK = 320
+_HEIGHT_FRAME_LOGICAL_BLOCK = 200  # TODO PCO: le bloc 'brique logique est trop petit
+_WIDTH_FRAME_STEP_STYPE_SELECTOR = 200
 _DND_ITEM_H = 46
 _DND_RESIZE_MIN_DELTA_PX = 8
 _DND_RESIZE_FINALIZE_MS = 250
@@ -208,15 +208,37 @@ class WorkflowListView(ttk.Frame):
         )  # Entre Workflow et Brique logique
         row.grid_propagate(False)  # enforce fixed height regardless of children
 
-        # Brique logique : largeur fixe 400 px. Aide à la saisie : espace restant.
-        row.columnconfigure(0, weight=0)
+        # Brique logique : left column fixed. Type frame in column 0, form in column 1.
+        row.columnconfigure(0, weight=0, minsize=_WIDTH_FRAME_STEP_STYPE_SELECTOR)
+        row.columnconfigure(1, weight=1)
         row.rowconfigure(0, weight=1)
 
-        # Brique logique panel — left column.
+        # Type d'étape frame — left column (outside the 'Brique logique' frame)
+        type_frame = ttk.LabelFrame(row, text="Type d'étape")
+        type_frame.grid(row=0, column=0, sticky="nsew")
+        type_frame.columnconfigure(0, weight=1)
+
+        # Scrollable Listbox that fills the available height
+        lb_container = ttk.Frame(type_frame)
+        lb_container.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        lb_scroll = ttk.Scrollbar(lb_container, orient=tk.VERTICAL)
+        lb = tk.Listbox(lb_container, exportselection=False, activestyle="none", yscrollcommand=lb_scroll.set)
+        lb_scroll.config(command=lb.yview)
+        lb_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        for lbl in _ALL_LABELS:
+            lb.insert(tk.END, lbl)
+        lb.bind("<<ListboxSelect>>", lambda e: self._on_type_list_select(e))
+        self._type_listbox = lb
+
+        # Brique logique panel — right column.
         self._inline_form = StepInlineFormPanel(row)
         self._inline_form.on_confirm = self._fire_confirm_step
         self._inline_form.on_cancel = self._fire_cancel_step
-        self._inline_form.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        self._inline_form.grid(row=0, column=1, sticky="nsew", padx=(0, 0))
+
+        # Ensure listbox selection drives the inline form when visible.
+        # The listbox items are the same as _ALL_LABELS; selection handler will set the panel's _type_var.
 
         return row
 
@@ -270,6 +292,16 @@ class WorkflowListView(ttk.Frame):
         """
         # Load form (triggers on_type_changed → help text update).
         self._inline_form.load(step)
+        # Select matching type in the left listbox if present
+        try:
+            if hasattr(self, "_type_listbox") and self._type_listbox is not None:
+                current = self._inline_form._type_var.get()
+                idx = _ALL_LABELS.index(current) if current in _ALL_LABELS else 0
+                self._type_listbox.selection_clear(0, tk.END)
+                self._type_listbox.selection_set(idx)
+                self._type_listbox.see(idx)
+        except Exception:
+            pass
         self._bottom_row.grid()
 
     def hide_inline_form(self) -> None:
@@ -325,6 +357,31 @@ class WorkflowListView(ttk.Frame):
         if self.on_edit_step:
             self.on_edit_step(idx)
 
+    def _on_type_list_select(self, event: tk.Event) -> None:
+        """Called when the user selects a type in the left listbox.
+
+        Sets the inline form type and rebuilds the form.
+        """
+        if not hasattr(self, "_type_listbox") or self._type_listbox is None:
+            return
+        sel = self._type_listbox.curselection()
+        if not sel:
+            return
+        idx = int(sel[0])
+        try:
+            label = self._type_listbox.get(idx)
+        except Exception:
+            return
+        # Update inline panel and trigger its change handler
+        self._inline_form._type_var.set(label)
+        try:
+            self._inline_form._on_type_changed(None)
+        except Exception:
+            # Fallback: directly rebuild based on mapping
+            step_type = _LABEL_TO_TYPE.get(label)
+            if step_type is not None:
+                self._inline_form._rebuild_form(step_type)
+
     def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
         label = StepItemRenderer.format_label(step, idx)
@@ -352,7 +409,9 @@ class WorkflowListView(ttk.Frame):
         # Serialise then deserialise to produce an independent deep copy.
         self._set_steps_count(len(self._dnd_list.items) + 1)
         new_object = StepScrapingModel.from_dict(step.to_dict())
-        new_object.step_id = generate_rng_hexastring(10)  # Ensure the duplicate has a unique ID.
+        new_object.step_id = generate_rng_hexastring(
+            C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
+        )  # Ensure the duplicate has a unique ID.
         return new_object
 
     def _on_dnd_toggle_active(self, _: StepScrapingModel, idx: int) -> None:

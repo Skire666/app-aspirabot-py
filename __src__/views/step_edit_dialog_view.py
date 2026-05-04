@@ -21,18 +21,18 @@ from tkinter import ttk
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
+from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
 from shared.random_util import generate_rng_hexastring
 from views.components.canvas_checkbox import CanvasCheckbox
 
-_CONSTANT_MISSING_FLOAT = -16736452  # Arbitrary value used to detect missing float
-_CONSTANT_INVALID_FLOAT = -16736451  # Arbitrary value used to detect invalid float
+from __src__.shared.numbers_util import C_CONSTANT_INVALID_INT
 
 # French display labels for each step type (Combobox values).
 STEP_TYPE_LABELS: dict[StepType, str] = {
     StepType.OPEN_URL: "Ouvrir une URL",
     StepType.REFRESH_PAGE: "Rafraîchir la page",
     StepType.SLEEP: "Attendre une durée fixe",
-    StepType.RANDOM_PAUSE: "Attendre aléatoire",
+    StepType.RANDOM_PAUSE: "Attendre aléatoirement",
     StepType.DOWNLOAD_IMAGE: "Télécharger les images",
     StepType.WAIT_IMAGE_SIZE: "Vérifier une taille d'image",
     StepType.WAIT_ELEMENT: "Vérifier les éléments",
@@ -52,7 +52,7 @@ _ALL_LABELS: list[str] = list(STEP_TYPE_LABELS.values())
 
 # Allowed constrained values (mirrors service layer constants).
 _WAIT_STATES = ["commit", "domcontentloaded", "load", "networkidle"]
-_UNITS = ["hour", "minute", "second", "millisecond"]
+_UNITS = ["heure", "minute", "seconde", "milliseconde"]
 _DOWNLOAD_MODES = ["largest", "first", "last", "all"]
 _CLICK_MODES = ["Normal", "Forced", "JS Direct"]
 
@@ -85,10 +85,10 @@ _CONDITION_MAP: dict[str, str] = dict(zip(_CONDITION_DISPLAY, _CONDITION_VALUES)
 _CONDITION_REVERSE: dict[str, str] = dict(zip(_CONDITION_VALUES, _CONDITION_DISPLAY))
 
 # --- END_PROCESS wait_unit display/value mappings ---
-_WAIT_UNIT_DISPLAY: list[str] = ["heure", "minute", "seconde", "milli-sec"]
-_WAIT_UNIT_VALUES: list[str] = ["hour", "minute", "second", "millisecond"]
-_WAIT_UNIT_MAP: dict[str, str] = dict(zip(_WAIT_UNIT_DISPLAY, _WAIT_UNIT_VALUES))
-_WAIT_UNIT_REVERSE: dict[str, str] = dict(zip(_WAIT_UNIT_VALUES, _WAIT_UNIT_DISPLAY))
+_WAIT_UNIT_DISPLAY: list[str] = ["heure", "minute", "seconde", "milliseconde"]
+_WAIT_UNIT_VALUES: list[str] = ["h", "m", "s", "ms"]
+_WAIT_UNIT_MAP_VIEW_TO_MODEL: dict[str, str] = dict(zip(_WAIT_UNIT_DISPLAY, _WAIT_UNIT_VALUES))
+_WAIT_UNIT_MAP_MODEL_TO_VIEW: dict[str, str] = dict(zip(_WAIT_UNIT_VALUES, _WAIT_UNIT_DISPLAY))
 
 # --- COUNT_ELEMENT operator display/value mappings ---
 _COUNT_OP_DISPLAY: list[str] = [
@@ -125,8 +125,8 @@ _PARAM_DISPLAY_REVERSE: dict[str, dict[str, str]] = {
     "extract_mode": _EXTRACT_MODE_REVERSE,
     "target": _TARGET_REVERSE,
     "condition": _CONDITION_REVERSE,
-    "wait_unit": _WAIT_UNIT_REVERSE,
-    "timeout_unit": _WAIT_UNIT_REVERSE,
+    "wait_unit": _WAIT_UNIT_MAP_MODEL_TO_VIEW,
+    "timeout_unit": _WAIT_UNIT_MAP_MODEL_TO_VIEW,
 }
 
 
@@ -148,12 +148,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
         Args:
             parent: The parent Tkinter widget to embed into.
         """
-        super().__init__(parent, text="Brique logique")
+        super().__init__(parent, text="Logistique")
         self.on_confirm: Callable[[StepScrapingModel], None] | None = None
         self.on_cancel: Callable[[], None] | None = None
         self.on_type_changed: Callable[[str], None] | None = None
         self._type_var = tk.StringVar()
         self._form_widgets: dict[str, Any] = {}
+        self._step_selected: str | None = None
         # Step list for JUMP_TO_STEP target combobox; set via set_available_steps().
         self._available_steps: list[StepScrapingModel] = []
         self._jump_target_displays: list[str] = []
@@ -180,34 +181,24 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._error_label = ttk.Label(self, text="", foreground="red")
         self._error_label.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 2))
 
-        # --- TOP zone (packed after, top→bottom order) ---
-        self._create_type_selector()
+        # --- TOP zone (packed after, left→right order) ---
+        top_area = ttk.Frame(self)
+        top_area.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self._form_frame = ttk.Frame(self)
-        self._form_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        # Right: dynamic form area (type selector is provided externally)
+        self._form_frame = ttk.Frame(top_area)
+        self._form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 5), pady=5)
 
     def _create_type_selector(self) -> None:
-        """Creates the step type selector Combobox at the top."""
-        frame = ttk.Frame(self)
-        frame.pack(fill=tk.X, padx=10, pady=(10, 5))
-
-        ttk.Label(frame, text="Type d'étape:").pack(side=tk.LEFT, padx=(0, 8))
-        cb = ttk.Combobox(
-            frame,
-            textvariable=self._type_var,
-            values=_ALL_LABELS,
-            state="readonly",
-            width=30,
-        )
-        cb.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        cb.bind("<<ComboboxSelected>>", self._on_type_changed)
+        """Deprecated: replaced by left-hand listbox UI."""
+        return
 
     def _create_buttons(self) -> None:
         """Creates the Confirm and Cancel buttons at the bottom."""
         btn_frame = ttk.Frame(self)
         btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
-
-        ttk.Button(btn_frame, text="Confirmer", command=self._confirm).pack(side=tk.RIGHT, padx=5)
+        self._btn_confirm = ttk.Button(btn_frame, text="Confirmer", command=self._confirm)
+        self._btn_confirm.pack(side=tk.RIGHT, padx=5)
         ttk.Button(btn_frame, text="Annuler", command=self._cancel).pack(side=tk.RIGHT, padx=5)
 
     # ---------------------------------------------------------------
@@ -236,6 +227,14 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._type_var.set(label)
         self._rebuild_form(initial_type)
 
+        # Track editing state and update confirm button label
+        self._step_selected = step if step else None
+        if hasattr(self, "_btn_confirm") and self._btn_confirm:
+            if step is None:
+                self._btn_confirm.config(text="Ajouter l'étape")
+            else:
+                self._btn_confirm.config(text="Mettre à jour")
+
         # Pre-fill widget values when editing an existing step.
         if step:
             self._load_step(step)
@@ -257,6 +256,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Notify the parent so it can update the help panel.
         if self.on_type_changed and label:
             self.on_type_changed(label)
+
+    # Note: listbox selection handler removed; external combobox is used instead.
 
     def _rebuild_form(self, step_type: StepType) -> None:
         """Clears and rebuilds the dynamic form for the given step type."""
@@ -333,7 +334,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_widgets["duration"] = dur_var
 
         ttk.Label(self._form_frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
-        unit_var = tk.StringVar(value="second")
+        unit_var = tk.StringVar(value="seconde")
         ttk.Combobox(self._form_frame, textvariable=unit_var, values=_UNITS, state="readonly").grid(
             row=1, column=1, sticky="ew", padx=5, pady=4
         )
@@ -341,26 +342,30 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
     def _build_form_random_pause(self) -> None:
         """Builds the RANDOM_PAUSE form (min, max spinboxes + unit combobox)."""
-        self._form_frame.columnconfigure(1, weight=1)
-        ttk.Label(self._form_frame, text="Min:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        # ligne 1
+        line1 = ttk.Frame(self._form_frame)
+        line1.pack(fill="x", anchor="w", pady=2)
+
+        ttk.Label(line1, text="Attendre aléatoirement entre : ").pack(side=tk.LEFT, padx=(0, 6))
+
         min_var = tk.StringVar(value="0")
-        ttk.Spinbox(self._form_frame, from_=0, to=9999, textvariable=min_var, width=10).grid(
-            row=0, column=1, sticky="w", padx=5, pady=4
-        )
+        ttk.Spinbox(line1, from_=0, to=9999, textvariable=min_var, width=10).pack(side=tk.LEFT, padx=(0, 6))
         self._form_widgets["min"] = min_var
 
-        ttk.Label(self._form_frame, text="Max:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+        ttk.Label(line1, text=" et ").pack(side=tk.LEFT, padx=(0, 6))
+
         max_var = tk.StringVar(value="1")
-        ttk.Spinbox(self._form_frame, from_=0, to=9999, textvariable=max_var, width=10).grid(
-            row=1, column=1, sticky="w", padx=5, pady=4
-        )
+        ttk.Spinbox(line1, from_=0, to=9999, textvariable=max_var, width=10).pack(side=tk.LEFT, padx=(0, 6))
         self._form_widgets["max"] = max_var
 
-        ttk.Label(self._form_frame, text="Unité:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
-        unit_var = tk.StringVar(value="second")
-        ttk.Combobox(self._form_frame, textvariable=unit_var, values=_UNITS, state="readonly").grid(
-            row=2, column=1, sticky="ew", padx=5, pady=4
-        )
+        # ligne 2
+        line2 = ttk.Frame(self._form_frame)
+        line2.pack(fill="x", anchor="w", pady=2)
+
+        ttk.Label(line2, text="Unité:").pack(side=tk.LEFT, padx=(0, 6))
+
+        unit_var = tk.StringVar(value="seconde")
+        ttk.Combobox(line2, textvariable=unit_var, values=_UNITS, state="readonly").pack(side=tk.LEFT, padx=(0, 6))
         self._form_widgets["unit"] = unit_var
 
     def _build_form_refresh_page(self) -> None:
@@ -445,54 +450,48 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """Builds the COUNT_ELEMENT form (selector, pre-wait, condition, operator rows)."""
         self._form_frame.columnconfigure(1, weight=1)
 
-        # Row 0 — CSS selector entry.
-        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
-        sel_var = tk.StringVar()
-        ttk.Entry(self._form_frame, textvariable=sel_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
-        self._form_widgets["selector"] = sel_var
-
-        # Row 1 — pre-wait: label | spinbox | unit combobox | hint.
+        # Row 0 — pre-wait: label | spinbox | unit combobox | hint.
         wait_frame = ttk.Frame(self._form_frame)
-        wait_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
-        ttk.Label(wait_frame, text="Attendre").pack(side=tk.LEFT, padx=(0, 4))
+        wait_frame.grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+        ttk.Label(wait_frame, text="Attendre ").pack(side=tk.LEFT, padx=(0, 4))
         wd_var = tk.StringVar(value="0")
         ttk.Spinbox(wait_frame, from_=0, to=99999, textvariable=wd_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
         wu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(wait_frame, textvariable=wu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        ttk.Label(wait_frame, text="(0 = immédiat)", foreground="gray").pack(side=tk.LEFT)
+        ttk.Label(wait_frame, text=" avant de lancer l'évaluation(0 = immédiat)").pack(side=tk.LEFT)
         self._form_widgets["wait_duration"] = wd_var
         self._form_widgets["wait_unit"] = wu_var
+
+        # Row 1 — CSS selector entry.
+        ttk.Label(self._form_frame, text="Sélecteur CSS:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+        sel_var = tk.StringVar()
+        ttk.Entry(self._form_frame, textvariable=sel_var).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        self._form_widgets["selector"] = sel_var
 
         # Row 2 — success_if: "C'est un" | combobox | "si COUNT est".
         result_frame = ttk.Frame(self._form_frame)
         result_frame.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=4)
-        ttk.Label(result_frame, text="C'est un").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(result_frame, text="Est un").pack(side=tk.LEFT, padx=(0, 4))
         si_var = tk.StringVar(value=_SUCCESS_IF_DISPLAY[0])
         si_cb = ttk.Combobox(
             result_frame, textvariable=si_var, values=_SUCCESS_IF_DISPLAY, state="readonly", width=8
         )
         si_cb.pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(result_frame, text="si COUNT est").pack(side=tk.LEFT, padx=(4, 0))
+        ttk.Label(result_frame, text="si le résultat est ").pack(side=tk.LEFT, padx=(4, 0))
         self._form_widgets["success_if"] = si_var
-
-        # Row 3 — operator combobox + dynamic value area.
-        self._build_count_element_row3_operator()
-
-    def _build_count_element_row3_operator(self) -> None:
-        """Builds Row 3: operator combobox and the dynamic value spinbox area."""
-        cond_frame = ttk.Frame(self._form_frame)
-        cond_frame.grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=4)
 
         # Operator combobox defaults to "égale à".
         op_var = tk.StringVar(value=_COUNT_OP_DISPLAY[2])
-        op_cb = ttk.Combobox(cond_frame, textvariable=op_var, values=_COUNT_OP_DISPLAY, state="readonly", width=18)
+        op_cb = ttk.Combobox(
+            result_frame, textvariable=op_var, values=_COUNT_OP_DISPLAY, state="readonly", width=18
+        )
         op_cb.pack(side=tk.LEFT, padx=(0, 6))
         self._form_widgets["operator"] = op_var
 
         # Value area: rebuilt dynamically when operator changes.
-        self._count_value_area_frame = ttk.Frame(cond_frame)
+        self._count_value_area_frame = ttk.Frame(result_frame)
         self._count_value_area_frame.pack(side=tk.LEFT)
         self._rebuild_count_value_area(_COUNT_OP_DISPLAY[2])
         op_cb.bind("<<ComboboxSelected>>", lambda _: self._rebuild_count_value_area(op_var.get()))
@@ -738,7 +737,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         if "wait_duration" in self._form_widgets:
             self._form_widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
         if "wait_unit" in self._form_widgets:
-            unit_display = _WAIT_UNIT_REVERSE.get(params.get("wait_unit", "second"), "seconde")
+            unit_display = _WAIT_UNIT_MAP_MODEL_TO_VIEW.get(params.get("wait_unit", "s"), "seconde")
             self._form_widgets["wait_unit"].set(unit_display)
         if "success_if" in self._form_widgets:
             si_display = _SUCCESS_IF_REVERSE.get(params.get("success_if", "success"), "succès")
@@ -796,22 +795,22 @@ class StepInlineFormPanel(ttk.LabelFrame):
         return {
             "url": self._form_widgets["url"].get().strip(),
             "wait_state": self._form_widgets["wait_state"].get(),
-            "timeout_duration": self._safe_float("timeout_duration", 0),
-            "timeout_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
+            "timeout_duration": self._safe_int("timeout_duration", C_CONSTANT_INVALID_INT),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
         }
 
     def _params_sleep(self) -> dict[str, Any]:
         """Reads SLEEP params, coercing duration to float."""
         return {
-            "duration": self._safe_float("duration", 0),
+            "duration": self._safe_int("duration", 0),
             "unit": self._form_widgets["unit"].get(),
         }
 
     def _params_random_pause(self) -> dict[str, Any]:
         """Reads RANDOM_PAUSE params, coercing min/max to float."""
         return {
-            "min": self._safe_float("min", 0),
-            "max": self._safe_float("max", 1),
+            "min": self._safe_int("min", 0),
+            "max": self._safe_int("max", 1),
             "unit": self._form_widgets["unit"].get(),
         }
 
@@ -837,8 +836,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
             "height_max": self._safe_int("height_max", 99999),
             "width_min": self._safe_int("width_min", 0),
             "width_max": self._safe_int("width_max", 99999),
-            "timeout_duration": self._safe_float("timeout_duration", 0),
-            "timeout_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
+            "timeout_duration": self._safe_int("timeout_duration", 0),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
         }
 
     def _params_click_element(self) -> dict[str, Any]:
@@ -853,8 +852,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
         unit_display = self._form_widgets["timeout_unit"].get()
         return {
             "selector": self._form_widgets["selector"].get().strip(),
-            "timeout_duration": self._safe_float("timeout_duration", 0),
-            "timeout_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
+            "timeout_duration": self._safe_int("timeout_duration", 0),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
         }
 
     def _params_count_element(self) -> dict[str, Any]:
@@ -867,8 +866,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Build base params shared by all operators.
         params: dict[str, Any] = {
             "selector": self._form_widgets["selector"].get().strip(),
-            "wait_duration": self._safe_float("wait_duration", 0),
-            "wait_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
+            "wait_duration": self._safe_int("wait_duration", 0),
+            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
             "success_if": _SUCCESS_IF_MAP.get(si_display, "success"),
             "operator": op_value,
         }
@@ -922,28 +921,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """Reads END_PROCESS params, translating display unit label to internal value."""
         unit_display = self._form_widgets["wait_unit"].get()
         return {
-            "wait_duration": self._safe_float("wait_duration", 0),
-            "wait_unit": _WAIT_UNIT_MAP.get(unit_display, "second"),
+            "wait_duration": self._safe_int("wait_duration", 0),
+            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
         }
 
     # ---------------------------------------------------------------
     # Type-safe widget reads
     # ---------------------------------------------------------------
-
-    def _safe_float(self, key: str, default: float) -> float:
-        """Reads a float from a StringVar form widget.
-
-        Args:
-            key: Form widget key.
-            default: Fallback value when conversion fails.
-
-        Returns:
-            Float value, or default on failure.
-        """
-        try:
-            return float(self._form_widgets[key].get())
-        except (ValueError, KeyError):
-            return default
 
     def _safe_int(self, key: str, default: int) -> int:
         """Reads an int from a StringVar form widget.
@@ -999,7 +983,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             errors.append("L'URL est obligatoire.")
         if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
             errors.append("Unité de timeout invalide.")
-        if self._safe_float("timeout_duration", -1) < 0:
+        if self._safe_int("timeout_duration", -1) < 0:
             errors.append("Durée de timeout doit être un nombre positif.")
         return errors
 
@@ -1043,7 +1027,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
                 errors.append(f"{key} doit être un entier.")
         if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
             errors.append("Unité de timeout invalide.")
-        if self._safe_float("timeout_duration", -1) < 0:
+        if self._safe_int("timeout_duration", -1) < 0:
             errors.append("Durée de timeout doit être un nombre positif.")
         return errors
 
@@ -1060,7 +1044,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             errors.append("Le sélecteur CSS est obligatoire.")
         if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
             errors.append("Unité de timeout invalide.")
-        if self._safe_float("timeout_duration", -1) < 0:
+        if self._safe_int("timeout_duration", -1) < 0:
             errors.append("Durée de timeout doit être un nombre positif.")
         return errors
 
@@ -1069,8 +1053,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
         errors: list[str] = []
 
         # Validate wait before
-        if self._safe_float("wait_duration", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
-            errors.append("Durée d'attente doit être un nombre positif.")
+        if self._safe_int("wait_duration", C_CONSTANT_INVALID_INT) == C_CONSTANT_INVALID_INT:
+            errors.append("Durée d'attente doit être un nombre positif ou égal à 0.")
 
         # Selector is mandatory.
         if not self._form_widgets.get("selector", tk.StringVar()).get().strip():
@@ -1082,14 +1066,14 @@ class StepInlineFormPanel(ttk.LabelFrame):
         has_ranged_mode = op_value in {"between", "not_between"}
 
         if has_ranged_mode:
-            if self._safe_float("value_min", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
-                errors.append("La valeur minimale doit être un nombre positif.")
-            if self._safe_float("value_max", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
-                errors.append("La valeur maximale doit être un nombre positif.")
+            if self._safe_int("value_min", C_CONSTANT_INVALID_INT) == C_CONSTANT_INVALID_INT:
+                errors.append("La valeur minimale doit être un nombre positif ou égal à 0.")
+            if self._safe_int("value_max", C_CONSTANT_INVALID_INT) == C_CONSTANT_INVALID_INT:
+                errors.append("La valeur maximale doit être un nombre positif ou égal à 0.")
             if self._safe_int("value_min", 0) > self._safe_int("value_max", 0):
-                errors.append("value_min doit être inférieur ou égal à value_max.")
-        elif self._safe_float("value", _CONSTANT_MISSING_FLOAT) == _CONSTANT_MISSING_FLOAT:
-            errors.append("La valeur doit être un nombre positif.")
+                errors.append("La valeur minimale doit être inférieure ou égale à la valeur maximale.")
+        elif self._safe_int("value", C_CONSTANT_INVALID_INT) == C_CONSTANT_INVALID_INT:
+            errors.append("La valeur doit être un nombre positif ou égal à 0.")
 
         return errors
 
@@ -1137,7 +1121,20 @@ class StepInlineFormPanel(ttk.LabelFrame):
         params = self._get_params(step_type)
 
         ## TODO PCO je distingue pas les nouveaux des existants
-        step = StepScrapingModel(step_type=step_type, step_id=generate_rng_hexastring(10), params=params)
+        if self._step_selected:
+            step = StepScrapingModel(
+                step_type=step_type,
+                is_active=self._step_selected.is_active,
+                step_id=generate_rng_hexastring(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID),
+                params=params,
+            )
+        else:
+            step = StepScrapingModel(
+                step_type=step_type,
+                is_active=True,
+                step_id=generate_rng_hexastring(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID),
+                params=params,
+            )
         if self.on_confirm:
             self.on_confirm(step)
 

@@ -49,7 +49,7 @@ def _fmt_wait_image_size(p: dict[str, Any], idx: int) -> str:
 
 def _fmt_wait_element(p: dict[str, Any], idx: int) -> str:
     """Formats a WAIT_ELEMENT step label."""
-    label = f"Vérifier les éléments\n{p.get('selector', '')}"
+    label = f"Vérifier les éléments\nSél. : {p.get('selector', '')}"
     td = p.get("timeout_duration", 0)
     if td:
         label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
@@ -76,7 +76,7 @@ def _fmt_count_element(p: dict[str, Any], idx: int) -> str:
         val_str = f"{p.get('value_min', 0)} et {p.get('value_max', 0)}"
     else:
         val_str = str(p.get("value", 0))
-    return f"Compter les éléments\n{selector} [{op} {val_str}]"
+    return f"Compter les éléments\nSél. : {selector} [{op} {val_str}]"
 
 
 def _fmt_extract_text(p: dict[str, Any], idx: int) -> str:
@@ -84,7 +84,7 @@ def _fmt_extract_text(p: dict[str, Any], idx: int) -> str:
     selector = p.get("selector", "")
     mode = p.get("extract_mode", "innerText")
     target = p.get("target", "first")
-    return f"Extraire les textes\n{selector} [{mode} / {target}]"
+    return f"Extraire les textes\nSél. : {selector} [{mode} / {target}]"
 
 
 def _fmt_jump_to_step(p: dict[str, Any], idx: int) -> str:
@@ -99,14 +99,14 @@ def _fmt_jump_to_step(p: dict[str, Any], idx: int) -> str:
         else "TOUJOURS"
     )
     # Pad for better alignment (01, 02, etc.)
-    return f"{txt_display}\nSe rendre à l'étape {str(target + 1).zfill(2)}"
+    return f"{txt_display}\nSe rendre à l'étape [{str(target + 1).zfill(2)}]"
 
 
 def _fmt_close_tabs(p: dict[str, Any], idx: int) -> str:
     """Formats a CLOSE_TABS step label."""
     url_filter = p.get("url_filter", "")
     max_t = p.get("max_tabs", 0)
-    filter_str = f"  -  Sél. : {url_filter})" if url_filter else ""
+    filter_str = f"  -  Sél. : {url_filter}" if url_filter else ""
     return f"Fermer des onglets\nMax. ouverts : {max_t}{filter_str}"
 
 
@@ -120,11 +120,11 @@ def _fmt_scroll_down(p: dict[str, Any], idx: int) -> str:
 
 
 def _fmt_click_element(p: dict[str, Any], idx: int) -> str:
-    return f"Cliquer sur un élément\nSélecteur: {p.get('selector', '')}"
+    return f"Cliquer sur un élément\nSél. : {p.get('selector', '')}"
 
 
 def _fmt_refresh_page(p: dict[str, Any], idx: int) -> str:
-    txt_display_cached = "Vide le cache (Ctrl+F5)" if p.get("clear_cache") else "Garde le cache (F5))"
+    txt_display_cached = "Vide le cache (Ctrl+F5)" if p.get("clear_cache") else "Garde le cache (F5)"
     return f"Rafraîchir la page\n{txt_display_cached}"
 
 
@@ -239,7 +239,7 @@ class StepItemRenderer:
         Returns:
             A short string combining the step type and its key parameters.
         """
-        prefix = f"[{('ON' if step.is_active else 'OFF')}]  -  "
+        prefix = f"{('[ON]' if step.is_active else '[OFF]')}  -  #{step.step_id}  -  "
         fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
 
         return prefix + fmt(step.params, idx) if fmt else step.step_type.value
