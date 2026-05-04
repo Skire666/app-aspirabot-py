@@ -19,7 +19,7 @@ from collections.abc import Callable
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
-from shared.constants import C_ALLOWED_UNITS_TIME_FOR_JSON, C_DEFAULT_UNITS_TIME
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_DEFAULT_MODEL
 
 
 class WorkflowService:
@@ -90,6 +90,7 @@ class WorkflowService:
             StepType.JUMP_TO_STEP: self._validate_jump_to_step,
             StepType.CLOSE_TABS: self._validate_close_tabs,
             StepType.END_PROCESS: self._validate_end_process,
+            StepType.WAIT_USER_ACTION: self._validate_wait_user_action,
         }
 
     # ------------------------------------------------------------------
@@ -107,9 +108,9 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
-        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
+        allowed_units = C_UNITS_TIME_ALLOWED_FOR_MODEL
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
+        timeout_unit = params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL)
 
         # URL is mandatory.
         if not params.get("url", "").strip():
@@ -183,9 +184,9 @@ class WorkflowService:
             List of error messages.
         """
         errors = list(self._validate_download_image(params, step_index))
-        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
+        allowed_units = C_UNITS_TIME_ALLOWED_FOR_MODEL
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
+        timeout_unit = params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL)
 
         # Timeout constraints.
         if timeout_duration < 0:
@@ -220,9 +221,9 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
-        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
+        allowed_units = C_UNITS_TIME_ALLOWED_FOR_MODEL
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
+        timeout_unit = params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL)
 
         # Selector is mandatory.
         if not params.get("selector", "").strip():
@@ -245,7 +246,7 @@ class WorkflowService:
         Returns:
             List of error messages.
         """
-        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
+        allowed_units = C_UNITS_TIME_ALLOWED_FOR_MODEL
         allowed_operators = {
             "between",
             "not_between",
@@ -346,6 +347,31 @@ class WorkflowService:
             errors.append("JUMP_TO_STEP : une étape ne peut pas pointer vers elle-même.")
         return errors
 
+    def _validate_wait_user_action(self, params: dict[str, Any], step_index: int) -> list[str]:
+        """Validates WAIT_USER_ACTION params.
+
+        Args:
+            params: Step parameter dict.
+            step_index: Zero-based step index (unused).
+
+        Returns:
+            List of error messages.
+        """
+        allowed_conditions = {"always", "success", "failure"}
+        allowed_units = C_UNITS_TIME_ALLOWED_FOR_MODEL
+        errors: list[str] = []
+
+        # Condition must be one of the three allowed values.
+        if params.get("condition") not in allowed_conditions:
+            errors.append(f"WAIT_USER_ACTION : condition invalide — {params.get('condition')!r}.")
+
+        # Duration must be non-negative.
+        if params.get("wait_duration", -1) < 0:
+            errors.append("WAIT_USER_ACTION : wait_duration doit être >= 0.")
+        if params.get("wait_unit") not in allowed_units:
+            errors.append(f"WAIT_USER_ACTION : unité de temps invalide — {params.get('wait_unit')!r}.")
+        return errors
+
     def _validate_end_process(self, params: dict[str, Any], step_index: int) -> list[str]:
         """Validates END_PROCESS params.
 
@@ -356,7 +382,7 @@ class WorkflowService:
         Returns:
             List of error messages.
         """
-        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
+        allowed_units = C_UNITS_TIME_ALLOWED_FOR_MODEL
         errors: list[str] = []
 
         # Duration must be non-negative.

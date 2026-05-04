@@ -187,6 +187,21 @@ class ScrapingPresenter:
         self._pause_event.set()
         self._view.set_paused_state(False)
 
+    def _on_user_wait_step(self) -> None:
+        """Called by the service when a WAIT_USER_ACTION step starts blocking.
+
+        Transitions the view to the paused state so the user sees the
+        Reprendre button and knows an action is expected.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        # Called from the background thread; set_paused_state is thread-safe.
+        self._view.set_paused_state(True)
+
     def _run_workflow(self) -> None:
         """Thread target: runs the workflow and dispatches the result to the view.
 
@@ -202,6 +217,7 @@ class ScrapingPresenter:
                 self._on_step_done,
                 self._cancel_event,
                 self._pause_event,
+                self._on_user_wait_step,
             )
         except (ValueError, RuntimeError, OSError) as exc:
             report = self._build_error_report(str(exc))

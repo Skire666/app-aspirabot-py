@@ -78,10 +78,11 @@ C_MAXIMUM_NBR_TABS_BROWSER: int = 999
 C_MAXIMUM_WAIT_TIME: int = 9_999
 
 # Allowed time units for step parameters (mirrors view layer allowed units)
-C_ALLOWED_UNITS_TIME_FOR_JSON: list[str] = ["m", "s", "ms"]
-
-# Default time unit for step parameters when not specified (mirrors view layer default unit)
-C_DEFAULT_UNITS_TIME: str = "s"
+C_UNITS_TIME_DEFAULT_MODEL: str = "s"
+C_UNITS_TIME_DEFAULT_VIEW: str = "seconde"
+C_UNITS_TIME_ALLOWED_FOR_MODEL: list[str] = ["m", "s", "ms"]
+C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["minute", "seconde", "milliseconde"]
+C_UNITS_TIME_CONVERSION_TO_MS: dict[str, int] = {"ms": 1, "s": 1000, "m": 60 * 1000}
 
 ## ---------------------------------------------------------------------------
 

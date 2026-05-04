@@ -22,12 +22,14 @@ from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
-    C_ALLOWED_UNITS_TIME_FOR_JSON,
-    C_DEFAULT_UNITS_TIME,
     C_MAXIMUM_NBR_TABS_BROWSER,
     C_MAXIMUM_SIZE_IMAGE,
     C_MAXIMUM_WAIT_TIME,
     C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID,
+    C_UNITS_TIME_ALLOWED_FOR_MODEL,
+    C_UNITS_TIME_ALLOWED_FOR_VIEW,
+    C_UNITS_TIME_DEFAULT_MODEL,
+    C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.numbers_util import C_CONSTANT_INVALID_INT
 from shared.random_util import generate_rng_hexastring
@@ -49,15 +51,17 @@ STEP_TYPE_LABELS: dict[StepType, str] = {
     StepType.JUMP_TO_STEP: "Si OK/KO, se rendre à ...",
     StepType.CLOSE_TABS: "Fermer des onglets",
     StepType.END_PROCESS: "Fin du processus",
+    StepType.WAIT_USER_ACTION: "Attendre action utilisateur",
 }
 
 # Reverse mapping for label → StepType lookup.
 _LABEL_TO_TYPE: dict[str, StepType] = {v: k for k, v in STEP_TYPE_LABELS.items()}
+
+# used by other files...
 _ALL_LABELS: list[str] = list(STEP_TYPE_LABELS.values())
 
 # Allowed constrained values (mirrors service layer constants).
 _WAIT_STATES = ["commit", "domcontentloaded", "load", "networkidle"]
-_UNITS = ["minute", "seconde", "milliseconde"]
 _DOWNLOAD_MODES = ["largest", "first", "last", "all"]
 _CLICK_MODES = ["Normal", "Forced", "JS Direct"]
 
@@ -90,9 +94,12 @@ _CONDITION_MAP: dict[str, str] = dict(zip(_CONDITION_DISPLAY, _CONDITION_VALUES)
 _CONDITION_REVERSE: dict[str, str] = dict(zip(_CONDITION_VALUES, _CONDITION_DISPLAY))
 
 # --- END_PROCESS wait_unit display/value mappings ---
-_WAIT_UNIT_DISPLAY: list[str] = ["minute", "seconde", "milliseconde"]
-_WAIT_UNIT_MAP_VIEW_TO_MODEL: dict[str, str] = dict(zip(_WAIT_UNIT_DISPLAY, C_ALLOWED_UNITS_TIME_FOR_JSON))
-_WAIT_UNIT_MAP_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_ALLOWED_UNITS_TIME_FOR_JSON, _WAIT_UNIT_DISPLAY))
+_WAIT_UNIT_MAP_VIEW_TO_MODEL: dict[str, str] = dict(
+    zip(C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_ALLOWED_FOR_MODEL)
+)
+_WAIT_UNIT_MAP_MODEL_TO_VIEW: dict[str, str] = dict(
+    zip(C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_ALLOWED_FOR_VIEW)
+)
 
 # --- COUNT_ELEMENT operator display/value mappings ---
 _COUNT_OP_DISPLAY: list[str] = [
@@ -288,6 +295,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             StepType.JUMP_TO_STEP: self._build_form_jump_to_step,
             StepType.CLOSE_TABS: self._build_form_close_tabs,
             StepType.END_PROCESS: self._build_form_end_process,
+            StepType.WAIT_USER_ACTION: self._build_form_wait_user_action,
         }
         builder = builders.get(step_type)
         if builder:
@@ -321,9 +329,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
+        tu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
+            timeout_frame, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
         ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
         self._form_widgets["timeout_duration"] = td_var
@@ -340,10 +348,10 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_widgets["duration"] = dur_var
 
         ttk.Label(self._form_frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
-        unit_var = tk.StringVar(value="seconde")
-        ttk.Combobox(self._form_frame, textvariable=unit_var, values=_UNITS, state="readonly").grid(
-            row=1, column=1, sticky="ew", padx=5, pady=4
-        )
+        unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
+        ttk.Combobox(
+            self._form_frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly"
+        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
         self._form_widgets["unit"] = unit_var
 
     def _build_form_random_pause(self) -> None:
@@ -374,8 +382,10 @@ class StepInlineFormPanel(ttk.LabelFrame):
 
         ttk.Label(line2, text="Unité:").pack(side=tk.LEFT, padx=(0, 6))
 
-        unit_var = tk.StringVar(value="seconde")
-        ttk.Combobox(line2, textvariable=unit_var, values=_UNITS, state="readonly").pack(side=tk.LEFT, padx=(0, 6))
+        unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
+        ttk.Combobox(line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly").pack(
+            side=tk.LEFT, padx=(0, 6)
+        )
         self._form_widgets["unit"] = unit_var
 
     def _build_form_refresh_page(self) -> None:
@@ -421,9 +431,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
+        tu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
+            timeout_frame, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
         ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
         self._form_widgets["timeout_duration"] = td_var
@@ -460,9 +470,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
+        tu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
+            timeout_frame, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
         ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
         self._form_widgets["timeout_duration"] = td_var
@@ -480,10 +490,10 @@ class StepInlineFormPanel(ttk.LabelFrame):
         ttk.Spinbox(wait_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=wd_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        wu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
-        ttk.Combobox(wait_frame, textvariable=wu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10).pack(
-            side=tk.LEFT, padx=(0, 4)
-        )
+        wu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
+        ttk.Combobox(
+            wait_frame, textvariable=wu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
+        ).pack(side=tk.LEFT, padx=(0, 4))
         ttk.Label(wait_frame, text=" avant de lancer l'évaluation(0 = immédiat)").pack(side=tk.LEFT)
         self._form_widgets["wait_duration"] = wd_var
         self._form_widgets["wait_unit"] = wu_var
@@ -668,12 +678,40 @@ class StepInlineFormPanel(ttk.LabelFrame):
         )
         self._form_widgets["wait_duration"] = dur_var
 
-        # Unit combobox — default "seconde" maps to internal "second".
+        # Unit combobox — default "seconde" maps to internal "s".
         ttk.Label(self._form_frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
-        unit_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
-        ttk.Combobox(self._form_frame, textvariable=unit_var, values=_WAIT_UNIT_DISPLAY, state="readonly").grid(
-            row=1, column=1, sticky="ew", padx=5, pady=4
+        unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
+        ttk.Combobox(
+            self._form_frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly"
+        ).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        self._form_widgets["wait_unit"] = unit_var
+
+    def _build_form_wait_user_action(self) -> None:
+        """Builds the WAIT_USER_ACTION form (condition combobox + post-resume delay row)."""
+        self._form_frame.columnconfigure(1, weight=1)
+
+        # Condition selector — defaults to "Toujours".
+        ttk.Label(self._form_frame, text="Mettre en pause si :").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        cond_var = tk.StringVar(value=_CONDITION_DISPLAY[2])
+        ttk.Combobox(self._form_frame, textvariable=cond_var, values=_CONDITION_DISPLAY, state="readonly").grid(
+            row=0, column=1, sticky="ew", padx=5, pady=4
         )
+        self._form_widgets["condition"] = cond_var
+
+        # Post-resume delay row: label | spinbox | unit combobox | hint.
+        delay_frame = ttk.Frame(self._form_frame)
+        delay_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+        ttk.Label(delay_frame, text="Délai après reprise :").pack(side=tk.LEFT, padx=(0, 4))
+        dur_var = tk.StringVar(value="0")
+        ttk.Spinbox(delay_frame, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
+        unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
+        ttk.Combobox(
+            delay_frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+        ).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(delay_frame, text="(0 = immédiat)", foreground="gray").pack(side=tk.LEFT)
+        self._form_widgets["wait_duration"] = dur_var
         self._form_widgets["wait_unit"] = unit_var
 
     # ---------------------------------------------------------------
@@ -769,9 +807,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
         if "wait_duration" in self._form_widgets:
             self._form_widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
         if "wait_unit" in self._form_widgets:
-            unit_display = _WAIT_UNIT_MAP_MODEL_TO_VIEW.get(
-                params.get("wait_unit", C_DEFAULT_UNITS_TIME), "seconde"
-            )
+            unit_model = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
+            unit_display = _WAIT_UNIT_MAP_MODEL_TO_VIEW.get(unit_model, C_UNITS_TIME_DEFAULT_VIEW)
             self._form_widgets["wait_unit"].set(unit_display)
         if "success_if" in self._form_widgets:
             si_display = _SUCCESS_IF_REVERSE.get(params.get("success_if", "success"), "succès")
@@ -815,6 +852,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             StepType.JUMP_TO_STEP: self._params_jump_to_step,
             StepType.CLOSE_TABS: self._params_close_tabs,
             StepType.END_PROCESS: self._params_end_process,
+            StepType.WAIT_USER_ACTION: self._params_wait_user_action,
         }
         reader = readers.get(step_type)
         return reader() if reader else {}
@@ -830,7 +868,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             "url": self._form_widgets["url"].get().strip(),
             "wait_state": self._form_widgets["wait_state"].get(),
             "timeout_duration": self._safe_int("timeout_duration", C_CONSTANT_INVALID_INT),
-            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     def _params_sleep_x_time(self) -> dict[str, Any]:
@@ -872,7 +910,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             "width_min": self._safe_int("width_min", 0),
             "width_max": self._safe_int("width_max", C_MAXIMUM_SIZE_IMAGE),
             "timeout_duration": self._safe_int("timeout_duration", 0),
-            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     def _params_click_element(self) -> dict[str, Any]:
@@ -888,7 +926,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         return {
             "selector": self._form_widgets["selector"].get().strip(),
             "timeout_duration": self._safe_int("timeout_duration", 0),
-            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     def _params_count_element(self) -> dict[str, Any]:
@@ -902,7 +940,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         params: dict[str, Any] = {
             "selector": self._form_widgets["selector"].get().strip(),
             "wait_duration": self._safe_int("wait_duration", 0),
-            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
+            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
             "success_if": _SUCCESS_IF_MAP.get(si_display, "success"),
             "operator": op_value,
         }
@@ -957,7 +995,17 @@ class StepInlineFormPanel(ttk.LabelFrame):
         unit_display = self._form_widgets["wait_unit"].get()
         return {
             "wait_duration": self._safe_int("wait_duration", 0),
-            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
+            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
+        }
+
+    def _params_wait_user_action(self) -> dict[str, Any]:
+        """Reads WAIT_USER_ACTION params, translating display labels to internal values."""
+        condition_display = self._form_widgets["condition"].get()
+        unit_display = self._form_widgets["wait_unit"].get()
+        return {
+            "condition": _CONDITION_MAP.get(condition_display, "always"),
+            "wait_duration": self._safe_int("wait_duration", 0),
+            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     # ---------------------------------------------------------------
@@ -1007,6 +1055,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             StepType.JUMP_TO_STEP: self._validate_jump_to_step_form,
             StepType.CLOSE_TABS: self._validate_close_tabs_form,
             StepType.END_PROCESS: list,
+            StepType.WAIT_USER_ACTION: self._validate_wait_user_action_form,
         }
         validator = validators.get(step_type)
         return validator() if validator else []
@@ -1016,7 +1065,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         errors: list[str] = []
         if not self._form_widgets.get("url", tk.StringVar()).get().strip():
             errors.append("L'URL est obligatoire.")
-        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
+        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in C_UNITS_TIME_ALLOWED_FOR_VIEW:
             errors.append("Unité de timeout invalide.")
         if self._safe_int("timeout_duration", -1) < 0:
             errors.append("Durée de timeout doit être un nombre positif.")
@@ -1060,7 +1109,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
                 int(self._form_widgets[key].get())
             except (ValueError, KeyError):
                 errors.append(f"{key} doit être un entier.")
-        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
+        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in C_UNITS_TIME_ALLOWED_FOR_VIEW:
             errors.append("Unité de timeout invalide.")
         if self._safe_int("timeout_duration", -1) < 0:
             errors.append("Durée de timeout doit être un nombre positif.")
@@ -1077,7 +1126,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         errors: list[str] = []
         if not self._form_widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Le sélecteur CSS est obligatoire.")
-        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in _WAIT_UNIT_DISPLAY:
+        if self._form_widgets.get("timeout_unit", tk.StringVar()).get() not in C_UNITS_TIME_ALLOWED_FOR_VIEW:
             errors.append("Unité de timeout invalide.")
         if self._safe_int("timeout_duration", -1) < 0:
             errors.append("Durée de timeout doit être un nombre positif.")
@@ -1110,6 +1159,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
         elif self._safe_int("value", C_CONSTANT_INVALID_INT) == C_CONSTANT_INVALID_INT:
             errors.append("La valeur doit être un nombre positif ou égal à 0.")
 
+        return errors
+
+    def _validate_wait_user_action_form(self) -> list[str]:
+        """Validates WAIT_USER_ACTION fields."""
+        errors: list[str] = []
+        if self._safe_int("wait_duration", -1) < 0:
+            errors.append("La durée d'attente après reprise doit être >= 0.")
         return errors
 
     def _validate_close_tabs_form(self) -> list[str]:

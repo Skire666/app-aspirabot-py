@@ -32,19 +32,12 @@ from models.scraping_report_model import ScrapingReportModel, StepResultModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
-from shared.constants import C_DEFAULT_UNITS_TIME, C_MAXIMUM_SIZE_IMAGE
+from shared.constants import (
+    C_MAXIMUM_SIZE_IMAGE,
+    C_UNITS_TIME_CONVERSION_TO_MS,
+    C_UNITS_TIME_DEFAULT_MODEL,
+)
 from shared.path_util import make_all_folders_if_not_exists
-
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
-
-# Conversion factors from each time unit to milliseconds.
-_UNIT_TO_MS: dict[str, int] = {
-    "minute": 60_000,
-    "second": 1_000,
-    "millisecond": 1,
-}
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -100,16 +93,16 @@ def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
         None.
 
     Example:
-        >>> _resolve_timeout_ms({"timeout_duration": 5, "timeout_unit": "second"})
+        >>> _resolve_timeout_ms({"timeout_duration": 5, "timeout_unit": "s"})
         5000
     """
     duration = params.get("timeout_duration", 0)
-    unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
+    unit = params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL)
 
     # Zero duration means no timeout regardless of unit.
     if not duration:
         return None
-    return int(duration * _UNIT_TO_MS.get(unit, 1_000))
+    return int(duration * C_UNITS_TIME_CONVERSION_TO_MS.get(unit, 1_000))
 
 
 class ScrapingService:
@@ -134,6 +127,10 @@ class ScrapingService:
         self._end_process_requested: bool = False
         self._downloaded_image_urls: set[str] = set()
         self._folder_scraping = folder_scraping
+        # Run-scoped references stored by run_workflow for WAIT_USER_ACTION.
+        self._pause_event_ref: threading.Event | None = None
+        self._cancel_event_ref: threading.Event | None = None
+        self._on_user_wait: Callable[[], None] | None = None
 
     def run_workflow(
         self,
@@ -141,6 +138,7 @@ class ScrapingService:
         on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
         cancel_event: threading.Event,
         pause_event: threading.Event,
+        on_user_wait: Callable[[], None] | None = None,
     ) -> ScrapingReportModel:
         """Executes all steps of a provider workflow sequentially.
 
@@ -150,6 +148,7 @@ class ScrapingService:
                 ``(index, step, success, message)``.
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
+            on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
 
         Returns:
             A ScrapingReportModel summarising the full run.
@@ -162,6 +161,10 @@ class ScrapingService:
             >>> pause = threading.Event(); pause.set()
             >>> report = service.run_workflow(provider, lambda *a: None, event, pause)
         """
+        # Store run-scoped refs for WAIT_USER_ACTION handler access.
+        self._pause_event_ref = pause_event
+        self._cancel_event_ref = cancel_event
+        self._on_user_wait = on_user_wait
         started_at = datetime.now().strftime(DATETIME_FORMAT)
 
         # Launch browser and execute all steps inside a managed Playwright context.
@@ -383,6 +386,7 @@ class ScrapingService:
             StepType.JUMP_TO_STEP: self._handle_jump_to_step,
             StepType.CLOSE_TABS: self._handle_close_tabs,
             StepType.END_PROCESS: self._handle_end_process,
+            StepType.WAIT_USER_ACTION: self._handle_wait_user_action,
         }
         handler = handlers.get(step_type)
         if handler is None:
@@ -433,10 +437,11 @@ class ScrapingService:
             None.
         """
         duration: int = params.get("duration", 0)
-        unit: str = params.get("unit", "seconde")
+        unit: str = params.get("unit", C_UNITS_TIME_DEFAULT_MODEL)
 
         # Convert milliseconds to seconds before calling time.sleep.
-        delay = duration / 1000.0 if unit == "millisecond" else float(duration)
+        multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
+        delay = duration * multipliers.get(unit, 1.0)
         time.sleep(delay)
 
     def _handle_random_pause(self, page: Page, params: dict[str, Any]) -> None:
@@ -455,12 +460,12 @@ class ScrapingService:
         """
         min_val: float = float(params.get("min", 0))
         max_val: float = float(params.get("max", 1))
-        unit: str = params.get("unit", "seconde")
+        unit: str = params.get("unit", C_UNITS_TIME_DEFAULT_MODEL)
 
         # Sample a uniform delay then apply unit conversion when necessary.
         delay = random.uniform(min_val, max_val)
-        if unit == "millisecond":
-            delay /= 1000.0
+        multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
+        delay = delay * multipliers.get(unit, 1.0)
         time.sleep(delay)
 
     def _handle_refresh_page(self, page: Page, params: dict[str, Any]) -> None:
@@ -633,7 +638,7 @@ class ScrapingService:
             ValueError: When the evaluated condition marks the step as a failure.
         """
         wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", C_DEFAULT_UNITS_TIME)
+        wait_unit: str = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
         selector: str = params.get("selector", "")
         operator: str = params.get("operator", "equal")
         success_if: str = params.get("success_if", "success")
@@ -643,7 +648,7 @@ class ScrapingService:
 
         # Apply pre-wait when configured.
         if wait_duration > 0:
-            time.sleep((wait_duration * _UNIT_TO_MS.get(wait_unit, 1_000)) / 1_000.0)
+            time.sleep((wait_duration * C_UNITS_TIME_CONVERSION_TO_MS.get(wait_unit, 1_000)) / 1_000.0)
 
         # Count matching elements and log the raw result.
         count: int = page.locator(selector).count()
@@ -787,7 +792,7 @@ class ScrapingService:
             None.
         """
         wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", C_DEFAULT_UNITS_TIME)
+        wait_unit: str = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
 
         # Convert wait duration to seconds using unit multipliers.
         multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
@@ -795,6 +800,52 @@ class ScrapingService:
         if delay > 0:
             time.sleep(delay)
         self._end_process_requested = True
+
+    def _handle_wait_user_action(self, page: Page, params: dict[str, Any]) -> None:
+        """Pauses the workflow until the user clicks Reprendre, then applies an optional delay.
+
+        The condition is evaluated against the previous step outcome; when not
+        satisfied the step is skipped without pausing.
+
+        Args:
+            page: Active Playwright page (unused; required by dispatch signature).
+            params: Must contain ``condition`` (``'always'`` | ``'success'`` |
+                ``'failure'``), ``wait_duration`` (float), and ``wait_unit``
+                (``'m'`` | ``'s'`` | ``'ms'``).
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        condition: str = params.get("condition", "always")
+        wait_duration: float = float(params.get("wait_duration", 0))
+        wait_unit: str = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
+
+        # Evaluate whether the pause condition is satisfied.
+        should_pause = (
+            condition == "always"
+            or (condition == "success" and self._prev_step_success)
+            or (condition == "failure" and not self._prev_step_success)
+        )
+        if not should_pause:
+            return
+
+        # Notify the presenter so the view transitions to "paused" state.
+        if self._on_user_wait:
+            self._on_user_wait()
+
+        # Clear the pause event and block until the user clicks Reprendre.
+        if self._pause_event_ref is not None:
+            self._pause_event_ref.clear()
+            self._pause_event_ref.wait()
+
+        # Apply optional post-resume delay, skipping it when the run was cancelled.
+        cancelled = self._cancel_event_ref is not None and self._cancel_event_ref.is_set()
+        if wait_duration > 0 and not cancelled:
+            multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
+            time.sleep(wait_duration * multipliers.get(wait_unit, 1.0))
 
     # ------------------------------------------------------------------
     # Shared helpers used by multiple handlers

@@ -136,6 +136,16 @@ def _fmt_random_pause(p: dict[str, Any], idx: int) -> str:
     return f"Attendre aléatoirement\n{p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
 
 
+def _fmt_wait_user_action(p: dict[str, Any], idx: int) -> str:
+    """Formats a WAIT_USER_ACTION step label."""
+    cond_labels = {"success": "succès", "failure": "échec", "always": "toujours"}
+    condition = cond_labels.get(p.get("condition", "always"), "toujours")
+    wd = p.get("wait_duration", 0)
+    wu = p.get("wait_unit", "")
+    delay_str = f" — délai : {wd} {wu}" if wd else ""
+    return f"Attendre action utilisateur\nCondition : {condition}{delay_str}"
+
+
 def _fmt_download_image(p: dict[str, Any], idx: int) -> str:
     unique_suffix = "(doublons refusés)" if p.get("unique_only", True) else "(tout est pris)"
     return (
@@ -162,6 +172,7 @@ _STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any], int], str]] = {
     StepType.JUMP_TO_STEP: _fmt_jump_to_step,
     StepType.CLOSE_TABS: _fmt_close_tabs,
     StepType.END_PROCESS: _fmt_end_process,
+    StepType.WAIT_USER_ACTION: _fmt_wait_user_action,
 }
 
 

@@ -45,6 +45,7 @@ class StepType(Enum):
     JUMP_TO_STEP = "JUMP_TO_STEP"
     CLOSE_TABS = "CLOSE_TABS"
     END_PROCESS = "END_PROCESS"
+    WAIT_USER_ACTION = "WAIT_USER_ACTION"
 
 
 # Default param values keyed by StepType value string.
@@ -52,12 +53,12 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
     StepType.OPEN_URL.value: {
         "url": "https://example.com/",
         "wait_state": "domcontentloaded",
-        "timeout_duration": 0,
-        "timeout_unit": "second",
+        "timeout_duration": 1,
+        "timeout_unit": "s",
     },
     StepType.REFRESH_PAGE.value: {"clear_cache": False},
-    StepType.SLEEP_X_TIME.value: {"duration": 0, "unit": "second"},
-    StepType.RANDOM_PAUSE.value: {"min": 0, "max": 1, "unit": "second"},
+    StepType.SLEEP_X_TIME.value: {"duration": 0, "unit": "s"},
+    StepType.RANDOM_PAUSE.value: {"min": 0, "max": 1, "unit": "s"},
     StepType.DOWNLOAD_IMAGE.value: {
         "mode": "largest",
         "unique_only": False,
@@ -71,18 +72,18 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "height_max": C_MAXIMUM_SIZE_IMAGE,
         "width_min": 0,
         "width_max": C_MAXIMUM_SIZE_IMAGE,
-        "timeout_duration": 0,
-        "timeout_unit": "second",
+        "timeout_duration": 1,
+        "timeout_unit": "s",
     },
     StepType.WAIT_ELEMENT.value: {
         "selector": "",
-        "timeout_duration": 0,
-        "timeout_unit": "second",
+        "timeout_duration": 1,
+        "timeout_unit": "s",
     },
     StepType.COUNT_ELEMENT.value: {
         "selector": "",
-        "wait_duration": 0,
-        "wait_unit": "second",
+        "wait_duration": 1,
+        "wait_unit": "s",
         "success_if": "success",
         "operator": "equal",
         "value_min": 0,
@@ -106,7 +107,12 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
     },
     StepType.END_PROCESS.value: {
         "wait_duration": 1,
-        "wait_unit": "second",
+        "wait_unit": "s",
+    },
+    StepType.WAIT_USER_ACTION.value: {
+        "condition": "always",
+        "wait_duration": 0,
+        "wait_unit": "s",
     },
 }
 
