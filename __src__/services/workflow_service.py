@@ -54,7 +54,7 @@ class WorkflowService:
             None.
 
         Example:
-            >>> service.validate_step(0, StepScrapingModel.create_default(StepType.SLEEP))
+            >>> service.validate_step(0, StepScrapingModel.create_default(StepType.SLEEP_X_TIME))
             []
         """
         # Resolve and invoke the per-type validator.
@@ -78,7 +78,7 @@ class WorkflowService:
         return {
             StepType.OPEN_URL: self._validate_open_url,
             StepType.REFRESH_PAGE: lambda p, i: [],
-            StepType.SLEEP: self._validate_sleep,
+            StepType.SLEEP_X_TIME: self._validate_sleep_x_time,
             StepType.RANDOM_PAUSE: self._validate_random_pause,
             StepType.DOWNLOAD_IMAGE: self._validate_download_image,
             StepType.WAIT_IMAGE_SIZE: self._validate_wait_image_size,
@@ -122,8 +122,8 @@ class WorkflowService:
             errors.append(f"OPEN_URL : timeout_unit invalide — {timeout_unit!r}.")
         return errors
 
-    def _validate_sleep(self, params: dict[str, Any], step_index: int) -> list[str]:
-        """Validates SLEEP params.
+    def _validate_sleep_x_time(self, params: dict[str, Any], step_index: int) -> list[str]:
+        """Validates SLEEP_X_TIME params.
 
         Args:
             params: Step parameter dict.
@@ -134,7 +134,7 @@ class WorkflowService:
         """
         errors: list[str] = []
         if params.get("duration", -1) < 0:
-            errors.append("SLEEP : duration doit être >= 0.")
+            errors.append("SLEEP_X_TIME : duration doit être >= 0.")
         return errors
 
     def _validate_random_pause(self, params: dict[str, Any], step_index: int) -> list[str]:

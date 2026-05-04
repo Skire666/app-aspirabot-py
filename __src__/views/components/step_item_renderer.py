@@ -128,7 +128,7 @@ def _fmt_refresh_page(p: dict[str, Any], idx: int) -> str:
     return f"Rafraîchir la page\n{txt_display_cached}"
 
 
-def _fmt_sleep(p: dict[str, Any], idx: int) -> str:
+def _fmt_sleep_x_time(p: dict[str, Any], idx: int) -> str:
     return f"Attendre une durée fixe\n{p.get('duration', 0)} {p.get('unit', '')}"
 
 
@@ -150,7 +150,7 @@ def _fmt_download_image(p: dict[str, Any], idx: int) -> str:
 _STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any], int], str]] = {
     StepType.OPEN_URL: _fmt_open_url,
     StepType.REFRESH_PAGE: _fmt_refresh_page,
-    StepType.SLEEP: _fmt_sleep,
+    StepType.SLEEP_X_TIME: _fmt_sleep_x_time,
     StepType.RANDOM_PAUSE: _fmt_random_pause,
     StepType.DOWNLOAD_IMAGE: _fmt_download_image,
     StepType.WAIT_IMAGE_SIZE: _fmt_wait_image_size,

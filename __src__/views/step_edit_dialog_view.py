@@ -37,7 +37,7 @@ from views.components.canvas_checkbox import CanvasCheckbox
 STEP_TYPE_LABELS: dict[StepType, str] = {
     StepType.OPEN_URL: "Ouvrir une URL",
     StepType.REFRESH_PAGE: "Rafraîchir la page",
-    StepType.SLEEP: "Attendre une durée fixe",
+    StepType.SLEEP_X_TIME: "Attendre une durée fixe",
     StepType.RANDOM_PAUSE: "Attendre aléatoirement",
     StepType.DOWNLOAD_IMAGE: "Télécharger les images",
     StepType.WAIT_IMAGE_SIZE: "Vérifier une taille d'image",
@@ -276,7 +276,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         builders = {
             StepType.OPEN_URL: self._build_form_open_url,
             StepType.REFRESH_PAGE: self._build_form_refresh_page,
-            StepType.SLEEP: self._build_form_sleep,
+            StepType.SLEEP_X_TIME: self._build_form_sleep_x_time,
             StepType.RANDOM_PAUSE: self._build_form_random_pause,
             StepType.DOWNLOAD_IMAGE: self._build_form_download_image,
             StepType.WAIT_IMAGE_SIZE: self._build_form_wait_image_size,
@@ -329,8 +329,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_widgets["timeout_duration"] = td_var
         self._form_widgets["timeout_unit"] = tu_var
 
-    def _build_form_sleep(self) -> None:
-        """Builds the SLEEP form (duration spinbox + unit combobox)."""
+    def _build_form_sleep_x_time(self) -> None:
+        """Builds the SLEEP_X_TIME form (duration spinbox + unit combobox)."""
         self._form_frame.columnconfigure(1, weight=1)
         ttk.Label(self._form_frame, text="Durée:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         dur_var = tk.StringVar(value="0")
@@ -803,7 +803,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         readers = {
             StepType.OPEN_URL: self._params_open_url,
             StepType.REFRESH_PAGE: self._params_refresh_page,
-            StepType.SLEEP: self._params_sleep,
+            StepType.SLEEP_X_TIME: self._params_sleep_x_time,
             StepType.RANDOM_PAUSE: self._params_random_pause,
             StepType.DOWNLOAD_IMAGE: self._params_download_image,
             StepType.WAIT_IMAGE_SIZE: self._params_wait_image_size,
@@ -833,8 +833,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
             "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
         }
 
-    def _params_sleep(self) -> dict[str, Any]:
-        """Reads SLEEP params, coercing duration to float."""
+    def _params_sleep_x_time(self) -> dict[str, Any]:
+        """Reads SLEEP_X_TIME params, coercing duration to float."""
         return {
             "duration": self._safe_int("duration", 0),
             "unit": self._form_widgets["unit"].get(),
@@ -995,7 +995,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         validators = {
             StepType.OPEN_URL: self._validate_open_url_form,
             StepType.REFRESH_PAGE: list,
-            StepType.SLEEP: self._validate_sleep_form,
+            StepType.SLEEP_X_TIME: self._validate_sleep_x_time_form,
             StepType.RANDOM_PAUSE: self._validate_random_pause_form,
             StepType.DOWNLOAD_IMAGE: self._validate_download_image_form,
             StepType.WAIT_IMAGE_SIZE: self._validate_wait_image_size_form,
@@ -1022,8 +1022,8 @@ class StepInlineFormPanel(ttk.LabelFrame):
             errors.append("Durée de timeout doit être un nombre positif.")
         return errors
 
-    def _validate_sleep_form(self) -> list[str]:
-        """Validates SLEEP fields."""
+    def _validate_sleep_x_time_form(self) -> list[str]:
+        """Validates SLEEP_X_TIME fields."""
         try:
             float(self._form_widgets["duration"].get())
             return []

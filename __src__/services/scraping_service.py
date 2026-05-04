@@ -371,7 +371,7 @@ class ScrapingService:
         handlers: dict[StepType, Callable[[Page, dict[str, Any]], None]] = {
             StepType.OPEN_URL: self._handle_open_url,
             StepType.REFRESH_PAGE: self._handle_refresh_page,
-            StepType.SLEEP: self._handle_sleep,
+            StepType.SLEEP_X_TIME: self._handle_sleep_x_time,
             StepType.RANDOM_PAUSE: self._handle_random_pause,
             StepType.DOWNLOAD_IMAGE: self._handle_download_image,
             StepType.WAIT_IMAGE_SIZE: self._handle_wait_image_size,
@@ -418,7 +418,7 @@ class ScrapingService:
         else:
             page.goto(url, wait_until=wait_state)
 
-    def _handle_sleep(self, page: Page, params: dict[str, Any]) -> None:
+    def _handle_sleep_x_time(self, page: Page, params: dict[str, Any]) -> None:
         """Pauses execution for a fixed duration.
 
         Args:

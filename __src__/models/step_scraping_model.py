@@ -33,7 +33,7 @@ class StepType(Enum):
 
     OPEN_URL = "OPEN_URL"
     REFRESH_PAGE = "REFRESH_PAGE"
-    SLEEP = "SLEEP"
+    SLEEP_X_TIME = "SLEEP_X_TIME"
     RANDOM_PAUSE = "RANDOM_PAUSE"
     DOWNLOAD_IMAGE = "DOWNLOAD_IMAGE"
     WAIT_IMAGE_SIZE = "WAIT_IMAGE_SIZE"
@@ -56,7 +56,7 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "timeout_unit": "second",
     },
     StepType.REFRESH_PAGE.value: {"clear_cache": False},
-    StepType.SLEEP.value: {"duration": 0, "unit": "second"},
+    StepType.SLEEP_X_TIME.value: {"duration": 0, "unit": "second"},
     StepType.RANDOM_PAUSE.value: {"min": 0, "max": 1, "unit": "second"},
     StepType.DOWNLOAD_IMAGE.value: {
         "mode": "largest",
@@ -120,7 +120,7 @@ class StepScrapingModel:
         params: Type-specific parameters for the action.
 
     Example:
-        >>> step = StepScrapingModel.create_default(StepType.SLEEP)
+        >>> step = StepScrapingModel.create_default(StepType.SLEEP_X_TIME)
         >>> step.params["duration"]
         0
     """
@@ -185,9 +185,9 @@ class StepScrapingModel:
             None.
 
         Example:
-            >>> step = StepScrapingModel.create_default(StepType.SLEEP)
+            >>> step = StepScrapingModel.create_default(StepType.SLEEP_X_TIME)
             >>> step.to_dict()["step_type"]
-            'SLEEP'
+            'SLEEP_X_TIME'
         """
         return {
             "step_type": self.step_type.value,
