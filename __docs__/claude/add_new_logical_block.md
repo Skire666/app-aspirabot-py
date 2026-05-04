@@ -193,7 +193,7 @@ Register the new type in the type selector Combobox with the French label: `"Com
 - Required — inline red error if empty on confirm
 
 **Row 2 — Pré-attente (single horizontal line)**
-- `ttk.Label` text `"Attendre"` + `ttk.Spinbox` for `wait_duration` (0–99999) + `ttk.Combobox` (readonly) for `wait_unit` + `ttk.Label` text `"(0 = immédiat)"`
+- `ttk.Label` text `"Attendre"` + `ttk.Spinbox` for `wait_duration` (0–C_MAXIMUM_SIZE_IMAGE_SCRAPPING) + `ttk.Combobox` (readonly) for `wait_unit` + `ttk.Label` text `"(0 = immédiat)"`
 - Unit display/value mapping: `heure`/`"hour"`, `minute`/`"minute"`, `seconde`/`"second"`, `milli-sec`/`"millisecond"`
 
 **Row 3 — Résultat (single horizontal line)**

@@ -68,6 +68,18 @@ C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
 
 ## ---------------------------------------------------------------------------
 
+# Maximum size for images to be scraped (in pixels) - used as default value for image size filters
+C_MAXIMUM_SIZE_IMAGE: int = 999_999
+
+# Maximum number of tabs that can be opened in the browser during scraping (used as a safety limit)
+C_MAXIMUM_NBR_TABS_BROWSER: int = 999
+
+# Maximum wait time for any step to complete/timeout
+C_MAXIMUM_WAIT_TIME: int = 9_999
+
+## ---------------------------------------------------------------------------
+
+
 # Minimum time each step is displayed (milliseconds).
 C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 220  # x4 < 900 ms total
 

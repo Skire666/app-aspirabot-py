@@ -84,7 +84,7 @@ def _fmt_extract_text(p: dict[str, Any], idx: int) -> str:
     selector = p.get("selector", "")
     mode = p.get("extract_mode", "innerText")
     target = p.get("target", "first")
-    return f"Extraire les textes\nSél. : {selector} [{mode} / {target}]"
+    return f"Extraire contenu textuel\nSél. : {selector} [{mode} / {target}]"
 
 
 def _fmt_jump_to_step(p: dict[str, Any], idx: int) -> str:
@@ -137,8 +137,9 @@ def _fmt_random_pause(p: dict[str, Any], idx: int) -> str:
 
 
 def _fmt_download_image(p: dict[str, Any], idx: int) -> str:
+    unique_suffix = "(doublons refusés)" if p.get("unique_only", True) else "(tout est pris)"
     return (
-        f"Télécharger les images\n{p.get('mode', 'largest')} — "
+        f"Télécharger les images\n{p.get('mode', 'largest')} - {unique_suffix} - "
         f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
         f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
     )

@@ -140,6 +140,7 @@ class ScrapingService:
         self._prev_step_success: bool = True
         self._pending_jump: int | None = None
         self._end_process_requested: bool = False
+        self._downloaded_image_urls: set[str] = set()
         self._folder_scraping = folder_scraping
 
     def run_workflow(
@@ -263,6 +264,7 @@ class ScrapingService:
         self._prev_step_success = True
         self._pending_jump = None
         self._end_process_requested = False
+        self._downloaded_image_urls = set()
         i = 0
 
         while i < len(steps):
@@ -478,12 +480,12 @@ class ScrapingService:
         page.reload()
 
     def _handle_download_image(self, page: Page, params: dict[str, Any]) -> None:
-        """Downloads the image that best matches the given dimension bounds.
+        """Downloads one or more images that match the given dimension bounds.
 
         Args:
             page: Active Playwright page.
             params: Must contain ``mode``, ``height_min``, ``height_max``,
-                ``width_min``, ``width_max``.
+                ``width_min``, ``width_max`` and ``unique_only``.
 
         Returns:
             None.
@@ -493,6 +495,7 @@ class ScrapingService:
             urllib.error.URLError: On download failure.
         """
         mode: str = params.get("mode", "largest")
+        unique_only: bool = bool(params.get("unique_only", False))
         bounds = self._extract_bounds(params)
 
         # Collect all visible images that fall within the size constraints.
@@ -500,9 +503,9 @@ class ScrapingService:
         if not images:
             raise ValueError("No image matching the size constraints found on the page.")
 
-        # Choose target image and persist it to a temporary file.
-        target = self._select_image_by_mode(images, mode)
-        self._fetch_and_save_image(page, target["src"])
+        # Choose target image(s) and persist them to temporary files.
+        targets = self._select_image_by_mode(images, mode)
+        self._fetch_and_save_image(page, targets, unique_only)
 
     def _handle_wait_image_size(self, page: Page, params: dict[str, Any]) -> None:
         """Polls the page until a visible image matches the dimension bounds.
@@ -831,9 +834,9 @@ class ScrapingService:
         """
         return {
             "h_min": int(params.get("height_min", 0)),
-            "h_max": int(params.get("height_max", 99999)),
+            "h_max": int(params.get("height_max", C_MAXIMUM_SIZE_IMAGE_SCRAPPING)),
             "w_min": int(params.get("width_min", 0)),
-            "w_max": int(params.get("width_max", 99999)),
+            "w_max": int(params.get("width_max", C_MAXIMUM_SIZE_IMAGE_SCRAPPING)),
         }
 
     def _get_filtered_images(
@@ -900,8 +903,8 @@ class ScrapingService:
         self,
         images: list[dict[str, Any]],
         mode: str,
-    ) -> dict[str, Any]:
-        """Selects one image from a filtered list according to the given mode.
+    ) -> list[dict[str, Any]]:
+        """Selects one or more images from a filtered list according to the given mode.
 
         Args:
             images: Non-empty list of image dicts with ``src``, ``width``, ``height``.
@@ -909,64 +912,80 @@ class ScrapingService:
                 greatest pixel area.
 
         Returns:
-            The selected image dict.
+            A list of selected image dicts.
 
         Raises:
             None.
         """
         # cf. _DOWNLOAD_MODES
         if mode == "first":
-            return images[0]
+            return [images[0]]
         if mode == "last":
-            return images[-1]
+            return [images[-1]]
         if mode == "all":
-            ## TODO PCO
-            raise NotImplementedError("Mode 'all' is not implemented yet.")
+            return list(images)
         # 'largest' -> Default to largest area regardless of mode value for MVP.
-        return max(images, key=lambda img: img["width"] * img["height"])
+        return [max(images, key=lambda img: img["width"] * img["height"])]
 
-    def _fetch_and_save_image(self, page: Page, img_src_url: str) -> str:
-        """Downloads an image from a URL and saves it to a temporary file.
+    def _fetch_and_save_image(
+        self,
+        page: Page,
+        images: list[dict[str, Any]],
+        unique_only: bool,
+    ) -> int:
+        """Downloads images from URLs and saves them to temporary files.
 
         Args:
             page: The active Playwright page.
-            img_src_url: The URL of the image to download.
+            images: Selected image metadata dictionaries.
+            unique_only: When True, skip URLs already downloaded during the run.
 
         Returns:
-            The absolute filesystem path where the file was saved.
+            The number of images successfully downloaded.
 
         Raises:
             urllib.error.URLError: On network or HTTP failure.
+            ValueError: When no image is downloaded.
         """
-        # prendre image inplace, fonctionne avec cloudflare
-        full_url = urljoin(page.url, img_src_url)
-        ext = Path.splitext(full_url.split("?")[0])[1] or ".jpg"
-        filename = Path(full_url.split("?")[0]).name + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + ext
-        dest = self._folder_scraping / filename
+        downloaded_count = 0
+        make_all_folders_if_not_exists(self._folder_scraping, is_file_path=False)
 
-        # Utilisation du réseau du navigateur pour récupérer l'image
-        response = page.context.request.get(
-            full_url,
-            headers={
-                "Referer": page.url,  # Referer = page actuelle
-                "User-Agent": page.evaluate("() => navigator.userAgent"),  # Même user-agent
-            },
-        )  ## TODO PCO : gérer les erreurs réseau et HTTP, notamment les 403 de Cloudflare
-        if response.ok:
-            make_all_folders_if_not_exists(self._folder_scraping, is_file_path=False)
-            with open(dest, "wb") as f:
-                f.write(response.body())
-        else:
-            raise PlaywrightError(f"Failed to download image: HTTP {response.status}")
+        for image in images:
+            img_src_url = str(image.get("src", ""))
+            full_url = urljoin(page.url, img_src_url)
 
-        # OLD : prends l'image, et tente de l'ouvrir (fonctionne pas avec cloudflare)
-        # Derive a clean filename from the URL, falling back to a safe default.
-        ## TODO PCO : plante sur cloduflare (image sur un autre serveur)
-        # raw_name = url.split("/")[-1].split("?")[0]
-        # filename = raw_name if raw_name else "image.jpg"
-        # dest = self._folder_scraping / filename  ##TODO PCO
-        # urllib.request.urlretrieve(url, dest) # Stream the image bytes directly to disk.
-        # return dest
+            if unique_only and full_url in self._downloaded_image_urls:
+                continue
+
+            # Download through the browser context to preserve the current session.
+            response = page.context.request.get(
+                full_url,
+                headers={
+                    "Referer": page.url,
+                    "User-Agent": page.evaluate("() => navigator.userAgent"),
+                },
+            )
+            if not response.ok:
+                raise PlaywrightError(f"Failed to download image: HTTP {response.status}")
+
+            url_path = full_url.split("?")[0]
+            suffix = Path(url_path).suffix or ".jpg"
+            filename = (
+                Path(url_path).stem
+                + datetime.now().strftime("_%Y%m%d_%H%M%S%f")
+                + f"_{downloaded_count + 1}"
+                + suffix
+            )
+            dest = self._folder_scraping / filename
+            with dest.open("wb") as file_handle:
+                file_handle.write(response.body())
+
+            self._downloaded_image_urls.add(full_url)
+            downloaded_count += 1
+
+        if downloaded_count == 0:
+            raise ValueError("No image was downloaded.")
+        return downloaded_count
 
     def _build_report(
         self,

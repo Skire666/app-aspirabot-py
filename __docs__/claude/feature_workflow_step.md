@@ -40,8 +40,8 @@ Each `StepScraping` instance holds a `step_type: StepType` and a `params: dict` 
 | `SLEEP` | `duration: int \| float`, `unit: str` | `duration=0` | both |
 | `RANDOM_PAUSE` | `min: int \| float`, `max: int \| float`, `unit: str` | `min=0`, `max=1` | all three |
 | `REFRESH_PAGE` | `clear_cache: bool` | `clear_cache=False` | always valid |
-| `DOWNLOAD_IMAGE` | `mode: str`, `height_min: int`, `height_max: int`, `width_min: int`, `width_max: int` | `mode="largest"`, `0/99999` for dimensions | all five |
-| `WAIT_IMAGE_SIZE` | `height_min: int`, `height_max: int`, `width_min: int`, `width_max: int` | `0/99999` | all four |
+| `DOWNLOAD_IMAGE` | `mode: str`, `height_min: int`, `height_max: int`, `width_min: int`, `width_max: int` | `mode="largest"`, `0/999999` for dimensions | all five |
+| `WAIT_IMAGE_SIZE` | `height_min: int`, `height_max: int`, `width_min: int`, `width_max: int` | `0/999999` | all four |
 | `CLICK_ELEMENT` | `selector: str`, `click_mode: str` | `click_mode="Normal"` | both |
 | `WAIT_ELEMENT` | `selector: str` | — | required |
 | `SCROLL_DOWN` | `pixels: int` | `pixels=1000` | required |

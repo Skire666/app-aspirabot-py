@@ -188,7 +188,7 @@ Register the 4 new types in the type selector Combobox (French display labels, i
 
 **`_build_form_CLOSE_TABS()`**
 - `ttk.Entry` for `url_filter` (optional, placeholder: `"Laisser vide pour ne pas filtrer"`)
-- `ttk.Spinbox` for `max_tabs` (range 0–9999, default 0)
+- `ttk.Spinbox` for `max_tabs` (range 0–999, default 0)
 
 **`_build_form_EXTRACT_TEXT()`**
 
@@ -220,7 +220,7 @@ Fields in order:
 Add `set_available_steps(steps: list[StepScrapingModel])` to `StepInlineFormPanel` if it does not already exist.
 
 **`_build_form_END_PROCESS()`**
-- `ttk.Spinbox` for `wait_duration` (range 0–99999, default 0)
+- `ttk.Spinbox` for `wait_duration` (range 0–C_MAXIMUM_SIZE_IMAGE_SCRAPPING, default 0)
 - `ttk.Combobox` for `wait_unit` (values: `heure` / `minute` / `seconde` / `milli-sec`; maps to `"hour"` / `"minute"` / `"second"` / `"millisecond"`)
 
 ---

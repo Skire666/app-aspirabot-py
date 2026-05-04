@@ -60,16 +60,17 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
     StepType.RANDOM_PAUSE.value: {"min": 0, "max": 1, "unit": "second"},
     StepType.DOWNLOAD_IMAGE.value: {
         "mode": "largest",
+        "unique_only": False,
         "height_min": 0,
-        "height_max": 99999,
+        "height_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
         "width_min": 0,
-        "width_max": 99999,
+        "width_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
     },
     StepType.WAIT_IMAGE_SIZE.value: {
         "height_min": 0,
-        "height_max": 99999,
+        "height_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
         "width_min": 0,
-        "width_max": 99999,
+        "width_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
         "timeout_duration": 0,
         "timeout_unit": "second",
     },
@@ -134,7 +135,7 @@ class StepScrapingModel:
         step_type: StepType,
         step_id: str,
         is_active: bool = True,
-        params: dict[str, Any] = None,
+        params: dict[str, Any] | None = None,
     ) -> None:
         """Initializes a scraping step model.
 

@@ -19,9 +19,8 @@ from datetime import datetime
 from typing import cast
 
 from models.step_scraping_model import StepScrapingModel
+from shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
 from shared.random_util import generate_rng_hexastring
-
-from __src__.shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
