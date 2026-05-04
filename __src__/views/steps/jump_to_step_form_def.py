@@ -1,8 +1,11 @@
 """IStepFormDef for JUMP_TO_STEP."""
+
 from __future__ import annotations
+
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
+
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
 from shared.step_registry import register_form
@@ -34,25 +37,29 @@ class JumpToStepFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Si OK/KO, se rendre à ..."
+        return "Si l'étape d'avant est un ..."
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         frame.columnconfigure(1, weight=1)
         ttk.Label(frame, text="Condition:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         cond_var = tk.StringVar(value=CONDITION_DISPLAY[0])
-        ttk.Combobox(frame, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(frame, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").grid(
+            row=0, column=1, sticky="ew", padx=5, pady=4
+        )
         widgets["condition"] = cond_var
 
-        available_steps = widgets.get("_steps", [])
+        available_steps = widgets.get("_steps", [])  ## list StepScrapingModel
         jump_target_displays = [
-            f"Étape {i+1} — {_STEP_LABELS.get(s.step_type, s.step_type.value)}"
+            f"Étape {i + 1}  -  #{s.step_id}  - {_STEP_LABELS.get(s.step_type, s.step_type.value)}"
             for i, s in enumerate(available_steps)
         ]
         widgets["_jump_target_displays"] = jump_target_displays
         default_target = jump_target_displays[0] if jump_target_displays else ""
         target_var = tk.StringVar(value=default_target)
         ttk.Label(frame, text="Étape cible:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
-        ttk.Combobox(frame, textvariable=target_var, values=jump_target_displays, state="readonly").grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(frame, textvariable=target_var, values=jump_target_displays, state="readonly").grid(
+            row=1, column=1, sticky="ew", padx=5, pady=4
+        )
         widgets["target_index"] = target_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
@@ -86,13 +93,12 @@ class JumpToStepFormDef(IStepFormDef):
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         target = params.get("target_index", 0)
         cond = params.get("condition", "success")
+        next_step = str(target + 1).zfill(2)
         if cond == "success":
-            txt = f"Si l'étape [{str(idx).zfill(2)}] est un succès"
-        elif cond == "failure":
-            txt = f"Si l'étape [{str(idx).zfill(2)}] est un échec"
-        else:
-            txt = "TOUJOURS"
-        return f"{txt}\nSe rendre à l'étape [{str(target + 1).zfill(2)}]"
+            return f"Si l'étape d'avant est ...\nun succès, se rendre à l'étape [{next_step}]"
+        if cond == "failure":
+            return f"Si l'étape d'avant est ...\nun échec, se rendre à l'étape [{next_step}]"
+        return f"Toujour sauter à ...\nl'étape {next_step}"
 
 
 register_form(JumpToStepFormDef())

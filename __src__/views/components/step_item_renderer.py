@@ -18,7 +18,7 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Callable
 
-from models.step_scraping_model import StepScrapingModel
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.step_registry import get_form
 
 ## ---------------------------------------------------------------------------
@@ -36,11 +36,13 @@ class StepItemRenderer:
     the palette without touching drawing logic.
     """
 
+    _C_BG_DEACTIVATE: str = "#f3f2f2"
     _C_BG_NORMAL: str = "#ffffff"
     _C_BG_SEL: str = "#dbeafe"
     _C_BORDER_NORMAL: str = "#e2e8f0"
     _C_BORDER_SEL: str = "#dbeafe"
-    _C_FG_NORMAL: str = "#334155"
+    _C_FG_DEACTIVATE: str = "#6B6B6B"
+    _C_FG_NORMAL: str = "#252D3A"
     _C_FG_SEL: str = "#1d5bd8"
     _C_FG_FLOAT: str = "#ffffff"
     _C_FONT: tuple[str, int] = ("Segoe UI", 10)
@@ -65,6 +67,11 @@ class StepItemRenderer:
             "fg": self._C_FG_SEL,
         }
         self._colors_floating: dict[str, str] = {"fg": self._C_FG_FLOAT}
+        self._colors_deactive: dict[str, str] = {
+            "bg": self._C_BG_DEACTIVATE,
+            "border": self._C_BORDER_NORMAL,
+            "fg": self._C_FG_DEACTIVATE,
+        }
 
     @staticmethod
     def format_label(step: StepScrapingModel, idx: int) -> str:
@@ -81,7 +88,7 @@ class StepItemRenderer:
         Returns:
             A short string combining the step type and its key parameters.
         """
-        prefix = f"{('[ON]' if step.is_active else '[OFF]')}  -  #{step.step_id}  -  "
+        prefix = f"  #{step.step_id}  -  "
         try:
             body = get_form(step.step_type).format_label(step.params, idx)
         except ValueError:
@@ -98,12 +105,14 @@ class StepItemRenderer:
         self._label_cache[key] = label
         return label
 
-    def _resolve_colors(self, state: str, is_selected: bool) -> dict[str, str]:
+    def _resolve_colors(self, state: str, is_selected: bool, is_active: bool) -> dict[str, str]:
         """Maps rendering state and selection flag to the color palette."""
         if state == "floating":
             return self._colors_floating
         if is_selected:
             return self._colors_selected
+        if not is_active:
+            return self._colors_deactive
         return self._colors_normal
 
     def _draw_background(
@@ -141,9 +150,10 @@ class StepItemRenderer:
     ) -> None:
         """Draws the step label text centered vertically within the item area."""
         str_index = str(idx + 1).zfill(2)
+        width_extra = 20 if item.step_type == StepType.JUMP_TO_STEP else 0
         label = f"{str_index}.  {self._format_label_cached(item, idx)}"
         canvas.create_text(
-            x + 10,
+            x + 10 + width_extra,
             y + h // 2,
             text=label,
             anchor="w",
@@ -176,6 +186,6 @@ class StepItemRenderer:
         if state == "ghost":
             return
         is_selected = idx == self._get_selected_index()
-        colors = self._resolve_colors(state, is_selected)
+        colors = self._resolve_colors(state, is_selected, is_active=item.is_active)
         self._draw_background(canvas, x, y, w, h, colors, state)
         self._draw_label(canvas, item, idx, x, y, w, h, colors)

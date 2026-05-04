@@ -1,9 +1,14 @@
 """Typed parameter model for the WAIT_USER_ACTION step."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any, Self
+
 from interfaces.i_step_params import IStepParams
+from models.step_scraping_model import StepType
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+
 
 @dataclass(frozen=True)
 class WaitUserActionParams(IStepParams):
@@ -25,3 +30,7 @@ class WaitUserActionParams(IStepParams):
             wait_duration=int(data.get("wait_duration", 0)),
             wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
         )
+
+    @classmethod
+    def get_step_type(cls):
+        return StepType.WAIT_USER_ACTION

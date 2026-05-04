@@ -1,8 +1,13 @@
 """Typed parameter model for the CLICK_ELEMENT step."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any, Self
+
 from interfaces.i_step_params import IStepParams
+from models.step_scraping_model import StepType
+
 
 @dataclass(frozen=True)
 class ClickElementParams(IStepParams):
@@ -22,3 +27,7 @@ class ClickElementParams(IStepParams):
             selector=data.get("selector", ""),
             click_mode=data.get("click_mode", "Normal"),
         )
+
+    @classmethod
+    def get_step_type(cls):
+        return StepType.CLICK_ELEMENT

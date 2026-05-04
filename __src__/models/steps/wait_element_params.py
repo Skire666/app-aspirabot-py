@@ -1,9 +1,14 @@
 """Typed parameter model for the WAIT_ELEMENT step."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any, Self
+
 from interfaces.i_step_params import IStepParams
+from models.step_scraping_model import StepType
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+
 
 @dataclass(frozen=True)
 class WaitElementParams(IStepParams):
@@ -16,7 +21,11 @@ class WaitElementParams(IStepParams):
         return cls(selector="", timeout_duration=1, timeout_unit=C_UNITS_TIME_DEFAULT_MODEL)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"selector": self.selector, "timeout_duration": self.timeout_duration, "timeout_unit": self.timeout_unit}
+        return {
+            "selector": self.selector,
+            "timeout_duration": self.timeout_duration,
+            "timeout_unit": self.timeout_unit,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -25,3 +34,7 @@ class WaitElementParams(IStepParams):
             timeout_duration=int(data.get("timeout_duration", 1)),
             timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
         )
+
+    @classmethod
+    def get_step_type(cls):
+        return StepType.WAIT_ELEMENT

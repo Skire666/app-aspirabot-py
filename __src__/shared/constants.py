@@ -69,7 +69,7 @@ C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
 ## ---------------------------------------------------------------------------
 
 # Maximum size for images to be scraped (in pixels) - used as default value for image size filters
-C_MAXIMUM_SIZE_IMAGE: int = 999_999
+C_MAXIMUM_SIZE_IMAGE: int = 99999
 
 # Maximum number of tabs that can be opened in the browser during scraping (used as a safety limit)
 C_MAXIMUM_NBR_TABS_BROWSER: int = 999

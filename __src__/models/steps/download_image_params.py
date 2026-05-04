@@ -1,9 +1,14 @@
 """Typed parameter model for the DOWNLOAD_IMAGE step."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any, Self
+
 from interfaces.i_step_params import IStepParams
+from models.step_scraping_model import StepType
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
+
 
 @dataclass(frozen=True)
 class DownloadImageParams(IStepParams):
@@ -16,10 +21,24 @@ class DownloadImageParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
-        return cls(mode="largest", unique_only=False, height_min=0, height_max=C_MAXIMUM_SIZE_IMAGE, width_min=0, width_max=C_MAXIMUM_SIZE_IMAGE)
+        return cls(
+            mode="largest",
+            unique_only=False,
+            height_min=0,
+            height_max=C_MAXIMUM_SIZE_IMAGE,
+            width_min=0,
+            width_max=C_MAXIMUM_SIZE_IMAGE,
+        )
 
     def to_dict(self) -> dict[str, Any]:
-        return {"mode": self.mode, "unique_only": self.unique_only, "height_min": self.height_min, "height_max": self.height_max, "width_min": self.width_min, "width_max": self.width_max}
+        return {
+            "mode": self.mode,
+            "unique_only": self.unique_only,
+            "height_min": self.height_min,
+            "height_max": self.height_max,
+            "width_min": self.width_min,
+            "width_max": self.width_max,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -31,3 +50,7 @@ class DownloadImageParams(IStepParams):
             width_min=int(data.get("width_min", 0)),
             width_max=int(data.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
         )
+
+    @classmethod
+    def get_step_type(cls):
+        return StepType.DOWNLOAD_IMAGE

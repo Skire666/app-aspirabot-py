@@ -1,8 +1,13 @@
 """Typed parameter model for the REFRESH_PAGE step."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any, Self
+
 from interfaces.i_step_params import IStepParams
+from models.step_scraping_model import StepType
+
 
 @dataclass(frozen=True)
 class RefreshPageParams(IStepParams):
@@ -20,3 +25,7 @@ class RefreshPageParams(IStepParams):
         return cls(
             clear_cache=bool(data.get("clear_cache", False)),
         )
+
+    @classmethod
+    def get_step_type(cls):
+        return StepType.REFRESH_PAGE

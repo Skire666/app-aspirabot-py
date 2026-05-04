@@ -88,7 +88,7 @@ _DEFAULT_PAD_BETWEEN_ITEMS = 4
 _DEFAULT_GAP_EXPAND_WHEN_FLOATING = 8
 
 # width and height of the action buttons
-_DEFAULT_SIZE_BTN = 40
+_DEFAULT_SIZE_BTN = 36
 
 # thickness of the insert-position indicator line
 _DEFAULT_HEIGHT_LINE_INSERT = 2
