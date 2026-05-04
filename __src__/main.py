@@ -8,6 +8,11 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 
+# Bootstrap: import all step packages to populate the central registry.
+import models.steps  # noqa: F401
+import services.steps  # noqa: F401
+import views.steps  # noqa: F401
+
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.log_presenter import LogPresenter

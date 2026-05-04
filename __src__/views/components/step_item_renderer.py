@@ -2,6 +2,7 @@
 
 Implements ItemRenderer[StepScrapingModel] as a callable class so that
 WorkflowBuilderView remains free of canvas calls and label-formatting logic.
+Step labels are delegated to the registered IStepFormDef instances.
 
 Example:
     >>> renderer = StepItemRenderer(get_selected_index=lambda: None)
@@ -16,167 +17,13 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Callable
-from typing import Any
 
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.step_registry import get_form
 
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
-
-
-def _fmt_open_url(p: dict[str, Any], idx: int) -> str:
-    """Formats an OPEN_URL step label."""
-    label = f"Ouvrir une URL\n{p.get('url', '')}"
-    td = p.get("timeout_duration", 0)
-    if td:
-        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-    return label
-
-
-def _fmt_wait_image_size(p: dict[str, Any], idx: int) -> str:
-    """Formats a WAIT_IMAGE_SIZE step label."""
-    label = (
-        f"Vérifier une taille d'image\n"
-        f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
-        f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
-    )
-    td = p.get("timeout_duration", 0)
-    if td:
-        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-    return label
-
-
-def _fmt_wait_element(p: dict[str, Any], idx: int) -> str:
-    """Formats a WAIT_ELEMENT step label."""
-    label = f"Vérifier les éléments\nSél. : {p.get('selector', '')}"
-    td = p.get("timeout_duration", 0)
-    if td:
-        label += f" [timeout: {td} {p.get('timeout_unit', '')}]"
-    return label
-
-
-def _fmt_count_element(p: dict[str, Any], idx: int) -> str:
-    """Formats a COUNT_ELEMENT step label."""
-    op_labels = {
-        "between": "compris entre",
-        "not_between": "non compris entre",
-        "equal": "=",
-        "not_equal": "≠",
-        "greater_than": ">",
-        "less_than": "<",
-        "greater_or_equal": "≥",
-        "less_or_equal": "≤",
-    }
-    op = op_labels.get(p.get("operator", "equal"), "?")
-    selector = p.get("selector", "")
-
-    # Range operators use two bounds; all others use a single value.
-    if p.get("operator") in {"between", "not_between"}:
-        val_str = f"{p.get('value_min', 0)} et {p.get('value_max', 0)}"
-    else:
-        val_str = str(p.get("value", 0))
-    return f"Compter les éléments\nSél. : {selector} [{op} {val_str}]"
-
-
-def _fmt_extract_text(p: dict[str, Any], idx: int) -> str:
-    """Formats an EXTRACT_TEXT step label."""
-    selector = p.get("selector", "")
-    mode = p.get("extract_mode", "innerText")
-    target = p.get("target", "first")
-    return f"Extraire contenu textuel\nSél. : {selector} [{mode} / {target}]"
-
-
-def _fmt_jump_to_step(p: dict[str, Any], idx: int) -> str:
-    """Formats a JUMP_TO_STEP step label."""
-    target = p.get("target_index", 0)
-    cond = p.get("condition", "success")
-    txt_display = (
-        f"Si l'étape [{str(idx).zfill(2)}] est un succès"
-        if cond == "success"
-        else f"Si l'étape [{str(idx).zfill(2)}] est un échec"
-        if cond == "failure"
-        else "TOUJOURS"
-    )
-    # Pad for better alignment (01, 02, etc.)
-    return f"{txt_display}\nSe rendre à l'étape [{str(target + 1).zfill(2)}]"
-
-
-def _fmt_close_tabs(p: dict[str, Any], idx: int) -> str:
-    """Formats a CLOSE_TABS step label."""
-    url_filter = p.get("url_filter", "")
-    max_t = p.get("max_tabs", 0)
-    filter_str = f"  -  Sél. : {url_filter}" if url_filter else ""
-    return f"Fermer des onglets\nMax. ouverts : {max_t}{filter_str}"
-
-
-def _fmt_end_process(p: dict[str, Any], idx: int) -> str:
-    """Formats an END_PROCESS step label."""
-    return f"Fin du processus\nAttendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
-
-
-def _fmt_scroll_down(p: dict[str, Any], idx: int) -> str:
-    return f"Défilement vers le bas\nLongueur: {p.get('pixels', 0)} px"
-
-
-def _fmt_click_element(p: dict[str, Any], idx: int) -> str:
-    return f"Cliquer sur un élément\nSél. : {p.get('selector', '')}"
-
-
-def _fmt_refresh_page(p: dict[str, Any], idx: int) -> str:
-    txt_display_cached = "Vide le cache (Ctrl+F5)" if p.get("clear_cache") else "Garde le cache (F5)"
-    return f"Rafraîchir la page\n{txt_display_cached}"
-
-
-def _fmt_sleep_x_time(p: dict[str, Any], idx: int) -> str:
-    return f"Attendre une durée fixe\n{p.get('duration', 0)} {p.get('unit', '')}"
-
-
-def _fmt_random_pause(p: dict[str, Any], idx: int) -> str:
-    return f"Attendre aléatoirement\n{p.get('min', 0)}-{p.get('max', 1)} {p.get('unit', '')}"
-
-
-def _fmt_wait_user_action(p: dict[str, Any], idx: int) -> str:
-    """Formats a WAIT_USER_ACTION step label."""
-    cond_labels = {"success": "succès", "failure": "échec", "always": "toujours"}
-    condition = cond_labels.get(p.get("condition", "always"), "toujours")
-    wd = p.get("wait_duration", 0)
-    wu = p.get("wait_unit", "")
-    delay_str = f" — délai : {wd} {wu}" if wd else ""
-    return f"Attendre action utilisateur\nCondition : {condition}{delay_str}"
-
-
-def _fmt_download_image(p: dict[str, Any], idx: int) -> str:
-    unique_suffix = "(doublons refusés)" if p.get("unique_only", True) else "(tout est pris)"
-    return (
-        f"Télécharger les images\n{p.get('mode', 'largest')} - {unique_suffix} - "
-        f"{p.get('width_min', 0)}x{p.get('height_min', 0)} -> "
-        f"{p.get('width_max', 0)}x{p.get('height_max', 0)}"
-    )
-
-
-# Dispatch table: each StepType maps to its label formatter function.
-
-_STEP_LABEL_FORMATTERS: dict[StepType, Callable[[dict[str, Any], int], str]] = {
-    StepType.OPEN_URL: _fmt_open_url,
-    StepType.REFRESH_PAGE: _fmt_refresh_page,
-    StepType.SLEEP_X_TIME: _fmt_sleep_x_time,
-    StepType.RANDOM_PAUSE: _fmt_random_pause,
-    StepType.DOWNLOAD_IMAGE: _fmt_download_image,
-    StepType.WAIT_IMAGE_SIZE: _fmt_wait_image_size,
-    StepType.WAIT_ELEMENT: _fmt_wait_element,
-    StepType.COUNT_ELEMENT: _fmt_count_element,
-    StepType.CLICK_ELEMENT: _fmt_click_element,
-    StepType.SCROLL_DOWN: _fmt_scroll_down,
-    StepType.EXTRACT_TEXT: _fmt_extract_text,
-    StepType.JUMP_TO_STEP: _fmt_jump_to_step,
-    StepType.CLOSE_TABS: _fmt_close_tabs,
-    StepType.END_PROCESS: _fmt_end_process,
-    StepType.WAIT_USER_ACTION: _fmt_wait_user_action,
-}
-
-
-# ── Renderer ──────────────────────────────────────────────────────────────────
 
 
 class StepItemRenderer:
@@ -187,19 +34,8 @@ class StepItemRenderer:
 
     Color constants are defined at class level so that subclasses can override
     the palette without touching drawing logic.
-
-    Attributes:
-        _C_BG_NORMAL: Card background when the item is not selected.
-        _C_BG_SEL: Card background when the item is selected.
-        _C_BORDER_NORMAL: Card border when not selected.
-        _C_BORDER_SEL: Card border when selected.
-        _C_FG_NORMAL: Label text color in normal (unselected) state.
-        _C_FG_SEL: Label text color when the item is selected.
-        _C_FG_FLOAT: Label text color while the item is floating (dragged).
-        _C_FONT: Font used for the step label text.
     """
 
-    # ── Color palette (class-level so subclasses can override) ────────────────
     _C_BG_NORMAL: str = "#ffffff"
     _C_BG_SEL: str = "#dbeafe"
     _C_BORDER_NORMAL: str = "#e2e8f0"
@@ -213,16 +49,11 @@ class StepItemRenderer:
         """Initializes the renderer with a selection-state accessor.
 
         Args:
-            get_selected_index: Zero-argument callable that returns the currently
-                selected item index, or None if nothing is selected. Typically a
-                lambda wrapping the owning view's ``_selected_index`` attribute,
-                e.g. ``lambda: self._selected_index``. This avoids a circular
-                reference to the full view object.
+            get_selected_index: Zero-argument callable returning the currently
+                selected item index, or None if nothing is selected.
         """
         self._get_selected_index = get_selected_index
-        # Cache repeated labels during redraw storms (e.g., resize).
-        self._label_cache: dict[tuple[StepType, tuple[tuple[str, str], ...]], str] = {}
-        # Pre-resolve palette dicts to avoid per-call allocations.
+        self._label_cache: dict[str, str] = {}
         self._colors_normal: dict[str, str] = {
             "bg": self._C_BG_NORMAL,
             "border": self._C_BORDER_NORMAL,
@@ -235,14 +66,13 @@ class StepItemRenderer:
         }
         self._colors_floating: dict[str, str] = {"fg": self._C_FG_FLOAT}
 
-    # ── Public helpers ────────────────────────────────────────────────────────
-
     @staticmethod
     def format_label(step: StepScrapingModel, idx: int) -> str:
         """Returns a concise human-readable description of a step.
 
-        Falls back to the raw StepType value string when no formatter is
-        registered for the step type (future-proof against new StepType members).
+        Delegates label formatting to the registered IStepFormDef for the
+        step type. Falls back to the raw StepType value string when no form
+        def is registered.
 
         Args:
             step: The step model to describe.
@@ -252,9 +82,11 @@ class StepItemRenderer:
             A short string combining the step type and its key parameters.
         """
         prefix = f"{('[ON]' if step.is_active else '[OFF]')}  -  #{step.step_id}  -  "
-        fmt = _STEP_LABEL_FORMATTERS.get(step.step_type)
-
-        return prefix + fmt(step.params, idx) if fmt else step.step_type.value
+        try:
+            body = get_form(step.step_type).format_label(step.params, idx)
+        except ValueError:
+            body = step.step_type.value
+        return prefix + body
 
     def _format_label_cached(self, step: StepScrapingModel, idx: int) -> str:
         """Returns a cached label to avoid recomputing during redraw bursts."""
@@ -266,24 +98,10 @@ class StepItemRenderer:
         self._label_cache[key] = label
         return label
 
-    # ── Private drawing helpers ───────────────────────────────────────────────
-
     def _resolve_colors(self, state: str, is_selected: bool) -> dict[str, str]:
-        """Maps rendering state and selection flag to the color palette.
-
-        Args:
-            state: One of "normal", "ghost", or "floating".
-            is_selected: True when this item's index matches the selected index.
-
-        Returns:
-            Dict with "fg" always present, plus "bg" and "border" for "normal"
-            state items.
-        """
-        # Floating items use DragDropList's drag background; only fg matters here.
+        """Maps rendering state and selection flag to the color palette."""
         if state == "floating":
             return self._colors_floating
-
-        # Normal state: full card colors based on selection.
         if is_selected:
             return self._colors_selected
         return self._colors_normal
@@ -298,16 +116,7 @@ class StepItemRenderer:
         colors: dict[str, str],
         state: str,
     ) -> None:
-        """Draws the card background rectangle for non-floating items.
-
-        Args:
-            canvas: Target canvas (must not call delete on it).
-            x, y: Top-left of the drawing area.
-            w, h: Width (button zone excluded) and height of the item.
-            colors: Resolved palette dict from _resolve_colors.
-            state: Rendering state; only "normal" gets a background rect.
-        """
-        # Floating items already have a background drawn by DragDropList itself.
+        """Draws the card background rectangle for non-floating items."""
         if state != "normal":
             return
         canvas.create_rectangle(
@@ -330,18 +139,8 @@ class StepItemRenderer:
         h: int,
         colors: dict[str, str],
     ) -> None:
-        """Draws the step label text centered vertically within the item area.
-
-        Args:
-            canvas: Target canvas.
-            item: Step model to format and display.
-            idx: 0-based list position, prefixed as a 1-based step number.
-            x, y: Top-left of the drawing area.
-            w, h: Width (button zone excluded) and height of the item.
-            colors: Resolved palette dict from _resolve_colors.
-        """
-        # Build "N.  <description>" using the formatter dispatch table.
-        str_index = str(idx + 1).zfill(2)  # Pad single-digit indices for better alignment (01., 02., etc.)
+        """Draws the step label text centered vertically within the item area."""
+        str_index = str(idx + 1).zfill(2)
         label = f"{str_index}.  {self._format_label_cached(item, idx)}"
         canvas.create_text(
             x + 10,
@@ -360,18 +159,8 @@ class StepItemRenderer:
         if canvas_w <= clip_x:
             return
         bg = canvas.cget("bg")
-        canvas.create_rectangle(
-            clip_x,
-            y + 1,
-            canvas_w,
-            y + h - 1,
-            fill=bg,
-            outline=bg,
-        )
+        canvas.create_rectangle(clip_x, y + 1, canvas_w, y + h - 1, fill=bg, outline=bg)
 
-    # ── ItemRenderer protocol entry point ─────────────────────────────────────
-
-    # NOTE PCO  est bien call, car '_draw_label' est notifié plus bas
     def __call__(
         self,
         canvas: tk.Canvas,
@@ -383,25 +172,9 @@ class StepItemRenderer:
         h: int,
         state: str,
     ) -> None:
-        """Renders one step item into (x, y, x+w, y+h). Never calls canvas.delete().
-
-        Satisfies the ItemRenderer[StepScrapingModel] protocol defined in
-        drag_drop_list.py.
-
-        Args:
-            canvas: The DragDropList's canvas object.
-            item: Step model at position idx.
-            idx: Current 0-based list index.
-            x, y: Top-left of the drawing area.
-            w: Width excluding the button zone.
-            h: Item height in pixels.
-            state: One of "normal", "ghost", or "floating".
-        """
-        # Ghost items are placeholders; DragDropList draws them itself.
+        """Renders one step item into (x, y, x+w, y+h). Never calls canvas.delete()."""
         if state == "ghost":
             return
-
-        # Resolve palette then delegate to specialized drawing helpers.
         is_selected = idx == self._get_selected_index()
         colors = self._resolve_colors(state, is_selected)
         self._draw_background(canvas, x, y, w, h, colors, state)

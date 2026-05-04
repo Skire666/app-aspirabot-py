@@ -1,0 +1,24 @@
+"""Typed parameter model for the CLICK_ELEMENT step."""
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any, Self
+from interfaces.i_step_params import IStepParams
+
+@dataclass(frozen=True)
+class ClickElementParams(IStepParams):
+    selector: str
+    click_mode: str
+
+    @classmethod
+    def default(cls) -> Self:
+        return cls(selector="", click_mode="Normal")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"selector": self.selector, "click_mode": self.click_mode}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            selector=data.get("selector", ""),
+            click_mode=data.get("click_mode", "Normal"),
+        )

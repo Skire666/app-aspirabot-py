@@ -7,7 +7,8 @@
       "Bash(.\\\\venv\\\\Scripts\\\\python.exe -c \"import sys; sys.path.insert\\(0, '__src__'\\); import ast, pathlib; files = ['__src__/main.py', '__src__/services/startup_service.py', '__src__/views/splashscreen_view.py', '__src__/presenters/splashscreen_presenter.py']; [print\\(f'OK: {f}'\\) or ast.parse\\(pathlib.Path\\(f\\).read_text\\(encoding='utf-8'\\)\\) for f in files]; print\\('All files parse OK'\\)\")",
       "PowerShell(& \".\\\\venv\\\\Scripts\\\\python.exe\" -c \"import ast, pathlib; files = ['__src__/main.py', '__src__/services/startup_service.py', '__src__/views/splashscreen_view.py', '__src__/presenters/splashscreen_presenter.py']; [print\\(f'OK: {f}'\\) or ast.parse\\(pathlib.Path\\(f\\).read_text\\(encoding='utf-8'\\)\\) for f in files]; print\\('All files parse OK'\\)\")",
       "Bash(python -c \"from models.step_scraping_model import StepType, _DEFAULT_PARAMS; print\\('StepType OK:', StepType.WAIT_USER_ACTION\\); print\\('Params OK:', _DEFAULT_PARAMS[StepType.WAIT_USER_ACTION.value]\\)\")",
-      "Bash(python -c \"import sys; sys.path.insert\\(0, '__src__'\\); from models.step_scraping_model import StepType, _DEFAULT_PARAMS; print\\('StepType OK:', StepType.WAIT_USER_ACTION\\); print\\('Params OK:', _DEFAULT_PARAMS[StepType.WAIT_USER_ACTION.value]\\)\")"
+      "Bash(python -c \"import sys; sys.path.insert\\(0, '__src__'\\); from models.step_scraping_model import StepType, _DEFAULT_PARAMS; print\\('StepType OK:', StepType.WAIT_USER_ACTION\\); print\\('Params OK:', _DEFAULT_PARAMS[StepType.WAIT_USER_ACTION.value]\\)\")",
+      "PowerShell(Write-Host \"=== INTERFACES FOLDER ===\"; Get-ChildItem -Path \"e:\\\\app-aspirabot-py\\\\__src__\\\\interfaces\" -File | ForEach-Object { Write-Host $_.Name }; Write-Host \"`n=== SHARED FOLDER ===\"; Get-ChildItem -Path \"e:\\\\app-aspirabot-py\\\\__src__\\\\shared\" -File | ForEach-Object { Write-Host $_.Name })"
     ]
   }
 }

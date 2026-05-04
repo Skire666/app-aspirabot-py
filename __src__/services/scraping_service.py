@@ -1,15 +1,15 @@
 """Service for executing a scraping workflow step by step via Playwright.
 
-Each StepType maps to a dedicated private handler method. The service is
-fully decoupled from Tkinter and communicates with the presenter only through
-the on_step_done callback.
+Each step type is dispatched through the central step registry. The service
+manages cross-step state (pause, cancel, jump, end-process, image dedup) and
+communicates progress to the presenter via on_step_done.
 
 Example:
     >>> import threading
-    >>> service = ScrapingService()
-    >>> event = threading.Event()
-    >>> report = service.run_workflow(provider, lambda *a: None, event)
-    >>> report.total_steps == len(provider.steps)
+    >>> service = ScrapingService(folder)
+    >>> pause = threading.Event(); pause.set()
+    >>> report = service.run_workflow(provider, lambda *a: None, threading.Event(), pause)
+    >>> isinstance(report, ScrapingReportModel)
     True
 """
 
@@ -18,102 +18,36 @@ Example:
 ## ---------------------------------------------------------------------------
 
 import logging
-import random
 import threading
 import time
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
 from models.scraping_report_model import ScrapingReportModel, StepResultModel
-from models.step_scraping_model import StepScrapingModel, StepType
-from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
+from models.step_scraping_model import StepScrapingModel
+from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
-from shared.constants import (
-    C_MAXIMUM_SIZE_IMAGE,
-    C_UNITS_TIME_CONVERSION_TO_MS,
-    C_UNITS_TIME_DEFAULT_MODEL,
-)
-from shared.path_util import make_all_folders_if_not_exists
+from playwright_stealth import Stealth
+from shared.step_registry import get_executor
 
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
 
 
-def _evaluate_count_condition(count: int, operator: str, value: int, value_min: int, value_max: int) -> bool:
-    """Evaluates a COUNT_ELEMENT operator expression against the actual element count.
-
-    Args:
-        count: Number of DOM elements found by the locator.
-        operator: Comparison operator string (e.g. ``'equal'``, ``'between'``).
-        value: Expected count for single-value operators.
-        value_min: Inclusive lower bound for range operators.
-        value_max: Inclusive upper bound for range operators.
-
-    Returns:
-        True when the condition is satisfied, False otherwise.
-
-    Raises:
-        None.
-
-    Example:
-        >>> _evaluate_count_condition(3, "equal", 3, 0, 0)
-        True
-    """
-    conditions: dict[str, bool] = {
-        "between": value_min <= count <= value_max,
-        "not_between": not (value_min <= count <= value_max),
-        "equal": count == value,
-        "not_equal": count != value,
-        "greater_than": count > value,
-        "less_than": count < value,
-        "greater_or_equal": count >= value,
-        "less_or_equal": count <= value,
-    }
-    return conditions.get(operator, False)
-
-
-def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
-    """Returns the configured timeout in milliseconds, or None when disabled.
-
-    A timeout_duration of 0 disables the timeout regardless of timeout_unit.
-
-    Args:
-        params: Step parameter dict containing ``timeout_duration`` and
-            ``timeout_unit`` keys.
-
-    Returns:
-        Timeout in milliseconds as an int, or None when timeout_duration is 0.
-
-    Raises:
-        None.
-
-    Example:
-        >>> _resolve_timeout_ms({"timeout_duration": 5, "timeout_unit": "s"})
-        5000
-    """
-    duration = params.get("timeout_duration", 0)
-    unit = params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL)
-
-    # Zero duration means no timeout regardless of unit.
-    if not duration:
-        return None
-    return int(duration * C_UNITS_TIME_CONVERSION_TO_MS.get(unit, 1_000))
-
-
 class ScrapingService:
     """Executes a provider workflow step by step via Playwright Chromium.
 
-    Each StepType is dispatched to a dedicated private handler. The caller
-    receives progress via the on_step_done callback; no Tkinter code lives here.
+    Step execution is fully delegated to registered IStepExecutor instances.
+    Cross-step state (pending jump, end-process flag, image dedup set) is owned
+    here and injected into the executor via runtime params.
 
     Example:
-        >>> service = ScrapingService()
-        >>> report = service.run_workflow(provider, on_step_done, threading.Event())
+        >>> service = ScrapingService(Path("."))
+        >>> report = service.run_workflow(provider, on_step_done, threading.Event(), threading.Event())
         >>> isinstance(report, ScrapingReportModel)
         True
     """
@@ -121,13 +55,13 @@ class ScrapingService:
     def __init__(self, folder_scraping: Path) -> None:
         """Initializes the service and its per-run execution state."""
         self._logger = logging.getLogger(__name__)
-        # Per-run state reset at the start of each _run_steps call.
+        self._folder_scraping = folder_scraping
+        # Per-run state — reset at the start of each _run_steps call.
         self._prev_step_success: bool = True
         self._pending_jump: int | None = None
         self._end_process_requested: bool = False
         self._downloaded_image_urls: set[str] = set()
-        self._folder_scraping = folder_scraping
-        # Run-scoped references stored by run_workflow for WAIT_USER_ACTION.
+        # Run-scoped references stored by run_workflow for stateful steps.
         self._pause_event_ref: threading.Event | None = None
         self._cancel_event_ref: threading.Event | None = None
         self._on_user_wait: Callable[[], None] | None = None
@@ -135,7 +69,7 @@ class ScrapingService:
     def run_workflow(
         self,
         provider: ProviderModel,
-        on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
+        on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
         cancel_event: threading.Event,
         pause_event: threading.Event,
         on_user_wait: Callable[[], None] | None = None,
@@ -145,7 +79,7 @@ class ScrapingService:
         Args:
             provider: The provider model containing the steps to execute.
             on_step_done: Callback fired after each step with
-                ``(index, step, success, message)``.
+                ``(index, step, success, message, elapsed)``.
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
@@ -155,20 +89,14 @@ class ScrapingService:
 
         Raises:
             None — all step-level exceptions are caught and reported per step.
-
-        Example:
-            >>> event = threading.Event()
-            >>> pause = threading.Event(); pause.set()
-            >>> report = service.run_workflow(provider, lambda *a: None, event, pause)
         """
-        # Store run-scoped refs for WAIT_USER_ACTION handler access.
         self._pause_event_ref = pause_event
         self._cancel_event_ref = cancel_event
         self._on_user_wait = on_user_wait
         started_at = datetime.now().strftime(DATETIME_FORMAT)
 
-        # Launch browser and execute all steps inside a managed Playwright context.
-        with sync_playwright() as pw:
+        stealth = Stealth()
+        with stealth.use_sync(sync_playwright()) as pw:
             browser, page = self._launch_browser(pw, provider)
             try:
                 results, steps_failed = self._run_steps(
@@ -179,66 +107,68 @@ class ScrapingService:
 
         return self._build_report(provider, results, steps_failed, cancel_event.is_set(), started_at)
 
-    def _launch_browser(
-        self,
-        pw: Playwright,
-        provider: ProviderModel,
-    ) -> tuple[Browser, Page]:
-        """Launches a Chromium browser and returns a (Browser, Page) pair.
-
-        Args:
-            pw: The Playwright instance from the sync_playwright context.
-            provider: Provider settings controlling headless mode and obfuscation.
-
-        Returns:
-            A tuple of (Browser, Page) ready for navigation.
-
-        Raises:
-            PlaywrightError: If the browser fails to start.
-        """
+    def _launch_browser(self, pw: Playwright, provider: ProviderModel) -> tuple[Browser, Page]:
+        """Launches a Chromium browser and returns a (Browser, Page) pair."""
         headless = not provider.browser_displayed
-
-        # Standard arguments to suppress automation detection hints.
         args = []
-        if provider.automation_obfuscated:
-            args = ["--no-sandbox", "--disable-blink-features=AutomationControlled"]
-
-        # browser: Browser = pw.chromium.launch(headless=headless, args=args, user_data_dir=user_dir)
-        browser: Browser = pw.chromium.launch(headless=headless, args=args)
+        # if provider.automation_obfuscated:
+        #     args = ["--no-sandbox", "--disable-blink-features=AutomationControlled"]
+        browser: Browser = pw.chromium.launch(headless=headless)  # , args=args)
         context: BrowserContext = browser.new_context()
         page: Page = context.new_page()
 
-        # Apply JavaScript-level obfuscation when the provider requests it.
-        if provider.automation_obfuscated:
-            self._apply_obfuscation(page)
-
+        # if provider.automation_obfuscated:
+        #     self._apply_obfuscation(page)
         return browser, page
 
     def _apply_obfuscation(self, page: Page) -> None:
-        """Hides Playwright automation markers via an init script injection.
-
-        Args:
-            page: The Playwright page to patch before any navigation.
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: If the script injection fails.
-        """
-        # Remove the navigator.webdriver flag checked by most bot-detection libraries.
+        """Hides Playwright automation markers via an init script injection."""
         script = """
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined,
-            });
-        """
+            (() => {
+                // webdriver
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined,
+                });
+
+                // languages
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['fr-FR', 'fr'],
+                });
+
+                // platform
+                Object.defineProperty(navigator, 'platform', {
+                    get: () => 'Win32',
+                });
+
+                // chrome runtime (very common check)
+                window.chrome = {
+                    runtime: {}
+                };
+
+                // permissions query override (notifications)
+                const originalQuery = window.navigator.permissions.query;
+                window.navigator.permissions.query = (parameters) => (
+                    parameters.name === 'notifications'
+                        ? Promise.resolve({ state: Notification.permission })
+                        : originalQuery(parameters)
+                );
+
+                // iframe contentWindow fix
+                Object.defineProperty(HTMLIFrameElement.prototype, 'contentWindow', {
+                    get: function () {
+                        return window;
+                    }
+                });
+
+            })();
+            """
         page.add_init_script(script)
 
     def _run_steps(
         self,
         page: Page,
         steps: list[StepScrapingModel],
-        on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
+        on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
         cancel_event: threading.Event,
         pause_event: threading.Event,
     ) -> tuple[list[StepResultModel], int]:
@@ -246,24 +176,10 @@ class ScrapingService:
 
         Supports non-sequential execution via JUMP_TO_STEP and early
         termination via END_PROCESS. Blocks between steps when pause_event
-        is cleared, resuming as soon as it is set again.
-
-        Args:
-            page: Active Playwright page.
-            steps: Ordered list of steps to execute.
-            on_step_done: Fired after every step with its outcome.
-            cancel_event: Abort signal checked before each step.
-            pause_event: Pause signal; cleared = paused, set = running.
-
-        Returns:
-            A tuple of (step_results, failure_count).
-
-        Raises:
-            None.
+        is cleared.
         """
         results: list[StepResultModel] = []
         steps_failed = 0
-        # Reset per-run state before iterating.
         self._prev_step_success = True
         self._pending_jump = None
         self._end_process_requested = False
@@ -273,9 +189,7 @@ class ScrapingService:
         while i < len(steps):
             if cancel_event.is_set():
                 break
-            # Block here while paused; unblocks when pause_event is set.
             pause_event.wait()
-            # Re-check cancel in case it was set during a pause.
             if cancel_event.is_set():
                 break
             i, result = self._run_one_step(page, steps[i], i, on_step_done)
@@ -292,31 +206,15 @@ class ScrapingService:
         page: Page,
         step: StepScrapingModel,
         index: int,
-        on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
+        on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
     ) -> tuple[int, StepResultModel]:
-        """Executes one step, fires the callback, and returns (next_index, result).
-
-        Updates _prev_step_success and consumes _pending_jump if set.
-
-        Args:
-            page: Active Playwright page.
-            step: The step to execute.
-            index: Zero-based position of the step in the workflow.
-            on_step_done: Fired with the step outcome.
-
-        Returns:
-            A tuple of (next_index, StepResultModel).
-
-        Raises:
-            None.
-        """
+        """Executes one step, fires the callback, and returns (next_index, result)."""
         start = time.time()
         success, message = self._execute_step(page, step)
-        end = time.time()
-        on_step_done(index, step, success, message, end - start)
-        result = StepResultModel(index, step.step_type.value, success, message, time_elapsed=end - start)
+        elapsed = time.time() - start
+        on_step_done(index, step, success, message, elapsed)
+        result = StepResultModel(index, step.step_type.value, success, message, time_elapsed=elapsed)
 
-        # Apply pending jump (set by JUMP_TO_STEP handler) or advance by one.
         if self._pending_jump is not None:
             next_index, self._pending_jump = self._pending_jump, None
         else:
@@ -324,724 +222,48 @@ class ScrapingService:
         self._prev_step_success = success
         return next_index, result
 
-    def _execute_step(
-        self,
-        page: Page,
-        step: StepScrapingModel,
-    ) -> tuple[bool, str]:
-        """Dispatches a step to its handler and converts exceptions to messages.
+    def _execute_step(self, page: Page, step: StepScrapingModel) -> tuple[bool, str]:
+        """Dispatches a step to its registered executor and converts exceptions.
 
-        Args:
-            page: Active Playwright page.
-            step: The step to execute.
-
-        Returns:
-            A ``(success, message)`` tuple — never raises.
-
-        Raises:
-            None.
+        Enriches params with runtime context keys (_prev_success, _folder, etc.)
+        so stateful executors (JUMP_TO_STEP, WAIT_USER_ACTION, …) can read and
+        write cross-step state without coupling to ScrapingService internals.
         """
         try:
             if not step.is_active:
                 return True, "SKIP"
-            handler = self._get_handler(step.step_type)
-            handler(page, step.params)
+
+            # Build a mutable copy enriched with runtime context.
+            runtime_params: dict[str, Any] = dict(step.params)
+            runtime_params.update(
+                {
+                    "_prev_success": self._prev_step_success,
+                    "_folder": self._folder_scraping,
+                    "_downloaded_urls": self._downloaded_image_urls,
+                    "_pause_event": self._pause_event_ref,
+                    "_cancel_event": self._cancel_event_ref,
+                    "_on_user_wait": self._on_user_wait,
+                }
+            )
+
+            get_executor(step.step_type).execute(page, runtime_params)
+
+            # Read back output signals set by stateful executors.
+            if runtime_params.get("_pending_jump") is not None:
+                self._pending_jump = runtime_params["_pending_jump"]
+            if runtime_params.get("_end_process"):
+                self._end_process_requested = True
+
             return True, "OK"
+
         except PlaywrightError as exc:
             return False, f"Playwright error: {exc}"
-        except (ValueError, TimeoutError) as exc:  # timeout here...
+        except (ValueError, TimeoutError) as exc:
             return False, f"Step error: {exc}"
         except FileNotFoundError as exc:
             return False, f"File error: {exc}"
         except Exception as exc:
             return False, f"Unexpected error: {exc}"
-
-    def _get_handler(
-        self,
-        step_type: StepType,
-    ) -> Callable[[Page, dict[str, Any]], None]:
-        """Returns the private handler method for the given StepType.
-
-        Args:
-            step_type: The step type to dispatch.
-
-        Returns:
-            A callable that accepts ``(page, params)`` and executes the step.
-
-        Raises:
-            ValueError: When no handler is registered for the given step_type.
-        """
-        handlers: dict[StepType, Callable[[Page, dict[str, Any]], None]] = {
-            StepType.OPEN_URL: self._handle_open_url,
-            StepType.REFRESH_PAGE: self._handle_refresh_page,
-            StepType.SLEEP_X_TIME: self._handle_sleep_x_time,
-            StepType.RANDOM_PAUSE: self._handle_random_pause,
-            StepType.DOWNLOAD_IMAGE: self._handle_download_image,
-            StepType.WAIT_IMAGE_SIZE: self._handle_wait_image_size,
-            StepType.WAIT_ELEMENT: self._handle_wait_element,
-            StepType.COUNT_ELEMENT: self._handle_count_element,
-            StepType.CLICK_ELEMENT: self._handle_click_element,
-            StepType.SCROLL_DOWN: self._handle_scroll_down,
-            StepType.EXTRACT_TEXT: self._handle_extract_text,
-            StepType.JUMP_TO_STEP: self._handle_jump_to_step,
-            StepType.CLOSE_TABS: self._handle_close_tabs,
-            StepType.END_PROCESS: self._handle_end_process,
-            StepType.WAIT_USER_ACTION: self._handle_wait_user_action,
-        }
-        handler = handlers.get(step_type)
-        if handler is None:
-            raise ValueError(f"No handler registered for step type: {step_type}")
-        return handler
-
-    # ------------------------------------------------------------------
-    # Step handlers — one private method per StepType (≤ 30 lines each)
-    # ------------------------------------------------------------------
-
-    def _handle_open_url(self, page: Page, params: dict[str, Any]) -> None:
-        """Navigates to the given URL and waits for the specified load state.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``url`` (str) and ``wait_state`` (str).
-                Optional ``timeout_duration`` and ``timeout_unit`` override
-                Playwright's default navigation timeout.
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: On navigation failure or timeout.
-        """
-        url: str = params.get("url", "")
-        wait_state: str = params.get("wait_state", "domcontentloaded")
-        timeout_ms = _resolve_timeout_ms(params)
-
-        # Pass an explicit timeout only when one is configured.
-        if timeout_ms is not None:
-            page.goto(url, wait_until=wait_state, timeout=timeout_ms)
-        else:
-            page.goto(url, wait_until=wait_state)
-
-    def _handle_sleep_x_time(self, page: Page, params: dict[str, Any]) -> None:
-        """Pauses execution for a fixed duration.
-
-        Args:
-            page: Active Playwright page (unused; required by dispatch signature).
-            params: Must contain ``duration`` (int) and ``unit``
-                (``'second'`` | ``'millisecond'``).
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        duration: int = params.get("duration", 0)
-        unit: str = params.get("unit", C_UNITS_TIME_DEFAULT_MODEL)
-
-        # Convert milliseconds to seconds before calling time.sleep.
-        multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
-        delay = duration * multipliers.get(unit, 1.0)
-        time.sleep(delay)
-
-    def _handle_random_pause(self, page: Page, params: dict[str, Any]) -> None:
-        """Pauses for a uniform-random duration within [min, max].
-
-        Args:
-            page: Active Playwright page (unused; required by dispatch signature).
-            params: Must contain ``min``, ``max`` (numeric) and ``unit``
-                (``'second'`` | ``'millisecond'``).
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        min_val: float = float(params.get("min", 0))
-        max_val: float = float(params.get("max", 1))
-        unit: str = params.get("unit", C_UNITS_TIME_DEFAULT_MODEL)
-
-        # Sample a uniform delay then apply unit conversion when necessary.
-        delay = random.uniform(min_val, max_val)
-        multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
-        delay = delay * multipliers.get(unit, 1.0)
-        time.sleep(delay)
-
-    def _handle_refresh_page(self, page: Page, params: dict[str, Any]) -> None:
-        """Reloads the current page, optionally clearing session cookies first.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``clear_cache`` (bool).
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: On reload failure.
-        """
-        clear_cache: bool = params.get("clear_cache", False)
-
-        # Purge cookies from the browser context to approximate a cache clear.
-        if clear_cache:
-            page.context.clear_cookies()
-
-        page.reload()
-
-    def _handle_download_image(self, page: Page, params: dict[str, Any]) -> None:
-        """Downloads one or more images that match the given dimension bounds.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``mode``, ``height_min``, ``height_max``,
-                ``width_min``, ``width_max`` and ``unique_only``.
-
-        Returns:
-            None.
-
-        Raises:
-            ValueError: When no image matches the dimension constraints.
-            urllib.error.URLError: On download failure.
-        """
-        mode: str = params.get("mode", "largest")
-        unique_only: bool = bool(params.get("unique_only", False))
-        bounds = self._extract_bounds(params)
-
-        # Collect all visible images that fall within the size constraints.
-        images = self._get_filtered_images(page, bounds)
-        if not images:
-            raise ValueError("No image matching the size constraints found on the page.")
-
-        # Choose target image(s) and persist them to temporary files.
-        targets = self._select_image_by_mode(images, mode)
-        self._fetch_and_save_image(page, targets, unique_only)
-
-    def _handle_wait_image_size(self, page: Page, params: dict[str, Any]) -> None:
-        """Polls the page until a visible image matches the dimension bounds.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``height_min``, ``height_max``,
-                ``width_min``, ``width_max``. Optional ``timeout_duration``
-                and ``timeout_unit`` override the default 10-second deadline.
-
-        Returns:
-            None.
-
-        Raises:
-            TimeoutError: When no matching image appears before the deadline.
-        """
-        bounds = self._extract_bounds(params)
-        timeout_ms = _resolve_timeout_ms(params)
-
-        # Fall back to the default 15-second wait when no timeout is configured.
-        wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 15
-        deadline = time.time() + wait_seconds
-
-        # Poll at 400 millisecond intervals until a matching image appears or deadline passes.
-        while time.time() < deadline:
-            if self._get_filtered_images(page, bounds):
-                return
-            time.sleep(0.4)  # 400 ms
-
-        raise TimeoutError(f"No image matching the size constraints appeared within {wait_seconds} seconds.")
-
-    def _handle_click_element(self, page: Page, params: dict[str, Any]) -> None:
-        """Clicks an element identified by a CSS selector.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``selector`` (str) and ``click_mode``
-                (``'Normal'`` | ``'Double'`` | ``'Right'``).
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: If the selector is not found or the click fails.
-        """
-        selector: str = params.get("selector", "")
-        click_mode: str = params.get("click_mode", "Normal")
-
-        # Dispatch the correct click variant based on the configured mode.
-
-        # Tentative 1 : click normal
-        try:
-            if click_mode == "Normal":
-                page.click(selector, timeout=1000)
-                return
-        except:
-            pass
-
-        if click_mode == "Normal":
-            raise PlaywrightError(f"Element with selector {selector} not found for normal click.")
-
-        # Tentative 2 : click forcé
-        try:
-            if click_mode == "Forced":
-                page.click(selector, force=True, timeout=1000)
-        except:
-            pass
-
-        if click_mode == "Forced":
-            raise PlaywrightError(f"Element with selector {selector} not found for forced click.")
-
-        # Tentative 3 : click JS direct
-        if click_mode == "JS Direct":
-            script = f"document.querySelector('{selector}')?.click();"
-            _ = self.evaluate_script_with_safe_retry(page, script, 5)
-        else:
-            raise ValueError(f"Unsupported click mode: {click_mode}")
-
-    def _handle_wait_element(self, page: Page, params: dict[str, Any]) -> None:
-        """Waits for an element to appear in the DOM.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``selector`` (str). Optional
-                ``timeout_duration`` and ``timeout_unit`` override
-                Playwright's default timeout.
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: If the element does not appear within the
-                configured timeout.
-        """
-        selector: str = params.get("selector", "")
-        timeout_ms = _resolve_timeout_ms(params)
-
-        # Pass an explicit timeout only when one is configured.
-        if timeout_ms is not None:
-            page.wait_for_selector(selector, timeout=timeout_ms)
-        else:
-            page.wait_for_selector(selector)
-
-    def _handle_count_element(self, page: Page, params: dict[str, Any]) -> None:
-        """Counts DOM elements matching a selector and evaluates a condition.
-
-        Optionally waits a pre-configured delay before counting. Raises
-        ValueError when the step outcome resolves to failure.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``selector`` (str), ``operator`` (str),
-                ``success_if`` (str), ``value`` (int), ``value_min`` (int),
-                ``value_max`` (int). Optional ``wait_duration`` and ``wait_unit``.
-
-        Returns:
-            None.
-
-        Raises:
-            ValueError: When the evaluated condition marks the step as a failure.
-        """
-        wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
-        selector: str = params.get("selector", "")
-        operator: str = params.get("operator", "equal")
-        success_if: str = params.get("success_if", "success")
-        value: int = int(params.get("value", 0))
-        value_min: int = int(params.get("value_min", 0))
-        value_max: int = int(params.get("value_max", 0))
-
-        # Apply pre-wait when configured.
-        if wait_duration > 0:
-            time.sleep((wait_duration * C_UNITS_TIME_CONVERSION_TO_MS.get(wait_unit, 1_000)) / 1_000.0)
-
-        # Count matching elements and log the raw result.
-        count: int = page.locator(selector).count()
-        self._logger.info("COUNT_ELEMENT : %d élément(s) trouvé(s) pour '%s'", count, selector)
-
-        # Evaluate condition and resolve the step outcome.
-        condition_met = _evaluate_count_condition(count, operator, value, value_min, value_max)
-        step_success = condition_met if success_if == "success" else not condition_met
-        val_desc = f"{value_min}-{value_max}" if operator in {"between", "not_between"} else str(value)
-        self._logger.info(
-            "COUNT_ELEMENT : %s (condition: COUNT %s %s)",
-            "succès" if step_success else "échec",
-            operator,
-            val_desc,
-        )
-
-        # Raise on failure to mark the step as failed.
-        if not step_success:
-            raise ValueError(f"COUNT_ELEMENT : condition non satisfaite (COUNT={count}, {operator} {val_desc})")
-
-    def _handle_scroll_down(self, page: Page, params: dict[str, Any]) -> None:
-        """Scrolls the page down by the specified number of pixels.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``pixels`` (int).
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: If the JavaScript evaluation fails.
-        """
-        pixels: int = params.get("pixels", 1000)
-
-        # Evaluate scrollBy in the page's JS context; pixels is always an int.
-        _ = self.evaluate_script_with_safe_retry(page, f"window.scrollBy(0, {pixels})", 5)
-
-    def _handle_close_tabs(self, page: Page, params: dict[str, Any]) -> None:
-        """Closes browser tabs, keeping those matching url_filter up to max_tabs.
-
-        The current active page is never closed.
-
-        Args:
-            page: Active Playwright page (protected from closure).
-            params: Must contain ``url_filter`` (str) and ``max_tabs`` (int).
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: If a tab close operation fails.
-        """
-        url_filter: str = params.get("url_filter", "")
-        max_tabs: int = int(params.get("max_tabs", 0))
-
-        # Close non-current pages that do not match the URL filter.
-        for p in list(page.context.pages):
-            if url_filter and p.url.find(url_filter) == -1:
-                p.close()
-
-        if page.context.pages.count(page) == 0:
-            raise PlaywrightError("Current page was closed, but it should have been protected.")
-
-        # Enforce max_tabs threshold on remaining non-current pages.
-        if max_tabs > 0:
-            others = [p for p in page.context.pages if p is not page]
-            for p in others[max_tabs - 1 :]:
-                p.close()
-
-    def _handle_extract_text(self, page: Page, params: dict[str, Any]) -> None:
-        """Extracts text or markup from DOM elements and logs the result.
-
-        Logs a warning if no element matches; does not raise.
-
-        Args:
-            page: Active Playwright page.
-            params: Must contain ``selector`` (str), ``extract_mode`` (str),
-                ``target`` (``'first'`` | ``'last'`` | ``'all'``).
-
-        Returns:
-            None.
-
-        Raises:
-            PlaywrightError: If a JS evaluation fails during extraction.
-        """
-        selector: str = params.get("selector", "")
-        mode: str = params.get("extract_mode", "innerText")
-        target: str = params.get("target", "first")
-
-        elements = page.query_selector_all(selector)
-        if not elements:
-            self._logger.warning("EXTRACT_TEXT: no element matches selector %r", selector)
-            return
-
-        # Select the target subset then extract and log.
-        selected = [elements[0]] if target == "first" else [elements[-1]] if target == "last" else elements
-        texts = [self._extract_from_element(el, mode) for el in selected]
-        self._logger.info("EXTRACT_TEXT [%s]: %s", selector, "\n".join(texts)[:500])
-
-    def _handle_jump_to_step(self, page: Page, params: dict[str, Any]) -> None:
-        """Conditionally jumps to a target step by setting _pending_jump.
-
-        The jump is resolved in _run_one_step after this handler returns.
-
-        Args:
-            page: Active Playwright page (unused; required by dispatch signature).
-            params: Must contain ``condition`` (str) and ``target_index`` (int).
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        condition: str = params.get("condition", "success")
-        target_index: int = int(params.get("target_index", 0))
-
-        # Evaluate condition against the previous step's result.
-        should_jump = (
-            condition == "always"
-            or (condition == "success" and self._prev_step_success)
-            or (condition == "failure" and not self._prev_step_success)
-        )
-        if should_jump:
-            self._pending_jump = target_index
-
-    def _handle_end_process(self, page: Page, params: dict[str, Any]) -> None:
-        """Waits the configured delay then signals the step loop to stop.
-
-        Args:
-            page: Active Playwright page (unused; required by dispatch signature).
-            params: Must contain ``wait_duration`` (int | float) and
-                ``wait_unit`` (``'h'`` | ``'m'`` | ``'s'`` |
-                ``'ms'``).
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
-
-        # Convert wait duration to seconds using unit multipliers.
-        multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
-        delay = wait_duration * multipliers.get(wait_unit, 1.0)
-        if delay > 0:
-            time.sleep(delay)
-        self._end_process_requested = True
-
-    def _handle_wait_user_action(self, page: Page, params: dict[str, Any]) -> None:
-        """Pauses the workflow until the user clicks Reprendre, then applies an optional delay.
-
-        The condition is evaluated against the previous step outcome; when not
-        satisfied the step is skipped without pausing.
-
-        Args:
-            page: Active Playwright page (unused; required by dispatch signature).
-            params: Must contain ``condition`` (``'always'`` | ``'success'`` |
-                ``'failure'``), ``wait_duration`` (float), and ``wait_unit``
-                (``'m'`` | ``'s'`` | ``'ms'``).
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        condition: str = params.get("condition", "always")
-        wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
-
-        # Evaluate whether the pause condition is satisfied.
-        should_pause = (
-            condition == "always"
-            or (condition == "success" and self._prev_step_success)
-            or (condition == "failure" and not self._prev_step_success)
-        )
-        if not should_pause:
-            return
-
-        # Notify the presenter so the view transitions to "paused" state.
-        if self._on_user_wait:
-            self._on_user_wait()
-
-        # Clear the pause event and block until the user clicks Reprendre.
-        if self._pause_event_ref is not None:
-            self._pause_event_ref.clear()
-            self._pause_event_ref.wait()
-
-        # Apply optional post-resume delay, skipping it when the run was cancelled.
-        cancelled = self._cancel_event_ref is not None and self._cancel_event_ref.is_set()
-        if wait_duration > 0 and not cancelled:
-            multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
-            time.sleep(wait_duration * multipliers.get(wait_unit, 1.0))
-
-    # ------------------------------------------------------------------
-    # Shared helpers used by multiple handlers
-    # ------------------------------------------------------------------
-
-    def _extract_from_element(self, element: ElementHandle, mode: str) -> str:
-        """Reads a property from a Playwright ElementHandle.
-
-        Args:
-            element: A Playwright ElementHandle instance.
-            mode: One of ``innerText``, ``textContent``, ``outerHTML``,
-                ``innerHTML``, ``value``.
-
-        Returns:
-            The extracted string value.
-
-        Raises:
-            PlaywrightError: If the JS evaluation fails.
-        """
-        if mode == "textContent":
-            return element.text_content() or ""
-        if mode == "outerHTML":
-            return element.evaluate("el => el.outerHTML") or ""
-        if mode == "innerHTML":
-            return element.inner_html()
-        if mode == "value":
-            return element.input_value()
-        # Default: innerText — visible rendered text.
-        return element.inner_text()
-
-    def _extract_bounds(self, params: dict[str, Any]) -> dict[str, int]:
-        """Extracts image dimension bounds from step params into a typed dict.
-
-        Args:
-            params: Raw step parameter dict.
-
-        Returns:
-            A dict with integer keys ``h_min``, ``h_max``, ``w_min``, ``w_max``.
-
-        Raises:
-            None.
-        """
-        return {
-            "h_min": int(params.get("height_min", 0)),
-            "h_max": int(params.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
-            "w_min": int(params.get("width_min", 0)),
-            "w_max": int(params.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
-        }
-
-    def _get_filtered_images(
-        self,
-        page: Page,
-        bounds: dict[str, int],
-    ) -> list[dict[str, Any]]:
-        """Returns all visible page images whose natural dimensions fall within bounds.
-
-        Args:
-            page: Active Playwright page.
-            bounds: Dict with ``h_min``, ``h_max``, ``w_min``, ``w_max`` keys.
-
-        Returns:
-            A list of dicts each carrying ``src``, ``width``, and ``height``.
-
-        Raises:
-            PlaywrightError: If the JS evaluation fails.
-        """
-        h_min, h_max = bounds["h_min"], bounds["h_max"]
-        w_min, w_max = bounds["w_min"], bounds["w_max"]
-
-        # Evaluate image metadata in the browser context via injected JavaScript.
-        script = """
-            () => Array.from(document.querySelectorAll('img'))
-                .filter(img => img.naturalWidth > 0)
-                .map(img => ({
-                    src: img.src,
-                    width: img.naturalWidth,
-                    height: img.naturalHeight
-                }))
-        """
-        all_imgs: list[dict[str, Any]] = self.evaluate_script_with_safe_retry(page, script, 5)
-
-        # Keep only images that satisfy every dimension constraint.
-        return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
-
-    def evaluate_script_with_safe_retry(self, page: Page, script: str, retries: int, delay: float = 0.300) -> Any:
-        """Evaluates a JavaScript snippet with retries on failure.
-
-        Args:
-            page: Active Playwright page.
-            script: The JavaScript code to evaluate in the page context.
-            retries: Number of retry attempts before giving up.
-            delay: Delay in seconds between retry attempts.
-
-        Returns:
-            The result of the script evaluation if successful.
-
-        Raises:
-            PlaywrightError: If all retry attempts fail.
-        """
-        for attempt in range(1, retries + 1):
-            try:
-                return page.evaluate(script)
-            except PlaywrightError as exc:
-                self._logger.warning("Script evaluation failed on attempt %d/%d: %s", attempt, retries, exc)
-                if attempt == retries:
-                    raise
-                time.sleep(delay)
-        return None  # This line should never be reached due to the raise in the except block.
-
-    def _select_image_by_mode(
-        self,
-        images: list[dict[str, Any]],
-        mode: str,
-    ) -> list[dict[str, Any]]:
-        """Selects one or more images from a filtered list according to the given mode.
-
-        Args:
-            images: Non-empty list of image dicts with ``src``, ``width``, ``height``.
-            mode: Selection strategy; ``'largest'`` picks the image with the
-                greatest pixel area.
-
-        Returns:
-            A list of selected image dicts.
-
-        Raises:
-            None.
-        """
-        # cf. _DOWNLOAD_MODES
-        if mode == "first":
-            return [images[0]]
-        if mode == "last":
-            return [images[-1]]
-        if mode == "all":
-            return list(images)
-        # 'largest' -> Default to largest area regardless of mode value for MVP.
-        return [max(images, key=lambda img: img["width"] * img["height"])]
-
-    def _fetch_and_save_image(
-        self,
-        page: Page,
-        images: list[dict[str, Any]],
-        unique_only: bool,
-    ) -> int:
-        """Downloads images from URLs and saves them to temporary files.
-
-        Args:
-            page: The active Playwright page.
-            images: Selected image metadata dictionaries.
-            unique_only: When True, skip URLs already downloaded during the run.
-
-        Returns:
-            The number of images successfully downloaded.
-
-        Raises:
-            urllib.error.URLError: On network or HTTP failure.
-            ValueError: When no image is downloaded.
-        """
-        downloaded_count = 0
-        make_all_folders_if_not_exists(self._folder_scraping, is_file_path=False)
-
-        for image in images:
-            img_src_url = str(image.get("src", ""))
-            full_url = urljoin(page.url, img_src_url)
-
-            if unique_only and full_url in self._downloaded_image_urls:
-                continue
-
-            # Download through the browser context to preserve the current session.
-            response = page.context.request.get(
-                full_url,
-                headers={
-                    "Referer": page.url,
-                    "User-Agent": page.evaluate("() => navigator.userAgent"),
-                },
-            )
-            if not response.ok:
-                raise PlaywrightError(f"Failed to download image: HTTP {response.status}")
-
-            url_path = full_url.split("?")[0]
-            suffix = Path(url_path).suffix or ".jpg"
-            filename = (
-                Path(url_path).stem
-                + datetime.now().strftime("_%Y%m%d_%H%M%S%f")
-                + f"_{downloaded_count + 1}"
-                + suffix
-            )
-            dest = self._folder_scraping / filename
-            with dest.open("wb") as file_handle:
-                file_handle.write(response.body())
-
-            self._downloaded_image_urls.add(full_url)
-            downloaded_count += 1
-
-        if downloaded_count == 0:
-            raise ValueError("No image was downloaded.")
-        return downloaded_count
 
     def _build_report(
         self,
@@ -1051,24 +273,8 @@ class ScrapingService:
         cancelled: bool,
         started_at: str,
     ) -> ScrapingReportModel:
-        """Assembles the final ScrapingReportModel from collected run data.
-
-        Args:
-            provider: The provider that was executed.
-            results: Per-step outcomes collected during the run.
-            steps_failed: Count of steps that returned a failure.
-            cancelled: True when the run was interrupted by cancel_event.
-            started_at: Formatted timestamp when the run started.
-
-        Returns:
-            A fully populated ScrapingReportModel.
-
-        Raises:
-            None.
-        """
+        """Assembles the final ScrapingReportModel from collected run data."""
         finished_at = datetime.now().strftime(DATETIME_FORMAT)
-
-        # Construct the report from aggregated counters and per-step details.
         return ScrapingReportModel(
             provider_name=provider.provider_name,
             total_steps=len(provider.steps),
