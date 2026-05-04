@@ -15,7 +15,7 @@ Regarde l'existant et le fonctionnement.
 Une fois listé et compris les différents éléments à coder, tu vas établir une liste des modifications à entreprendre pour pouvoir ajouter la nouvelle brique logique "COUNT_ELEMENT".
 
 Cette nouvelle brique logique permet :
-- D'attendre X temps (hour, min, sec, millisec) avant de compter les éléments.
+- D'attendre X temps (min, sec, millisec) avant de compter les éléments.
 - Les éléments à compter sont une évaluation du nombre de "css/selector". Il retourne un nombre >= 0 (soit 'COUNT').
 - Il est possible de renseigner si le compteur est en succès/éches en fonction de la condition que l'utilisateur a saisie : Est un [ succès | échec ] si COUNT est [ compris entre | non compris entre | égale à | différent de | supérieur à | inférieur à | supérieur ou égal à | inférieur ou égal à ]
 - L'exécution est bloquée jusqu'à ce que l'évaluation soit terminé.
@@ -154,7 +154,7 @@ Execution sequence:
 Add validation for `COUNT_ELEMENT` following the same dispatch pattern as `WAIT_ELEMENT`:
 
 ```python
-allowed_units = {"hour", "minute", "second", "millisecond"}
+allowed_units = {"minute", "second", "millisecond"}
 allowed_operators = {
     "between", "not_between", "equal", "not_equal",
     "greater_than", "less_than", "greater_or_equal", "less_or_equal"
@@ -193,8 +193,8 @@ Register the new type in the type selector Combobox with the French label: `"Com
 - Required — inline red error if empty on confirm
 
 **Row 2 — Pré-attente (single horizontal line)**
-- `ttk.Label` text `"Attendre"` + `ttk.Spinbox` for `wait_duration` (0–C_MAXIMUM_SIZE_IMAGE_SCRAPPING) + `ttk.Combobox` (readonly) for `wait_unit` + `ttk.Label` text `"(0 = immédiat)"`
-- Unit display/value mapping: `heure`/`"hour"`, `minute`/`"minute"`, `seconde`/`"second"`, `milli-sec`/`"millisecond"`
+- `ttk.Label` text `"Attendre"` + `ttk.Spinbox` for `wait_duration` (0–C_MAXIMUM_SIZE_IMAGE) + `ttk.Combobox` (readonly) for `wait_unit` + `ttk.Label` text `"(0 = immédiat)"`
+- Unit display/value mapping: `minute`/`"minute"`, `seconde`/`"second"`, `milli-sec`/`"millisecond"`
 
 **Row 3 — Résultat (single horizontal line)**
 - `ttk.Label` text `"C'est un"` + `ttk.Combobox` for `success_if` (display: `"succès"` / `"échec"`, values: `"success"` / `"failure"`) + `ttk.Label` text `"si COUNT est"`

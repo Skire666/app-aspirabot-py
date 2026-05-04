@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
+from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
 from shared.random_util import generate_rng_hexastring
 
 ## ---------------------------------------------------------------------------
@@ -62,15 +62,15 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "mode": "largest",
         "unique_only": False,
         "height_min": 0,
-        "height_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
+        "height_max": C_MAXIMUM_SIZE_IMAGE,
         "width_min": 0,
-        "width_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
+        "width_max": C_MAXIMUM_SIZE_IMAGE,
     },
     StepType.WAIT_IMAGE_SIZE.value: {
         "height_min": 0,
-        "height_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
+        "height_max": C_MAXIMUM_SIZE_IMAGE,
         "width_min": 0,
-        "width_max": C_MAXIMUM_SIZE_IMAGE_SCRAPPING,
+        "width_max": C_MAXIMUM_SIZE_IMAGE,
         "timeout_duration": 0,
         "timeout_unit": "second",
     },

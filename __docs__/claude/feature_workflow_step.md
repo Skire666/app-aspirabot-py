@@ -48,7 +48,7 @@ Each `StepScraping` instance holds a `step_type: StepType` and a `params: dict` 
 
 Allowed values for constrained fields:
 - `wait_state`: `"commit"`, `"domcontentloaded"`, `"load"`, `"networkidle"`
-- `unit` (SLEEP / RANDOM_PAUSE): `"hour"`, `"minute"`, `"second"`, `"millisecond"`
+- `unit` (SLEEP / RANDOM_PAUSE): `"minute"`, `"second"`, `"millisecond"`
 - `mode` (DOWNLOAD_IMAGE): `"largest"`, `"first"`, `"last"`, `"all"`
 - `click_mode` (CLICK_ELEMENT): `"Normal"`, `"Forced"`, `"JS Direct"`
 

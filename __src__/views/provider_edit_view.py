@@ -109,7 +109,7 @@ class ProviderEditView(ttk.Frame):
         self._workflow_builder_view = WorkflowListView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self._btn_save = ttk.Button(footer_frame, text="Sauvegarder", command=self._notify_save)
+        self._btn_save = ttk.Button(footer_frame, text="Sauvegarder le fournisseur", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
 
         self._btn_cancel = ttk.Button(footer_frame, text="Annuler", command=self._notify_cancel)

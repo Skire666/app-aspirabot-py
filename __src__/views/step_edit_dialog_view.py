@@ -21,10 +21,17 @@ from tkinter import ttk
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
-from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER, C_MAXIMUM_WAIT_TIME, C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
+from shared.constants import (
+    C_ALLOWED_UNITS_TIME_FOR_JSON,
+    C_DEFAULT_UNITS_TIME,
+    C_MAXIMUM_NBR_TABS_BROWSER,
+    C_MAXIMUM_SIZE_IMAGE,
+    C_MAXIMUM_WAIT_TIME,
+    C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID,
+)
+from shared.numbers_util import C_CONSTANT_INVALID_INT
 from shared.random_util import generate_rng_hexastring
 from views.components.canvas_checkbox import CanvasCheckbox
-from shared.numbers_util import C_CONSTANT_INVALID_INT
 
 # French display labels for each step type (Combobox values).
 STEP_TYPE_LABELS: dict[StepType, str] = {
@@ -46,10 +53,11 @@ STEP_TYPE_LABELS: dict[StepType, str] = {
 
 # Reverse mapping for label → StepType lookup.
 _LABEL_TO_TYPE: dict[str, StepType] = {v: k for k, v in STEP_TYPE_LABELS.items()}
+_ALL_LABELS: list[str] = list(STEP_TYPE_LABELS.values())
 
 # Allowed constrained values (mirrors service layer constants).
 _WAIT_STATES = ["commit", "domcontentloaded", "load", "networkidle"]
-_UNITS = ["heure", "minute", "seconde", "milliseconde"]
+_UNITS = ["minute", "seconde", "milliseconde"]
 _DOWNLOAD_MODES = ["largest", "first", "last", "all"]
 _CLICK_MODES = ["Normal", "Forced", "JS Direct"]
 
@@ -82,10 +90,9 @@ _CONDITION_MAP: dict[str, str] = dict(zip(_CONDITION_DISPLAY, _CONDITION_VALUES)
 _CONDITION_REVERSE: dict[str, str] = dict(zip(_CONDITION_VALUES, _CONDITION_DISPLAY))
 
 # --- END_PROCESS wait_unit display/value mappings ---
-_WAIT_UNIT_DISPLAY: list[str] = ["heure", "minute", "seconde", "milliseconde"]
-_WAIT_UNIT_VALUES: list[str] = ["h", "m", "s", "ms"]
-_WAIT_UNIT_MAP_VIEW_TO_MODEL: dict[str, str] = dict(zip(_WAIT_UNIT_DISPLAY, _WAIT_UNIT_VALUES))
-_WAIT_UNIT_MAP_MODEL_TO_VIEW: dict[str, str] = dict(zip(_WAIT_UNIT_VALUES, _WAIT_UNIT_DISPLAY))
+_WAIT_UNIT_DISPLAY: list[str] = ["minute", "seconde", "milliseconde"]
+_WAIT_UNIT_MAP_VIEW_TO_MODEL: dict[str, str] = dict(zip(_WAIT_UNIT_DISPLAY, C_ALLOWED_UNITS_TIME_FOR_JSON))
+_WAIT_UNIT_MAP_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_ALLOWED_UNITS_TIME_FOR_JSON, _WAIT_UNIT_DISPLAY))
 
 # --- COUNT_ELEMENT operator display/value mappings ---
 _COUNT_OP_DISPLAY: list[str] = [
@@ -311,7 +318,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         timeout_frame.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=4)
         ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value="0")
-        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=td_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
         tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
@@ -346,13 +355,17 @@ class StepInlineFormPanel(ttk.LabelFrame):
         ttk.Label(line1, text="Attendre aléatoirement entre : ").pack(side=tk.LEFT, padx=(0, 6))
 
         min_var = tk.StringVar(value="0")
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=10).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=10).pack(
+            side=tk.LEFT, padx=(0, 6)
+        )
         self._form_widgets["min"] = min_var
 
         ttk.Label(line1, text=" et ").pack(side=tk.LEFT, padx=(0, 6))
 
         max_var = tk.StringVar(value="1")
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=10).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=10).pack(
+            side=tk.LEFT, padx=(0, 6)
+        )
         self._form_widgets["max"] = max_var
 
         # ligne 2
@@ -392,20 +405,22 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_widgets["unique_only"] = unique_var
 
         # Height and width dimension rows share the same helper.
-        self._add_dimension_row(2, "Hauteur (px):", "height_min", "height_max", 0, C_MAXIMUM_SIZE_IMAGE_SCRAPPING)
-        self._add_dimension_row(3, "Largeur (px):", "width_min", "width_max", 0, C_MAXIMUM_SIZE_IMAGE_SCRAPPING)
+        self._add_dimension_row(2, "Hauteur (px):", "height_min", "height_max", 0, C_MAXIMUM_SIZE_IMAGE)
+        self._add_dimension_row(3, "Largeur (px):", "width_min", "width_max", 0, C_MAXIMUM_SIZE_IMAGE)
 
     def _build_form_wait_image_size(self) -> None:
         """Builds the WAIT_IMAGE_SIZE form (4 dimension spinboxes + timeout row)."""
-        self._add_dimension_row(0, "Hauteur (px):", "height_min", "height_max", 0, C_MAXIMUM_SIZE_IMAGE_SCRAPPING)
-        self._add_dimension_row(1, "Largeur (px):", "width_min", "width_max", 0, C_MAXIMUM_SIZE_IMAGE_SCRAPPING)
+        self._add_dimension_row(0, "Hauteur (px):", "height_min", "height_max", 0, C_MAXIMUM_SIZE_IMAGE)
+        self._add_dimension_row(1, "Largeur (px):", "width_min", "width_max", 0, C_MAXIMUM_SIZE_IMAGE)
 
         # Timeout row — single horizontal line: label | spinbox | combobox | hint.
         timeout_frame = ttk.Frame(self._form_frame)
         timeout_frame.grid(row=2, column=0, columnspan=5, sticky="w", padx=5, pady=4)
         ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value="0")
-        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=td_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
         tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
@@ -442,7 +457,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         timeout_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
         ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value="0")
-        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=td_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
         tu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10
@@ -460,7 +477,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         wait_frame.grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=4)
         ttk.Label(wait_frame, text="Attendre ").pack(side=tk.LEFT, padx=(0, 4))
         wd_var = tk.StringVar(value="0")
-        ttk.Spinbox(wait_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=wd_var, width=7).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Spinbox(wait_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=wd_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
         wu_var = tk.StringVar(value=_WAIT_UNIT_DISPLAY[2])
         ttk.Combobox(wait_frame, textvariable=wu_var, values=_WAIT_UNIT_DISPLAY, state="readonly", width=10).pack(
             side=tk.LEFT, padx=(0, 4)
@@ -524,14 +543,22 @@ class StepInlineFormPanel(ttk.LabelFrame):
         if op_value in {"between", "not_between"}:
             ttk.Label(self._count_value_area_frame, text="min").pack(side=tk.LEFT, padx=(0, 2))
             vmin_var = tk.StringVar(value="0")
-            ttk.Spinbox(self._count_value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=vmin_var, width=7).pack(
-                side=tk.LEFT, padx=(0, 6)
-            )
+            ttk.Spinbox(
+                self._count_value_area_frame,
+                from_=0,
+                to=C_MAXIMUM_SIZE_IMAGE,
+                textvariable=vmin_var,
+                width=7,
+            ).pack(side=tk.LEFT, padx=(0, 6))
             ttk.Label(self._count_value_area_frame, text="max").pack(side=tk.LEFT, padx=(0, 2))
             vmax_var = tk.StringVar(value="0")
-            ttk.Spinbox(self._count_value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=vmax_var, width=7).pack(
-                side=tk.LEFT
-            )
+            ttk.Spinbox(
+                self._count_value_area_frame,
+                from_=0,
+                to=C_MAXIMUM_SIZE_IMAGE,
+                textvariable=vmax_var,
+                width=7,
+            ).pack(side=tk.LEFT)
             self._form_widgets["value_min"] = vmin_var
             self._form_widgets["value_max"] = vmax_var
             return
@@ -539,9 +566,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Single-value operators require one spinbox.
         ttk.Label(self._count_value_area_frame, text="valeur").pack(side=tk.LEFT, padx=(0, 2))
         val_var = tk.StringVar(value="0")
-        ttk.Spinbox(self._count_value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=val_var, width=7).pack(
-            side=tk.LEFT
-        )
+        ttk.Spinbox(
+            self._count_value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=val_var, width=7
+        ).pack(side=tk.LEFT)
         self._form_widgets["value"] = val_var
 
     def _build_form_scroll_down(self) -> None:
@@ -549,7 +576,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._form_frame.columnconfigure(1, weight=1)
         ttk.Label(self._form_frame, text="Pixels:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         px_var = tk.StringVar(value="1000")
-        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=px_var, width=10).grid(
+        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=px_var, width=10).grid(
             row=0, column=1, sticky="w", padx=5, pady=4
         )
         self._form_widgets["pixels"] = px_var
@@ -570,9 +597,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Maximum tabs to keep open.
         ttk.Label(self._form_frame, text="Max onglets:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
         tabs_var = tk.StringVar(value="0")
-        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=tabs_var, width=10).grid(
-            row=2, column=1, sticky="w", padx=5, pady=4
-        )
+        ttk.Spinbox(
+            self._form_frame, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=tabs_var, width=10
+        ).grid(row=2, column=1, sticky="w", padx=5, pady=4)
         self._form_widgets["max_tabs"] = tabs_var
 
     def _build_form_extract_text(self) -> None:
@@ -636,7 +663,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Duration spinbox.
         ttk.Label(self._form_frame, text="Durée d'attente:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         dur_var = tk.StringVar(value="0")
-        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=dur_var, width=10).grid(
+        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=dur_var, width=10).grid(
             row=0, column=1, sticky="w", padx=5, pady=4
         )
         self._form_widgets["wait_duration"] = dur_var
@@ -675,13 +702,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
         ttk.Label(self._form_frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=4)
         ttk.Label(self._form_frame, text="Min:").grid(row=row, column=1, sticky="w", padx=2)
         min_var = tk.StringVar(value=str(default_min))
-        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=min_var, width=8).grid(
+        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=min_var, width=8).grid(
             row=row, column=2, padx=5, pady=4
         )
 
         ttk.Label(self._form_frame, text="Max:").grid(row=row, column=3, sticky="w", padx=2)
         max_var = tk.StringVar(value=str(default_max))
-        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE_SCRAPPING, textvariable=max_var, width=8).grid(
+        ttk.Spinbox(self._form_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=max_var, width=8).grid(
             row=row, column=4, padx=5, pady=4
         )
 
@@ -742,7 +769,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         if "wait_duration" in self._form_widgets:
             self._form_widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
         if "wait_unit" in self._form_widgets:
-            unit_display = _WAIT_UNIT_MAP_MODEL_TO_VIEW.get(params.get("wait_unit", "s"), "seconde")
+            unit_display = _WAIT_UNIT_MAP_MODEL_TO_VIEW.get(
+                params.get("wait_unit", C_DEFAULT_UNITS_TIME), "seconde"
+            )
             self._form_widgets["wait_unit"].set(unit_display)
         if "success_if" in self._form_widgets:
             si_display = _SUCCESS_IF_REVERSE.get(params.get("success_if", "success"), "succès")
@@ -801,7 +830,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             "url": self._form_widgets["url"].get().strip(),
             "wait_state": self._form_widgets["wait_state"].get(),
             "timeout_duration": self._safe_int("timeout_duration", C_CONSTANT_INVALID_INT),
-            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
         }
 
     def _params_sleep(self) -> dict[str, Any]:
@@ -829,9 +858,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
             "mode": self._form_widgets["mode"].get(),
             "unique_only": bool(self._form_widgets["unique_only"].get()),
             "height_min": self._safe_int("height_min", 0),
-            "height_max": self._safe_int("height_max", 9C_MAXIMUM_SIZE_IMAGE_SCRAPPING),
+            "height_max": self._safe_int("height_max", C_MAXIMUM_SIZE_IMAGE),
             "width_min": self._safe_int("width_min", 0),
-            "width_max": self._safe_int("width_max", 9C_MAXIMUM_SIZE_IMAGE_SCRAPPING),
+            "width_max": self._safe_int("width_max", C_MAXIMUM_SIZE_IMAGE),
         }
 
     def _params_wait_image_size(self) -> dict[str, Any]:
@@ -839,11 +868,11 @@ class StepInlineFormPanel(ttk.LabelFrame):
         unit_display = self._form_widgets["timeout_unit"].get()
         return {
             "height_min": self._safe_int("height_min", 0),
-            "height_max": self._safe_int("height_max", 9C_MAXIMUM_SIZE_IMAGE_SCRAPPING),
+            "height_max": self._safe_int("height_max", C_MAXIMUM_SIZE_IMAGE),
             "width_min": self._safe_int("width_min", 0),
-            "width_max": self._safe_int("width_max", 9C_MAXIMUM_SIZE_IMAGE_SCRAPPING),
+            "width_max": self._safe_int("width_max", C_MAXIMUM_SIZE_IMAGE),
             "timeout_duration": self._safe_int("timeout_duration", 0),
-            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
         }
 
     def _params_click_element(self) -> dict[str, Any]:
@@ -859,7 +888,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         return {
             "selector": self._form_widgets["selector"].get().strip(),
             "timeout_duration": self._safe_int("timeout_duration", 0),
-            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
+            "timeout_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
         }
 
     def _params_count_element(self) -> dict[str, Any]:
@@ -873,7 +902,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         params: dict[str, Any] = {
             "selector": self._form_widgets["selector"].get().strip(),
             "wait_duration": self._safe_int("wait_duration", 0),
-            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
+            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
             "success_if": _SUCCESS_IF_MAP.get(si_display, "success"),
             "operator": op_value,
         }
@@ -928,7 +957,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         unit_display = self._form_widgets["wait_unit"].get()
         return {
             "wait_duration": self._safe_int("wait_duration", 0),
-            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, "s"),
+            "wait_unit": _WAIT_UNIT_MAP_VIEW_TO_MODEL.get(unit_display, C_DEFAULT_UNITS_TIME),
         }
 
     # ---------------------------------------------------------------

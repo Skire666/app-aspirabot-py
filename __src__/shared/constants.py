@@ -77,6 +77,12 @@ C_MAXIMUM_NBR_TABS_BROWSER: int = 999
 # Maximum wait time for any step to complete/timeout
 C_MAXIMUM_WAIT_TIME: int = 9_999
 
+# Allowed time units for step parameters (mirrors view layer allowed units)
+C_ALLOWED_UNITS_TIME_FOR_JSON: list[str] = ["m", "s", "ms"]
+
+# Default time unit for step parameters when not specified (mirrors view layer default unit)
+C_DEFAULT_UNITS_TIME: str = "s"
+
 ## ---------------------------------------------------------------------------
 
 

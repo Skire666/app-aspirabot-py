@@ -106,7 +106,7 @@ Signals the end of the scraping run and waits a fixed delay before releasing con
 | `wait_duration` | `int \| float` | `0` | yes |
 | `wait_unit` | `str` | `"second"` | yes |
 
-Allowed values for `wait_unit`: `"hour"`, `"minute"`, `"second"`, `"millisecond"` — same set as `SLEEP`.
+Allowed values for `wait_unit`: `"minute"`, `"second"`, `"millisecond"` — same set as `SLEEP`.
 
 Validation: `wait_duration >= 1` and `wait_unit` is one of the four allowed values.
 
@@ -220,8 +220,8 @@ Fields in order:
 Add `set_available_steps(steps: list[StepScrapingModel])` to `StepInlineFormPanel` if it does not already exist.
 
 **`_build_form_END_PROCESS()`**
-- `ttk.Spinbox` for `wait_duration` (range 0–C_MAXIMUM_SIZE_IMAGE_SCRAPPING, default 0)
-- `ttk.Combobox` for `wait_unit` (values: `heure` / `minute` / `seconde` / `milli-sec`; maps to `"hour"` / `"minute"` / `"second"` / `"millisecond"`)
+- `ttk.Spinbox` for `wait_duration` (range 0–C_MAXIMUM_SIZE_IMAGE, default 0)
+- `ttk.Combobox` for `wait_unit` (values: `minute` / `seconde` / `milli-sec`; maps to `"minute"` / `"second"` / `"millisecond"`)
 
 ---
 
@@ -266,7 +266,7 @@ if params.get("target_index") == step_index:
     errors.append("JUMP_TO_STEP : une étape ne peut pas pointer vers elle-même.")
 
 # END_PROCESS
-allowed_units = {"hour", "minute", "second", "millisecond"}
+allowed_units = {"minute", "second", "millisecond"}
 if params.get("wait_duration", -1) < 0:
     errors.append("END_PROCESS : wait_duration doit être >= 0.")
 if params.get("wait_unit") not in allowed_units:

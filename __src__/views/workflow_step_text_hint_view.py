@@ -33,14 +33,14 @@ class WorkflowStepTextHint:
         "Pause fixe": (
             "Attend un délai fixe avant de passer à l'étape suivante.\n\n"
             "• Durée : valeur numérique (entier ou décimal)\n"
-            "• Unité : millisecond, second, minute ou hour"
+            "• Unité : millisecond, second, minute"
         ),
         "Pause aléatoire": (
             "Attend un délai aléatoire compris entre Min et Max.\n"
             "Utile pour simuler un comportement humain.\n\n"
             "• Min : borne inférieure (strictement < Max)\n"
             "• Max : borne supérieure\n"
-            "• Unité : millisecond, second, minute ou hour"
+            "• Unité : millisecond, second, minute"
         ),
         "Rafraîchir la page": (
             "Recharge la page courante du navigateur.\n\n"
@@ -132,7 +132,7 @@ class WorkflowStepTextHint:
             "Marque la fin du flux de scraping et attend un délai fixe\n"
             "avant de libérer les ressources du navigateur.\n\n"
             "• Durée d'attente : délai à respecter avant la fin\n"
-            "• Unité : milli-sec, seconde, minute ou heure\n\n"
+            "• Unité : milli-sec, seconde, minute\n\n"
             "Utile pour laisser les actions asynchrones se terminer\n"
             "avant la fermeture du navigateur."
         ),

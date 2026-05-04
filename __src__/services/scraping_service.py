@@ -32,6 +32,7 @@ from models.scraping_report_model import ScrapingReportModel, StepResultModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from playwright.sync_api import Browser, BrowserContext, ElementHandle, Page, Playwright, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
+from shared.constants import C_DEFAULT_UNITS_TIME, C_MAXIMUM_SIZE_IMAGE
 from shared.path_util import make_all_folders_if_not_exists
 
 ## ---------------------------------------------------------------------------
@@ -40,7 +41,6 @@ from shared.path_util import make_all_folders_if_not_exists
 
 # Conversion factors from each time unit to milliseconds.
 _UNIT_TO_MS: dict[str, int] = {
-    "hour": 3_600_000,
     "minute": 60_000,
     "second": 1_000,
     "millisecond": 1,
@@ -71,25 +71,17 @@ def _evaluate_count_condition(count: int, operator: str, value: int, value_min: 
         >>> _evaluate_count_condition(3, "equal", 3, 0, 0)
         True
     """
-    match operator:
-        case "between":
-            return value_min <= count <= value_max
-        case "not_between":
-            return not (value_min <= count <= value_max)
-        case "equal":
-            return count == value
-        case "not_equal":
-            return count != value
-        case "greater_than":
-            return count > value
-        case "less_than":
-            return count < value
-        case "greater_or_equal":
-            return count >= value
-        case "less_or_equal":
-            return count <= value
-        case _:
-            return False
+    conditions: dict[str, bool] = {
+        "between": value_min <= count <= value_max,
+        "not_between": not (value_min <= count <= value_max),
+        "equal": count == value,
+        "not_equal": count != value,
+        "greater_than": count > value,
+        "less_than": count < value,
+        "greater_or_equal": count >= value,
+        "less_or_equal": count <= value,
+    }
+    return conditions.get(operator, False)
 
 
 def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
@@ -112,7 +104,7 @@ def _resolve_timeout_ms(params: dict[str, Any]) -> int | None:
         5000
     """
     duration = params.get("timeout_duration", 0)
-    unit = params.get("timeout_unit", "s")
+    unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
 
     # Zero duration means no timeout regardless of unit.
     if not duration:
@@ -628,7 +620,7 @@ class ScrapingService:
             ValueError: When the evaluated condition marks the step as a failure.
         """
         wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", "s")
+        wait_unit: str = params.get("wait_unit", C_DEFAULT_UNITS_TIME)
         selector: str = params.get("selector", "")
         operator: str = params.get("operator", "equal")
         success_if: str = params.get("success_if", "success")
@@ -782,10 +774,10 @@ class ScrapingService:
             None.
         """
         wait_duration: float = float(params.get("wait_duration", 0))
-        wait_unit: str = params.get("wait_unit", "s")
+        wait_unit: str = params.get("wait_unit", C_DEFAULT_UNITS_TIME)
 
         # Convert wait duration to seconds using unit multipliers.
-        multipliers = {"h": 3600.0, "m": 60.0, "s": 1.0, "ms": 0.001}
+        multipliers = {"m": 60.0, "s": 1.0, "ms": 0.001}
         delay = wait_duration * multipliers.get(wait_unit, 1.0)
         if delay > 0:
             time.sleep(delay)
@@ -834,9 +826,9 @@ class ScrapingService:
         """
         return {
             "h_min": int(params.get("height_min", 0)),
-            "h_max": int(params.get("height_max", C_MAXIMUM_SIZE_IMAGE_SCRAPPING)),
+            "h_max": int(params.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
             "w_min": int(params.get("width_min", 0)),
-            "w_max": int(params.get("width_max", C_MAXIMUM_SIZE_IMAGE_SCRAPPING)),
+            "w_max": int(params.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
         }
 
     def _get_filtered_images(

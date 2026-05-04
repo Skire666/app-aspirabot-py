@@ -19,6 +19,7 @@ from collections.abc import Callable
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
+from shared.constants import C_ALLOWED_UNITS_TIME_FOR_JSON, C_DEFAULT_UNITS_TIME
 
 
 class WorkflowService:
@@ -106,9 +107,9 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
-        allowed_units = {"h", "m", "s", "ms"}
+        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", "s")
+        timeout_unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
 
         # URL is mandatory.
         if not params.get("url", "").strip():
@@ -182,9 +183,9 @@ class WorkflowService:
             List of error messages.
         """
         errors = list(self._validate_download_image(params, step_index))
-        allowed_units = {"h", "m", "s", "ms"}
+        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", "s")
+        timeout_unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
 
         # Timeout constraints.
         if timeout_duration < 0:
@@ -219,9 +220,9 @@ class WorkflowService:
             List of error messages.
         """
         errors: list[str] = []
-        allowed_units = {"h", "m", "s", "ms"}
+        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
         timeout_duration = params.get("timeout_duration", 0)
-        timeout_unit = params.get("timeout_unit", "s")
+        timeout_unit = params.get("timeout_unit", C_DEFAULT_UNITS_TIME)
 
         # Selector is mandatory.
         if not params.get("selector", "").strip():
@@ -244,7 +245,7 @@ class WorkflowService:
         Returns:
             List of error messages.
         """
-        allowed_units = {"h", "m", "s", "ms"}
+        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
         allowed_operators = {
             "between",
             "not_between",
@@ -355,7 +356,7 @@ class WorkflowService:
         Returns:
             List of error messages.
         """
-        allowed_units = {"h", "m", "s", "ms"}
+        allowed_units = C_ALLOWED_UNITS_TIME_FOR_JSON
         errors: list[str] = []
 
         # Duration must be non-negative.
