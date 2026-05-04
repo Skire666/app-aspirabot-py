@@ -12,7 +12,7 @@ from services.app_configuration_service import ConfigService
 from views.app_configuration_view import AppConfigurationView
 
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+_DATETIME_FORMAT = "%Y-%m-%d %Hh%Mm%Ss"
 
 ## ---------------------------------------------------------------------------
 ## Classes

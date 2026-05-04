@@ -15,6 +15,7 @@ Example:
 ## ---------------------------------------------------------------------------
 
 import threading
+from collections.abc import Callable
 from datetime import datetime
 
 from models.provider_model import DATETIME_FORMAT, ProviderModel
@@ -42,6 +43,8 @@ class ScrapingPresenter:
         _provider: The currently loaded provider model (None when idle).
         _cancel_event: Threading event passed to the service for cancellation.
         _thread: The background worker thread (None when idle).
+        is_workflow_active: Optional guard injected from main; returns True when
+            a Workflow edit session is already open.
 
     Example:
         >>> presenter = ScrapingPresenter(panel, service)
@@ -68,9 +71,18 @@ class ScrapingPresenter:
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
 
+        # pause_event set = running freely; cleared = blocked between steps.
+        self._pause_event = threading.Event()
+        self._pause_event.set()
+
+        # Guard: returns True when a Workflow edit session is already open.
+        self.is_workflow_active: Callable[[], bool] | None = None
+
         # Wire view buttons to presenter handlers once at construction time.
         view.set_on_launch(self._on_launch)
         view.set_on_cancel(self._on_cancel)
+        view.set_on_pause(self._on_pause)
+        view.set_on_resume(self._on_resume)
 
     def load_provider(self, provider: ProviderModel) -> None:
         """Loads a new provider and resets the view for a fresh run.
@@ -89,7 +101,8 @@ class ScrapingPresenter:
         Example:
             >>> presenter.load_provider(provider)
         """
-        # Stop any in-progress run before replacing the provider.
+        # Unblock any active pause then cancel the running workflow.
+        self._pause_event.set()
         self._cancel_event.set()
 
         # Update target and clear the stale cancellation signal.
@@ -118,7 +131,16 @@ class ScrapingPresenter:
         if not self._provider:
             return
 
-        # Clear any residual cancellation signal from a previous run.
+        # Block launch when a Workflow edit session is already open.
+        if self.is_workflow_active and self.is_workflow_active():
+            self._view.show_warning(
+                "Un Workflow est déjà en cours de modification.\n"
+                "Veuillez terminer ou annuler la modification en cours avant de lancer le scraping."
+            )
+            return
+
+        # Clear any residual signals from a previous run.
+        self._pause_event.set()
         self._cancel_event.clear()
         self._view.set_running_state(True)
 
@@ -135,8 +157,35 @@ class ScrapingPresenter:
         Raises:
             None.
         """
-        # The service polls this event before each step and exits the loop when set.
+        # Unblock any active pause so the cancel signal can be observed immediately.
+        self._pause_event.set()
         self._cancel_event.set()
+
+    def _on_pause(self) -> None:
+        """Clears the pause event to suspend the workflow before its next step.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        # Clearing the event blocks the service loop at the next pause_event.wait().
+        self._pause_event.clear()
+        self._view.set_paused_state(True)
+
+    def _on_resume(self) -> None:
+        """Sets the pause event to resume the suspended workflow.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        # Setting the event unblocks the service loop so the next step can execute.
+        self._pause_event.set()
+        self._view.set_paused_state(False)
 
     def _run_workflow(self) -> None:
         """Thread target: runs the workflow and dispatches the result to the view.
@@ -152,6 +201,7 @@ class ScrapingPresenter:
                 self._provider,
                 self._on_step_done,
                 self._cancel_event,
+                self._pause_event,
             )
         except (ValueError, RuntimeError, OSError) as exc:
             report = self._build_error_report(str(exc))
@@ -203,6 +253,8 @@ class ScrapingPresenter:
         Raises:
             None.
         """
+        # Ensure pause is cleared so the event is ready for the next run.
+        self._pause_event.set()
         # Restore idle button state before rendering the report.
         self._view.set_running_state(False)
         self._view.show_report(report)

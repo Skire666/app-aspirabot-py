@@ -188,6 +188,14 @@ class ProvidersListView(ttk.Frame):
         """
         messagebox.showerror("Erreur", message)
 
+    def show_warning(self, message: str) -> None:
+        """Shows a warning message box.
+
+        Args:
+            message: The message to be displayed.
+        """
+        messagebox.showwarning("Avertissement", message)
+
     def show_validation_report(self, report_data: dict[str, Any]) -> None:
         """Displays a validation summary to the user.
 

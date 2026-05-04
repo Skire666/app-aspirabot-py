@@ -140,6 +140,7 @@ class ScrapingService:
         provider: ProviderModel,
         on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
         cancel_event: threading.Event,
+        pause_event: threading.Event,
     ) -> ScrapingReportModel:
         """Executes all steps of a provider workflow sequentially.
 
@@ -148,6 +149,7 @@ class ScrapingService:
             on_step_done: Callback fired after each step with
                 ``(index, step, success, message)``.
             cancel_event: Threading event that aborts the run when set.
+            pause_event: Threading event that blocks step execution when cleared.
 
         Returns:
             A ScrapingReportModel summarising the full run.
@@ -157,7 +159,8 @@ class ScrapingService:
 
         Example:
             >>> event = threading.Event()
-            >>> report = service.run_workflow(provider, lambda *a: None, event)
+            >>> pause = threading.Event(); pause.set()
+            >>> report = service.run_workflow(provider, lambda *a: None, event, pause)
         """
         started_at = datetime.now().strftime(DATETIME_FORMAT)
 
@@ -165,7 +168,9 @@ class ScrapingService:
         with sync_playwright() as pw:
             browser, page = self._launch_browser(pw, provider)
             try:
-                results, steps_failed = self._run_steps(page, provider.steps, on_step_done, cancel_event)
+                results, steps_failed = self._run_steps(
+                    page, provider.steps, on_step_done, cancel_event, pause_event
+                )
             finally:
                 browser.close()
 
@@ -232,17 +237,20 @@ class ScrapingService:
         steps: list[StepScrapingModel],
         on_step_done: Callable[[int, StepScrapingModel, bool, str], None],
         cancel_event: threading.Event,
+        pause_event: threading.Event,
     ) -> tuple[list[StepResultModel], int]:
         """Iterates over steps, executes each one, and notifies the caller.
 
         Supports non-sequential execution via JUMP_TO_STEP and early
-        termination via END_PROCESS.
+        termination via END_PROCESS. Blocks between steps when pause_event
+        is cleared, resuming as soon as it is set again.
 
         Args:
             page: Active Playwright page.
             steps: Ordered list of steps to execute.
             on_step_done: Fired after every step with its outcome.
             cancel_event: Abort signal checked before each step.
+            pause_event: Pause signal; cleared = paused, set = running.
 
         Returns:
             A tuple of (step_results, failure_count).
@@ -260,6 +268,11 @@ class ScrapingService:
         i = 0
 
         while i < len(steps):
+            if cancel_event.is_set():
+                break
+            # Block here while paused; unblocks when pause_event is set.
+            pause_event.wait()
+            # Re-check cancel in case it was set during a pause.
             if cancel_event.is_set():
                 break
             i, result = self._run_one_step(page, steps[i], i, on_step_done)

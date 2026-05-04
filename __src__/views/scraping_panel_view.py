@@ -17,7 +17,7 @@ Example:
 
 import tkinter as tk
 from collections.abc import Callable
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 from models.scraping_report_model import ScrapingReportModel
 
@@ -55,6 +55,8 @@ class ScrapingPanelView(ttk.Frame):
         # Callback slots — populated once by the presenter via set_on_*.
         self._on_launch: Callable[[], None] | None = None
         self._on_cancel: Callable[[], None] | None = None
+        self._on_pause: Callable[[], None] | None = None
+        self._on_resume: Callable[[], None] | None = None
 
         self._create_widgets()
 
@@ -67,7 +69,7 @@ class ScrapingPanelView(ttk.Frame):
         self._create_report_section()
 
     def _create_action_bar(self) -> None:
-        """Creates the top action bar with Lancer and Annuler buttons."""
+        """Creates the top action bar with Lancer, Annuler, Pause, and Reprendre buttons."""
         bar = ttk.Frame(self, padding=(5, 5))
         bar.pack(side=tk.TOP, fill=tk.X)
 
@@ -77,6 +79,14 @@ class ScrapingPanelView(ttk.Frame):
         # Annuler is disabled until a workflow is running.
         self._btn_cancel = ttk.Button(bar, text="Annuler", command=self._notify_cancel, state=tk.DISABLED)
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
+
+        # Pause is disabled until a workflow is running.
+        self._btn_pause = ttk.Button(bar, text="Pause", command=self._notify_pause, state=tk.DISABLED)
+        self._btn_pause.pack(side=tk.LEFT, padx=5)
+
+        # Reprendre is disabled until the workflow is paused.
+        self._btn_resume = ttk.Button(bar, text="Reprendre", command=self._notify_resume, state=tk.DISABLED)
+        self._btn_resume.pack(side=tk.LEFT, padx=5)
 
     def _create_provider_info_section(self) -> None:
         """Creates the provider summary block displayed below the action bar."""
@@ -173,6 +183,34 @@ class ScrapingPanelView(ttk.Frame):
         """
         self._on_cancel = callback
 
+    def set_on_pause(self, callback: Callable[[], None]) -> None:
+        """Registers the callback fired when the user clicks Pause.
+
+        Args:
+            callback: Zero-argument callable that pauses the workflow.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        self._on_pause = callback
+
+    def set_on_resume(self, callback: Callable[[], None]) -> None:
+        """Registers the callback fired when the user clicks Reprendre.
+
+        Args:
+            callback: Zero-argument callable that resumes the workflow.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        self._on_resume = callback
+
     def set_provider_info(
         self,
         name: str,
@@ -242,9 +280,11 @@ class ScrapingPanelView(ttk.Frame):
         # Hide the report section until the next run completes.
         self._report_frame.pack_forget()
 
-        # Restore buttons to idle state.
+        # Restore all buttons to idle state.
         self._btn_launch.config(state=tk.NORMAL)
         self._btn_cancel.config(state=tk.DISABLED)
+        self._btn_pause.config(state=tk.DISABLED)
+        self._btn_resume.config(state=tk.DISABLED)
 
     # ------------------------------------------------------------------
     # Public render interface (called by the presenter, thread-safe)
@@ -370,6 +410,35 @@ class ScrapingPanelView(ttk.Frame):
         self._lbl_report.config(text=summary)
         self._report_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
 
+    def set_paused_state(self, paused: bool) -> None:
+        """Toggles Pause/Reprendre buttons to match whether the workflow is paused.
+
+        Safe to call from a background thread — the update is deferred to the
+        main thread via self.after(0, ...).
+
+        Args:
+            paused: True while the workflow is paused; False when running.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        self.after(0, lambda: self._apply_paused_state(paused))
+
+    def _apply_paused_state(self, paused: bool) -> None:
+        """Applies Pause/Reprendre button states on the main thread.
+
+        Args:
+            paused: True to show paused state; False to restore running state.
+        """
+        pause_state = tk.DISABLED if paused else tk.NORMAL
+        resume_state = tk.NORMAL if paused else tk.DISABLED
+
+        self._btn_pause.config(state=pause_state)
+        self._btn_resume.config(state=resume_state)
+
     def set_running_state(self, running: bool) -> None:
         """Toggles button states to match whether a workflow is in progress.
 
@@ -395,9 +464,13 @@ class ScrapingPanelView(ttk.Frame):
         """
         launch_state = tk.DISABLED if running else tk.NORMAL
         cancel_state = tk.NORMAL if running else tk.DISABLED
+        pause_state = tk.NORMAL if running else tk.DISABLED
 
         self._btn_launch.config(state=launch_state)
         self._btn_cancel.config(state=cancel_state)
+        # Pause activates when running starts; Reprendre always resets to DISABLED.
+        self._btn_pause.config(state=pause_state)
+        self._btn_resume.config(state=tk.DISABLED)
 
     # ------------------------------------------------------------------
     # Internal notification helpers
@@ -412,3 +485,21 @@ class ScrapingPanelView(ttk.Frame):
         """Fires the on_cancel callback when the Annuler button is clicked."""
         if self._on_cancel:
             self._on_cancel()
+
+    def _notify_pause(self) -> None:
+        """Fires the on_pause callback when the Pause button is clicked."""
+        if self._on_pause:
+            self._on_pause()
+
+    def _notify_resume(self) -> None:
+        """Fires the on_resume callback when the Reprendre button is clicked."""
+        if self._on_resume:
+            self._on_resume()
+
+    def show_warning(self, message: str) -> None:
+        """Shows a warning message box.
+
+        Args:
+            message: The message to be displayed.
+        """
+        messagebox.showwarning("Avertissement", message)

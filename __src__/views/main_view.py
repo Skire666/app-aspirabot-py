@@ -221,3 +221,16 @@ class MainView(ttk.Frame):
         """
         if name in self._buttons:
             self._buttons[name].config(state=state)
+
+    def get_tab_state(self, name: str) -> str:
+        """Returns the current state of a sidebar module button.
+
+        Args:
+            name: The name of the module tab.
+
+        Returns:
+            The Tkinter state string (tk.NORMAL or tk.DISABLED).
+        """
+        if name in self._buttons:
+            return str(self._buttons[name].cget("state"))
+        return tk.DISABLED

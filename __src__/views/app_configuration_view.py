@@ -41,7 +41,9 @@ class AppConfigurationView(ttk.Frame):
 
         self._log_level_combo: ttk.Combobox | None = None
         self._btn_cancel: ttk.Button | None = None
+        self._btn_save: ttk.Button | None = None
         self._lbl_last_write: ttk.Label | None = None
+        self._original_data: dict[str, Any] | None = None
 
         self._bind_change_events()
         self._create_widgets()
@@ -68,8 +70,8 @@ class AppConfigurationView(ttk.Frame):
         self._add_path_row(frame, 1, "Dossier logs", self._folder_logs_var)
         self._add_path_row(frame, 2, "Dossier providers", self._folder_providers_var)
         self._add_path_row(frame, 3, "Dossier scraping", self._folder_scraping_var)
-        self._add_text_row(frame, 4, "Taille GUI (WxH)", self._gui_booting_size_var)
-        self._add_bool_row(frame, 5, "GUI plein ecran", self._gui_booting_fullscreen_var)
+        self._add_text_row(frame, 4, "Taille fenêtre libre (WxH)", self._gui_booting_size_var)
+        self._add_bool_row(frame, 5, "Démarrer en plein écran", self._gui_booting_fullscreen_var)
 
         return frame
 
@@ -84,7 +86,10 @@ class AppConfigurationView(ttk.Frame):
             state=tk.DISABLED,
         )
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
-        ttk.Button(frame, text="Sauvegarder", command=self._notify_save).pack(side=tk.LEFT, padx=5)
+        self._btn_save = ttk.Button(
+            frame, text="Sauvegarder les modifications", command=self._notify_save, state=tk.DISABLED
+        )
+        self._btn_save.pack(side=tk.LEFT, padx=5)
 
         self._lbl_last_write = ttk.Label(frame, text="Derniere ecriture: --")
         self._lbl_last_write.pack(side=tk.RIGHT, padx=5)
@@ -179,6 +184,26 @@ class AppConfigurationView(ttk.Frame):
         state = tk.NORMAL if is_enabled else tk.DISABLED
         self._btn_cancel.config(state=state)
 
+    def set_save_enabled(self, is_enabled: bool) -> None:
+        """Enables or disables the save button.
+
+        Args:
+            is_enabled: True to enable, False to disable.
+        """
+        if self._btn_save is None:
+            return
+        state = tk.NORMAL if is_enabled else tk.DISABLED
+        self._btn_save.config(state=state)
+
+    def _is_modified(self) -> bool:
+        """Returns True if current form values differ from the last loaded/saved state.
+
+        If no original state is known, returns False to avoid enabling buttons prematurely.
+        """
+        if self._original_data is None:
+            return False
+        return self.get_data() != self._original_data
+
     def set_log_level_options(self, options: list[str]) -> None:
         """Sets the available options for the log level combobox.
 
@@ -203,6 +228,10 @@ class AppConfigurationView(ttk.Frame):
         self._folder_scraping_var.set(self._safe_text(data.get("folder_scraping")))
         self._gui_booting_size_var.set(self._safe_text(data.get("gui_booting_size")))
         self._gui_booting_fullscreen_var.set(bool(data.get("gui_booting_fullscreen", False)))
+        # Loaded data represents a clean state: record original snapshot and disable buttons
+        self._original_data = self.get_data()
+        self.set_cancel_enabled(False)
+        self.set_save_enabled(False)
 
     def get_data(self) -> dict[str, Any]:
         """Returns the current form values.
@@ -227,7 +256,7 @@ class AppConfigurationView(ttk.Frame):
         """
         if self._lbl_last_write is None:
             return
-        self._lbl_last_write.config(text=f"Derniere ecriture: {display_value}")
+        self._lbl_last_write.config(text=f"Dernière écriture : {display_value}")
 
     def ask_reset_confirmation(self) -> bool:
         """Asks the user to confirm a reset action.
@@ -235,7 +264,7 @@ class AppConfigurationView(ttk.Frame):
         Returns:
             True if the user confirms the reset.
         """
-        return messagebox.askyesno("Confirmation", "Reinitialiser la configuration ?")
+        return messagebox.askyesno("Confirmation", "Réinitialiser la configuration ?")
 
     def show_error(self, message: str) -> None:
         """Displays an error dialog.
@@ -248,16 +277,28 @@ class AppConfigurationView(ttk.Frame):
     def _notify_save(self) -> None:
         if self._on_save:
             self._on_save()
+        # after saving, consider the form clean: update snapshot and disable buttons
+        self._original_data = self.get_data()
+        self.set_cancel_enabled(False)
+        self.set_save_enabled(False)
 
     def _notify_reset(self) -> None:
         if self._on_reset:
             self._on_reset()
+        # reset brings form back to clean state: update snapshot and disable buttons
+        self._original_data = self.get_data()
+        self.set_cancel_enabled(False)
+        self.set_save_enabled(False)
 
     def _notify_cancel(self) -> None:
         if self._on_cancel:
             self._on_cancel()
 
     def _notify_change(self, *_: str) -> None:
+        # enable buttons only if the current values actually differ from the original snapshot
+        modified = self._is_modified()
+        self.set_cancel_enabled(modified)
+        self.set_save_enabled(modified)
         if self._on_change:
             self._on_change()
 

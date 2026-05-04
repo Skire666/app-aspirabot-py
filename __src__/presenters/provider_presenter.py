@@ -37,6 +37,8 @@ class ProviderPresenter:
         self.on_request_create_provider: Callable[[], None] | None = None
         self.on_request_edit_provider: Callable[[str], None] | None = None
         self.on_request_launch_provider: Callable[[str], None] | None = None
+        # Guard: returns True when a Workflow edit session is already open.
+        self.is_workflow_active: Callable[[], bool] | None = None
 
         self._bind_view_events()
         self._load_providers()
@@ -122,6 +124,13 @@ class ProviderPresenter:
 
     def _on_create_provider(self) -> None:
         """Gère l'événement de création d'un fournisseur depuis la vue."""
+        # Block creation when a Workflow edit session is already open.
+        if self.is_workflow_active and self.is_workflow_active():
+            self._view.show_warning(
+                "Un Workflow est déjà en cours de modification.\n"
+                "Veuillez terminer ou annuler la modification en cours avant de continuer."
+            )
+            return
         if self.on_request_create_provider:
             self.on_request_create_provider()
         else:
@@ -135,6 +144,13 @@ class ProviderPresenter:
         Args:
             id_file: L'ID fichier du fournisseur à éditer.
         """
+        # Block edit when a Workflow edit session is already open.
+        if self.is_workflow_active and self.is_workflow_active():
+            self._view.show_warning(
+                "Un Workflow est déjà en cours de modification.\n"
+                "Veuillez terminer ou annuler la modification en cours avant de continuer."
+            )
+            return
         if self.on_request_edit_provider:
             self.on_request_edit_provider(id_file)
 

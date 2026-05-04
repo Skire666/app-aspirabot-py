@@ -4,6 +4,7 @@
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import sys
 import tkinter as tk
 from tkinter import ttk
 
@@ -78,9 +79,23 @@ def main() -> None:
 ## ---------------------------------------------------------------------------
 
 
-def _override_style_buttons(root: tk.Tk) -> None:
-    # Override global de tous les ttk.Button
+def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) -> None:
 
+    root.title("Aspirabot")
+    root.geometry(config_model.gui_booting_size)
+
+    # Maximize the window on launch based on the platform.
+    # May be cannot work depending on the window manager
+    # but is a best effort to start in a maximized state.
+    if config_model.gui_booting_fullscreen:
+        if sys.platform.startswith("win"):
+            root.state("zoomed")
+        elif sys.platform == "darwin":  # macOS
+            root.attributes("-zoomed", True)
+        else:  # Linux (fallback)
+            root.attributes("-zoomed", True)
+
+    # Override global de tous les ttk.Button
     style = ttk.Style()
 
     style.configure(
@@ -105,10 +120,7 @@ def _launch_main_app(
     logging_service = startup_service.logging_service
 
     # Apply window settings from the loaded configuration.
-    root.title("Aspirabot")
-    root.geometry(config_model.gui_booting_size)
-
-    _override_style_buttons(root)
+    _override_gui_and_style(root, config_model)
 
     # Build the main sidebar-and-content-area layout.
     root_container = tk.Frame(root)
@@ -128,6 +140,7 @@ def _launch_main_app(
     # Wire inter-component navigation and launch callbacks.
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
     _wire_scraping_launch(main_view, provider_presenter, provider_service, scraping_presenter)
+    _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
 
     # Register views, reveal the window, and anchor presenters against GC.
     _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view)
@@ -304,6 +317,31 @@ def _wire_scraping_launch(
         main_view.show_view(C_TITLE_MODULE_SCRAPING)
 
     provider_presenter.on_request_launch_provider = on_request_launch_provider
+
+
+def _wire_workflow_guard(
+    main_view: MainView,
+    provider_presenter: ProviderPresenter,
+    scraping_presenter: ScrapingPresenter,
+) -> None:
+    """Inject the workflow-active guard into presenters that need it.
+
+    The guard returns True when the Workflow tab is enabled (i.e. a provider
+    creation or edit session is already in progress). Both ProviderPresenter and
+    ScrapingPresenter use it to block conflicting actions and prompt the user.
+
+    Args:
+        main_view: Shell that owns the sidebar tab state.
+        provider_presenter: Presenter for the providers list.
+        scraping_presenter: Presenter for the scraping panel.
+    """
+
+    def is_workflow_active() -> bool:
+        return main_view.get_tab_state(C_TITLE_MODULE_WORKFLOW) == tk.NORMAL
+
+    # Inject into both presenters so either can check the guard independently.
+    provider_presenter.is_workflow_active = is_workflow_active
+    scraping_presenter.is_workflow_active = is_workflow_active
 
 
 ## ---------------------------------------------------------------------------
