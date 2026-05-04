@@ -150,7 +150,7 @@ class WorkflowListPresenter:
         """
         # Target index: future position for add mode, current slot for edit mode.
         target_index = len(self._steps) if self._edit_index is None else self._edit_index
-        errors = self._workflow_service.validate_step(target_index, step)
+        errors = self._workflow_service.validate_step(target_index, step, self._steps)
 
         # Abort and surface the first error without closing the form.
         if errors:

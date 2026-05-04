@@ -58,9 +58,12 @@ class ScrapingService:
         self._folder_scraping = folder_scraping
         # Per-run state — reset at the start of each _run_steps call.
         self._prev_step_success: bool = True
-        self._pending_jump: int | None = None
+        self._pending_jump: str | int | None = None
         self._end_process_requested: bool = False
         self._downloaded_image_urls: set[str] = set()
+        self._step_id_by_index: list[str] = []
+        self._step_index_by_id: dict[str, int] = {}
+        self._steps_count: int = 0
         # Run-scoped references stored by run_workflow for stateful steps.
         self._pause_event_ref: threading.Event | None = None
         self._cancel_event_ref: threading.Event | None = None
@@ -184,6 +187,10 @@ class ScrapingService:
         self._pending_jump = None
         self._end_process_requested = False
         self._downloaded_image_urls = set()
+        # Cache step_id mappings for JUMP_TO_STEP resolution.
+        self._step_id_by_index = [step.step_id for step in steps]
+        self._step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
+        self._steps_count = len(steps)
         i = 0
 
         while i < len(steps):
@@ -216,11 +223,27 @@ class ScrapingService:
         result = StepResultModel(index, step.step_type.value, success, message, time_elapsed=elapsed)
 
         if self._pending_jump is not None:
-            next_index, self._pending_jump = self._pending_jump, None
+            next_index = self._resolve_jump_index(self._pending_jump, index)
+            self._pending_jump = None
         else:
             next_index = index + 1
         self._prev_step_success = success
         return next_index, result
+
+    def _resolve_jump_index(self, pending_jump: str | int, current_index: int) -> int:
+        """Resolves a pending jump target into a valid workflow index."""
+        if isinstance(pending_jump, int):
+            if 0 <= pending_jump < self._steps_count:
+                return pending_jump
+            self._logger.warning("JUMP_TO_STEP : index invalide %s.", pending_jump)
+            return current_index + 1
+        if isinstance(pending_jump, str):
+            next_index = self._step_index_by_id.get(pending_jump)
+            if next_index is not None:
+                return next_index
+            self._logger.warning("JUMP_TO_STEP : step_id introuvable %s.", pending_jump)
+            return current_index + 1
+        return current_index + 1
 
     def _execute_step(self, page: Page, step: StepScrapingModel) -> tuple[bool, str]:
         """Dispatches a step to its registered executor and converts exceptions.
@@ -240,6 +263,9 @@ class ScrapingService:
                     "_prev_success": self._prev_step_success,
                     "_folder": self._folder_scraping,
                     "_downloaded_urls": self._downloaded_image_urls,
+                    "_self_step_id": step.step_id,
+                    "_step_id_by_index": self._step_id_by_index,
+                    "_step_index_by_id": self._step_index_by_id,
                     "_pause_event": self._pause_event_ref,
                     "_cancel_event": self._cancel_event_ref,
                     "_on_user_wait": self._on_user_wait,

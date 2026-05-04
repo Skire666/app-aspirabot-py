@@ -35,12 +35,14 @@ class WorkflowService:
         self,
         step_index: int,
         step: StepScrapingModel,
+        steps: list[StepScrapingModel] | None = None,
     ) -> list[str]:
         """Validates the parameters of a single workflow step.
 
         Args:
             step_index: Zero-based position of the step in the workflow.
             step: The step to validate.
+            steps: Optional ordered workflow list for context-aware checks.
 
         Returns:
             A list of error messages; empty when the step is valid.
@@ -50,6 +52,13 @@ class WorkflowService:
         """
         try:
             executor = get_executor(step.step_type)
-            return executor.validate(step.params, step_index)
+            # Enrich params with workflow context for validators.
+            params = dict(step.params)
+            params["_self_step_id"] = step.step_id
+            if steps is not None:
+                step_ids = [current.step_id for current in steps]
+                params["_workflow_step_ids"] = step_ids
+                params["_step_id_by_index"] = step_ids
+            return executor.validate(params, step_index)
         except ValueError:
             return []

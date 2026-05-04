@@ -99,7 +99,7 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
     },
     StepType.JUMP_TO_STEP.value: {
         "condition": "success",
-        "target_index": 0,
+        "target_index": "",
     },
     StepType.CLOSE_TABS.value: {
         "url_filter": "",
