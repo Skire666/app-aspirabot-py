@@ -55,10 +55,10 @@ class JumpToStepExecutor(IStepExecutor):
         if target_step_id:
             workflow_step_ids = params.get("_workflow_step_ids")
             if isinstance(workflow_step_ids, list) and target_step_id not in workflow_step_ids:
-                errors.append("JUMP_TO_STEP : l'étape cible est introuvable.")
+                errors.append(f"JUMP_TO_STEP : l'étape cible [{target_step_id}] est introuvable.")
             self_step_id = params.get("_self_step_id")
             if self_step_id and target_step_id == self_step_id:
-                errors.append("JUMP_TO_STEP : une étape ne peut pas pointer vers elle-même.")
+                errors.append(f"JUMP_TO_STEP : l'étape [{target_step_id}] ne peut pas pointer vers elle-même.")
         return errors
 
 

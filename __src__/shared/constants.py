@@ -56,6 +56,7 @@ C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 
 ## ---------------------------------------------------------------------------
 
+
 # Default folders for data storage (relative to current working directory)
 C_DATA_DEFAULT_FOLDER_PROVIDER: str = "data_providers"
 
@@ -67,6 +68,11 @@ C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 6  # must be even (aka % 2 == 0)
 C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
 
 ## ---------------------------------------------------------------------------
+
+# Temporary folder for browser profiles used during scraping (relative to current working directory)
+# NOTE PCO : truc de dingue, si je mets 'tmp_browser_profiles', ça ne fonctionne pas pour cloudflare
+# je sais pas si c'est une coincidence, mais l'avenir, ne pas réessayer de changer, il n'aime pas.
+C_FOLDER_TMP_DATA_BROWSER: str = "browser_profiles"
 
 # Maximum size for images to be scraped (in pixels) - used as default value for image size filters
 C_MAXIMUM_SIZE_IMAGE: int = 99999

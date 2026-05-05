@@ -2,6 +2,8 @@
 tmp_app_logs/
 data_scraping/
 data_providers/
+browser_profiles/
+extensions/
 config-aspirabot.json
 
 # Byte-compiled / optimized / DLL files

@@ -1,19 +1,21 @@
 """IStepExecutor for DOWNLOAD_IMAGE."""
+
 from __future__ import annotations
+
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
+
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.download_image_params import DownloadImageParams
-from playwright.sync_api import Page
 from playwright.sync_api import Error as PlaywrightError
-from shared.constants import C_MAXIMUM_SIZE_IMAGE
+from playwright.sync_api import Page
+from services.steps._helpers import evaluate_script_with_safe_retry
 from shared.path_util import make_all_folders_if_not_exists
 from shared.step_registry import register_executor
-from services.steps._helpers import evaluate_script_with_safe_retry
 
 _logger = logging.getLogger(__name__)
 
@@ -54,7 +56,7 @@ class DownloadImageExecutor(IStepExecutor):
 
     def execute(self, page: Page, params: dict[str, Any]) -> None:
         p = DownloadImageParams.from_dict(params)
-        folder: Path = params.get("_folder", Path("."))
+        folder: Path = params.get("_folder", Path())
         downloaded_urls: set[str] = params.get("_downloaded_urls", set())
 
         bounds = _extract_bounds(p)
@@ -69,6 +71,7 @@ class DownloadImageExecutor(IStepExecutor):
         for image in targets:
             img_src = str(image.get("src", ""))
             full_url = urljoin(page.url, img_src)
+            print(f"Attempting to download image: {full_url}")
             if p.unique_only and full_url in downloaded_urls:
                 continue
             response = page.context.request.get(
