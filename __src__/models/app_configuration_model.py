@@ -20,7 +20,6 @@ from pathlib import Path
 from shared.constants import (
     C_APP_DEFAULT_SIZE_GUI,
     C_BROWSER_ENGINE_DEFAULT,
-    C_BROWSER_ENGINE_PATCHRIGHT,
     C_BROWSER_ENGINE_PLAYWRIGHT,
     C_DATA_DEFAULT_FOLDER_PROVIDER,
     C_DATA_DEFAULT_FOLDER_SCRAPPING,
@@ -209,7 +208,7 @@ class AppConfigurationModel:
         Raises:
             ValueError: If the value is not a supported engine identifier.
         """
-        valid = [C_BROWSER_ENGINE_PLAYWRIGHT, C_BROWSER_ENGINE_PATCHRIGHT]
+        valid = [C_BROWSER_ENGINE_PLAYWRIGHT]  # , C_BROWSER_ENGINE_PATCHRIGHT --- IGNORE ---
         if value not in valid:
             raise InvalidBrowserEngineError(valid)
         self._browser_engine = value

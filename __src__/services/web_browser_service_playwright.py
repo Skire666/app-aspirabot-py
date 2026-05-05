@@ -24,17 +24,10 @@ from pathlib import Path
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import ProviderModel
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
-from playwright_stealth import stealth_sync
-from shared.constants import C_FOLDER_TMP_DATA_BROWSER
 
 ## ---------------------------------------------------------------------------
 ## Class
 ## ---------------------------------------------------------------------------
-
-import dns.resolver
-# Forcer la résolution IPv4 d'abord
-dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
-dns.resolver.default_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
 
 
 class PlaywrightBrowserService(IWebBrowserService):
@@ -110,7 +103,7 @@ class PlaywrightBrowserService(IWebBrowserService):
 
         page = self._context.new_page()
 
-        return stealth_sync(page)
+        return page
 
     def close_browser(self) -> None:
         """Close the context, the browser, and the Playwright runtime.
@@ -169,57 +162,10 @@ class PlaywrightBrowserService(IWebBrowserService):
         headless = not provider.browser_displayed
 
         # Obfuscated mode uses custom args; standard mode uses a plain context.
-        if provider.automation_obfuscated:
-            return self._launch_obfuscated(headless)
-
-        browser = self._pw.chromium.launch(headless=headless)
+        browser = self._pw.chromium.launch(
+            headless=headless, args=["--disable-blink-features=AutomationControlled"]
+        )
         return browser, browser.new_context()
-
-    def _launch_obfuscated(self, headless: bool) -> tuple[Browser, BrowserContext]:
-        """Launch Chromium with anti-detection args and return the browser pair.
-
-        Args:
-            headless: Whether to run without a visible window.
-
-        Returns:
-            A ``(Browser, BrowserContext)`` tuple with hardened settings.
-        """
-        args = self._build_launch_args()
-        self._log(f"Launching obfuscated browser — args={args}")
-
-        # Launch with custom flags; context inherits the browser's settings.
-        browser = self._pw.chromium.launch(headless=headless, args=args)
-        return browser, browser.new_context()
-
-    def _build_launch_args(self) -> list[str]:
-        """Build Chromium launch args, injecting uBlock Origin Lite if present.
-
-        Returns:
-            A list of Chromium CLI flags.
-        """
-        args: list[str] = []
-
-        # Load the extension to reduce the browser's fingerprinting surface.
-        args += [
-            '--force-fieldtrials=UseDnsHttpsSvcb/disabled',
-            # Désactive les requêtes DNS sur IPv6
-            '--disable-ipv6',
-            "--disable-features=IsolateOrigins,site-per-process",
-            
-            ]
-        return args
-
-    def _get_profile_dir(self, provider: ProviderModel) -> Path:
-        """Return the persistent browser profile directory for a provider.
-
-        Args:
-            provider: The provider whose ID names the profile sub-folder.
-
-        Returns:
-            Path to the provider-specific browser profile directory.
-        """
-        return self._folder_scraping.parent / C_FOLDER_TMP_DATA_BROWSER / provider.id_file
-
 
     # ------------------------------------------------------------------
     # Private helpers — logging

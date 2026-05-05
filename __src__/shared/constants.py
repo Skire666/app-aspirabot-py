@@ -71,7 +71,6 @@ C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
 
 # Supported browser engine identifiers for the scraping service.
 C_BROWSER_ENGINE_PLAYWRIGHT: str = "playwright"
-C_BROWSER_ENGINE_PATCHRIGHT: str = "patchright"
 C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
 ## ---------------------------------------------------------------------------
