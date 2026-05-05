@@ -19,7 +19,6 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from models.step_scraping_model import StepType
-from playwright.sync_api import Page
 
 ## ---------------------------------------------------------------------------
 ## Interface
@@ -64,7 +63,7 @@ class IStepExecutor(ABC):
         """
 
     @abstractmethod
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Executes the step against the active browser page.
 
         Args:

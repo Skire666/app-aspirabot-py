@@ -5,7 +5,6 @@ from typing import Any
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.end_process_params import EndProcessParams
-from playwright.sync_api import Page
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.step_registry import register_executor
 
@@ -20,7 +19,7 @@ class EndProcessExecutor(IStepExecutor):
     def default_params_dict(self) -> dict[str, Any]:
         return EndProcessParams.default().to_dict()
 
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = EndProcessParams.from_dict(params)
         delay = float(p.wait_duration) * _MULTIPLIERS.get(p.wait_unit, 1.0)
         if delay > 0:

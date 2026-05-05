@@ -19,12 +19,16 @@ from pathlib import Path
 
 from shared.constants import (
     C_APP_DEFAULT_SIZE_GUI,
+    C_BROWSER_ENGINE_DEFAULT,
+    C_BROWSER_ENGINE_PATCHRIGHT,
+    C_BROWSER_ENGINE_PLAYWRIGHT,
     C_DATA_DEFAULT_FOLDER_PROVIDER,
     C_DATA_DEFAULT_FOLDER_SCRAPPING,
     C_LOGS_DEFAULT_FOLDER,
     C_LOGS_DEFAULT_LEVEL_TRACE,
 )
 from shared.exception_util import (
+    InvalidBrowserEngineError,
     InvalidFolderLogsError,
     InvalidFolderProvidersError,
     InvalidFolderScrapingError,
@@ -70,6 +74,7 @@ class AppConfigurationModel:
     _folder_scraping: Path
     _gui_booting_size: str
     _gui_booting_fullscreen: bool
+    _browser_engine: str
 
     ## ---------------------------------------------------------------------------
     ## Methods
@@ -83,6 +88,7 @@ class AppConfigurationModel:
         folder_scraping: Path | str = C_DATA_DEFAULT_FOLDER_SCRAPPING,
         gui_booting_size: str = C_APP_DEFAULT_SIZE_GUI,
         gui_booting_fullscreen: bool = False,
+        browser_engine: str = C_BROWSER_ENGINE_DEFAULT,
     ) -> None:
         """Initializes the configuration model with optional parameters."""
         self.log_level_enum = log_level_enum
@@ -91,6 +97,7 @@ class AppConfigurationModel:
         self.folder_scraping = folder_scraping
         self.gui_booting_size = gui_booting_size
         self.gui_booting_fullscreen = gui_booting_fullscreen
+        self.browser_engine = browser_engine
 
     def to_dict(self) -> dict:
         """Converts the configuration model to a dictionary for serialization."""
@@ -101,6 +108,7 @@ class AppConfigurationModel:
             "folder_scraping": str(self.folder_scraping),
             "gui_booting_size": self.gui_booting_size,
             "gui_booting_fullscreen": self.gui_booting_fullscreen,
+            "browser_engine": self.browser_engine,
         }
 
     ## ---------------------------------------------------------------------------
@@ -181,6 +189,30 @@ class AppConfigurationModel:
     def gui_booting_fullscreen(self, value: bool) -> None:
         """Sets whether the GUI should start in fullscreen mode."""
         self._gui_booting_fullscreen = value
+
+    @property
+    def browser_engine(self) -> str:
+        """Returns the browser engine identifier used for scraping.
+
+        Returns:
+            str: One of ``"playwright"`` or ``"patchright"``.
+        """
+        return self._browser_engine
+
+    @browser_engine.setter
+    def browser_engine(self, value: str) -> None:
+        """Sets the browser engine, validating against the allowed identifiers.
+
+        Args:
+            value: Engine identifier — must be ``"playwright"`` or ``"patchright"``.
+
+        Raises:
+            ValueError: If the value is not a supported engine identifier.
+        """
+        valid = [C_BROWSER_ENGINE_PLAYWRIGHT, C_BROWSER_ENGINE_PATCHRIGHT]
+        if value not in valid:
+            raise InvalidBrowserEngineError(valid)
+        self._browser_engine = value
 
 
 ## END

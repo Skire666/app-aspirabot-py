@@ -69,6 +69,13 @@ C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
 
 ## ---------------------------------------------------------------------------
 
+# Supported browser engine identifiers for the scraping service.
+C_BROWSER_ENGINE_PLAYWRIGHT: str = "playwright"
+C_BROWSER_ENGINE_PATCHRIGHT: str = "patchright"
+C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
+
+## ---------------------------------------------------------------------------
+
 # Temporary folder for browser profiles used during scraping (relative to current working directory)
 # NOTE PCO : truc de dingue, si je mets 'tmp_browser_profiles', ça ne fonctionne pas pour cloudflare
 # je sais pas si c'est une coincidence, mais l'avenir, ne pas réessayer de changer, il n'aime pas.

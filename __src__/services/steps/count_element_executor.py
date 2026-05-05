@@ -6,8 +6,7 @@ from typing import Any
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.count_element_params import CountElementParams
-from playwright.sync_api import Page
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_MS, C_UNITS_TIME_DEFAULT_MODEL
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_MS
 from shared.step_registry import register_executor
 from services.steps._helpers import evaluate_count_condition
 
@@ -22,7 +21,7 @@ class CountElementExecutor(IStepExecutor):
     def default_params_dict(self) -> dict[str, Any]:
         return CountElementParams.default().to_dict()
 
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = CountElementParams.from_dict(params)
         if p.wait_duration > 0:
             ms = p.wait_duration * C_UNITS_TIME_CONVERSION_TO_MS.get(p.wait_unit, 1_000)

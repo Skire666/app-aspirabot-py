@@ -4,7 +4,6 @@ from typing import Any
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.wait_element_params import WaitElementParams
-from playwright.sync_api import Page
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.step_registry import register_executor
 from services.steps._helpers import resolve_timeout_ms
@@ -18,7 +17,7 @@ class WaitElementExecutor(IStepExecutor):
     def default_params_dict(self) -> dict[str, Any]:
         return WaitElementParams.default().to_dict()
 
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = WaitElementParams.from_dict(params)
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         if timeout_ms is not None:

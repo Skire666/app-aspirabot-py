@@ -27,9 +27,12 @@ from services.app_configuration_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
+from services.web_browser_service_patchright import PatchrightBrowserService
+# from services.web_browser_service_playwright import PlaywrightBrowserService
 from services.startup_service import StartupService
 from shared.constants import (
     C_APP_CONFIG_FILE,
+    C_BROWSER_ENGINE_PATCHRIGHT,
     C_TITLE_MODULE_CONFIG,
     C_TITLE_MODULE_FAQ,
     C_TITLE_MODULE_LOGS,
@@ -251,7 +254,11 @@ def _init_scraping_component(
     Returns:
         A (ScrapingPanelView, ScrapingPresenter) tuple.
     """
-    scraping_service = ScrapingService(config_model.folder_scraping)
+    if config_model.browser_engine == C_BROWSER_ENGINE_PATCHRIGHT:
+        browser_service = PatchrightBrowserService(config_model.folder_scraping)
+    else:
+        browser_service = PlaywrightBrowserService(config_model.folder_scraping)
+    scraping_service = ScrapingService(config_model.folder_scraping, browser_service)
     scraping_view = ScrapingPanelView(main_view.content_area)
     scraping_presenter = ScrapingPresenter(view=scraping_view, service=scraping_service)
     return scraping_view, scraping_presenter

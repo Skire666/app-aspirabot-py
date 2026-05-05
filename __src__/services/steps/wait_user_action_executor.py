@@ -5,7 +5,6 @@ from typing import Any
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.wait_user_action_params import WaitUserActionParams
-from playwright.sync_api import Page
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.step_registry import register_executor
 
@@ -20,7 +19,7 @@ class WaitUserActionExecutor(IStepExecutor):
     def default_params_dict(self) -> dict[str, Any]:
         return WaitUserActionParams.default().to_dict()
 
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = WaitUserActionParams.from_dict(params)
         prev_success: bool = params.get("_prev_success", True)
         should_pause = (

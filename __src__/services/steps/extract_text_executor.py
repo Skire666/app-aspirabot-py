@@ -5,7 +5,6 @@ from typing import Any
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.extract_text_params import ExtractTextParams
-from playwright.sync_api import Page
 from shared.step_registry import register_executor
 from services.steps._helpers import extract_from_element
 
@@ -20,7 +19,7 @@ class ExtractTextExecutor(IStepExecutor):
     def default_params_dict(self) -> dict[str, Any]:
         return ExtractTextParams.default().to_dict()
 
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = ExtractTextParams.from_dict(params)
         elements = page.query_selector_all(p.selector)
         if not elements:

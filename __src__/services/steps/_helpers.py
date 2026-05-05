@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 import time
 from typing import Any
-from playwright.sync_api import ElementHandle, Page
-from playwright.sync_api import Error as PlaywrightError
 from shared.constants import C_UNITS_TIME_CONVERSION_TO_MS, C_UNITS_TIME_DEFAULT_MODEL
 
 _logger = logging.getLogger(__name__)
@@ -17,12 +15,12 @@ def resolve_timeout_ms(timeout_duration: int, timeout_unit: str) -> int | None:
     return int(timeout_duration * C_UNITS_TIME_CONVERSION_TO_MS.get(timeout_unit, 1_000))
 
 
-def evaluate_script_with_safe_retry(page: Page, script: str, retries: int, delay: float = 0.300) -> Any:
+def evaluate_script_with_safe_retry(page: Any, script: str, retries: int, delay: float = 0.300) -> Any:
     """Evaluates a JS snippet with retries on PlaywrightError."""
     for attempt in range(1, retries + 1):
         try:
             return page.evaluate(script)
-        except PlaywrightError as exc:
+        except Exception as exc:
             _logger.warning("Script eval failed attempt %d/%d: %s", attempt, retries, exc)
             if attempt == retries:
                 raise
@@ -30,7 +28,7 @@ def evaluate_script_with_safe_retry(page: Page, script: str, retries: int, delay
     return None
 
 
-def extract_from_element(element: ElementHandle, mode: str) -> str:
+def extract_from_element(element: Any, mode: str) -> str:
     """Reads a property from a Playwright ElementHandle."""
     if mode == "textContent":
         return element.text_content() or ""

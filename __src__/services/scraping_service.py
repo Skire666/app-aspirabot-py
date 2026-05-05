@@ -1,13 +1,14 @@
-"""Service for executing a scraping workflow step by step via Playwright.
+"""Service for executing a scraping workflow step by step via a browser service.
 
-Each step type is dispatched through the central step registry. The service
-manages cross-step state (pause, cancel, jump, end-process, image dedup) and
-communicates progress to the presenter via on_step_done.
+Orchestrates the browser lifecycle (via IWebBrowserService), iterates over
+workflow steps, handles pause/cancel/jump signals, and produces a final report.
+All browser-level concerns (launch, stealth, routing) are delegated to the
+injected IWebBrowserService implementation.
 
 Example:
-    >>> import threading
-    >>> service = ScrapingService(folder)
-    >>> pause = threading.Event(); pause.set()
+    >>> from services.web_browser_service_playwright import PlaywrightBrowserService
+    >>> browser = PlaywrightBrowserService(folder)
+    >>> service = ScrapingService(folder, browser)
     >>> report = service.run_workflow(provider, lambda *a: None, threading.Event(), pause)
     >>> isinstance(report, ScrapingReportModel)
     True
@@ -24,52 +25,50 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
-import requests
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import DATETIME_FORMAT, ProviderModel
 from models.scraping_report_model import ScrapingReportModel, StepResultModel
 from models.step_scraping_model import StepScrapingModel
-from playwright.sync_api import Browser, BrowserContext, Page, Playwright, Route, sync_playwright
-from playwright.sync_api import Error as PlaywrightError
 from shared.step_registry import get_executor
 
-from __src__.shared.constants import C_FOLDER_TMP_DATA_BROWSER
-
 ## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
-
-
-_CF_BYPASS_BASE_URL = "http://localhost:8000"
-_CF_BYPASS_WARMUP_TIMEOUT_S = 90  # CF bypass peut prendre jusqu'à ~60s pour résoudre
-
-
-## ---------------------------------------------------------------------------
-## Classes
+## Class
 ## ---------------------------------------------------------------------------
 
 
 class ScrapingService:
-    """Executes a provider workflow step by step via Playwright Chromium.
+    """Executes a provider workflow step by step using a pluggable browser service.
 
-    Step execution is fully delegated to registered IStepExecutor instances.
-    Cross-step state (pending jump, end-process flag, image dedup set) is owned
-    here and injected into the executor via runtime params.
+    All browser concerns are delegated to IWebBrowserService. Cross-step
+    state (pending jump, end-process flag, image dedup set) is owned here
+    and injected into each executor via runtime params.
 
     Example:
-        >>> service = ScrapingService(Path("."))
-        >>> report = service.run_workflow(
-        ...     provider, on_step_done, threading.Event(), threading.Event()
-        ... )
+        >>> from services.web_browser_service_playwright import PlaywrightBrowserService
+        >>> svc = ScrapingService(Path("."), PlaywrightBrowserService(Path(".")))
+        >>> report = svc.run_workflow(provider, on_step_done, cancel, pause)
         >>> isinstance(report, ScrapingReportModel)
         True
     """
 
-    def __init__(self, folder_scraping: Path) -> None:
-        """Initializes the service and its per-run execution state."""
+    def __init__(
+        self,
+        folder_scraping: Path,
+        browser_service: IWebBrowserService,
+    ) -> None:
+        """Initialise the service and its per-run execution state.
+
+        Args:
+            folder_scraping: Working folder forwarded to step executors via
+                the ``_folder`` runtime param key.
+            browser_service: Concrete browser service implementation to use
+                for all browser lifecycle operations.
+        """
         self._logger = logging.getLogger(__name__)
         self._folder_scraping = folder_scraping
+        self._browser_service = browser_service
+
         # Per-run state — reset at the start of each _run_steps call.
         self._prev_step_success: bool = True
         self._pending_jump: str | int | None = None
@@ -78,10 +77,15 @@ class ScrapingService:
         self._step_id_by_index: list[str] = []
         self._step_index_by_id: dict[str, int] = {}
         self._steps_count: int = 0
-        # Run-scoped references stored by run_workflow for stateful steps.
+
+        # Run-scoped references stored for stateful step executors.
         self._pause_event_ref: threading.Event | None = None
         self._cancel_event_ref: threading.Event | None = None
         self._on_user_wait: Callable[[], None] | None = None
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     def run_workflow(
         self,
@@ -91,7 +95,7 @@ class ScrapingService:
         pause_event: threading.Event,
         on_user_wait: Callable[[], None] | None = None,
     ) -> ScrapingReportModel:
-        """Executes all steps of a provider workflow sequentially.
+        """Execute all steps of a provider workflow sequentially.
 
         Args:
             provider: The provider model containing the steps to execute.
@@ -112,164 +116,53 @@ class ScrapingService:
         self._on_user_wait = on_user_wait
         started_at = datetime.now().strftime(DATETIME_FORMAT)
 
-        if provider.automation_obfuscated:
-            self._warmup_cf_bypass(provider.url)
-
-        pw_ctx = sync_playwright()
-        with pw_ctx as pw:
-            context, page = self._launch_browser(pw, provider)
-            try:
-                results, steps_failed = self._run_steps(
-                    page, provider.steps, on_step_done, cancel_event, pause_event
-                )
-            finally:
-                # context.browser is None for persistent contexts, not None for regular ones.
-                _browser: Browser | None = context.browser
-                print("1----------------------------------")
-                print("BROWSER" + str(_browser))
-                print("2----------------------------------")
-                print(context)
-                print("3----------------------------------")
-                print(cancel_event.is_set())
-                print("3----------------------------------")
-                context.close()
-                if _browser is not None:
-                    _browser.close()
+        # Delegate the full browser lifecycle to the injected service.
+        self._browser_service.launch(provider)
+        try:
+            page = self._browser_service.new_page()
+            results, steps_failed = self._run_steps(page, provider.steps, on_step_done, cancel_event, pause_event)
+        finally:
+            self._browser_service.close_browser()
 
         return self._build_report(provider, results, steps_failed, cancel_event.is_set(), started_at)
 
-    def _launch_browser(self, pw: Playwright, provider: ProviderModel) -> tuple[BrowserContext, Page]:
-        """Launches a Chromium browser with optional anti-detection hardening.
-
-        When automation_obfuscated is enabled, uses a persistent browser profile
-        stored on disk so that Cloudflare and similar bot-detection systems see
-        a browser with genuine history rather than a fresh ephemeral context.
-        """
-        headless = not provider.browser_displayed
-        args = []
-
-        if provider.automation_obfuscated:
-            profile_dir = self._get_profile_dir(provider)
-            profile_dir.mkdir(parents=True, exist_ok=True)
-
-            ext_dir = self._folder_scraping.parent / "extensions" / "ublock_origin_lite"
-            if ext_dir.is_dir():
-                ext_path = str(ext_dir.resolve())
-                args += [
-                    f"--load-extension={ext_path}",
-                    f"--disable-extensions-except={ext_path}",
-                ]
-
-            context: BrowserContext = pw.chromium.launch_persistent_context(
-                user_data_dir=str(profile_dir),
-                headless=headless,
-                args=args,
-            )
-        else:
-            browser: Browser = pw.chromium.launch(headless=headless)
-            context = browser.new_context()
-
-        page: Page = context.new_page()
-        if provider.automation_obfuscated:
-            hostname = urlparse(provider.url).netloc
-            if hostname:
-                self._setup_cf_bypass_routing(page, hostname)
-            page.goto("https://www.google.com", wait_until="networkidle")
-        return context, page
-
-    def _get_profile_dir(self, provider: ProviderModel) -> Path:
-        """Returns the persistent browser profile directory for a provider."""
-        return self._folder_scraping.parent / C_FOLDER_TMP_DATA_BROWSER / provider.id_file
-
-    def _warmup_cf_bypass(self, url: str) -> None:
-        """Pré-chauffe le service CF bypass pour mettre en cache les cookies Cloudflare.
-
-        Le premier appel peut durer jusqu'à ~60 s le temps que le bypass resolve le
-        challenge. Les appels suivants utilisent les cookies en cache.
-        """
-        parsed = urlparse(url)
-        hostname = parsed.netloc
-        if not hostname:
-            return
-        path = parsed.path or "/"
-        proxy_url = f"{_CF_BYPASS_BASE_URL}{path}"
-        self._logger.info("CF bypass warm-up → %s (hostname: %s)", proxy_url, hostname)
-        try:
-            resp = requests.get(
-                proxy_url,
-                headers={"x-hostname": hostname},
-                timeout=_CF_BYPASS_WARMUP_TIMEOUT_S,
-            )
-            self._logger.info("CF bypass warm-up terminé : HTTP %s", resp.status_code)
-        except requests.RequestException as exc:
-            self._logger.warning("CF bypass warm-up échoué : %s", exc)
-
-    def _setup_cf_bypass_routing(self, page: Page, hostname: str) -> None:
-        """Intercepte toutes les requêtes vers hostname et les miroire via CF bypass.
-
-        Chaque requête Playwright vers le domaine cible est redirigée vers
-        http://localhost:8004<path> avec le header ``x-hostname`` positionné sur le
-        hostname d'origine. Le service CF bypass gère les cookies et le fingerprint TLS.
-        En cas d'erreur de proxy, la requête passe en direct (fallback).
-        """
-
-        def _handle(route: Route) -> None:
-            req = route.request
-            parsed = urlparse(req.url)
-            path_qs = parsed.path + (f"?{parsed.query}" if parsed.query else "")
-            proxy_url = f"{_CF_BYPASS_BASE_URL}{path_qs}"
-            headers = {k: v for k, v in req.headers.items() if k.lower() != "host"}
-            headers["x-hostname"] = hostname
-            try:
-                resp = requests.request(
-                    method=req.method,
-                    url=proxy_url,
-                    headers=headers,
-                    data=req.post_data_buffer,
-                    allow_redirects=False,
-                    timeout=60,
-                )
-                route.fulfill(
-                    status=resp.status_code,
-                    headers=dict(resp.headers),
-                    body=resp.content,
-                )
-            except requests.RequestException as exc:
-                self._logger.warning("CF bypass route error [%s]: %s", req.url, exc)
-                route.continue_()
-
-        page.route(f"**://{hostname}/**", _handle)
-        page.route(f"**://{hostname}", _handle)
+    # ------------------------------------------------------------------
+    # Step iteration
+    # ------------------------------------------------------------------
 
     def _run_steps(
         self,
-        page: Page,
+        page: Any,
         steps: list[StepScrapingModel],
         on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
         cancel_event: threading.Event,
         pause_event: threading.Event,
     ) -> tuple[list[StepResultModel], int]:
-        """Iterates over steps, executes each one, and notifies the caller.
+        """Iterate over steps, execute each, and notify the caller.
 
         Supports non-sequential execution via JUMP_TO_STEP and early
         termination via END_PROCESS. Blocks between steps when pause_event
         is cleared.
+
+        Args:
+            page: The active browser page.
+            steps: Ordered list of scraping steps to run.
+            on_step_done: Progress callback.
+            cancel_event: Abort signal.
+            pause_event: Pause/resume signal.
+
+        Returns:
+            A ``(results, steps_failed)`` tuple.
         """
+        self._reset_run_state(steps)
         results: list[StepResultModel] = []
         steps_failed = 0
-        self._prev_step_success = True
-        self._pending_jump = None
-        self._end_process_requested = False
-        self._downloaded_image_urls = set()
-        # Cache step_id mappings for JUMP_TO_STEP resolution.
-        self._step_id_by_index = [step.step_id for step in steps]
-        self._step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
-        self._steps_count = len(steps)
         i = 0
 
         while i < len(steps):
             if cancel_event.is_set():
                 break
+            # Block here while the run is paused.
             pause_event.wait()
             if cancel_event.is_set():
                 break
@@ -282,88 +175,169 @@ class ScrapingService:
 
         return results, steps_failed
 
+    def _reset_run_state(self, steps: list[StepScrapingModel]) -> None:
+        """Reset all per-run mutable state before a new workflow execution.
+
+        Args:
+            steps: The full ordered list of steps for the upcoming run.
+
+        Returns:
+            None.
+        """
+        self._prev_step_success = True
+        self._pending_jump = None
+        self._end_process_requested = False
+        self._downloaded_image_urls = set()
+
+        # Build fast-lookup maps used by JUMP_TO_STEP resolution.
+        self._step_id_by_index = [step.step_id for step in steps]
+        self._step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
+        self._steps_count = len(steps)
+
     def _run_one_step(
         self,
-        page: Page,
+        page: Any,
         step: StepScrapingModel,
         index: int,
         on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
     ) -> tuple[int, StepResultModel]:
-        """Executes one step, fires the callback, and returns (next_index, result)."""
+        """Execute one step, fire the callback, and return the next index.
+
+        Args:
+            page: The active browser page.
+            step: The step model to execute.
+            index: Zero-based position of this step in the workflow.
+            on_step_done: Callback to notify the presenter on completion.
+
+        Returns:
+            A ``(next_index, StepResultModel)`` tuple.
+        """
         start = time.time()
         success, message = self._execute_step(page, step)
         elapsed = time.time() - start
+
         on_step_done(index, step, success, message, elapsed)
         result = StepResultModel(index, step.step_type.value, success, message, time_elapsed=elapsed)
 
-        if self._pending_jump is not None:
-            next_index = self._resolve_jump_index(self._pending_jump, index)
-            self._pending_jump = None
-        else:
-            next_index = index + 1
+        # Resolve any pending jump or simply advance to the next step.
+        next_index = self._consume_pending_jump(index)
         self._prev_step_success = success
         return next_index, result
 
+    def _consume_pending_jump(self, current_index: int) -> int:
+        """Resolve and clear any pending JUMP_TO_STEP signal.
+
+        Args:
+            current_index: The index of the step that just executed.
+
+        Returns:
+            The resolved next step index.
+        """
+        if self._pending_jump is None:
+            return current_index + 1
+
+        # Resolve the target and clear the signal before returning.
+        next_index = self._resolve_jump_index(self._pending_jump, current_index)
+        self._pending_jump = None
+        return next_index
+
     def _resolve_jump_index(self, pending_jump: str | int, current_index: int) -> int:
-        """Resolves a pending jump target into a valid workflow index."""
+        """Resolve a pending jump target into a valid workflow index.
+
+        Args:
+            pending_jump: Either a numeric index or a step_id string.
+            current_index: Fallback when the target is invalid.
+
+        Returns:
+            A valid step index to jump to.
+        """
         if isinstance(pending_jump, int):
             if 0 <= pending_jump < self._steps_count:
                 return pending_jump
-            self._logger.warning("JUMP_TO_STEP : index invalide %s.", pending_jump)
+            self._logger.warning("JUMP_TO_STEP: invalid index %s.", pending_jump)
             return current_index + 1
+
         if isinstance(pending_jump, str):
+            # Look up the step_id in the pre-built map.
             next_index = self._step_index_by_id.get(pending_jump)
             if next_index is not None:
                 return next_index
-            self._logger.warning("JUMP_TO_STEP : step_id introuvable %s.", pending_jump)
-            return current_index + 1
+            self._logger.warning("JUMP_TO_STEP: step_id not found %s.", pending_jump)
+
         return current_index + 1
 
-    def _execute_step(self, page: Page, step: StepScrapingModel) -> tuple[bool, str]:
-        """Dispatches a step to its registered executor and converts exceptions.
+    # ------------------------------------------------------------------
+    # Step execution
+    # ------------------------------------------------------------------
 
-        Enriches params with runtime context keys (_prev_success, _folder, etc.)
-        so stateful executors (JUMP_TO_STEP, WAIT_USER_ACTION, …) can read and
-        write cross-step state without coupling to ScrapingService internals.
+    def _execute_step(self, page: Any, step: StepScrapingModel) -> tuple[bool, str]:
+        """Dispatch a step to its registered executor and convert exceptions.
+
+        Args:
+            page: The active browser page.
+            step: The step model to execute.
+
+        Returns:
+            A ``(success, message)`` tuple.
         """
+        if not step.is_active:
+            return True, "SKIP"
+
+        runtime_params = self._build_runtime_params(step)
         try:
-            if not step.is_active:
-                return True, "SKIP"
-
-            # Build a mutable copy enriched with runtime context.
-            runtime_params: dict[str, Any] = dict(step.params)
-            runtime_params.update(
-                {
-                    "_prev_success": self._prev_step_success,
-                    "_folder": self._folder_scraping,
-                    "_downloaded_urls": self._downloaded_image_urls,
-                    "_self_step_id": step.step_id,
-                    "_step_id_by_index": self._step_id_by_index,
-                    "_step_index_by_id": self._step_index_by_id,
-                    "_pause_event": self._pause_event_ref,
-                    "_cancel_event": self._cancel_event_ref,
-                    "_on_user_wait": self._on_user_wait,
-                }
-            )
-
             get_executor(step.step_type).execute(page, runtime_params)
-
-            # Read back output signals set by stateful executors.
-            if runtime_params.get("_pending_jump") is not None:
-                self._pending_jump = runtime_params["_pending_jump"]
-            if runtime_params.get("_end_process"):
-                self._end_process_requested = True
-
+            # Read back output signals written by stateful executors.
+            self._read_back_output_signals(runtime_params)
+        except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors
+            return False, f"Unexpected error: {exc}"
+        else:
             return True, "OK"
 
-        except PlaywrightError as exc:
-            return False, f"Playwright error: {exc}"
-        except (ValueError, TimeoutError) as exc:
-            return False, f"Step error: {exc}"
-        except FileNotFoundError as exc:
-            return False, f"File error: {exc}"
-        except Exception as exc:
-            return False, f"Unexpected error: {exc}"
+    def _build_runtime_params(self, step: StepScrapingModel) -> dict[str, Any]:
+        """Build a runtime-enriched parameter dict for the step executor.
+
+        Args:
+            step: The step model providing base params and metadata.
+
+        Returns:
+            A mutable dict combining step params and injected runtime keys.
+        """
+        runtime_params: dict[str, Any] = dict(step.params)
+
+        # Inject cross-step state and run-scoped references.
+        runtime_params.update(
+            {
+                "_prev_success": self._prev_step_success,
+                "_folder": self._folder_scraping,
+                "_downloaded_urls": self._downloaded_image_urls,
+                "_self_step_id": step.step_id,
+                "_step_id_by_index": self._step_id_by_index,
+                "_step_index_by_id": self._step_index_by_id,
+                "_pause_event": self._pause_event_ref,
+                "_cancel_event": self._cancel_event_ref,
+                "_on_user_wait": self._on_user_wait,
+            }
+        )
+        return runtime_params
+
+    def _read_back_output_signals(self, runtime_params: dict[str, Any]) -> None:
+        """Read stateful output signals written back by executors into params.
+
+        Args:
+            runtime_params: The enriched params dict after executor.execute().
+
+        Returns:
+            None.
+        """
+        # Stateful executors write these keys to communicate with the orchestrator.
+        if runtime_params.get("_pending_jump") is not None:
+            self._pending_jump = runtime_params["_pending_jump"]
+        if runtime_params.get("_end_process"):
+            self._end_process_requested = True
+
+    # ------------------------------------------------------------------
+    # Report assembly
+    # ------------------------------------------------------------------
 
     def _build_report(
         self,
@@ -373,7 +347,18 @@ class ScrapingService:
         cancelled: bool,
         started_at: str,
     ) -> ScrapingReportModel:
-        """Assembles the final ScrapingReportModel from collected run data."""
+        """Assemble the final ScrapingReportModel from collected run data.
+
+        Args:
+            provider: The executed provider model.
+            results: Per-step result records collected during the run.
+            steps_failed: Count of steps that returned a failure.
+            cancelled: True if the run was aborted via ``cancel_event``.
+            started_at: ISO-formatted run start timestamp.
+
+        Returns:
+            A fully populated ScrapingReportModel.
+        """
         finished_at = datetime.now().strftime(DATETIME_FORMAT)
         return ScrapingReportModel(
             provider_name=provider.provider_name,

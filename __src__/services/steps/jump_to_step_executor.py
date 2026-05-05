@@ -7,7 +7,6 @@ from typing import Any
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.jump_to_step_params import JumpToStepParams
-from playwright.sync_api import Page
 from shared.step_registry import register_executor
 
 
@@ -31,7 +30,7 @@ class JumpToStepExecutor(IStepExecutor):
                 return str(step_id_by_index.get(raw_target, ""))
         return ""
 
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = JumpToStepParams.from_dict(params)
         prev_success: bool = params.get("_prev_success", True)
         should_jump = (

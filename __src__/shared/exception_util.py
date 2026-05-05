@@ -106,6 +106,11 @@ class InvalidGuiBootingSizeError(AspirabotError):
         super().__init__("Invalid GUI booting size. Must be in format 'WIDTHxHEIGHT' with numeric values.")
 
 
+class InvalidBrowserEngineError(AspirabotError):
+    def __init__(self, valid_engines: list[str]):
+        super().__init__(f"Invalid browser engine. Valid options are: {', '.join(valid_engines)}.")
+
+
 class FailedToLoadConfigurationDuringRuntimeError(AspirabotError):
     def __init__(self):
         super().__init__("Failed to load configuration during runtime.")

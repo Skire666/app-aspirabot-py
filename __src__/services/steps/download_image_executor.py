@@ -11,8 +11,6 @@ from urllib.parse import urljoin
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.download_image_params import DownloadImageParams
-from playwright.sync_api import Error as PlaywrightError
-from playwright.sync_api import Page
 from services.steps._helpers import evaluate_script_with_safe_retry
 from shared.path_util import make_all_folders_if_not_exists
 from shared.step_registry import register_executor
@@ -24,7 +22,7 @@ def _extract_bounds(p: DownloadImageParams) -> dict[str, int]:
     return {"h_min": p.height_min, "h_max": p.height_max, "w_min": p.width_min, "w_max": p.width_max}
 
 
-def _get_filtered_images(page: Page, bounds: dict[str, int]) -> list[dict[str, Any]]:
+def _get_filtered_images(page: Any, bounds: dict[str, int]) -> list[dict[str, Any]]:
     h_min, h_max = bounds["h_min"], bounds["h_max"]
     w_min, w_max = bounds["w_min"], bounds["w_max"]
     script = """
@@ -54,7 +52,7 @@ class DownloadImageExecutor(IStepExecutor):
     def default_params_dict(self) -> dict[str, Any]:
         return DownloadImageParams.default().to_dict()
 
-    def execute(self, page: Page, params: dict[str, Any]) -> None:
+    def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = DownloadImageParams.from_dict(params)
         folder: Path = params.get("_folder", Path())
         downloaded_urls: set[str] = params.get("_downloaded_urls", set())
@@ -79,7 +77,7 @@ class DownloadImageExecutor(IStepExecutor):
                 headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")},
             )
             if not response.ok:
-                raise PlaywrightError(f"Failed to download image: HTTP {response.status}")
+                raise ValueError(f"Failed to download image: HTTP {response.status}")
             url_path = full_url.split("?")[0]
             suffix = Path(url_path).suffix or ".jpg"
             filename = (

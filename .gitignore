@@ -3,6 +3,7 @@ tmp_app_logs/
 data_scraping/
 data_providers/
 browser_profiles/
+browser_profile/
 extensions/
 config-aspirabot.json
 
