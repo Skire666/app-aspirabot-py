@@ -30,7 +30,7 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 ## ---------------------------------------------------------------------------
 
 
-class PlaywrightBrowserService(IWebBrowserService):
+class BrowserService(IWebBrowserService):
     """Playwright + playwright-stealth browser service for scraping workflows.
 
     Handles Chromium launch with optional anti-detection hardening, stealth
@@ -111,20 +111,28 @@ class PlaywrightBrowserService(IWebBrowserService):
         Returns:
             None.
         """
-        # Close in reverse-creation order: context → browser → playwright.
-        if self._context is not None:
-            self._context.close()
-            self._context = None
+        try:
+            # Close in reverse-creation order: context → browser → playwright.
+            if self._context is not None:
+                self._context.close()
+                self._context = None
 
-        if self._browser is not None:
-            self._browser.close()
-            self._browser = None
+            if self._browser is not None:
+                self._browser.close()
+                self._browser = None
 
-        if self._pw is not None:
-            self._pw.stop()
-            self._pw = None
+            if self._pw is not None:
+                self._pw.stop()
+                self._pw = None
 
-        self._provider = None
+            self._provider = None
+
+            is_closed = self.is_launched
+            self._logger.info(f"Browser closed successfully. is_launched={is_closed}")
+
+        except Exception as e:
+            self._logger.error(f"Error while closing browser: {e}")
+            # Don't re-raise; we want to ensure all resources are attempted to be cleaned up
 
     @property
     def is_launched(self) -> bool:

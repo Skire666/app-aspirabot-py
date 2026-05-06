@@ -27,7 +27,7 @@ from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
-from services.web_browser_service_playwright import PlaywrightBrowserService
+from services.web_browser_service import BrowserService
 from shared.constants import (
     C_APP_CONFIG_FILE,
     C_BROWSER_ENGINE_PLAYWRIGHT,
@@ -253,7 +253,7 @@ def _init_scraping_component(
         A (ScrapingPanelView, ScrapingPresenter) tuple.
     """
     if config_model.browser_engine == C_BROWSER_ENGINE_PLAYWRIGHT:
-        browser_service = PlaywrightBrowserService(config_model.folder_scraping)
+        browser_service = BrowserService(config_model.folder_scraping)
     else:
         raise Exception(f"Unsupported browser engine: {config_model.browser_engine}")
     scraping_service = ScrapingService(config_model.folder_scraping, browser_service)
