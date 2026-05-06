@@ -462,10 +462,6 @@ class WorkflowListView(ttk.Frame):
         self._update_dnd_window_geometry()
         self._bind_dnd_canvas_scroll()
 
-    def _on_dnd_canvas_configure(self, _: tk.Event) -> None:
-        """Refreshes the workflow list when the internal canvas gets its final size."""
-        self._update_dnd_window_geometry()
-
     def _on_scroll_canvas_configure(self, _: tk.Event) -> None:
         # Outer canvas resized: ensure DragDropList window fills the new dimensions.
         self._update_dnd_window_geometry()
@@ -481,7 +477,7 @@ class WorkflowListView(ttk.Frame):
         h = max(dnd_h, canvas_h)
         self._scroll_canvas.itemconfig(self._scroll_win, width=w, height=h)
         self._scroll_canvas.configure(scrollregion=(0, 0, w, h))
-        self._dnd_list.redraw_visible(force=True)
+        self._dnd_list.redraw_visible()
 
     def _get_dnd_viewport(self) -> tuple[int, int]:
         """Returns the visible viewport bounds in DragDropList coordinates."""
@@ -509,7 +505,6 @@ class WorkflowListView(ttk.Frame):
         def disable(_: tk.Event) -> None:
             self._scroll_canvas.unbind_all("<MouseWheel>")
 
-        self._dnd_list.canvas.bind("<Configure>", self._on_dnd_canvas_configure, add="+")
         self._dnd_list.canvas.bind("<Enter>", enable)
         self._dnd_list.canvas.bind("<Leave>", disable, add="+")
 
@@ -554,9 +549,3 @@ class WorkflowListView(ttk.Frame):
     def _hide_toast(self) -> None:
         """Hides the toast notification label."""
         self._toast_label.grid_remove()
-
-    def _scroll_steps_to_top(self) -> None:
-        """Resets the workflow list scrollbar to the top."""
-        if hasattr(self, "_scroll_canvas") and self._scroll_canvas is not None:
-            self._scroll_canvas.yview_moveto(0)
-            self._dnd_list.redraw_visible(force=True)
