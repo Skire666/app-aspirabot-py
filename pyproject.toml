@@ -153,4 +153,8 @@ testpaths = ["__tests__"]
 # Verbosity level (2 = detailed, displays each test individually).
 verbosity = 2
 
+# Add __src__ to sys.path so tests can import from the source tree
+# without the __src__ prefix (mirrors how main.py is run).
+pythonpath = ["__src__"]
+
 ## END

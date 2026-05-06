@@ -24,7 +24,7 @@ from typing import Any
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
 from shared.random_util import generate_rng_hexastring
-from shared.step_registry import get_all_labels, get_form
+from shared.step_registry import get_form
 
 ## ---------------------------------------------------------------------------
 ## Step type label tables (kept for external consumers)
@@ -43,7 +43,7 @@ STEP_TYPE_LABELS: dict[StepType, str] = {
     StepType.CLICK_ELEMENT: "Cliquer sur un élément",
     StepType.SCROLL_DOWN: "Défiler vers le bas",
     StepType.EXTRACT_TEXT: "Extraire contenu textuel",
-    StepType.JUMP_TO_STEP: "Si OK/KO, se rendre à ...",
+    StepType.JUMP_TO_STEP: "Si l'étape d'avant est un...",
     StepType.CLOSE_TABS: "Fermer des onglets",
     StepType.END_PROCESS: "Fin du processus",
     StepType.WAIT_USER_ACTION: "Attendre action utilisateur",

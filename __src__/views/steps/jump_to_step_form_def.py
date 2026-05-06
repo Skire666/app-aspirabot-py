@@ -23,7 +23,7 @@ _STEP_LABELS: dict[StepType, str] = {
     StepType.CLICK_ELEMENT: "Cliquer sur un élément",
     StepType.SCROLL_DOWN: "Défiler vers le bas",
     StepType.EXTRACT_TEXT: "Extraire contenu textuel",
-    StepType.JUMP_TO_STEP: "Si OK/KO, se rendre à ...",
+    StepType.JUMP_TO_STEP: "Si l'étape d'avant est un...",
     StepType.CLOSE_TABS: "Fermer des onglets",
     StepType.END_PROCESS: "Fin du processus",
     StepType.WAIT_USER_ACTION: "Attendre action utilisateur",
