@@ -24,6 +24,9 @@ from views.steps._constants import (
     safe_int_widget,
 )
 
+C_INPUT_DEFAULT_POST_WAIT_DURATION: int = 3
+C_INPUT_DEFAULT_CONDITION: str = CONDITION_DISPLAY[-1]  # "Toujours"
+
 
 class WaitUserActionFormDef(IStepFormDef):
     @classmethod
@@ -38,7 +41,7 @@ class WaitUserActionFormDef(IStepFormDef):
         frame.columnconfigure(1, weight=1)
 
         ttk.Label(frame, text="Condition:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
-        cond_var = tk.StringVar(value=CONDITION_DISPLAY[2])
+        cond_var = tk.StringVar(value=C_INPUT_DEFAULT_CONDITION)
         ttk.Combobox(frame, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").grid(
             row=0, column=1, sticky="ew", padx=5, pady=4
         )
@@ -47,7 +50,7 @@ class WaitUserActionFormDef(IStepFormDef):
         delay_frame = ttk.Frame(frame)
         delay_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
         ttk.Label(delay_frame, text="Délai post-reprise :").pack(side=tk.LEFT, padx=(0, 4))
-        dur_var = tk.StringVar(value="0")
+        dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_POST_WAIT_DURATION))
         ttk.Spinbox(delay_frame, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
@@ -61,9 +64,9 @@ class WaitUserActionFormDef(IStepFormDef):
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["condition"].set(
-            CONDITION_MODEL_TO_VIEW.get(params.get("condition", "always"), CONDITION_DISPLAY[2])
+            CONDITION_MODEL_TO_VIEW.get(params.get("condition", "always"), C_INPUT_DEFAULT_CONDITION)
         )
-        widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
+        widgets["wait_duration"].set(str(params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)))
         widgets["wait_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
@@ -73,7 +76,7 @@ class WaitUserActionFormDef(IStepFormDef):
     def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(widgets["condition"].get(), "always"),
-            "wait_duration": safe_int_widget(widgets, "wait_duration", 0),
+            "wait_duration": safe_int_widget(widgets, "wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION),
             "wait_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["wait_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
@@ -86,7 +89,7 @@ class WaitUserActionFormDef(IStepFormDef):
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         cond_labels = {"success": "Si succès", "failure": "Si échec", "always": "Toujours"}
         condition = cond_labels.get(params.get("condition", "always"), "toujours")
-        wd = params.get("wait_duration", 0)
+        wd = params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)
         unit_time = params.get("wait_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 

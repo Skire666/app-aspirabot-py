@@ -63,39 +63,44 @@ class OpenUrlFormDef(IStepFormDef):
 
     def _build_subform_timeout(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the timeout controls."""
-        timeout_frame = ttk.Frame(frame)
-        timeout_frame.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+        line3 = ttk.Frame(frame)
+        line3.pack(fill="x", pady=4)
 
         # timeout duration
-        ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(line3, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
-        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
+        ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
 
         ttk.Combobox(
-            timeout_frame, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
+            line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
         widgets["timeout_duration"] = td_var
         widgets["timeout_unit"] = tu_var
 
     def _build_subform_wait_state(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the wait-state selector."""
-        ttk.Label(frame, text="L'état à attendre :").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+        line2 = ttk.Frame(frame)
+        line2.pack(fill="x", pady=2)
+
+        ttk.Label(line2, text="L'état à attendre :").pack(side=tk.LEFT, padx=(0, 4))
         ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_STATE)
-        ttk.Combobox(frame, textvariable=ws_var, values=WAIT_STATES, state="readonly").grid(
-            row=1, column=1, sticky="ew", padx=5, pady=4
+        ttk.Combobox(line2, textvariable=ws_var, values=WAIT_STATES, state="readonly").pack(
+            side=tk.LEFT, padx=5, pady=4
         )
-        ttk.Label(frame, text="(dom >load >idle)").grid(row=1, column=2, sticky="w", padx=5, pady=4)
+        ttk.Label(line2, text="(dom >load >idle)").pack(side=tk.LEFT, padx=(0, 4))
         widgets["wait_state"] = ws_var
 
     def _build_subform_url(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the URL input field."""
-        ttk.Label(frame, text="URL:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        line1 = ttk.Frame(frame)
+        line1.pack(fill="x", pady=2)
+
+        ttk.Label(line1, text="URL : ").pack(side=tk.LEFT, padx=(0, 4))
         url_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
-        ttk.Entry(frame, textvariable=url_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Entry(line1, textvariable=url_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["url"] = url_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:

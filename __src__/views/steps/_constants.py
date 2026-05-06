@@ -51,7 +51,7 @@ CLICK_MODES: list[str] = ["Normal", "Forced", "JS Direct"]
 ## JUMP_TO_STEP condition display / model mappings
 ## ---------------------------------------------------------------------------
 
-CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]
+CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]  ## GARDER 'Toujours' à la fin
 CONDITION_VALUES: list[str] = ["success", "failure", "always"]
 CONDITION_VIEW_TO_MODEL: dict[str, str] = dict(zip(CONDITION_DISPLAY, CONDITION_VALUES))
 CONDITION_MODEL_TO_VIEW: dict[str, str] = dict(zip(CONDITION_VALUES, CONDITION_DISPLAY))
@@ -85,24 +85,22 @@ EXTRACT_TARGET_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_TARGET_VALUES, E
 ## ---------------------------------------------------------------------------
 
 COUNT_OP_DISPLAY: list[str] = [
-    "compris entre",
-    "non compris entre",
     "égale à",
+    "compris entre",
     "différent de",
-    "supérieur à",
     "inférieur à",
-    "supérieur ou égal à",
+    "supérieur à",
     "inférieur ou égal à",
+    "supérieur ou égal à",
 ]
 COUNT_OP_VALUES: list[str] = [
-    "between",
-    "not_between",
     "equal",
+    "between",
     "not_equal",
-    "greater_than",
     "less_than",
-    "greater_or_equal",
+    "greater_than",
     "less_or_equal",
+    "greater_or_equal",
 ]
 COUNT_OP_VIEW_TO_MODEL: dict[str, str] = dict(zip(COUNT_OP_DISPLAY, COUNT_OP_VALUES))
 COUNT_OP_MODEL_TO_VIEW: dict[str, str] = dict(zip(COUNT_OP_VALUES, COUNT_OP_DISPLAY))

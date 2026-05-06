@@ -27,6 +27,8 @@ from views.steps._constants import (
     safe_int_widget,
 )
 
+C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+
 
 class CountElementFormDef(IStepFormDef):
     def __init__(self) -> None:
@@ -43,49 +45,50 @@ class CountElementFormDef(IStepFormDef):
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         self._form_widgets_ref = widgets
-        frame.columnconfigure(1, weight=1)
 
-        # Row 0 — pre-wait
-        wait_frame = ttk.Frame(frame)
-        wait_frame.grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=4)
-        ttk.Label(wait_frame, text="Attendre ").pack(side=tk.LEFT, padx=(0, 4))
+        # ROW 0 — pre-wait
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=2)
+
+        ttk.Label(row0, text="Attendre avant évaluation : ").pack(side=tk.LEFT, padx=(5, 4))
         wd_var = tk.StringVar(value="0")
-        ttk.Spinbox(wait_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=wd_var, width=7).pack(
+        ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=wd_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
         wu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            wait_frame, textvariable=wu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
+            row0, textvariable=wu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(wait_frame, text=" avant de lancer l'évaluation (0 = immédiat)").pack(side=tk.LEFT)
+        ttk.Label(row0, text="(0 = immédiat)").pack(side=tk.LEFT)
         widgets["wait_duration"] = wd_var
         widgets["wait_unit"] = wu_var
 
-        # Row 1 — CSS selector
-        ttk.Label(frame, text="Sélecteur CSS:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
-        sel_var = tk.StringVar()
-        ttk.Entry(frame, textvariable=sel_var).grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        # ROW 1 — CSS selector
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=2)
+
+        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(5, 5))
+        sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
+        ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
 
-        # Row 2 — success_if + operator + dynamic value area
-        result_frame = ttk.Frame(frame)
-        result_frame.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=4)
-        ttk.Label(result_frame, text="Est un").pack(side=tk.LEFT, padx=(0, 4))
+        # ROW 2 — success_if + operator + dynamic value area
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=4)
+
         si_var = tk.StringVar(value=COUNT_SUCCESS_IF_DISPLAY[0])
-        ttk.Combobox(
-            result_frame, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8
-        ).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(result_frame, text="si le résultat est ").pack(side=tk.LEFT, padx=(4, 0))
+        ttk.Combobox(row2, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8).pack(
+            side=tk.LEFT, padx=(5)
+        )
+        ttk.Label(row2, text="si").pack(side=tk.LEFT, padx=(5))
         widgets["success_if"] = si_var
 
-        op_var = tk.StringVar(value=COUNT_OP_DISPLAY[2])
-        op_cb = ttk.Combobox(
-            result_frame, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18
-        )
+        op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])  # supérieur ou égal
+        op_cb = ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18)
         op_cb.pack(side=tk.LEFT, padx=(0, 6))
         widgets["operator"] = op_var
 
-        self._value_area_frame = ttk.Frame(result_frame)
+        self._value_area_frame = ttk.Frame(row2)
         self._value_area_frame.pack(side=tk.LEFT)
         self._rebuild_value_area(COUNT_OP_DISPLAY[2])
         op_cb.bind("<<ComboboxSelected>>", lambda _: self._rebuild_value_area(op_var.get()))
@@ -99,12 +102,11 @@ class CountElementFormDef(IStepFormDef):
             self._form_widgets_ref.pop(key, None)
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
         if op_value in {"between", "not_between"}:
-            ttk.Label(self._value_area_frame, text="min").pack(side=tk.LEFT, padx=(0, 2))
             vmin_var = tk.StringVar(value="0")
             ttk.Spinbox(
                 self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmin_var, width=7
             ).pack(side=tk.LEFT, padx=(0, 6))
-            ttk.Label(self._value_area_frame, text="max").pack(side=tk.LEFT, padx=(0, 2))
+            ttk.Label(self._value_area_frame, text=" et ").pack(side=tk.LEFT)
             vmax_var = tk.StringVar(value="0")
             ttk.Spinbox(
                 self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmax_var, width=7
@@ -121,7 +123,7 @@ class CountElementFormDef(IStepFormDef):
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         self._form_widgets_ref = widgets
-        widgets["selector"].set(params.get("selector", ""))
+        widgets["selector"].set(params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
         unit_model = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
         widgets["wait_unit"].set(WAIT_UNIT_MODEL_TO_VIEW.get(unit_model, C_UNITS_TIME_DEFAULT_VIEW))
@@ -177,7 +179,6 @@ class CountElementFormDef(IStepFormDef):
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         op_labels = {
             "between": "compris entre",
-            "not_between": "non compris entre",
             "equal": "==",
             "not_equal": "!=",
             "greater_than": ">",

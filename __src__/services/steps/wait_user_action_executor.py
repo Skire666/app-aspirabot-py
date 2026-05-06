@@ -1,7 +1,10 @@
 """IStepExecutor for WAIT_USER_ACTION."""
+
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.wait_user_action_params import WaitUserActionParams

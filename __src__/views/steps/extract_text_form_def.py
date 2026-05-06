@@ -18,6 +18,8 @@ from views.steps._constants import (
     EXTRACT_TARGET_VIEW_TO_MODEL,
 )
 
+C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+
 
 class ExtractTextFormDef(IStepFormDef):
     @classmethod
@@ -29,24 +31,35 @@ class ExtractTextFormDef(IStepFormDef):
         return "Extraire contenu textuel"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Sélecteur CSS:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
-        sel_var = tk.StringVar()
-        ttk.Entry(frame, textvariable=sel_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        # ROW 0
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=4)
+
+        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(5, 5))
+        sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
+        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
 
-        ttk.Label(frame, text="Mode d'extraction:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+        # ROW 1
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=4)
+
+        ttk.Label(row1, text="Mode d'extraction : ").pack(side=tk.LEFT, padx=(5, 5))
         mode_var = tk.StringVar(value=EXTRACT_MODE_DISPLAY[0])
-        ttk.Combobox(frame, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").grid(
-            row=1, column=1, sticky="ew", padx=5, pady=4
+        ttk.Combobox(row1, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").pack(
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["extract_mode"] = mode_var
 
-        ttk.Label(frame, text="Cible:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
+        # ROW 2
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=4)
+
+        ttk.Label(row2, text="Cible : ").pack(side=tk.LEFT, padx=(5, 5))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[0])
-        ttk.Combobox(frame, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").grid(
-            row=2, column=1, sticky="ew", padx=5, pady=4
+        ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["target"] = target_var
 

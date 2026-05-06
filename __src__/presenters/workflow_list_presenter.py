@@ -174,7 +174,6 @@ class WorkflowListPresenter:
 
         # Abort and surface the first error without closing the form.
         if errors:
-            self._view.show_toast(errors[0], level="error")
             return
 
         if self._edit_index is None:

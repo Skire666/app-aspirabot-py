@@ -1,8 +1,11 @@
 """IStepFormDef for REFRESH_PAGE."""
+
 from __future__ import annotations
+
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
+
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
 from shared.step_registry import register_form
@@ -20,7 +23,9 @@ class RefreshPageFormDef(IStepFormDef):
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         cache_var = tk.BooleanVar(value=False)
-        CanvasCheckbox(frame, text="Vider le cache", variable=cache_var).grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        CanvasCheckbox(frame, text="Vider le cache (Ctrl + F5)", variable=cache_var).grid(
+            row=0, column=0, sticky="w", padx=5, pady=4
+        )
         widgets["clear_cache"] = cache_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:

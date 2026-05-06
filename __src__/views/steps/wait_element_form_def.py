@@ -17,41 +17,54 @@ from shared.constants import (
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
+C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
+
 
 class WaitElementFormDef(IStepFormDef):
+    """Form definition for waiting until an element is present."""
+
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the StepType handled by this form."""
         return StepType.WAIT_ELEMENT
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return "Présence d'un élément"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        frame.columnconfigure(1, weight=1)
-        ttk.Label(frame, text="Sélecteur CSS:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
-        sel_var = tk.StringVar()
-        ttk.Entry(frame, textvariable=sel_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        """Build the selector and timeout widgets into the given frame."""
+        frame.columnconfigure(0, weight=1)
+
+        selector_frame = ttk.Frame(frame)
+        selector_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=5, pady=4)
+
+        ttk.Label(selector_frame, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
+        sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
+        ttk.Entry(selector_frame, textvariable=sel_var).pack(side=tk.LEFT, fill=tk.X, expand=True)
         widgets["selector"] = sel_var
 
         timeout_frame = ttk.Frame(frame)
         timeout_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
-        ttk.Label(timeout_frame, text="Timeout").pack(side=tk.LEFT, padx=(0, 4))
-        td_var = tk.StringVar(value="0")
+        ttk.Label(timeout_frame, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 4))
+        td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        tu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
+        tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(timeout_frame, text="(0 = désactivé)", foreground="gray").pack(side=tk.LEFT)
         widgets["timeout_duration"] = td_var
         widgets["timeout_unit"] = tu_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["selector"].set(params.get("selector", ""))
-        widgets["timeout_duration"].set(str(params.get("timeout_duration", 0)))
+        """Load stored parameters into the form widgets."""
+        widgets["selector"].set(params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
+        widgets["timeout_duration"].set(str(params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION)))
         widgets["timeout_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
@@ -59,6 +72,7 @@ class WaitElementFormDef(IStepFormDef):
         )
 
     def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read widget values into a parameters mapping."""
         return {
             "selector": widgets["selector"].get().strip(),
             "timeout_duration": safe_int_widget(widgets, "timeout_duration", 0),
@@ -66,6 +80,7 @@ class WaitElementFormDef(IStepFormDef):
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate the current form values and return error messages."""
         errors: list[str] = []
         if not widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Le sélecteur CSS est obligatoire.")
@@ -74,6 +89,7 @@ class WaitElementFormDef(IStepFormDef):
         return errors
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
+        """Return a compact label for the workflow list."""
         selector = params.get("selector", "")
 
         timeout = params.get("timeout_duration", 0)

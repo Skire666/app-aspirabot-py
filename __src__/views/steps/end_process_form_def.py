@@ -9,7 +9,7 @@ from typing import Any
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
 from shared.constants import (
-    C_MAXIMUM_SIZE_IMAGE,
+    C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
@@ -28,24 +28,25 @@ class EndProcessFormDef(IStepFormDef):
         return "Fin du processus"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Attente finale:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
-        dur_var = tk.StringVar(value="0")
-        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=dur_var, width=7).grid(
-            row=0, column=1, sticky="w", padx=5, pady=4
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=4)
+
+        ttk.Label(row0, text="Attendre avant de fermer:").pack(side=tk.LEFT, padx=(5, 5))
+        dur_var = tk.StringVar(value="5")
+        ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets["wait_duration"] = dur_var
 
-        ttk.Label(frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
-        ).grid(row=1, column=1, sticky="w", padx=5, pady=4)
+            row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+        ).pack(side=tk.LEFT, padx=(0, 5))
         widgets["wait_unit"] = unit_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
+        widgets["wait_duration"].set(str(params.get("wait_duration", 5)))
         widgets["wait_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW

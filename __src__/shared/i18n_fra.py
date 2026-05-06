@@ -21,7 +21,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepType, str] = {
     StepType.RANDOM_PAUSE: "Attendre aléatoirement",
     StepType.WAIT_USER_ACTION: "Attendre action utilisateur",
     StepType.DOWNLOAD_IMAGE: "Télécharger les images",
-    StepType.WAIT_IMAGE_SIZE: "Présence d'une image",
+    StepType.WAIT_IMAGE_SIZE: "Présence taille d'image",
     StepType.WAIT_ELEMENT: "Présence d'un élément",
     StepType.COUNT_ELEMENT: "Compter les éléments",
     StepType.CLICK_ELEMENT: "Cliquer sur un élément",

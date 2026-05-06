@@ -11,6 +11,8 @@ from models.step_scraping_model import StepType
 from shared.step_registry import register_form
 from views.steps._constants import CLICK_MODES
 
+C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+
 
 class ClickElementFormDef(IStepFormDef):
     @classmethod
@@ -22,22 +24,29 @@ class ClickElementFormDef(IStepFormDef):
         return "Cliquer sur un élément"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Sélecteur CSS:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
-        sel_var = tk.StringVar()
-        ttk.Entry(frame, textvariable=sel_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        # ROW 0
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=4)
+
+        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(5, 5))
+        sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
+        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
 
-        ttk.Label(frame, text="Mode de clic:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+        # ROW 1
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=4)
+
+        ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) : ").pack(side=tk.LEFT, padx=(5, 5))
         mode_var = tk.StringVar(value="Normal")
-        ttk.Combobox(frame, textvariable=mode_var, values=CLICK_MODES, state="readonly").grid(
-            row=1, column=1, sticky="ew", padx=5, pady=4
+        ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["click_mode"] = mode_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["selector"].set(params.get("selector", ""))
+        widgets["selector"].set(params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["click_mode"].set(params.get("click_mode", "Normal"))
 
     def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:

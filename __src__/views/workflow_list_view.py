@@ -106,11 +106,6 @@ class WorkflowListView(ttk.Frame):
         self.rowconfigure(2, weight=1)
         self.columnconfigure(0, weight=1)
 
-        # Toast — row 0, hidden by default.
-        self._toast_label = ttk.Label(self, text="", foreground="#0055aa")
-        self._toast_label.grid(row=0, column=0, sticky="ew", pady=2)
-        self._toast_label.grid_remove()
-
         # Toolbar — row 1.
         toolbar = self._create_toolbar()
         toolbar.grid(row=1, column=0, sticky="ew", pady=(0, 4))
@@ -268,19 +263,6 @@ class WorkflowListView(ttk.Frame):
         # Defer geometry update: rebuild() queues its layout asynchronously,
         # so winfo_reqheight() is only accurate after the event loop processes it.
         self.after_idle(self._update_dnd_window_geometry)
-
-    def show_toast(self, message: str, level: str = "info") -> None:
-        """Briefly displays a notification message above the toolbar.
-
-        Args:
-            message: Text to show.
-            level: 'info', 'error', or 'success' controls the colour.
-        """
-        colour_map = {"info": "#0055aa", "error": "#cc0000", "success": "#006600"}
-        colour = colour_map.get(level, "#000000")
-        self._toast_label.configure(text=message, foreground=colour)
-        self._toast_label.grid()
-        self.after(3000, self._hide_toast)
 
     def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
         """Reveals both Brique logique and Aide à la saisie panels.

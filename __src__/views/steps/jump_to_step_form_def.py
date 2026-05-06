@@ -39,15 +39,23 @@ class JumpToStepFormDef(IStepFormDef):
         return None
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        frame.columnconfigure(1, weight=1)
-        ttk.Label(frame, text="Condition:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+
+        # ROW 0
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=4)
+
+        ttk.Label(row0, text="Condition:").pack(side=tk.LEFT, padx=(5, 5))
         cond_var = tk.StringVar(value=CONDITION_DISPLAY[0])
-        ttk.Combobox(frame, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").grid(
-            row=0, column=1, sticky="ew", padx=5, pady=4
+        ttk.Combobox(row0, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["condition"] = cond_var
 
-        available_steps = widgets.get("_steps", [])  ## list StepScrapingModel
+        # ROW 1
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=4)
+
+        available_steps = widgets.get("_steps", [])
         jump_target_displays = [
             f"{str(i + 1).zfill(2)}.  -  #{s.step_id}  - {C_STEP_TYPE_TO_LABELS.get(s.step_type, s.step_type.value)}"
             for i, s in enumerate(available_steps)
@@ -57,9 +65,10 @@ class JumpToStepFormDef(IStepFormDef):
         widgets["_jump_target_ids"] = jump_target_ids
         default_target = jump_target_displays[0] if jump_target_displays else ""
         target_var = tk.StringVar(value=default_target)
-        ttk.Label(frame, text="Étape cible:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
-        ttk.Combobox(frame, textvariable=target_var, values=jump_target_displays, state="readonly").grid(
-            row=1, column=1, sticky="ew", padx=5, pady=4
+
+        ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Combobox(row1, textvariable=target_var, values=jump_target_displays, state="readonly").pack(
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["target_hexastring"] = target_var
         widgets["target_position_unsafe"] = 0

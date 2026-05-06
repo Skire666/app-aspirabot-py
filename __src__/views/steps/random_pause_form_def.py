@@ -28,31 +28,30 @@ class RandomPauseFormDef(IStepFormDef):
         return "Attendre aléatoirement"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        min_var = tk.StringVar(value="500")
+        max_var = tk.StringVar(value="1000")
+        unit_var = tk.StringVar(value="millisec")
+        widgets["min"] = min_var
+        widgets["max"] = max_var
+        widgets["unit"] = unit_var
+
+        # To make the second column expand and keep the form compact on the left.
         frame.columnconfigure(1, weight=1)
 
+        # line for min and max values
         row0 = ttk.Frame(frame)
         row0.grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=4)
-        ttk.Label(row0, text="Attendre aléatoirement entre :").pack(side=tk.LEFT, padx=(0, 4))
-        min_var = tk.StringVar(value="0")
+        ttk.Label(row0, text="Pause aléatoire entre : ").pack(side=tk.LEFT, padx=(0, 4))
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
         ttk.Label(row0, text=" et ").pack(side=tk.LEFT)
-        max_var = tk.StringVar(value="1")
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=7).pack(
-            side=tk.LEFT, padx=(4, 0)
+            side=tk.LEFT, padx=5
         )
-        widgets["min"] = min_var
-        widgets["max"] = max_var
-
-        row1 = ttk.Frame(frame)
-        row1.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
-        ttk.Label(row1, text="Unité:").pack(side=tk.LEFT, padx=(0, 4))
-        unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            row1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+            row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT)
-        widgets["unit"] = unit_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["min"].set(str(params.get("min", 0)))

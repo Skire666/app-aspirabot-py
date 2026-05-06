@@ -17,6 +17,8 @@ from shared.constants import (
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+C_INPUT_DEFAULT_DURATION = 3
+
 
 class WaitXTimeFormDef(IStepFormDef):
     @classmethod
@@ -28,31 +30,32 @@ class WaitXTimeFormDef(IStepFormDef):
         return "Attendre une durée fixe"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Durée:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
-        dur_var = tk.StringVar(value="0")
-        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).grid(
-            row=0, column=1, sticky="w", padx=5, pady=4
+        timeout_frame = ttk.Frame(frame)
+        timeout_frame.pack(fill="x", pady=4)
+
+        ttk.Label(timeout_frame, text="Attendre une durée de : ").pack(side=tk.LEFT, padx=5, pady=4)
+        dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_DURATION))
+        ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 5), pady=4
         )
         widgets["duration"] = dur_var
 
-        ttk.Label(frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
-        ).grid(row=1, column=1, sticky="w", padx=5, pady=4)
+            timeout_frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+        ).pack(side=tk.LEFT, padx=(0, 4))
         widgets["unit"] = unit_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["duration"].set(str(params.get("duration", 0)))
+        widgets["duration"].set(str(params.get("duration", C_INPUT_DEFAULT_DURATION)))
         widgets["unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
         )
 
     def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
-            "duration": safe_int_widget(widgets, "duration", 0),
+            "duration": safe_int_widget(widgets, "duration", C_INPUT_DEFAULT_DURATION),
             "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
@@ -65,7 +68,7 @@ class WaitXTimeFormDef(IStepFormDef):
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         unit_time = params.get("unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return f"Attendre une durée fixe\n{params.get('duration', 0)} {unit_display}"
+        return f"Attendre une durée fixe\n{params.get('duration', C_INPUT_DEFAULT_DURATION)} {unit_display}"
 
 
 register_form(WaitXTimeFormDef())

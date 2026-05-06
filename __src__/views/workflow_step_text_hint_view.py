@@ -84,7 +84,6 @@ class WorkflowStepTextHint:
             "  ex. 'C'est un succès si COUNT est supérieur à 3'\n\n"
             "• Opérateurs de plage :\n"
             "  - compris entre (inclus) : value_min ≤ COUNT ≤ value_max\n"
-            "  - non compris entre : COUNT hors de [value_min, value_max]\n\n"
             "Le nombre brut d'éléments et le résultat final\n"
             "sont tous deux consignés dans le journal d'exécution."
         ),
