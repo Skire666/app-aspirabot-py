@@ -29,7 +29,7 @@ class ProviderService:
         self._repository = repository
         self._logger = logging.getLogger(__name__)
 
-    def list_providers(self) -> list[ProviderModel]:
+    def list_all_providers(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs.
 
         Returns:
@@ -37,7 +37,7 @@ class ProviderService:
         """
         return self._repository.list_all_providers()
 
-    def get_provider(self, id_file: str) -> ProviderModel:
+    def read_provider(self, id_file: str) -> ProviderModel:
         """Récupère un fournisseur par son GUID.
 
         Args:

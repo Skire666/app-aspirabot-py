@@ -79,7 +79,7 @@ class RandomPauseFormDef(IStepFormDef):
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         unit_time = params.get("unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return f"Attendre aléatoirement\n{params.get('min', 0)}-{params.get('max', 1)} {unit_display}"
+        return f"Attendre aléatoirement\nEntre {params.get('min', 0)} et {params.get('max', 1)} {unit_display}"
 
 
 register_form(RandomPauseFormDef())

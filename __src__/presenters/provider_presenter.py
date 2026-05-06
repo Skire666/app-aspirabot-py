@@ -29,7 +29,7 @@ class ProviderPresenter:
         """
         self._view = view
         self._service = service
-        self._providers: list[ProviderModel] = []
+        self._all_providers: list[ProviderModel] = []
         self._current_sort_column = "provider_name"
         self._current_sort_ascending = True
 
@@ -63,9 +63,9 @@ class ProviderPresenter:
     def _load_providers(self) -> None:
         """Charge la liste complète des fournisseurs et met à jour la vue."""
         try:
-            self._providers = self._service.list_providers()
+            self._all_providers = self._service.list_all_providers()
         except FileNotFoundError:
-            self._providers = []
+            self._all_providers = []
 
         self._sort_providers(self._current_sort_column, self._current_sort_ascending)
         self._update_view()
@@ -83,19 +83,19 @@ class ProviderPresenter:
             ascending: True for ascending order.
         """
         if column == "id_file":
-            self._providers.sort(key=lambda p: self._text_key(p.id_file), reverse=not ascending)
+            self._all_providers.sort(key=lambda p: self._text_key(p.id_file), reverse=not ascending)
         elif column == "provider_name":
-            self._providers.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
+            self._all_providers.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
         elif column == "url":
-            self._providers.sort(key=lambda p: self._text_key(p.url), reverse=not ascending)
+            self._all_providers.sort(key=lambda p: self._text_key(p.url), reverse=not ascending)
         elif column == "created_date":
-            self._providers.sort(key=lambda p: self._text_key(p.created_date), reverse=not ascending)
+            self._all_providers.sort(key=lambda p: self._text_key(p.created_date), reverse=not ascending)
         elif column == "modified_date":
-            self._providers.sort(key=lambda p: self._text_key(p.modified_date), reverse=not ascending)
+            self._all_providers.sort(key=lambda p: self._text_key(p.modified_date), reverse=not ascending)
 
     def _update_view(self) -> None:
         """Transforme les modèles en structures de données simples et rafraîchit la vue."""
-        providers_data = self._format_providers(self._providers)
+        providers_data = self._format_providers(self._all_providers)
         self._view.render_providers(providers_data)
 
     def _format_providers(self, providers: list[ProviderModel]) -> list[dict[str, str]]:

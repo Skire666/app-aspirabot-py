@@ -16,15 +16,15 @@ Example:
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import logging
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
-from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
-from shared.random_util import generate_rng_hexastring_with_alphabet
+from shared.random_util import generate_rng_id_step
 from shared.step_registry import get_form
 
 ## ---------------------------------------------------------------------------
@@ -69,6 +69,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Available steps for JUMP_TO_STEP target population.
         self._available_steps: list[StepScrapingModel] = []
         self._create_widgets()
+        self._logger = logging.getLogger(__name__)
 
     # ---------------------------------------------------------------
     # Widget construction
@@ -159,6 +160,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         # Inject JUMP_TO_STEP context before building so the form def can
         # populate the target combobox from the available steps list.
         self._form_widgets["_steps"] = self._available_steps
+        self._logger.debug(f"Rebuilding form for step type {step_type}")
 
         try:
             get_form(step_type).build_form(self._form_frame, self._form_widgets)
@@ -217,7 +219,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         step = StepScrapingModel(
             step_type=step_type,
             is_active=is_active,
-            step_id=generate_rng_hexastring_with_alphabet(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID),
+            step_id=generate_rng_id_step(),
             params=params,
         )
         if self.on_confirm:

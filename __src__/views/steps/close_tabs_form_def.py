@@ -20,7 +20,7 @@ class CloseTabsFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Fermer des onglets"
+        return "Fermer les onglets"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         frame.columnconfigure(1, weight=1)
@@ -53,16 +53,30 @@ class CloseTabsFormDef(IStepFormDef):
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         errors: list[str] = []
-        if safe_int_widget(widgets, "max_tabs", -1) < 0:
+        url = widgets["url_filter"].get().strip()
+        max_tb = safe_int_widget(widgets, "max_tabs", -1)
+
+        if max_tb < 0:
             errors.append("Le nombre maximum d'onglets doit être un entier positif ou égal à 0.")
+        if url and max_tb == 0:
+            errors.append(
+                "Un filtre URL ne peut pas être utilisé si le nombre maximum d'onglets est 0 (tous les onglets seront fermés)."
+            )
+        if max_tb >= 1 and not url:
+            errors.append(
+                "Un filtre URL doit être utilisé si le nombre maximum d'onglets est supérieur ou égal à 1 (sinon, aucun onglet ne sera fermé)."
+            )
         return errors
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         max_tabs = params.get("max_tabs", 0)
         url_filter = params.get("url_filter", "")
-        label = f"Fermer des onglets\nMax. ouverts : {max_tabs}"
-        if url_filter:
-            label += f"  -  Sél. '*{url_filter}*'"
+        if max_tabs == 0:
+            return "Fermer les onglets  -  Tous\nIl ne restera aucun onglet d'ouvert"
+
+        ## si plusieurs
+        label = f"Fermer les onglets  -  {max_tabs} onglet(s) max.\n"
+        label += f"Ne garde que si contient '{url_filter}'"
         return label
 
 

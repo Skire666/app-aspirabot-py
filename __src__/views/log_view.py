@@ -58,10 +58,10 @@ class LogView(ttk.Frame):
         self.tree.heading("origin", text="Origin")
         self.tree.heading("message", text="Message")
 
-        self.tree.column("date", width=150, anchor=tk.W)
-        self.tree.column("level", width=80, anchor=tk.CENTER)
-        self.tree.column("origin", width=100, anchor=tk.W)
-        self.tree.column("message", width=400, anchor=tk.W)
+        self.tree.column("date", width=90, anchor=tk.W)
+        self.tree.column("level", width=40, anchor=tk.CENTER)
+        self.tree.column("origin", width=150, anchor=tk.W)
+        self.tree.column("message", width=500, anchor=tk.W)
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
@@ -109,5 +109,12 @@ class LogView(ttk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
+        last_item_id = None
         for date, level, origin, message in logs_data:
-            self.tree.insert("", tk.END, values=(date, level, origin, message), tags=(level,))
+            last_item_id = self.tree.insert("", tk.END, values=(date, level, origin, message), tags=(level,))
+
+        if last_item_id:
+            self.tree.focus_set()
+            self.tree.selection_set(last_item_id)
+            self.tree.focus(last_item_id)
+            self.tree.see(last_item_id)

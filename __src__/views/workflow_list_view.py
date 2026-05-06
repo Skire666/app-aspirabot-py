@@ -23,9 +23,8 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 
 from models.step_scraping_model import StepScrapingModel
-from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
-from shared.random_util import generate_rng_hexastring_with_alphabet
+from shared.random_util import generate_rng_id_step
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
 from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
@@ -412,9 +411,7 @@ class WorkflowListView(ttk.Frame):
         # Serialise then deserialise to produce an independent deep copy.
         self._set_steps_count(len(self._dnd_list.items) + 1)
         new_object = StepScrapingModel.from_dict(step.to_dict())
-        new_object.step_id = generate_rng_hexastring_with_alphabet(
-            C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
-        )  # Ensure the duplicate has a unique ID.
+        new_object.step_id = generate_rng_id_step()  # Ensure the duplicate has a unique ID.
         return new_object
 
     def _on_dnd_toggle_active(self, _: StepScrapingModel, idx: int) -> None:

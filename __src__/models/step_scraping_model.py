@@ -17,8 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
-from shared.random_util import generate_rng_hexastring_with_alphabet
+from shared.random_util import generate_rng_id_step
 
 ## ---------------------------------------------------------------------------
 ## Constants
@@ -46,76 +45,6 @@ class StepType(Enum):
     CLOSE_TABS = "CLOSE_TABS"
     END_PROCESS = "END_PROCESS"
     WAIT_USER_ACTION = "WAIT_USER_ACTION"
-
-
-# Default param values keyed by StepType value string.
-_DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
-    StepType.OPEN_URL.value: {
-        "url": "https://example.com/",
-        "wait_state": "domcontentloaded",
-        "timeout_duration": 1,
-        "timeout_unit": "s",
-    },
-    StepType.REFRESH_PAGE.value: {"clear_cache": False},
-    StepType.WAIT_X_TIME.value: {"duration": 0, "unit": "s"},
-    StepType.RANDOM_PAUSE.value: {"min": 0, "max": 1, "unit": "s"},
-    StepType.DOWNLOAD_IMAGE.value: {
-        "mode": "largest",
-        "unique_only": False,
-        "height_min": 0,
-        "height_max": C_MAXIMUM_SIZE_IMAGE,
-        "width_min": 0,
-        "width_max": C_MAXIMUM_SIZE_IMAGE,
-    },
-    StepType.WAIT_IMAGE_SIZE.value: {
-        "height_min": 0,
-        "height_max": C_MAXIMUM_SIZE_IMAGE,
-        "width_min": 0,
-        "width_max": C_MAXIMUM_SIZE_IMAGE,
-        "timeout_duration": 1,
-        "timeout_unit": "s",
-    },
-    StepType.WAIT_ELEMENT.value: {
-        "selector": "",
-        "timeout_duration": 1,
-        "timeout_unit": "s",
-    },
-    StepType.COUNT_ELEMENT.value: {
-        "selector": "",
-        "wait_duration": 1,
-        "wait_unit": "s",
-        "success_if": "success",
-        "operator": "equal",
-        "value_min": 0,
-        "value_max": 0,
-        "value": 0,
-    },
-    StepType.CLICK_ELEMENT.value: {"selector": "", "click_mode": "Normal"},
-    StepType.SCROLL_DOWN.value: {"pixels": 1000},
-    StepType.EXTRACT_TEXT.value: {
-        "selector": "",
-        "extract_mode": "innerText",
-        "target": "first",
-    },
-    StepType.JUMP_TO_STEP.value: {
-        "condition": "success",
-        "target_hexastring": "",
-        "target_position_unsafe": 0,
-    },
-    StepType.CLOSE_TABS.value: {
-        "url_filter": "",
-        "max_tabs": 1,
-    },
-    StepType.END_PROCESS.value: {
-        "wait_duration": 1,
-        "wait_unit": "s",
-    },
-    StepType.WAIT_USER_ACTION.value: {
-        "condition": "always",
-        "wait_duration": 0,
-        "wait_unit": "s",
-    },
-}
 
 
 @dataclass
@@ -177,7 +106,7 @@ class StepScrapingModel:
         """
         return cls(
             step_type=StepType(data["step_type"]),
-            step_id=data.get("step_id", generate_rng_hexastring_with_alphabet(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID)),
+            step_id=data.get("step_id", generate_rng_id_step()),
             is_active=data.get("is_active", True),
             params=data.get("params", {}),
         )

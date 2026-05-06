@@ -13,6 +13,8 @@ from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
 from views.provider_edit_view import ProviderEditView
 
+from __src__.shared.random_util import merge_unique_list_id_step
+
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
@@ -83,7 +85,13 @@ class ProviderEditPresenter:
             id_file: L'ID fichier du fournisseur à supprimer.
         """
         self._is_creation_mode = False
-        self._current_provider = self._service.get_provider(id_file)
+        self._current_provider = self._service.read_provider(id_file)
+
+        unique_list_id_step: set[str] = set()
+        unique_list_id_step.update(
+            step.step_id for step in self._current_provider.steps
+        )  # Guard against duplicate step IDs.
+        merge_unique_list_id_step(unique_list_id_step)
 
         # Load existing workflow steps from the repository.
         self._workflow_presenter.load(self._current_provider.id_file)

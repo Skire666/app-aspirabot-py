@@ -58,7 +58,7 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["mode"] = mode_var
         unique_var = tk.BooleanVar(value=False)
         CanvasCheckbox(
-            frame, text="Télécharger les images uniques (mode 'aucun doublon')", variable=unique_var
+            frame, text="Télécharger uniquement les nouvelles (doublons refusés)", variable=unique_var
         ).grid(row=1, column=0, columnspan=5, sticky="w", padx=5, pady=(0, 4))
         widgets["unique_only"] = unique_var
         _add_dimension_row(frame, widgets, 2, "Hauteur (px):", "height_min", "height_max", 0, C_MAXIMUM_SIZE_IMAGE)

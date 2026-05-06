@@ -90,7 +90,7 @@ class WaitUserActionFormDef(IStepFormDef):
         unit_time = params.get("wait_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
-        delay_str = f"Si reprise demandée, patiente {wd} {unit_display}" if wd > 0 else ""
+        delay_str = f"Si reprise demandée, patienter {wd} {unit_display}" if wd > 0 else ""
         return f"{condition} attendre action utilisateur\n{delay_str}"
 
 

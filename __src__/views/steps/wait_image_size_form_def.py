@@ -99,8 +99,8 @@ class WaitImageSizeFormDef(IStepFormDef):
         for key in ("height_min", "height_max", "width_min", "width_max"):
             if safe_int_widget(widgets, key, -1) < 0:
                 errors.append(f"La valeur '{key}' doit être un entier positif ou égal à 0.")
-        if safe_int_widget(widgets, "timeout_duration", -1) < 0:
-            errors.append("Durée de timeout doit être un nombre positif.")
+        if safe_int_widget(widgets, "timeout_duration", -1) < 1:
+            errors.append("Durée de timeout doit être un nombre supérieur ou égal à 1.")
         return errors
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
@@ -108,13 +108,13 @@ class WaitImageSizeFormDef(IStepFormDef):
         height_min = params.get("height_min", 0)
         width_max = params.get("width_max", 0)
         height_max = params.get("height_max", 0)
-        label = f"Présence d'une image\n{width_min}x{height_min} -> {width_max}x{height_max}"
+
+        unit_time = params.get("timeout_unit", "")
+        unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
         td = params.get("timeout_duration", 0)
-        if td:
-            unit_time = params.get("timeout_unit", "")
-            unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-            label += f" [timeout: {td} {unit_display}]"
-        return label
+
+        label = f"Présence d'une image  -  timeout : {td} {unit_display}\n"
+        return label + f"{width_min}x{height_min} -> {width_max}x{height_max}"
 
 
 register_form(WaitImageSizeFormDef())

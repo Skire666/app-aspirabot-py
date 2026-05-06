@@ -25,10 +25,9 @@ class WorkflowStepTextHint:
             "l'état choisi.\n\n"
             "• URL : adresse complète incluant https://\n"
             "• État d'attente :\n"
-            "  -load : attend l'événement window.load\n"
             "  -domcontentloaded : attend le DOM (plus rapide)\n"
-            "  -networkidle : attend la fin des requêtes réseau\n"
-            "  -commit : attend la première réponse HTTP"
+            "  -load : attend page chargée (l'événement window.load)\n"
+            "  -networkidle : attend la fin des requêtes réseau"
         ),
         "Pause fixe": (
             "Attend un délai fixe avant de passer à l'étape suivante.\n\n"
@@ -100,7 +99,8 @@ class WorkflowStepTextHint:
             "  Si vide, tous les onglets correspondants sont fermés.\n"
             "  Si renseigné, seuls les onglets dont l'URL contient cette\n"
             "  chaîne sont conservés — les autres sont fermés.\n"
-            "• Max onglets : nombre maximum d'onglets à conserver (0 = tous)"
+            "  valide de mettre 0, car potentiellement, l'utilisateur peut ouvrir juste après\n"
+            "• Max onglets : nombre maximum d'onglets à conserver"
         ),
         "Extraire le texte (CSS)": (
             "Extrait du contenu depuis des éléments DOM via un sélecteur CSS.\n\n"

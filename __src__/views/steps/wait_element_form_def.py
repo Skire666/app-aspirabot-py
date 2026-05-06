@@ -69,20 +69,18 @@ class WaitElementFormDef(IStepFormDef):
         errors: list[str] = []
         if not widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Le sélecteur CSS est obligatoire.")
-        if safe_int_widget(widgets, "timeout_duration", -1) < 0:
-            errors.append("Durée de timeout doit être un nombre positif.")
+        if safe_int_widget(widgets, "timeout_duration", -1) < 1:
+            errors.append("Durée de timeout doit être un nombre supérieur ou égal à 1.")
         return errors
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         selector = params.get("selector", "")
-        label = f"Présence d'un élément\nSél. '{selector}' - "
 
         timeout = params.get("timeout_duration", 0)
         unit_time = params.get("timeout_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
-        label += f" Timeout: {timeout} {unit_display}]"
-        return label
+        return f"Présence d'un élément  -  timeout : {timeout} {unit_display}\nSél. : {selector}"
 
 
 register_form(WaitElementFormDef())

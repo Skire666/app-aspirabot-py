@@ -144,7 +144,7 @@ class StepItemRenderer:
         """Draws the step label text centered vertically within the item area."""
         txt_prefix = f"{str(idx + 1).zfill(2)}.\n#{item.step_id}"
         txt_item = get_form(item.step_type).format_label(item.params, idx)
-        offset_w = 75 if item.step_type == StepType.JUMP_TO_STEP else 58
+        offset_w = 80 if item.step_type == StepType.JUMP_TO_STEP else 58
         start_w = x + 8
         pos_h = y + h // 2
 

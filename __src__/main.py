@@ -323,7 +323,7 @@ def _wire_scraping_launch(
 
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scraping.
-        provider = provider_service.get_provider(id_file)
+        provider = provider_service.read_provider(id_file)
         scraping_presenter.load_provider(provider)
         main_view.set_tab_state(C_TITLE_MODULE_SCRAPING, tk.NORMAL)
         main_view.show_view(C_TITLE_MODULE_SCRAPING)
