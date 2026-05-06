@@ -162,6 +162,9 @@ class ProviderEditPresenter:
 
     def _on_cancel(self) -> None:
         """Annule l'action courante."""
+        # Reset the embedded workflow too: Save already clears it, so Cancel
+        # must leave the presenter and view in the same clean state.
+        self._workflow_presenter.clear_steps()
         self._view.clear_data()
         self._current_provider = None
         if self._on_done:

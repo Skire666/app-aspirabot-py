@@ -17,6 +17,7 @@ Example:
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import tkinter as tk
 from collections.abc import Callable
@@ -27,7 +28,7 @@ from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
 from shared.random_util import generate_rng_hexastring
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
-from views.step_edit_dialog_view import _ALL_LABELS, StepInlineFormPanel
+from views.step_edit_dialog_view import _ALL_LABELS, _LABEL_TO_TYPE, StepInlineFormPanel
 
 s_logger = logging.getLogger(__name__)
 
@@ -261,12 +262,38 @@ class WorkflowListView(ttk.Frame):
         if self._dnd_busy:
             return
         self._dnd_list.items = self._last_steps
+        s_logger.debug(
+            "render_steps: count=%d, dnd_busy=%s",
+            len(self._last_steps),
+            self._dnd_busy,
+        )
+        with contextlib.suppress(Exception):
+            s_logger.debug(
+                (
+                    "render_steps: scroll_canvas mapped=%s, scroll_canvas height=%s, "
+                    "dnd_reqheight=%s, dnd_canvas mapped=%s"
+                ),
+                (getattr(self, "_scroll_canvas", None) is not None
+                 and self._scroll_canvas.winfo_ismapped()),
+                (getattr(self, "_scroll_canvas", None)
+                 and self._scroll_canvas.winfo_height()),
+                getattr(self._dnd_list, "winfo_reqheight", lambda: None)(),
+                (getattr(self._dnd_list, "canvas", None) is not None
+                 and getattr(self._dnd_list.canvas, "winfo_ismapped", lambda: False)()),
+            )
         self._dnd_list.rebuild()
         # Rebind scroll: rebuild() recreates the internal canvas object.
         self._bind_dnd_canvas_scroll()
         # Defer geometry update: rebuild() queues its layout asynchronously,
         # so winfo_reqheight() is only accurate after the event loop processes it.
         self.after_idle(self._update_dnd_window_geometry)
+        self.after_idle(self._scroll_steps_to_top)
+        # Force a full redraw once the event loop has processed layout. Some
+        # platforms report zero sizes earlier which leaves virtualization with
+        # an empty visible range; a full redraw here guarantees items are
+        # painted. A short delayed redraw acts as a fallback.
+        self.after_idle(self._dnd_list.redraw)
+        self.after(25, lambda: self._dnd_list.redraw())
 
     def show_toast(self, message: str, level: str = "info") -> None:
         """Briefly displays a notification message above the toolbar.
@@ -300,9 +327,10 @@ class WorkflowListView(ttk.Frame):
                 self._type_listbox.selection_clear(0, tk.END)
                 self._type_listbox.selection_set(idx)
                 self._type_listbox.see(idx)
-        except Exception:
+        except (tk.TclError, ValueError):
             pass
         self._bottom_row.grid()
+        self.after_idle(self._scroll_steps_to_top)
 
     def hide_inline_form(self) -> None:
         """Hides both Brique logique and Aide à la saisie panels."""
@@ -370,13 +398,13 @@ class WorkflowListView(ttk.Frame):
         idx = int(sel[0])
         try:
             label = self._type_listbox.get(idx)
-        except Exception:
+        except tk.TclError:
             return
         # Update inline panel and trigger its change handler
         self._inline_form._type_var.set(label)
         try:
             self._inline_form._on_type_changed(None)
-        except Exception:
+        except (AttributeError, KeyError, tk.TclError, ValueError):
             # Fallback: directly rebuild based on mapping
             step_type = _LABEL_TO_TYPE.get(label)
             if step_type is not None:
@@ -384,7 +412,6 @@ class WorkflowListView(ttk.Frame):
 
     def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
-        label = StepItemRenderer.format_label(step, idx)
         confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape : {str(idx + 1).zfill(2)} ?")
         if not confirmed:
             return False
@@ -463,6 +490,10 @@ class WorkflowListView(ttk.Frame):
         self._update_dnd_window_geometry()
         self._bind_dnd_canvas_scroll()
 
+    def _on_dnd_canvas_configure(self, _: tk.Event) -> None:
+        """Refreshes the workflow list when the internal canvas gets its final size."""
+        self._update_dnd_window_geometry()
+
     def _on_scroll_canvas_configure(self, _: tk.Event) -> None:
         # Outer canvas resized: ensure DragDropList window fills the new dimensions.
         self._update_dnd_window_geometry()
@@ -478,7 +509,7 @@ class WorkflowListView(ttk.Frame):
         h = max(dnd_h, canvas_h)
         self._scroll_canvas.itemconfig(self._scroll_win, width=w, height=h)
         self._scroll_canvas.configure(scrollregion=(0, 0, w, h))
-        self._dnd_list.redraw_visible()
+        self._dnd_list.redraw_visible(force=True)
 
     def _get_dnd_viewport(self) -> tuple[int, int]:
         """Returns the visible viewport bounds in DragDropList coordinates."""
@@ -506,6 +537,7 @@ class WorkflowListView(ttk.Frame):
         def disable(_: tk.Event) -> None:
             self._scroll_canvas.unbind_all("<MouseWheel>")
 
+        self._dnd_list.canvas.bind("<Configure>", self._on_dnd_canvas_configure, add="+")
         self._dnd_list.canvas.bind("<Enter>", enable)
         self._dnd_list.canvas.bind("<Leave>", disable, add="+")
 
@@ -550,3 +582,9 @@ class WorkflowListView(ttk.Frame):
     def _hide_toast(self) -> None:
         """Hides the toast notification label."""
         self._toast_label.grid_remove()
+
+    def _scroll_steps_to_top(self) -> None:
+        """Resets the workflow list scrollbar to the top."""
+        if hasattr(self, "_scroll_canvas") and self._scroll_canvas is not None:
+            self._scroll_canvas.yview_moveto(0)
+            self._dnd_list.redraw_visible(force=True)
