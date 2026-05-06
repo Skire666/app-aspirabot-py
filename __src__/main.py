@@ -31,6 +31,8 @@ from services.web_browser_service import BrowserService
 from shared.constants import (
     C_APP_CONFIG_FILE,
     C_BROWSER_ENGINE_PLAYWRIGHT,
+)
+from shared.i18n_fra import (
     C_TITLE_MODULE_CONFIG,
     C_TITLE_MODULE_FAQ,
     C_TITLE_MODULE_LOGS,

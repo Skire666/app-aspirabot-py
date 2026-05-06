@@ -1,8 +1,11 @@
 """IStepFormDef for CLICK_ELEMENT."""
+
 from __future__ import annotations
+
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
+
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
 from shared.step_registry import register_form
@@ -28,7 +31,9 @@ class ClickElementFormDef(IStepFormDef):
 
         ttk.Label(frame, text="Mode de clic:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         mode_var = tk.StringVar(value="Normal")
-        ttk.Combobox(frame, textvariable=mode_var, values=CLICK_MODES, state="readonly").grid(row=1, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Combobox(frame, textvariable=mode_var, values=CLICK_MODES, state="readonly").grid(
+            row=1, column=1, sticky="ew", padx=5, pady=4
+        )
         widgets["click_mode"] = mode_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
@@ -48,7 +53,8 @@ class ClickElementFormDef(IStepFormDef):
         return errors
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
-        return f"Cliquer sur un élément\nSél. : {params.get('selector', '')}"
+        selector = params.get("selector", "")
+        return f"Cliquer sur un élément\nSél. '{selector}'"
 
 
 register_form(ClickElementFormDef())

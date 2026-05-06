@@ -65,7 +65,11 @@ class StepItemRenderer:
             "border": self._C_BORDER_SEL,
             "fg": self._C_FG_SEL,
         }
-        self._colors_floating: dict[str, str] = {"fg": self._C_FG_FLOAT}
+        self._colors_floating: dict[str, str] = {
+            "bg": self._C_FG_FLOAT,
+            "border": self._C_FG_FLOAT,
+            "fg": self._C_FG_FLOAT,
+        }
         self._colors_deactive: dict[str, str] = {
             "bg": self._C_BG_DEACTIVATE,
             "border": self._C_BORDER_NORMAL,
@@ -138,16 +142,16 @@ class StepItemRenderer:
         colors: dict[str, str],
     ) -> None:
         """Draws the step label text centered vertically within the item area."""
-        str_index = str(idx + 1).zfill(2)
-        width_extra = 20 if item.step_type == StepType.JUMP_TO_STEP else 0
-        label = f"{str_index}.  {self.format_label(item, idx)}"
+        txt_prefix = f"{str(idx + 1).zfill(2)}.\n#{item.step_id}"
+        txt_item = get_form(item.step_type).format_label(item.params, idx)
+        offset_w = 75 if item.step_type == StepType.JUMP_TO_STEP else 58
+        start_w = x + 8
+        pos_h = y + h // 2
+
+        canvas.create_text(start_w, pos_h, text=txt_prefix, anchor="w", fill=colors["fg"], font=self._C_FONT)
+        canvas.create_line(start_w + 50, y, start_w + 50, y + h, fill=colors["border"])
         canvas.create_text(
-            x + 10 + width_extra,
-            y + h // 2,
-            text=label,
-            anchor="w",
-            fill=colors["fg"],
-            font=self._C_FONT,
+            start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT
         )
         self._draw_overflow_mask(canvas, x, y, w, h)
 

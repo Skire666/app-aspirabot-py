@@ -23,37 +23,16 @@ from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
-from shared.random_util import generate_rng_hexastring
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from shared.random_util import generate_rng_hexastring_with_alphabet
 from shared.step_registry import get_form
 
 ## ---------------------------------------------------------------------------
-## Step type label tables (kept for external consumers)
+## Constants
 ## ---------------------------------------------------------------------------
 
-# French display labels for each step type (Combobox values).
-STEP_TYPE_LABELS: dict[StepType, str] = {
-    StepType.OPEN_URL: "Ouvrir une URL",
-    StepType.REFRESH_PAGE: "Rafraîchir la page",
-    StepType.SLEEP_X_TIME: "Attendre une durée fixe",
-    StepType.RANDOM_PAUSE: "Attendre aléatoirement",
-    StepType.DOWNLOAD_IMAGE: "Télécharger les images",
-    StepType.WAIT_IMAGE_SIZE: "Vérifier une taille d'image",
-    StepType.WAIT_ELEMENT: "Vérifier les éléments",
-    StepType.COUNT_ELEMENT: "Compter les éléments",
-    StepType.CLICK_ELEMENT: "Cliquer sur un élément",
-    StepType.SCROLL_DOWN: "Défiler vers le bas",
-    StepType.EXTRACT_TEXT: "Extraire contenu textuel",
-    StepType.JUMP_TO_STEP: "Si l'étape d'avant est un...",
-    StepType.CLOSE_TABS: "Fermer des onglets",
-    StepType.END_PROCESS: "Fin du processus",
-    StepType.WAIT_USER_ACTION: "Attendre action utilisateur",
-}
-
 # Reverse mapping for label → StepType lookup.
-_LABEL_TO_TYPE: dict[str, StepType] = {v: k for k, v in STEP_TYPE_LABELS.items()}
-
-# used by other files...
-_ALL_LABELS: list[str] = list(STEP_TYPE_LABELS.values())
+_LABEL_TO_TYPE: dict[str, StepType] = {v: k for k, v in C_STEP_TYPE_TO_LABELS.items()}
 
 
 ## ---------------------------------------------------------------------------
@@ -143,7 +122,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
             step: Existing step to pre-fill, or None to show a blank form.
         """
         initial_type = step.step_type if step else StepType.OPEN_URL
-        label = STEP_TYPE_LABELS[initial_type]
+        label = C_STEP_TYPE_TO_LABELS[initial_type]
         self._type_var.set(label)
         self._rebuild_form(initial_type)
 
@@ -238,7 +217,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         step = StepScrapingModel(
             step_type=step_type,
             is_active=is_active,
-            step_id=generate_rng_hexastring(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID),
+            step_id=generate_rng_hexastring_with_alphabet(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID),
             params=params,
         )
         if self.on_confirm:

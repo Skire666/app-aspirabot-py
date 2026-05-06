@@ -24,17 +24,20 @@ from tkinter import messagebox, ttk
 
 from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
-from shared.random_util import generate_rng_hexastring
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from shared.random_util import generate_rng_hexastring_with_alphabet
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
-from views.step_edit_dialog_view import _ALL_LABELS, _LABEL_TO_TYPE, StepInlineFormPanel
+from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 
-s_logger = logging.getLogger(__name__)
+## ---------------------------------------------------------------------------
+## Constants
+## ---------------------------------------------------------------------------
 
 # Layout constants
 _HEIGHT_FRAME_LOGICAL_BLOCK = 200  # TODO PCO: le bloc 'brique logique est trop petit
 _WIDTH_FRAME_STEP_STYPE_SELECTOR = 200
-_DND_ITEM_H = 46
+_DND_ITEM_H = 45
 _DND_RESIZE_MIN_DELTA_PX = 5
 _DND_RESIZE_FINALIZE_MS = 5
 _DND_DRAG_REDRAW_MIN_INTERVAL_MS = 5
@@ -42,10 +45,13 @@ _DND_DRAG_REDRAW_MIN_DELTA_PX = 5
 _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
 _STEPS_SECTION_TITLE = "Liste des étapes"
+C_ALL_LABELS: list[str] = list(C_STEP_TYPE_TO_LABELS.values())
 
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
+
+s_logger = logging.getLogger(__name__)
 
 
 class WorkflowListView(ttk.Frame):
@@ -226,7 +232,7 @@ class WorkflowListView(ttk.Frame):
         lb_scroll.config(command=lb.yview)
         lb_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        for lbl in _ALL_LABELS:
+        for lbl in C_ALL_LABELS:
             lb.insert(tk.END, lbl)
         lb.bind("<<ListboxSelect>>", lambda e: self._on_type_list_select(e))
         self._type_listbox = lb
@@ -236,10 +242,6 @@ class WorkflowListView(ttk.Frame):
         self._inline_form.on_confirm = self._fire_confirm_step
         self._inline_form.on_cancel = self._fire_cancel_step
         self._inline_form.grid(row=0, column=1, sticky="nsew", padx=(0, 0))
-
-        # Ensure listbox selection drives the inline form when visible.
-        # The listbox items are the same as _ALL_LABELS; selection handler will set the panel's _type_var.
-
         return row
 
     # ---------------------------------------------------------------
@@ -295,8 +297,10 @@ class WorkflowListView(ttk.Frame):
         # Select matching type in the left listbox if present
         try:
             if hasattr(self, "_type_listbox") and self._type_listbox is not None:
+                list_all_labels: list[str] = list(C_STEP_TYPE_TO_LABELS.values())
+
                 current = self._inline_form._type_var.get()
-                idx = _ALL_LABELS.index(current) if current in _ALL_LABELS else 0
+                idx = list_all_labels.index(current) if current in list_all_labels else 0
                 self._type_listbox.selection_clear(0, tk.END)
                 self._type_listbox.selection_set(idx)
                 self._type_listbox.see(idx)
@@ -408,7 +412,7 @@ class WorkflowListView(ttk.Frame):
         # Serialise then deserialise to produce an independent deep copy.
         self._set_steps_count(len(self._dnd_list.items) + 1)
         new_object = StepScrapingModel.from_dict(step.to_dict())
-        new_object.step_id = generate_rng_hexastring(
+        new_object.step_id = generate_rng_hexastring_with_alphabet(
             C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
         )  # Ensure the duplicate has a unique ID.
         return new_object

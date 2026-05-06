@@ -46,18 +46,21 @@ class JumpToStepExecutor(IStepExecutor):
     def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
         p = JumpToStepParams.from_dict(params)
         errors: list[str] = []
+        step_idx_display = {str(step_index + 1).zfill(2)}
         if p.condition not in {"success", "failure", "always"}:
-            errors.append(f"JUMP_TO_STEP : condition invalide — {p.condition!r}.")
+            errors.append(f"Dans l'étape {step_idx_display}. : condition invalide — {p.condition!r}.")
         target_step_id = self._resolve_target_step_id(params)
         if not target_step_id:
-            errors.append("JUMP_TO_STEP : target_hexastring doit référencer un step_id valide.")
+            errors.append(
+                f"Dans l'étape {step_idx_display}. : 'target_hexastring' doit référencer un step_id valide."
+            )
         if target_step_id:
             workflow_step_ids = params.get("_workflow_step_ids")
             if isinstance(workflow_step_ids, list) and target_step_id not in workflow_step_ids:
-                errors.append(f"JUMP_TO_STEP : l'étape cible [{target_step_id}] est introuvable.")
+                errors.append(f"Dans l'étape {step_idx_display}. : la cible [{target_step_id}] est introuvable.")
             self_step_id = params.get("_self_step_id")
             if self_step_id and target_step_id == self_step_id:
-                errors.append(f"JUMP_TO_STEP : l'étape [{target_step_id}] ne peut pas pointer vers elle-même.")
+                errors.append(f"Dans l'étape {step_idx_display}. : ne peut pas pointer vers elle-même.")
         return errors
 
 

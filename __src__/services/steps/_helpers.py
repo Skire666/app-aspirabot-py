@@ -1,16 +1,20 @@
 """Shared helper functions for step executors."""
+
 from __future__ import annotations
+
 import logging
 import time
 from typing import Any
-from shared.constants import C_UNITS_TIME_CONVERSION_TO_MS, C_UNITS_TIME_DEFAULT_MODEL
+
+from shared.constants import C_UNITS_TIME_CONVERSION_TO_MS
 
 _logger = logging.getLogger(__name__)
 
 
 def resolve_timeout_ms(timeout_duration: int, timeout_unit: str) -> int | None:
     """Returns timeout in ms or None when duration is 0."""
-    if not timeout_duration:
+    if timeout_duration <= -1 or timeout_unit not in C_UNITS_TIME_CONVERSION_TO_MS:
+        _logger.warning("Invalid timeout parameters: duration=%d, unit=%r", timeout_duration, timeout_unit)
         return None
     return int(timeout_duration * C_UNITS_TIME_CONVERSION_TO_MS.get(timeout_unit, 1_000))
 

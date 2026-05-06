@@ -1,4 +1,4 @@
-"""Typed parameter model for the SLEEP_X_TIME step."""
+"""Typed parameter model for the WAIT_X_TIME step."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 
 @dataclass(frozen=True)
-class SleepXTimeParams(IStepParams):
+class WaitXTimeParams(IStepParams):
     duration: int
     unit: str
 
@@ -31,4 +31,4 @@ class SleepXTimeParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
-        return StepType.SLEEP_X_TIME
+        return StepType.WAIT_X_TIME

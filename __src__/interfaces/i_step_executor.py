@@ -8,7 +8,6 @@ contract without knowing any concrete step type by name.
 Example:
     >>> executor = WaitElementExecutor()
     >>> executor.step_type()
-    <StepType.WAIT_ELEMENT: 'WAIT_ELEMENT'>
 """
 
 ## ---------------------------------------------------------------------------

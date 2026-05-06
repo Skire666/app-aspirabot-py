@@ -1,11 +1,19 @@
 """IStepFormDef for END_PROCESS."""
+
 from __future__ import annotations
+
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
+
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
-from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_MODEL, C_UNITS_TIME_DEFAULT_VIEW
+from shared.constants import (
+    C_MAXIMUM_SIZE_IMAGE,
+    C_UNITS_TIME_ALLOWED_FOR_VIEW,
+    C_UNITS_TIME_DEFAULT_MODEL,
+    C_UNITS_TIME_DEFAULT_VIEW,
+)
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
@@ -24,17 +32,25 @@ class EndProcessFormDef(IStepFormDef):
 
         ttk.Label(frame, text="Attente finale:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         dur_var = tk.StringVar(value="0")
-        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=dur_var, width=7).grid(row=0, column=1, sticky="w", padx=5, pady=4)
+        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=dur_var, width=7).grid(
+            row=0, column=1, sticky="w", padx=5, pady=4
+        )
         widgets["wait_duration"] = dur_var
 
         ttk.Label(frame, text="Unité:").grid(row=1, column=0, sticky="w", padx=5, pady=4)
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
-        ttk.Combobox(frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12).grid(row=1, column=1, sticky="w", padx=5, pady=4)
+        ttk.Combobox(
+            frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+        ).grid(row=1, column=1, sticky="w", padx=5, pady=4)
         widgets["wait_unit"] = unit_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
-        widgets["wait_unit"].set(WAIT_UNIT_MODEL_TO_VIEW.get(params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW))
+        widgets["wait_unit"].set(
+            WAIT_UNIT_MODEL_TO_VIEW.get(
+                params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+            )
+        )
 
     def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -46,7 +62,9 @@ class EndProcessFormDef(IStepFormDef):
         return []
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
-        return f"Fin du processus\nAttendre {params.get('wait_duration', 0)} {params.get('wait_unit', '')}"
+        unit_time = params.get("wait_unit", "")
+        unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
+        return f"Fin du processus\nAttendre {params.get('wait_duration', 0)} {unit_display} avant de quitter"
 
 
 register_form(EndProcessFormDef())

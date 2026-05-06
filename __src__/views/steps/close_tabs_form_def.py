@@ -1,8 +1,11 @@
 """IStepFormDef for CLOSE_TABS."""
+
 from __future__ import annotations
+
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
+
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
 from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
@@ -27,11 +30,15 @@ class CloseTabsFormDef(IStepFormDef):
         ttk.Entry(frame, textvariable=filter_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
         widgets["url_filter"] = filter_var
 
-        ttk.Label(frame, text="(Laisser vide pour ne pas filtrer)", foreground="gray").grid(row=1, column=1, sticky="w", padx=5, pady=(0, 4))
+        ttk.Label(frame, text="(Laisser vide pour ne pas filtrer)", foreground="gray").grid(
+            row=1, column=1, sticky="w", padx=5, pady=(0, 4)
+        )
 
         ttk.Label(frame, text="Max. onglets ouverts:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
         max_var = tk.StringVar(value="0")
-        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).grid(row=2, column=1, sticky="w", padx=5, pady=4)
+        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).grid(
+            row=2, column=1, sticky="w", padx=5, pady=4
+        )
         widgets["max_tabs"] = max_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
@@ -55,7 +62,7 @@ class CloseTabsFormDef(IStepFormDef):
         url_filter = params.get("url_filter", "")
         label = f"Fermer des onglets\nMax. ouverts : {max_tabs}"
         if url_filter:
-            label += f"  -  Sél. : {url_filter}"
+            label += f"  -  Sél. '*{url_filter}*'"
         return label
 
 

@@ -1,5 +1,9 @@
 """IStepFormDef for JUMP_TO_STEP."""
 
+## ---------------------------------------------------------------------------
+## Imports
+## ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -8,26 +12,13 @@ from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, CONDITION_VIEW_TO_MODEL
 
-_STEP_LABELS: dict[StepType, str] = {
-    StepType.OPEN_URL: "Ouvrir une URL",
-    StepType.REFRESH_PAGE: "Rafraîchir la page",
-    StepType.SLEEP_X_TIME: "Attendre une durée fixe",
-    StepType.RANDOM_PAUSE: "Attendre aléatoirement",
-    StepType.DOWNLOAD_IMAGE: "Télécharger les images",
-    StepType.WAIT_IMAGE_SIZE: "Vérifier une taille d'image",
-    StepType.WAIT_ELEMENT: "Vérifier les éléments",
-    StepType.COUNT_ELEMENT: "Compter les éléments",
-    StepType.CLICK_ELEMENT: "Cliquer sur un élément",
-    StepType.SCROLL_DOWN: "Défiler vers le bas",
-    StepType.EXTRACT_TEXT: "Extraire contenu textuel",
-    StepType.JUMP_TO_STEP: "Si l'étape d'avant est un...",
-    StepType.CLOSE_TABS: "Fermer des onglets",
-    StepType.END_PROCESS: "Fin du processus",
-    StepType.WAIT_USER_ACTION: "Attendre action utilisateur",
-}
+## ---------------------------------------------------------------------------
+## Classes
+## ---------------------------------------------------------------------------
 
 
 class JumpToStepFormDef(IStepFormDef):
@@ -37,7 +28,7 @@ class JumpToStepFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Si l'étape d'avant est un ..."
+        return "Si le résultat est un ..."
 
     @staticmethod
     def _resolve_target_hexastring(target_value: Any, target_ids: list[str]) -> int | None:
@@ -58,7 +49,7 @@ class JumpToStepFormDef(IStepFormDef):
 
         available_steps = widgets.get("_steps", [])  ## list StepScrapingModel
         jump_target_displays = [
-            f"Étape {i + 1}  -  #{s.step_id}  - {_STEP_LABELS.get(s.step_type, s.step_type.value)}"
+            f"{str(i + 1).zfill(2)}.  -  #{s.step_id}  - {C_STEP_TYPE_TO_LABELS.get(s.step_type, s.step_type.value)}"
             for i, s in enumerate(available_steps)
         ]
         jump_target_ids = [s.step_id for s in available_steps]
@@ -111,17 +102,13 @@ class JumpToStepFormDef(IStepFormDef):
 
     def format_label(self, params: dict[str, Any], idx: int) -> str:
         target_hexastr = params.get("target_hexastring", "??")
-        target_idx = params.get("target_position_unsafe", "*****")
+        target_idx = str(params.get("target_position_unsafe", -1) + 1).zfill(2)
         cond = params.get("condition", "success")
         if cond == "success":
-            return (
-                f"Si l'étape d'avant est ...\nun succès, se rendre à l'étape {target_idx + 1}.  #{target_hexastr}"
-            )
+            return f"Si le résultat est un succès\nSe rendre à l'étape {target_idx}.  #{target_hexastr}"
         if cond == "failure":
-            return (
-                f"Si l'étape d'avant est ...\nun échec, se rendre à l'étape {target_idx + 1}.  #{target_hexastr}"
-            )
-        return f"Toujour sauter à ...\nl'étape {target_idx + 1}.  #{target_hexastr}"
+            return f"Si le résultat est un échec\nSe rendre à l'étape {target_idx}.  #{target_hexastr}"
+        return f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_idx}.  #{target_hexastr}"
 
 
 register_form(JumpToStepFormDef())

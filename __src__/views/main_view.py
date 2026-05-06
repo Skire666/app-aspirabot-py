@@ -7,7 +7,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from shared.constants import (
+from shared.i18n_fra import (
     C_TITLE_MODULE_CONFIG,
     C_TITLE_MODULE_FAQ,
     C_TITLE_MODULE_LOGS,

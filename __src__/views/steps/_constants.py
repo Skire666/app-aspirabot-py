@@ -3,23 +3,17 @@
 Provides unit mappings, display lists, and the safe-int helper used by
 every IStepFormDef implementation.  Centralising these avoids duplication
 across the 15 form-def files.
-
-Example:
-    >>> _WAIT_UNIT_MAP_VIEW_TO_MODEL["seconde"]
-    's'
 """
 
 ## ---------------------------------------------------------------------------
 ## Imports
 ## ---------------------------------------------------------------------------
 
-import tkinter as tk
 from typing import Any
 
 from shared.constants import (
     C_UNITS_TIME_ALLOWED_FOR_MODEL,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_MODEL,
 )
 
 ## ---------------------------------------------------------------------------
@@ -27,12 +21,12 @@ from shared.constants import (
 ## ---------------------------------------------------------------------------
 
 # Display strings shown in Comboboxes.
-WAIT_UNIT_DISPLAY: list[str] = list(C_UNITS_TIME_ALLOWED_FOR_VIEW)  # ["minute", "seconde", "milliseconde"]
+WAIT_UNIT_DISPLAY: list[str] = list(C_UNITS_TIME_ALLOWED_FOR_VIEW)
 
-# Display → internal model value ("seconde" → "s").
+# Display → internal model value ("sec" → "s").
 WAIT_UNIT_VIEW_TO_MODEL: dict[str, str] = dict(zip(WAIT_UNIT_DISPLAY, C_UNITS_TIME_ALLOWED_FOR_MODEL))
 
-# Internal model value → display ("s" → "seconde").
+# Internal model value → display ("s" → "sec").
 WAIT_UNIT_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_UNITS_TIME_ALLOWED_FOR_MODEL, WAIT_UNIT_DISPLAY))
 
 ## ---------------------------------------------------------------------------

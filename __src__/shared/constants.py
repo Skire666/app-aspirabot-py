@@ -64,7 +64,7 @@ C_DATA_DEFAULT_FOLDER_PROVIDER: str = "data_providers"
 C_DATA_DEFAULT_FOLDER_SCRAPPING: str = "data_scraping"
 
 # size of the hex string used for generating unique IDs (e.g., for workflow items)
-C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 6  # must be even (aka % 2 == 0)
+C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 4  # must be even (aka % 2 == 0)
 C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
 
 ## ---------------------------------------------------------------------------
@@ -74,11 +74,6 @@ C_BROWSER_ENGINE_PLAYWRIGHT: str = "playwright"
 C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
 ## ---------------------------------------------------------------------------
-
-# Temporary folder for browser profiles used during scraping (relative to current working directory)
-# NOTE PCO : truc de dingue, si je mets 'tmp_browser_profiles', ça ne fonctionne pas pour cloudflare
-# je sais pas si c'est une coincidence, mais l'avenir, ne pas réessayer de changer, il n'aime pas.
-C_FOLDER_TMP_DATA_BROWSER: str = "browser_profiles"
 
 # Maximum size for images to be scraped (in pixels) - used as default value for image size filters
 C_MAXIMUM_SIZE_IMAGE: int = 99999
@@ -91,19 +86,19 @@ C_MAXIMUM_WAIT_TIME: int = 9_999
 
 # Allowed time units for step parameters (mirrors view layer allowed units)
 C_UNITS_TIME_DEFAULT_MODEL: str = "s"
-C_UNITS_TIME_DEFAULT_VIEW: str = "seconde"
+C_UNITS_TIME_DEFAULT_VIEW: str = "sec"
 C_UNITS_TIME_ALLOWED_FOR_MODEL: list[str] = ["m", "s", "ms"]
-C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["minute", "seconde", "milliseconde"]
-C_UNITS_TIME_CONVERSION_TO_MS: dict[str, int] = {"ms": 1, "s": 1000, "m": 60 * 1000}
+C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
+C_UNITS_TIME_CONVERSION_TO_MS: dict[str, int] = {"m": 60 * 1000, "s": 1000, "ms": 1}
 
 ## ---------------------------------------------------------------------------
 
 
 # Minimum time each step is displayed (milliseconds).
-C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 220  # x4 < 900 ms total
+C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 100  # x4 < 800 ms total
 
 # Minimum time the splash screen should be visible (milliseconds).
-C_SPLASHSCREEN_DISPLAY_MS_TOTAL = 880
+C_SPLASHSCREEN_DISPLAY_MS_TOTAL = 400
 
 # Human-readable label shown on the status line for each step.
 C_SPLASHSCREEN_STEP_LABELS = (" ._. ", " -_- ", " o_O ", " ^_^ ")
@@ -111,19 +106,5 @@ C_SPLASHSCREEN_STEP_LABELS = (" ._. ", " -_- ", " o_O ", " ^_^ ")
 # Splash window dimensions
 C_SPLASHSCREEN_SIZE_WIDTH = 280
 C_SPLASHSCREEN_SIZE_HEIGHT = 170
-
-## ---------------------------------------------------------------------------
-
-# Main view sidebar width in pixels
-C_VIEW_SIDEBAR_LEFT_WIDTH = 88
-
-# All title labels for sidebar buttons
-C_TITLE_MODULE_LOGS = "Journal"
-C_TITLE_MODULE_PROJECTS = "Projets"
-C_TITLE_MODULE_PROVIDER = "Fournisseur"
-C_TITLE_MODULE_WORKFLOW = "Workflow"
-C_TITLE_MODULE_SCRAPING = "Scraping"
-C_TITLE_MODULE_FAQ = "F.A.Q."
-C_TITLE_MODULE_CONFIG = "Paramètres"
 
 ## END

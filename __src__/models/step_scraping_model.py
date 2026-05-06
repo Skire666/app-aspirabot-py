@@ -18,7 +18,7 @@ from enum import Enum
 from typing import Any
 
 from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID
-from shared.random_util import generate_rng_hexastring
+from shared.random_util import generate_rng_hexastring_with_alphabet
 
 ## ---------------------------------------------------------------------------
 ## Constants
@@ -33,7 +33,7 @@ class StepType(Enum):
 
     OPEN_URL = "OPEN_URL"
     REFRESH_PAGE = "REFRESH_PAGE"
-    SLEEP_X_TIME = "SLEEP_X_TIME"
+    WAIT_X_TIME = "WAIT_X_TIME"
     RANDOM_PAUSE = "RANDOM_PAUSE"
     DOWNLOAD_IMAGE = "DOWNLOAD_IMAGE"
     WAIT_IMAGE_SIZE = "WAIT_IMAGE_SIZE"
@@ -57,7 +57,7 @@ _DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
         "timeout_unit": "s",
     },
     StepType.REFRESH_PAGE.value: {"clear_cache": False},
-    StepType.SLEEP_X_TIME.value: {"duration": 0, "unit": "s"},
+    StepType.WAIT_X_TIME.value: {"duration": 0, "unit": "s"},
     StepType.RANDOM_PAUSE.value: {"min": 0, "max": 1, "unit": "s"},
     StepType.DOWNLOAD_IMAGE.value: {
         "mode": "largest",
@@ -127,7 +127,7 @@ class StepScrapingModel:
         params: Type-specific parameters for the action.
 
     Example:
-        >>> step = StepScrapingModel.create_default(StepType.SLEEP_X_TIME)
+        >>> step = StepScrapingModel.create_default(StepType.WAIT_X_TIME)
         >>> step.params["duration"]
         0
     """
@@ -177,7 +177,7 @@ class StepScrapingModel:
         """
         return cls(
             step_type=StepType(data["step_type"]),
-            step_id=data.get("step_id", generate_rng_hexastring(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID)),
+            step_id=data.get("step_id", generate_rng_hexastring_with_alphabet(C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID)),
             is_active=data.get("is_active", True),
             params=data.get("params", {}),
         )
@@ -192,9 +192,9 @@ class StepScrapingModel:
             None.
 
         Example:
-            >>> step = StepScrapingModel.create_default(StepType.SLEEP_X_TIME)
+            >>> step = StepScrapingModel.create_default(StepType.WAIT_X_TIME)
             >>> step.to_dict()["step_type"]
-            'SLEEP_X_TIME'
+            'WAIT_X_TIME'
         """
         return {
             "step_type": self.step_type.value,
