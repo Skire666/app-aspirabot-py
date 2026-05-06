@@ -162,9 +162,11 @@ class PlaywrightBrowserService(IWebBrowserService):
         headless = not provider.browser_displayed
 
         # Obfuscated mode uses custom args; standard mode uses a plain context.
-        browser = self._pw.chromium.launch(
-            headless=headless, args=["--disable-blink-features=AutomationControlled"]
-        )
+        args = []
+        if provider.automation_obfuscated:
+            args += ["--disable-blink-features=AutomationControlled"]
+
+        browser = self._pw.chromium.launch(headless=headless, args=args)
         return browser, browser.new_context()
 
     # ------------------------------------------------------------------
