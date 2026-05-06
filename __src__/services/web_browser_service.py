@@ -174,6 +174,11 @@ class BrowserService(IWebBrowserService):
         if provider.automation_obfuscated:
             args += ["--disable-blink-features=AutomationControlled"]
 
+        ## NOTE PCO : Ne plus faire un dossier au démarrage, dans l'optique de préserver la session.
+        ## Les détections de bot n'aiment pas du tout ça. Surtout CloudFlare.
+        # Les trucs de 'stealth', avec headless false, ils ne servent à rien (utile que si mode 'caché').
+        # Donc autant ne pas le mettre, surtout qu'avec cloudflare, le stealth ne suffit pas.
+
         browser = self._pw.chromium.launch(headless=headless, args=args)
         return browser, browser.new_context()
 
