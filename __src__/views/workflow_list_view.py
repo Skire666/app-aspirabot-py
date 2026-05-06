@@ -17,7 +17,6 @@ Example:
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import tkinter as tk
 from collections.abc import Callable
@@ -262,38 +261,12 @@ class WorkflowListView(ttk.Frame):
         if self._dnd_busy:
             return
         self._dnd_list.items = self._last_steps
-        s_logger.debug(
-            "render_steps: count=%d, dnd_busy=%s",
-            len(self._last_steps),
-            self._dnd_busy,
-        )
-        with contextlib.suppress(Exception):
-            s_logger.debug(
-                (
-                    "render_steps: scroll_canvas mapped=%s, scroll_canvas height=%s, "
-                    "dnd_reqheight=%s, dnd_canvas mapped=%s"
-                ),
-                (getattr(self, "_scroll_canvas", None) is not None
-                 and self._scroll_canvas.winfo_ismapped()),
-                (getattr(self, "_scroll_canvas", None)
-                 and self._scroll_canvas.winfo_height()),
-                getattr(self._dnd_list, "winfo_reqheight", lambda: None)(),
-                (getattr(self._dnd_list, "canvas", None) is not None
-                 and getattr(self._dnd_list.canvas, "winfo_ismapped", lambda: False)()),
-            )
         self._dnd_list.rebuild()
         # Rebind scroll: rebuild() recreates the internal canvas object.
         self._bind_dnd_canvas_scroll()
         # Defer geometry update: rebuild() queues its layout asynchronously,
         # so winfo_reqheight() is only accurate after the event loop processes it.
         self.after_idle(self._update_dnd_window_geometry)
-        self.after_idle(self._scroll_steps_to_top)
-        # Force a full redraw once the event loop has processed layout. Some
-        # platforms report zero sizes earlier which leaves virtualization with
-        # an empty visible range; a full redraw here guarantees items are
-        # painted. A short delayed redraw acts as a fallback.
-        self.after_idle(self._dnd_list.redraw)
-        self.after(25, lambda: self._dnd_list.redraw())
 
     def show_toast(self, message: str, level: str = "info") -> None:
         """Briefly displays a notification message above the toolbar.
@@ -330,7 +303,6 @@ class WorkflowListView(ttk.Frame):
         except (tk.TclError, ValueError):
             pass
         self._bottom_row.grid()
-        self.after_idle(self._scroll_steps_to_top)
 
     def hide_inline_form(self) -> None:
         """Hides both Brique logique and Aide à la saisie panels."""

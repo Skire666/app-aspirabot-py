@@ -7,7 +7,6 @@ import them directly from views.components.drag_drop_list.
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import tkinter as tk
 from collections.abc import Callable
@@ -262,18 +261,6 @@ class DragDropList(tk.Frame, Generic[T]):
         self._engine = RenderEngine(self.canvas, self._theme)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        s_logger.debug(
-            "_build_canvas: created canvas height=%s, mapped=%s",
-            self._calc.total_height(),
-            getattr(self.canvas, "winfo_ismapped", lambda: False)(),
-        )
-
-        # Ensure we repaint once the canvas is actually mapped to the screen.
-        # <Map> fires when the widget becomes visible; some platforms deliver
-        # initial <Configure> earlier with zero sizes, leaving the first
-        # redraw with an empty visible range.
-        self.canvas.bind("<Map>", self._on_canvas_map, add="+")
-
         # Bind all canvas events.
         self.canvas.bind("<Configure>", self._on_canvas_configure)
         self.canvas.bind("<ButtonPress-1>", self._on_press)
@@ -291,12 +278,6 @@ class DragDropList(tk.Frame, Generic[T]):
         self._resize_debouncer.cancel(self)
         self._resize_finalize_debouncer.cancel(self)
         self._build_canvas()
-        # Schedule an initial redraw attempt after rebuild: the canvas may
-        # not be mapped yet, so also rely on the <Map> handler to force a
-        # repaint when it becomes visible.
-        with contextlib.suppress(Exception):
-            self.after_idle(self._ensure_redraw)
-            self.after(50, self._ensure_redraw)
 
     # ─── Geometry helpers ─────────────────────────────────────────────────────
 
@@ -346,7 +327,6 @@ class DragDropList(tk.Frame, Generic[T]):
 
     def _on_canvas_configure(self, event: tk.Event) -> None:  # type: ignore[type-arg]
         """Handles canvas size changes and schedules debounced redraws."""
-        s_logger.debug("_on_canvas_configure: width=%s height=%s", event.width, event.height)
         if not self._calc.set_canvas_w(event.width):
             return  # height-only change; skip (layout is width-derived)
         self._resize_debouncer.schedule(self, self._on_resize_debounced)
@@ -477,19 +457,11 @@ class DragDropList(tk.Frame, Generic[T]):
             floating_idx: Index of the currently dragged item, or None.
             floating_y: Top Y coordinate of the floating item, or None.
         """
-        s_logger.debug(
-            "redraw: items=%d, virtualize=%s, canvas_w=%s",
-            len(self.items),
-            self._virtualize,
-            self._calc._canvas_w,
-        )
-
         self._calc.set_n_items(len(self.items))
         self._engine.clear_all()
 
         start, end = self._visible_range()
         btn_start, btn_end = self._buttons_range()
-        s_logger.debug("redraw: visible_range=(%s,%s) btn_range=(%s,%s)", start, end, btn_start, btn_end)
         if self._virtualize:
             self._last_visible_range = (start, end)
             self._last_buttons_range = (btn_start, btn_end)
@@ -537,34 +509,10 @@ class DragDropList(tk.Frame, Generic[T]):
         current = self._visible_range()
         current_buttons = self._buttons_range()
         if not force and self._last_visible_range == current and self._last_buttons_range == current_buttons:
-            s_logger.debug("redraw_visible: skipped (no range change)")
             return
-        s_logger.debug("redraw_visible: force=%s current=%s last=%s", force, current, self._last_visible_range)
         self._last_visible_range = current
         self._last_buttons_range = current_buttons
         self.redraw()
-
-    def _on_canvas_map(self, _: tk.Event) -> None:
-        """Called when the internal canvas is mapped (becomes visible).
-
-        Forces an immediate redraw now that the widget is visible on screen.
-        """
-        s_logger.debug("_on_canvas_map: canvas mapped; ensure redraw")
-        self._ensure_redraw()
-
-    def _ensure_redraw(self) -> None:
-        """Helper that forces a visible redraw and a short delayed fallback."""
-        with contextlib.suppress(Exception):
-            # Make sure geometry is processed
-            self.canvas.update_idletasks()
-
-        with contextlib.suppress(Exception):
-            self.redraw_visible(force=True)
-
-        with contextlib.suppress(Exception):
-            self.redraw()
-
-        s_logger.debug("_ensure_redraw: attempted redraws")
 
     # ─── Item redraw ──────────────────────────────────────────────────────────
 
