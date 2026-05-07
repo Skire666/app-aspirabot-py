@@ -53,7 +53,7 @@ class JumpToStepExecutor(IStepExecutor):
 
             # TODO PCO : pas optimisé la recherche, un dictionnaire serait mieux.
             step_found = None
-            for step_item in model.parent_context.steps:  # type: ignore
+            for step_item in model.parent_context:  # type: ignore
                 if step_item.step_id == target_step_id:
                     step_found = step_item
                     break

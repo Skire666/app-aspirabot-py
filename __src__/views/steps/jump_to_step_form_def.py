@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import datetime
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
@@ -110,12 +109,8 @@ class JumpToStepFormDef(IStepFormDef):
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         target_hexastr = model.params.get("target_hexastring", "??")
 
-        print(
-            f"DEBUG: {datetime.datetime.now()} Formatting label for JumpToStep with target_hexastring={target_hexastr}"
-        )
-
         str_target_idx = "??"
-        for target_idx, step_item in enumerate(model.parent_context.steps):
+        for target_idx, step_item in enumerate(model.parent_context):
             if step_item.step_id == target_hexastr:
                 str_target_idx = f"{target_idx + 1}".zfill(2)
                 break

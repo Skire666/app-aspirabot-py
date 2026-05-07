@@ -304,7 +304,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         try:
             # Convertit le modèle en dictionnaire
-            provider_dict = provider.provider.export_to_data_json()
+            provider_dict = provider.export_to_data_json()
 
             # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
             json_repo = JsonFileRepository(full_filepath, {})

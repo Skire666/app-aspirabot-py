@@ -36,10 +36,6 @@ from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 _HEIGHT_FRAME_LOGICAL_BLOCK = 200  # TODO PCO: le bloc 'brique logique est trop petit
 _WIDTH_FRAME_STEP_STYPE_SELECTOR = 200
 _DND_ITEM_H = 45
-_DND_RESIZE_MIN_DELTA_PX = 5
-_DND_RESIZE_FINALIZE_MS = 5
-_DND_DRAG_REDRAW_MIN_INTERVAL_MS = 5
-_DND_DRAG_REDRAW_MIN_DELTA_PX = 5
 _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
 _STEPS_SECTION_TITLE = "Liste des étapes"
@@ -169,10 +165,6 @@ class WorkflowListView(ttk.Frame):
             on_toggle_active=self._on_dnd_toggle_active,
             on_reorder=self._on_dnd_reorder,
             item_height=_DND_ITEM_H,
-            resize_min_delta_px=_DND_RESIZE_MIN_DELTA_PX,
-            resize_finalize_ms=_DND_RESIZE_FINALIZE_MS,
-            drag_redraw_min_interval_ms=_DND_DRAG_REDRAW_MIN_INTERVAL_MS,
-            drag_redraw_min_delta_px=_DND_DRAG_REDRAW_MIN_DELTA_PX,
             virtualize=_DND_VIRTUALIZE,
             viewport_provider=self._get_dnd_viewport,
             virtualize_buffer=_DND_VIRTUALIZE_BUFFER,

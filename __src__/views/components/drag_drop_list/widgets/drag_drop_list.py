@@ -149,10 +149,10 @@ class DragDropList(tk.Frame, Generic[T]):
         btn_size: int = 36,
         theme: dict[str, str] | None = None,
         resize_debounce_ms: int = 0,
-        resize_min_delta_px: int = 4,
-        resize_finalize_ms: int = 250,
-        drag_redraw_min_interval_ms: int = 16,
-        drag_redraw_min_delta_px: int = 3,
+        resize_min_delta_px: int = 0,
+        resize_finalize_ms: int = 0,
+        drag_redraw_min_interval_ms: int = 0,
+        drag_redraw_min_delta_px: int = 0,
         virtualize: bool = False,
         viewport_provider: Callable[[], tuple[int, int]] | None = None,
         virtualize_buffer: int = 2,
@@ -547,9 +547,8 @@ class DragDropList(tk.Frame, Generic[T]):
             bw = self._calc.btn_zone_width(len(self._visible_btns))
             draw_btns = btn_start <= i < btn_end
 
-            updated = (
-                has_resize_update
-                and renderer.resize_update(self.canvas, self.items[i], i, x, y, w - bw, h, "normal")
+            updated = has_resize_update and renderer.resize_update(
+                self.canvas, self.items[i], i, x, y, w - bw, h, "normal"
             )
             if updated:
                 if draw_btns and self._visible_btns:

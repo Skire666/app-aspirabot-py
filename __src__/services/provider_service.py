@@ -46,9 +46,9 @@ class ProviderService:
         Returns:
             Le modèle du fournisseur.
         """
-        model: ProviderModel = self._repository.read_provider(id_file)
+        model = self._repository.read_provider(id_file)
         for step in model.steps:
-            step.parent_context = model
+            step.parent_context = model.steps
         return model
 
     def exists_provider(self, id_file: str) -> bool:

@@ -216,14 +216,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
         params = self._get_params(step_type)
 
         is_active = self._step_selected.is_active if self._step_selected else True
-        parent_model = self._available_steps[0].parent_context if self._available_steps else None
 
         step = StepScrapingModel(
             step_type=step_type,
             is_active=is_active,
             step_id=generate_rng_id_step(),
             params=params,
-            parent_context=parent_model,
+            parent_context=self._available_steps,
         )
         if self.on_confirm:
             self.on_confirm(step)

@@ -96,6 +96,7 @@ class WorkflowService:
                 raise ValueError("Workflow steps context is required for validation.")
 
             executor: IStepExecutor = self.get_step_executor(step.step_type)
+            step.parent_context = steps  # type: ignore
             return executor.validate_model(step, step_index)
         except ValueError:
             return []

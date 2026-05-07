@@ -75,6 +75,7 @@ class StepItemRenderer:
             "border": self._C_BORDER_NORMAL,
             "fg": self._C_FG_DEACTIVATE,
         }
+        self._cached_labels: dict[str, str] = {}
 
     def _resolve_colors(self, state: str, is_selected: bool, is_active: bool) -> dict[str, str]:
         """Maps rendering state and selection flag to the color palette."""
@@ -123,7 +124,7 @@ class StepItemRenderer:
     ) -> None:
         """Draws the step label text centered vertically within the item area."""
         txt_prefix = f"{str(idx + 1).zfill(2)}.\n#{item.step_id}"
-        txt_item = get_form(item.step_type).format_label(item, idx)
+        txt_item = self.get_label_from_store(item, idx)
         offset_w = 80 if item.step_type == StepType.JUMP_TO_STEP else 58
         start_w = x + 8
         pos_h = y + h // 2
@@ -134,6 +135,18 @@ class StepItemRenderer:
             start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT
         )
         self._draw_overflow_mask(canvas, x, y, w, h, idx)
+
+    def get_label_from_store(self, item, idx):
+        # always (because of the dynamic nature of the label)
+        # get the label for jump_to_step without caching
+        if item.step_type == StepType.JUMP_TO_STEP:
+            return get_form(item.step_type).format_label(item, idx)
+
+        # cache the label for other step types to avoid unnecessary recomputation on each redraw
+        key = f"{item.step_id}_{idx}"
+        if key not in self._cached_labels:
+            self._cached_labels[key] = get_form(item.step_type).format_label(item, idx)
+        return self._cached_labels[key]
 
     def _draw_overflow_mask(self, canvas: tk.Canvas, x: int, y: int, w: int, h: int, idx: int) -> None:
         """Draws (or removes) the overflow mask, tagged for resize reuse."""
