@@ -11,7 +11,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
     C_MAXIMUM_SIZE_IMAGE,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
@@ -132,11 +132,11 @@ class OpenUrlFormDef(IStepFormDef):
             errors.append("Durée de timeout doit être un nombre supérieur ou égal à 1.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Formats the label displayed in the workflow list."""
-        url = params.get("url", "")
-        td = params.get("timeout_duration", 0)
-        unit_time = params.get("timeout_unit", "")
+        url = model.params.get("url", "")
+        td = model.params.get("timeout_duration", 0)
+        unit_time = model.params.get("timeout_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
         return f"Ouvrir une URL  -  timeout : {td} {unit_display}\nUrl: '{url}'"
 

@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
@@ -75,10 +75,10 @@ class RandomPauseFormDef(IStepFormDef):
             errors.append("La valeur minimale doit être strictement inférieure à la valeur maximale.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        unit_time = params.get("unit", "")
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        unit_time = model.params.get("unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return f"Attendre aléatoirement\nEntre {params.get('min', 0)} et {params.get('max', 1)} {unit_display}"
+        return f"Attendre aléatoirement\nEntre {model.params.get('min', 0)} et {model.params.get('max', 1)} {unit_display}"
 
 
 register_form(RandomPauseFormDef())

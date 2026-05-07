@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
 
@@ -37,8 +37,8 @@ class RefreshPageFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         return []
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        if params.get("clear_cache"):
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        if model.params.get("clear_cache"):
             return "Rafraîchir la page\nVide le cache (Ctrl+F5)"
         return "Rafraîchir la page\nGarde le cache (F5)"
 

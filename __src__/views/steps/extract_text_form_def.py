@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.step_registry import register_form
 from views.steps._constants import (
     EXTRACT_MODE_DISPLAY,
@@ -85,10 +85,10 @@ class ExtractTextFormDef(IStepFormDef):
             errors.append("Le sélecteur CSS est obligatoire.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        selector = params.get("selector", "")
-        extract_mode = params.get("extract_mode", "")
-        target = params.get("target", "")
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        selector = model.params.get("selector", "")
+        extract_mode = model.params.get("extract_mode", "")
+        target = model.params.get("target", "")
         return f"Extraire contenu textuel\nSél. '{selector}'  -  {extract_mode}  /  {target}"
 
 

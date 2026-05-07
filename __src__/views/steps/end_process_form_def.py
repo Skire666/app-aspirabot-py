@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
@@ -62,10 +62,10 @@ class EndProcessFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         return []
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        unit_time = params.get("wait_unit", "")
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        unit_time = model.params.get("wait_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return f"Fin du processus\nAttendre {params.get('wait_duration', 0)} {unit_display} avant de quitter"
+        return f"Fin du processus\nAttendre {model.params.get('wait_duration', 0)} {unit_display} avant de quitter"
 
 
 register_form(EndProcessFormDef())

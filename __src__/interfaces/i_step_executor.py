@@ -17,7 +17,7 @@ Example:
 from abc import ABC, abstractmethod
 from typing import Any
 
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 
 ## ---------------------------------------------------------------------------
 ## Interface
@@ -80,7 +80,7 @@ class IStepExecutor(ABC):
         """
 
     @abstractmethod
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
+    def validate_model(self, params: StepScrapingModel, step_index: int) -> list[str]:
         """Validates step parameters and returns human-readable error messages.
 
         Args:

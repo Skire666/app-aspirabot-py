@@ -14,8 +14,29 @@ Example:
 ## Imports
 ## ---------------------------------------------------------------------------
 
-from models.step_scraping_model import StepScrapingModel
-from shared.step_registry import get_executor
+from interfaces.i_step_executor import IStepExecutor
+from models.step_scraping_model import StepScrapingModel, StepType
+
+## ---------------------------------------------------------------------------
+## Variables
+## ---------------------------------------------------------------------------
+
+_all_step_executors: dict[StepType, IStepExecutor] = {}
+
+
+def register_step_executor(executor: IStepExecutor) -> None:
+    """Registers an executor instance in the service registry.
+
+    Args:
+        executor: Concrete IStepExecutor instance.
+
+    Returns:
+        None.
+
+    Raises:
+        None.
+    """
+    _all_step_executors[executor.step_type()] = executor
 
 
 class WorkflowService:
@@ -30,6 +51,26 @@ class WorkflowService:
         >>> isinstance(errors, list)
         True
     """
+
+    def __init__(self):
+        pass
+
+    def get_step_executor(self, step_type: StepType) -> IStepExecutor:
+        """Returns the registered executor for the given step type.
+
+        Args:
+            step_type: The StepType to look up.
+
+        Returns:
+            The IStepExecutor instance registered for that type.
+
+        Raises:
+            ValueError: When no executor has been registered for the type.
+        """
+        executor = _all_step_executors.get(step_type)
+        if executor is None:
+            raise ValueError(f"No executor registered for step type {step_type}.")
+        return executor
 
     def validate_step(
         self,
@@ -51,14 +92,10 @@ class WorkflowService:
             None.
         """
         try:
-            executor = get_executor(step.step_type)
-            # Enrich params with workflow context for validators.
-            params = dict(step.params)
-            params["_self_step_id"] = step.step_id
-            if steps is not None:
-                step_ids = [current.step_id for current in steps]
-                params["_workflow_step_ids"] = step_ids
-                params["_step_id_by_index"] = step_ids
-            return executor.validate(params, step_index)
+            if steps is None:
+                raise ValueError("Workflow steps context is required for validation.")
+
+            executor: IStepExecutor = self.get_step_executor(step.step_type)
+            return executor.validate_model(step, step_index)
         except ValueError:
             return []

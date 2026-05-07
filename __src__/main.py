@@ -8,7 +8,6 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 
-# Bootstrap: import all step packages to populate the central registry.
 import models.steps  # noqa: F401
 import services.steps  # noqa: F401
 import views.steps  # noqa: F401
@@ -49,6 +48,9 @@ from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
 from views.scraping_panel_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
+
+# Bootstrap: import all step packages to populate the central registry.
+from __src__.services.workflow_service import WorkflowService
 
 ## ---------------------------------------------------------------------------
 ## Entry point
@@ -260,7 +262,8 @@ def _init_scraping_component(
         browser_service = BrowserService(config_model.folder_scraping)
     else:
         raise Exception(f"Unsupported browser engine: {config_model.browser_engine}")
-    scraping_service = ScrapingService(config_model.folder_scraping, browser_service)
+    workflow_service = WorkflowService()
+    scraping_service = ScrapingService(config_model.folder_scraping, browser_service, workflow_service)
     scraping_view = ScrapingView(main_view.content_area)
     scraping_presenter = ScrapingPresenter(
         view=scraping_view, service_scraping=scraping_service, service_provider=provider_service

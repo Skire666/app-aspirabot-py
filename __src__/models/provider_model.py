@@ -16,7 +16,7 @@ Example:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import cast
+from typing import Any, cast
 
 from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
@@ -158,3 +158,31 @@ class ProviderModel:
             return False
 
         return normalized_value.isalnum()
+
+    def export_to_data_json(self) -> dict[str, Any]:
+        """Converts the provider model to a JSON-serializable dictionary.
+
+        Returns:
+            dict: A dictionary representation of the provider suitable for JSON serialization.
+
+        Raises:
+            None.
+
+        Example:
+            >>> provider = ProviderModel.get_default_data()
+            >>> data_json = provider.export_to_data_json()
+            >>> isinstance(data_json, dict)
+            True
+        """
+        # Use asdict to convert dataclass fields to a dictionary.
+        return {
+            "id_file": self.id_file,
+            "provider_name": self.provider_name,
+            "url": self.url,
+            "created_date": self.created_date,
+            "modified_date": self.modified_date,
+            "version": self.version,
+            "browser_displayed": self.browser_displayed,
+            "automation_obfuscated": self.automation_obfuscated,
+            "steps": [step.export_to_data_json() for step in self.steps],
+        }

@@ -1,12 +1,15 @@
 """IStepExecutor for END_PROCESS."""
+
 from __future__ import annotations
+
 import time
 from typing import Any
+
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.end_process_params import EndProcessParams
+from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
-from shared.step_registry import register_executor
 
 _MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
 
@@ -27,14 +30,15 @@ class EndProcessExecutor(IStepExecutor):
         # Signal end-process to the service via the mutable params dict.
         params["_end_process"] = True
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
-        p = EndProcessParams.from_dict(params)
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        p = EndProcessParams.from_dict(model.params)
+        index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []
         if p.wait_duration < 0:
-            errors.append("END_PROCESS : wait_duration doit être >= 0.")
+            errors.append(f"Erreur dans l'étape {index_display}. : wait_duration doit être >= 0.")
         if p.wait_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(f"END_PROCESS : unité de temps invalide — {p.wait_unit!r}.")
+            errors.append(f"Erreur dans l'étape {index_display}. : unité de temps invalide — {p.wait_unit!r}.")
         return errors
 
 
-register_executor(EndProcessExecutor())
+register_step_executor(EndProcessExecutor())

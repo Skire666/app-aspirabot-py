@@ -9,11 +9,11 @@ from typing import Any
 from urllib.parse import urljoin
 
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import evaluate_script_with_safe_retry
+from services.workflow_service import register_step_executor
 from shared.path_util import make_all_folders_if_not_exists
-from shared.step_registry import register_executor
 
 _logger = logging.getLogger(__name__)
 
@@ -95,14 +95,16 @@ class DownloadImageExecutor(IStepExecutor):
         if downloaded_count == 0:
             raise ValueError("No image was downloaded.")
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        p = DownloadImageParams.from_dict(model.params)
+        index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
-                int(params.get(key, 0))
+                int(model.params.get(key, 0))
             except (ValueError, TypeError):
-                errors.append(f"DOWNLOAD_IMAGE : {key} doit être un entier.")
+                errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un entier.")
         return errors
 
 
-register_executor(DownloadImageExecutor())
+register_step_executor(DownloadImageExecutor())

@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
@@ -86,11 +86,11 @@ class WaitUserActionFormDef(IStepFormDef):
             errors.append("Le délai post-reprise doit être un nombre positif ou égal à 0.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
         cond_labels = {"success": "Si succès", "failure": "Si échec", "always": "Toujours"}
-        condition = cond_labels.get(params.get("condition", "always"), "toujours")
-        wd = params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)
-        unit_time = params.get("wait_unit", "")
+        condition = cond_labels.get(model.params.get("condition", "always"), "toujours")
+        wd = model.params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)
+        unit_time = model.params.get("wait_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
         delay_str = f"Si reprise demandée, patienter {wd} {unit_display}" if wd > 0 else ""

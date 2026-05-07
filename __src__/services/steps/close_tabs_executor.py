@@ -1,10 +1,13 @@
 """IStepExecutor for CLOSE_TABS."""
+
 from __future__ import annotations
+
 from typing import Any
+
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.close_tabs_params import CloseTabsParams
-from shared.step_registry import register_executor
+from services.workflow_service import register_step_executor
 
 
 class CloseTabsExecutor(IStepExecutor):
@@ -24,14 +27,16 @@ class CloseTabsExecutor(IStepExecutor):
             raise ValueError("Current page was closed unexpectedly.")
         if p.max_tabs > 0:
             others = [t for t in page.context.pages if t is not page]
-            for t in others[p.max_tabs - 1:]:
+            for t in others[p.max_tabs - 1 :]:
                 t.close()
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
-        p = CloseTabsParams.from_dict(params)
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        p = CloseTabsParams.from_dict(model.params)
+        index_display = str(step_index + 1).zfill(2)
+
         if p.max_tabs < 0:
-            return ["CLOSE_TABS : max_tabs doit être >= 0."]
+            return [f"Erreur dans l'étape {index_display}. : max_tabs doit être >= 0."]
         return []
 
 
-register_executor(CloseTabsExecutor())
+register_step_executor(CloseTabsExecutor())

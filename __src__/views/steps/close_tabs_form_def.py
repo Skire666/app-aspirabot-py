@@ -11,7 +11,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
 from shared.step_registry import register_form
 from views.steps._constants import safe_int_widget
@@ -79,9 +79,9 @@ class CloseTabsFormDef(IStepFormDef):
             )
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        max_tabs = params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)
-        url_filter = params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER)
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        max_tabs = model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)
+        url_filter = model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER)
         if max_tabs == 0:
             return "Fermer les onglets  -  Tous\nIl ne restera aucun onglet d'ouvert"
 

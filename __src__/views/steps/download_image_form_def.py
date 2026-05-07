@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
 from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
@@ -129,13 +129,13 @@ class DownloadImageFormDef(IStepFormDef):
                 errors.append(f"La valeur '{key}' doit être un entier positif ou égal à 0.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        mode = params.get("mode", "")
-        unique_only = params.get("unique_only", False)
-        width_min = params.get("width_min", 200)
-        height_min = params.get("height_min", 200)
-        width_max = params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
-        height_max = params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        mode = model.params.get("mode", "")
+        unique_only = model.params.get("unique_only", False)
+        width_min = model.params.get("width_min", 200)
+        height_min = model.params.get("height_min", 200)
+        width_max = model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
+        height_max = model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
         dup_str = "(doublons refusés)" if unique_only else "(doublons autorisés)"
         return f"Télécharger images {dup_str}\n{mode} - {width_min}x{height_min} -> {width_max}x{height_max}"
 

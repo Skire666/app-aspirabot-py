@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from tkinter import ttk
 from typing import Any
 
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 
 ## ---------------------------------------------------------------------------
 ## Interface
@@ -135,11 +135,11 @@ class IStepFormDef(ABC):
         """
 
     @abstractmethod
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Returns the renderer label for a step list item.
 
         Args:
-            params: Raw parameter dict from the step model.
+            model: The step model instance.
             idx: Zero-based index of the step in the workflow.
 
         Returns:

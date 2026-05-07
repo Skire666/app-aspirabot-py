@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.jump_to_step_params import JumpToStepParams
-from shared.step_registry import register_executor
+from services.workflow_service import register_step_executor
 
 
 class JumpToStepExecutor(IStepExecutor):
@@ -17,18 +17,6 @@ class JumpToStepExecutor(IStepExecutor):
 
     def default_params_dict(self) -> dict[str, Any]:
         return JumpToStepParams.default().to_dict()
-
-    def _resolve_target_step_id(self, params: dict[str, Any]) -> str:
-        raw_target = params.get("target_hexastring", "")
-        if isinstance(raw_target, str):
-            return raw_target
-        if isinstance(raw_target, int):
-            step_id_by_index = params.get("_step_id_by_index")
-            if isinstance(step_id_by_index, list) and 0 <= raw_target < len(step_id_by_index):
-                return step_id_by_index[raw_target]
-            if isinstance(step_id_by_index, dict):
-                return str(step_id_by_index.get(raw_target, ""))
-        return ""
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         p = JumpToStepParams.from_dict(params)
@@ -43,25 +31,38 @@ class JumpToStepExecutor(IStepExecutor):
             # Signal the service by writing to the mutable params dict.
             params["_pending_jump"] = target_step_id
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
-        p = JumpToStepParams.from_dict(params)
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        condition = model.params.get("condition", "success")
+        target_step_id = model.params.get("target_hexastring", "")
+
         errors: list[str] = []
         step_idx_display = str(step_index + 1).zfill(2)
-        if p.condition not in {"success", "failure", "always"}:
-            errors.append(f"Dans l'étape {step_idx_display}. : condition invalide — {p.condition!r}.")
-        target_step_id = self._resolve_target_step_id(params)
+        if condition not in {"success", "failure", "always"}:
+            errors.append(f"Dans l'étape {step_idx_display}. : condition invalide - {condition}.")
+
+        # Basic check for presence of target step ID.
         if not target_step_id:
-            errors.append(
-                f"Dans l'étape {step_idx_display}. : 'target_hexastring' doit référencer un step_id valide."
-            )
+            errors.append(f"Dans l'étape {step_idx_display}. : Aucune étape de référencée.")
+            return errors
+
+        # Additional checks if a target step ID is provided.
         if target_step_id:
-            workflow_step_ids = params.get("_workflow_step_ids")
-            if isinstance(workflow_step_ids, list) and target_step_id not in workflow_step_ids:
-                errors.append(f"Dans l'étape {step_idx_display}. : la cible [{target_step_id}] est introuvable.")
-            self_step_id = params.get("_self_step_id")
-            if self_step_id and target_step_id == self_step_id:
+            # Check for self-referencing jump.
+            if target_step_id == model.step_id:
                 errors.append(f"Dans l'étape {step_idx_display}. : ne peut pas pointer vers elle-même.")
+
+            # TODO PCO : pas optimisé la recherche, un dictionnaire serait mieux.
+            step_found = None
+            for step_item in model.parent_context.steps:  # type: ignore
+                if step_item.step_id == target_step_id:
+                    step_found = step_item
+                    break
+
+            if step_found is None:
+                errors.append(f"Dans l'étape {step_idx_display}. : la cible [{target_step_id}] est introuvable.")
+
+        # Note: We cannot check for jump loops here, as it would require analyzing the entire workflow
         return errors
 
 
-register_executor(JumpToStepExecutor())
+register_step_executor(JumpToStepExecutor())

@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.step_registry import register_form
 from views.steps._constants import CLICK_MODES
 
@@ -61,8 +61,8 @@ class ClickElementFormDef(IStepFormDef):
             errors.append("Le sélecteur CSS est obligatoire.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        selector = params.get("selector", "")
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        selector = model.params.get("selector", "")
         return f"Cliquer sur un élément\nSél. '{selector}'"
 
 

@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
 from shared.step_registry import register_form
 from views.steps._constants import safe_int_widget
@@ -41,8 +41,8 @@ class ScrollDownFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         return []
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        return f"Défilement vers le bas\nLongueur: {params.get('pixels', 0)} px"
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        return f"Défilement vers le bas\nLongueur: {model.params.get('pixels', 0)} px"
 
 
 register_form(ScrollDownFormDef())

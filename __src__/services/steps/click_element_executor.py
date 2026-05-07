@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.click_element_params import ClickElementParams
 from services.steps._helpers import evaluate_script_with_safe_retry
-from shared.step_registry import register_executor
+from services.workflow_service import register_step_executor
 
 
 class ClickElementExecutor(IStepExecutor):
@@ -46,11 +46,14 @@ class ClickElementExecutor(IStepExecutor):
         else:
             raise ValueError(f"Unsupported click mode: {p.click_mode}")
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
-        p = ClickElementParams.from_dict(params)
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        p = ClickElementParams.from_dict(model.params)
+        index_display = str(step_index + 1).zfill(2)
+
+        # if selecteur est vide ou ne contient que des espaces
         if not p.selector.strip():
-            return ["CLICK_ELEMENT : le sélecteur CSS est obligatoire."]
+            return [f"Erreur dans l'étape {index_display}. : le sélecteur CSS est obligatoire."]
         return []
 
 
-register_executor(ClickElementExecutor())
+register_step_executor(ClickElementExecutor())

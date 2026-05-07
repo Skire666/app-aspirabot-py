@@ -4,6 +4,8 @@
 
 import secrets
 
+from shared.exception_util import ValueMustBePositiveAndEvenError
+
 ## ---------------------------------------------------------------------------
 ## Constants
 ## ---------------------------------------------------------------------------
@@ -54,6 +56,7 @@ def generate_rng_id_step() -> str:
             g_unique_list_id_step.add(value)
             return value
 
+    ## +2 char ?
     return "".join(secrets.choice(_ALPHABET_PATTERN) for _ in range(6))
 
 

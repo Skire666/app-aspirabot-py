@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
     C_MAXIMUM_SIZE_IMAGE,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
@@ -152,16 +152,16 @@ class WaitImageSizeFormDef(IStepFormDef):
             errors.append("Durée de timeout doit être un nombre supérieur ou égal à 1.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Produce a compact, human-readable label describing this step instance."""
-        width_min = params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        height_min = params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        width_max = params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
-        height_max = params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
+        width_min = model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
+        height_min = model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
+        width_max = model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
+        height_max = model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
 
-        unit_time = params.get("timeout_unit", "")
+        unit_time = model.params.get("timeout_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        td = params.get("timeout_duration", 0)
+        td = model.params.get("timeout_duration", 0)
 
         label = f"Présence d'une image  -  timeout : {td} {unit_display}\n"
         return label + f"{width_min}x{height_min} -> {width_max}x{height_max}"

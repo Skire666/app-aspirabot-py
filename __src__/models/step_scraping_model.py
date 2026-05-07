@@ -15,9 +15,11 @@ Example:
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, TypeVar
 
 from shared.random_util import generate_rng_id_step
+
+ParentContextType = TypeVar("ParentContextType")
 
 ## ---------------------------------------------------------------------------
 ## Constants
@@ -65,6 +67,7 @@ class StepScrapingModel:
     step_id: str
     is_active: bool = True
     params: dict[str, Any] = field(default_factory=dict)
+    parent_context: ParentContextType = field(default=None, repr=False, compare=False)
 
     def __init__(
         self,
@@ -72,6 +75,7 @@ class StepScrapingModel:
         step_id: str,
         is_active: bool = True,
         params: dict[str, Any] | None = None,
+        parent_context: ParentContextType = None,
     ) -> None:
         """Initializes a scraping step model.
 
@@ -80,14 +84,16 @@ class StepScrapingModel:
             step_id: The unique step identifier.
             is_active: Whether the step is enabled.
             params: Step-specific parameters.
+            parent_context: The context of the parent step.
         """
         self.step_type = step_type
         self.step_id = step_id
         self.is_active = is_active
         self.params = params if params is not None else {}
+        self.parent_context = parent_context
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "StepScrapingModel":
+    def import_from_data_json(cls, data: dict[str, Any]) -> "StepScrapingModel":
         """Deserializes a step from a raw dictionary.
 
         Args:
@@ -109,9 +115,10 @@ class StepScrapingModel:
             step_id=data.get("step_id", generate_rng_id_step()),
             is_active=data.get("is_active", True),
             params=data.get("params", {}),
+            parent_context=None,
         )
 
-    def to_dict(self) -> dict[str, Any]:
+    def export_to_data_json(self) -> dict[str, Any]:
         """Serializes the step to a JSON-compatible dictionary.
 
         Returns:
@@ -122,7 +129,7 @@ class StepScrapingModel:
 
         Example:
             >>> step = StepScrapingModel.create_default(StepType.WAIT_X_TIME)
-            >>> step.to_dict()["step_type"]
+            >>> step.export_to_data_json()["step_type"]
             'WAIT_X_TIME'
         """
         return {
@@ -131,3 +138,20 @@ class StepScrapingModel:
             "is_active": self.is_active,
             "params": dict(self.params),
         }
+
+    def copy_business(self) -> "StepScrapingModel":
+        """Creates a duplicate of the given step with a new unique ID.
+
+        Args:
+            step: The StepScrapingModel instance to duplicate.
+
+        Returns:
+            A new StepScrapingModel instance with the same type and params but a new ID.
+        """
+        return StepScrapingModel(
+            step_type=self.step_type,
+            step_id=generate_rng_id_step(),  # Ensure the duplicate has a unique ID.
+            is_active=self.is_active,
+            params=dict(self.params),
+            parent_context=self.parent_context,
+        )

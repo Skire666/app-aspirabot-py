@@ -1,10 +1,13 @@
 """IStepExecutor for REFRESH_PAGE."""
+
 from __future__ import annotations
+
 from typing import Any
+
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.refresh_page_params import RefreshPageParams
-from shared.step_registry import register_executor
+from services.workflow_service import register_step_executor
 
 
 class RefreshPageExecutor(IStepExecutor):
@@ -21,8 +24,9 @@ class RefreshPageExecutor(IStepExecutor):
             page.context.clear_cookies()
         page.reload()
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        # always valid as there are no parameters with constraints
         return []
 
 
-register_executor(RefreshPageExecutor())
+register_step_executor(RefreshPageExecutor())

@@ -76,28 +76,6 @@ class StepItemRenderer:
             "fg": self._C_FG_DEACTIVATE,
         }
 
-    @staticmethod
-    def format_label(step: StepScrapingModel, idx: int) -> str:
-        """Returns a concise human-readable description of a step.
-
-        Delegates label formatting to the registered IStepFormDef for the
-        step type. Falls back to the raw StepType value string when no form
-        def is registered.
-
-        Args:
-            step: The step model to describe.
-            idx: The index of the step in the list.
-
-        Returns:
-            A short string combining the step type and its key parameters.
-        """
-        prefix = f"  #{step.step_id}  -  "
-        try:
-            body = get_form(step.step_type).format_label(step.params, idx)
-        except ValueError:
-            body = step.step_type.value
-        return prefix + body
-
     def _resolve_colors(self, state: str, is_selected: bool, is_active: bool) -> dict[str, str]:
         """Maps rendering state and selection flag to the color palette."""
         if state == "floating":
@@ -143,7 +121,7 @@ class StepItemRenderer:
     ) -> None:
         """Draws the step label text centered vertically within the item area."""
         txt_prefix = f"{str(idx + 1).zfill(2)}.\n#{item.step_id}"
-        txt_item = get_form(item.step_type).format_label(item.params, idx)
+        txt_item = get_form(item.step_type).format_label(item, idx)
         offset_w = 80 if item.step_type == StepType.JUMP_TO_STEP else 58
         start_w = x + 8
         pos_h = y + h // 2

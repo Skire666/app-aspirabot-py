@@ -1,12 +1,15 @@
 """IStepExecutor for EXTRACT_TEXT."""
+
 from __future__ import annotations
+
 import logging
 from typing import Any
+
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.extract_text_params import ExtractTextParams
-from shared.step_registry import register_executor
 from services.steps._helpers import extract_from_element
+from services.workflow_service import register_step_executor
 
 _logger = logging.getLogger(__name__)
 
@@ -29,18 +32,19 @@ class ExtractTextExecutor(IStepExecutor):
         texts = [extract_from_element(el, p.extract_mode) for el in selected]
         _logger.info("EXTRACT_TEXT [%s]: %s", p.selector, "\n".join(texts)[:500])
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
-        p = ExtractTextParams.from_dict(params)
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        p = ExtractTextParams.from_dict(model.params)
+        index_display = str(step_index + 1).zfill(2)
         allowed_modes = {"innerText", "textContent", "outerHTML", "innerHTML", "value"}
         allowed_targets = {"first", "last", "all"}
         errors: list[str] = []
         if not p.selector.strip():
-            errors.append("EXTRACT_TEXT : le sélecteur CSS est obligatoire.")
+            errors.append(f"Erreur dans l'étape {index_display}. : le sélecteur CSS est obligatoire.")
         if p.extract_mode not in allowed_modes:
-            errors.append(f"EXTRACT_TEXT : mode d'extraction invalide — {p.extract_mode!r}.")
+            errors.append(f"Erreur dans l'étape {index_display}. : mode d'extraction '{p.extract_mode}' invalide.")
         if p.target not in allowed_targets:
-            errors.append(f"EXTRACT_TEXT : cible invalide — {p.target!r}.")
+            errors.append(f"Erreur dans l'étape {index_display}. : cible '{p.target}' invalide.")
         return errors
 
 
-register_executor(ExtractTextExecutor())
+register_step_executor(ExtractTextExecutor())

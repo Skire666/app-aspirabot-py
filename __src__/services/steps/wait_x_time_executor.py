@@ -6,9 +6,9 @@ import time
 from typing import Any
 
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_x_time_params import WaitXTimeParams
-from shared.step_registry import register_executor
+from services.workflow_service import register_step_executor
 
 _MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
 
@@ -25,11 +25,12 @@ class WaitXTimeExecutor(IStepExecutor):
         p = WaitXTimeParams.from_dict(params)
         time.sleep(p.duration * _MULTIPLIERS.get(p.unit, 1.0))
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
-        p = WaitXTimeParams.from_dict(params)
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        p = WaitXTimeParams.from_dict(model.params)
+        index_display = str(step_index + 1).zfill(2)
         if p.duration < 0:
-            return ["La durée d'attente doit être égale ou supérieure à 0."]
+            return [f"Dans l'étape {index_display}. : La durée d'attente doit être égale ou supérieure à 0."]
         return []
 
 
-register_executor(WaitXTimeExecutor())
+register_step_executor(WaitXTimeExecutor())

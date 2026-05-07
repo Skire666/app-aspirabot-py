@@ -6,12 +6,13 @@
 
 from __future__ import annotations
 
+import datetime
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, CONDITION_VIEW_TO_MODEL
@@ -71,7 +72,6 @@ class JumpToStepFormDef(IStepFormDef):
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["target_hexastring"] = target_var
-        widgets["target_position_unsafe"] = 0
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         cond_model = params.get("condition", "success")
@@ -84,7 +84,6 @@ class JumpToStepFormDef(IStepFormDef):
             target_idx = 0
         if target_idx is not None and jump_target_displays:
             widgets["target_hexastring"].set(jump_target_displays[target_idx])
-            widgets["target_position_unsafe"] = target_idx
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         cond_display = widgets["condition"].get()
@@ -98,7 +97,6 @@ class JumpToStepFormDef(IStepFormDef):
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(cond_display, "success"),
             "target_hexastring": target_id,
-            "target_position_unsafe": target_idx,
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
@@ -109,15 +107,25 @@ class JumpToStepFormDef(IStepFormDef):
             errors.append("L'étape cible sélectionnée est invalide.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
-        target_hexastr = params.get("target_hexastring", "??")
-        target_idx = str(params.get("target_position_unsafe", -1) + 1).zfill(2)
-        cond = params.get("condition", "success")
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        target_hexastr = model.params.get("target_hexastring", "??")
+
+        print(
+            f"DEBUG: {datetime.datetime.now()} Formatting label for JumpToStep with target_hexastring={target_hexastr}"
+        )
+
+        str_target_idx = "??"
+        for target_idx, step_item in enumerate(model.parent_context.steps):
+            if step_item.step_id == target_hexastr:
+                str_target_idx = f"{target_idx + 1}".zfill(2)
+                break
+
+        cond = model.params.get("condition", "success")
         if cond == "success":
-            return f"Si le résultat est un succès\nSe rendre à l'étape {target_idx}.  #{target_hexastr}"
+            return f"Si le résultat est un succès\nSe rendre à l'étape {str_target_idx}.  #{target_hexastr}"
         if cond == "failure":
-            return f"Si le résultat est un échec\nSe rendre à l'étape {target_idx}.  #{target_hexastr}"
-        return f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_idx}.  #{target_hexastr}"
+            return f"Si le résultat est un échec\nSe rendre à l'étape {str_target_idx}.  #{target_hexastr}"
+        return f"Si le résultat est un succès/échec\nToujours aller à l'étape {str_target_idx}.  #{target_hexastr}"
 
 
 register_form(JumpToStepFormDef())

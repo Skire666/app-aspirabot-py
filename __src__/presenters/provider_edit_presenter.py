@@ -11,9 +11,8 @@ from models.provider_model import ProviderModel
 from presenters.workflow_list_presenter import WorkflowListPresenter
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
+from shared.random_util import merge_unique_list_id_step
 from views.provider_edit_view import ProviderEditView
-
-from __src__.shared.random_util import merge_unique_list_id_step
 
 ## ---------------------------------------------------------------------------
 ## Classes

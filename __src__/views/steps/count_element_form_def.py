@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
     C_MAXIMUM_SIZE_IMAGE,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
@@ -177,7 +177,7 @@ class CountElementFormDef(IStepFormDef):
                 errors.append("La valeur minimale doit être inférieure ou égale à la valeur maximale.")
         return errors
 
-    def format_label(self, params: dict[str, Any], idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int) -> str:
         op_labels = {
             "between": "compris entre",
             "equal": "==",
@@ -187,12 +187,12 @@ class CountElementFormDef(IStepFormDef):
             "greater_or_equal": ">=",
             "less_or_equal": "<=",
         }
-        op = op_labels.get(params.get("operator", "equal"), "?")
-        selector = params.get("selector", "")
-        if params.get("operator") in {"between", "not_between"}:
-            val_str = f"{params.get('value_min', 0)} et {params.get('value_max', 0)}"
+        op = op_labels.get(model.params.get("operator", "equal"), "?")
+        selector = model.params.get("selector", "")
+        if model.params.get("operator") in {"between", "not_between"}:
+            val_str = f"{model.params.get('value_min', 0)} et {model.params.get('value_max', 0)}"
         else:
-            val_str = str(params.get("value", 0))
+            val_str = str(model.params.get("value", 0))
         return f"Dénombrer les éléments\nSél. : '{selector}'  -  Attendu {op} {val_str}"
 
 

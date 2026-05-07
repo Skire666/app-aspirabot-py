@@ -19,7 +19,6 @@ import logging
 import os
 import shutil
 import subprocess
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -168,19 +167,6 @@ class ProvidersRepository(ProviderRepositoryInterface):
         filtered_data["steps"] = self._deserialize_steps(filtered_data.get("steps", []))
         return ProviderModel(**filtered_data)
 
-    def _provider_model_to_dict(self, provider: ProviderModel) -> dict[str, Any]:
-        """Convertit une instance ProviderModel en dictionnaire pour la sérialisation JSON.
-
-        Args:
-            provider (ProviderModel): L'instance du modèle à convertir.
-
-        Returns:
-            Dict[str, Any]: Le dictionnaire sérialisable en JSON.
-        """
-        payload = asdict(provider)
-        payload["steps"] = [step.to_dict() for step in provider.steps]
-        return payload
-
     def _deserialize_steps(self, steps_data: object) -> list[StepScrapingModel]:
         """Converts a raw JSON list into validated step model instances.
 
@@ -201,7 +187,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             if not isinstance(raw_step, dict):
                 continue
             try:
-                result.append(StepScrapingModel.from_dict(raw_step))
+                result.append(StepScrapingModel.import_from_data_json(raw_step))
             except ValueError:
                 continue
         return result
@@ -318,7 +304,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         try:
             # Convertit le modèle en dictionnaire
-            provider_dict = self._provider_model_to_dict(provider)
+            provider_dict = provider.provider.export_to_data_json()
 
             # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
             json_repo = JsonFileRepository(full_filepath, {})
@@ -329,7 +315,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
             self.logger.info(f"Fournisseur sauvegardé: {full_filepath}")
         except Exception as e:
-            self.logger.error(f"Erreur lors de la sauvegarde du fournisseur: {e}")
+            self.logger.error(f"Erreur lors de la création du fournisseur: {e}")
             raise
 
     def update_provider(self, provider: ProviderModel) -> None:
@@ -357,7 +343,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         try:
             # Convertit le modèle en dictionnaire
-            provider_dict = self._provider_model_to_dict(provider)
+            provider_dict = provider.export_to_data_json()
 
             # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
             json_repo = JsonFileRepository(full_filepath, {})
@@ -368,7 +354,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
             self.logger.info(f"Fournisseur sauvegardé: {full_filepath}")
         except Exception as e:
-            self.logger.error(f"Erreur lors de la sauvegarde du fournisseur: {e}")
+            self.logger.error(f"Erreur lors de la MAJ du fournisseur: {e}")
             raise
 
     def create_folder_if_missing(self):

@@ -29,7 +29,9 @@ from typing import Any
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import DATETIME_FORMAT, ProviderModel
 from models.step_scraping_model import StepScrapingModel
-from shared.step_registry import get_executor
+
+from __src__.interfaces.i_step_executor import IStepExecutor
+from __src__.services.workflow_service import WorkflowService
 
 ## ---------------------------------------------------------------------------
 ## Class
@@ -55,6 +57,7 @@ class ScrapingService:
         self,
         folder_scraping: Path,
         browser_service: IWebBrowserService,
+        workflow_service: WorkflowService,
     ) -> None:
         """Initialise the service and its per-run execution state.
 
@@ -63,10 +66,12 @@ class ScrapingService:
                 the ``_folder`` runtime param key.
             browser_service: Concrete browser service implementation to use
                 for all browser lifecycle operations.
+            workflow_service: Service for managing the workflow execution.
         """
         self._logger = logging.getLogger(__name__)
         self._folder_scraping = folder_scraping
         self._browser_service = browser_service
+        self._workflow_service = workflow_service
 
         # Per-run state — reset at the start of each _run_steps call.
         self._prev_step_success: bool = True
@@ -263,7 +268,8 @@ class ScrapingService:
 
         runtime_params = self._build_runtime_params(step)
         try:
-            get_executor(step.step_type).execute(page, runtime_params)
+            executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
+            executor.execute(page, runtime_params)
             # Read back output signals written by stateful executors.
             self._read_back_output_signals(runtime_params)
         except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors

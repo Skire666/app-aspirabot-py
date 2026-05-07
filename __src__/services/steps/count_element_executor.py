@@ -1,14 +1,17 @@
 """IStepExecutor for COUNT_ELEMENT."""
+
 from __future__ import annotations
+
 import logging
 import time
 from typing import Any
+
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepType
+from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.count_element_params import CountElementParams
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_MS
-from shared.step_registry import register_executor
 from services.steps._helpers import evaluate_count_condition
+from services.workflow_service import register_step_executor
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_MS
 
 _logger = logging.getLogger(__name__)
 
@@ -34,23 +37,33 @@ class CountElementExecutor(IStepExecutor):
             val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between", "not_between"} else str(p.value)
             raise ValueError(f"COUNT_ELEMENT : condition non satisfaite (COUNT={count}, {p.operator} {val_desc})")
 
-    def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
-        p = CountElementParams.from_dict(params)
-        allowed_operators = {"between", "not_between", "equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}
+    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        p = CountElementParams.from_dict(model.params)
+        index_display = str(step_index + 1).zfill(2)
+        allowed_operators = {
+            "between",
+            "not_between",
+            "equal",
+            "not_equal",
+            "greater_than",
+            "less_than",
+            "greater_or_equal",
+            "less_or_equal",
+        }
         errors: list[str] = []
         if not p.selector.strip():
-            errors.append("COUNT_ELEMENT : le sélecteur CSS est obligatoire.")
+            errors.append(f"Erreur dans l'étape {index_display}. : le sélecteur CSS est obligatoire.")
         if p.wait_duration < 0:
-            errors.append("COUNT_ELEMENT : wait_duration doit être >= 0.")
+            errors.append(f"Erreur dans l'étape {index_display}. : wait_duration doit être >= 0.")
         if p.wait_duration > 0 and p.wait_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(f"COUNT_ELEMENT : wait_unit invalide — {p.wait_unit!r}.")
+            errors.append(f"Erreur dans l'étape {index_display}. : wait_unit invalide — {p.wait_unit!r}.")
         if p.success_if not in {"success", "failure"}:
-            errors.append(f"COUNT_ELEMENT : success_if invalide — {p.success_if!r}.")
+            errors.append(f"Erreur dans l'étape {index_display}. : success_if invalide — {p.success_if!r}.")
         if p.operator not in allowed_operators:
-            errors.append(f"COUNT_ELEMENT : operator invalide — {p.operator!r}.")
+            errors.append(f"Erreur dans l'étape {index_display}. : operator invalide — {p.operator!r}.")
         if p.operator in {"between", "not_between"} and p.value_min > p.value_max:
-            errors.append("COUNT_ELEMENT : value_min doit être <= value_max.")
+            errors.append(f"Erreur dans l'étape {index_display}. : value_min doit être <= value_max.")
         return errors
 
 
-register_executor(CountElementExecutor())
+register_step_executor(CountElementExecutor())

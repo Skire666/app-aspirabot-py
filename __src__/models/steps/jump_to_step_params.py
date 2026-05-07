@@ -13,18 +13,13 @@ from models.step_scraping_model import StepType
 class JumpToStepParams(IStepParams):
     condition: str
     target_hexastring: str
-    target_position_unsafe: int
 
     @classmethod
     def default(cls) -> Self:
-        return cls(condition="success", target_hexastring="", target_position_unsafe=0)
+        return cls(condition="success", target_hexastring="")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "condition": self.condition,
-            "target_hexastring": self.target_hexastring,
-            "target_position_unsafe": self.target_position_unsafe,
-        }
+        return {"condition": self.condition, "target_hexastring": self.target_hexastring}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -32,7 +27,6 @@ class JumpToStepParams(IStepParams):
         return cls(
             condition=data.get("condition", "success"),
             target_hexastring=str(target_value) if target_value is not None else "",
-            target_position_unsafe=int(data.get("target_position_unsafe", 0)),
         )
 
     @classmethod
