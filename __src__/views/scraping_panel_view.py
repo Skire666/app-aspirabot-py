@@ -25,23 +25,6 @@ from tkinter import messagebox, ttk
 
 
 class ScrapingView(ttk.Frame):
-    """Display-only frame for monitoring and reporting a scraping workflow.
-
-    Layout (top to bottom):
-      - Action bar: [Lancer] [Annuler] buttons.
-      - Provider info section: Nom, URL, ID Fichier, Version.
-      - Progress section: current step label and progress bar.
-      - Log section: scrollable history of step results.
-      - Report section: final summary shown after completion.
-
-    All business logic and service calls must remain in the presenter.
-
-    Example:
-        >>> panel = ScrapingPanelView(parent)
-        >>> panel.set_on_launch(lambda: None)
-        >>> panel.reset()
-    """
-
     def __init__(self, parent: tk.Widget) -> None:
         """Initializes the scraping panel and builds all widgets.
 
@@ -59,7 +42,6 @@ class ScrapingView(ttk.Frame):
         self._create_widgets()
 
     def _create_widgets(self) -> None:
-        """Builds all UI sections: action bar, provider info, progress, log, and report."""
         self._create_action_bar()
         self._create_provider_info_section()
 

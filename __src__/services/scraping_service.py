@@ -179,12 +179,7 @@ class ScrapingService:
         self._step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
         self._steps_count = len(steps)
 
-    def _run_one_step(
-        self,
-        page: Any,
-        step: StepScrapingModel,
-        index: int,
-    ) -> int:
+    def _run_one_step(self, page: Any, step: StepScrapingModel, index: int) -> int:
         """Execute one step, fire the callback, and return the next index.
 
         Args:
@@ -293,7 +288,6 @@ class ScrapingService:
                 "_prev_success": self._prev_step_success,
                 "_folder": self._folder_scraping,
                 "_downloaded_urls": self._downloaded_image_urls,
-                "_self_step_id": step.step_id,
                 "_step_id_by_index": self._step_id_by_index,
                 "_step_index_by_id": self._step_index_by_id,
                 "_pause_event": self._pause_event_ref,

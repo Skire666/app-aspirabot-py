@@ -1,11 +1,14 @@
 """IStepExecutor for CLICK_ELEMENT."""
+
 from __future__ import annotations
+
 from typing import Any
+
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepType
 from models.steps.click_element_params import ClickElementParams
-from shared.step_registry import register_executor
 from services.steps._helpers import evaluate_script_with_safe_retry
+from shared.step_registry import register_executor
 
 
 class ClickElementExecutor(IStepExecutor):
