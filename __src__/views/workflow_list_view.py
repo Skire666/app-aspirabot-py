@@ -528,7 +528,3 @@ class WorkflowListView(ttk.Frame):
         )
         if confirmed and self.on_clear_all_steps:
             self.on_clear_all_steps()
-
-    def _hide_toast(self) -> None:
-        """Hides the toast notification label."""
-        self._toast_label.grid_remove()

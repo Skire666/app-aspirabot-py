@@ -174,7 +174,6 @@ view.on_run_workflow: Callable | None
 # Render methods the Presenter calls on the view
 view.render_steps(steps: list[StepScraping]) -> None
 view.set_run_button_state(enabled: bool) -> None
-view.show_toast(message: str, level: str = "info") -> None
 view.append_log(line: str) -> None
 ```
 
