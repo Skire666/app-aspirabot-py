@@ -14,6 +14,7 @@ Example:
 
 import logging
 import threading
+from collections.abc import Callable
 
 from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
@@ -64,6 +65,7 @@ class WorkflowListPresenter:
         self._cancel_event = threading.Event()
         self._edit_index: int | None = None
         self._is_new_provider: bool = False
+        self._on_validation_feedback: Callable[[str, bool], None] | None = None
 
         self._bind_view_events()
 
@@ -114,6 +116,17 @@ class WorkflowListPresenter:
         """
         return list(self._steps)
 
+    def set_validation_feedback_handler(
+        self,
+        handler: Callable[[str, bool], None] | None,
+    ) -> None:
+        """Sets a callback to display workflow validation feedback.
+
+        Args:
+            handler: Callback receiving (message, is_error) or None to clear.
+        """
+        self._on_validation_feedback = handler
+
     def validate_steps(self) -> list[str]:
         """Validates the current workflow step list.
 
@@ -163,17 +176,23 @@ class WorkflowListPresenter:
     def _on_confirm_inline_step(self, step: StepScrapingModel) -> None:
         """Validates then applies the confirmed step (add or update).
 
-        Shows a toast and keeps the form open when validation fails.
+        Shows validation feedback and keeps the form open when the candidate step fails.
 
         Args:
             step: The newly created or updated step from the inline form.
         """
-        # Target index: future position for add mode, current slot for edit mode.
-        target_hexastring = len(self._steps) if self._edit_index is None else self._edit_index
-        errors = self._workflow_service.validate_step(target_hexastring, step, self._steps)
+        # Build candidate list so full validation includes the new/updated step.
+        target_index = len(self._steps) if self._edit_index is None else self._edit_index
+        candidate_steps = list(self._steps)
+        if self._edit_index is None:
+            candidate_steps.append(step)
+        else:
+            candidate_steps[self._edit_index] = step
 
-        # Abort and surface the first error without closing the form.
-        if errors:
+        first_error, candidate_error = self._validate_workflow_steps(candidate_steps, target_index)
+        self._notify_validation_feedback(first_error)
+
+        if candidate_error:
             return
 
         if self._edit_index is None:
@@ -249,3 +268,28 @@ class WorkflowListPresenter:
     def _refresh_view(self) -> None:
         """Updates the view step list."""
         self._view.render_steps(self._steps)
+
+    def _notify_validation_feedback(self, first_error: str | None) -> None:
+        if not self._on_validation_feedback:
+            return
+        if first_error:
+            self._on_validation_feedback(first_error, True)
+        else:
+            self._on_validation_feedback("Workflow valide.", False)
+
+    def _validate_workflow_steps(
+        self,
+        steps: list[StepScrapingModel],
+        candidate_index: int,
+    ) -> tuple[str | None, bool]:
+        """Validates a full step list and detects candidate step errors."""
+        first_error: str | None = None
+        candidate_error = False
+        for index, current in enumerate(steps):
+            errors = self._workflow_service.validate_step(index, current, steps)
+            if errors:
+                if first_error is None:
+                    first_error = errors[0]
+                if index == candidate_index:
+                    candidate_error = True
+        return first_error, candidate_error

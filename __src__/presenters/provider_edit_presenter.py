@@ -51,6 +51,7 @@ class ProviderEditPresenter:
             service_provider=provider_service,
             workflow_service=WorkflowService(),
         )
+        self._workflow_presenter.set_validation_feedback_handler(self._view.set_workflow_validation_message)
 
         self._bind_view_events()
 

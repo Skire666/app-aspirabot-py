@@ -16,6 +16,9 @@ from views.workflow_list_view import WorkflowListView
 ## Classes
 ## ---------------------------------------------------------------------------
 
+_STATUS_COLOR_OK = "#1b5e20"
+_STATUS_COLOR_ERROR = "#b00020"
+
 
 class ProviderEditView(ttk.Frame):
     """View component that renders the provider modification form."""
@@ -102,6 +105,14 @@ class ProviderEditView(ttk.Frame):
         footer_frame = ttk.Frame(main_container)
         footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
 
+        self._lbl_workflow_status = ttk.Label(
+            footer_frame,
+            text="",
+            anchor="w",
+            foreground=_STATUS_COLOR_OK,
+        )
+        self._lbl_workflow_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
         # 3. Workflow & Instructions — fills all remaining vertical space
         workflow_lf = ttk.LabelFrame(main_container, text="Workflow & Instructions")
         workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5), padx=(5))
@@ -152,6 +163,7 @@ class ProviderEditView(ttk.Frame):
         self._var_obfuscated.set(data.get("automation_obfuscated", True))
         self._var_created.set(data.get("created_date", ""))
         self._var_modified.set(data.get("modified_date", ""))
+        self.set_workflow_validation_message("Aucun vérification effectuée.", False)
 
     def get_data(self) -> dict[str, Any]:
         """Reads data from the interface fields.
@@ -180,6 +192,7 @@ class ProviderEditView(ttk.Frame):
         self._var_obfuscated.set(False)
         self._var_created.set("")
         self._var_modified.set("")
+        self.set_workflow_validation_message("", False)
 
     def ask_overwrite_confirmation(self) -> bool:
         """Shows a popup asking if the user wants to overwrite an existing file.
@@ -196,6 +209,16 @@ class ProviderEditView(ttk.Frame):
             message: The message to tell the user.
         """
         messagebox.showerror("Erreur", message)
+
+    def set_workflow_validation_message(self, message: str, is_error: bool) -> None:
+        """Updates the workflow validation message near the Save button.
+
+        Args:
+            message: Status message to display.
+            is_error: True to show error state, False for success state.
+        """
+        color = _STATUS_COLOR_ERROR if is_error else _STATUS_COLOR_OK
+        self._lbl_workflow_status.configure(text=message, foreground=color)
 
     def _notify_save(self) -> None:
         if self._on_save:
