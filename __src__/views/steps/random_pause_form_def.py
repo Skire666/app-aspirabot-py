@@ -60,7 +60,7 @@ class RandomPauseFormDef(IStepFormDef):
             WAIT_UNIT_MODEL_TO_VIEW.get(params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "min": safe_int_widget(widgets, "min", 0),
             "max": safe_int_widget(widgets, "max", 1),

@@ -14,13 +14,12 @@ Example:
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import logging
 import threading
 from collections.abc import Callable
-from datetime import datetime
 
-from models.provider_model import DATETIME_FORMAT, ProviderModel
-from models.scraping_report_model import ScrapingReportModel, StepResultModel
-from models.step_scraping_model import StepScrapingModel
+from models.provider_model import ProviderModel
+from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from views.scraping_panel_view import ScrapingPanelView
 
@@ -54,19 +53,21 @@ class ScrapingPresenter:
     def __init__(
         self,
         view: ScrapingPanelView,
-        service: ScrapingService,
+        service_scraping: ScrapingService,
+        service_provider: ProviderService,
         provider: ProviderModel | None = None,
     ) -> None:
         """Initializes the presenter and registers callbacks on the view.
 
         Args:
             view: The scraping panel view.
-            service: The scraping service that drives Playwright execution.
+            service_scraping: The scraping service that drives Playwright execution.
             provider: Optional initial provider model. Use load_provider() to set
                 or change it at runtime.
         """
         self._view = view
-        self._service = service
+        self._service_scraping = service_scraping
+        self._service_provider = service_provider
         self._provider: ProviderModel | None = provider
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -77,6 +78,7 @@ class ScrapingPresenter:
 
         # Guard: returns True when a Workflow edit session is already open.
         self.is_workflow_active: Callable[[], bool] | None = None
+        self._logging = logging.getLogger(__name__)
 
         # Wire view buttons to presenter handlers once at construction time.
         view.set_on_launch(self._on_launch)
@@ -84,13 +86,13 @@ class ScrapingPresenter:
         view.set_on_pause(self._on_pause)
         view.set_on_resume(self._on_resume)
 
-    def load_provider(self, provider: ProviderModel) -> None:
+    def load_provider(self, id_file: str) -> None:
         """Loads a new provider and resets the view for a fresh run.
 
         If a workflow is currently running it is cancelled before switching.
 
         Args:
-            provider: The provider whose workflow will be executed on next launch.
+            id_file: The ID of the provider file to load.
 
         Returns:
             None.
@@ -99,23 +101,25 @@ class ScrapingPresenter:
             None.
 
         Example:
-            >>> presenter.load_provider(provider)
+            >>> presenter.load_provider("provider_123")
         """
         # Unblock any active pause then cancel the running workflow.
+
         self._pause_event.set()
         self._cancel_event.set()
 
         # Update target and clear the stale cancellation signal.
-        self._provider = provider
+        self._logging.info("Loading provider with id_file={id_file}")
+        self._provider = self._service_provider.read_provider(id_file)
         self._cancel_event.clear()
 
         # Wipe the view and display the new provider's summary.
         self._view.reset()
         self._view.set_provider_info(
-            name=provider.provider_name,
-            url=provider.url,
-            id_file=provider.id_file,
-            version=provider.version,
+            name=self._provider.provider_name,
+            url=self._provider.url,
+            id_file=self._provider.id_file,
+            version=self._provider.version,
         )
 
     def _on_launch(self) -> None:
@@ -129,6 +133,7 @@ class ScrapingPresenter:
         """
         # Guard: do nothing if no provider has been loaded yet.
         if not self._provider:
+            self._view.show_warning("Veuillez charger un provider avant de lancer le scraping.")
             return
 
         # Block launch when a Workflow edit session is already open.
@@ -212,52 +217,19 @@ class ScrapingPresenter:
             None — catastrophic failures are surfaced as a synthetic error report.
         """
         try:
-            report = self._service.run_workflow(
+            self._service_scraping.run_workflow(
                 self._provider,
-                self._on_step_done,
                 self._cancel_event,
                 self._pause_event,
                 self._on_user_wait_step,
             )
-        except (ValueError, RuntimeError, OSError) as exc:
-            report = self._build_error_report(str(exc))
+        except (ValueError, RuntimeError, OSError):
+            print("Workflow execution failed with an exception:", exc_info=True)
+            ## TODO Push final report bugs
 
-        self._on_workflow_finished(report)
+        self._on_workflow_finished()
 
-    def _on_step_done(
-        self,
-        index: int,
-        step: StepScrapingModel,
-        success: bool,
-        message: str,
-        time_elapsed: float,
-    ) -> None:
-        """Forwards a completed step result to the view.
-
-        Called by the service from the background thread; all view calls are
-        safe because they schedule updates via self.after(0, ...).
-
-        Args:
-            index: Zero-based position of the step.
-            step: The step that was executed.
-            success: True when the step completed without error.
-            message: Outcome or error description.
-            time_elapsed: Duration of the step execution in seconds.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        total = len(self._provider.steps)
-        step_type = step.step_type.value
-
-        # Update the progress indicator then append the result to the log below.
-        self._view.show_step_progress(index, total, step_type)
-        self._view.append_step_result(index, step_type, success, message, time_elapsed)
-
-    def _on_workflow_finished(self, report: ScrapingReportModel) -> None:
+    def _on_workflow_finished(self) -> None:
         """Restores idle state and displays the final report in the view.
 
         Args:
@@ -273,30 +245,3 @@ class ScrapingPresenter:
         self._pause_event.set()
         # Restore idle button state before rendering the report.
         self._view.set_running_state(False)
-        self._view.show_report(report)
-
-    def _build_error_report(self, error_message: str) -> ScrapingReportModel:
-        """Creates a synthetic report when the workflow fails catastrophically.
-
-        Args:
-            error_message: Description of the fatal exception.
-
-        Returns:
-            A ScrapingReportModel that reflects the failure.
-
-        Raises:
-            None.
-        """
-        now = datetime.now().strftime(DATETIME_FORMAT)
-
-        # Represent the fatal failure as a single failed step at index 0.
-        return ScrapingReportModel(
-            provider_name=self._provider.provider_name if self._provider else "N/A",
-            total_steps=len(self._provider.steps) if self._provider else 0,
-            steps_done=0,
-            steps_failed=1,
-            cancelled=False,
-            started_at=now,
-            finished_at=now,
-            step_results=[StepResultModel(0, "N/A", False, error_message, time_elapsed=0.0)],
-        )

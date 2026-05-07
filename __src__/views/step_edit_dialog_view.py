@@ -181,7 +181,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
     def _get_params(self, step_type: StepType) -> dict[str, Any]:
         """Reads current widget values and returns the params dict."""
         try:
-            return get_form(step_type).read_params(self._form_widgets)
+            return get_form(step_type).read_params_from_view(self._form_widgets)
         except ValueError:
             return {}
 

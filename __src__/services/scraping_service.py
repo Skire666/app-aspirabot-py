@@ -28,7 +28,6 @@ from typing import Any
 
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import DATETIME_FORMAT, ProviderModel
-from models.scraping_report_model import ScrapingReportModel, StepResultModel
 from models.step_scraping_model import StepScrapingModel
 from shared.step_registry import get_executor
 
@@ -90,17 +89,14 @@ class ScrapingService:
     def run_workflow(
         self,
         provider: ProviderModel,
-        on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
         cancel_event: threading.Event,
         pause_event: threading.Event,
         on_user_wait: Callable[[], None] | None = None,
-    ) -> ScrapingReportModel:
+    ):
         """Execute all steps of a provider workflow sequentially.
 
         Args:
             provider: The provider model containing the steps to execute.
-            on_step_done: Callback fired after each step with
-                ``(index, step, success, message, elapsed)``.
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
@@ -120,11 +116,9 @@ class ScrapingService:
         self._browser_service.launch(provider)
         try:
             page = self._browser_service.new_page()
-            results, steps_failed = self._run_steps(page, provider.steps, on_step_done, cancel_event, pause_event)
+            steps_failed = self._run_steps(page, provider.steps, cancel_event, pause_event)
         finally:
             self._browser_service.close_browser()
-
-        return self._build_report(provider, results, steps_failed, cancel_event.is_set(), started_at)
 
     # ------------------------------------------------------------------
     # Step iteration
@@ -134,10 +128,9 @@ class ScrapingService:
         self,
         page: Any,
         steps: list[StepScrapingModel],
-        on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
         cancel_event: threading.Event,
         pause_event: threading.Event,
-    ) -> tuple[list[StepResultModel], int]:
+    ):
         """Iterate over steps, execute each, and notify the caller.
 
         Supports non-sequential execution via JUMP_TO_STEP and early
@@ -147,16 +140,13 @@ class ScrapingService:
         Args:
             page: The active browser page.
             steps: Ordered list of scraping steps to run.
-            on_step_done: Progress callback.
             cancel_event: Abort signal.
             pause_event: Pause/resume signal.
 
         Returns:
-            A ``(results, steps_failed)`` tuple.
+            The number of steps that failed.
         """
         self._reset_run_state(steps)
-        results: list[StepResultModel] = []
-        steps_failed = 0
         i = 0
 
         while i < len(steps):
@@ -166,14 +156,9 @@ class ScrapingService:
             pause_event.wait()
             if cancel_event.is_set():
                 break
-            i, result = self._run_one_step(page, steps[i], i, on_step_done)
-            results.append(result)
-            if not result.success:
-                steps_failed += 1
+            i = self._run_one_step(page, steps[i], i)
             if self._end_process_requested:
                 break
-
-        return results, steps_failed
 
     def _reset_run_state(self, steps: list[StepScrapingModel]) -> None:
         """Reset all per-run mutable state before a new workflow execution.
@@ -199,8 +184,7 @@ class ScrapingService:
         page: Any,
         step: StepScrapingModel,
         index: int,
-        on_step_done: Callable[[int, StepScrapingModel, bool, str, float], None],
-    ) -> tuple[int, StepResultModel]:
+    ) -> int:
         """Execute one step, fire the callback, and return the next index.
 
         Args:
@@ -210,19 +194,18 @@ class ScrapingService:
             on_step_done: Callback to notify the presenter on completion.
 
         Returns:
-            A ``(next_index, StepResultModel)`` tuple.
+            The index of the next step to execute.
         """
         start = time.time()
         success, message = self._execute_step(page, step)
         elapsed = time.time() - start
 
-        on_step_done(index, step, success, message, elapsed)
-        result = StepResultModel(index, step.step_type.value, success, message, time_elapsed=elapsed)
+        print(f"Execute step {index} ({step.step_type}) completed in {elapsed:.1f}s with result: {message}")
 
         # Resolve any pending jump or simply advance to the next step.
         next_index = self._consume_pending_jump(index)
         self._prev_step_success = success
-        return next_index, result
+        return next_index
 
     def _consume_pending_jump(self, current_index: int) -> int:
         """Resolve and clear any pending JUMP_TO_STEP signal.
@@ -334,39 +317,3 @@ class ScrapingService:
             self._pending_jump = runtime_params["_pending_jump"]
         if runtime_params.get("_end_process"):
             self._end_process_requested = True
-
-    # ------------------------------------------------------------------
-    # Report assembly
-    # ------------------------------------------------------------------
-
-    def _build_report(
-        self,
-        provider: ProviderModel,
-        results: list[StepResultModel],
-        steps_failed: int,
-        cancelled: bool,
-        started_at: str,
-    ) -> ScrapingReportModel:
-        """Assemble the final ScrapingReportModel from collected run data.
-
-        Args:
-            provider: The executed provider model.
-            results: Per-step result records collected during the run.
-            steps_failed: Count of steps that returned a failure.
-            cancelled: True if the run was aborted via ``cancel_event``.
-            started_at: ISO-formatted run start timestamp.
-
-        Returns:
-            A fully populated ScrapingReportModel.
-        """
-        finished_at = datetime.now().strftime(DATETIME_FORMAT)
-        return ScrapingReportModel(
-            provider_name=provider.provider_name,
-            total_steps=len(provider.steps),
-            steps_done=len(results),
-            steps_failed=steps_failed,
-            cancelled=cancelled,
-            started_at=started_at,
-            finished_at=finished_at,
-            step_results=results,
-        )

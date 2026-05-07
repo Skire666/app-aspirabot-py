@@ -86,7 +86,7 @@ class JumpToStepFormDef(IStepFormDef):
             widgets["target_hexastring"].set(jump_target_displays[target_idx])
             widgets["target_position_unsafe"] = target_idx
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         cond_display = widgets["condition"].get()
         target_display = widgets["target_hexastring"].get()
         jump_target_displays = widgets.get("_jump_target_displays", [])

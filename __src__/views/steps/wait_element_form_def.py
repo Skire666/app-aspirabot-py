@@ -71,7 +71,7 @@ class WaitElementFormDef(IStepFormDef):
             )
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read widget values into a parameters mapping."""
         return {
             "selector": widgets["selector"].get().strip(),

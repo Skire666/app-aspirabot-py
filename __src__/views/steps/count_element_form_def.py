@@ -28,6 +28,7 @@ from views.steps._constants import (
 )
 
 C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+C_INPUT_DEFAULT_TIME_WAIT = 100
 
 
 class CountElementFormDef(IStepFormDef):
@@ -51,11 +52,11 @@ class CountElementFormDef(IStepFormDef):
         row0.pack(fill="x", pady=2)
 
         ttk.Label(row0, text="Attendre avant évaluation : ").pack(side=tk.LEFT, padx=(5, 4))
-        wd_var = tk.StringVar(value="0")
+        wd_var = tk.StringVar(value=C_INPUT_DEFAULT_TIME_WAIT)
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=wd_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        wu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
+        wu_var = tk.StringVar(value=C_UNITS_TIME_ALLOWED_FOR_VIEW[-1])
         ttk.Combobox(
             row0, textvariable=wu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
@@ -141,7 +142,7 @@ class CountElementFormDef(IStepFormDef):
         if "value" in widgets:
             widgets["value"].set(str(params.get("value", 0)))
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         unit_display = widgets["wait_unit"].get()
         si_display = widgets["success_if"].get()
         op_display = widgets["operator"].get()

@@ -142,7 +142,7 @@ def _launch_main_app(
     provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service = (
         _init_provider_components(main_view, config_model)
     )
-    scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model)
+    scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model, provider_service)
     faq_view = FaqView(main_view.content_area)
 
     # Wire inter-component navigation and launch callbacks.
@@ -244,12 +244,14 @@ def _init_provider_components(
 def _init_scraping_component(
     main_view: MainView,
     config_model: AppConfigurationModel,
+    provider_service: ProviderService,
 ) -> tuple[ScrapingPanelView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
     Args:
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the scraping output folder.
+        provider_service: The provider service for managing provider data.
 
     Returns:
         A (ScrapingPanelView, ScrapingPresenter) tuple.
@@ -260,7 +262,9 @@ def _init_scraping_component(
         raise Exception(f"Unsupported browser engine: {config_model.browser_engine}")
     scraping_service = ScrapingService(config_model.folder_scraping, browser_service)
     scraping_view = ScrapingPanelView(main_view.content_area)
-    scraping_presenter = ScrapingPresenter(view=scraping_view, service=scraping_service)
+    scraping_presenter = ScrapingPresenter(
+        view=scraping_view, service_scraping=scraping_service, service_provider=provider_service
+    )
     return scraping_view, scraping_presenter
 
 
@@ -323,8 +327,8 @@ def _wire_scraping_launch(
 
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scraping.
-        provider = provider_service.read_provider(id_file)
-        scraping_presenter.load_provider(provider)
+        print(f"Request to launch provider with id_file={id_file}")
+        scraping_presenter.load_provider(id_file)
         main_view.set_tab_state(C_TITLE_MODULE_SCRAPING, tk.NORMAL)
         main_view.show_view(C_TITLE_MODULE_SCRAPING)
 
@@ -379,6 +383,7 @@ def _register_views(
         provider_view: Providers list module view.
         provider_edit_view: Provider edit module view.
         scraping_view: Scraping panel module view.
+        faq_view: FAQ module view.
     """
     # Map each sidebar label to its corresponding view widget.
     main_view.add_view(C_TITLE_MODULE_LOGS, log_view)

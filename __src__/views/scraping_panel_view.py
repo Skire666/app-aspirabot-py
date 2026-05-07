@@ -19,8 +19,6 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
 
-from models.scraping_report_model import ScrapingReportModel
-
 ## ---------------------------------------------------------------------------
 ## Classes
 ## ---------------------------------------------------------------------------
@@ -64,16 +62,13 @@ class ScrapingPanelView(ttk.Frame):
         """Builds all UI sections: action bar, provider info, progress, log, and report."""
         self._create_action_bar()
         self._create_provider_info_section()
-        self._create_progress_section()
-        self._create_log_section()
-        self._create_report_section()
 
     def _create_action_bar(self) -> None:
         """Creates the top action bar with Lancer, Annuler, Pause, and Reprendre buttons."""
         bar = ttk.Frame(self, padding=(5, 5))
         bar.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_launch = ttk.Button(bar, text="Lancer", command=self._notify_launch)
+        self._btn_launch = ttk.Button(bar, text="Lancer le scraping", command=self._notify_launch)
         self._btn_launch.pack(side=tk.LEFT, padx=5)
 
         # Annuler is disabled until a workflow is running.
@@ -105,51 +100,6 @@ class ScrapingPanelView(ttk.Frame):
             setattr(self, var_attr, var)
             ttk.Label(section, text=label_text).pack(side=tk.LEFT, padx=(8, 2))
             ttk.Label(section, textvariable=var).pack(side=tk.LEFT, padx=(0, 8))
-
-    def _create_progress_section(self) -> None:
-        """Creates the current-step label and determinate progress bar."""
-        section = ttk.LabelFrame(self, text="Progression", padding=(5, 5))
-        section.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(0, 5))
-
-        # Label updated with "Étape N / M — TYPE" on each step transition.
-        self._lbl_step = ttk.Label(section, text="En attente du lancement...")
-        self._lbl_step.pack(anchor="w")
-
-        # Determinate bar whose value ranges from 0 to 100.
-        self._var_progress = tk.DoubleVar(value=0.0)
-        self._progress_bar = ttk.Progressbar(section, variable=self._var_progress, maximum=100.0)
-        self._progress_bar.pack(fill=tk.X, pady=(4, 0))
-
-    def _create_log_section(self) -> None:
-        """Creates the scrollable Text widget that records step results."""
-        section = ttk.LabelFrame(self, text="Journal des étapes", padding=(5, 5))
-        section.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
-
-        # Scrollbar paired with the Text widget via yscrollcommand.
-        scrollbar = ttk.Scrollbar(section, orient="vertical")
-        self._log_text = tk.Text(
-            section,
-            state=tk.DISABLED,
-            wrap=tk.WORD,
-            yscrollcommand=scrollbar.set,
-            height=10,
-        )
-        scrollbar.config(command=self._log_text.yview)
-
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-    def _create_report_section(self) -> None:
-        """Creates the final report frame, hidden until the workflow finishes."""
-        self._report_frame = ttk.LabelFrame(self, text="Rapport final", padding=(5, 5))
-        self._report_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
-
-        # Multi-line label populated by show_report().
-        self._lbl_report = ttk.Label(self._report_frame, text="", justify=tk.LEFT)
-        self._lbl_report.pack(anchor="w")
-
-        # Hidden until the workflow completes.
-        self._report_frame.pack_forget()
 
     # ------------------------------------------------------------------
     # Callback registration (called once by the presenter)
@@ -268,18 +218,6 @@ class ScrapingPanelView(ttk.Frame):
         ):
             var.set("—")
 
-        # Restore labels and progress to their default initial values.
-        self._lbl_step.config(text="En attente du lancement...")
-        self._var_progress.set(0.0)
-
-        # Wipe all previous log lines from the text widget.
-        self._log_text.config(state=tk.NORMAL)
-        self._log_text.delete("1.0", tk.END)
-        self._log_text.config(state=tk.DISABLED)
-
-        # Hide the report section until the next run completes.
-        self._report_frame.pack_forget()
-
         # Restore all buttons to idle state.
         self._btn_launch.config(state=tk.NORMAL)
         self._btn_cancel.config(state=tk.DISABLED)
@@ -289,126 +227,6 @@ class ScrapingPanelView(ttk.Frame):
     # ------------------------------------------------------------------
     # Public render interface (called by the presenter, thread-safe)
     # ------------------------------------------------------------------
-
-    def show_step_progress(self, index: int, total: int, step_type: str) -> None:
-        """Updates the step label and advances the progress bar.
-
-        Safe to call from a background thread — the update is deferred to the
-        main thread via self.after(0, ...).
-
-        Args:
-            index: Zero-based index of the step being executed.
-            total: Total number of steps in the workflow.
-            step_type: String label of the step type (e.g. ``'OPEN_URL'``).
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        self.after(0, lambda: self._update_progress(index, total, step_type))
-
-    def _update_progress(self, index: int, total: int, step_type: str) -> None:
-        """Applies the progress update on the main thread.
-
-        Args:
-            index: Zero-based step index.
-            total: Total number of steps.
-            step_type: Step type label string.
-        """
-        label = f"Étape {index + 1} / {total}  —  {step_type}"
-        self._lbl_step.config(text=label)
-
-        # Advance the bar proportionally to the completed step count.
-        pct = ((index + 1) / total * 100.0) if total > 0 else 0.0
-        self._var_progress.set(pct)
-
-    def append_step_result(
-        self,
-        index: int,
-        step_type: str,
-        success: bool,
-        message: str,
-        time_elapsed: float,
-    ) -> None:
-        """Appends a step outcome line to the scrollable log.
-
-        Safe to call from a background thread — the write is deferred to the
-        main thread via self.after(0, ...).
-
-        Args:
-            index: Zero-based step index.
-            step_type: String label of the step type.
-            success: True when the step succeeded.
-            message: Outcome or error message.
-            time_elapsed: Duration of the step execution in seconds.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        icon = "[OK]" if success else "[ERR]"
-        line = f"{icon} - Étape {index + 1}: {step_type} — {message} - [ {time_elapsed:.3f}s ]\n"
-
-        # Capture 'line' in the lambda default to avoid late-binding issues.
-        self.after(0, lambda ln=line: self._append_log_line(ln))
-
-    def _append_log_line(self, line: str) -> None:
-        """Writes one line to the log Text widget on the main thread.
-
-        Args:
-            line: Fully formatted log line to append.
-        """
-        # Briefly enable the read-only widget to insert text, then lock it again.
-        self._log_text.config(state=tk.NORMAL)
-        self._log_text.insert(tk.END, line)
-        self._log_text.config(state=tk.DISABLED)
-
-        # Auto-scroll so the latest entry is always visible.
-        self._log_text.see(tk.END)
-
-    def show_report(self, report: ScrapingReportModel) -> None:
-        """Renders the final workflow report in the bottom report section.
-
-        Safe to call from a background thread — the render is deferred to the
-        main thread via self.after(0, ...).
-
-        Args:
-            report: The completed ScrapingReportModel to display.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        self.after(0, lambda: self._render_report(report))
-
-    def _render_report(self, report: ScrapingReportModel) -> None:
-        """Applies report data to the report frame on the main thread.
-
-        Args:
-            report: Completed report model to render.
-        """
-        if report.cancelled:
-            status = "ANNULÉ"
-        elif report.steps_failed > 0:
-            status = "PARTIEL"
-        else:
-            status = "SUCCÈS"
-
-        # Build a concise multi-line summary from the report fields.
-        passed = report.steps_done - report.steps_failed
-        summary = (
-            f"{passed}/{report.total_steps} étapes réussies\n"
-            f"Début : {report.started_at}   Fin : {report.finished_at}\n"
-            f"Statut : [{status}]"
-        )
-        self._lbl_report.config(text=summary)
-        self._report_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
 
     def set_paused_state(self, paused: bool) -> None:
         """Toggles Pause/Reprendre buttons to match whether the workflow is paused.

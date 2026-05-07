@@ -46,7 +46,7 @@ class JumpToStepExecutor(IStepExecutor):
     def validate(self, params: dict[str, Any], step_index: int) -> list[str]:
         p = JumpToStepParams.from_dict(params)
         errors: list[str] = []
-        step_idx_display = {str(step_index + 1).zfill(2)}
+        step_idx_display = str(step_index + 1).zfill(2)
         if p.condition not in {"success", "failure", "always"}:
             errors.append(f"Dans l'étape {step_idx_display}. : condition invalide — {p.condition!r}.")
         target_step_id = self._resolve_target_step_id(params)

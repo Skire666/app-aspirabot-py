@@ -53,7 +53,7 @@ class WaitXTimeFormDef(IStepFormDef):
             WAIT_UNIT_MODEL_TO_VIEW.get(params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "duration": safe_int_widget(widgets, "duration", C_INPUT_DEFAULT_DURATION),
             "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),

@@ -163,7 +163,7 @@ class ProviderEditView(ttk.Frame):
         self._var_obfuscated.set(data.get("automation_obfuscated", True))
         self._var_created.set(data.get("created_date", ""))
         self._var_modified.set(data.get("modified_date", ""))
-        self.set_workflow_validation_message("Aucun vérification effectuée.", False)
+        self.set_workflow_validation_message("(aucune vérification effectuée)", False)
 
     def get_data(self) -> dict[str, Any]:
         """Reads data from the interface fields.

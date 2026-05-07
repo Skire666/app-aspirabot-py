@@ -60,7 +60,7 @@ class CloseTabsFormDef(IStepFormDef):
         widgets["url_filter"].set(params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER))
         widgets["max_tabs"].set(str(params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)))
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "url_filter": widgets["url_filter"].get().strip(),
             "max_tabs": safe_int_widget(widgets, "max_tabs", C_INPUT_DEFAULT_MAX_TABS),

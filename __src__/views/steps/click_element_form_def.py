@@ -49,7 +49,7 @@ class ClickElementFormDef(IStepFormDef):
         widgets["selector"].set(params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["click_mode"].set(params.get("click_mode", "Normal"))
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "selector": widgets["selector"].get().strip(),
             "click_mode": widgets["click_mode"].get(),

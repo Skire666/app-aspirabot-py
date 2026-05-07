@@ -218,6 +218,8 @@ class WorkflowListPresenter:
         if 0 <= index < len(self._steps):
             del self._steps[index]
             self._refresh_view()
+            first_error, _ = self._validate_workflow_steps(self._steps, index)
+            self._notify_validation_feedback(first_error)
 
     def _on_clear_all_steps(self) -> None:
         """Clears all steps and persists the empty workflow."""

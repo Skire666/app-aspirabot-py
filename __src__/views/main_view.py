@@ -133,7 +133,6 @@ class MainView(ttk.Frame):
 
         # Some modules are disabled until explicitly enabled by the presenter
         self.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
-        self.set_tab_state(C_TITLE_MODULE_SCRAPING, tk.DISABLED)
 
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a sidebar module button.

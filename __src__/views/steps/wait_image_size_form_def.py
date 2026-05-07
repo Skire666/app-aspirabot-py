@@ -131,7 +131,7 @@ class WaitImageSizeFormDef(IStepFormDef):
             )
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
             "height_min": safe_int_widget(widgets, "height_min", C_INPUT_DEFAULT_MINIMUM_SIZE),

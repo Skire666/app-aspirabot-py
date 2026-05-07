@@ -53,7 +53,7 @@ class EndProcessFormDef(IStepFormDef):
             )
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "wait_duration": safe_int_widget(widgets, "wait_duration", 0),
             "wait_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["wait_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),

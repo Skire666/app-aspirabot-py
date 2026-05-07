@@ -15,7 +15,6 @@ Example:
 ## Imports
 ## ---------------------------------------------------------------------------
 
-import tkinter as tk
 from abc import ABC, abstractmethod
 from tkinter import ttk
 from typing import Any
@@ -76,7 +75,7 @@ class IStepFormDef(ABC):
         """Populates ``frame`` with the step-specific form widgets.
 
         Widget variables are stored in ``widgets`` under their parameter key
-        so that ``load_params``, ``read_params``, and ``validate_form`` can
+        so that ``load_params``, ``read_params_from_view``, and ``validate_form`` can
         access them by name.
 
         Args:
@@ -108,7 +107,7 @@ class IStepFormDef(ABC):
         """
 
     @abstractmethod
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Reads current widget values and returns a raw params dict.
 
         Args:

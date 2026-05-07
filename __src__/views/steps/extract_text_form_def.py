@@ -72,7 +72,7 @@ class ExtractTextFormDef(IStepFormDef):
             EXTRACT_TARGET_MODEL_TO_VIEW.get(params.get("target", "first"), EXTRACT_TARGET_DISPLAY[0])
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "selector": widgets["selector"].get().strip(),
             "extract_mode": EXTRACT_MODE_VIEW_TO_MODEL.get(widgets["extract_mode"].get(), "innerText"),

@@ -31,7 +31,7 @@ class RefreshPageFormDef(IStepFormDef):
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["clear_cache"].set(bool(params.get("clear_cache", False)))
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {"clear_cache": bool(widgets["clear_cache"].get())}
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:

@@ -114,7 +114,7 @@ class OpenUrlFormDef(IStepFormDef):
             )
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Reads the current widget values as step parameters."""
         return {
             "url": widgets["url"].get().strip(),

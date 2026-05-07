@@ -1,8 +1,11 @@
 """IStepFormDef for SCROLL_DOWN."""
+
 from __future__ import annotations
+
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
+
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepType
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
@@ -24,13 +27,15 @@ class ScrollDownFormDef(IStepFormDef):
 
         ttk.Label(frame, text="Pixels:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
         pixels_var = tk.StringVar(value="1000")
-        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=pixels_var, width=10).grid(row=0, column=1, sticky="w", padx=5, pady=4)
+        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=pixels_var, width=10).grid(
+            row=0, column=1, sticky="w", padx=5, pady=4
+        )
         widgets["pixels"] = pixels_var
 
     def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["pixels"].set(str(params.get("pixels", 1000)))
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {"pixels": safe_int_widget(widgets, "pixels", 1000)}
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:

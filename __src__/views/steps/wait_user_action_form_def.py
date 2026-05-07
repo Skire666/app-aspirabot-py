@@ -73,7 +73,7 @@ class WaitUserActionFormDef(IStepFormDef):
             )
         )
 
-    def read_params(self, widgets: dict[str, Any]) -> dict[str, Any]:
+    def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(widgets["condition"].get(), "always"),
             "wait_duration": safe_int_widget(widgets, "wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION),
