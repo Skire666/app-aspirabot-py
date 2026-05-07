@@ -340,7 +340,7 @@ class DragDropList(tk.Frame, Generic[T]):
             return
         if self._should_skip_resize_redraw():
             return
-        self.redraw()
+        self._redraw_for_resize()
 
     def _on_resize_finalize(self) -> None:
         """Forces a final redraw once resize has fully settled."""
@@ -348,7 +348,7 @@ class DragDropList(tk.Frame, Generic[T]):
             return
         if self._last_redraw_w == self._calc._canvas_w:
             return
-        self.redraw()
+        self._redraw_for_resize()
 
     # ─── Drawing ─────────────────────────────────────────────────────────────
 
@@ -374,15 +374,16 @@ class DragDropList(tk.Frame, Generic[T]):
         Args:
             idx: Zero-based item index.
         """
+        btn_tag = f"_btns{idx}"
         rects = self._calc.btn_rects(idx, len(self._visible_btns))
         for i, btn in enumerate(self._visible_btns):
             x1, y1, x2, y2 = rects[i]
             hovered = self._hovered_btn == (idx, btn.key)
             if btn.key == "toggle_active":
-                self._draw_toggle_for(idx, x1, y1, x2, y2, hovered)
+                self._draw_toggle_for(idx, x1, y1, x2, y2, hovered, tag=btn_tag)
             else:
                 bdef = ButtonDef(key=btn.key, color_key=btn.color_key, icon=btn.icon)
-                self._engine.draw_button(bdef, x1, y1, x2, y2, hovered)
+                self._engine.draw_button(bdef, x1, y1, x2, y2, hovered, tag=btn_tag)
 
     def _draw_toggle_for(
         self,
@@ -392,6 +393,7 @@ class DragDropList(tk.Frame, Generic[T]):
         x2: int,
         y2: int,
         hovered: bool,
+        tag: str | None = None,
     ) -> None:
         """Draws the toggle-active button for item at idx.
 
@@ -402,6 +404,7 @@ class DragDropList(tk.Frame, Generic[T]):
             x2: Right edge of the button.
             y2: Bottom edge of the button.
             hovered: True when the pointer is over the button.
+            tag: Optional canvas tag applied to all button primitives.
         """
         is_active = bool(getattr(self.items[idx], "is_active", True))
         self._engine.draw_toggle_button(
@@ -413,6 +416,7 @@ class DragDropList(tk.Frame, Generic[T]):
             hovered=hovered,
             icon_on=C_RESS_ICON_WHITE_TOGGLE_ON,
             icon_off=C_RESS_ICON_WHITE_TOGGLE_OFF,
+            tag=tag,
         )
 
     def _draw_floating(self, idx: int, y_top: int) -> None:
@@ -513,6 +517,50 @@ class DragDropList(tk.Frame, Generic[T]):
         self._last_visible_range = current
         self._last_buttons_range = current_buttons
         self.redraw()
+
+    def _redraw_for_resize(self) -> None:
+        """Repositions items after a width-only resize without clearing the canvas.
+
+        Text and separator items are left in place (their X positions are fixed).
+        Only the background rectangle and overflow mask are moved via coords() /
+        itemconfig(). Buttons are right-aligned so their tagged group is deleted
+        and redrawn at the new positions.
+
+        Falls back to a full clear-region + _draw_normal for any item whose
+        tagged primitives are not yet in the canvas (e.g. first draw after rebuild).
+        """
+        self._calc.set_n_items(len(self.items))
+        renderer = self._render_item
+        has_resize_update = hasattr(renderer, "resize_update")
+
+        start, end = self._visible_range()
+        btn_start, btn_end = self._buttons_range()
+        if self._virtualize:
+            self._last_visible_range = (start, end)
+            self._last_buttons_range = (btn_start, btn_end)
+
+        for i in range(start, end):
+            y = self._calc.item_y(i)
+            x = self._calc._pad
+            w = self._calc.item_w()
+            h = self._calc._item_h
+            bw = self._calc.btn_zone_width(len(self._visible_btns))
+            draw_btns = btn_start <= i < btn_end
+
+            updated = (
+                has_resize_update
+                and renderer.resize_update(self.canvas, self.items[i], i, x, y, w - bw, h, "normal")
+            )
+            if updated:
+                if draw_btns and self._visible_btns:
+                    self.canvas.delete(f"_btns{i}")
+                    self._draw_buttons_for(i)
+            else:
+                self._engine.clear_region(x, y, w, h)
+                self._draw_normal(i, draw_buttons=draw_btns)
+
+        self._last_redraw_w = self._calc._canvas_w
+        self._dirty.clear()
 
     # ─── Item redraw ──────────────────────────────────────────────────────────
 

@@ -99,6 +99,7 @@ class RenderEngine:
         r: int,
         fill: str,
         outline: str = "",
+        tags: tuple[str, ...] = (),
     ) -> None:
         """Draws a filled rounded rectangle.
 
@@ -110,22 +111,23 @@ class RenderEngine:
             r: Corner radius in pixels.
             fill: Fill color string.
             outline: Optional border color. Omitted when empty or equal to fill.
+            tags: Canvas tags applied to every primitive that composes the rect.
         """
         cv = self._canvas
 
         # Four corner arcs.
-        cv.create_arc(x1, y1, x1 + 2*r, y1 + 2*r, start=90, extent=90, fill=fill, outline=fill)
-        cv.create_arc(x2 - 2*r, y1, x2, y1 + 2*r, start=0, extent=90, fill=fill, outline=fill)
-        cv.create_arc(x1, y2 - 2*r, x1 + 2*r, y2, start=180, extent=90, fill=fill, outline=fill)
-        cv.create_arc(x2 - 2*r, y2 - 2*r, x2, y2, start=270, extent=90, fill=fill, outline=fill)
+        cv.create_arc(x1, y1, x1 + 2*r, y1 + 2*r, start=90, extent=90, fill=fill, outline=fill, tags=tags)
+        cv.create_arc(x2 - 2*r, y1, x2, y1 + 2*r, start=0, extent=90, fill=fill, outline=fill, tags=tags)
+        cv.create_arc(x1, y2 - 2*r, x1 + 2*r, y2, start=180, extent=90, fill=fill, outline=fill, tags=tags)
+        cv.create_arc(x2 - 2*r, y2 - 2*r, x2, y2, start=270, extent=90, fill=fill, outline=fill, tags=tags)
 
         # Central fill panels.
-        cv.create_rectangle(x1 + r, y1, x2 - r, y2, fill=fill, outline=fill)
-        cv.create_rectangle(x1, y1 + r, x2, y2 - r, fill=fill, outline=fill)
+        cv.create_rectangle(x1 + r, y1, x2 - r, y2, fill=fill, outline=fill, tags=tags)
+        cv.create_rectangle(x1, y1 + r, x2, y2 - r, fill=fill, outline=fill, tags=tags)
 
         # Optional outline border.
         if outline and outline != fill:
-            cv.create_rectangle(x1, y1, x2, y2, outline=outline, fill="")
+            cv.create_rectangle(x1, y1, x2, y2, outline=outline, fill="", tags=tags)
 
     # ── Button drawing ───────────────────────────────────────────────
 
@@ -137,6 +139,7 @@ class RenderEngine:
         x2: int,
         y2: int,
         hovered: bool,
+        tag: str | None = None,
     ) -> None:
         """Draws a single action button.
 
@@ -147,14 +150,17 @@ class RenderEngine:
             x2: Right edge.
             y2: Bottom edge.
             hovered: True when the pointer is over this button.
+            tag: Optional canvas tag applied to all primitives (for bulk delete on resize).
         """
+        tags: tuple[str, ...] = (tag,) if tag else ()
         color = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
-        self.draw_rounded_rect(x1, y1, x2, y2, 5, color)
+        self.draw_rounded_rect(x1, y1, x2, y2, 5, color, tags=tags)
         self._canvas.create_image(
             (x1 + x2) // 2,
             (y1 + y2) // 2,
             image=get_resource_icon_24px(btn.icon),
             anchor="center",
+            tags=tags,
         )
 
     def draw_toggle_button(
@@ -167,6 +173,7 @@ class RenderEngine:
         hovered: bool,
         icon_on: str,
         icon_off: str,
+        tag: str | None = None,
     ) -> None:
         """Draws a toggle (on/off) button reflecting item.is_active state.
 
@@ -179,18 +186,21 @@ class RenderEngine:
             hovered: True when the pointer is over this button.
             icon_on: Resource constant for the active-state icon.
             icon_off: Resource constant for the inactive-state icon.
+            tag: Optional canvas tag applied to all primitives (for bulk delete on resize).
         """
+        tags: tuple[str, ...] = (tag,) if tag else ()
         if hovered:
             bg = self._theme["btn_hover"]
         else:
             bg = self._theme["btn_toggle_on" if is_active else "btn_toggle_off"]
-        self.draw_rounded_rect(x1, y1, x2, y2, 5, bg)
+        self.draw_rounded_rect(x1, y1, x2, y2, 5, bg, tags=tags)
         icon = icon_on if is_active else icon_off
         self._canvas.create_image(
             (x1 + x2) // 2,
             (y1 + y2) // 2,
             image=get_resource_icon_24px(icon),
             anchor="center",
+            tags=tags,
         )
 
     # ── Composite drawing ────────────────────────────────────────────

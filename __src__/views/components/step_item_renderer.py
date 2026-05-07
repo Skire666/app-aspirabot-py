@@ -95,8 +95,9 @@ class StepItemRenderer:
         h: int,
         colors: dict[str, str],
         state: str,
+        idx: int,
     ) -> None:
-        """Draws the card background rectangle for non-floating items."""
+        """Draws the card background rectangle for non-floating items, tagged for resize reuse."""
         if state != "normal":
             return
         canvas.create_rectangle(
@@ -106,6 +107,7 @@ class StepItemRenderer:
             y + h - 1,
             fill=colors["bg"],
             outline=colors["border"],
+            tags=(f"_bg{idx}",),
         )
 
     def _draw_label(
@@ -131,16 +133,16 @@ class StepItemRenderer:
         canvas.create_text(
             start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT
         )
-        self._draw_overflow_mask(canvas, x, y, w, h)
+        self._draw_overflow_mask(canvas, x, y, w, h, idx)
 
-    def _draw_overflow_mask(self, canvas: tk.Canvas, x: int, y: int, w: int, h: int) -> None:
-        """Masks any label overflow to the right of the item area."""
+    def _draw_overflow_mask(self, canvas: tk.Canvas, x: int, y: int, w: int, h: int, idx: int) -> None:
+        """Draws (or removes) the overflow mask, tagged for resize reuse."""
         clip_x = x + w
         canvas_w = canvas.winfo_width()
         if canvas_w <= clip_x:
             return
         bg = canvas.cget("bg")
-        canvas.create_rectangle(clip_x, y + 1, canvas_w, y + h - 1, fill=bg, outline=bg)
+        canvas.create_rectangle(clip_x, y + 1, canvas_w, y + h - 1, fill=bg, outline=bg, tags=(f"_msk{idx}",))
 
     def __call__(
         self,
@@ -158,5 +160,54 @@ class StepItemRenderer:
             return
         is_selected = idx == self._get_selected_index()
         colors = self._resolve_colors(state, is_selected, is_active=item.is_active)
-        self._draw_background(canvas, x, y, w, h, colors, state)
+        self._draw_background(canvas, x, y, w, h, colors, state, idx)
         self._draw_label(canvas, item, idx, x, y, w, h, colors)
+
+    def resize_update(
+        self,
+        canvas: tk.Canvas,
+        item: StepScrapingModel,
+        idx: int,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        state: str,
+    ) -> bool:
+        """Repositions cached canvas items on a width-only resize.
+
+        Text and separator items have fixed left-aligned positions and are
+        untouched. Only the background rectangle and the overflow mask change
+        when the canvas width changes, and both are updated via coords() /
+        itemconfig() without any delete-and-recreate cycle.
+
+        Returns:
+            True when cached tags were found and updated; False on cache miss
+            (caller should fall back to a full _draw_normal).
+        """
+        if state != "normal":
+            return False
+
+        bg_tag = f"_bg{idx}"
+        if not canvas.find_withtag(bg_tag):
+            return False
+
+        is_selected = idx == self._get_selected_index()
+        colors = self._resolve_colors(state, is_selected, is_active=item.is_active)
+
+        canvas.coords(bg_tag, x, y + 1, x + w, y + h - 1)
+        canvas.itemconfig(bg_tag, fill=colors["bg"], outline=colors["border"])
+
+        msk_tag = f"_msk{idx}"
+        clip_x = x + w
+        canvas_w = canvas.winfo_width()
+        if canvas_w > clip_x:
+            bg = canvas.cget("bg")
+            if canvas.find_withtag(msk_tag):
+                canvas.coords(msk_tag, clip_x, y + 1, canvas_w, y + h - 1)
+            else:
+                canvas.create_rectangle(clip_x, y + 1, canvas_w, y + h - 1, fill=bg, outline=bg, tags=(msk_tag,))
+        else:
+            canvas.delete(msk_tag)
+
+        return True

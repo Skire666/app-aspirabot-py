@@ -120,6 +120,9 @@ class JumpToStepFormDef(IStepFormDef):
                 str_target_idx = f"{target_idx + 1}".zfill(2)
                 break
 
+        if str_target_idx == "??":
+            target_hexastr = "???"
+
         cond = model.params.get("condition", "success")
         if cond == "success":
             return f"Si le résultat est un succès\nSe rendre à l'étape {str_target_idx}.  #{target_hexastr}"
