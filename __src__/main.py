@@ -47,7 +47,7 @@ from views.log_view import LogView
 from views.main_view import MainView
 from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
-from views.scraping_panel_view import ScrapingPanelView
+from views.scraping_panel_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
 
 ## ---------------------------------------------------------------------------
@@ -245,7 +245,7 @@ def _init_scraping_component(
     main_view: MainView,
     config_model: AppConfigurationModel,
     provider_service: ProviderService,
-) -> tuple[ScrapingPanelView, ScrapingPresenter]:
+) -> tuple[ScrapingView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
     Args:
@@ -261,7 +261,7 @@ def _init_scraping_component(
     else:
         raise Exception(f"Unsupported browser engine: {config_model.browser_engine}")
     scraping_service = ScrapingService(config_model.folder_scraping, browser_service)
-    scraping_view = ScrapingPanelView(main_view.content_area)
+    scraping_view = ScrapingView(main_view.content_area)
     scraping_presenter = ScrapingPresenter(
         view=scraping_view, service_scraping=scraping_service, service_provider=provider_service
     )
@@ -371,7 +371,7 @@ def _register_views(
     config_view: AppConfigurationView,
     provider_view: ProvidersListView,
     provider_edit_view: ProviderEditView,
-    scraping_view: ScrapingPanelView,
+    scraping_view: ScrapingView,
     faq_view: FaqView,
 ) -> None:
     """Register all module views with the sidebar and display the default tab.

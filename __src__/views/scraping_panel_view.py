@@ -24,7 +24,7 @@ from tkinter import messagebox, ttk
 ## ---------------------------------------------------------------------------
 
 
-class ScrapingPanelView(ttk.Frame):
+class ScrapingView(ttk.Frame):
     """Display-only frame for monitoring and reporting a scraping workflow.
 
     Layout (top to bottom):

@@ -21,7 +21,7 @@ from collections.abc import Callable
 from models.provider_model import ProviderModel
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
-from views.scraping_panel_view import ScrapingPanelView
+from views.scraping_panel_view import ScrapingView
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -52,7 +52,7 @@ class ScrapingPresenter:
 
     def __init__(
         self,
-        view: ScrapingPanelView,
+        view: ScrapingView,
         service_scraping: ScrapingService,
         service_provider: ProviderService,
         provider: ProviderModel | None = None,
