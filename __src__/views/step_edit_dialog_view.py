@@ -40,7 +40,7 @@ _LABEL_TO_TYPE: dict[str, StepType] = {v: k for k, v in C_STEP_TYPE_TO_LABELS.it
 ## ---------------------------------------------------------------------------
 
 
-class StepInlineFormPanel(ttk.LabelFrame):
+class StepInlineFormPanel(ttk.Frame):
     """Inline form panel for creating or editing a single scraping step.
 
     All form-specific logic (build / load / read / validate / label) is
@@ -59,7 +59,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
         Args:
             parent: The parent Tkinter widget to embed into.
         """
-        super().__init__(parent, text="Logistique")
+        super().__init__(parent)
         self.on_confirm: Callable[[StepScrapingModel], None] | None = None
         self.on_cancel: Callable[[], None] | None = None
         self.on_type_changed: Callable[[str], None] | None = None
@@ -84,10 +84,10 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._create_buttons()
 
         self._error_label = ttk.Label(self, text="", foreground="red")
-        self._error_label.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 2))
+        self._error_label.pack(side=tk.BOTTOM, fill=tk.X, padx=(10, 5), pady=(0, 2))
 
         top_area = ttk.Frame(self)
-        top_area.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        top_area.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5)
 
         self._form_frame = ttk.Frame(top_area)
         self._form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 5), pady=5)
@@ -104,13 +104,25 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._btn_create.pack(side=tk.LEFT, padx=5)
         self._btn_edit = ttk.Button(btn_frame, text="Modifier une étape", command=self._btn_confirm_update)
         self._btn_edit.pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Annuler l'édition", command=self._btn_cancel_edition).pack(
-            side=tk.LEFT, padx=5
-        )
+        self._btn_cancel = ttk.Button(btn_frame, text="Annuler l'édition", command=self._btn_cancel_edition)
+        self._btn_cancel.pack(side=tk.LEFT, padx=5)
+        self.set_creation_mode()
 
     # ---------------------------------------------------------------
     # Public interface
     # ---------------------------------------------------------------
+
+    def set_creation_mode(self) -> None:
+        """Enables Create; disables Edit and Cancel."""
+        self._btn_create.configure(state="normal")
+        self._btn_edit.configure(state="disabled")
+        self._btn_cancel.configure(state="disabled")
+
+    def set_edit_mode(self) -> None:
+        """Enables Edit and Cancel; disables Create."""
+        self._btn_create.configure(state="disabled")
+        self._btn_edit.configure(state="normal")
+        self._btn_cancel.configure(state="normal")
 
     def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
         """Stores the workflow step list for JUMP_TO_STEP target population.

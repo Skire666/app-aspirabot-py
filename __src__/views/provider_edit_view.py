@@ -11,7 +11,7 @@ from typing import Any
 
 from models.step_scraping_model import StepScrapingModel
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
-from views.step_edit_dialog_view import _LABEL_TO_TYPE
+from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 from views.workflow_list_view import WorkflowListView
 
 ## ---------------------------------------------------------------------------
@@ -100,8 +100,12 @@ class ProviderEditView(ttk.Frame):
         top_frame.columnconfigure(0, weight=1)
 
         # Gestion des étapes — between Informations and Workflow & Instructions.
-        self._gestion_container = ttk.Frame(main_container)
-        self._gestion_container.pack(side=tk.TOP, fill=tk.X, padx=5)
+        self._gestion_container = ttk.LabelFrame(
+            main_container, text="Gestion des étapes", height=_HEIGHT_FRAME_GESTION
+        )
+        self._gestion_container.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(0, 5))
+        self._gestion_container.pack_propagate(False)
+        self._create_gestion_widgets()
 
         # 4. Footer — packed before workflow so side=BOTTOM reserves space correctly
         footer_frame = ttk.Frame(main_container)
@@ -121,12 +125,71 @@ class ProviderEditView(ttk.Frame):
 
         self._workflow_builder_view = WorkflowListView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self._workflow_builder_view.on_edit_step = self._handle_edit_step
 
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder le fournisseur", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
 
         self._btn_cancel = ttk.Button(footer_frame, text="Annuler", command=self._notify_cancel)
         self._btn_cancel.pack(side=tk.RIGHT, padx=5)
+
+    def _create_gestion_widgets(self) -> None:
+        labels = list(C_STEP_TYPE_TO_LABELS.values())
+
+        left_frame = ttk.Frame(self._gestion_container, width=180)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 2), pady=5)
+        left_frame.pack_propagate(False)
+
+        self._type_listbox = tk.Listbox(
+            left_frame, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
+        )
+        sb = ttk.Scrollbar(left_frame, orient="vertical", command=self._type_listbox.yview)
+        self._type_listbox.configure(yscrollcommand=sb.set)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self._type_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        for label in labels:
+            self._type_listbox.insert(tk.END, label)
+        self._type_listbox.selection_set(0)
+        self._type_listbox.bind("<<ListboxSelect>>", self._on_type_list_select)
+
+        self._inline_form = StepInlineFormPanel(self._gestion_container)
+        self._inline_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 5), pady=5)
+
+        self._inline_form.on_confirm = self._on_inline_confirm
+        self._inline_form.on_cancel = self._on_inline_cancel
+        self._inline_form.on_type_changed = self._on_inline_type_changed
+
+        self._inline_form.load(None)
+
+    def _handle_edit_step(self, idx: int) -> None:
+        steps = self._workflow_builder_view._last_steps
+        if idx < len(steps):
+            self.show_inline_form(steps[idx])
+
+    def _on_inline_confirm(self, step: StepScrapingModel) -> None:
+        cb = self._workflow_builder_view.on_confirm_inline_step
+        if cb:
+            cb(step)
+        self._inline_form.set_creation_mode()
+        self._inline_form.load(None)
+
+    def _on_inline_cancel(self) -> None:
+        cb = self._workflow_builder_view.on_cancel_inline_step
+        if cb:
+            cb()
+        self._inline_form.set_creation_mode()
+        self._inline_form.load(None)
+
+    def _on_inline_type_changed(self, label: str) -> None:
+        try:
+            labels = list(C_STEP_TYPE_TO_LABELS.values())
+            idx = labels.index(label)
+            self._type_listbox.selection_clear(0, tk.END)
+            self._type_listbox.selection_set(idx)
+            self._type_listbox.see(idx)
+        except (ValueError, tk.TclError):
+            pass
 
     def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
         """Loads a step into the inline form and syncs the type-selector listbox.
@@ -135,15 +198,10 @@ class ProviderEditView(ttk.Frame):
             step: Existing step to pre-fill for editing, or None for a blank form.
         """
         self._inline_form.load(step)
-        try:
-            labels = list(C_STEP_TYPE_TO_LABELS.values())
-            current = self._inline_form._type_var.get()
-            idx = labels.index(current) if current in labels else 0
-            self._type_listbox.selection_clear(0, tk.END)
-            self._type_listbox.selection_set(idx)
-            self._type_listbox.see(idx)
-        except (tk.TclError, ValueError):
-            pass
+        if step is not None:
+            self._inline_form.set_edit_mode()
+        else:
+            self._inline_form.set_creation_mode()
 
     def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
         """Forwards the step list to the inline form for JUMP_TO_STEP target population.
