@@ -11,6 +11,8 @@ from models.step_scraping_model import StepScrapingModel, StepType
 from shared.step_registry import register_form
 from views.steps._constants import CLICK_MODES
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
 
 
@@ -21,7 +23,7 @@ class ClickElementFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Cliquer sur un élément"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.CLICK_ELEMENT)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
 

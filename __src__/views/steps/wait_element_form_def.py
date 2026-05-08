@@ -17,6 +17,8 @@ from shared.constants import (
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
@@ -33,7 +35,7 @@ class WaitElementFormDef(IStepFormDef):
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return "Présence d'un élément"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_ELEMENT)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the selector and timeout widgets into the given frame."""

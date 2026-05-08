@@ -27,6 +27,8 @@ from views.steps._constants import (
     safe_int_widget,
 )
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
 C_INPUT_DEFAULT_TIME_WAIT = 100
 
@@ -42,7 +44,7 @@ class CountElementFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Compter les éléments"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_ELEMENT)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         self._form_widgets_ref = widgets

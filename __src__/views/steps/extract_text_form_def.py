@@ -18,6 +18,8 @@ from views.steps._constants import (
     EXTRACT_TARGET_VIEW_TO_MODEL,
 )
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
 
 
@@ -28,7 +30,7 @@ class ExtractTextFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Extraire contenu textuel"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.EXTRACT_TEXT)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
 

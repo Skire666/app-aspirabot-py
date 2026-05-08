@@ -13,6 +13,8 @@ from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import DOWNLOAD_MODES, safe_int_widget
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_MODE_DDL = DOWNLOAD_MODES[-1]  # all
 
@@ -49,7 +51,7 @@ class DownloadImageFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Télécharger les images"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.DOWNLOAD_IMAGE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
 

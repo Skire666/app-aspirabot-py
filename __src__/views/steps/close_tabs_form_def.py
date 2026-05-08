@@ -16,6 +16,8 @@ from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
 from shared.step_registry import register_form
 from views.steps._constants import safe_int_widget
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 ## ---------------------------------------------------------------------------
 ## Constants
 ## ---------------------------------------------------------------------------
@@ -35,7 +37,7 @@ class CloseTabsFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Fermer les onglets"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.CLOSE_TABS)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         frame.columnconfigure(1, weight=1)

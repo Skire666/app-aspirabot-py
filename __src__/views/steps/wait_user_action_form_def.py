@@ -24,6 +24,8 @@ from views.steps._constants import (
     safe_int_widget,
 )
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 C_INPUT_DEFAULT_POST_WAIT_DURATION: int = 3
 C_INPUT_DEFAULT_CONDITION: str = CONDITION_DISPLAY[-1]  # "Toujours"
 
@@ -35,7 +37,7 @@ class WaitUserActionFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Attendre action utilisateur"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_USER_ACTION)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         frame.columnconfigure(1, weight=1)

@@ -11,6 +11,8 @@ from models.step_scraping_model import StepScrapingModel, StepType
 from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 
 class RefreshPageFormDef(IStepFormDef):
     @classmethod
@@ -19,7 +21,7 @@ class RefreshPageFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Rafraîchir la page"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.REFRESH_PAGE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         cache_var = tk.BooleanVar(value=False)

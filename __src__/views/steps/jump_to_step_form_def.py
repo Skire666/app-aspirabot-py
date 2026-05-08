@@ -28,7 +28,7 @@ class JumpToStepFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Si le résultat est un ..."
+        return C_STEP_TYPE_TO_LABELS.get(StepType.JUMP_TO_STEP)
 
     @staticmethod
     def _resolve_target_hexastring(target_value: Any, target_ids: list[str]) -> int | None:

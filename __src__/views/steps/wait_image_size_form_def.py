@@ -17,6 +17,8 @@ from shared.constants import (
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
@@ -36,7 +38,7 @@ class WaitImageSizeFormDef(IStepFormDef):
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return "Présence taille d'image"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_IMAGE_SIZE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         # LIGNE 1 : Hauteur (px) + Min + Spinbox + Max + Spinbox

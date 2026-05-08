@@ -100,9 +100,13 @@ class StepInlineFormPanel(ttk.LabelFrame):
         """Creates the Confirm and Cancel buttons at the bottom."""
         btn_frame = ttk.Frame(self)
         btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
-        self._btn_confirm = ttk.Button(btn_frame, text="Confirmer", command=self._confirm)
-        self._btn_confirm.pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Annuler", command=self._cancel).pack(side=tk.LEFT, padx=5)
+        self._btn_create = ttk.Button(btn_frame, text="Créer une étape", command=self._btn_confirm_create)
+        self._btn_create.pack(side=tk.LEFT, padx=5)
+        self._btn_edit = ttk.Button(btn_frame, text="Modifier une étape", command=self._btn_confirm_update)
+        self._btn_edit.pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Annuler l'édition", command=self._btn_cancel_edition).pack(
+            side=tk.LEFT, padx=5
+        )
 
     # ---------------------------------------------------------------
     # Public interface
@@ -200,7 +204,7 @@ class StepInlineFormPanel(ttk.LabelFrame):
     # Button handlers
     # ---------------------------------------------------------------
 
-    def _confirm(self) -> None:
+    def _btn_confirm_create(self) -> None:
         """Validates the form, builds the step, and fires on_confirm."""
         label = self._type_var.get()
         step_type = _LABEL_TO_TYPE.get(label)
@@ -215,11 +219,9 @@ class StepInlineFormPanel(ttk.LabelFrame):
         self._error_label.configure(text="")
         params = self._get_params(step_type)
 
-        is_active = self._step_selected.is_active if self._step_selected else True
-
         step = StepScrapingModel(
             step_type=step_type,
-            is_active=is_active,
+            is_active=True,
             step_id=generate_rng_id_step(),
             params=params,
             parent_context=self._available_steps,
@@ -227,7 +229,32 @@ class StepInlineFormPanel(ttk.LabelFrame):
         if self.on_confirm:
             self.on_confirm(step)
 
-    def _cancel(self) -> None:
+    def _btn_confirm_update(self) -> None:
+        """Validates the form, builds the step, and fires on_confirm."""
+        label = self._type_var.get()
+        step_type = _LABEL_TO_TYPE.get(label)
+        if step_type is None:
+            return
+
+        errors = self._validate_form(step_type)
+        if errors:
+            self._error_label.configure(text=errors[0])
+            return
+
+        self._error_label.configure(text="")
+        params = self._get_params(step_type)
+
+        step = StepScrapingModel(
+            step_type=step_type,
+            is_active=self._step_selected.is_active,
+            step_id=self._step_selected.step_id,
+            params=params,
+            parent_context=self._available_steps,
+        )
+        if self.on_confirm:
+            self.on_confirm(step)
+
+    def _btn_cancel_edition(self) -> None:
         """Fires the on_cancel callback without modifying the step list."""
         if self.on_cancel:
             self.on_cancel()

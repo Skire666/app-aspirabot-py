@@ -17,6 +17,8 @@ from shared.constants import (
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 
 class RandomPauseFormDef(IStepFormDef):
     @classmethod
@@ -25,7 +27,7 @@ class RandomPauseFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Attendre aléatoirement"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.RANDOM_PAUSE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         min_var = tk.StringVar(value="500")

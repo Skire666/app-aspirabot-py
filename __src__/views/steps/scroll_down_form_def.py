@@ -12,6 +12,8 @@ from shared.constants import C_MAXIMUM_SIZE_IMAGE
 from shared.step_registry import register_form
 from views.steps._constants import safe_int_widget
 
+from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+
 
 class ScrollDownFormDef(IStepFormDef):
     @classmethod
@@ -20,7 +22,7 @@ class ScrollDownFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Défiler vers le bas"
+        return C_STEP_TYPE_TO_LABELS.get(StepType.SCROLL_DOWN)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         frame.columnconfigure(1, weight=1)
