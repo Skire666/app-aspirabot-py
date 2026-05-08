@@ -9,8 +9,9 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
+from models.step_scraping_model import StepScrapingModel
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
-from views.step_edit_dialog_view import StepInlineFormPanel
+from views.step_edit_dialog_view import _LABEL_TO_TYPE
 from views.workflow_list_view import WorkflowListView
 
 ## ---------------------------------------------------------------------------
@@ -121,60 +122,53 @@ class ProviderEditView(ttk.Frame):
         self._workflow_builder_view = WorkflowListView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        main_frame, type_listbox = self._create_gestion_section()
-        self._workflow_builder_view.set_type_listbox(type_listbox)
-
-        self._inline_form = StepInlineFormPanel(main_frame)
-        self._inline_form.on_confirm = self._workflow_builder_view._fire_confirm_step
-        self._inline_form.on_cancel = self._workflow_builder_view._fire_cancel_step
-        self._inline_form.grid(row=0, column=2, sticky="nsew", padx=(2, 4), pady=4)
-        self._workflow_builder_view.set_inline_form(self._inline_form)
-
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder le fournisseur", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
 
         self._btn_cancel = ttk.Button(footer_frame, text="Annuler", command=self._notify_cancel)
         self._btn_cancel.pack(side=tk.RIGHT, padx=5)
 
-    def _create_gestion_section(self) -> tuple[ttk.LabelFrame, tk.Listbox]:
-        """Builds the 'Gestion des étapes' panel inside _gestion_container.
+    def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
+        """Loads a step into the inline form and syncs the type-selector listbox.
 
-        Returns:
-            Tuple of (main_frame, type_listbox) for inline-form placement and type-sync.
+        Args:
+            step: Existing step to pre-fill for editing, or None for a blank form.
         """
-        row = ttk.Frame(self._gestion_container, height=_HEIGHT_FRAME_GESTION, padding=(0, 10, 0, 0))
-        row.grid_propagate(False)
-        row.columnconfigure(0, weight=1)
-        row.rowconfigure(0, weight=1)
-        row.pack(fill=tk.X)
+        self._inline_form.load(step)
+        try:
+            labels = list(C_STEP_TYPE_TO_LABELS.values())
+            current = self._inline_form._type_var.get()
+            idx = labels.index(current) if current in labels else 0
+            self._type_listbox.selection_clear(0, tk.END)
+            self._type_listbox.selection_set(idx)
+            self._type_listbox.see(idx)
+        except (tk.TclError, ValueError):
+            pass
 
-        main_frame = ttk.LabelFrame(row, text="Gestion des étapes")
-        main_frame.grid(row=0, column=0, sticky="nsew")
-        main_frame.columnconfigure(0, weight=0)
-        main_frame.columnconfigure(1, weight=0)
-        main_frame.columnconfigure(2, weight=1)
-        main_frame.rowconfigure(0, weight=1)
+    def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
+        """Forwards the step list to the inline form for JUMP_TO_STEP target population.
 
-        left_panel = ttk.Frame(main_frame)
-        left_panel.grid(row=0, column=0, sticky="nsew", padx=0, pady=5)
+        Args:
+            steps: Current ordered workflow step list.
+        """
+        self._inline_form.set_available_steps(steps)
 
-        lb_container = ttk.Frame(left_panel)
-        lb_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        lb_scroll = ttk.Scrollbar(lb_container, orient=tk.VERTICAL)
-        lb = tk.Listbox(lb_container, exportselection=False, activestyle="none", yscrollcommand=lb_scroll.set)
-        lb_scroll.config(command=lb.yview)
-        lb_scroll.pack(side=tk.LEFT, fill=tk.Y)
-        lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        for lbl in C_STEP_TYPE_TO_LABELS.values():
-            lb.insert(tk.END, lbl)
-        lb.bind("<<ListboxSelect>>", lambda e: self._workflow_builder_view._on_type_list_select(e))
-
-        separator = ttk.Separator(main_frame, orient="vertical")
-        separator.grid(row=0, column=1, sticky="ns")
-
-        return main_frame, lb
+    def _on_type_list_select(self, _: tk.Event) -> None:
+        sel = self._type_listbox.curselection()
+        if not sel:
+            return
+        idx = int(sel[0])
+        try:
+            label = self._type_listbox.get(idx)
+        except tk.TclError:
+            return
+        self._inline_form._type_var.set(label)
+        try:
+            self._inline_form._on_type_changed(None)
+        except (AttributeError, KeyError, tk.TclError, ValueError):
+            step_type = _LABEL_TO_TYPE.get(label)
+            if step_type is not None:
+                self._inline_form._rebuild_form(step_type)
 
     @property
     def workflow_builder_view(self) -> WorkflowListView:

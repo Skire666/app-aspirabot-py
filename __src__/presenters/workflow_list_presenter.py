@@ -46,15 +46,19 @@ class WorkflowListPresenter:
         view: WorkflowListView,
         service_provider: ProviderService,
         workflow_service: WorkflowService,
+        gestion_view: object | None = None,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
         Args:
-            view: The WorkflowListsView instance.
+            view: The WorkflowListView instance (step list and DnD callbacks).
             service_provider: ProviderService for provider-related operations.
             workflow_service: WorkflowService used to validate each step on confirm.
+            gestion_view: View that owns show_inline_form / set_available_steps.
+                          Defaults to view when not provided.
         """
         self._view = view
+        self._gestion_view = gestion_view if gestion_view is not None else view
         self._service_provider: ProviderService = service_provider
         self._workflow_service: WorkflowService = workflow_service
         self._logger = logging.getLogger(__name__)
@@ -71,7 +75,6 @@ class WorkflowListPresenter:
 
     def _bind_view_events(self) -> None:
         """Registers presenter handlers as view callbacks."""
-        self._view.on_add_step = self._on_add_step
         self._view.on_edit_step = self._on_edit_step
         self._view.on_delete_step = self._on_delete_step
         self._view.on_move_step = self._on_move_step
@@ -150,14 +153,6 @@ class WorkflowListPresenter:
     # View event handlers
     # ---------------------------------------------------------------
 
-    def _on_add_step(self) -> None:
-        """Shows the inline form in add mode (no pre-fill)."""
-        # Clear any pending edit index so confirm appends a new step.
-        self._edit_index = None
-        # Provide the current step list for JUMP_TO_STEP target population.
-        self._view.set_available_steps(self._steps)
-        self._view.show_inline_form()
-
     def _on_edit_step(self, index: int) -> None:
         """Shows the inline form pre-filled with the step at the given index.
 
@@ -169,8 +164,8 @@ class WorkflowListPresenter:
         # Track the index so confirm knows which slot to update.
         self._edit_index = index
         # Provide the current step list for JUMP_TO_STEP target population.
-        self._view.set_available_steps(self._steps)
-        self._view.show_inline_form(self._steps[index])
+        self._gestion_view.set_available_steps(self._steps)
+        self._gestion_view.show_inline_form(self._steps[index])
 
     def _on_confirm_inline_step(self, step: StepScrapingModel) -> None:
         """Validates then applies the confirmed step (add or update).

@@ -23,10 +23,8 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 
 from models.step_scraping_model import StepScrapingModel
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
-from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 
 ## ---------------------------------------------------------------------------
 ## Constants
@@ -68,8 +66,6 @@ class WorkflowListView(ttk.Frame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent)
-        self._inline_form: StepInlineFormPanel | None = None
-        self._type_listbox: tk.Listbox | None = None
         self._init_callbacks()
         self._selected_index: int | None = None
         self._last_steps: list[StepScrapingModel] = []
@@ -195,49 +191,6 @@ class WorkflowListView(ttk.Frame):
         # so winfo_reqheight() is only accurate after the event loop processes it.
         self.after_idle(self._update_dnd_window_geometry)
 
-    def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
-        """Loads a step into the always-visible inline form.
-
-        Args:
-            step: Existing step to pre-fill for editing, or None for a blank form.
-        """
-        # Load form (triggers on_type_changed → help text update).
-        self._inline_form.load(step)
-        # Select matching type in the left listbox if present
-        try:
-            if hasattr(self, "_type_listbox") and self._type_listbox is not None:
-                list_all_labels: list[str] = list(C_STEP_TYPE_TO_LABELS.values())
-
-                current = self._inline_form._type_var.get()
-                idx = list_all_labels.index(current) if current in list_all_labels else 0
-                self._type_listbox.selection_clear(0, tk.END)
-                self._type_listbox.selection_set(idx)
-                self._type_listbox.see(idx)
-        except (tk.TclError, ValueError):
-            pass
-
-    def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
-        """Forwards the step list to the inline form for JUMP_TO_STEP target population.
-
-        Must be called before show_inline_form() whenever JUMP_TO_STEP may be used.
-
-        Args:
-            steps: Current ordered workflow step list.
-        """
-        self._inline_form.set_available_steps(steps)
-
-    def set_type_listbox(self, listbox: tk.Listbox) -> None:
-        """Stores the type-selector listbox created externally, for selection sync."""
-        self._type_listbox = listbox
-
-    def set_inline_form(self, form: StepInlineFormPanel) -> None:
-        """Stores the inline form created and wired externally.
-
-        Args:
-            form: The StepInlineFormPanel instance to use for step editing.
-        """
-        self._inline_form = form
-
     # ---------------------------------------------------------------
     # DragDropList action callbacks
     # ---------------------------------------------------------------
@@ -272,31 +225,6 @@ class WorkflowListView(ttk.Frame):
         self._dnd_list.redraw()  # show highlight immediately without requiring a full rebuild
         if self.on_edit_step:
             self.on_edit_step(idx)
-
-    def _on_type_list_select(self, event: tk.Event) -> None:
-        """Called when the user selects a type in the left listbox.
-
-        Sets the inline form type and rebuilds the form.
-        """
-        if not hasattr(self, "_type_listbox") or self._type_listbox is None:
-            return
-        sel = self._type_listbox.curselection()
-        if not sel:
-            return
-        idx = int(sel[0])
-        try:
-            label = self._type_listbox.get(idx)
-        except tk.TclError:
-            return
-        # Update inline panel and trigger its change handler
-        self._inline_form._type_var.set(label)
-        try:
-            self._inline_form._on_type_changed(None)
-        except (AttributeError, KeyError, tk.TclError, ValueError):
-            # Fallback: directly rebuild based on mapping
-            step_type = _LABEL_TO_TYPE.get(label)
-            if step_type is not None:
-                self._inline_form._rebuild_form(step_type)
 
     def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
@@ -420,23 +348,6 @@ class WorkflowListView(ttk.Frame):
     # ---------------------------------------------------------------
     # Callback fires
     # ---------------------------------------------------------------
-
-    def _fire_confirm_step(self, step: StepScrapingModel) -> None:
-        """Forwards the confirmed step to the presenter callback.
-
-        Args:
-            step: The step built from the inline form.
-        """
-        self._selected_index = None
-        if self.on_confirm_inline_step:
-            self.on_confirm_inline_step(step)
-
-    def _fire_cancel_step(self) -> None:
-        """Hides the inline form and notifies the presenter of cancellation."""
-        self._selected_index = None
-        self._dnd_list.redraw()
-        if self.on_cancel_inline_step:
-            self.on_cancel_inline_step()
 
     def _fire_clear_all_steps(self) -> None:
         """Asks confirmation then notifies the presenter to clear all steps."""
