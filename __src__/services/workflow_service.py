@@ -67,6 +67,8 @@ class WorkflowService:
         Raises:
             ValueError: When no executor has been registered for the type.
         """
+        if not _all_step_executors:
+            raise ValueError("Executors are empty. No executors have been registered.")
         executor = _all_step_executors.get(step_type)
         if executor is None:
             raise ValueError(f"No executor registered for step type {step_type}.")

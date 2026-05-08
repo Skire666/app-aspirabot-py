@@ -6,11 +6,10 @@ All browser-level concerns (launch, stealth, routing) are delegated to the
 injected IWebBrowserService implementation.
 
 Example:
-    >>> from services.web_browser_service_playwright import PlaywrightBrowserService
-    >>> browser = PlaywrightBrowserService(folder)
-    >>> service = ScrapingService(folder, browser)
-    >>> service.run_workflow(provider, lambda *a: None, threading.Event(), pause)
-    True
+    >>> from services.web_browser_service import BrowserService
+    >>> browser = BrowserService(folder)
+    >>> service = ScrapingService(folder, browser, workflow_service)
+    >>> report = service.run_workflow(provider, cancel, pause)
 """
 
 ## ---------------------------------------------------------------------------
@@ -25,12 +24,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
-from models.provider_model import DATETIME_FORMAT, ProviderModel
-from models.step_scraping_model import StepScrapingModel
-
-from __src__.interfaces.i_step_executor import IStepExecutor
-from __src__.services.workflow_service import WorkflowService
+from models.provider_model import ProviderModel
+from models.scraping_report_model import ScrapingReportModel
+from models.step_scraping_model import StepScrapingModel, StepType
+from services.workflow_service import WorkflowService
 
 ## ---------------------------------------------------------------------------
 ## Class
@@ -41,14 +40,15 @@ class ScrapingService:
     """Executes a provider workflow step by step using a pluggable browser service.
 
     All browser concerns are delegated to IWebBrowserService. Cross-step
-    state (pending jump, end-process flag, image dedup set) is owned here
-    and injected into each executor via runtime params.
+    state (pending jump, end-process flag, image dedup set, statistics) is
+    owned here and injected into each executor via runtime params.
 
     Example:
-        >>> from services.web_browser_service_playwright import PlaywrightBrowserService
-        >>> svc = ScrapingService(Path("."), PlaywrightBrowserService(Path(".")))
-        >>> svc.run_workflow(provider, on_step_done, cancel, pause)
-        True
+        >>> from services.web_browser_service import BrowserService
+        >>> svc = ScrapingService(Path("."), BrowserService(Path(".")), WorkflowService())
+        >>> report = svc.run_workflow(provider, cancel, pause)
+        >>> report.steps_total
+        0
     """
 
     def __init__(
@@ -64,14 +64,14 @@ class ScrapingService:
                 the ``_folder`` runtime param key.
             browser_service: Concrete browser service implementation to use
                 for all browser lifecycle operations.
-            workflow_service: Service for managing the workflow execution.
+            workflow_service: Service for resolving step executors by type.
         """
         self._logger = logging.getLogger(__name__)
         self._folder_scraping = folder_scraping
         self._browser_service = browser_service
         self._workflow_service = workflow_service
 
-        # Per-run state — reset at the start of each _run_steps call.
+        # Per-run mutable state — reset at the start of each run.
         self._prev_step_success: bool = True
         self._pending_jump: str | int | None = None
         self._end_process_requested: bool = False
@@ -80,10 +80,21 @@ class ScrapingService:
         self._step_index_by_id: dict[str, int] = {}
         self._steps_count: int = 0
 
+        # Run-level statistics counters.
+        self._steps_success_count: int = 0
+        self._steps_failed_count: int = 0
+        self._clicks_count: int = 0
+        self._urls_opened_count: int = 0
+
+        # Active page reference — set during run, cleared on close.
+        self._page: Any = None
+        self._started_at: datetime | None = None
+
         # Run-scoped references stored for stateful step executors.
         self._pause_event_ref: threading.Event | None = None
         self._cancel_event_ref: threading.Event | None = None
         self._on_user_wait: Callable[[], None] | None = None
+        self._on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -95,7 +106,9 @@ class ScrapingService:
         cancel_event: threading.Event,
         pause_event: threading.Event,
         on_user_wait: Callable[[], None] | None = None,
-    ):
+        on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None,
+        on_init_step: Callable[[str], None] | None = None,
+    ) -> ScrapingReportModel:
         """Execute all steps of a provider workflow sequentially.
 
         Args:
@@ -103,19 +116,125 @@ class ScrapingService:
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
+            on_step_done: Optional callback fired after each step with
+                (step, success, message, elapsed_s).
+            on_init_step: Optional callback fired with a status string during
+                browser initialisation (before any workflow step runs).
+
+        Returns:
+            A ScrapingReportModel summarising the completed run.
         """
+        # Store run-scoped references used by executors and callbacks.
         self._pause_event_ref = pause_event
         self._cancel_event_ref = cancel_event
         self._on_user_wait = on_user_wait
-        started_at = datetime.now().strftime(DATETIME_FORMAT)
+        self._on_step_done = on_step_done
+        self._started_at = datetime.now()
 
-        # Delegate the full browser lifecycle to the injected service.
+        # Initialise the browser and page, then run all steps.
+        cancelled = self._run_browser_lifecycle(provider, cancel_event, pause_event, on_init_step)
+        return self._build_report(cancelled)
+
+    def get_page_info(self) -> tuple[str, int]:
+        """Return the current page URL and number of open tabs.
+
+        Safe to call from a callback while a run is active. Returns empty
+        defaults when no page is active or when querying the page fails.
+
+        Returns:
+            A ``(url, tabs_count)`` tuple.
+        """
+        if self._page is None:
+            return "", 0
+        try:
+            # Playwright page exposes .url and .context.pages directly.
+            url = self._page.url or ""
+            tabs = len(self._page.context.pages)
+        except Exception:  # noqa: BLE001
+            return "", 0
+        else:
+            return url, tabs
+
+    @property
+    def current_stats(self) -> dict[str, int]:
+        """Running counters for the current (or most recent) workflow run.
+
+        Returns:
+            Dict with keys ``success``, ``errors``, ``clicks``, ``urls``.
+        """
+        return {
+            "success": self._steps_success_count,
+            "errors": self._steps_failed_count,
+            "clicks": self._clicks_count,
+            "urls": self._urls_opened_count,
+        }
+
+    # ------------------------------------------------------------------
+    # Browser lifecycle
+    # ------------------------------------------------------------------
+
+    def _run_browser_lifecycle(
+        self,
+        provider: ProviderModel,
+        cancel_event: threading.Event,
+        pause_event: threading.Event,
+        on_init_step: Callable[[str], None] | None,
+    ) -> bool:
+        """Launch browser, run steps, close browser, return cancelled flag.
+
+        Args:
+            provider: Provider model with browser config and workflow steps.
+            cancel_event: Abort signal.
+            pause_event: Pause/resume signal.
+            on_init_step: Callback for init-phase status messages.
+
+        Returns:
+            True if the run was aborted by the cancel signal.
+        """
+        self._emit_init("Initialisation de Playwright…", on_init_step)
         self._browser_service.launch(provider)
         try:
-            page = self._browser_service.new_page()
-            steps_failed = self._run_steps(page, provider.steps, cancel_event, pause_event)
+            self._emit_init("Création du contexte de navigation…", on_init_step)
+            self._page = self._browser_service.new_page()
+            self._emit_init("Démarrage des étapes du workflow…", on_init_step)
+            self._run_steps(self._page, provider.steps, cancel_event, pause_event)
         finally:
+            # Always close the browser even if a step raised an exception.
             self._browser_service.close_browser()
+            self._page = None
+
+        return cancel_event.is_set()
+
+    def _emit_init(self, message: str, callback: Callable[[str], None] | None) -> None:
+        """Log an init-phase message and forward it to the optional callback.
+
+        Args:
+            message: Human-readable initialisation status.
+            callback: Optional callable receiving the message string.
+        """
+        self._logger.info(message)
+        if callable(callback):
+            callback(message)
+
+    def _build_report(self, cancelled: bool) -> ScrapingReportModel:
+        """Assemble the final report from run-level counters.
+
+        Args:
+            cancelled: True when the run was aborted by the cancel signal.
+
+        Returns:
+            A fully populated ScrapingReportModel.
+        """
+        return ScrapingReportModel(
+            started_at=self._started_at or datetime.now(),
+            finished_at=datetime.now(),
+            steps_total=self._steps_count,
+            steps_success=self._steps_success_count,
+            steps_failed=self._steps_failed_count,
+            clicks_performed=self._clicks_count,
+            urls_opened=self._urls_opened_count,
+            cancelled=cancelled,
+        )
 
     # ------------------------------------------------------------------
     # Step iteration
@@ -127,8 +246,8 @@ class ScrapingService:
         steps: list[StepScrapingModel],
         cancel_event: threading.Event,
         pause_event: threading.Event,
-    ):
-        """Iterate over steps, execute each, and notify the caller.
+    ) -> int:
+        """Iterate over steps, execute each, and return the failure count.
 
         Supports non-sequential execution via JUMP_TO_STEP and early
         termination via END_PROCESS. Blocks between steps when pause_event
@@ -157,19 +276,24 @@ class ScrapingService:
             if self._end_process_requested:
                 break
 
+        return self._steps_failed_count
+
     def _reset_run_state(self, steps: list[StepScrapingModel]) -> None:
         """Reset all per-run mutable state before a new workflow execution.
 
         Args:
             steps: The full ordered list of steps for the upcoming run.
-
-        Returns:
-            None.
         """
         self._prev_step_success = True
         self._pending_jump = None
         self._end_process_requested = False
         self._downloaded_image_urls = set()
+
+        # Reset per-run statistics counters.
+        self._steps_success_count = 0
+        self._steps_failed_count = 0
+        self._clicks_count = 0
+        self._urls_opened_count = 0
 
         # Build fast-lookup maps used by JUMP_TO_STEP resolution.
         self._step_id_by_index = [step.step_id for step in steps]
@@ -177,27 +301,50 @@ class ScrapingService:
         self._steps_count = len(steps)
 
     def _run_one_step(self, page: Any, step: StepScrapingModel, index: int) -> int:
-        """Execute one step, fire the callback, and return the next index.
+        """Execute one step, update stats, fire callback, return next index.
 
         Args:
             page: The active browser page.
             step: The step model to execute.
             index: Zero-based position of this step in the workflow.
-            on_step_done: Callback to notify the presenter on completion.
 
         Returns:
             The index of the next step to execute.
         """
         start = time.time()
         success, message = self._execute_step(page, step)
+        print(f"Step {index} ({step.step_type}) completed with success={success}  and message: {message}")
         elapsed = time.time() - start
 
-        print(f"Execute step {index} ({step.step_type}) completed in {elapsed:.1f}s with result: {message}")
+        # Update run-level statistics based on the outcome.
+        self._update_step_stats(step, success)
+
+        # Notify the presenter with the completed step result.
+        if callable(self._on_step_done):
+            self._on_step_done(step, success, message, elapsed)
 
         # Resolve any pending jump or simply advance to the next step.
         next_index = self._consume_pending_jump(index)
         self._prev_step_success = success
         return next_index
+
+    def _update_step_stats(self, step: StepScrapingModel, success: bool) -> None:
+        """Increment the appropriate run-level counters after a step completes.
+
+        Args:
+            step: The step that just executed.
+            success: True when the step completed without error.
+        """
+        if success:
+            self._steps_success_count += 1
+        else:
+            self._steps_failed_count += 1
+
+        # Track step-type-specific action counters.
+        if step.step_type == StepType.CLICK_ELEMENT:
+            self._clicks_count += 1
+        elif step.step_type == StepType.OPEN_URL:
+            self._urls_opened_count += 1
 
     def _consume_pending_jump(self, current_index: int) -> int:
         """Resolve and clear any pending JUMP_TO_STEP signal.
@@ -300,9 +447,6 @@ class ScrapingService:
 
         Args:
             runtime_params: The enriched params dict after executor.execute().
-
-        Returns:
-            None.
         """
         # Stateful executors write these keys to communicate with the orchestrator.
         if runtime_params.get("_pending_jump") is not None:

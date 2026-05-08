@@ -27,6 +27,9 @@ from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
 from services.web_browser_service import BrowserService
+
+# Bootstrap: import all step packages to populate the central registry.
+from services.workflow_service import WorkflowService
 from shared.constants import (
     C_APP_CONFIG_FILE,
     C_BROWSER_ENGINE_PLAYWRIGHT,
@@ -48,9 +51,6 @@ from views.provider_edit_view import ProviderEditView
 from views.providers_list_view import ProvidersListView
 from views.scraping_panel_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
-
-# Bootstrap: import all step packages to populate the central registry.
-from __src__.services.workflow_service import WorkflowService
 
 ## ---------------------------------------------------------------------------
 ## Entry point
@@ -330,7 +330,6 @@ def _wire_scraping_launch(
 
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scraping.
-        print(f"Request to launch provider with id_file={id_file}")
         scraping_presenter.load_provider(id_file)
         main_view.set_tab_state(C_TITLE_MODULE_SCRAPING, tk.NORMAL)
         main_view.show_view(C_TITLE_MODULE_SCRAPING)

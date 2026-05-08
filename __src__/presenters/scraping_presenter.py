@@ -1,12 +1,12 @@
-"""Presenter wiring ScrapingPanelView to ScrapingService.
+"""Presenter wiring ScrapingView to ScrapingService.
 
 The presenter starts the workflow in a daemon thread, forwards step outcomes
-to the view, and exposes cancellation through a threading.Event. No business
-logic lives here — only orchestration.
+to the view (journal + progress), and exposes cancellation through threading
+events. No business logic lives here — only orchestration.
 
 Example:
-    >>> presenter = ScrapingPresenter(panel, service)
-    >>> presenter.load_provider(provider)
+    >>> presenter = ScrapingPresenter(panel, service_scraping, service_provider)
+    >>> presenter.load_provider("abc123")
     >>> # The Lancer button in the view then drives the rest.
 """
 
@@ -17,8 +17,11 @@ Example:
 import logging
 import threading
 from collections.abc import Callable
+from datetime import datetime
 
-from models.provider_model import ProviderModel
+from models.provider_model import DATETIME_FORMAT, ProviderModel
+from models.scraping_report_model import ScrapingReportModel
+from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from views.scraping_panel_view import ScrapingView
@@ -29,25 +32,27 @@ from views.scraping_panel_view import ScrapingView
 
 
 class ScrapingPresenter:
-    """Orchestrates a scraping workflow between ScrapingPanelView and ScrapingService.
+    """Orchestrates a scraping workflow between ScrapingView and ScrapingService.
 
-    The workflow runs in a daemon thread so Tkinter's event loop stays responsive.
-    Cancellation is signalled to the service via a threading.Event.
-    A new provider can be loaded at any time via load_provider(); any running
-    workflow is cancelled first.
+    The workflow runs in a daemon thread so Tkinter's event loop stays
+    responsive. Cancellation is signalled via threading.Event. Provider
+    selection is exposed via view callbacks, allowing the user to pick a
+    provider from the embedded dropdown without leaving the scraping panel.
 
     Attributes:
-        _view: The scraping panel view to update.
-        _service: The service that executes Playwright steps.
-        _provider: The currently loaded provider model (None when idle).
-        _cancel_event: Threading event passed to the service for cancellation.
-        _thread: The background worker thread (None when idle).
-        is_workflow_active: Optional guard injected from main; returns True when
-            a Workflow edit session is already open.
+        _view: The scraping panel view.
+        _service_scraping: Service that drives Playwright step execution.
+        _service_provider: Service for listing and loading providers.
+        _provider: Currently loaded provider model (None when idle).
+        _cancel_event: Abort signal passed to the scraping service.
+        _pause_event: Pause/resume signal passed to the scraping service.
+        _thread: Background worker thread (None when idle).
+        is_workflow_active: Optional guard injected from main; returns True
+            when a Workflow edit session is already open.
 
     Example:
-        >>> presenter = ScrapingPresenter(panel, service)
-        >>> presenter.load_provider(my_provider)
+        >>> presenter = ScrapingPresenter(panel, svc_scraping, svc_provider)
+        >>> presenter.load_provider("abc123")
     """
 
     def __init__(
@@ -57,13 +62,13 @@ class ScrapingPresenter:
         service_provider: ProviderService,
         provider: ProviderModel | None = None,
     ) -> None:
-        """Initializes the presenter and registers callbacks on the view.
+        """Initialize the presenter and register all view callbacks.
 
         Args:
             view: The scraping panel view.
-            service_scraping: The scraping service that drives Playwright execution.
-            provider: Optional initial provider model. Use load_provider() to set
-                or change it at runtime.
+            service_scraping: Service that executes Playwright workflow steps.
+            service_provider: Service for reading and listing providers.
+            provider: Optional initial provider model.
         """
         self._view = view
         self._service_scraping = service_scraping
@@ -71,6 +76,7 @@ class ScrapingPresenter:
         self._provider: ProviderModel | None = provider
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
+        self._logging = logging.getLogger(__name__)
 
         # pause_event set = running freely; cleared = blocked between steps.
         self._pause_event = threading.Event()
@@ -78,117 +84,156 @@ class ScrapingPresenter:
 
         # Guard: returns True when a Workflow edit session is already open.
         self.is_workflow_active: Callable[[], bool] | None = None
-        self._logging = logging.getLogger(__name__)
 
-        # Wire view buttons to presenter handlers once at construction time.
-        view.set_on_launch(self._on_launch)
-        view.set_on_cancel(self._on_cancel)
-        view.set_on_pause(self._on_pause)
-        view.set_on_resume(self._on_resume)
+        # Wire all view callbacks to presenter handlers.
+        self._wire_view_callbacks()
+
+        # Populate provider dropdown immediately.
+        self._on_refresh_providers()
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     def load_provider(self, id_file: str) -> None:
-        """Loads a new provider and resets the view for a fresh run.
+        """Load a provider by id_file and reset the view for a fresh run.
 
         If a workflow is currently running it is cancelled before switching.
 
         Args:
             id_file: The ID of the provider file to load.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-
-        Example:
-            >>> presenter.load_provider("provider_123")
         """
-        # Unblock any active pause then cancel the running workflow.
-
+        # Unblock any active pause, then cancel the running workflow.
         self._pause_event.set()
         self._cancel_event.set()
 
-        # Update target and clear the stale cancellation signal.
-        self._logging.info("Loading provider with id_file={id_file}")
+        # Load the new provider and clear the stale cancellation signal.
+        self._logging.info("Loading provider id_file=%s", id_file)
         self._provider = self._service_provider.read_provider(id_file)
         self._cancel_event.clear()
 
-        # Wipe the view and display the new provider's summary.
+        # Refresh the view provider selection and reset run-specific state.
+        self._view.set_selected_provider(id_file)
         self._view.reset()
-        self._view.set_provider_info(
-            name=self._provider.provider_name,
-            url=self._provider.url,
-            id_file=self._provider.id_file,
-            version=self._provider.version,
-        )
 
-    def _on_launch(self) -> None:
-        """Starts the workflow in a daemon background thread.
+    # ------------------------------------------------------------------
+    # View callback wiring
+    # ------------------------------------------------------------------
+
+    def _wire_view_callbacks(self) -> None:
+        """Register all presenter handlers on the view.
 
         Returns:
             None.
+        """
+        self._view.set_on_launch(self._on_launch)
+        self._view.set_on_cancel(self._on_cancel)
+        self._view.set_on_pause(self._on_pause)
+        self._view.set_on_resume(self._on_resume)
+        self._view.set_on_provider_selected(self._on_provider_selected)
+        self._view.set_on_refresh_providers(self._on_refresh_providers)
 
-        Raises:
+    # ------------------------------------------------------------------
+    # Provider management callbacks
+    # ------------------------------------------------------------------
+
+    def _on_provider_selected(self, id_file: str) -> None:
+        """Load the provider chosen from the view's dropdown.
+
+        Args:
+            id_file: Unique file identifier of the selected provider.
+        """
+        # Guard: block provider switch while a workflow edit session is open.
+        if self.is_workflow_active and self.is_workflow_active():
+            self._view.show_warning(
+                "Un Workflow est déjà en cours de modification.\n"
+                "Veuillez terminer ou annuler la modification avant de changer de fournisseur."
+            )
+            return
+
+        self._logging.info("Provider selected from view: id_file=%s", id_file)
+        self.load_provider(id_file)
+
+    def _on_refresh_providers(self) -> None:
+        """Reload the providers list and forward it to the view dropdown."""
+        try:
+            providers = self._service_provider.list_all_providers()
+        except Exception as exc:  # noqa: BLE001
+            self._logging.error("Failed to load providers list: %s", exc)
+            providers = []
+
+        # Build display-ready dicts and push to the view.
+        rows = [
+            {
+                "id_file": p.id_file,
+                "provider_name": p.provider_name,
+                "url": p.url,
+                "version": p.version,
+                "modified_date": p.modified_date,
+            }
+            for p in providers
+        ]
+        self._view.render_providers_list(rows)
+
+    # ------------------------------------------------------------------
+    # Workflow control callbacks
+    # ------------------------------------------------------------------
+
+    def _on_launch(self) -> None:
+        """Start the workflow in a daemon background thread.
+
+        Returns:
             None.
         """
-        # Guard: do nothing if no provider has been loaded yet.
         if not self._provider:
-            self._view.show_warning("Veuillez charger un provider avant de lancer le scraping.")
+            self._view.show_warning("Veuillez charger un fournisseur avant de lancer le scraping.")
             return
 
         # Block launch when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
             self._view.show_warning(
                 "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification en cours avant de lancer le scraping."
+                "Veuillez terminer ou annuler la modification avant de lancer le scraping."
             )
             return
 
-        # Clear any residual signals from a previous run.
+        # Reset signals from any previous run.
         self._pause_event.set()
         self._cancel_event.clear()
         self._view.set_running_state(True)
 
-        # Use a daemon thread so the app can exit without waiting for the workflow.
+        started_at = datetime.now()
+        self._view.start_elapsed_timer(started_at)
+
+        # Launch workflow in a daemon thread so the UI stays responsive.
         self._thread = threading.Thread(target=self._run_workflow, daemon=True)
         self._thread.start()
 
     def _on_cancel(self) -> None:
-        """Sets the cancel event to abort the running workflow after the current step.
+        """Signal the running workflow to abort after the current step.
 
         Returns:
             None.
-
-        Raises:
-            None.
         """
-        # Unblock any active pause so the cancel signal can be observed immediately.
+        # Unblock any pause so the cancel signal is observed immediately.
         self._pause_event.set()
         self._cancel_event.set()
 
     def _on_pause(self) -> None:
-        """Clears the pause event to suspend the workflow before its next step.
+        """Suspend the workflow before its next step.
 
         Returns:
             None.
-
-        Raises:
-            None.
         """
-        # Clearing the event blocks the service loop at the next pause_event.wait().
         self._pause_event.clear()
         self._view.set_paused_state(True)
 
     def _on_resume(self) -> None:
-        """Sets the pause event to resume the suspended workflow.
+        """Resume a suspended workflow.
 
         Returns:
             None.
-
-        Raises:
-            None.
         """
-        # Setting the event unblocks the service loop so the next step can execute.
         self._pause_event.set()
         self._view.set_paused_state(False)
 
@@ -196,52 +241,131 @@ class ScrapingPresenter:
         """Called by the service when a WAIT_USER_ACTION step starts blocking.
 
         Transitions the view to the paused state so the user sees the
-        Reprendre button and knows an action is expected.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
+        Reprendre button and knows manual action is expected.
         """
         # Called from the background thread; set_paused_state is thread-safe.
         self._view.set_paused_state(True)
 
+    # ------------------------------------------------------------------
+    # Step completion callback
+    # ------------------------------------------------------------------
+
+    def _on_step_done(
+        self,
+        step: StepScrapingModel,
+        success: bool,
+        message: str,
+        elapsed_s: float,
+    ) -> None:
+        """Called by the service after each step completes.
+
+        Feeds the journal entry and updates the progress frame.
+
+        Args:
+            step: The completed step model.
+            success: True when the step produced no error.
+            message: Short result message from the executor.
+            elapsed_s: Wall-clock duration of the step in seconds.
+        """
+        date_str = datetime.now().strftime(DATETIME_FORMAT)
+
+        # Append a row to the scraping journal.
+        self._view.append_journal_entry(
+            date=date_str,
+            step_started=step.step_type.value,
+            step_ended=step.step_type.value,
+            success=success,
+            duration_s=elapsed_s,
+        )
+
+        # Push live progress values to the progression frame.
+        url, tabs = self._service_scraping.get_page_info()
+        last_result = f"{'OK' if success else 'ERREUR'} — {message}"
+        self._view.update_progress(
+            url=url,
+            tabs=tabs,
+            current_step=step.step_type.value,
+            last_result=last_result,
+            status="en cours",
+            stats=self._service_scraping.current_stats,
+        )
+
+    def _on_init_step(self, message: str) -> None:
+        """Called by the service during browser initialization phases.
+
+        Args:
+            message: Human-readable init status string.
+        """
+        self._view.update_progress(
+            url="",
+            tabs=0,
+            current_step=message,
+            last_result="",
+            status="en cours",
+            stats={"success": 0, "errors": 0, "clicks": 0, "urls": 0},
+        )
+
+    # ------------------------------------------------------------------
+    # Workflow thread target
+    # ------------------------------------------------------------------
+
     def _run_workflow(self) -> None:
-        """Thread target: runs the workflow and dispatches the result to the view.
+        """Thread target: run the workflow and dispatch the result to the view.
 
         Returns:
             None.
 
         Raises:
-            None — catastrophic failures are surfaced as a synthetic error report.
+            None — catastrophic failures are logged and result in a None report.
         """
+        report: ScrapingReportModel | None = None
         try:
-            self._service_scraping.run_workflow(
+            report = self._service_scraping.run_workflow(
                 self._provider,
                 self._cancel_event,
                 self._pause_event,
                 self._on_user_wait_step,
+                self._on_step_done,
+                self._on_init_step,
             )
-        except (ValueError, RuntimeError, OSError):
-            print("Workflow execution failed with an exception:", exc_info=True)
-            ## TODO Push final report bugs
+        except (ValueError, RuntimeError, OSError) as exc:
+            self._logging.exception("Workflow execution failed: %s", exc)
 
-        self._on_workflow_finished()
+        self._on_workflow_finished(report)
 
-    def _on_workflow_finished(self) -> None:
-        """Restores idle state and displays the final report in the view.
+    def _on_workflow_finished(self, report: ScrapingReportModel | None) -> None:
+        """Restore idle state and display the final report in the view.
 
         Args:
-            report: The completed ScrapingReportModel to display.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
+            report: Completed report, or None when the run raised an exception.
         """
-        # Ensure pause is cleared so the event is ready for the next run.
+        # Ensure pause is released so the event is ready for the next run.
         self._pause_event.set()
-        # Restore idle button state before rendering the report.
+        self._view.stop_elapsed_timer()
         self._view.set_running_state(False)
+
+        # Push final status and statistics to the progression frame.
+        if report is not None:
+            status = "annulé" if report.cancelled else "terminé"
+            self._view.update_progress(
+                url="",
+                tabs=0,
+                current_step="—",
+                last_result="Workflow terminé.",
+                status=status,
+                stats={
+                    "success": report.steps_success,
+                    "errors": report.steps_failed,
+                    "clicks": report.clicks_performed,
+                    "urls": report.urls_opened,
+                },
+            )
+        else:
+            self._view.update_progress(
+                url="",
+                tabs=0,
+                current_step="—",
+                last_result="Erreur critique — voir les logs.",
+                status="erreur",
+                stats={"success": 0, "errors": 0, "clicks": 0, "urls": 0},
+            )

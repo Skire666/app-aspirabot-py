@@ -161,7 +161,6 @@ class ProviderPresenter:
             id_file: The file ID of the provider to launch.
         """
         # Fire the hook injected from main.py, identical pattern to on_request_edit_provider.
-        print(f"Request to launch provider with id_file={id_file}")
         if self.on_request_launch_provider:
             self.on_request_launch_provider(id_file)
 

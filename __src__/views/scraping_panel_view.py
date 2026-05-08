@@ -1,12 +1,13 @@
-"""Tkinter panel for monitoring and reporting a live scraping workflow execution.
+"""Tkinter panel for monitoring and controlling a live scraping workflow.
 
-This ttk.Frame is placed inside the main content area by the application shell,
-exactly like ProviderEditView is placed under the 'Modification' tab.
-All UI mutations triggered from a background thread are scheduled via
-self.after(0, ...) so Tkinter's event loop applies them on the main thread.
+Five stacked LabelFrame sections provide: provider selection, launch profile,
+workflow controls, live progression, and a step-by-step scraping journal.
+All background-thread mutations are deferred to the main thread via
+self.after(0, ...). The elapsed timer refreshes every second via
+self.after(1000, ...).
 
 Example:
-    >>> panel = ScrapingPanelView(content_area)
+    >>> panel = ScrapingView(content_area)
     >>> panel.set_on_launch(lambda: print("launch"))
     >>> panel.reset()
 """
@@ -17,7 +18,19 @@ Example:
 
 import tkinter as tk
 from collections.abc import Callable
-from tkinter import messagebox, ttk
+from datetime import datetime
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
+from typing import Any
+
+## ---------------------------------------------------------------------------
+## Constants
+## ---------------------------------------------------------------------------
+
+# Labels for the three URL-source radio buttons.
+_URL_SOURCE_MANUAL = "manual"
+_URL_SOURCE_FOLDER = "folder"
+_URL_SOURCE_CSV = "csv"
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -25,123 +38,316 @@ from tkinter import messagebox, ttk
 
 
 class ScrapingView(ttk.Frame):
+    """Scraping panel composed of five vertically stacked frames.
+
+    Section order (top to bottom):
+    1. Provider selection dropdown.
+    2. Launch profile (export folder + URL source).
+    3. Workflow controls (Lancer / Annuler / Pause / Reprendre).
+    4. Live progression (7 StringVar fields + elapsed timer).
+    5. Scraping journal (Treeview + Export button).
+    """
+
     def __init__(self, parent: tk.Widget) -> None:
-        """Initializes the scraping panel and builds all widgets.
+        """Initialize the scraping panel and build all widgets.
 
         Args:
             parent: The parent Tkinter widget (e.g. main_view.content_area).
         """
         super().__init__(parent)
 
-        # Callback slots — populated once by the presenter via set_on_*.
+        # Callback slots — populated by the presenter via set_on_*().
         self._on_launch: Callable[[], None] | None = None
         self._on_cancel: Callable[[], None] | None = None
         self._on_pause: Callable[[], None] | None = None
         self._on_resume: Callable[[], None] | None = None
+        self._on_provider_selected: Callable[[str], None] | None = None
+        self._on_refresh_providers: Callable[[], None] | None = None
+
+        # Provider id_file index — maps combobox values to id_file strings.
+        self._provider_id_by_display: dict[str, str] = {}
+
+        # URL-source state.
+        self._url_source_type: str = _URL_SOURCE_MANUAL
+        self._url_source_value: list[str] | str = []
+
+        # Export folder path.
+        self._export_folder: str = str(Path.cwd())
+
+        # Elapsed timer state.
+        self._elapsed_timer_id: str | None = None
+        self._run_started_at: datetime | None = None
 
         self._create_widgets()
 
+    # ------------------------------------------------------------------
+    # Widget construction
+    # ------------------------------------------------------------------
+
     def _create_widgets(self) -> None:
-        self._create_action_bar()
-        self._create_provider_info_section()
+        """Build and pack all five section frames."""
+        self._create_provider_selection_frame()
+        self._create_launch_profile_frame()
+        self._create_workflow_controls_frame()
+        self._create_progression_frame()
+        self._create_journal_frame()
 
-    def _create_action_bar(self) -> None:
-        """Creates the top action bar with Lancer, Annuler, Pause, and Reprendre buttons."""
-        bar = ttk.Frame(self, padding=(5, 5))
-        bar.pack(side=tk.TOP, fill=tk.X)
+    def _create_provider_selection_frame(self) -> None:
+        """Build the 'Sélectionner un fournisseur' section."""
+        frame = ttk.LabelFrame(self, text="Sélectionner un fournisseur", padding=(5, 5))
+        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
 
-        self._btn_launch = ttk.Button(bar, text="Lancer le scraping", command=self._notify_launch)
+        # Combobox shows "Name — URL — Version — modified_date".
+        self._cmb_provider = ttk.Combobox(frame, state="readonly", width=80)
+        self._cmb_provider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+        self._cmb_provider.bind("<<ComboboxSelected>>", self._on_combobox_selected)
+
+        # Refresh button reloads the provider list from disk.
+        btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._notify_refresh_providers)
+        btn_refresh.pack(side=tk.RIGHT)
+
+    def _create_launch_profile_frame(self) -> None:
+        """Build the 'Profil de lancement' section."""
+        frame = ttk.LabelFrame(self, text="Profil de lancement", padding=(5, 5))
+        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+
+        self._create_export_folder_row(frame)
+        self._create_url_source_row(frame)
+        self._create_auto_export_row(frame)
+
+    def _create_export_folder_row(self, parent: ttk.LabelFrame) -> None:
+        """Build the export-folder selector row inside the launch profile frame.
+
+        Args:
+            parent: The launch-profile LabelFrame to pack into.
+        """
+        row = ttk.Frame(parent)
+        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
+
+        ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=(0, 4))
+
+        # StringVar keeps the displayed path in sync with internal state.
+        self._var_export_folder = tk.StringVar(value=self._export_folder)
+        ttk.Entry(row, textvariable=self._var_export_folder, state="readonly", width=60).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4)
+        )
+        ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(side=tk.RIGHT)
+
+    def _create_url_source_row(self, parent: ttk.LabelFrame) -> None:
+        """Build the URL-source radio-button row inside the launch profile frame.
+
+        Args:
+            parent: The launch-profile LabelFrame to pack into.
+        """
+        row = ttk.Frame(parent)
+        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
+
+        ttk.Label(row, text="URLs à scraper :").pack(side=tk.LEFT, padx=(0, 8))
+
+        # StringVar tracks the active radio selection.
+        self._var_url_source = tk.StringVar(value=_URL_SOURCE_MANUAL)
+        radio_defs = [
+            ("Saisie manuelle", _URL_SOURCE_MANUAL),
+            ("Depuis un dossier", _URL_SOURCE_FOLDER),
+            ("Depuis un fichier CSV", _URL_SOURCE_CSV),
+        ]
+        for label, value in radio_defs:
+            ttk.Radiobutton(
+                row,
+                text=label,
+                variable=self._var_url_source,
+                value=value,
+                command=lambda v=value: self._on_url_source_changed(v),
+            ).pack(side=tk.LEFT, padx=(0, 12))
+
+    def _create_auto_export_row(self, parent: ttk.LabelFrame) -> None:
+        """Build the auto-export journal checkbox row.
+
+        Args:
+            parent: The launch-profile LabelFrame to pack into.
+        """
+        row = ttk.Frame(parent)
+        row.pack(side=tk.TOP, fill=tk.X)
+
+        self._var_auto_export_journal = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            row,
+            text="Exporter le journal scraping automatiquement à la fin du processus",
+            variable=self._var_auto_export_journal,
+        ).pack(side=tk.LEFT)
+
+    def _create_workflow_controls_frame(self) -> None:
+        """Build the 'Pilotage du workflow' section with the four action buttons."""
+        frame = ttk.LabelFrame(self, text="Pilotage du workflow", padding=(5, 5))
+        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+
+        self._btn_launch = ttk.Button(frame, text="Lancer le scraping", command=self._notify_launch)
         self._btn_launch.pack(side=tk.LEFT, padx=5)
 
-        # Annuler is disabled until a workflow is running.
-        self._btn_cancel = ttk.Button(bar, text="Annuler", command=self._notify_cancel, state=tk.DISABLED)
+        self._btn_cancel = ttk.Button(frame, text="Annuler", command=self._notify_cancel, state=tk.DISABLED)
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
 
-        # Pause is disabled until a workflow is running.
-        self._btn_pause = ttk.Button(bar, text="Pause", command=self._notify_pause, state=tk.DISABLED)
+        self._btn_pause = ttk.Button(frame, text="Pause", command=self._notify_pause, state=tk.DISABLED)
         self._btn_pause.pack(side=tk.LEFT, padx=5)
 
-        # Reprendre is disabled until the workflow is paused.
-        self._btn_resume = ttk.Button(bar, text="Reprendre", command=self._notify_resume, state=tk.DISABLED)
+        self._btn_resume = ttk.Button(frame, text="Reprendre", command=self._notify_resume, state=tk.DISABLED)
         self._btn_resume.pack(side=tk.LEFT, padx=5)
 
-    def _create_provider_info_section(self) -> None:
-        """Creates the provider summary block displayed below the action bar."""
-        section = ttk.LabelFrame(self, text="Fournisseur sélectionné", padding=(5, 5))
-        section.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(0, 5))
+    def _create_progression_frame(self) -> None:
+        """Build the 'Progression' section with 7 live-updated info rows."""
+        frame = ttk.LabelFrame(self, text="Progression", padding=(5, 5))
+        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
 
-        # Each field is a (label, var) pair packed left to right in a single row.
-        fields = [
-            ("Nom :", "_var_provider_name"),
-            ("ID Fichier :", "_var_provider_id"),
-            ("Version :", "_var_provider_version"),
-            ("URL :", "_var_provider_url"),
+        # Build StringVars for each field, stored for external updates.
+        self._var_prog_url = tk.StringVar(value="—")
+        self._var_prog_tabs = tk.StringVar(value="—")
+        self._var_prog_step = tk.StringVar(value="—")
+        self._var_prog_last_result = tk.StringVar(value="—")
+        self._var_prog_status = tk.StringVar(value="inactif")
+        self._var_prog_elapsed = tk.StringVar(value="—")
+        self._var_prog_stats = tk.StringVar(value="—")
+
+        # Map each label to its StringVar for compact row construction.
+        rows_def = [
+            ("URL courante :", self._var_prog_url),
+            ("Onglets ouverts :", self._var_prog_tabs),
+            ("Étape en cours :", self._var_prog_step),
+            ("Dernier résultat :", self._var_prog_last_result),
+            ("État :", self._var_prog_status),
+            ("Démarré / Écoulé :", self._var_prog_elapsed),
+            ("Statistiques :", self._var_prog_stats),
         ]
-        for label_text, var_attr in fields:
-            var = tk.StringVar(value="—")
-            setattr(self, var_attr, var)
-            ttk.Label(section, text=label_text).pack(side=tk.LEFT, padx=(8, 2))
-            ttk.Label(section, textvariable=var).pack(side=tk.LEFT, padx=(0, 8))
+        for label_text, var in rows_def:
+            self._add_progress_row(frame, label_text, var)
+
+    @staticmethod
+    def _add_progress_row(parent: ttk.LabelFrame, label_text: str, var: tk.StringVar) -> None:
+        """Pack a single label + value row into the progression frame.
+
+        Args:
+            parent: The progression LabelFrame.
+            label_text: Fixed description label on the left.
+            var: StringVar whose value is displayed on the right.
+        """
+        row = ttk.Frame(parent)
+        row.pack(side=tk.TOP, fill=tk.X, pady=1)
+        ttk.Label(row, text=label_text, width=20, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, textvariable=var, anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+    def _create_journal_frame(self) -> None:
+        """Build the 'Journal scraping' section with a Treeview and Export button."""
+        frame = ttk.LabelFrame(self, text="Journal scraping", padding=(5, 5))
+        frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=(5, 5))
+
+        # Top bar: export button aligned right.
+        bar = ttk.Frame(frame)
+        bar.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
+        ttk.Button(bar, text="Exporter (.txt)", command=self._export_journal).pack(side=tk.RIGHT)
+
+        # Treeview with vertical scrollbar.
+        columns = ("date", "step_started", "step_ended", "success", "duration")
+        self._tree = ttk.Treeview(frame, columns=columns, show="headings", height=8)
+
+        headings = {
+            "date": ("Date", 130),
+            "step_started": ("Étape démarrée", 160),
+            "step_ended": ("Étape terminée", 160),
+            "success": ("Résultat", 80),
+            "duration": ("Durée (s)", 80),
+        }
+        for col, (title, width) in headings.items():
+            self._tree.heading(col, text=title)
+            self._tree.column(col, width=width, anchor=tk.CENTER)
+
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self._tree.yview)
+        self._tree.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self._tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     # ------------------------------------------------------------------
     # Callback registration (called once by the presenter)
     # ------------------------------------------------------------------
 
     def set_on_launch(self, callback: Callable[[], None]) -> None:
-        """Registers the callback fired when the user clicks Lancer.
+        """Register the callback fired when the user clicks Lancer.
 
         Args:
             callback: Zero-argument callable that starts the workflow.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
         """
         self._on_launch = callback
 
     def set_on_cancel(self, callback: Callable[[], None]) -> None:
-        """Registers the callback fired when the user clicks Annuler.
+        """Register the callback fired when the user clicks Annuler.
 
         Args:
             callback: Zero-argument callable that signals cancellation.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
         """
         self._on_cancel = callback
 
     def set_on_pause(self, callback: Callable[[], None]) -> None:
-        """Registers the callback fired when the user clicks Pause.
+        """Register the callback fired when the user clicks Pause.
 
         Args:
             callback: Zero-argument callable that pauses the workflow.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
         """
         self._on_pause = callback
 
     def set_on_resume(self, callback: Callable[[], None]) -> None:
-        """Registers the callback fired when the user clicks Reprendre.
+        """Register the callback fired when the user clicks Reprendre.
 
         Args:
             callback: Zero-argument callable that resumes the workflow.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
         """
         self._on_resume = callback
+
+    def set_on_provider_selected(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user selects a provider.
+
+        Args:
+            callback: Callable receiving the selected provider's id_file.
+        """
+        self._on_provider_selected = callback
+
+    def set_on_refresh_providers(self, callback: Callable[[], None]) -> None:
+        """Register the callback fired when the user clicks Rafraîchir.
+
+        Args:
+            callback: Zero-argument callable that reloads the provider list.
+        """
+        self._on_refresh_providers = callback
+
+    # ------------------------------------------------------------------
+    # Public data feed (called by the presenter)
+    # ------------------------------------------------------------------
+
+    def render_providers_list(self, providers: list[dict[str, Any]]) -> None:
+        """Populate the provider combobox with the given provider rows.
+
+        Args:
+            providers: List of dicts with keys ``id_file``, ``provider_name``,
+                ``url``, ``version``, ``modified_date``.
+        """
+        self._provider_id_by_display.clear()
+        values = []
+        for p in providers:
+            display = f"{p['provider_name']}  —  {p['url']}  —  v{p['version']}  —  {p['modified_date']}"
+            self._provider_id_by_display[display] = p["id_file"]
+            values.append(display)
+
+        self._cmb_provider["values"] = values
+
+    def set_selected_provider(self, id_file: str) -> None:
+        """Highlight the combobox entry matching id_file.
+
+        Args:
+            id_file: The unique provider file identifier to select.
+        """
+        # Find the display key that maps to the given id_file.
+        for display, fid in self._provider_id_by_display.items():
+            if fid == id_file:
+                self._cmb_provider.set(display)
+                return
 
     def set_provider_info(
         self,
@@ -150,55 +356,68 @@ class ScrapingView(ttk.Frame):
         id_file: str,
         version: str,
     ) -> None:
-        """Populates the provider summary section with the given values.
+        """No-op kept for backward compatibility with the wiring in main.py.
 
-        Must be called from the main thread (invoked by load_provider before
-        the workflow starts, not from a background thread).
+        The provider info is now conveyed via the dropdown selection.
 
         Args:
-            name: Provider display name.
-            url: Provider root URL.
-            id_file: Provider unique file identifier.
-            version: Provider version string.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
+            name: Provider display name (unused).
+            url: Provider root URL (unused).
+            id_file: Provider unique file identifier — used to sync dropdown.
+            version: Provider version string (unused).
         """
-        self._var_provider_name.set(name)
-        self._var_provider_url.set(url)
-        self._var_provider_id.set(id_file)
-        self._var_provider_version.set(version)
+        self.set_selected_provider(id_file)
 
     # ------------------------------------------------------------------
-    # Public state management (called by the presenter from main thread)
+    # Public getters
+    # ------------------------------------------------------------------
+
+    def get_export_folder(self) -> str:
+        """Return the currently selected export folder path.
+
+        Returns:
+            str: Absolute path of the selected export folder.
+        """
+        return self._export_folder
+
+    def get_url_source(self) -> dict[str, Any]:
+        """Return the selected URL source type and its collected value.
+
+        Returns:
+            Dict with keys ``type`` (``"manual"``, ``"folder"``, or ``"csv"``)
+            and ``value`` (list of URL strings or a path string).
+        """
+        return {"type": self._url_source_type, "value": self._url_source_value}
+
+    def get_auto_export_journal(self) -> bool:
+        """Return whether the auto-export journal checkbox is checked.
+
+        Returns:
+            bool: True when the journal should be exported automatically.
+        """
+        return bool(self._var_auto_export_journal.get())
+
+    # ------------------------------------------------------------------
+    # Public state management (main thread — called by presenter)
     # ------------------------------------------------------------------
 
     def reset(self) -> None:
-        """Resets all UI elements to their initial idle state for a new run.
+        """Reset run-specific UI elements to their initial idle state.
 
-        Must be called from the main thread. Used by the presenter each time
-        a new provider is loaded via load_provider().
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-
-        Example:
-            >>> panel.reset()
+        Clears the progression fields and the journal Treeview. Restores
+        all buttons to idle. Must be called from the main thread.
         """
-        # Clear the provider summary fields.
-        for var in (
-            self._var_provider_name,
-            self._var_provider_url,
-            self._var_provider_id,
-            self._var_provider_version,
-        ):
-            var.set("—")
+        # Reset all progression StringVars to their placeholder values.
+        self._var_prog_url.set("—")
+        self._var_prog_tabs.set("—")
+        self._var_prog_step.set("—")
+        self._var_prog_last_result.set("—")
+        self._var_prog_status.set("inactif")
+        self._var_prog_elapsed.set("—")
+        self._var_prog_stats.set("—")
+
+        # Clear all journal rows.
+        self._tree.delete(*self._tree.get_children())
 
         # Restore all buttons to idle state.
         self._btn_launch.config(state=tk.NORMAL)
@@ -207,28 +426,46 @@ class ScrapingView(ttk.Frame):
         self._btn_resume.config(state=tk.DISABLED)
 
     # ------------------------------------------------------------------
-    # Public render interface (called by the presenter, thread-safe)
+    # Thread-safe render interface
     # ------------------------------------------------------------------
 
-    def set_paused_state(self, paused: bool) -> None:
-        """Toggles Pause/Reprendre buttons to match whether the workflow is paused.
+    def set_running_state(self, running: bool) -> None:
+        """Toggle button states to match whether a workflow is in progress.
 
-        Safe to call from a background thread — the update is deferred to the
-        main thread via self.after(0, ...).
+        Safe to call from a background thread.
+
+        Args:
+            running: True while the workflow is running; False when idle.
+        """
+        self.after(0, lambda: self._apply_running_state(running))
+
+    def _apply_running_state(self, running: bool) -> None:
+        """Apply button enable/disable state on the main thread.
+
+        Args:
+            running: True for running state; False for idle state.
+        """
+        launch_state = tk.DISABLED if running else tk.NORMAL
+        cancel_state = tk.NORMAL if running else tk.DISABLED
+        pause_state = tk.NORMAL if running else tk.DISABLED
+
+        self._btn_launch.config(state=launch_state)
+        self._btn_cancel.config(state=cancel_state)
+        self._btn_pause.config(state=pause_state)
+        self._btn_resume.config(state=tk.DISABLED)
+
+    def set_paused_state(self, paused: bool) -> None:
+        """Toggle Pause/Reprendre buttons to match the paused state.
+
+        Safe to call from a background thread.
 
         Args:
             paused: True while the workflow is paused; False when running.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
         """
         self.after(0, lambda: self._apply_paused_state(paused))
 
     def _apply_paused_state(self, paused: bool) -> None:
-        """Applies Pause/Reprendre button states on the main thread.
+        """Apply Pause/Reprendre button states on the main thread.
 
         Args:
             paused: True to show paused state; False to restore running state.
@@ -239,65 +476,324 @@ class ScrapingView(ttk.Frame):
         self._btn_pause.config(state=pause_state)
         self._btn_resume.config(state=resume_state)
 
-    def set_running_state(self, running: bool) -> None:
-        """Toggles button states to match whether a workflow is in progress.
+    def update_progress(
+        self,
+        url: str,
+        tabs: int,
+        current_step: str,
+        last_result: str,
+        status: str,
+        stats: dict[str, int],
+    ) -> None:
+        """Push live progress values to the progression frame.
 
-        Safe to call from a background thread — the state change is deferred to
-        the main thread via self.after(0, ...).
-
-        Args:
-            running: True while the workflow is running; False when idle.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        self.after(0, lambda: self._apply_running_state(running))
-
-    def _apply_running_state(self, running: bool) -> None:
-        """Applies button enable/disable state on the main thread.
+        Safe to call from a background thread.
 
         Args:
-            running: True to show running state; False to restore idle state.
+            url: Current browser page URL.
+            tabs: Number of open browser tabs.
+            current_step: Label of the step currently executing.
+            last_result: Short result string from the last completed step.
+            status: Workflow status label (e.g. ``"en cours"``, ``"terminé"``).
+            stats: Dict with int values for ``success``, ``errors``,
+                ``clicks``, and ``urls``.
         """
-        launch_state = tk.DISABLED if running else tk.NORMAL
-        cancel_state = tk.NORMAL if running else tk.DISABLED
-        pause_state = tk.NORMAL if running else tk.DISABLED
+        self.after(
+            0,
+            lambda: self._apply_progress(url, tabs, current_step, last_result, status, stats),
+        )
 
-        self._btn_launch.config(state=launch_state)
-        self._btn_cancel.config(state=cancel_state)
-        # Pause activates when running starts; Reprendre always resets to DISABLED.
-        self._btn_pause.config(state=pause_state)
-        self._btn_resume.config(state=tk.DISABLED)
+    def _apply_progress(
+        self,
+        url: str,
+        tabs: int,
+        current_step: str,
+        last_result: str,
+        status: str,
+        stats: dict[str, int],
+    ) -> None:
+        """Update progression StringVars on the main thread.
+
+        Args:
+            url: Current browser URL.
+            tabs: Open tab count.
+            current_step: Current step label.
+            last_result: Last step result string.
+            status: Workflow status string.
+            stats: Counters dict (success, errors, clicks, urls).
+        """
+        self._var_prog_url.set(url or "—")
+        self._var_prog_tabs.set(str(tabs) if tabs else "—")
+        self._var_prog_step.set(current_step or "—")
+        self._var_prog_last_result.set(last_result or "—")
+        self._var_prog_status.set(status or "—")
+
+        # Format the statistics line.
+        stats_text = (
+            f"Succès : {stats.get('success', 0)}  |  "
+            f"Erreurs : {stats.get('errors', 0)}  |  "
+            f"Clics : {stats.get('clicks', 0)}  |  "
+            f"URLs : {stats.get('urls', 0)}"
+        )
+        self._var_prog_stats.set(stats_text)
+
+    def start_elapsed_timer(self, started_at: datetime) -> None:
+        """Start the elapsed-time ticker in the progression frame.
+
+        Safe to call from a background thread — schedules via self.after().
+
+        Args:
+            started_at: The datetime at which the workflow started.
+        """
+        self._run_started_at = started_at
+        self.after(0, self._tick_elapsed_timer)
+
+    def stop_elapsed_timer(self) -> None:
+        """Cancel the elapsed-time ticker.
+
+        Safe to call from a background thread.
+        """
+        self.after(0, self._cancel_elapsed_timer)
+
+    def _tick_elapsed_timer(self) -> None:
+        """Update the elapsed-time StringVar and reschedule for the next second."""
+        if self._run_started_at is None:
+            return
+
+        elapsed = datetime.now() - self._run_started_at
+        total_s = int(elapsed.total_seconds())
+        hours, remainder = divmod(total_s, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        # Format: "HH:MM:SS | démarré à HH:MM:SS"
+        start_str = self._run_started_at.strftime("%H:%M:%S")
+        elapsed_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        self._var_prog_elapsed.set(f"Démarré à {start_str}  |  Écoulé : {elapsed_str}")
+
+        # Schedule next tick and store the ID for cancellation.
+        self._elapsed_timer_id = self.after(1000, self._tick_elapsed_timer)
+
+    def _cancel_elapsed_timer(self) -> None:
+        """Cancel any pending elapsed-timer callback on the main thread."""
+        if self._elapsed_timer_id is not None:
+            self.after_cancel(self._elapsed_timer_id)
+            self._elapsed_timer_id = None
+        self._run_started_at = None
+
+    def append_journal_entry(
+        self,
+        date: str,
+        step_started: str,
+        step_ended: str,
+        success: bool,
+        duration_s: float,
+    ) -> None:
+        """Append a row to the scraping journal Treeview.
+
+        Safe to call from a background thread.
+
+        Args:
+            date: Timestamp string for this entry.
+            step_started: Label of the step type when it began.
+            step_ended: Label of the step type when it finished.
+            success: True for a successful step; False for an error.
+            duration_s: Wall-clock duration of the step in seconds.
+        """
+        self.after(
+            0,
+            lambda: self._insert_journal_row(date, step_started, step_ended, success, duration_s),
+        )
+
+    def _insert_journal_row(
+        self,
+        date: str,
+        step_started: str,
+        step_ended: str,
+        success: bool,
+        duration_s: float,
+    ) -> None:
+        """Insert a journal row and scroll to the bottom on the main thread.
+
+        Args:
+            date: Timestamp for this entry.
+            step_started: Step type label at start.
+            step_ended: Step type label at end.
+            success: True for success; False for error.
+            duration_s: Step duration in seconds.
+        """
+        result_label = "OK" if success else "ERREUR"
+        values = (date, step_started, step_ended, result_label, f"{duration_s:.2f}")
+        self._tree.insert("", tk.END, values=values)
+
+        # Auto-scroll to the latest entry (user can scroll back manually).
+        children = self._tree.get_children()
+        if children:
+            self._tree.see(children[-1])
 
     # ------------------------------------------------------------------
     # Internal notification helpers
     # ------------------------------------------------------------------
 
     def _notify_launch(self) -> None:
-        """Fires the on_launch callback when the Lancer button is clicked."""
+        """Fire the on_launch callback when the Lancer button is clicked."""
         if self._on_launch:
             self._on_launch()
 
     def _notify_cancel(self) -> None:
-        """Fires the on_cancel callback when the Annuler button is clicked."""
+        """Fire the on_cancel callback when the Annuler button is clicked."""
         if self._on_cancel:
             self._on_cancel()
 
     def _notify_pause(self) -> None:
-        """Fires the on_pause callback when the Pause button is clicked."""
+        """Fire the on_pause callback when the Pause button is clicked."""
         if self._on_pause:
             self._on_pause()
 
     def _notify_resume(self) -> None:
-        """Fires the on_resume callback when the Reprendre button is clicked."""
+        """Fire the on_resume callback when the Reprendre button is clicked."""
         if self._on_resume:
             self._on_resume()
 
+    def _notify_refresh_providers(self) -> None:
+        """Fire the on_refresh_providers callback when Rafraîchir is clicked."""
+        if self._on_refresh_providers:
+            self._on_refresh_providers()
+
+    def _on_combobox_selected(self, _event: Any) -> None:
+        """Resolve the combobox selection to an id_file and fire the callback.
+
+        Args:
+            _event: The Tkinter <<ComboboxSelected>> event (unused).
+        """
+        display = self._cmb_provider.get()
+        id_file = self._provider_id_by_display.get(display)
+        if id_file and self._on_provider_selected:
+            self._on_provider_selected(id_file)
+
+    # ------------------------------------------------------------------
+    # URL-source and folder dialogs
+    # ------------------------------------------------------------------
+
+    def _on_url_source_changed(self, source_type: str) -> None:
+        """Open the appropriate dialog when the user switches URL source.
+
+        Args:
+            source_type: One of ``"manual"``, ``"folder"``, or ``"csv"``.
+        """
+        if source_type == _URL_SOURCE_MANUAL:
+            self._collect_manual_urls()
+        elif source_type == _URL_SOURCE_FOLDER:
+            self._collect_folder_source()
+        elif source_type == _URL_SOURCE_CSV:
+            self._collect_csv_source()
+
+    def _collect_manual_urls(self) -> None:
+        """Open a popup for the user to paste a newline-separated URL list."""
+        popup = tk.Toplevel(self)
+        popup.title("Saisir les URLs")
+        popup.grab_set()
+
+        ttk.Label(popup, text="Collez les URLs (une par ligne) :").pack(padx=10, pady=(10, 4))
+
+        # Multiline text area for URL input.
+        text = tk.Text(popup, width=60, height=12)
+        text.pack(padx=10, pady=(0, 6))
+
+        # Pre-fill with existing manual URLs if any.
+        if isinstance(self._url_source_value, list):
+            text.insert(tk.END, "\n".join(self._url_source_value))
+
+        def _on_ok() -> None:
+            raw = text.get("1.0", tk.END)
+            urls = [line.strip() for line in raw.splitlines() if line.strip()]
+            self._url_source_type = _URL_SOURCE_MANUAL
+            self._url_source_value = urls
+            popup.destroy()
+
+        def _on_cancel() -> None:
+            # Revert radio button to the previous selection.
+            self._var_url_source.set(self._url_source_type)
+            popup.destroy()
+
+        btn_frame = ttk.Frame(popup)
+        btn_frame.pack(pady=(0, 10))
+        ttk.Button(btn_frame, text="OK", command=_on_ok).pack(side=tk.LEFT, padx=6)
+        ttk.Button(btn_frame, text="Annuler", command=_on_cancel).pack(side=tk.LEFT, padx=6)
+
+    def _collect_folder_source(self) -> None:
+        """Open a folder dialog to set the URL source directory."""
+        folder = filedialog.askdirectory(title="Sélectionner le dossier source des URLs")
+        if folder:
+            self._url_source_type = _URL_SOURCE_FOLDER
+            self._url_source_value = folder
+        else:
+            # Revert radio to the previous source type on cancel.
+            self._var_url_source.set(self._url_source_type)
+
+    def _collect_csv_source(self) -> None:
+        """Open a file dialog to select a CSV file as the URL source."""
+        path = filedialog.askopenfilename(
+            title="Sélectionner un fichier CSV",
+            filetypes=[("Fichiers CSV", "*.csv"), ("Tous les fichiers", "*.*")],
+        )
+        if path:
+            self._url_source_type = _URL_SOURCE_CSV
+            self._url_source_value = path
+        else:
+            # Revert radio to the previous source type on cancel.
+            self._var_url_source.set(self._url_source_type)
+
+    def _browse_export_folder(self) -> None:
+        """Open a folder dialog to select the export destination."""
+        folder = filedialog.askdirectory(
+            title="Sélectionner le dossier d'export",
+            initialdir=self._export_folder,
+        )
+        if folder:
+            self._export_folder = folder
+            self._var_export_folder.set(folder)
+
+    # ------------------------------------------------------------------
+    # Journal export
+    # ------------------------------------------------------------------
+
+    def _export_journal(self) -> None:
+        """Save the full journal content to a .txt file chosen by the user."""
+        path = filedialog.asksaveasfilename(
+            title="Exporter le journal",
+            defaultextension=".txt",
+            filetypes=[("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*")],
+        )
+        if not path:
+            return
+
+        self._write_journal_to_file(path)
+
+    def _write_journal_to_file(self, path: str) -> None:
+        """Write the journal Treeview content to the given file path.
+
+        Args:
+            path: Absolute path of the destination .txt file.
+        """
+        header = "\t".join(["Date", "Étape démarrée", "Étape terminée", "Résultat", "Durée (s)"])
+        lines = [header]
+
+        for item in self._tree.get_children():
+            values = self._tree.item(item, "values")
+            lines.append("\t".join(str(v) for v in values))
+
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write("\n".join(lines))
+        except OSError as exc:
+            messagebox.showerror("Erreur d'export", f"Impossible d'écrire le fichier :\n{exc}")
+
+    # ------------------------------------------------------------------
+    # Message boxes
+    # ------------------------------------------------------------------
+
     def show_warning(self, message: str) -> None:
-        """Shows a warning message box.
+        """Display a warning message box.
 
         Args:
             message: The message to be displayed.
