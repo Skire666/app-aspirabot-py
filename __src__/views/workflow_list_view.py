@@ -33,12 +33,9 @@ from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 ## ---------------------------------------------------------------------------
 
 # Layout constants
-_HEIGHT_FRAME_LOGICAL_BLOCK = 200  # TODO PCO: le bloc 'brique logique est trop petit
-_WIDTH_FRAME_STEP_STYPE_SELECTOR = 190
 _DND_ITEM_H = 45
 _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
-C_ALL_LABELS: list[str] = list(C_STEP_TYPE_TO_LABELS.values())
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -54,7 +51,6 @@ class WorkflowListView(ttk.Frame):
     The view never imports services or repositories.
 
     Attributes:
-        on_add_step: Called when the user clicks 'Add step'.
         on_edit_step: Called with the step index when Edit is clicked.
         on_delete_step: Called with the step index when Delete is confirmed.
         on_move_step: Called with (index, direction) where direction is -1 or +1.
@@ -72,6 +68,8 @@ class WorkflowListView(ttk.Frame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent)
+        self._inline_form: StepInlineFormPanel | None = None
+        self._type_listbox: tk.Listbox | None = None
         self._init_callbacks()
         self._selected_index: int | None = None
         self._last_steps: list[StepScrapingModel] = []
@@ -84,7 +82,6 @@ class WorkflowListView(ttk.Frame):
 
     def _init_callbacks(self) -> None:
         """Sets all callback attributes to None."""
-        self.on_add_step: Callable[[], None] | None = None
         self.on_edit_step: Callable[[int], None] | None = None
         self.on_delete_step: Callable[[int], None] | None = None
         self.on_move_step: Callable[[int, int], None] | None = None
@@ -96,8 +93,8 @@ class WorkflowListView(ttk.Frame):
 
     def _create_widgets(self) -> None:
         """Builds toolbar, step list."""
-        # Grid layout: row 2 (steps) expands; rows 0/1/3 are fixed-height.
         self.columnconfigure(0, weight=1)
+        self.rowconfigure(2, weight=1)  # DragDropList row expands to fill available height
 
         # Toolbar — row 1.
         toolbar = self._create_toolbar()
@@ -107,10 +104,6 @@ class WorkflowListView(ttk.Frame):
         steps_section = self._create_steps_section()
         steps_section.grid(row=2, column=0, sticky="nsew", padx=0)
 
-        # Bottom row (Brique logique + Aide à la saisie) — row 3, fixed 200 px, hidden by default.
-        self._bottom_row = self._create_bottom_row()
-        self._bottom_row.grid(row=3, column=0, sticky="ew")
-
     def _create_toolbar(self) -> ttk.Frame:
         """Creates the toolbar frame with the Add step button.
 
@@ -118,10 +111,6 @@ class WorkflowListView(ttk.Frame):
             The fully built toolbar frame.
         """
         toolbar = ttk.Frame(self)
-
-        # Add step button.
-        self._btn_add = ttk.Button(toolbar, text="Ajouter une étape", command=self._fire_add_step)
-        self._btn_add.pack(side=tk.LEFT, padx=5, pady=4)
 
         self._btn_clear = ttk.Button(toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps)
         self._btn_clear.pack(side=tk.RIGHT, padx=5, pady=4)
@@ -181,50 +170,6 @@ class WorkflowListView(ttk.Frame):
 
         return section
 
-    def _create_bottom_row(self) -> ttk.Frame:
-        """Creates the fixed-height row containing Brique logique and Aide à la saisie.
-
-        Both panels are placed side by side: 60 % for the form, 40 % for help.
-        The row is not packed on creation — call show_inline_form() to reveal it.
-
-        Returns:
-            The row frame with both panels already gridded inside.
-        """
-        row = ttk.Frame(
-            self, height=_HEIGHT_FRAME_LOGICAL_BLOCK, padding=(0, 10, 0, 0)
-        )  # Entre Workflow et Brique logique
-        row.grid_propagate(False)  # enforce fixed height regardless of children
-
-        # Brique logique : left column fixed. Type frame in column 0, form in column 1.
-        row.columnconfigure(0, weight=0, minsize=_WIDTH_FRAME_STEP_STYPE_SELECTOR)
-        row.columnconfigure(1, weight=1)
-        row.rowconfigure(0, weight=1)
-
-        # Type d'étape frame — left column (outside the 'Brique logique' frame)
-        type_frame = ttk.LabelFrame(row, text="Ajouter/modifier une étape")
-        type_frame.grid(row=0, column=0, sticky="nsew")
-        type_frame.columnconfigure(0, weight=1)
-
-        # Scrollable Listbox that fills the available height
-        lb_container = ttk.Frame(type_frame)
-        lb_container.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-        lb_scroll = ttk.Scrollbar(lb_container, orient=tk.VERTICAL)
-        lb = tk.Listbox(lb_container, exportselection=False, activestyle="none", yscrollcommand=lb_scroll.set)
-        lb_scroll.config(command=lb.yview)
-        lb_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        for lbl in C_ALL_LABELS:
-            lb.insert(tk.END, lbl)
-        lb.bind("<<ListboxSelect>>", lambda e: self._on_type_list_select(e))
-        self._type_listbox = lb
-
-        # Brique logique panel — right column.
-        self._inline_form = StepInlineFormPanel(row)
-        self._inline_form.on_confirm = self._fire_confirm_step
-        self._inline_form.on_cancel = self._fire_cancel_step
-        self._inline_form.grid(row=0, column=1, sticky="nsew", padx=(0, 0))
-        return row
-
     # ---------------------------------------------------------------
     # Public render interface (called by the presenter)
     # ---------------------------------------------------------------
@@ -251,10 +196,7 @@ class WorkflowListView(ttk.Frame):
         self.after_idle(self._update_dnd_window_geometry)
 
     def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
-        """Reveals both Brique logique and Aide à la saisie panels.
-
-        Loading the form fires on_type_changed, which in turn updates the
-        help panel content before the row becomes visible.
+        """Loads a step into the always-visible inline form.
 
         Args:
             step: Existing step to pre-fill for editing, or None for a blank form.
@@ -273,7 +215,6 @@ class WorkflowListView(ttk.Frame):
                 self._type_listbox.see(idx)
         except (tk.TclError, ValueError):
             pass
-        self._bottom_row.grid()
 
     def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
         """Forwards the step list to the inline form for JUMP_TO_STEP target population.
@@ -284,6 +225,18 @@ class WorkflowListView(ttk.Frame):
             steps: Current ordered workflow step list.
         """
         self._inline_form.set_available_steps(steps)
+
+    def set_type_listbox(self, listbox: tk.Listbox) -> None:
+        """Stores the type-selector listbox created externally, for selection sync."""
+        self._type_listbox = listbox
+
+    def set_inline_form(self, form: StepInlineFormPanel) -> None:
+        """Stores the inline form created and wired externally.
+
+        Args:
+            form: The StepInlineFormPanel instance to use for step editing.
+        """
+        self._inline_form = form
 
     # ---------------------------------------------------------------
     # DragDropList action callbacks
@@ -467,13 +420,6 @@ class WorkflowListView(ttk.Frame):
     # ---------------------------------------------------------------
     # Callback fires
     # ---------------------------------------------------------------
-
-    def _fire_add_step(self) -> None:
-        """Fires the on_add_step callback."""
-        self._selected_index = None
-        self._dnd_list.redraw()
-        if self.on_add_step:
-            self.on_add_step()
 
     def _fire_confirm_step(self, step: StepScrapingModel) -> None:
         """Forwards the confirmed step to the presenter callback.
