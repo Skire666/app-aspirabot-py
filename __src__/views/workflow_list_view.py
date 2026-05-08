@@ -34,11 +34,10 @@ from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 
 # Layout constants
 _HEIGHT_FRAME_LOGICAL_BLOCK = 200  # TODO PCO: le bloc 'brique logique est trop petit
-_WIDTH_FRAME_STEP_STYPE_SELECTOR = 200
+_WIDTH_FRAME_STEP_STYPE_SELECTOR = 190
 _DND_ITEM_H = 45
 _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
-_STEPS_SECTION_TITLE = "Liste des étapes"
 C_ALL_LABELS: list[str] = list(C_STEP_TYPE_TO_LABELS.values())
 
 ## ---------------------------------------------------------------------------
@@ -96,9 +95,8 @@ class WorkflowListView(ttk.Frame):
         self.on_clear_all_steps: Callable[[], None] | None = None
 
     def _create_widgets(self) -> None:
-        """Builds toolbar, step list, and brique logique sections."""
+        """Builds toolbar, step list."""
         # Grid layout: row 2 (steps) expands; rows 0/1/3 are fixed-height.
-        self.rowconfigure(2, weight=1)
         self.columnconfigure(0, weight=1)
 
         # Toolbar — row 1.
@@ -107,12 +105,11 @@ class WorkflowListView(ttk.Frame):
 
         # DragDropList step list — row 2, fills all available height.
         steps_section = self._create_steps_section()
-        steps_section.grid(row=2, column=0, sticky="nsew", padx=5)
+        steps_section.grid(row=2, column=0, sticky="nsew", padx=0)
 
         # Bottom row (Brique logique + Aide à la saisie) — row 3, fixed 200 px, hidden by default.
         self._bottom_row = self._create_bottom_row()
         self._bottom_row.grid(row=3, column=0, sticky="ew")
-        self._bottom_row.grid_remove()
 
     def _create_toolbar(self) -> ttk.Frame:
         """Creates the toolbar frame with the Add step button.
@@ -137,9 +134,8 @@ class WorkflowListView(ttk.Frame):
         Returns:
             The section container frame.
         """
-        section = ttk.LabelFrame(self, text=_STEPS_SECTION_TITLE)
+        section = ttk.Frame(self)
         self._steps_section = section
-        self._set_steps_count(0)
 
         # Vertical scroll wrapper keeps the list accessible with many steps.
         outer = tk.Canvas(section, highlightthickness=0)
@@ -205,7 +201,7 @@ class WorkflowListView(ttk.Frame):
         row.rowconfigure(0, weight=1)
 
         # Type d'étape frame — left column (outside the 'Brique logique' frame)
-        type_frame = ttk.LabelFrame(row, text="Type d'étape")
+        type_frame = ttk.LabelFrame(row, text="Ajouter/modifier une étape")
         type_frame.grid(row=0, column=0, sticky="nsew")
         type_frame.columnconfigure(0, weight=1)
 
@@ -241,7 +237,6 @@ class WorkflowListView(ttk.Frame):
         """
         # Always cache the latest step list for future refreshes.
         self._last_steps = list(steps)
-        self._set_steps_count(len(self._last_steps))
 
         # Skip the DragDropList update while it is mid-callback to prevent
         # re-entrant mutations (presenter calling render_steps via _refresh_view).
@@ -280,10 +275,6 @@ class WorkflowListView(ttk.Frame):
             pass
         self._bottom_row.grid()
 
-    def hide_inline_form(self) -> None:
-        """Hides both Brique logique and Aide à la saisie panels."""
-        self._bottom_row.grid_remove()
-
     def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
         """Forwards the step list to the inline form for JUMP_TO_STEP target population.
 
@@ -293,10 +284,6 @@ class WorkflowListView(ttk.Frame):
             steps: Current ordered workflow step list.
         """
         self._inline_form.set_available_steps(steps)
-
-    def _set_steps_count(self, count: int) -> None:
-        """Updates the step count displayed in the section header."""
-        self._steps_section.configure(text=f"{_STEPS_SECTION_TITLE} (x{count})")
 
     # ---------------------------------------------------------------
     # DragDropList action callbacks
@@ -364,8 +351,6 @@ class WorkflowListView(ttk.Frame):
         if not confirmed:
             return False
 
-        self._set_steps_count(max(len(self._dnd_list.items) - 1, 0))
-
         # Clear stale selection before the presenter refreshes.
         if self._selected_index == idx:
             self._selected_index = None
@@ -382,7 +367,6 @@ class WorkflowListView(ttk.Frame):
 
     def _on_dnd_duplicate(self, step: StepScrapingModel, _: int) -> StepScrapingModel:
         # Serialise then deserialise to produce an independent deep copy.
-        self._set_steps_count(len(self._dnd_list.items) + 1)
         new_object: StepScrapingModel = step.copy_business()
         return new_object
 
@@ -403,7 +387,6 @@ class WorkflowListView(ttk.Frame):
     def _on_dnd_reorder(self, steps: list[StepScrapingModel]) -> None:
         # Fires after every DragDropList mutation (move, delete, duplicate, drag).
         # Gives the presenter a chance to sync its own step list without refreshing.
-        self._set_steps_count(len(steps))
         if self.on_reorder_steps:
             self.on_reorder_steps(list(steps))
         # Defer rebind: DragDropList calls rebuild() AFTER this callback returns,
@@ -505,7 +488,6 @@ class WorkflowListView(ttk.Frame):
     def _fire_cancel_step(self) -> None:
         """Hides the inline form and notifies the presenter of cancellation."""
         self._selected_index = None
-        self.hide_inline_form()
         self._dnd_list.redraw()
         if self.on_cancel_inline_step:
             self.on_cancel_inline_step()

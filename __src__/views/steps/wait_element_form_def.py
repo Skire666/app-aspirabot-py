@@ -90,7 +90,7 @@ class WaitElementFormDef(IStepFormDef):
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact label for the workflow list."""
-        selector = model.params.get("selector", "")
+        selector = model.params.get("selector", "<vide>")
 
         timeout = model.params.get("timeout_duration", 0)
         unit_time = model.params.get("timeout_unit", "")

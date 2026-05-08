@@ -13,7 +13,7 @@ from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import DOWNLOAD_MODES, safe_int_widget
 
-C_INPUT_DEFAULT_MINIMUM_SIZE = 200
+C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_MODE_DDL = DOWNLOAD_MODES[-1]  # all
 
 
@@ -72,13 +72,12 @@ class DownloadImageFormDef(IStepFormDef):
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=2)
 
-        ttk.Label(line2, text="Hauteur (px) : ", width=10).pack(side="left", padx=5)
-        ttk.Label(line2, text="Min.").pack(side="left", padx=2)
+        ttk.Label(line2, text="Hauteur entre : ", width=15).pack(side="left", padx=5)
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=8).pack(
             side="left", padx=5
         )
-        ttk.Label(line2, text="Max.").pack(side="left", padx=2)
+        ttk.Label(line2, text=" et ").pack(side="left", padx=2)
         height_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=8).pack(
             side="left", padx=5
@@ -90,13 +89,12 @@ class DownloadImageFormDef(IStepFormDef):
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=2)
 
-        ttk.Label(line3, text="Largeur (px) : ", width=10).pack(side="left", padx=5)
-        ttk.Label(line3, text="Min.").pack(side="left", padx=2)
+        ttk.Label(line3, text="Largeur entre : ", width=15).pack(side="left", padx=5)
         width_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_min_var, width=8).pack(
             side="left", padx=5
         )
-        ttk.Label(line3, text="Max.").pack(side="left", padx=2)
+        ttk.Label(line3, text=" et ").pack(side="left", padx=2)
         width_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=8).pack(
             side="left", padx=5
@@ -132,8 +130,8 @@ class DownloadImageFormDef(IStepFormDef):
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         mode = model.params.get("mode", "")
         unique_only = model.params.get("unique_only", False)
-        width_min = model.params.get("width_min", 200)
-        height_min = model.params.get("height_min", 200)
+        width_min = model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
+        height_min = model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
         width_max = model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
         height_max = model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
         dup_str = "(doublons refusés)" if unique_only else "(doublons autorisés)"

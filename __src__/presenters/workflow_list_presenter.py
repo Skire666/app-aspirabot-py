@@ -144,7 +144,6 @@ class WorkflowListPresenter:
         # Reset in-memory state and hide the inline form.
         self._steps.clear()
         self._edit_index = None
-        self._view.hide_inline_form()
         self._refresh_view()
 
     # ---------------------------------------------------------------
@@ -202,7 +201,6 @@ class WorkflowListPresenter:
             # Edit mode: replace the step at the tracked index.
             self._steps[self._edit_index] = step
         self._edit_index = None
-        self._view.hide_inline_form()
         self._refresh_view()
 
     def _on_cancel_inline_step(self) -> None:
@@ -225,7 +223,6 @@ class WorkflowListPresenter:
         """Clears all steps and persists the empty workflow."""
         self._steps.clear()
         self._edit_index = None
-        self._view.hide_inline_form()
         self._refresh_view()
 
     def _on_reorder_steps(self, steps: list[StepScrapingModel]) -> None:

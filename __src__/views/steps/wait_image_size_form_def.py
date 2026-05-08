@@ -17,38 +17,9 @@ from shared.constants import (
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
-C_INPUT_DEFAULT_MINIMUM_SIZE = 200
+C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
-
-
-def _add_dimension_row(
-    frame: ttk.Frame,
-    widgets: dict[str, Any],
-    row: int,
-    label: str,
-    min_key: str,
-    max_key: str,
-    default_min: int,
-    default_max: int,
-) -> None:
-    min_var = tk.StringVar(value=str(default_min))
-    max_var = tk.StringVar(value=str(default_max))
-    widgets[min_key] = min_var
-    widgets[max_key] = max_var
-
-    row_frame = ttk.Frame(frame)
-    row_frame.grid(row=row, column=0, columnspan=5, sticky="w", padx=5, pady=4)
-
-    ttk.Label(row_frame, text=label, width=15).pack(side=tk.LEFT, padx=(0, 6))
-    ttk.Label(row_frame, text=" Min : ").pack(side=tk.LEFT, padx=(0, 8))
-    ttk.Spinbox(row_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=min_var, width=8).pack(
-        side=tk.LEFT, padx=(0, 4)
-    )
-    ttk.Label(row_frame, text=" Max : ").pack(side=tk.LEFT)
-    ttk.Spinbox(row_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=max_var, width=8).pack(
-        side=tk.LEFT, padx=(0, 4)
-    )
 
 
 class WaitImageSizeFormDef(IStepFormDef):
@@ -68,43 +39,48 @@ class WaitImageSizeFormDef(IStepFormDef):
         return "Présence taille d'image"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Create the form widgets and arrange them in `frame`.
+        # LIGNE 1 : Hauteur (px) + Min + Spinbox + Max + Spinbox
+        line1 = ttk.Frame(frame)
+        line1.pack(fill="x", pady=2)
 
-        The layout uses a fixed set of columns so rows align left-to-right.
-        """
-        # Ensure columns are configured so widgets align left-to-right
-        for c in range(5):
-            frame.columnconfigure(c, weight=0)
-        # allow the main middle column to expand if there is extra space
-        frame.columnconfigure(1, weight=1)
-        _add_dimension_row(
-            frame,
-            widgets,
-            0,
-            "Hauteur (px) : ",
-            "height_min",
-            "height_max",
-            C_INPUT_DEFAULT_MINIMUM_SIZE,
-            C_MAXIMUM_SIZE_IMAGE,
+        ttk.Label(line1, text="Hauteur entre : ", width=10).pack(side="left")
+        height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=8).pack(
+            side="left", padx=5
         )
-        _add_dimension_row(
-            frame,
-            widgets,
-            1,
-            "Largeur (px) : ",
-            "width_min",
-            "width_max",
-            C_INPUT_DEFAULT_MINIMUM_SIZE,
-            C_MAXIMUM_SIZE_IMAGE,
+        ttk.Label(line1, text="et").pack(side="left", padx=2)
+        height_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=8).pack(
+            side="left", padx=5
         )
+        widgets["height_min"] = height_min_var
+        widgets["height_max"] = height_max_var
 
+        # LIGNE 2 : Largeur (px) + Min + Spinbox + Max + Spinbox
+        line2 = ttk.Frame(frame)
+        line2.pack(fill="x", pady=2)
+
+        ttk.Label(line2, text="Largeur entre : ", width=10).pack(side="left")
+        width_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
+        ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_min_var, width=8).pack(
+            side="left", padx=5
+        )
+        ttk.Label(line2, text="et").pack(side="left", padx=2)
+        width_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
+        ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=8).pack(
+            side="left", padx=5
+        )
+        widgets["width_min"] = width_min_var
+        widgets["width_max"] = width_max_var
+
+        ## dernière ligne
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         tu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         widgets["timeout_duration"] = td_var
         widgets["timeout_unit"] = tu_var
 
         timeout_frame = ttk.Frame(frame)
-        timeout_frame.grid(row=2, column=0, columnspan=5, sticky="w", padx=5, pady=4)
+        timeout_frame.pack(fill="x", pady=2)
         ttk.Label(timeout_frame, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 4))
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)

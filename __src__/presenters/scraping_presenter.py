@@ -19,12 +19,14 @@ import threading
 from collections.abc import Callable
 from datetime import datetime
 
-from models.provider_model import DATETIME_FORMAT, ProviderModel
+from models.provider_model import ProviderModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from views.scraping_panel_view import ScrapingView
+
+from __src__.shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -84,6 +86,10 @@ class ScrapingPresenter:
 
         # Guard: returns True when a Workflow edit session is already open.
         self.is_workflow_active: Callable[[], bool] | None = None
+
+        # Journal entry counter — provides a unique iid for each Treeview row.
+        self._journal_entry_counter: int = 0
+        self._current_journal_item_id: str | None = None
 
         # Wire all view callbacks to presenter handlers.
         self._wire_view_callbacks()
@@ -197,9 +203,11 @@ class ScrapingPresenter:
             )
             return
 
-        # Reset signals from any previous run.
+        # Reset signals and journal counter from any previous run.
         self._pause_event.set()
         self._cancel_event.clear()
+        self._journal_entry_counter = 0
+        self._current_journal_item_id = None
         self._view.set_running_state(True)
 
         started_at = datetime.now()
@@ -247,8 +255,25 @@ class ScrapingPresenter:
         self._view.set_paused_state(True)
 
     # ------------------------------------------------------------------
-    # Step completion callback
+    # Step lifecycle callbacks
     # ------------------------------------------------------------------
+
+    def _on_step_start(self, step: StepScrapingModel) -> None:
+        """Called by the service just before a step executes.
+
+        Inserts a pending row in the journal so the user sees the step
+        name immediately, before the result is known.
+
+        Args:
+            step: The step model about to execute.
+        """
+        self._journal_entry_counter += 1
+        item_id = f"entry_{self._journal_entry_counter}"
+        self._current_journal_item_id = item_id
+
+        # Pre-insert the journal row with a 'pending' placeholder.
+        date_str = get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff()
+        self._view.start_journal_entry(item_id, date_str, step.step_type.value)
 
     def _on_step_done(
         self,
@@ -259,7 +284,7 @@ class ScrapingPresenter:
     ) -> None:
         """Called by the service after each step completes.
 
-        Feeds the journal entry and updates the progress frame.
+        Updates the pre-inserted journal row and refreshes the progress frame.
 
         Args:
             step: The completed step model.
@@ -267,16 +292,14 @@ class ScrapingPresenter:
             message: Short result message from the executor.
             elapsed_s: Wall-clock duration of the step in seconds.
         """
-        date_str = datetime.now().strftime(DATETIME_FORMAT)
-
-        # Append a row to the scraping journal.
-        self._view.append_journal_entry(
-            date=date_str,
-            step_started=step.step_type.value,
-            step_ended=step.step_type.value,
-            success=success,
-            duration_s=elapsed_s,
-        )
+        # Complete the journal row started in _on_step_start.
+        if self._current_journal_item_id:
+            self._view.complete_journal_entry(
+                item_id=self._current_journal_item_id,
+                msg_step_ended=message,
+                success=success,
+                duration_s=elapsed_s,
+            )
 
         # Push live progress values to the progression frame.
         url, tabs = self._service_scraping.get_page_info()
@@ -325,6 +348,7 @@ class ScrapingPresenter:
                 self._cancel_event,
                 self._pause_event,
                 self._on_user_wait_step,
+                self._on_step_start,
                 self._on_step_done,
                 self._on_init_step,
             )

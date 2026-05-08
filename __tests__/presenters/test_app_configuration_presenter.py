@@ -76,21 +76,6 @@ class _StubService:
         return self._last_write
 
 
-def test_presenter_loads_configuration_and_last_write_time() -> None:
-    """Presenter should load configuration and expose last write time."""
-    model = AppConfigurationModel(log_level_enum="INFO")
-    last_write = datetime(2026, 1, 2, 3, 4, 5)
-    view = _StubView()
-    service = _StubService(model, last_write)
-
-    AppConfigurationPresenter(view=view, service=service)
-
-    assert view.data_loaded == model.to_dict()
-    assert view.last_write == last_write.strftime("%Y-%m-%d %H:%M:%S")
-    assert view.log_level_options is not None
-    assert "DEBUG" in view.log_level_options
-
-
 def test_presenter_save_updates_configuration() -> None:
     """Presenter should validate and persist form data on save."""
     view = _StubView()

@@ -23,6 +23,8 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
+from __src__.shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
+
 ## ---------------------------------------------------------------------------
 ## Constants
 ## ---------------------------------------------------------------------------
@@ -245,19 +247,12 @@ class ScrapingView(ttk.Frame):
         ttk.Button(bar, text="Exporter (.txt)", command=self._export_journal).pack(side=tk.RIGHT)
 
         # Treeview with vertical scrollbar.
-        columns = ("date", "step_started", "step_ended", "success", "duration")
+        columns = ("date", "step_started", "duration", "success", "msg_step_ended")
         self._tree = ttk.Treeview(frame, columns=columns, show="headings", height=8)
 
-        headings = {
-            "date": ("Date", 130),
-            "step_started": ("Étape démarrée", 160),
-            "step_ended": ("Étape terminée", 160),
-            "success": ("Résultat", 80),
-            "duration": ("Durée (s)", 80),
-        }
-        for col, (title, width) in headings.items():
+        for col, (title, width, anchor, stretch) in C_VIEW_SCRAPING_HEADINGS.items():
             self._tree.heading(col, text=title)
-            self._tree.column(col, width=width, anchor=tk.CENTER)
+            self._tree.column(col, width=width, anchor=anchor, stretch=stretch)
 
         scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self._tree.yview)
         self._tree.configure(yscrollcommand=scrollbar.set)
@@ -580,55 +575,75 @@ class ScrapingView(ttk.Frame):
             self._elapsed_timer_id = None
         self._run_started_at = None
 
-    def append_journal_entry(
+    def start_journal_entry(self, item_id: str, date: str, step_started: str) -> None:
+        """Insert a pending journal row before the step executes.
+
+        The row shows the step type immediately with placeholder values in the
+        result columns. Call ``complete_journal_entry`` after execution to fill them.
+        Safe to call from a background thread.
+
+        Args:
+            item_id: Unique Treeview iid used to update the row later.
+            date: Timestamp string captured at step start.
+            step_started: Step type label (e.g. ``"OPEN_URL"``).
+        """
+        self.after(0, lambda: self._insert_pending_journal_row(item_id, date, step_started))
+
+    def _insert_pending_journal_row(self, item_id: str, date: str, step_started: str) -> None:
+        """Insert a pending row with the given iid on the main thread.
+
+        Args:
+            item_id: Treeview iid for the new row.
+            date: Timestamp at step start.
+            step_started: Step type label.
+        """
+        ## TODO PCO : ordre des colonnes pas explicite
+        values = (date, step_started, "en cours", "...", "...")
+        self._tree.insert("", tk.END, iid=item_id, values=values)
+
+        # Auto-scroll so the newest row is always visible.
+        children = self._tree.get_children()
+        if children:
+            self._tree.see(children[-1])
+
+    def complete_journal_entry(
         self,
-        date: str,
-        step_started: str,
-        step_ended: str,
+        item_id: str,
+        msg_step_ended: str,
         success: bool,
         duration_s: float,
     ) -> None:
-        """Append a row to the scraping journal Treeview.
+        """Update the pending journal row once the step has finished.
 
         Safe to call from a background thread.
 
         Args:
-            date: Timestamp string for this entry.
-            step_started: Label of the step type when it began.
-            step_ended: Label of the step type when it finished.
+            item_id: The iid returned by ``start_journal_entry``.
+            msg_step_ended: Result message from the executor (e.g. ``"OK"`` or
+                the error description).
             success: True for a successful step; False for an error.
             duration_s: Wall-clock duration of the step in seconds.
         """
-        self.after(
-            0,
-            lambda: self._insert_journal_row(date, step_started, step_ended, success, duration_s),
-        )
+        self.after(0, lambda: self._update_journal_row(item_id, msg_step_ended, success, duration_s))
 
-    def _insert_journal_row(
-        self,
-        date: str,
-        step_started: str,
-        step_ended: str,
-        success: bool,
-        duration_s: float,
-    ) -> None:
-        """Insert a journal row and scroll to the bottom on the main thread.
+    def _update_journal_row(self, item_id: str, msg_step_ended: str, success: bool, duration_s: float) -> None:
+        """Patch the result columns of an existing journal row on the main thread.
 
         Args:
-            date: Timestamp for this entry.
-            step_started: Step type label at start.
-            step_ended: Step type label at end.
-            success: True for success; False for error.
+            item_id: Treeview iid of the row to update.
+            msg_step_ended: Executor result message.
+            success: True for OK; False for ERREUR.
             duration_s: Step duration in seconds.
         """
-        result_label = "OK" if success else "ERREUR"
-        values = (date, step_started, step_ended, result_label, f"{duration_s:.2f}")
-        self._tree.insert("", tk.END, values=values)
+        current = self._tree.item(item_id, "values")
+        if not current:
+            return
 
-        # Auto-scroll to the latest entry (user can scroll back manually).
-        children = self._tree.get_children()
-        if children:
-            self._tree.see(children[-1])
+        result_label = "OK" if success else "ERREUR"
+        # Preserve date (col 0) and step_started (col 1); replace cols 2-4.
+        ## TODO PCO : ordre des colonnes pas explicite
+        updated = (current[0], current[1], f"{duration_s:.3f}", result_label, msg_step_ended)
+        self._tree.item(item_id, values=updated)
 
     # ------------------------------------------------------------------
     # Internal notification helpers
@@ -775,7 +790,7 @@ class ScrapingView(ttk.Frame):
         Args:
             path: Absolute path of the destination .txt file.
         """
-        header = "\t".join(["Date", "Étape démarrée", "Étape terminée", "Résultat", "Durée (s)"])
+        header = "\t".join(["Date", "Étape démarrée", "Résultat", "Durée (s)", "Message de fin"])
         lines = [header]
 
         for item in self._tree.get_children():

@@ -11,8 +11,9 @@ from models.app_configuration_model import AppConfigurationModel
 from services.app_configuration_service import ConfigService
 from views.app_configuration_view import AppConfigurationView
 
+from __src__.shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
+
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-_DATETIME_FORMAT = "%Y-%m-%d %Hh%Mm%Ss"
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -135,4 +136,4 @@ class AppConfigurationPresenter:
     def _format_last_write_time(last_write: datetime | None) -> str:
         if not last_write:
             return "N/A"
-        return last_write.strftime(_DATETIME_FORMAT)
+        return last_write.strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS)

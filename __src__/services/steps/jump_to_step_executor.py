@@ -23,10 +23,10 @@ class JumpToStepExecutor(IStepExecutor):
         prev_success: bool = params.get("_prev_success", True)
         should_jump = (
             p.condition == "always"
-            or (p.condition == "success" and prev_success)
-            or (p.condition == "failure" and not prev_success)
+            or (prev_success and p.condition == "success")
+            or (not prev_success and p.condition == "failure")
         )
-        target_step_id = self._resolve_target_step_id(params)
+        target_step_id = params.get("target_hexastring", "")
         if should_jump and target_step_id:
             # Signal the service by writing to the mutable params dict.
             params["_pending_jump"] = target_step_id

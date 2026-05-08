@@ -42,7 +42,7 @@ class CountElementFormDef(IStepFormDef):
 
     @classmethod
     def label(cls) -> str:
-        return "Dénombrer les éléments"
+        return "Compter les éléments"
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         self._form_widgets_ref = widgets
@@ -188,12 +188,12 @@ class CountElementFormDef(IStepFormDef):
             "less_or_equal": "<=",
         }
         op = op_labels.get(model.params.get("operator", "equal"), "?")
-        selector = model.params.get("selector", "")
+        selector = model.params.get("selector", "<vide>")
         if model.params.get("operator") in {"between", "not_between"}:
             val_str = f"{model.params.get('value_min', 0)} et {model.params.get('value_max', 0)}"
         else:
             val_str = str(model.params.get("value", 0))
-        return f"Dénombrer les éléments\nSél. : '{selector}'  -  Attendu {op} {val_str}"
+        return f"Compter les éléments  -  Attendu {op} {val_str}\nSél. : {selector}"
 
 
 register_form(CountElementFormDef())

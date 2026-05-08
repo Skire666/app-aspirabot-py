@@ -1,4 +1,6 @@
 # Main view sidebar width in pixels
+import tkinter as tk
+
 from models.step_scraping_model import StepType
 
 C_VIEW_SIDEBAR_LEFT_WIDTH = 88
@@ -29,6 +31,15 @@ C_STEP_TYPE_TO_LABELS: dict[StepType, str] = {
     StepType.JUMP_TO_STEP: "Si le résultat est un...",
     StepType.SCROLL_DOWN: "Défiler vers le bas",
     StepType.END_PROCESS: "Fin du processus",
+}
+
+# Scraping journal Treeview column configurations: (title, width, anchor, stretch)
+C_VIEW_SCRAPING_HEADINGS = {
+    "date": ("Date", 155, tk.W, False),
+    "step_started": ("Étape démarrée", 110, tk.W, False),
+    "duration": ("Durée (s)", 65, tk.E, False),
+    "success": ("Résultat", 65, tk.CENTER, False),
+    "msg_step_ended": ("Message de fin", 160, tk.W, True),
 }
 
 ## END

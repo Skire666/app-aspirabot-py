@@ -86,10 +86,10 @@ class ExtractTextFormDef(IStepFormDef):
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        selector = model.params.get("selector", "")
+        selector = model.params.get("selector", "<vide>")
         extract_mode = model.params.get("extract_mode", "")
         target = model.params.get("target", "")
-        return f"Extraire contenu textuel\nSél. '{selector}'  -  {extract_mode}  /  {target}"
+        return f"Extraire contenu textuel\nSél. : {selector}  -  {extract_mode}  /  {target}"
 
 
 register_form(ExtractTextFormDef())

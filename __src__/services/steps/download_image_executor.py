@@ -93,7 +93,7 @@ class DownloadImageExecutor(IStepExecutor):
             downloaded_count += 1
 
         if downloaded_count == 0:
-            raise ValueError("No image was downloaded.")
+            raise ValueError(f"No image was downloaded (but found={len(targets)}).")
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         p = DownloadImageParams.from_dict(model.params)

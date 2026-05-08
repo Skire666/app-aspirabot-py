@@ -9,7 +9,6 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
-from views.components.canvas_checkbox import CanvasCheckbox
 from views.workflow_list_view import WorkflowListView
 
 ## ---------------------------------------------------------------------------
@@ -41,7 +40,7 @@ class ProviderEditView(ttk.Frame):
         self.rowconfigure(0, weight=1)
 
         main_container = ttk.Frame(self)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=10)
+        main_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=(5, 10))
 
         # Top Section (Informations + Metadonnees)
         top_frame = ttk.Frame(main_container)
@@ -49,58 +48,52 @@ class ProviderEditView(ttk.Frame):
         top_frame.columnconfigure(0, weight=1)
         top_frame.columnconfigure(1, weight=1)
 
-        # 1. Informations (Top-left)
+        # 1. Informations générales (fusionné)
         info_lf = ttk.LabelFrame(top_frame, text="Informations")
-        info_lf.grid(row=0, column=0, sticky="nwes", padx=(5, 5))
+        info_lf.grid(row=0, column=0, columnspan=2, sticky="nwes", padx=(5, 5))
 
-        ttk.Label(info_lf, text="Nom : ").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        # Ligne 1 : Nom + ID Fichier
+        line1_frame = ttk.Frame(info_lf)
+        line1_frame.pack(fill="x", padx=5, pady=5)
+
+        # Label Nom
+        ttk.Label(line1_frame, text="Nom : ", width=7).pack(side="left")
+
+        # Zone de texte éditable Nom (occupe l'espace restant)
         self._var_name = tk.StringVar()
-        self._entry_name = ttk.Entry(info_lf, textvariable=self._var_name)
-        self._entry_name.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        self._entry_name = ttk.Entry(line1_frame, textvariable=self._var_name)
+        self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-        ttk.Label(info_lf, text="URL : ").grid(row=1, column=0, sticky="w", padx=5, pady=5)
-        self._var_url = tk.StringVar()
-        self._entry_url = ttk.Entry(info_lf, textvariable=self._var_url)
-        self._entry_url.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+        # Label ID Fichier
+        ttk.Label(line1_frame, text="ID Fichier : ", width=10).pack(side="left", padx=(20, 0))
 
-        self._var_browser = tk.BooleanVar()
-        self._chk_browser = CanvasCheckbox(info_lf, text="Browser affiché", variable=self._var_browser)
-        self._chk_browser.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=5)
-
-        self._var_obfuscated = tk.BooleanVar()
-        self._chk_obfuscated = CanvasCheckbox(
-            info_lf, text="Automatisation obfusquée", variable=self._var_obfuscated
-        )
-        self._chk_obfuscated.grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=5)
-
-        info_lf.columnconfigure(1, weight=1)  # pour avoir toute la larguer
-
-        # 2. Métadonnées (Top-right)
-        meta_lf = ttk.LabelFrame(top_frame, text="Métadonnées")
-        meta_lf.grid(row=0, column=1, sticky="nwes", padx=(5, 5))
-
-        ttk.Label(meta_lf, text="ID Fichier : ").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        # Label en lecture seule ID Fichier
         self._var_id_file = tk.StringVar()
-        self._entry_id_file = ttk.Entry(meta_lf, textvariable=self._var_id_file, state="readonly")
-        self._entry_id_file.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        self._entry_id_file = ttk.Entry(line1_frame, textvariable=self._var_id_file, state="readonly", width=15)
+        self._entry_id_file.pack(side="left")
 
-        ttk.Label(meta_lf, text="Version : ").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        # Ligne 2 : URL + Version
+        line2_frame = ttk.Frame(info_lf)
+        line2_frame.pack(fill="x", padx=5, pady=(0, 10))
+
+        # Label URL
+        ttk.Label(line2_frame, text="URL : ", width=7).pack(side="left")
+
+        # Zone de texte éditable URL (occupe l'espace restant)
+        self._var_url = tk.StringVar()
+        self._entry_url = ttk.Entry(line2_frame, textvariable=self._var_url)
+        self._entry_url.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+        # Label Version
+        ttk.Label(line2_frame, text="Version : ", width=10).pack(side="left", padx=(20, 0))
+
+        # Zone de texte éditable Version
         self._var_version = tk.StringVar()
-        self._entry_version = ttk.Entry(meta_lf, textvariable=self._var_version)
-        self._entry_version.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+        self._entry_version = ttk.Entry(line2_frame, textvariable=self._var_version, width=15)
+        self._entry_version.pack(side="left")
 
-        ttk.Label(meta_lf, text="Créé le : ").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-        self._var_created = tk.StringVar()
-        self._entry_created = ttk.Entry(meta_lf, textvariable=self._var_created, state="readonly")
-        self._entry_created.grid(row=2, column=1, sticky="ew", padx=5, pady=5)
-
-        ttk.Label(meta_lf, text="Modifié le : ").grid(row=3, column=0, sticky="w", padx=5, pady=5)
-        self._var_modified = tk.StringVar()
-        self._entry_modified = ttk.Entry(meta_lf, textvariable=self._var_modified, state="readonly")
-        self._entry_modified.grid(row=3, column=1, sticky="ew", padx=5, pady=5)
-
-        meta_lf.columnconfigure(1, weight=1)
-
+        # Configuration du grid pour top_frame
+        top_frame.columnconfigure(0, weight=1)
         # 4. Footer — packed before workflow so side=BOTTOM reserves space correctly
         footer_frame = ttk.Frame(main_container)
         footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
@@ -159,10 +152,6 @@ class ProviderEditView(ttk.Frame):
         self._var_name.set(data.get("provider_name", ""))
         self._var_url.set(data.get("url", ""))
         self._var_version.set(data.get("version", ""))
-        self._var_browser.set(data.get("browser_displayed", True))
-        self._var_obfuscated.set(data.get("automation_obfuscated", True))
-        self._var_created.set(data.get("created_date", ""))
-        self._var_modified.set(data.get("modified_date", ""))
         self.set_workflow_validation_message("(aucune vérification effectuée)", False)
 
     def get_data(self) -> dict[str, Any]:
@@ -176,10 +165,6 @@ class ProviderEditView(ttk.Frame):
             "provider_name": self._var_name.get(),
             "url": self._var_url.get(),
             "version": self._var_version.get(),
-            "browser_displayed": self._var_browser.get(),
-            "automation_obfuscated": self._var_obfuscated.get(),
-            "created_date": self._var_created.get(),
-            "modified_date": self._var_modified.get(),
         }
 
     def clear_data(self) -> None:
@@ -188,10 +173,6 @@ class ProviderEditView(ttk.Frame):
         self._var_name.set("")
         self._var_url.set("")
         self._var_version.set("")
-        self._var_browser.set(False)
-        self._var_obfuscated.set(False)
-        self._var_created.set("")
-        self._var_modified.set("")
         self.set_workflow_validation_message("", False)
 
     def ask_overwrite_confirmation(self) -> bool:

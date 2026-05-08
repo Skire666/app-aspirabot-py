@@ -94,6 +94,7 @@ class ScrapingService:
         self._pause_event_ref: threading.Event | None = None
         self._cancel_event_ref: threading.Event | None = None
         self._on_user_wait: Callable[[], None] | None = None
+        self._on_step_start: Callable[[StepScrapingModel], None] | None = None
         self._on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None
 
     # ------------------------------------------------------------------
@@ -106,6 +107,7 @@ class ScrapingService:
         cancel_event: threading.Event,
         pause_event: threading.Event,
         on_user_wait: Callable[[], None] | None = None,
+        on_step_start: Callable[[StepScrapingModel], None] | None = None,
         on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None,
         on_init_step: Callable[[str], None] | None = None,
     ) -> ScrapingReportModel:
@@ -116,6 +118,7 @@ class ScrapingService:
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
+            on_step_start: Optional callback fired before each step with (step,).
             on_step_done: Optional callback fired after each step with
                 (step, success, message, elapsed_s).
             on_init_step: Optional callback fired with a status string during
@@ -128,6 +131,7 @@ class ScrapingService:
         self._pause_event_ref = pause_event
         self._cancel_event_ref = cancel_event
         self._on_user_wait = on_user_wait
+        self._on_step_start = on_step_start
         self._on_step_done = on_step_done
         self._started_at = datetime.now()
 
@@ -311,9 +315,12 @@ class ScrapingService:
         Returns:
             The index of the next step to execute.
         """
+        # Notify presenter that this step is about to start (for journal pre-insert).
+        if callable(self._on_step_start):
+            self._on_step_start(step)
+
         start = time.time()
         success, message = self._execute_step(page, step)
-        print(f"Step {index} ({step.step_type}) completed with success={success}  and message: {message}")
         elapsed = time.time() - start
 
         # Update run-level statistics based on the outcome.

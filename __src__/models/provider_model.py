@@ -15,14 +15,12 @@ Example:
 ## ---------------------------------------------------------------------------
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any, cast
 
 from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
+from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 from shared.random_util import generate_rng_hexastring
-
-DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 ## ---------------------------------------------------------------------------
 ## Classes
@@ -79,7 +77,7 @@ class ProviderModel:
             'https://example.com'
         """
         # Capture a single timestamp to keep creation and modification aligned.
-        current_timestamp = datetime.now().strftime(DATETIME_FORMAT)
+        current_timestamp = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
 
         # Return a ready-to-use default provider.
         return cls(
@@ -109,7 +107,7 @@ class ProviderModel:
             >>> provider.update_created_date_and_modified_date()
         """
         # Use one value so both fields remain perfectly synchronized.
-        current_timestamp = datetime.now().strftime(DATETIME_FORMAT)
+        current_timestamp = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         self.created_date = current_timestamp
         self.modified_date = current_timestamp
 
@@ -127,7 +125,7 @@ class ProviderModel:
             >>> provider.update_modified_date()
         """
         # Refresh only the modification date to preserve creation metadata.
-        self.modified_date = datetime.now().strftime(DATETIME_FORMAT)
+        self.modified_date = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
 
     @staticmethod
     def is_valid_id(value: str) -> bool:

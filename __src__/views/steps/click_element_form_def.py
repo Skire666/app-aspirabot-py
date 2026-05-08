@@ -62,8 +62,8 @@ class ClickElementFormDef(IStepFormDef):
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        selector = model.params.get("selector", "")
-        return f"Cliquer sur un élément\nSél. '{selector}'"
+        selector = model.params.get("selector", "<vide>")
+        return f"Cliquer sur un élément\nSél. {selector}"
 
 
 register_form(ClickElementFormDef())
