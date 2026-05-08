@@ -9,8 +9,7 @@ Example:
     >>> from services.web_browser_service_playwright import PlaywrightBrowserService
     >>> browser = PlaywrightBrowserService(folder)
     >>> service = ScrapingService(folder, browser)
-    >>> report = service.run_workflow(provider, lambda *a: None, threading.Event(), pause)
-    >>> isinstance(report, ScrapingReportModel)
+    >>> service.run_workflow(provider, lambda *a: None, threading.Event(), pause)
     True
 """
 
@@ -48,8 +47,7 @@ class ScrapingService:
     Example:
         >>> from services.web_browser_service_playwright import PlaywrightBrowserService
         >>> svc = ScrapingService(Path("."), PlaywrightBrowserService(Path(".")))
-        >>> report = svc.run_workflow(provider, on_step_done, cancel, pause)
-        >>> isinstance(report, ScrapingReportModel)
+        >>> svc.run_workflow(provider, on_step_done, cancel, pause)
         True
     """
 
@@ -105,12 +103,6 @@ class ScrapingService:
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
-
-        Returns:
-            A ScrapingReportModel summarising the full run.
-
-        Raises:
-            None — all step-level exceptions are caught and reported per step.
         """
         self._pause_event_ref = pause_event
         self._cancel_event_ref = cancel_event

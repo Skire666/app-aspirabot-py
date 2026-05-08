@@ -53,12 +53,12 @@ class ProviderEditView(ttk.Frame):
         info_lf = ttk.LabelFrame(top_frame, text="Informations")
         info_lf.grid(row=0, column=0, sticky="nwes", padx=(5, 5))
 
-        ttk.Label(info_lf, text="Nom:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(info_lf, text="Nom : ").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self._var_name = tk.StringVar()
         self._entry_name = ttk.Entry(info_lf, textvariable=self._var_name)
         self._entry_name.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
-        ttk.Label(info_lf, text="URL:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(info_lf, text="URL : ").grid(row=1, column=0, sticky="w", padx=5, pady=5)
         self._var_url = tk.StringVar()
         self._entry_url = ttk.Entry(info_lf, textvariable=self._var_url)
         self._entry_url.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
@@ -79,22 +79,22 @@ class ProviderEditView(ttk.Frame):
         meta_lf = ttk.LabelFrame(top_frame, text="Métadonnées")
         meta_lf.grid(row=0, column=1, sticky="nwes", padx=(5, 5))
 
-        ttk.Label(meta_lf, text="Guid:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(meta_lf, text="ID Fichier : ").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self._var_id_file = tk.StringVar()
         self._entry_id_file = ttk.Entry(meta_lf, textvariable=self._var_id_file, state="readonly")
         self._entry_id_file.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
-        ttk.Label(meta_lf, text="Version:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(meta_lf, text="Version : ").grid(row=1, column=0, sticky="w", padx=5, pady=5)
         self._var_version = tk.StringVar()
         self._entry_version = ttk.Entry(meta_lf, textvariable=self._var_version)
         self._entry_version.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
 
-        ttk.Label(meta_lf, text="Créé le:").grid(row=2, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(meta_lf, text="Créé le : ").grid(row=2, column=0, sticky="w", padx=5, pady=5)
         self._var_created = tk.StringVar()
         self._entry_created = ttk.Entry(meta_lf, textvariable=self._var_created, state="readonly")
         self._entry_created.grid(row=2, column=1, sticky="ew", padx=5, pady=5)
 
-        ttk.Label(meta_lf, text="Modifié le:").grid(row=3, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(meta_lf, text="Modifié le : ").grid(row=3, column=0, sticky="w", padx=5, pady=5)
         self._var_modified = tk.StringVar()
         self._entry_modified = ttk.Entry(meta_lf, textvariable=self._var_modified, state="readonly")
         self._entry_modified.grid(row=3, column=1, sticky="ew", padx=5, pady=5)
