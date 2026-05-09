@@ -91,15 +91,19 @@ class ScrapingPresenter:
         self._journal_entry_counter: int = 0
         self._current_journal_item_id: str | None = None
 
+        self._providers_loaded: bool = False
+
         # Wire all view callbacks to presenter handlers.
         self._wire_view_callbacks()
-
-        # Populate provider dropdown immediately.
-        self._on_refresh_providers()
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def ensure_providers_loaded(self) -> None:
+        """Populate the provider dropdown on first show, skipped if already loaded."""
+        if not self._providers_loaded:
+            self._on_refresh_providers()
 
     def load_provider(self, id_file: str) -> None:
         """Load a provider by id_file and reset the view for a fresh run.
@@ -167,6 +171,7 @@ class ScrapingPresenter:
         except Exception as exc:  # noqa: BLE001
             self._logging.error("Failed to load providers list: %s", exc)
             providers = []
+        self._providers_loaded = True
 
         # Build display-ready dicts and push to the view.
         rows = [

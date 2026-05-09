@@ -145,14 +145,12 @@ class StepInlineFormPanel(ttk.Frame):
             step: Existing step to pre-fill, or None to show a blank form.
         """
         initial_type = step.step_type if step else StepType.OPEN_URL
+
         label = C_STEP_TYPE_TO_LABELS[initial_type]
         self._type_var.set(label)
         self._rebuild_form(initial_type)
 
         self._step_selected = step
-        if hasattr(self, "_btn_confirm") and self._btn_confirm:
-            self._btn_confirm.config(text="Ajouter l'étape" if step is None else "Mettre à jour")
-
         if step:
             self._load_step(step)
 
@@ -185,7 +183,8 @@ class StepInlineFormPanel(ttk.Frame):
         self._logger.debug(f"Rebuilding form for step type {step_type}")
 
         try:
-            get_form(step_type).build_form(self._form_frame, self._form_widgets)
+            if step_type is not None and step_type != StepType.UNSET:
+                get_form(step_type).build_form(self._form_frame, self._form_widgets)
         except ValueError:
             pass
 

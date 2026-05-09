@@ -172,9 +172,6 @@ class StepItemRenderer:
         if state == "ghost":
             return
         is_selected = idx == self._get_selected_index()
-        print(
-            f"Rendering item {idx} with state '{state}' and active={item.is_active} and is_selected={is_selected}"
-        )
         colors = self._resolve_colors(state, is_selected, is_active=item.is_active)
         self._draw_background(canvas, x, y, w, h, colors, state, idx)
         self._draw_label(canvas, item, idx, x, y, w, h, colors)

@@ -152,6 +152,9 @@ def _launch_main_app(
     _wire_scraping_launch(main_view, provider_presenter, provider_service, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
 
+    # Lazy-load the scraping provider dropdown on first tab visit.
+    main_view.set_on_show(C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
+
     # Register views, reveal the window, and anchor presenters against GC.
     _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view)
     root._app_presenters = [  # type: ignore[attr-defined]

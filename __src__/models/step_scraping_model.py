@@ -32,6 +32,7 @@ class StepType(Enum):
     Each member maps to a distinct browser or scraping action.
     """
 
+    UNSET = "UNSET"
     OPEN_URL = "OPEN_URL"
     REFRESH_PAGE = "REFRESH_PAGE"
     WAIT_X_TIME = "WAIT_X_TIME"
@@ -47,6 +48,7 @@ class StepType(Enum):
     CLOSE_TABS = "CLOSE_TABS"
     END_PROCESS = "END_PROCESS"
     WAIT_USER_ACTION = "WAIT_USER_ACTION"
+    UNKNOWN = "UNKNOWN"
 
 
 @dataclass
