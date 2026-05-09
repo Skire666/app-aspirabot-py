@@ -80,6 +80,7 @@ class ProviderEditPresenter:
         # Initialize an empty workflow for the new provider.
         self._workflow_presenter.init_new(self._current_provider.id_file)
         self._view.load_data(self._provider_to_dict(self._current_provider))
+        self._view.show_inline_form(None)
 
     def load_provider(self, id_file: str) -> None:
         """Passe le presentateur en mode modification et charge le modele specifie.
