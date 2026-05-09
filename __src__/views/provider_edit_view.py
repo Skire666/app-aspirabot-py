@@ -160,8 +160,6 @@ class ProviderEditView(ttk.Frame):
         self._inline_form.on_cancel = self._on_inline_cancel
         self._inline_form.on_type_changed = self._on_inline_type_changed
 
-        self._inline_form.load(None)
-
     def _handle_edit_step(self, idx: int) -> None:
         steps = self._workflow_builder_view._last_steps
         if idx < len(steps):

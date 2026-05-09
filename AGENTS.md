@@ -303,6 +303,38 @@ except PlaywrightTimeoutError as e:
     raise
 ```
 
+❌ Never trigger data loading or dynamic content building inside a View constructor
+
+The View constructor must only build the widget structure (frames, labels, entries, buttons).
+It must never call `load()`, `initialize()`, or any method that populates or rebuilds dynamic content.
+The Presenter is responsible for deciding *when* content is loaded, via an explicit method call.
+
+```python
+# BAD — the View self-initializes its dynamic form at construction time
+class ProviderEditView(ttk.Frame):
+    def _create_gestion_widgets(self):
+        self._inline_form = StepInlineFormPanel(self)
+        self._inline_form.load(None)  # ← View decides when to load — wrong
+
+# GOOD — the View only builds widget structure; the Presenter triggers loading
+class ProviderEditView(ttk.Frame):
+    def _create_gestion_widgets(self):
+        self._inline_form = StepInlineFormPanel(self)
+        # No load() here — the Presenter calls show_inline_form() when needed
+
+class ProviderEditPresenter:
+    def create_new(self):
+        ...
+        self._view.show_inline_form(None)  # ← Presenter decides when to load
+```
+
+For lazy tab initialization (content loaded only on first visit), use `MainView.set_on_show()`:
+```python
+main_view.set_on_show(C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
+```
+
+---
+
 ❌ Never commit runtime-generated files or folders
 ```
 # BAD — these must stay in .gitignore
