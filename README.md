@@ -145,6 +145,10 @@ All tools are configured in `pyproject.toml`.
 ### Ruff — linter & formatter
 
 ```bash
+
+# install
+pip install ruff
+
 # Check for issues
 ruff check ./__src__/
 

@@ -26,11 +26,11 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "C_MINI_BUTTONS_WORKFLOW",
+    "DEFAULT_THEME",
     "DragDropList",
     "ItemRenderer",
-    "DEFAULT_THEME",
     "_BtnDef",
-    "C_MINI_BUTTONS_WORKFLOW",
 ]
 
 _LAZY_ATTRS = frozenset(__all__)

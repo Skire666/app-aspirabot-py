@@ -61,9 +61,8 @@ class LRUCache(Generic[K, V]):
         """
         if key in self._cache:
             self._cache.move_to_end(key)
-        else:
-            if len(self._cache) >= self._capacity:
-                self._cache.popitem(last=False)
+        elif len(self._cache) >= self._capacity:
+            self._cache.popitem(last=False)
         self._cache[key] = value
 
     def invalidate(self, key: K) -> None:

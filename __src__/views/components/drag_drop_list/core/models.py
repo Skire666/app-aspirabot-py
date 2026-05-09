@@ -7,7 +7,8 @@ via dataclasses.replace() so callers can diff state snapshots cheaply.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field, replace as _dc_replace
+from dataclasses import dataclass, field
+from dataclasses import replace as _dc_replace
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,7 @@ class DragState:
 
     # ── Transitions ──────────────────────────────────────────────────
 
-    def with_position(self, insert_pos: int | None) -> "DragState":
+    def with_position(self, insert_pos: int | None) -> DragState:
         """Returns a copy with an updated insert position.
 
         Args:
@@ -53,7 +54,7 @@ class DragState:
             move_count=self.move_count + 1,
         )
 
-    def with_redraw(self, fy: int) -> "DragState":
+    def with_redraw(self, fy: int) -> DragState:
         """Returns a copy recording that a redraw occurred.
 
         Args:
@@ -71,7 +72,7 @@ class DragState:
             did_redraw=True,
         )
 
-    def with_skip(self) -> "DragState":
+    def with_skip(self) -> DragState:
         """Returns a copy recording a skipped redraw.
 
         Returns:
