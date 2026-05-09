@@ -12,6 +12,8 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 @dataclass(frozen=True)
 class CountElementParams(IStepParams):
+    """Parameters for the count element scraping step."""
+
     selector: str
     wait_duration: int
     wait_unit: str

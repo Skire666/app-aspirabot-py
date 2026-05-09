@@ -11,6 +11,8 @@ from services.workflow_service import register_step_executor
 
 
 class RefreshPageExecutor(IStepExecutor):
+    """Executor for the refresh page scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

@@ -24,6 +24,8 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='
 
 
 class ExtractTextFormDef(IStepFormDef):
+    """Form definition for the extract text scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

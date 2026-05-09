@@ -11,6 +11,8 @@ from models.step_scraping_model import StepType
 
 @dataclass(frozen=True)
 class JumpToStepParams(IStepParams):
+    """Parameters for the jump to step scraping step."""
+
     condition: str
     target_hexastring: str
 

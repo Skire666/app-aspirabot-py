@@ -11,6 +11,8 @@ from services.workflow_service import register_step_executor
 
 
 class JumpToStepExecutor(IStepExecutor):
+    """Executor for the jump to step scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

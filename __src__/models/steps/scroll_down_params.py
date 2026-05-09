@@ -11,6 +11,8 @@ from models.step_scraping_model import StepType
 
 @dataclass(frozen=True)
 class ScrollDownParams(IStepParams):
+    """Parameters for the scroll down scraping step."""
+
     pixels: int
 
     @classmethod

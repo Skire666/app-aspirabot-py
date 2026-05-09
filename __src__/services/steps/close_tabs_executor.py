@@ -11,6 +11,8 @@ from services.workflow_service import register_step_executor
 
 
 class CloseTabsExecutor(IStepExecutor):
+    """Executor for the close tabs scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

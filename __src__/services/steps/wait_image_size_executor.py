@@ -28,6 +28,8 @@ def _get_filtered_images(page: Any, p: WaitImageSizeParams) -> list[dict]:
 
 
 class WaitImageSizeExecutor(IStepExecutor):
+    """Executor for the wait image size scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

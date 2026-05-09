@@ -45,6 +45,8 @@ def _add_dimension_row(
 
 
 class DownloadImageFormDef(IStepFormDef):
+    """Form definition for the download image scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

@@ -14,6 +14,8 @@ _MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
 
 
 class WaitXTimeExecutor(IStepExecutor):
+    """Executor for the wait X time scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

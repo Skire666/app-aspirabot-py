@@ -13,6 +13,8 @@ from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 
 
 class WaitElementExecutor(IStepExecutor):
+    """Executor for the wait element scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

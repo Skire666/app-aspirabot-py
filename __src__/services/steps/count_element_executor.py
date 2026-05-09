@@ -17,6 +17,8 @@ _logger = logging.getLogger(__name__)
 
 
 class CountElementExecutor(IStepExecutor):
+    """Executor for the count element scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

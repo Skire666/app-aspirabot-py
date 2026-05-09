@@ -12,6 +12,8 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 @dataclass(frozen=True)
 class EndProcessParams(IStepParams):
+    """Parameters for the end process scraping step."""
+
     wait_duration: int
     wait_unit: str
 

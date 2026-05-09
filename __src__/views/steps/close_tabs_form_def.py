@@ -31,6 +31,8 @@ C_INPUT_DEFAULT_MAX_TABS: int = 1
 
 
 class CloseTabsFormDef(IStepFormDef):
+    """Form definition for the close tabs scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

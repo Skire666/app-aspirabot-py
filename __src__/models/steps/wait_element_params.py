@@ -12,6 +12,8 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 @dataclass(frozen=True)
 class WaitElementParams(IStepParams):
+    """Parameters for the wait element scraping step."""
+
     selector: str
     timeout_duration: int
     timeout_unit: str

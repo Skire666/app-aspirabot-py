@@ -23,6 +23,8 @@ C_INPUT_DEFAULT_DURATION = 3
 
 
 class WaitXTimeFormDef(IStepFormDef):
+    """Form definition for the wait X time scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

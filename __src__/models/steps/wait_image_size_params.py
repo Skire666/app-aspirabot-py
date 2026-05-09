@@ -12,6 +12,8 @@ from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_DEFAULT_MODEL
 
 @dataclass(frozen=True)
 class WaitImageSizeParams(IStepParams):
+    """Parameters for the wait image size scraping step."""
+
     height_min: int
     height_max: int
     width_min: int

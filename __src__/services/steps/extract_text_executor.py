@@ -15,6 +15,8 @@ _logger = logging.getLogger(__name__)
 
 
 class ExtractTextExecutor(IStepExecutor):
+    """Executor for the extract text scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

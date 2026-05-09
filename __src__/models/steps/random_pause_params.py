@@ -12,6 +12,8 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 @dataclass(frozen=True)
 class RandomPauseParams(IStepParams):
+    """Parameters for the random pause scraping step."""
+
     min_val: int
     max_val: int
     unit: str

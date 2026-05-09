@@ -11,6 +11,8 @@ from models.step_scraping_model import StepType
 
 @dataclass(frozen=True)
 class RefreshPageParams(IStepParams):
+    """Parameters for the refresh page scraping step."""
+
     clear_cache: bool
 
     @classmethod

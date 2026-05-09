@@ -12,6 +12,8 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 @dataclass(frozen=True)
 class OpenUrlParams(IStepParams):
+    """Parameters for the open URL scraping step."""
+
     url: str
     wait_state: str
     timeout_duration: int

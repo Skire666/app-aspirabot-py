@@ -12,6 +12,8 @@ from services.workflow_service import register_step_executor
 
 
 class ScrollDownExecutor(IStepExecutor):
+    """Executor for the scroll down scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

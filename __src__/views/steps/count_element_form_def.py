@@ -34,6 +34,8 @@ C_INPUT_DEFAULT_TIME_WAIT = 100
 
 
 class CountElementFormDef(IStepFormDef):
+    """Form definition for the count element scraping step."""
+
     def __init__(self) -> None:
         self._value_area_frame: ttk.Frame | None = None
         self._form_widgets_ref: dict[str, Any] | None = None

@@ -11,6 +11,8 @@ from models.step_scraping_model import StepType
 
 @dataclass(frozen=True)
 class CloseTabsParams(IStepParams):
+    """Parameters for the close tabs scraping step."""
+
     url_filter: str
     max_tabs: int
 

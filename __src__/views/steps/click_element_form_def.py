@@ -17,6 +17,8 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='
 
 
 class ClickElementFormDef(IStepFormDef):
+    """Form definition for the click element scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

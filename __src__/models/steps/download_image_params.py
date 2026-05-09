@@ -12,6 +12,8 @@ from shared.constants import C_MAXIMUM_SIZE_IMAGE
 
 @dataclass(frozen=True)
 class DownloadImageParams(IStepParams):
+    """Parameters for the download image scraping step."""
+
     mode: str
     unique_only: bool
     height_min: int

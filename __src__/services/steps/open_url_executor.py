@@ -13,6 +13,8 @@ from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 
 
 class OpenUrlExecutor(IStepExecutor):
+    """Executor for the open URL scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

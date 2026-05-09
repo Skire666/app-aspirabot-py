@@ -12,6 +12,8 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 @dataclass(frozen=True)
 class WaitXTimeParams(IStepParams):
+    """Parameters for the wait X time scraping step."""
+
     duration: int
     unit: str
 

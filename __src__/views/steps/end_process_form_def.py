@@ -21,6 +21,8 @@ from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 
 class EndProcessFormDef(IStepFormDef):
+    """Form definition for the end process scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

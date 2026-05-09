@@ -11,6 +11,8 @@ from models.step_scraping_model import StepType
 
 @dataclass(frozen=True)
 class ClickElementParams(IStepParams):
+    """Parameters for the click element scraping step."""
+
     selector: str
     click_mode: str
 

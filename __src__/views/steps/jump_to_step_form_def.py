@@ -23,6 +23,8 @@ from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, C
 
 
 class JumpToStepFormDef(IStepFormDef):
+    """Form definition for the jump to step scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

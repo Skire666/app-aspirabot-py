@@ -45,6 +45,8 @@ def _select_by_mode(images: list[dict[str, Any]], mode: str) -> list[dict[str, A
 
 
 class DownloadImageExecutor(IStepExecutor):
+    """Executor for the download image scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""

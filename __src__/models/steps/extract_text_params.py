@@ -11,6 +11,8 @@ from models.step_scraping_model import StepType
 
 @dataclass(frozen=True)
 class ExtractTextParams(IStepParams):
+    """Parameters for the extract text scraping step."""
+
     selector: str
     extract_mode: str
     target: str

@@ -31,6 +31,8 @@ C_INPUT_DEFAULT_CONDITION: str = CONDITION_DISPLAY[-1]  # "Toujours"
 
 
 class WaitUserActionFormDef(IStepFormDef):
+    """Form definition for the wait user action scraping step."""
+
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
