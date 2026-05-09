@@ -57,11 +57,11 @@ class WorkflowListPresenter:
             gestion_view: View that owns show_inline_form / set_available_steps.
                           Defaults to view when not provided.
         """
+        self._logger = logging.getLogger(__name__)
         self._view = view
         self._gestion_view = gestion_view if gestion_view is not None else view
         self._service_provider: ProviderService = service_provider
         self._workflow_service: WorkflowService = workflow_service
-        self._logger = logging.getLogger(__name__)
 
         self._provider_id_file: str | None = None
         self._steps: list[StepScrapingModel] = []
@@ -196,11 +196,13 @@ class WorkflowListPresenter:
             # Edit mode: replace the step at the tracked index.
             self._steps[self._edit_index] = step
         self._edit_index = None
+        self._view.clear_selection()
         self._refresh_view()
 
     def _on_cancel_inline_step(self) -> None:
         """Clears the pending edit state after the view hides the panel."""
         self._edit_index = None
+        self._view.clear_selection()
 
     def _on_delete_step(self, index: int) -> None:
         """Removes a step by index.

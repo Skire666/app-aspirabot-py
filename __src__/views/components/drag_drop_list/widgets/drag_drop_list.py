@@ -7,7 +7,6 @@ import them directly from views.components.drag_drop_list.
 
 from __future__ import annotations
 
-import logging
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -28,8 +27,6 @@ from ..core.controller import DragDropController
 from ..core.models import DirtyRegion, DragState
 from ..core.renderer import ButtonDef, RenderEngine
 from ..utils.throttling import Debouncer
-
-s_logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -148,11 +145,11 @@ class DragDropList(tk.Frame, Generic[T]):
         gap_expand: int = 8,
         btn_size: int = 36,
         theme: dict[str, str] | None = None,
-        resize_debounce_ms: int = 0,
-        resize_min_delta_px: int = 0,
-        resize_finalize_ms: int = 0,
-        drag_redraw_min_interval_ms: int = 0,
-        drag_redraw_min_delta_px: int = 0,
+        resize_debounce_ms: int = 16,
+        resize_min_delta_px: int = 1,
+        resize_finalize_ms: int = 16,
+        drag_redraw_min_interval_ms: int = 16,
+        drag_redraw_min_delta_px: int = 1,
         virtualize: bool = False,
         viewport_provider: Callable[[], tuple[int, int]] | None = None,
         virtualize_buffer: int = 2,
@@ -576,6 +573,14 @@ class DragDropList(tk.Frame, Generic[T]):
         w = self._calc.item_w()
         self._engine.clear_region(x, y, w, self._calc._item_h)
         self._draw_normal(idx, draw_buttons=True)
+
+    def redraw_item(self, idx: int) -> None:
+        """Public wrapper: redraws a single item without touching the rest of the canvas.
+
+        Args:
+            idx: Zero-based item index.
+        """
+        self._redraw_item(idx)
 
     # ─── Event handlers ───────────────────────────────────────────────────────
 

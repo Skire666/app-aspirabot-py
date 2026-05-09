@@ -4,6 +4,7 @@
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -38,6 +39,7 @@ class ProviderEditPresenter:
             service: Le service gérant la logique métier des fournisseurs.
             provider_service: Service de gestion des fournisseurs.
         """
+        self._logger = logging.getLogger(__name__)
         self._view = view
         self._service = provider_service
         self._is_creation_mode = False
@@ -112,8 +114,6 @@ class ProviderEditPresenter:
             "provider_name": provider.provider_name,
             "url": provider.url,
             "version": provider.version,
-            "browser_displayed": provider.browser_displayed,
-            "automation_obfuscated": provider.automation_obfuscated,
             "created_date": provider.created_date,
             "modified_date": provider.modified_date,
         }
@@ -138,16 +138,15 @@ class ProviderEditPresenter:
             self._current_provider.provider_name = form_data["provider_name"]
             self._current_provider.url = form_data["url"]
             self._current_provider.version = form_data["version"]
-            self._current_provider.browser_displayed = form_data["browser_displayed"]
-            self._current_provider.automation_obfuscated = form_data["automation_obfuscated"]
 
             # Collect steps from the sub-presenter.
             self._current_provider.steps = self._workflow_presenter.get_steps()
 
             self._persist_provider()
 
-        except Exception as e:
-            self._view.show_error(str(e))
+        except Exception as exc:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
+            self._view.show_error(str(exc))
 
     def _persist_provider(self) -> None:
         """Creates or updates the provider in the service layer."""

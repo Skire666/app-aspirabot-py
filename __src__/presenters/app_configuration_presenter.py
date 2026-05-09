@@ -4,6 +4,7 @@
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -29,6 +30,7 @@ class AppConfigurationPresenter:
 
     def __init__(self, view: AppConfigurationView, service: ConfigService) -> None:
         """Initializes the presenter with the given view and service."""
+        self._logger = logging.getLogger(__name__)
         self._view = view
         self._service = service
         self._is_loading = False
@@ -48,6 +50,7 @@ class AppConfigurationPresenter:
         try:
             config = self._service.read_configuration()
         except Exception as exc:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
             config = AppConfigurationModel()
 
@@ -60,6 +63,7 @@ class AppConfigurationPresenter:
             new_config = self._build_model(form_data)
             self._service.update_configuration(new_config)
         except Exception as exc:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
             return
 
@@ -74,6 +78,7 @@ class AppConfigurationPresenter:
             default_config = AppConfigurationModel()
             self._service.update_configuration(default_config)
         except Exception as exc:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
             return
 

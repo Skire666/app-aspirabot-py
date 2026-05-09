@@ -60,6 +60,7 @@ class StepInlineFormPanel(ttk.Frame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent)
+        self._logger = logging.getLogger(__name__)
         self.on_confirm: Callable[[StepScrapingModel], None] | None = None
         self.on_cancel: Callable[[], None] | None = None
         self.on_type_changed: Callable[[str], None] | None = None
@@ -69,7 +70,6 @@ class StepInlineFormPanel(ttk.Frame):
         # Available steps for JUMP_TO_STEP target population.
         self._available_steps: list[StepScrapingModel] = []
         self._create_widgets()
-        self._logger = logging.getLogger(__name__)
 
     # ---------------------------------------------------------------
     # Widget construction
@@ -100,9 +100,9 @@ class StepInlineFormPanel(ttk.Frame):
         """Creates the Confirm and Cancel buttons at the bottom."""
         btn_frame = ttk.Frame(self)
         btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
-        self._btn_create = ttk.Button(btn_frame, text="Créer une étape", command=self._btn_confirm_create)
+        self._btn_create = ttk.Button(btn_frame, text="Ajouter une étape", command=self._btn_confirm_create)
         self._btn_create.pack(side=tk.LEFT, padx=5)
-        self._btn_edit = ttk.Button(btn_frame, text="Modifier une étape", command=self._btn_confirm_update)
+        self._btn_edit = ttk.Button(btn_frame, text="Modifier l'étape", command=self._btn_confirm_update)
         self._btn_edit.pack(side=tk.LEFT, padx=5)
         self._btn_cancel = ttk.Button(btn_frame, text="Annuler l'édition", command=self._btn_cancel_edition)
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
@@ -115,14 +115,20 @@ class StepInlineFormPanel(ttk.Frame):
     def set_creation_mode(self) -> None:
         """Enables Create; disables Edit and Cancel."""
         self._btn_create.configure(state="normal")
+        self._btn_create.pack(side=tk.LEFT, padx=5)  # Show Create button in creation mode
         self._btn_edit.configure(state="disabled")
+        self._btn_edit.pack_forget()  # Edit button is hidden in creation mode
         self._btn_cancel.configure(state="disabled")
+        self._btn_cancel.pack_forget()  # Edit button is hidden in creation mode
 
     def set_edit_mode(self) -> None:
         """Enables Edit and Cancel; disables Create."""
         self._btn_create.configure(state="disabled")
+        self._btn_create.pack_forget()
         self._btn_edit.configure(state="normal")
+        self._btn_edit.pack(side=tk.LEFT, padx=5)  # Show Edit button in edit mode
         self._btn_cancel.configure(state="normal")
+        self._btn_cancel.pack(side=tk.LEFT, padx=5)  # Show Edit button in edit mode
 
     def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
         """Stores the workflow step list for JUMP_TO_STEP target population.

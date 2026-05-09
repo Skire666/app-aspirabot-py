@@ -1,8 +1,7 @@
 """Playwright-based implementation of IWebBrowserService.
 
 Uses Playwright Chromium with optional playwright-stealth patches and a local
-Cloudflare bypass proxy. When ``automation_obfuscated`` is enabled on the
-provider, the service pre-warms the CF bypass, launches Chromium with custom
+Cloudflare bypass proxy. Chromium is launched with custom
 args and stealth init scripts, then sets up hostname-level request routing.
 
 Example:
@@ -130,8 +129,8 @@ class BrowserService(IWebBrowserService):
             is_closed = self.is_launched
             self._logger.info(f"Browser closed successfully. is_launched={is_closed}")
 
-        except Exception as e:
-            self._logger.error(f"Error while closing browser: {e}")
+        except Exception:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
             # Don't re-raise; we want to ensure all resources are attempted to be cleaned up
 
     @property
@@ -167,19 +166,15 @@ class BrowserService(IWebBrowserService):
         Returns:
             A ``(Browser, BrowserContext)`` tuple ready for page creation.
         """
-        headless = not provider.browser_displayed
-
         # Obfuscated mode uses custom args; standard mode uses a plain context.
-        args = []
-        if provider.automation_obfuscated:
-            args += ["--disable-blink-features=AutomationControlled"]
+        args = ["--disable-blink-features=AutomationControlled"]
 
         ## NOTE PCO : Ne plus faire un dossier au démarrage, dans l'optique de préserver la session.
         ## Les détections de bot n'aiment pas du tout ça. Surtout CloudFlare.
         # Les trucs de 'stealth', avec headless false, ils ne servent à rien (utile que si mode 'caché').
         # Donc autant ne pas le mettre, surtout qu'avec cloudflare, le stealth ne suffit pas.
 
-        browser = self._pw.chromium.launch(headless=headless, args=args)
+        browser = self._pw.chromium.launch(headless=False, args=args)
         return browser, browser.new_context()
 
     # ------------------------------------------------------------------

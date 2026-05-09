@@ -41,8 +41,6 @@ class ProviderModel:
         created_date: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
         modified_date: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
         version: Provider version string (for example 1.0.0).
-        browser_displayed: Whether a browser window should be displayed.
-        automation_obfuscated: Whether automation should be obfuscated.
         steps: Ordered list of scraping actions.
 
     Example:
@@ -57,8 +55,6 @@ class ProviderModel:
     created_date: str
     modified_date: str
     version: str
-    browser_displayed: bool
-    automation_obfuscated: bool
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
 
     @classmethod
@@ -85,8 +81,6 @@ class ProviderModel:
             provider_name="Nouv. Fournisseur",
             url="https://example.com",
             version="1.0.0",
-            browser_displayed=True,
-            automation_obfuscated=True,
             created_date=current_timestamp,
             modified_date=current_timestamp,
         )
@@ -180,7 +174,5 @@ class ProviderModel:
             "created_date": self.created_date,
             "modified_date": self.modified_date,
             "version": self.version,
-            "browser_displayed": self.browser_displayed,
-            "automation_obfuscated": self.automation_obfuscated,
             "steps": [step.export_to_data_json() for step in self.steps],
         }

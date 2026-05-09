@@ -26,8 +26,8 @@ class ProviderService:
         Args:
             repository: Le dépôt pour la persistance des fournisseurs.
         """
-        self._repository = repository
         self._logger = logging.getLogger(__name__)
+        self._repository = repository
 
     def list_all_providers(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs.

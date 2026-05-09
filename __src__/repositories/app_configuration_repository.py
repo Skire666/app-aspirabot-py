@@ -109,10 +109,9 @@ class AppConfigurationRepository(ConfigRepositoryInterface):
             >>> repo = JsonConfigRepository("config-aspirabot.json")
             >>> repo2 = JsonConfigRepository("./data/config.json")
         """
+        self._logger = logging.getLogger(__name__)
         # Store the file path for all subsequent I/O operations.
         self._full_pathfile = Path(file_path)
-        # Obtain a logger for this repository class.
-        self._logger = logging.getLogger(__name__)
 
     def ensure_file_exists(self) -> None:
         """Ensure the configuration file exists, creating defaults if needed.
@@ -250,9 +249,8 @@ class AppConfigurationRepository(ConfigRepositoryInterface):
             with open(self._full_pathfile, encoding="utf-8") as file:
                 # Parse JSON with UTF-8 encoding to handle special characters.
                 return AppConfigurationModel(**json.load(file))
-        except (OSError, json.JSONDecodeError) as error:
-            # Log the error for debugging and monitoring.
-            self._logger.exception(f"Failed to read configuration file '{self._full_pathfile}'", error)
+        except Exception:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
             # Return defaults as a safe fallback.
             return AppConfigurationModel()
 

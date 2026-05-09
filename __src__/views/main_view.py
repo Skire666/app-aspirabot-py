@@ -5,6 +5,7 @@
 ## ---------------------------------------------------------------------------
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
 
 from shared.i18n_fra import (
@@ -81,6 +82,7 @@ class MainView(ttk.Frame):
         self._views: dict[str, tk.Widget] = {}
         self._buttons: dict[str, tk.Button] = {}
         self._active_view: str | None = None
+        self._on_show_callbacks: dict[str, Callable[[], None]] = {}
         self._create_widgets()
 
     def _create_widgets(self) -> None:
@@ -144,6 +146,15 @@ class MainView(ttk.Frame):
         self._views[name] = view_widget
         view_widget.pack_forget()
 
+    def set_on_show(self, name: str, callback: Callable[[], None]) -> None:
+        """Register a callback fired each time the named view is shown.
+
+        Args:
+            name: The module name to watch.
+            callback: Zero-argument callable invoked when that view becomes visible.
+        """
+        self._on_show_callbacks[name] = callback
+
     def show_view(self, name: str) -> None:
         """Displays the specified view, hides all others, and highlights the active button.
 
@@ -160,6 +171,9 @@ class MainView(ttk.Frame):
         # Reflect active state on the sidebar buttons
         self._update_button_highlights(name)
         self._active_view = name
+
+        if name in self._on_show_callbacks:
+            self._on_show_callbacks[name]()
 
     def _update_button_highlights(self, active_name: str) -> None:
         """Applies highlight color to the active button and resets all others.

@@ -4,6 +4,7 @@
 ## Imports
 ## ---------------------------------------------------------------------------
 
+import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -27,6 +28,7 @@ class ProviderPresenter:
             view (ProviderView): L'interface utilisateur.
             service (ProviderService): Le service gérant la logique métier.
         """
+        self._logger = logging.getLogger(__name__)
         self._view = view
         self._service = service
         self._all_providers: list[ProviderModel] = []
@@ -191,6 +193,7 @@ class ProviderPresenter:
             self._load_providers()
             self._view.show_validation_report(self._format_validation_report(report))
         except Exception as exc:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
             self._view.show_error(f"La validation des fournisseurs a échoué: {exc}")
         finally:
             self._view.set_validation_state(False)

@@ -39,8 +39,6 @@ _DND_VIRTUALIZE_BUFFER = 2
 ## Classes
 ## ---------------------------------------------------------------------------
 
-s_logger = logging.getLogger(__name__)
-
 
 class WorkflowListView(ttk.Frame):
     """Drag-and-drop step list with toolbar and inline form, embedded in a parent frame.
@@ -66,6 +64,7 @@ class WorkflowListView(ttk.Frame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent)
+        self._logger = logging.getLogger(__name__)
         self._init_callbacks()
         self._selected_index: int | None = None
         self._last_steps: list[StepScrapingModel] = []
@@ -170,6 +169,18 @@ class WorkflowListView(ttk.Frame):
     # Public render interface (called by the presenter)
     # ---------------------------------------------------------------
 
+    def reset(self) -> None:
+        """Resets transient view state: selection and cached step list."""
+        self._selected_index = None
+        self._last_steps = []
+
+    def clear_selection(self) -> None:
+        """Clears the current step selection and redraws only the deselected item."""
+        prev = self._selected_index
+        self._selected_index = None
+        if prev is not None:
+            self._dnd_list.redraw_item(prev)
+
     def render_steps(self, steps: list[StepScrapingModel]) -> None:
         """Redraws the entire step list.
 
@@ -221,8 +232,11 @@ class WorkflowListView(ttk.Frame):
             self._dnd_busy = False
 
     def _on_dnd_edit(self, _: StepScrapingModel, idx: int) -> None:
+        prev = self._selected_index
         self._selected_index = idx
-        self._dnd_list.redraw()  # show highlight immediately without requiring a full rebuild
+        if prev is not None and prev != idx:
+            self._dnd_list.redraw_item(prev)
+        self._dnd_list.redraw_item(idx)
         if self.on_edit_step:
             self.on_edit_step(idx)
 
@@ -356,4 +370,5 @@ class WorkflowListView(ttk.Frame):
             "Voulez-vous vraiment supprimer toutes les étapes ?",
         )
         if confirmed and self.on_clear_all_steps:
+            self._selected_index = None
             self.on_clear_all_steps()

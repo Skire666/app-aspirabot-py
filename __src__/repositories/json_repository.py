@@ -25,8 +25,6 @@ from typing import Any
 ## Classes
 ## ---------------------------------------------------------------------------
 
-s_logger = logging.getLogger(__name__)
-
 
 class JsonFileRepository:
     """Dépôt générique pour la gestion (lecture/écriture) de données dans un fichier JSON.
@@ -52,6 +50,7 @@ class JsonFileRepository:
         Exemples d'utilisation:
             >>> repo = JsonFileRepository("config.json", {"setting1": True})
         """
+        self._logger = logging.getLogger(__name__)
         self.file_path: Path = file_path
         self.default_data: dict[str, Any] = default_data  # jamais none, doit être un dict
         self.all_data: dict[str, Any] = {}
@@ -68,16 +67,16 @@ class JsonFileRepository:
             None
         """
         if not os.path.exists(self.file_path):
-            s_logger.warning(f"Fichier '{self.file_path}' introuvable. Création par défaut.")
+            self._logger.warning(f"Fichier '{self.file_path}' introuvable. Création par défaut.")
             self.all_data = self.default_data.copy()
             self.save_to_file()
         else:
             try:
                 with open(self.file_path, encoding="utf-8") as f:
                     self.all_data = json.load(f)
-                s_logger.info(f"Données chargées depuis '{self.file_path}'.")
-            except json.JSONDecodeError as e:
-                s_logger.error(f"Fichier '{self.file_path}' corrompu ({e}). Restauration par défaut.")
+                self._logger.info(f"Données chargées depuis '{self.file_path}'.")
+            except Exception:
+                self._logger.error("Une erreur s'est produite", exc_info=True)
                 self.all_data = self.default_data.copy()
                 self.save_to_file()
 
@@ -92,7 +91,7 @@ class JsonFileRepository:
             None
         """
         try:
-            s_logger.debug(f"Sauvegarde des données dans '{self.file_path}'...")
+            self._logger.debug(f"Sauvegarde des données dans '{self.file_path}'...")
 
             dir_name = os.path.dirname(self.file_path)
             if dir_name:
@@ -100,8 +99,8 @@ class JsonFileRepository:
 
             with open(self.file_path, "w", encoding="utf-8") as f:
                 json.dump(self.all_data, f, indent=4)
-        except Exception as e:
-            s_logger.exception(f"Erreur de sauvegarde dans '{self.file_path}' : {e}")
+        except Exception:
+            self._logger.error("Une erreur s'est produite", exc_info=True)
 
     def get_value(self, key: str, default: Any = None) -> Any:
         """Récupère la valeur associée à une clé de base.

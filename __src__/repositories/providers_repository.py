@@ -55,8 +55,8 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Exemples d'utilisation:
             >>> repo = ProvidersRepository("/chemin/vers/providers")
         """
+        self._logger = logging.getLogger(__name__)
         self._folder_path: Path = Path(folder_providers)
-        self.logger = logging.getLogger(__name__)
 
     @property
     def folder_path(self) -> Path:
@@ -159,8 +159,6 @@ class ProvidersRepository(ProviderRepositoryInterface):
             "created_date",
             "modified_date",
             "version",
-            "browser_displayed",
-            "automation_obfuscated",
             "steps",
         }
         filtered_data = {k: v for k, v in data.items() if k in provider_fields}
@@ -236,14 +234,14 @@ class ProvidersRepository(ProviderRepositoryInterface):
             provider_data = json_repo.all_data
 
             if not provider_data:
-                self.logger.warning(f"Le fichier {full_filepath} est vide.")
+                self._logger.warning(f"Le fichier {full_filepath} est vide.")
                 raise ValueError(f"Données manquantes pour {id_file}")
 
             provider_model = self._dict_to_provider_model(provider_data)
-            self.logger.info(f"Fournisseur chargé: {full_filepath}")
+            self._logger.info(f"Fournisseur chargé: {full_filepath}")
             return provider_model
         except Exception as e:
-            self.logger.warning(f"Impossible de lire le fournisseur {full_filepath}: {e}")
+            self._logger.warning(f"Impossible de lire le fournisseur {full_filepath}: {e}")
             raise
 
     def list_all_providers(self) -> list[ProviderModel]:
@@ -271,12 +269,12 @@ class ProvidersRepository(ProviderRepositoryInterface):
                 if provider_data:
                     provider_model = self._dict_to_provider_model(provider_data)
                     providers.append(provider_model)
-                    self.logger.debug(f"Fournisseur ajouté à la liste: {file_path.name}")
+                    self._logger.debug(f"Fournisseur ajouté à la liste: {file_path.name}")
             except Exception as e:
-                self.logger.warning(f"Impossible de charger le provider {file_path.name}: {e}")
+                self._logger.error(f"Impossible de charger le provider {file_path.name}: {e}")
                 continue
 
-        self.logger.info(f"Total de {len(providers)} provider(s) chargé(s).")
+        self._logger.info(f"Total de {len(providers)} provider(s) chargé(s).")
         return providers
 
     def create_provider(self, provider: ProviderModel) -> None:
@@ -313,9 +311,9 @@ class ProvidersRepository(ProviderRepositoryInterface):
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
 
-            self.logger.info(f"Fournisseur sauvegardé: {full_filepath}")
+            self._logger.info(f"Fournisseur sauvegardé: {full_filepath}")
         except Exception as e:
-            self.logger.error(f"Erreur lors de la création du fournisseur: {e}")
+            self._logger.error(f"Erreur lors de la création du fournisseur: {e}")
             raise
 
     def update_provider(self, provider: ProviderModel) -> None:
@@ -352,15 +350,15 @@ class ProvidersRepository(ProviderRepositoryInterface):
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
 
-            self.logger.info(f"Fournisseur sauvegardé: {full_filepath}")
+            self._logger.info(f"Fournisseur sauvegardé: {full_filepath}")
         except Exception as e:
-            self.logger.error(f"Erreur lors de la MAJ du fournisseur: {e}")
+            self._logger.error(f"Erreur lors de la MAJ du fournisseur: {e}")
             raise
 
     def create_folder_if_missing(self):
         if not self._folder_path.exists():
             os.makedirs(self._folder_path, exist_ok=True)
-            self.logger.info(f"Dossier créé: {self._folder_path}")
+            self._logger.info(f"Dossier créé: {self._folder_path}")
 
     def delete_provider(self, id_file: str) -> None:
         """Supprime un fournisseur.
@@ -377,7 +375,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Exemples d'utilisation:
             >>> repo.delete_provider("mon_provider")
         """
-        self.logger.info("Ouverture du dossier des fournisseurs...")
+        self._logger.info("Ouverture du dossier des fournisseurs...")
 
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
@@ -390,9 +388,9 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         try:
             os.remove(full_pathfile_to_delete)
-            self.logger.info(f"Fournisseur supprimé: {full_pathfile_to_delete}")
+            self._logger.info(f"Fournisseur supprimé: {full_pathfile_to_delete}")
         except Exception as e:
-            self.logger.error(f"Erreur lors de la suppression du fournisseur: {e}")
+            self._logger.error(f"Erreur lors de la suppression du fournisseur: {e}")
             raise
 
     def open_providers_folder(self) -> None:

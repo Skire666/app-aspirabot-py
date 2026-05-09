@@ -315,5 +315,6 @@ class ProviderEditView(ttk.Frame):
             self._on_save(self.get_data())
 
     def _notify_cancel(self) -> None:
+        self._workflow_builder_view.reset()
         if self._on_cancel:
             self._on_cancel()
