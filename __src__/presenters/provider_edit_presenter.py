@@ -40,7 +40,7 @@ class ProviderEditPresenter:
             provider_service: Service de gestion des fournisseurs.
         """
         self._logger = logging.getLogger(__name__)
-        self._view = view
+        self._view: ProviderEditView = view
         self._service = provider_service
         self._is_creation_mode = False
         self._current_provider: ProviderModel | None = None

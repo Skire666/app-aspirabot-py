@@ -9,7 +9,7 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
-from models.step_scraping_model import StepScrapingModel
+from models.step_scraping_model import StepScrapingModel, StepType
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 from views.workflow_list_view import WorkflowListView
@@ -155,23 +155,38 @@ class ProviderEditView(ttk.Frame):
         self._inline_form = StepInlineFormPanel(self._gestion_container)
         self._inline_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 5), pady=5)
 
+        self._is_edit_mode: bool = False
         self._inline_form.on_confirm = self._on_inline_confirm
         self._inline_form.on_cancel = self._on_inline_cancel
         self._inline_form.on_type_changed = self._on_inline_type_changed
 
+    def _get_current_listbox_type(self) -> StepType:
+        sel = self._type_listbox.curselection()
+        if sel:
+            label = self._type_listbox.get(sel[0])
+            step_type = _LABEL_TO_TYPE.get(label)
+            if step_type:
+                return step_type
+        return StepType.OPEN_URL
+
     def _on_inline_confirm(self, step: StepScrapingModel) -> None:
+        was_creation = not self._is_edit_mode
         cb = self._workflow_builder_view.on_confirm_inline_step
         if cb:
             cb(step)
+        self._is_edit_mode = False
         self._inline_form.set_creation_mode()
-        self._inline_form.load(None)
+        self._inline_form.reset(self._get_current_listbox_type())
+        if was_creation:
+            self._workflow_builder_view.scroll_to_bottom()
 
     def _on_inline_cancel(self) -> None:
         cb = self._workflow_builder_view.on_cancel_inline_step
         if cb:
             cb()
+        self._is_edit_mode = False
         self._inline_form.set_creation_mode()
-        self._inline_form.load(None)
+        self._inline_form.reset(self._get_current_listbox_type())
 
     def _on_inline_type_changed(self, label: str) -> None:
         try:
@@ -189,6 +204,7 @@ class ProviderEditView(ttk.Frame):
         Args:
             step: Existing step to pre-fill for editing, or None for a blank form.
         """
+        self._is_edit_mode = step is not None
         self._inline_form.load(step)
         if step is not None:
             self._inline_form.set_edit_mode()

@@ -108,7 +108,7 @@ def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) ->
             root.attributes("-zoomed", True)
 
     # Apply global padding to all ttk.Button widgets.
-    ttk.Style().configure("TButton", padding=(8, 8))
+    ttk.Style().configure("TButton", padding=(6, 6))
 
 
 def _launch_main_app(

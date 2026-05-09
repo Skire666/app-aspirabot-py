@@ -34,8 +34,8 @@ class ScrollDownFormDef(IStepFormDef):
         )
         widgets["pixels"] = pixels_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["pixels"].set(str(params.get("pixels", 1000)))
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        widgets["pixels"].set(str(model.params.get("pixels", 1000)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {"pixels": safe_int_widget(widgets, "pixels", 1000)}

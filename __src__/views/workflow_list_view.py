@@ -175,6 +175,10 @@ class WorkflowListView(ttk.Frame):
         self._selected_index = None
         self._last_steps = []
 
+    def scroll_to_bottom(self) -> None:
+        """Scrolls the step list to reveal the last added item."""
+        self.after_idle(lambda: self._scroll_canvas.yview_moveto(1.0))
+
     def clear_selection(self) -> None:
         """Clears the current step selection and redraws only the deselected item."""
         prev = self._selected_index

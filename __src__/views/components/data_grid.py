@@ -45,7 +45,7 @@ class DataGrid(ttk.Frame):
         self.on_sort = on_sort
         self.on_action = on_action
 
-        self._row_height = 40
+        self._row_height = 42
         self._header_height = 40
         self._data: list[dict[str, Any]] = []
 

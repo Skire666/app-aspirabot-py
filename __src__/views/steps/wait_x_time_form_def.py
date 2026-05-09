@@ -49,10 +49,12 @@ class WaitXTimeFormDef(IStepFormDef):
         ).pack(side=tk.LEFT, padx=(0, 4))
         widgets["unit"] = unit_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["duration"].set(str(params.get("duration", C_INPUT_DEFAULT_DURATION)))
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        widgets["duration"].set(str(model.params.get("duration", C_INPUT_DEFAULT_DURATION)))
         widgets["unit"].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
+            WAIT_UNIT_MODEL_TO_VIEW.get(
+                model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+            )
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:

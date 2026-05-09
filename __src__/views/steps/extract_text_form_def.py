@@ -65,13 +65,13 @@ class ExtractTextFormDef(IStepFormDef):
         )
         widgets["target"] = target_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["selector"].set(params.get("selector", ""))
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        widgets["selector"].set(model.params.get("selector", ""))
         widgets["extract_mode"].set(
-            EXTRACT_MODE_MODEL_TO_VIEW.get(params.get("extract_mode", "innerText"), EXTRACT_MODE_DISPLAY[0])
+            EXTRACT_MODE_MODEL_TO_VIEW.get(model.params.get("extract_mode", "innerText"), EXTRACT_MODE_DISPLAY[0])
         )
         widgets["target"].set(
-            EXTRACT_TARGET_MODEL_TO_VIEW.get(params.get("target", "first"), EXTRACT_TARGET_DISPLAY[0])
+            EXTRACT_TARGET_MODEL_TO_VIEW.get(model.params.get("target", "first"), EXTRACT_TARGET_DISPLAY[0])
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:

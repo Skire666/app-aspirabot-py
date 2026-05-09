@@ -30,8 +30,8 @@ class RefreshPageFormDef(IStepFormDef):
         )
         widgets["clear_cache"] = cache_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["clear_cache"].set(bool(params.get("clear_cache", False)))
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        widgets["clear_cache"].set(bool(model.params.get("clear_cache", False)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {"clear_cache": bool(widgets["clear_cache"].get())}

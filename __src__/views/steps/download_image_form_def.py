@@ -104,13 +104,13 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["width_min"] = width_min_var
         widgets["width_max"] = width_max_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["mode"].set(params.get("mode", "largest"))
-        widgets["unique_only"].set(bool(params.get("unique_only", False)))
-        widgets["height_min"].set(str(params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["height_max"].set(str(params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
-        widgets["width_min"].set(str(params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["width_max"].set(str(params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        widgets["mode"].set(model.params.get("mode", "largest"))
+        widgets["unique_only"].set(bool(model.params.get("unique_only", False)))
+        widgets["height_min"].set(str(model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets["height_max"].set(str(model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
+        widgets["width_min"].set(str(model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         return {

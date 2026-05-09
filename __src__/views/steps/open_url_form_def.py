@@ -105,14 +105,16 @@ class OpenUrlFormDef(IStepFormDef):
         ttk.Entry(line1, textvariable=url_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["url"] = url_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Loads persisted parameters into the widgets."""
-        widgets["url"].set(params.get("url", C_INPUT_DEFAULT_URL))
-        widgets["wait_state"].set(params.get("wait_state", C_INPUT_DEFAULT_WAIT_STATE))
-        widgets["timeout_duration"].set(str(params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION)))
+        widgets["url"].set(model.params.get("url", C_INPUT_DEFAULT_URL))
+        widgets["wait_state"].set(model.params.get("wait_state", C_INPUT_DEFAULT_WAIT_STATE))
+        widgets["timeout_duration"].set(
+            str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION))
+        )
         widgets["timeout_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+                model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
 

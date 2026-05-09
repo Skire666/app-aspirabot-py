@@ -64,14 +64,14 @@ class WaitUserActionFormDef(IStepFormDef):
         widgets["wait_duration"] = dur_var
         widgets["wait_unit"] = unit_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         widgets["condition"].set(
-            CONDITION_MODEL_TO_VIEW.get(params.get("condition", "always"), C_INPUT_DEFAULT_CONDITION)
+            CONDITION_MODEL_TO_VIEW.get(model.params.get("condition", "always"), C_INPUT_DEFAULT_CONDITION)
         )
-        widgets["wait_duration"].set(str(params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)))
+        widgets["wait_duration"].set(str(model.params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)))
         widgets["wait_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+                model.params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
 

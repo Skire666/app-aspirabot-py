@@ -90,7 +90,7 @@ class IStepFormDef(ABC):
         """
 
     @abstractmethod
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Pre-fills form widgets from an existing params dict.
 
         Called when the user opens an existing step for editing.

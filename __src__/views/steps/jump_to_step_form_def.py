@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from datetime import datetime
 from tkinter import ttk
 from typing import Any
 
@@ -50,72 +51,98 @@ class JumpToStepFormDef(IStepFormDef):
         available_steps: list[StepScrapingModel] = widgets.get("_all_steps_available", [])
 
         # liste des étapes disponibles pour la cible du saut, au format d'affichage dans la combobox : "01. - #hexastring - label"
-        all_targets_display = []
+        all_choices_listbox = []
+        all_steps_id_to_index = []
+        all_hexastring_to_model = {}
         for index, s in enumerate(available_steps):
-            all_targets_display.append(
-                f"{str(index + 1).zfill(2)}.  -  #{s.step_id}  - {C_STEP_TYPE_TO_LABELS.get(s.step_type, s.step_type.value)}"
-            )
-        widgets["_all_targets_display"] = all_targets_display
+            choice_str = f"{str(index + 1).zfill(2)}.  -  #{s.step_id}  - {C_STEP_TYPE_TO_LABELS.get(s.step_type, s.step_type.value)}"
+            all_choices_listbox.append(choice_str)
+            all_steps_id_to_index.append(s.step_id)
+            all_hexastring_to_model[s.step_id] = s
+        widgets["_all_choices_listbox"] = all_choices_listbox
+        widgets["_all_steps_id_to_index"] = all_steps_id_to_index
+        widgets["_all_hexastring_to_model"] = all_hexastring_to_model
 
-        ## list of targethexastring
-        all_targets_hexastring = [s.step_id for s in available_steps]
-        widgets["_all_targets_hexastring"] = all_targets_hexastring
-
-        ## étape cible par défaut : la première de la liste des étapes disponibles
-        widgets["_choice_target_hexastring"] = available_steps[0].step_id if available_steps else ""
-        widgets["_choice_target_display"] = all_targets_display[0] if all_targets_display else ""
+        default_choice = all_choices_listbox[0] if all_choices_listbox else ""
 
         # GUI
-        target_var = tk.StringVar(value=widgets["_choice_target_display"])
+        print(f"A) {datetime.now()} default_choice = {default_choice!r}")
+
+        target_var = tk.StringVar(value=default_choice)
+        widgets["_choice_from_listbox"] = target_var  ## important de passer le stringvar
 
         ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(5, 5))
-        ttk.Combobox(row1, textvariable=target_var, values=all_targets_display, state="readonly").pack(
+        ttk.Combobox(row1, textvariable=target_var, values=all_choices_listbox, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
-        print(f"AA) Target value: {widgets['_choice_target_hexastring']!r}")
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    # à partir du model, alimente view
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         # consition
-        cond_model = params.get("condition", "success")
+        cond_model = model.params.get("condition", "success")
         widgets["condition"].set(CONDITION_MODEL_TO_VIEW.get(cond_model, CONDITION_DISPLAY[0]))
 
         # cible du JUMP_TO_STEP
+        all_hexastring_to_model = widgets.get("_all_hexastring_to_model", [])
+        all_choices_listbox = widgets.get("_all_choices_listbox", [])
+        target_hexastring = model.params.get("target_hexastring", "")
 
-        all_targets_display = widgets.get("_all_targets_display", [])
-        all_targets_hexastring = widgets.get("_all_targets_hexastring", [])
-        target_hexastring = params.get("target_hexastring", "")
+        choice_str = all_choices_listbox[0] if all_choices_listbox else ""
 
-        if target_hexastring is not None and target_hexastring in all_targets_hexastring:
-            widgets["_choice_target_hexastring"] = target_hexastring
-            index = all_targets_hexastring.index(target_hexastring)
-            widgets["_choice_target_display"] = all_targets_display[index]
-        else:
-            widgets["_choice_target_hexastring"] = ""
-            widgets["_choice_target_display"] = ""
+        if target_hexastring is not None and all_choices_listbox:
+            all_steps_id_to_index = widgets.get("_all_steps_id_to_index", [])
+            index_target = (
+                all_steps_id_to_index.index(target_hexastring)
+                if target_hexastring in all_steps_id_to_index
+                else -1
+            )
+            model_target = all_hexastring_to_model.get(target_hexastring)
+            if index_target != -1 and model_target is not None:
+                choice_str = f"{str(index_target + 1).zfill(2)}.  -  #{model_target.step_id}  - {C_STEP_TYPE_TO_LABELS.get(model_target.step_type, model_target.step_type.value)}"
+
+        widgets["_choice_from_listbox"].set(choice_str)  # Clear selection if target is invalid.
+        print(f"B) {datetime.now()} target_hexastring = {target_hexastring!r}")
+        print(f"B) {datetime.now()} choice_str = {choice_str!r}")
 
     ## le dictionne qui est retourné, c'est les '.params' du StepScrapingModel
     # il doit contenir la condition et la cible du saut (hexastring de l'étape cible)
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         cond_display = widgets["condition"].get()
 
-        target_hexastring = widgets.get("_choice_target_hexastring", "")
-        print(f"CC) target_hexastring : {target_hexastring!r}")
+        choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
+        hexastring = self._extract_after_hash_hexastring(choice_target_hexastring)
+        print(f"C) {datetime.now()} hexastring : {hexastring!r}")
+        print(f"C) {datetime.now()} choice_target_hexastring : {choice_target_hexastring!r}")
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(cond_display, "success"),
-            "target_hexastring": target_hexastring,
+            "target_hexastring": hexastring,
         }
 
+    def _extract_after_hash_hexastring(self, choice_target_hexastring: str) -> str:
+        """Trouve '#' et retourne les 4 caractères suivants"""
+        # Extrait l'hexastring de la sélection de la combobox
+        # qui est au format "01. - #hxst - label_xxxx".
+        if choice_target_hexastring is not None:
+            hash_index = choice_target_hexastring.find("#")
+            if hash_index != -1:
+                return choice_target_hexastring[hash_index + 1 : hash_index + 5]
+        return ""
+
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        choice_target_hexastring = widgets.get("_choice_target_hexastring", "??")
-        all_targets_hexastring = widgets.get("_all_targets_hexastring", [])
-        print(f"DD) target_hexastring : {choice_target_hexastring!r}")
+
+        choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
+        hexastring = self._extract_after_hash_hexastring(choice_target_hexastring)
 
         # si vide ou "????" (valeur par défaut d'une cible non trouvée), c'est une erreur obligatoire
-        if not choice_target_hexastring:
+        if not hexastring:
             return ["L'étape cible : valeur obligatoire"]
+
+        all_hexastring_to_model = widgets.get("_all_hexastring_to_model", {})
+
+        print(f"D) {datetime.now()} hexastring : {hexastring!r}")
         # si n'existe pas dans la liste des cibles possibles, c'est une erreur
-        if choice_target_hexastring not in all_targets_hexastring:
-            return [f"L'étape cible '#{choice_target_hexastring}' : doit être valide"]
+        if hexastring not in all_hexastring_to_model:
+            return [f"L'étape cible '#{hexastring}' : doit être valide"]
         return []
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

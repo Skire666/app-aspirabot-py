@@ -47,11 +47,11 @@ class EndProcessFormDef(IStepFormDef):
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets["wait_unit"] = unit_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["wait_duration"].set(str(params.get("wait_duration", 5)))
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        widgets["wait_duration"].set(str(model.params.get("wait_duration", 5)))
         widgets["wait_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+                model.params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
 

@@ -133,6 +133,13 @@ class StepInlineFormPanel(ttk.Frame):
         self._available_steps = list(steps)
         self._form_widgets["_all_steps_available"] = self._available_steps
 
+    def reset(self, step_type: StepType) -> None:
+        """Resets to a blank form for the given step type without firing on_type_changed."""
+        label = C_STEP_TYPE_TO_LABELS[step_type]
+        self._type_var.set(label)
+        self._rebuild_form(step_type)
+        self._step_selected = None
+
     def load(self, step: StepScrapingModel | None = None) -> None:
         """Prepares the form for a new step or pre-fills it from an existing one.
 
@@ -190,7 +197,7 @@ class StepInlineFormPanel(ttk.Frame):
     def _load_step(self, step: StepScrapingModel) -> None:
         """Pre-fills form widgets from an existing step's params."""
         try:
-            get_form(step.step_type).load_params_step_to_widget(step.params, self._form_widgets)
+            get_form(step.step_type).load_params_step_to_widget(step, self._form_widgets)
         except ValueError:
             pass
 

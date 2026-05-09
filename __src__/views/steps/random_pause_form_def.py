@@ -55,11 +55,13 @@ class RandomPauseFormDef(IStepFormDef):
             row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT)
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
-        widgets["min"].set(str(params.get("min", 0)))
-        widgets["max"].set(str(params.get("max", 1)))
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        widgets["min"].set(str(model.params.get("min", 0)))
+        widgets["max"].set(str(model.params.get("max", 1)))
         widgets["unit"].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
+            WAIT_UNIT_MODEL_TO_VIEW.get(
+                model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+            )
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:

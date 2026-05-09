@@ -124,25 +124,25 @@ class CountElementFormDef(IStepFormDef):
             ).pack(side=tk.LEFT)
             self._form_widgets_ref["value"] = val_var
 
-    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         self._form_widgets_ref = widgets
-        widgets["selector"].set(params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
-        widgets["wait_duration"].set(str(params.get("wait_duration", 0)))
-        unit_model = params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
+        widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
+        widgets["wait_duration"].set(str(model.params.get("wait_duration", 0)))
+        unit_model = model.params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
         widgets["wait_unit"].set(WAIT_UNIT_MODEL_TO_VIEW.get(unit_model, C_UNITS_TIME_DEFAULT_VIEW))
         si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(
-            params.get("success_if", "success"), COUNT_SUCCESS_IF_DISPLAY[0]
+            model.params.get("success_if", "success"), COUNT_SUCCESS_IF_DISPLAY[0]
         )
         widgets["success_if"].set(si_display)
-        op_display = COUNT_OP_MODEL_TO_VIEW.get(params.get("operator", "equal"), COUNT_OP_DISPLAY[2])
+        op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get("operator", "equal"), COUNT_OP_DISPLAY[2])
         widgets["operator"].set(op_display)
         self._rebuild_value_area(op_display)
         if "value_min" in widgets:
-            widgets["value_min"].set(str(params.get("value_min", 0)))
+            widgets["value_min"].set(str(model.params.get("value_min", 0)))
         if "value_max" in widgets:
-            widgets["value_max"].set(str(params.get("value_max", 0)))
+            widgets["value_max"].set(str(model.params.get("value_max", 0)))
         if "value" in widgets:
-            widgets["value"].set(str(params.get("value", 0)))
+            widgets["value"].set(str(model.params.get("value", 0)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         unit_display = widgets["wait_unit"].get()
