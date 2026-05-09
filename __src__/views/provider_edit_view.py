@@ -125,7 +125,6 @@ class ProviderEditView(ttk.Frame):
 
         self._workflow_builder_view = WorkflowListView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        self._workflow_builder_view.on_edit_step = self._handle_edit_step
 
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder le fournisseur", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
@@ -159,11 +158,6 @@ class ProviderEditView(ttk.Frame):
         self._inline_form.on_confirm = self._on_inline_confirm
         self._inline_form.on_cancel = self._on_inline_cancel
         self._inline_form.on_type_changed = self._on_inline_type_changed
-
-    def _handle_edit_step(self, idx: int) -> None:
-        steps = self._workflow_builder_view._last_steps
-        if idx < len(steps):
-            self.show_inline_form(steps[idx])
 
     def _on_inline_confirm(self, step: StepScrapingModel) -> None:
         cb = self._workflow_builder_view.on_confirm_inline_step

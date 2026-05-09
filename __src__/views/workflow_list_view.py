@@ -85,6 +85,7 @@ class WorkflowListView(ttk.Frame):
         self.on_confirm_inline_step: Callable[[StepScrapingModel], None] | None = None
         self.on_cancel_inline_step: Callable[[], None] | None = None
         self.on_clear_all_steps: Callable[[], None] | None = None
+        self.on_duplicate_step: Callable[[StepScrapingModel, int], StepScrapingModel] | None = None
 
     def _create_widgets(self) -> None:
         """Builds toolbar, step list."""
@@ -260,10 +261,9 @@ class WorkflowListView(ttk.Frame):
 
         return True
 
-    def _on_dnd_duplicate(self, step: StepScrapingModel, _: int) -> StepScrapingModel:
-        # Serialise then deserialise to produce an independent deep copy.
-        new_object: StepScrapingModel = step.copy_business()
-        return new_object
+    def _on_dnd_duplicate(self, step: StepScrapingModel, idx: int) -> StepScrapingModel:
+        assert self.on_duplicate_step is not None
+        return self.on_duplicate_step(step, idx)
 
     def _on_dnd_toggle_active(self, _: StepScrapingModel, idx: int) -> None:
         """Forwards the toggle action to the presenter.

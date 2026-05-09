@@ -22,6 +22,7 @@ from datetime import datetime
 from models.provider_model import ProviderModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
+from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from views.scraping_panel_view import ScrapingView
@@ -62,6 +63,7 @@ class ScrapingPresenter:
         view: ScrapingView,
         service_scraping: ScrapingService,
         service_provider: ProviderService,
+        journal_repository: ScrapingJournalRepository,
         provider: ProviderModel | None = None,
     ) -> None:
         """Initialize the presenter and register all view callbacks.
@@ -70,11 +72,13 @@ class ScrapingPresenter:
             view: The scraping panel view.
             service_scraping: Service that executes Playwright workflow steps.
             service_provider: Service for reading and listing providers.
+            journal_repository: Repository used to persist journal exports to disk.
             provider: Optional initial provider model.
         """
         self._view = view
         self._service_scraping = service_scraping
         self._service_provider = service_provider
+        self._journal_repository = journal_repository
         self._provider: ProviderModel | None = provider
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -142,10 +146,24 @@ class ScrapingPresenter:
         self._view.set_on_resume(self._on_resume)
         self._view.set_on_provider_selected(self._on_provider_selected)
         self._view.set_on_refresh_providers(self._on_refresh_providers)
+        self._view.set_on_export_journal(self._on_export_journal)
 
     # ------------------------------------------------------------------
     # Provider management callbacks
     # ------------------------------------------------------------------
+
+    def _on_export_journal(self, path: str) -> None:
+        """Retrieve journal rows from the view and persist them via the repository.
+
+        Args:
+            path: Absolute path of the destination file chosen by the user.
+        """
+        try:
+            rows = self._view.get_journal_rows()
+            self._journal_repository.save(path, rows)
+        except OSError as exc:
+            self._logging.error("Journal export failed: %s", exc)
+            self._view.show_warning(f"Impossible d'écrire le fichier :\n{exc}")
 
     def _on_provider_selected(self, id_file: str) -> None:
         """Load the provider chosen from the view's dropdown.

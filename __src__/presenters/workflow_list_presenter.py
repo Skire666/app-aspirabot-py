@@ -83,6 +83,7 @@ class WorkflowListPresenter:
         self._view.on_confirm_inline_step = self._on_confirm_inline_step
         self._view.on_cancel_inline_step = self._on_cancel_inline_step
         self._view.on_clear_all_steps = self._on_clear_all_steps
+        self._view.on_duplicate_step = self._on_duplicate_step
 
     # ---------------------------------------------------------------
     # Public API called by ProviderEditPresenter
@@ -247,6 +248,18 @@ class WorkflowListPresenter:
                 self._steps[index],
             )
             self._refresh_view()
+
+    def _on_duplicate_step(self, step: StepScrapingModel, _: int) -> StepScrapingModel:
+        """Returns an independent copy of the given step.
+
+        Args:
+            step: The step to duplicate.
+            _: Index of the step (unused — duplication is index-independent).
+
+        Returns:
+            A new StepScrapingModel independent of the original.
+        """
+        return step.copy_business()
 
     def _on_toggle_active_step(self, index: int) -> None:
         """Toggles the is_active state of a step.

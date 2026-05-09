@@ -133,8 +133,6 @@ class MainView(ttk.Frame):
             btn.bind("<Enter>", lambda _e, n=name: self._on_button_enter(n))
             btn.bind("<Leave>", lambda _e, n=name: self._on_button_leave(n))
 
-        # Some modules are disabled until explicitly enabled by the presenter
-        self.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
 
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a sidebar module button.

@@ -21,6 +21,7 @@ from presenters.splashscreen_presenter import SplashscreenPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
+from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.app_configuration_service import ConfigService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
@@ -90,28 +91,24 @@ def main() -> None:
 
 
 def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) -> None:
+    """Apply window title, geometry, fullscreen state, and global widget style.
 
+    Args:
+        root: The root Tk window to configure.
+        config_model: Configuration model supplying sizing and style preferences.
+    """
     root.title("Aspirabot")
     root.geometry(config_model.gui_booting_size)
 
-    # Maximize the window on launch based on the platform.
-    # May be cannot work depending on the window manager
-    # but is a best effort to start in a maximized state.
+    # Maximize on launch — behavior depends on the window manager.
     if config_model.gui_booting_fullscreen:
         if sys.platform.startswith("win"):
             root.state("zoomed")
-        elif sys.platform == "darwin":  # macOS
-            root.attributes("-zoomed", True)
-        else:  # Linux (fallback)
+        else:
             root.attributes("-zoomed", True)
 
-    # Override global de tous les ttk.Button
-    style = ttk.Style()
-
-    style.configure(
-        "TButton",
-        padding=(6, 6),  # (horizontal, vertical)
-    )
+    # Apply global padding to all ttk.Button widgets.
+    ttk.Style().configure("TButton", padding=(6, 6))
 
 
 def _launch_main_app(
@@ -129,14 +126,8 @@ def _launch_main_app(
     config_model = startup_service.config_model
     logging_service = startup_service.logging_service
 
-    # Apply window settings from the loaded configuration.
     _override_gui_and_style(root, config_model)
-
-    # Build the main sidebar-and-content-area layout.
-    root_container = tk.Frame(root)
-    root_container.pack(fill=tk.BOTH, expand=True)
-    main_view = MainView(root_container)
-    main_view.pack(fill=tk.BOTH, expand=True)
+    main_view = _build_main_view(root)
 
     # Instantiate all MVP component groups.
     log_view, log_presenter = _init_log_component(main_view, logging_service)
@@ -147,24 +138,34 @@ def _launch_main_app(
     scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model, provider_service)
     faq_view = FaqView(main_view.content_area)
 
-    # Wire inter-component navigation and launch callbacks.
+    # Wire inter-component navigation and callbacks.
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
     _wire_scraping_launch(main_view, provider_presenter, provider_service, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
-
-    # Lazy-load the scraping provider dropdown on first tab visit.
     main_view.set_on_show(C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
 
-    # Register views, reveal the window, and anchor presenters against GC.
     _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view)
-    root._app_presenters = [  # type: ignore[attr-defined]
-        log_presenter,
-        config_presenter,
-        provider_presenter,
-        provider_edit_presenter,
-        scraping_presenter,
-    ]
+    _anchor_presenters(root, [
+        log_presenter, config_presenter, provider_presenter,
+        provider_edit_presenter, scraping_presenter,
+    ])
     root.deiconify()
+
+
+def _build_main_view(root: tk.Tk) -> MainView:
+    """Build and pack the sidebar-and-content layout inside the root window.
+
+    Args:
+        root: The root Tk window to embed the layout into.
+
+    Returns:
+        The initialized MainView instance.
+    """
+    root_container = tk.Frame(root)
+    root_container.pack(fill=tk.BOTH, expand=True)
+    main_view = MainView(root_container)
+    main_view.pack(fill=tk.BOTH, expand=True)
+    return main_view
 
 
 ## ---------------------------------------------------------------------------
@@ -268,8 +269,12 @@ def _init_scraping_component(
     workflow_service = WorkflowService()
     scraping_service = ScrapingService(config_model.folder_scraping, browser_service, workflow_service)
     scraping_view = ScrapingView(main_view.content_area)
+    journal_repository = ScrapingJournalRepository()
     scraping_presenter = ScrapingPresenter(
-        view=scraping_view, service_scraping=scraping_service, service_provider=provider_service
+        view=scraping_view,
+        service_scraping=scraping_service,
+        service_provider=provider_service,
+        journal_repository=journal_repository,
     )
     return scraping_view, scraping_presenter
 
@@ -314,6 +319,9 @@ def _wire_provider_navigation(
     provider_presenter.on_request_create_provider = on_request_create_provider
     provider_presenter.on_request_edit_provider = on_request_edit_provider
     provider_edit_presenter.set_on_done_callback(on_edit_done)
+
+    # Initial state: workflow tab is disabled until a provider session is opened.
+    main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
 
 
 def _wire_scraping_launch(
@@ -400,6 +408,16 @@ def _register_views(
 
     # Land on the providers list as the startup default.
     main_view.show_view(C_TITLE_MODULE_PROVIDER)
+
+
+def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:
+    """Attach presenters to the root window to prevent garbage collection.
+
+    Args:
+        root: The root Tk window that outlives all presenters.
+        presenters: Presenter instances to keep alive for the application lifetime.
+    """
+    root._app_presenters = presenters  # type: ignore[attr-defined]
 
 
 ## ---------------------------------------------------------------------------

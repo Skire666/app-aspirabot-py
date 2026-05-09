@@ -65,6 +65,7 @@ class ScrapingView(ttk.Frame):
         self._on_resume: Callable[[], None] | None = None
         self._on_provider_selected: Callable[[str], None] | None = None
         self._on_refresh_providers: Callable[[], None] | None = None
+        self._on_export_journal: Callable[[str], None] | None = None
 
         # Provider id_file index — maps combobox values to id_file strings.
         self._provider_id_by_display: dict[str, str] = {}
@@ -312,6 +313,14 @@ class ScrapingView(ttk.Frame):
         """
         self._on_refresh_providers = callback
 
+    def set_on_export_journal(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user confirms a journal export.
+
+        Args:
+            callback: Callable receiving the chosen destination file path.
+        """
+        self._on_export_journal = callback
+
     # ------------------------------------------------------------------
     # Public data feed (called by the presenter)
     # ------------------------------------------------------------------
@@ -343,25 +352,6 @@ class ScrapingView(ttk.Frame):
             if fid == id_file:
                 self._cmb_provider.set(display)
                 return
-
-    def set_provider_info(
-        self,
-        name: str,
-        url: str,
-        id_file: str,
-        version: str,
-    ) -> None:
-        """No-op kept for backward compatibility with the wiring in main.py.
-
-        The provider info is now conveyed via the dropdown selection.
-
-        Args:
-            name: Provider display name (unused).
-            url: Provider root URL (unused).
-            id_file: Provider unique file identifier — used to sync dropdown.
-            version: Provider version string (unused).
-        """
-        self.set_selected_provider(id_file)
 
     # ------------------------------------------------------------------
     # Public getters
@@ -772,36 +762,26 @@ class ScrapingView(ttk.Frame):
     # Journal export
     # ------------------------------------------------------------------
 
+    def get_journal_rows(self) -> list[tuple[str, ...]]:
+        """Returns the current journal Treeview rows as a list of value tuples.
+
+        Returns:
+            Ordered list of row tuples (date, step_started, duration, result, message).
+        """
+        return [
+            tuple(str(v) for v in self._tree.item(item, "values"))
+            for item in self._tree.get_children()
+        ]
+
     def _export_journal(self) -> None:
-        """Save the full journal content to a .txt file chosen by the user."""
+        """Open a save dialog and fire on_export_journal with the chosen path."""
         path = filedialog.asksaveasfilename(
             title="Exporter le journal",
             defaultextension=".txt",
             filetypes=[("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*")],
         )
-        if not path:
-            return
-
-        self._write_journal_to_file(path)
-
-    def _write_journal_to_file(self, path: str) -> None:
-        """Write the journal Treeview content to the given file path.
-
-        Args:
-            path: Absolute path of the destination .txt file.
-        """
-        header = "\t".join(["Date", "Étape démarrée", "Résultat", "Durée (s)", "Message de fin"])
-        lines = [header]
-
-        for item in self._tree.get_children():
-            values = self._tree.item(item, "values")
-            lines.append("\t".join(str(v) for v in values))
-
-        try:
-            with open(path, "w", encoding="utf-8") as fh:
-                fh.write("\n".join(lines))
-        except OSError as exc:
-            messagebox.showerror("Erreur d'export", f"Impossible d'écrire le fichier :\n{exc}")
+        if path and self._on_export_journal:
+            self._on_export_journal(path)
 
     # ------------------------------------------------------------------
     # Message boxes
