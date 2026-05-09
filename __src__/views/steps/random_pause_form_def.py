@@ -23,13 +23,16 @@ from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 class RandomPauseFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.RANDOM_PAUSE
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.RANDOM_PAUSE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the form widgets into the given frame."""
         min_var = tk.StringVar(value="500")
         max_var = tk.StringVar(value="1000")
         unit_var = tk.StringVar(value="millisec")
@@ -56,6 +59,7 @@ class RandomPauseFormDef(IStepFormDef):
         ).pack(side=tk.LEFT)
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["min"].set(str(model.params.get("min", 0)))
         widgets["max"].set(str(model.params.get("max", 1)))
         widgets["unit"].set(
@@ -65,6 +69,7 @@ class RandomPauseFormDef(IStepFormDef):
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "min": safe_int_widget(widgets, "min", 0),
             "max": safe_int_widget(widgets, "max", 1),
@@ -72,6 +77,7 @@ class RandomPauseFormDef(IStepFormDef):
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         min_val = safe_int_widget(widgets, "min", -1)
         max_val = safe_int_widget(widgets, "max", -1)
@@ -85,6 +91,7 @@ class RandomPauseFormDef(IStepFormDef):
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         unit_time = model.params.get("unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
         return f"Attendre aléatoirement\nEntre {model.params.get('min', 0)} et {model.params.get('max', 1)} {unit_display}"

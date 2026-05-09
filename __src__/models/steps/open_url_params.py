@@ -19,6 +19,7 @@ class OpenUrlParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(
             url="https://example.com/",
             wait_state="domcontentloaded",
@@ -27,6 +28,7 @@ class OpenUrlParams(IStepParams):
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {
             "url": self.url,
             "wait_state": self.wait_state,
@@ -36,6 +38,7 @@ class OpenUrlParams(IStepParams):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             url=data.get("url", "https://example.com/"),
             wait_state=data.get("wait_state", "domcontentloaded"),
@@ -45,4 +48,5 @@ class OpenUrlParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.OPEN_URL

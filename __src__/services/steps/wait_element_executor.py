@@ -15,12 +15,15 @@ from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 class WaitElementExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.WAIT_ELEMENT
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return WaitElementParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = WaitElementParams.from_dict(params)
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         if timeout_ms is not None:
@@ -29,6 +32,7 @@ class WaitElementExecutor(IStepExecutor):
             page.wait_for_selector(p.selector)
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         errors: list[str] = []
         p = WaitElementParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)

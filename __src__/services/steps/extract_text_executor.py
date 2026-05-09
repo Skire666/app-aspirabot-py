@@ -17,12 +17,15 @@ _logger = logging.getLogger(__name__)
 class ExtractTextExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.EXTRACT_TEXT
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return ExtractTextParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = ExtractTextParams.from_dict(params)
         elements = page.query_selector_all(p.selector)
         if not elements:
@@ -33,6 +36,7 @@ class ExtractTextExecutor(IStepExecutor):
         _logger.info("EXTRACT_TEXT [%s]: %s", p.selector, "\n".join(texts)[:500])
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = ExtractTextParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_modes = {"innerText", "textContent", "outerHTML", "innerHTML", "value"}

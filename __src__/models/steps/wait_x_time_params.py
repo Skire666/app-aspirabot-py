@@ -17,13 +17,16 @@ class WaitXTimeParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(duration=0, unit=C_UNITS_TIME_DEFAULT_MODEL)
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {"duration": self.duration, "unit": self.unit}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             duration=int(data.get("duration", 0)),
             unit=data.get("unit", C_UNITS_TIME_DEFAULT_MODEL),
@@ -31,4 +34,5 @@ class WaitXTimeParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.WAIT_X_TIME

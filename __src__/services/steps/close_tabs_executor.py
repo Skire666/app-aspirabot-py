@@ -13,12 +13,15 @@ from services.workflow_service import register_step_executor
 class CloseTabsExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.CLOSE_TABS
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return CloseTabsParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = CloseTabsParams.from_dict(params)
         for p_tab in list(page.context.pages):
             if p.url_filter and p_tab.url.find(p.url_filter) == -1:
@@ -31,6 +34,7 @@ class CloseTabsExecutor(IStepExecutor):
                 t.close()
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = CloseTabsParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
 

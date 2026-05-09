@@ -137,6 +137,7 @@ class StepItemRenderer:
         self._draw_overflow_mask(canvas, x, y, w, h, idx)
 
     def get_label_from_store(self, item, idx):
+        """Return the display label for a step item, using cache where possible."""
         # always (because of the dynamic nature of the label)
         # get the label for jump_to_step without caching
         if item.step_type == StepType.JUMP_TO_STEP:

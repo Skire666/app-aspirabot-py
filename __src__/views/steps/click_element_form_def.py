@@ -19,14 +19,16 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='
 class ClickElementFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.CLICK_ELEMENT
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.CLICK_ELEMENT)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-
+        """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=4)
@@ -48,22 +50,26 @@ class ClickElementFormDef(IStepFormDef):
         widgets["click_mode"] = mode_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["click_mode"].set(model.params.get("click_mode", "Normal"))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "selector": widgets["selector"].get().strip(),
             "click_mode": widgets["click_mode"].get(),
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         if not widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Sélecteur CSS : valeur obligatoire.")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         selector = model.params.get("selector", "<vide>")
         return f"Cliquer sur un élément\nSél. {selector}"
 

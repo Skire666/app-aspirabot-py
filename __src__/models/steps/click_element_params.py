@@ -16,13 +16,16 @@ class ClickElementParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(selector="", click_mode="Normal")
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {"selector": self.selector, "click_mode": self.click_mode}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             selector=data.get("selector", ""),
             click_mode=data.get("click_mode", "Normal"),
@@ -30,4 +33,5 @@ class ClickElementParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.CLICK_ELEMENT

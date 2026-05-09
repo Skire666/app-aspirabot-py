@@ -47,12 +47,15 @@ def _select_by_mode(images: list[dict[str, Any]], mode: str) -> list[dict[str, A
 class DownloadImageExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.DOWNLOAD_IMAGE
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return DownloadImageParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = DownloadImageParams.from_dict(params)
         folder: Path = params.get("_folder", Path())
         downloaded_urls: set[str] = params.get("_downloaded_urls", set())
@@ -96,6 +99,7 @@ class DownloadImageExecutor(IStepExecutor):
             raise ValueError(f"No image was downloaded (but found={len(targets)}).")
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = DownloadImageParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []

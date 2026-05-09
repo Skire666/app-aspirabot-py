@@ -19,12 +19,15 @@ _logger = logging.getLogger(__name__)
 class CountElementExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.COUNT_ELEMENT
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return CountElementParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = CountElementParams.from_dict(params)
         if p.wait_duration > 0:
             ms = p.wait_duration * C_UNITS_TIME_CONVERSION_TO_MS.get(p.wait_unit, 1_000)
@@ -38,6 +41,7 @@ class CountElementExecutor(IStepExecutor):
             raise ValueError(f"COUNT_ELEMENT : condition non satisfaite (COUNT={count}, {p.operator} {val_desc})")
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = CountElementParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_operators = {

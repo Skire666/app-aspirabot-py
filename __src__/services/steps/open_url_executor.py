@@ -15,12 +15,15 @@ from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 class OpenUrlExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.OPEN_URL
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return OpenUrlParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = OpenUrlParams.from_dict(params)
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         if timeout_ms is not None:
@@ -29,6 +32,7 @@ class OpenUrlExecutor(IStepExecutor):
             page.goto(p.url, wait_until=p.wait_state)
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = OpenUrlParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
 

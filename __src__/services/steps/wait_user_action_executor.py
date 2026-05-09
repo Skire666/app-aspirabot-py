@@ -17,12 +17,15 @@ _MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
 class WaitUserActionExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.WAIT_USER_ACTION
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return WaitUserActionParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = WaitUserActionParams.from_dict(params)
         prev_success: bool = params.get("_prev_success", True)
         should_pause = (
@@ -45,6 +48,7 @@ class WaitUserActionExecutor(IStepExecutor):
             time.sleep(float(p.wait_duration) * _MULTIPLIERS.get(p.wait_unit, 1.0))
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = WaitUserActionParams.from_dict(model.params)
         errors: list[str] = []
         index_display = str(step_index + 1).zfill(2)

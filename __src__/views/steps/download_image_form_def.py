@@ -47,14 +47,16 @@ def _add_dimension_row(
 class DownloadImageFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.DOWNLOAD_IMAGE
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.DOWNLOAD_IMAGE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-
+        """Build the form widgets into the given frame."""
         mode_var = tk.StringVar(value=C_INPUT_DEFAULT_MODE_DDL)
         unique_var = tk.BooleanVar(value=True)
         widgets["mode"] = mode_var
@@ -105,6 +107,7 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["width_max"] = width_max_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["mode"].set(model.params.get("mode", "largest"))
         widgets["unique_only"].set(bool(model.params.get("unique_only", False)))
         widgets["height_min"].set(str(model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
@@ -113,6 +116,7 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "mode": widgets["mode"].get(),
             "unique_only": bool(widgets["unique_only"].get()),
@@ -123,6 +127,7 @@ class DownloadImageFormDef(IStepFormDef):
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
 
         v_height_min = safe_int_widget(widgets, "height_min", -1)
@@ -149,6 +154,7 @@ class DownloadImageFormDef(IStepFormDef):
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         mode = model.params.get("mode", "")
         unique_only = model.params.get("unique_only", False)
         width_min = model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)

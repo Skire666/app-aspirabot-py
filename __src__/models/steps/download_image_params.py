@@ -21,6 +21,7 @@ class DownloadImageParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(
             mode="largest",
             unique_only=False,
@@ -31,6 +32,7 @@ class DownloadImageParams(IStepParams):
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {
             "mode": self.mode,
             "unique_only": self.unique_only,
@@ -42,6 +44,7 @@ class DownloadImageParams(IStepParams):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             mode=data.get("mode", "largest"),
             unique_only=bool(data.get("unique_only", False)),
@@ -53,4 +56,5 @@ class DownloadImageParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.DOWNLOAD_IMAGE

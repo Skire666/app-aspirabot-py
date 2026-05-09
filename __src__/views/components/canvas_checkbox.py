@@ -35,13 +35,16 @@ class CanvasCheckbox(tk.Frame):
     # Public API
     # -------------------------
     def get(self):
+        """Return the current boolean value."""
         return self._var.get()
 
     def set(self, value: bool):
+        """Set the checkbox state and redraw."""
         self._var.set(bool(value))
         self._draw()
 
     def config_text(self, text: str):
+        """Update the label text and redraw."""
         self._text = text
         self._draw()
 

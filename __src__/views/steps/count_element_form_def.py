@@ -40,13 +40,16 @@ class CountElementFormDef(IStepFormDef):
 
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.COUNT_ELEMENT
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_ELEMENT)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the form widgets into the given frame."""
         self._form_widgets_ref = widgets
 
         # ROW 0 — pre-wait
@@ -125,6 +128,7 @@ class CountElementFormDef(IStepFormDef):
             self._form_widgets_ref["value"] = val_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         self._form_widgets_ref = widgets
         widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["wait_duration"].set(str(model.params.get("wait_duration", 0)))
@@ -145,6 +149,7 @@ class CountElementFormDef(IStepFormDef):
             widgets["value"].set(str(model.params.get("value", 0)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         unit_display = widgets["wait_unit"].get()
         si_display = widgets["success_if"].get()
         op_display = widgets["operator"].get()
@@ -167,6 +172,7 @@ class CountElementFormDef(IStepFormDef):
         return result
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         if safe_int_widget(widgets, "wait_duration", -1) < 0:
             errors.append("Durée d'attente : doit être >= 0")
@@ -190,6 +196,7 @@ class CountElementFormDef(IStepFormDef):
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         op_labels = {
             "between": "compris entre",
             "equal": "==",

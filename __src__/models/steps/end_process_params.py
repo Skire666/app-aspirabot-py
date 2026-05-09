@@ -17,13 +17,16 @@ class EndProcessParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(wait_duration=1, wait_unit=C_UNITS_TIME_DEFAULT_MODEL)
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {"wait_duration": self.wait_duration, "wait_unit": self.wait_unit}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             wait_duration=int(data.get("wait_duration", 1)),
             wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
@@ -31,4 +34,5 @@ class EndProcessParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.END_PROCESS

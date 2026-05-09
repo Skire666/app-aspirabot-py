@@ -41,6 +41,7 @@ class WaitImageSizeFormDef(IStepFormDef):
         return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_IMAGE_SIZE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the form widgets into the given frame."""
         # LIGNE 1 : Hauteur (px) + Min + Spinbox + Max + Spinbox
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=2)

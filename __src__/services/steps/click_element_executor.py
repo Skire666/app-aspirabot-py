@@ -14,12 +14,15 @@ from services.workflow_service import register_step_executor
 class ClickElementExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.CLICK_ELEMENT
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return ClickElementParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = ClickElementParams.from_dict(params)
         # Tentative 1 : click normal
         try:
@@ -47,6 +50,7 @@ class ClickElementExecutor(IStepExecutor):
             raise ValueError(f"Unsupported click mode: {p.click_mode}")
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = ClickElementParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
 

@@ -30,12 +30,15 @@ def _get_filtered_images(page: Any, p: WaitImageSizeParams) -> list[dict]:
 class WaitImageSizeExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.WAIT_IMAGE_SIZE
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return WaitImageSizeParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = WaitImageSizeParams.from_dict(params)
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 15
@@ -47,6 +50,7 @@ class WaitImageSizeExecutor(IStepExecutor):
         raise TimeoutError(f"No image matching size constraints appeared within {wait_seconds}s.")
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = WaitImageSizeParams.from_dict(model.params)
         errors: list[str] = []
         index_display = str(step_index + 1).zfill(2)

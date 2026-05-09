@@ -26,14 +26,16 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='
 class ExtractTextFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.EXTRACT_TEXT
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.EXTRACT_TEXT)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-
+        """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=4)
@@ -66,6 +68,7 @@ class ExtractTextFormDef(IStepFormDef):
         widgets["target"] = target_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["selector"].set(model.params.get("selector", ""))
         widgets["extract_mode"].set(
             EXTRACT_MODE_MODEL_TO_VIEW.get(model.params.get("extract_mode", "innerText"), EXTRACT_MODE_DISPLAY[0])
@@ -75,6 +78,7 @@ class ExtractTextFormDef(IStepFormDef):
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "selector": widgets["selector"].get().strip(),
             "extract_mode": EXTRACT_MODE_VIEW_TO_MODEL.get(widgets["extract_mode"].get(), "innerText"),
@@ -82,12 +86,14 @@ class ExtractTextFormDef(IStepFormDef):
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         if not widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Sélecteur CSS : valeur obligatoire")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         selector = model.params.get("selector", "<vide>")
         extract_mode = model.params.get("extract_mode", "")
         target = model.params.get("target", "")

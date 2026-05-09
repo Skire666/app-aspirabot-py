@@ -17,12 +17,15 @@ _MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
 class EndProcessExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.END_PROCESS
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return EndProcessParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = EndProcessParams.from_dict(params)
         delay = float(p.wait_duration) * _MULTIPLIERS.get(p.wait_unit, 1.0)
         if delay > 0:
@@ -31,6 +34,7 @@ class EndProcessExecutor(IStepExecutor):
         params["_end_process"] = True
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = EndProcessParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []

@@ -13,18 +13,22 @@ from services.workflow_service import register_step_executor
 class RefreshPageExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.REFRESH_PAGE
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return RefreshPageParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = RefreshPageParams.from_dict(params)
         if p.clear_cache:
             page.context.clear_cookies()
         page.reload()
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         # always valid as there are no parameters with constraints
         return []
 

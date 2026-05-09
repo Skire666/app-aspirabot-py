@@ -16,13 +16,16 @@ class CloseTabsParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(url_filter="", max_tabs=1)
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {"url_filter": self.url_filter, "max_tabs": self.max_tabs}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             url_filter=data.get("url_filter", ""),
             max_tabs=int(data.get("max_tabs", 1)),
@@ -30,4 +33,5 @@ class CloseTabsParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.CLOSE_TABS

@@ -18,13 +18,16 @@ from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 class ScrollDownFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.SCROLL_DOWN
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.SCROLL_DOWN)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the form widgets into the given frame."""
         frame.columnconfigure(1, weight=1)
 
         ttk.Label(frame, text="Pixels:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
@@ -35,17 +38,21 @@ class ScrollDownFormDef(IStepFormDef):
         widgets["pixels"] = pixels_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["pixels"].set(str(model.params.get("pixels", 1000)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {"pixels": safe_int_widget(widgets, "pixels", 1000)}
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         if safe_int_widget(widgets, "pixels", -1) <= 0:
             return ["Pixels : doit être >= 1"]
         return []
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         return f"Défilement vers le bas\nLongueur: {model.params.get('pixels', 0)} px"
 
 

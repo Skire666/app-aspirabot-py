@@ -16,13 +16,16 @@ class JumpToStepParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(condition="success", target_hexastring="")
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {"condition": self.condition, "target_hexastring": self.target_hexastring}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         target_value = data.get("target_hexastring", "")
         return cls(
             condition=data.get("condition", "success"),
@@ -31,4 +34,5 @@ class JumpToStepParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.JUMP_TO_STEP

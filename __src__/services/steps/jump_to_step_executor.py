@@ -13,12 +13,15 @@ from services.workflow_service import register_step_executor
 class JumpToStepExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.JUMP_TO_STEP
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return JumpToStepParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = JumpToStepParams.from_dict(params)
         prev_success: bool = params.get("_prev_success", True)
         should_jump = (
@@ -32,6 +35,7 @@ class JumpToStepExecutor(IStepExecutor):
             params["_pending_jump"] = target_step_id
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         condition = model.params.get("condition", "success")
         target_step_id = model.params.get("target_hexastring", "")
 

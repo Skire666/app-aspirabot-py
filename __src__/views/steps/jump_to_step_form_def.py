@@ -25,14 +25,16 @@ from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, C
 class JumpToStepFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.JUMP_TO_STEP
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.JUMP_TO_STEP)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-
+        """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=4)
@@ -78,6 +80,7 @@ class JumpToStepFormDef(IStepFormDef):
 
     # à partir du model, alimente view
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         # consition
         cond_model = model.params.get("condition", "success")
         widgets["condition"].set(CONDITION_MODEL_TO_VIEW.get(cond_model, CONDITION_DISPLAY[0]))
@@ -107,6 +110,7 @@ class JumpToStepFormDef(IStepFormDef):
     ## le dictionne qui est retourné, c'est les '.params' du StepScrapingModel
     # il doit contenir la condition et la cible du saut (hexastring de l'étape cible)
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         cond_display = widgets["condition"].get()
 
         choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
@@ -129,7 +133,7 @@ class JumpToStepFormDef(IStepFormDef):
         return ""
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-
+        """Validate current widget values and return a list of error messages."""
         choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
         hexastring = self._extract_after_hash_hexastring(choice_target_hexastring)
 
@@ -146,6 +150,7 @@ class JumpToStepFormDef(IStepFormDef):
         return []
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         target_hexastring = model.params.get("target_hexastring", "????")
 
         str_target_index = ""

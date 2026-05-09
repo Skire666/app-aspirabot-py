@@ -23,14 +23,16 @@ from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 class EndProcessFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.END_PROCESS
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.END_PROCESS)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-
+        """Build the form widgets into the given frame."""
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=4)
 
@@ -48,6 +50,7 @@ class EndProcessFormDef(IStepFormDef):
         widgets["wait_unit"] = unit_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["wait_duration"].set(str(model.params.get("wait_duration", 5)))
         widgets["wait_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
@@ -56,18 +59,21 @@ class EndProcessFormDef(IStepFormDef):
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "wait_duration": safe_int_widget(widgets, "wait_duration", 0),
             "wait_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["wait_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         if safe_int_widget(widgets, "wait_duration", -1) <= 0:
             errors.append("Durée d'attente : doit être >= 1")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         unit_time = model.params.get("wait_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
         return f"Fin du processus\nAttendre {model.params.get('wait_duration', 0)} {unit_display} avant de quitter"

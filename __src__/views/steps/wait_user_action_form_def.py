@@ -33,13 +33,16 @@ C_INPUT_DEFAULT_CONDITION: str = CONDITION_DISPLAY[-1]  # "Toujours"
 class WaitUserActionFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.WAIT_USER_ACTION
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_USER_ACTION)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the form widgets into the given frame."""
         frame.columnconfigure(1, weight=1)
 
         ttk.Label(frame, text="Condition:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
@@ -65,6 +68,7 @@ class WaitUserActionFormDef(IStepFormDef):
         widgets["wait_unit"] = unit_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["condition"].set(
             CONDITION_MODEL_TO_VIEW.get(model.params.get("condition", "always"), C_INPUT_DEFAULT_CONDITION)
         )
@@ -76,6 +80,7 @@ class WaitUserActionFormDef(IStepFormDef):
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(widgets["condition"].get(), "always"),
             "wait_duration": safe_int_widget(widgets, "wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION),
@@ -83,12 +88,14 @@ class WaitUserActionFormDef(IStepFormDef):
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         if safe_int_widget(widgets, "wait_duration", -1) < 0:
             errors.append("Délai post-reprise : doit être >= 0")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         cond_labels = {"success": "Si succès", "failure": "Si échec", "always": "Toujours"}
         condition = cond_labels.get(model.params.get("condition", "always"), "toujours")
         wd = model.params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)

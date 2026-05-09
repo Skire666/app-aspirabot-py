@@ -33,13 +33,16 @@ C_INPUT_DEFAULT_MAX_TABS: int = 1
 class CloseTabsFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.CLOSE_TABS
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.CLOSE_TABS)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the form widgets into the given frame."""
         frame.columnconfigure(1, weight=1)
 
         ttk.Label(frame, text="Garder uniquement ce qui contient : ").grid(
@@ -59,16 +62,19 @@ class CloseTabsFormDef(IStepFormDef):
         widgets["max_tabs"] = max_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["url_filter"].set(model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER))
         widgets["max_tabs"].set(str(model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "url_filter": widgets["url_filter"].get().strip(),
             "max_tabs": safe_int_widget(widgets, "max_tabs", C_INPUT_DEFAULT_MAX_TABS),
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         url = widgets["url_filter"].get().strip()
         max_tb = safe_int_widget(widgets, "max_tabs", -1)
@@ -80,6 +86,7 @@ class CloseTabsFormDef(IStepFormDef):
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         max_tabs = model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)
         url_filter = model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER)
         if max_tabs == 0:

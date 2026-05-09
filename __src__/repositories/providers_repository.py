@@ -356,6 +356,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             raise
 
     def create_folder_if_missing(self):
+        """Create the providers folder if it does not already exist."""
         if not self._folder_path.exists():
             os.makedirs(self._folder_path, exist_ok=True)
             self._logger.info(f"Dossier créé: {self._folder_path}")

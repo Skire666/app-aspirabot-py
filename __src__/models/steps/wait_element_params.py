@@ -18,9 +18,11 @@ class WaitElementParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(selector="", timeout_duration=1, timeout_unit=C_UNITS_TIME_DEFAULT_MODEL)
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {
             "selector": self.selector,
             "timeout_duration": self.timeout_duration,
@@ -29,6 +31,7 @@ class WaitElementParams(IStepParams):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             selector=data.get("selector", ""),
             timeout_duration=int(data.get("timeout_duration", 1)),
@@ -37,4 +40,5 @@ class WaitElementParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.WAIT_ELEMENT

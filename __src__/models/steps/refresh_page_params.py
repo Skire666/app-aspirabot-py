@@ -15,17 +15,21 @@ class RefreshPageParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(clear_cache=False)
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {"clear_cache": self.clear_cache}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             clear_cache=bool(data.get("clear_cache", False)),
         )
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.REFRESH_PAGE

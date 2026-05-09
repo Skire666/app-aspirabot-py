@@ -23,6 +23,7 @@ class CountElementParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(
             selector="",
             wait_duration=1,
@@ -35,6 +36,7 @@ class CountElementParams(IStepParams):
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {
             "selector": self.selector,
             "wait_duration": self.wait_duration,
@@ -48,6 +50,7 @@ class CountElementParams(IStepParams):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             selector=data.get("selector", ""),
             wait_duration=int(data.get("wait_duration", 1)),
@@ -61,4 +64,5 @@ class CountElementParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.COUNT_ELEMENT

@@ -25,14 +25,16 @@ C_INPUT_DEFAULT_DURATION = 3
 class WaitXTimeFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.WAIT_X_TIME
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_X_TIME)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-
+        """Build the form widgets into the given frame."""
         timeout_frame = ttk.Frame(frame)
         timeout_frame.pack(fill="x", pady=4)
 
@@ -50,6 +52,7 @@ class WaitXTimeFormDef(IStepFormDef):
         widgets["unit"] = unit_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["duration"].set(str(model.params.get("duration", C_INPUT_DEFAULT_DURATION)))
         widgets["unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
@@ -58,18 +61,21 @@ class WaitXTimeFormDef(IStepFormDef):
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {
             "duration": safe_int_widget(widgets, "duration", C_INPUT_DEFAULT_DURATION),
             "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
         if safe_int_widget(widgets, "duration", -1) <= 0:
             errors.append("Durée d'attente : doit être >= 1")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         unit_time = model.params.get("unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
         return f"Attendre une durée fixe\n{model.params.get('duration', C_INPUT_DEFAULT_DURATION)} {unit_display}"

@@ -21,6 +21,7 @@ class WaitImageSizeParams(IStepParams):
 
     @classmethod
     def default(cls) -> Self:
+        """Return default instance."""
         return cls(
             height_min=0,
             height_max=C_MAXIMUM_SIZE_IMAGE,
@@ -31,6 +32,7 @@ class WaitImageSizeParams(IStepParams):
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize to dict."""
         return {
             "height_min": self.height_min,
             "height_max": self.height_max,
@@ -42,6 +44,7 @@ class WaitImageSizeParams(IStepParams):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Deserialize from dict."""
         return cls(
             height_min=int(data.get("height_min", 0)),
             height_max=int(data.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
@@ -53,4 +56,5 @@ class WaitImageSizeParams(IStepParams):
 
     @classmethod
     def get_step_type(cls):
+        """Return the step type."""
         return StepType.WAIT_IMAGE_SIZE

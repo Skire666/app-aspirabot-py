@@ -17,17 +17,21 @@ _MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
 class RandomPauseExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.RANDOM_PAUSE
 
     def default_params_dict(self) -> dict[str, Any]:
+        """Return default parameters as dict."""
         return RandomPauseParams.default().to_dict()
 
     def execute(self, page: Any, params: dict[str, Any]) -> None:
+        """Execute the step."""
         p = RandomPauseParams.from_dict(params)
         delay = random.uniform(float(p.min_val), float(p.max_val))
         time.sleep(delay * _MULTIPLIERS.get(p.unit, 1.0))
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+        """Validate the step model."""
         p = RandomPauseParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         if p.min_val >= p.max_val:

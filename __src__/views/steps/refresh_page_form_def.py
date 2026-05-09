@@ -17,13 +17,16 @@ from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 class RefreshPageFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
+        """Return the step type."""
         return StepType.REFRESH_PAGE
 
     @classmethod
     def label(cls) -> str:
+        """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.REFRESH_PAGE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the form widgets into the given frame."""
         cache_var = tk.BooleanVar(value=False)
         CanvasCheckbox(frame, text="Vider le cache (Ctrl + F5)", variable=cache_var).grid(
             row=0, column=0, sticky="w", padx=5, pady=4
@@ -31,16 +34,20 @@ class RefreshPageFormDef(IStepFormDef):
         widgets["clear_cache"] = cache_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
+        """Load step parameters into form widgets."""
         widgets["clear_cache"].set(bool(model.params.get("clear_cache", False)))
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
+        """Read current widget values and return them as a parameters dict."""
         return {"clear_cache": bool(widgets["clear_cache"].get())}
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        """Validate current widget values and return a list of error messages."""
         # Aucune validation nécessaire pour ce formulaire, il n'y a qu'une option booléenne.
         return []
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
+        """Return a compact human-readable label for this step instance."""
         if model.params.get("clear_cache"):
             return "Rafraîchir la page\nVide le cache (Ctrl+F5)"
         return "Rafraîchir la page\nGarde le cache (F5)"
