@@ -71,10 +71,15 @@ class RandomPauseFormDef(IStepFormDef):
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         errors: list[str] = []
-        min_val = safe_int_widget(widgets, "min", 0)
-        max_val = safe_int_widget(widgets, "max", 1)
-        if min_val >= max_val:
-            errors.append("La valeur minimale doit être strictement inférieure à la valeur maximale.")
+        min_val = safe_int_widget(widgets, "min", -1)
+        max_val = safe_int_widget(widgets, "max", -1)
+
+        if min_val < 0:
+            errors.append("Valeur min. : doit être >= 0")
+        if max_val <= 0:
+            errors.append("Valeur max. : doit être >= 1")
+        if min_val > max_val:
+            errors.append("La valeur min. doit être <= à valeur max.")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

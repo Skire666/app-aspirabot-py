@@ -129,9 +129,9 @@ class OpenUrlFormDef(IStepFormDef):
         """Validates the form and returns user-facing errors."""
         errors: list[str] = []
         if not widgets.get("url", tk.StringVar()).get().strip():
-            errors.append("L'URL est obligatoire.")
+            errors.append("URL : valeur obligatoire")
         if safe_int_widget(widgets, "timeout_duration", -1) < 1:
-            errors.append("Durée de timeout doit être un nombre supérieur ou égal à 1.")
+            errors.append("Durée de timeout : doit être >= 1")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

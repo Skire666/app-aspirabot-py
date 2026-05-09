@@ -37,6 +37,7 @@ class RefreshPageFormDef(IStepFormDef):
         return {"clear_cache": bool(widgets["clear_cache"].get())}
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        # Aucune validation nécessaire pour ce formulaire, il n'y a qu'une option booléenne.
         return []
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

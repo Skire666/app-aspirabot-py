@@ -1,6 +1,6 @@
 """Embedded workflow builder widget.
 
-This ttk.Frame is placed inside the 'Workflow & Instructions' LabelFrame
+This ttk.Frame is placed inside the 'Liste des étapes' LabelFrame
 of ProviderEditView. It renders a drag-and-drop step list, a toolbar,
 and an inline 'Brique logique' form panel for adding and editing steps.
 All user actions fire callbacks set by the presenter.

@@ -103,7 +103,7 @@ class JumpToStepFormDef(IStepFormDef):
         target_display = widgets.get("target_hexastring", tk.StringVar()).get()
         jump_target_displays = widgets.get("_jump_target_displays", [])
         if target_display not in jump_target_displays:
-            errors.append("L'étape cible sélectionnée est invalide.")
+            errors.append(f"L'étape cible #{target_display} : dot être valide")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

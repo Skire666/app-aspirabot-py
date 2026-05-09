@@ -73,23 +73,21 @@ class CloseTabsFormDef(IStepFormDef):
         url = widgets["url_filter"].get().strip()
         max_tb = safe_int_widget(widgets, "max_tabs", -1)
 
-        if max_tb < 0:
-            errors.append("Le nombre maximum d'onglets doit être un entier positif ou égal à 0.")
-        if max_tb >= 1 and not url:
-            errors.append(
-                "Un filtre URL doit être utilisé si le nombre maximum d'onglets est supérieur ou égal à 1 (sinon, aucun onglet ne sera fermé)."
-            )
+        if max_tb <= 0:
+            errors.append("Nombre max. d'onglets : doit être >= 1")
+        if not url:
+            errors.append("Filtre URL : valeur obligatoire")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         max_tabs = model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)
         url_filter = model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER)
         if max_tabs == 0:
-            return "Fermer les onglets  -  Tous\nIl ne restera aucun onglet d'ouvert"
+            return "Fermer tous les onglets\nIl ne restera aucun onglet d'ouvert"
 
         ## si plusieurs
         label = f"Fermer les onglets  -  {max_tabs} onglet(s) max.\n"
-        label += f"Ne garde que si contient '{url_filter}'"
+        label += f"Ne garder que les URL contenant '{url_filter}'"
         return label
 
 

@@ -85,7 +85,7 @@ class WaitUserActionFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         errors: list[str] = []
         if safe_int_widget(widgets, "wait_duration", -1) < 0:
-            errors.append("Le délai post-reprise doit être un nombre positif ou égal à 0.")
+            errors.append("Délai post-reprise : doit être >= 0")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

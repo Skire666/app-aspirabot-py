@@ -85,9 +85,9 @@ class WaitElementFormDef(IStepFormDef):
         """Validate the current form values and return error messages."""
         errors: list[str] = []
         if not widgets.get("selector", tk.StringVar()).get().strip():
-            errors.append("Le sélecteur CSS est obligatoire.")
+            errors.append("Sélecteur CSS : valeur obligatoire")
         if safe_int_widget(widgets, "timeout_duration", -1) < 1:
-            errors.append("Durée de timeout doit être un nombre supérieur ou égal à 1.")
+            errors.append("Durée de timeout : doit être >= 1")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

@@ -62,7 +62,10 @@ class EndProcessFormDef(IStepFormDef):
         }
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        return []
+        errors: list[str] = []
+        if safe_int_widget(widgets, "wait_duration", -1) <= 0:
+            errors.append("Durée d'attente : doit être >= 1")
+        return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         unit_time = model.params.get("wait_unit", "")

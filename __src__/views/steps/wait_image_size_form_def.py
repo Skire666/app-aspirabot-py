@@ -123,11 +123,30 @@ class WaitImageSizeFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
-        for key in ("height_min", "height_max", "width_min", "width_max"):
-            if safe_int_widget(widgets, key, -1) < 0:
-                errors.append(f"La valeur '{key}' doit être un entier positif ou égal à 0.")
+        v_height_min = safe_int_widget(widgets, "height_min", -1)
+        v_height_max = safe_int_widget(widgets, "height_max", -1)
+        v_width_min = safe_int_widget(widgets, "width_min", -1)
+        v_width_max = safe_int_widget(widgets, "width_max", -1)
+
+        # Validate non-negativity.
+        if v_height_min < 0:
+            errors.append("Hauteur min. doit être >= 0.")
+        if v_height_max < 0:
+            errors.append("Hauteur max. doit être >= 0.")
+        if v_width_min < 0:
+            errors.append("Largeur min. doit être >= 0.")
+        if v_width_max < 0:
+            errors.append("Largeur max. doit être >= 0.")
+
+        # Validate min <= max constraints.
+        if v_height_min > v_height_max:
+            errors.append("Hauteur min. doit être <= hauteur max.")
+        if v_width_min > v_width_max:
+            errors.append("Largeur min. doit être <= largeur max.")
+
+        # Validate timeout duration.
         if safe_int_widget(widgets, "timeout_duration", -1) < 1:
-            errors.append("Durée de timeout doit être un nombre supérieur ou égal à 1.")
+            errors.append("Durée de timeout : doit être >= 1")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

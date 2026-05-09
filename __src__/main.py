@@ -108,7 +108,7 @@ def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) ->
             root.attributes("-zoomed", True)
 
     # Apply global padding to all ttk.Button widgets.
-    ttk.Style().configure("TButton", padding=(6, 6))
+    ttk.Style().configure("TButton", padding=(8, 8))
 
 
 def _launch_main_app(
@@ -145,10 +145,16 @@ def _launch_main_app(
     main_view.set_on_show(C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
 
     _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view)
-    _anchor_presenters(root, [
-        log_presenter, config_presenter, provider_presenter,
-        provider_edit_presenter, scraping_presenter,
-    ])
+    _anchor_presenters(
+        root,
+        [
+            log_presenter,
+            config_presenter,
+            provider_presenter,
+            provider_edit_presenter,
+            scraping_presenter,
+        ],
+    )
     root.deiconify()
 
 

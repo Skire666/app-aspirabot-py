@@ -104,7 +104,7 @@ class CountElementFormDef(IStepFormDef):
         for key in ("value", "value_min", "value_max"):
             self._form_widgets_ref.pop(key, None)
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
-        if op_value in {"between", "not_between"}:
+        if op_value in {"between"}:
             vmin_var = tk.StringVar(value="0")
             ttk.Spinbox(
                 self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmin_var, width=7
@@ -156,27 +156,37 @@ class CountElementFormDef(IStepFormDef):
             "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display, "success"),
             "operator": op_value,
         }
-        if op_value in {"between", "not_between"}:
+        if op_value in {"between"}:
             result["value_min"] = safe_int_widget(widgets, "value_min", 0)
             result["value_max"] = safe_int_widget(widgets, "value_max", 0)
             result["value"] = 0
         else:
             result["value_min"] = 0
             result["value_max"] = 0
-            result["value"] = safe_int_widget(widgets, "value", 0)
+            result["value"] = safe_int_widget(widgets, "value", -1)
         return result
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         errors: list[str] = []
         if safe_int_widget(widgets, "wait_duration", -1) < 0:
-            errors.append("Durée d'attente doit être un nombre positif ou égal à 0.")
+            errors.append("Durée d'attente : doit être >= 0")
         if not widgets.get("selector", tk.StringVar()).get().strip():
-            errors.append("Le sélecteur CSS est obligatoire.")
+            errors.append("Sélecteur CSS : valeur obligatoire")
+
+        # Validate operator-specific value constraints.
         op_display = widgets.get("operator", tk.StringVar()).get()
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
-        if op_value in {"between", "not_between"}:
-            if safe_int_widget(widgets, "value_min", 0) > safe_int_widget(widgets, "value_max", 0):
-                errors.append("La valeur minimale doit être inférieure ou égale à la valeur maximale.")
+        if op_value in {"between"}:
+            # 2 valeurs à valider : min et max, avec contraintes de non-négativité et de min <= max.
+            val_min = safe_int_widget(widgets, "value_min", 0)
+            val_max = safe_int_widget(widgets, "value_max", 0)
+            if not (val_min <= val_max):
+                errors.append("Valeur min. doit être <= à valeur max.")
+        else:
+            # 1 seule valeur à valider, avec contrainte de non-négativité.
+            val = safe_int_widget(widgets, "value", -1)
+            if val < 0:
+                errors.append("La valeur doit être >= 0.")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
@@ -191,7 +201,7 @@ class CountElementFormDef(IStepFormDef):
         }
         op = op_labels.get(model.params.get("operator", "equal"), "?")
         selector = model.params.get("selector", "<vide>")
-        if model.params.get("operator") in {"between", "not_between"}:
+        if model.params.get("operator") in {"between"}:
             val_str = f"{model.params.get('value_min', 0)} et {model.params.get('value_max', 0)}"
         else:
             val_str = str(model.params.get("value", 0))

@@ -34,7 +34,7 @@ class CountElementExecutor(IStepExecutor):
         condition_met = evaluate_count_condition(count, p.operator, p.value, p.value_min, p.value_max)
         step_success = condition_met if p.success_if == "success" else not condition_met
         if not step_success:
-            val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between", "not_between"} else str(p.value)
+            val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between"} else str(p.value)
             raise ValueError(f"COUNT_ELEMENT : condition non satisfaite (COUNT={count}, {p.operator} {val_desc})")
 
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -42,7 +42,6 @@ class CountElementExecutor(IStepExecutor):
         index_display = str(step_index + 1).zfill(2)
         allowed_operators = {
             "between",
-            "not_between",
             "equal",
             "not_equal",
             "greater_than",
@@ -61,7 +60,7 @@ class CountElementExecutor(IStepExecutor):
             errors.append(f"Erreur dans l'étape {index_display}. : success_if invalide — {p.success_if!r}.")
         if p.operator not in allowed_operators:
             errors.append(f"Erreur dans l'étape {index_display}. : operator invalide — {p.operator!r}.")
-        if p.operator in {"between", "not_between"} and p.value_min > p.value_max:
+        if p.operator in {"between"} and p.value_min > p.value_max:
             errors.append(f"Erreur dans l'étape {index_display}. : value_min doit être <= value_max.")
         return errors
 

@@ -84,7 +84,7 @@ class ExtractTextFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         errors: list[str] = []
         if not widgets.get("selector", tk.StringVar()).get().strip():
-            errors.append("Le sélecteur CSS est obligatoire.")
+            errors.append("Sélecteur CSS : valeur obligatoire")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

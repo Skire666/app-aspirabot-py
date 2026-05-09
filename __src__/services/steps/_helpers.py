@@ -49,7 +49,6 @@ def evaluate_count_condition(count: int, operator: str, value: int, value_min: i
     """Evaluates a COUNT_ELEMENT condition."""
     conditions: dict[str, bool] = {
         "between": value_min <= count <= value_max,
-        "not_between": not (value_min <= count <= value_max),
         "equal": count == value,
         "not_equal": count != value,
         "greater_than": count > value,

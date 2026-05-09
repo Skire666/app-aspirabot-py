@@ -99,7 +99,7 @@ class ProviderEditView(ttk.Frame):
         # Configuration du grid pour top_frame
         top_frame.columnconfigure(0, weight=1)
 
-        # Gestion des étapes — between Informations and Workflow & Instructions.
+        # Gestion des étapes.
         self._gestion_container = ttk.LabelFrame(
             main_container, text="Gestion des étapes", height=_HEIGHT_FRAME_GESTION
         )
@@ -119,8 +119,8 @@ class ProviderEditView(ttk.Frame):
         )
         self._lbl_workflow_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
-        # 3. Workflow & Instructions — fills all remaining vertical space
-        workflow_lf = ttk.LabelFrame(main_container, text="Workflow & Instructions")
+        # 3. fills all remaining vertical space
+        workflow_lf = ttk.LabelFrame(main_container, text="Liste des étapes")
         workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5), padx=(5))
 
         self._workflow_builder_view = WorkflowListView(workflow_lf)

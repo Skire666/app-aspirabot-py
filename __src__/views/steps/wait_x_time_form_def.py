@@ -63,8 +63,8 @@ class WaitXTimeFormDef(IStepFormDef):
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         errors: list[str] = []
-        if safe_int_widget(widgets, "duration", -1) < 0:
-            errors.append("La durée doit être un nombre positif ou égal à 0.")
+        if safe_int_widget(widgets, "duration", -1) <= 0:
+            errors.append("Durée d'attente : doit être >= 1")
         return errors
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

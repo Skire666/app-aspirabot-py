@@ -81,22 +81,14 @@ class StepInlineFormPanel(ttk.Frame):
         Pack order rule: BOTTOM widgets must be packed before TOP ones so that
         pack reserves their space before the expanding form_frame claims the rest.
         """
-        self._create_buttons()
-
-        self._error_label = ttk.Label(self, text="", foreground="red")
-        self._error_label.pack(side=tk.BOTTOM, fill=tk.X, padx=(10, 5), pady=(0, 2))
-
         top_area = ttk.Frame(self)
         top_area.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5)
 
         self._form_frame = ttk.Frame(top_area)
         self._form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 5), pady=5)
+        self._create_bottom()
 
-    def _create_type_selector(self) -> None:
-        """Deprecated: replaced by left-hand listbox UI."""
-        return
-
-    def _create_buttons(self) -> None:
+    def _create_bottom(self) -> None:
         """Creates the Confirm and Cancel buttons at the bottom."""
         btn_frame = ttk.Frame(self)
         btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
@@ -104,8 +96,10 @@ class StepInlineFormPanel(ttk.Frame):
         self._btn_create.pack(side=tk.LEFT, padx=5)
         self._btn_edit = ttk.Button(btn_frame, text="Modifier l'étape", command=self._btn_confirm_update)
         self._btn_edit.pack(side=tk.LEFT, padx=5)
-        self._btn_cancel = ttk.Button(btn_frame, text="Annuler l'édition", command=self._btn_cancel_edition)
+        self._btn_cancel = ttk.Button(btn_frame, text="Annuler", command=self._btn_cancel_edition)
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
+        self._error_label = ttk.Label(btn_frame, text="", foreground="red")
+        self._error_label.pack(side=tk.RIGHT, fill=tk.X, padx=(10, 5), pady=(0, 2))
         self.set_creation_mode()
 
     # ---------------------------------------------------------------

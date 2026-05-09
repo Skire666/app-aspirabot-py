@@ -92,13 +92,11 @@ class WorkflowStepTextHint:
             "Utile pour déclencher le chargement en infinite scroll.\n\n"
             "• Pixels : distance de défilement en pixels (ex. 1000)"
         ),
-        "Fermer les onglets": (
+        "Fermer des onglets": (
             "Ferme les onglets du navigateur selon les critères définis.\n\n"
             "• Filtre URL : chaîne recherchée dans l'adresse des onglets\n"
-            "  Si vide, tous les onglets correspondants sont fermés.\n"
             "  Si renseigné, seuls les onglets dont l'URL contient cette\n"
             "  chaîne sont conservés — les autres sont fermés.\n"
-            "  valide de mettre 0, car potentiellement, l'utilisateur peut ouvrir juste après\n"
             "• Max onglets : nombre maximum d'onglets à conserver"
         ),
         "Extraire le texte (CSS)": (

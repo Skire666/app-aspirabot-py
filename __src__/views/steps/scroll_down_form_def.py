@@ -41,6 +41,8 @@ class ScrollDownFormDef(IStepFormDef):
         return {"pixels": safe_int_widget(widgets, "pixels", 1000)}
 
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
+        if safe_int_widget(widgets, "pixels", -1) <= 0:
+            return ["Pixels : doit être >= 1"]
         return []
 
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
