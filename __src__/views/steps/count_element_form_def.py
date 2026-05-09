@@ -124,7 +124,7 @@ class CountElementFormDef(IStepFormDef):
             ).pack(side=tk.LEFT)
             self._form_widgets_ref["value"] = val_var
 
-    def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         self._form_widgets_ref = widgets
         widgets["selector"].set(params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["wait_duration"].set(str(params.get("wait_duration", 0)))

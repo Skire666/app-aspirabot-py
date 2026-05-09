@@ -63,7 +63,7 @@ class WaitElementFormDef(IStepFormDef):
         widgets["timeout_duration"] = td_var
         widgets["timeout_unit"] = tu_var
 
-    def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         """Load stored parameters into the form widgets."""
         widgets["selector"].set(params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["timeout_duration"].set(str(params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION)))

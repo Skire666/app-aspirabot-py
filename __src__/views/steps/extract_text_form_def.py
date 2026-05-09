@@ -65,7 +65,7 @@ class ExtractTextFormDef(IStepFormDef):
         )
         widgets["target"] = target_var
 
-    def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["selector"].set(params.get("selector", ""))
         widgets["extract_mode"].set(
             EXTRACT_MODE_MODEL_TO_VIEW.get(params.get("extract_mode", "innerText"), EXTRACT_MODE_DISPLAY[0])

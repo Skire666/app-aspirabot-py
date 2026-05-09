@@ -58,7 +58,7 @@ class CloseTabsFormDef(IStepFormDef):
         )
         widgets["max_tabs"] = max_var
 
-    def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["url_filter"].set(params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER))
         widgets["max_tabs"].set(str(params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)))
 

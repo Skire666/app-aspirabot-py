@@ -277,6 +277,7 @@ class WorkflowListPresenter:
     def _refresh_view(self) -> None:
         """Updates the view step list."""
         self._view.render_steps(self._steps)
+        self._gestion_view.set_available_steps(self._steps)
 
     def _notify_validation_feedback(self, first_error: str | None) -> None:
         if not self._on_validation_feedback:

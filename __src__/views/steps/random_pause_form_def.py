@@ -55,7 +55,7 @@ class RandomPauseFormDef(IStepFormDef):
             row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT)
 
-    def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["min"].set(str(params.get("min", 0)))
         widgets["max"].set(str(params.get("max", 1)))
         widgets["unit"].set(

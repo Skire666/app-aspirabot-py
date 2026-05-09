@@ -212,6 +212,10 @@ class ProviderEditView(ttk.Frame):
             label = self._type_listbox.get(idx)
         except tk.TclError:
             return
+        # Skip if the form already shows this type (guards against Windows firing
+        # <<ListboxSelect>> on programmatic selection_set calls).
+        if label == self._inline_form._type_var.get():
+            return
         self._inline_form._type_var.set(label)
         try:
             self._inline_form._on_type_changed(None)

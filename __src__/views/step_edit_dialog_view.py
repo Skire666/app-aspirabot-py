@@ -131,6 +131,7 @@ class StepInlineFormPanel(ttk.Frame):
             steps: Current ordered workflow step list.
         """
         self._available_steps = list(steps)
+        self._form_widgets["_all_steps_available"] = self._available_steps
 
     def load(self, step: StepScrapingModel | None = None) -> None:
         """Prepares the form for a new step or pre-fills it from an existing one.
@@ -173,8 +174,8 @@ class StepInlineFormPanel(ttk.Frame):
 
         # Inject JUMP_TO_STEP context before building so the form def can
         # populate the target combobox from the available steps list.
-        self._form_widgets["_steps"] = self._available_steps
-        self._logger.debug(f"Rebuilding form for step type {step_type}")
+        self._form_widgets["_all_steps_available"] = self._available_steps
+        self._logger.debug(f"Rebuilding form for step type {step_type} with steps={len(self._available_steps)}")
 
         try:
             if step_type is not None and step_type != StepType.UNSET:
@@ -189,7 +190,7 @@ class StepInlineFormPanel(ttk.Frame):
     def _load_step(self, step: StepScrapingModel) -> None:
         """Pre-fills form widgets from an existing step's params."""
         try:
-            get_form(step.step_type).load_params(step.params, self._form_widgets)
+            get_form(step.step_type).load_params_step_to_widget(step.params, self._form_widgets)
         except ValueError:
             pass
 

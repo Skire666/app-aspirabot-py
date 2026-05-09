@@ -104,7 +104,7 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["width_min"] = width_min_var
         widgets["width_max"] = width_max_var
 
-    def load_params(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
+    def load_params_step_to_widget(self, params: dict[str, Any], widgets: dict[str, Any]) -> None:
         widgets["mode"].set(params.get("mode", "largest"))
         widgets["unique_only"].set(bool(params.get("unique_only", False)))
         widgets["height_min"].set(str(params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
