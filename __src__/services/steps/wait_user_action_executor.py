@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -22,10 +22,12 @@ class WaitUserActionExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.WAIT_USER_ACTION
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return WaitUserActionParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitUserActionParams.from_dict(params)
@@ -49,6 +51,7 @@ class WaitUserActionExecutor(IStepExecutor):
         if p.wait_duration > 0 and not cancelled:
             time.sleep(float(p.wait_duration) * _MULTIPLIERS.get(p.wait_unit, 1.0))
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = WaitUserActionParams.from_dict(model.params)

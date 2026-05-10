@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -22,10 +22,12 @@ class CountElementExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.COUNT_ELEMENTS
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return CountElementsParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = CountElementsParams.from_dict(params)
@@ -37,6 +39,7 @@ class CountElementExecutor(IStepExecutor):
             val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between"} else str(p.value)
             raise ValueError(f"COUNT_ELEMENTS : condition non satisfaite (COUNT={count}, {p.operator} {val_desc})")
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = CountElementsParams.from_dict(model.params)

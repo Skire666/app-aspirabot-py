@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -18,10 +18,12 @@ class JumpToStepExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.JUMP_TO_STEP
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return JumpToStepParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = JumpToStepParams.from_dict(params)
@@ -36,6 +38,7 @@ class JumpToStepExecutor(IStepExecutor):
             # Signal the service by writing to the mutable params dict.
             params["_pending_jump"] = target_step_id
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         condition = model.params.get("condition", "success")

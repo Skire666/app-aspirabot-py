@@ -52,10 +52,11 @@ class WorkflowService:
         True
     """
 
-    def __init__(self):
-        pass
+    def __init__(self) -> None:
+        """Initialize the workflow service."""
 
-    def get_step_executor(self, step_type: StepType) -> IStepExecutor:
+    @staticmethod
+    def get_step_executor(step_type: StepType) -> IStepExecutor:
         """Returns the registered executor for the given step type.
 
         Args:

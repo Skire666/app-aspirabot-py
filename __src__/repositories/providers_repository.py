@@ -96,7 +96,8 @@ class ProvidersRepository(ProviderRepositoryInterface):
             key=lambda path: path.name.lower(),
         )
 
-    def read_provider_content(self, file_path: Path) -> dict[str, Any]:
+    @staticmethod
+    def read_provider_content(file_path: Path) -> dict[str, Any]:
         """Reads a provider file and returns the decoded JSON content.
 
         Args:
@@ -165,7 +166,8 @@ class ProvidersRepository(ProviderRepositoryInterface):
         filtered_data["steps"] = self._deserialize_steps(filtered_data.get("steps", []))
         return ProviderModel(**filtered_data)
 
-    def _deserialize_steps(self, steps_data: object) -> list[StepScrapingModel]:
+    @staticmethod
+    def _deserialize_steps(steps_data: object) -> list[StepScrapingModel]:
         """Converts a raw JSON list into validated step model instances.
 
         Silently skips entries that are not dicts or carry an unknown step type.
@@ -425,9 +427,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             elif enum_os == OperatingSystem.LINUX:  # Linux
                 subprocess.Popen(["xdg-open", self._folder_path])
             else:
-                self.logger.warning(
-                    f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}"
-                )
+                self.logger.warning(f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}")
                 raise OSError(f"Système d'exploitation non pris en charge: {enum_os}")
             self.logger.info(f"Dossier ouvert: {self._folder_path}")
         except Exception as e:

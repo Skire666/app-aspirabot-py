@@ -96,7 +96,7 @@ class IStepFormDef(ABC):
         Called when the user opens an existing step for editing.
 
         Args:
-            params: Raw parameter dict from the step model.
+            model: Step model containing the stored parameters.
             widgets: Dict populated by ``build_form``.
 
         Returns:

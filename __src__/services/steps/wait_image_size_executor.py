@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -35,10 +35,12 @@ class WaitImageSizeExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.WAIT_IMAGES
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return WaitImageSizeParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitImageSizeParams.from_dict(params)
@@ -51,6 +53,7 @@ class WaitImageSizeExecutor(IStepExecutor):
             time.sleep(0.4)
         raise TimeoutError(f"No image matching size constraints appeared within {wait_seconds}s.")
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = WaitImageSizeParams.from_dict(model.params)

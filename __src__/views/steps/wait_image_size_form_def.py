@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -39,6 +39,7 @@ class WaitImageSizeFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_IMAGES)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         # LIGNE 1 : Hauteur (px) + Min + Spinbox + Max + Spinbox
@@ -81,11 +82,12 @@ class WaitImageSizeFormDef(IStepFormDef):
             timeout_frame, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Populate widget values from stored parameters.
 
         Args:
-            params: Mapping of step parameters.
+            model: Step model containing stored parameters.
             widgets: Mapping of form widgets to populate.
         """
         widgets["height_min"].set(str(model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
@@ -99,6 +101,7 @@ class WaitImageSizeFormDef(IStepFormDef):
             )
         )
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
@@ -110,6 +113,7 @@ class WaitImageSizeFormDef(IStepFormDef):
             "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
@@ -139,6 +143,7 @@ class WaitImageSizeFormDef(IStepFormDef):
             errors.append("Durée de timeout : doit être >= 1")
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Produce a compact, human-readable label describing this step instance."""
         width_min = model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)

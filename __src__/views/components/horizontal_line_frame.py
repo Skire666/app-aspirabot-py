@@ -4,7 +4,16 @@ from shared.constants import C_COLOR_GRAY_SEPARATOR
 
 
 class HorizontalLineFrame(tk.Frame):
+    """Frame widget that renders a labeled horizontal separator."""
+
     def __init__(self, parent, text="", **kwargs):
+        """Initialize the separator frame.
+
+        Args:
+            parent: Parent widget.
+            text: Optional label text displayed over the line.
+            **kwargs: Additional Tkinter frame options.
+        """
         super().__init__(parent, **kwargs)
 
         self.configure(bg=self.cget("bg"))
@@ -25,7 +34,7 @@ class HorizontalLineFrame(tk.Frame):
         self.bind("<Configure>", lambda e: self.draw_line())
 
     def draw_line(self):
-        """Dessine ou redessine la ligne horizontale"""
+        """Draw or redraw the horizontal line."""
         self.line_canvas.delete("all")
         width = self.winfo_width()
         if width > 0:

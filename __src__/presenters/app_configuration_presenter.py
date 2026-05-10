@@ -98,7 +98,8 @@ class AppConfigurationPresenter:
         normalized = self._normalize_form_data(data)
         return AppConfigurationModel(**normalized)
 
-    def _normalize_form_data(self, data: dict[str, Any]) -> dict[str, Any]:
+    @staticmethod
+    def _normalize_form_data(data: dict[str, Any]) -> dict[str, Any]:
         """Normalizes raw form data for stable comparisons and model creation."""
         return {
             "log_level_enum": str(data.get("log_level_enum", "")),

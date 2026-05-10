@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -19,15 +19,18 @@ class ScrollDownExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.SCROLL_DOWN
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return ScrollDownParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = ScrollDownParams.from_dict(params)
         evaluate_script_with_safe_retry(page, f"window.scrollBy(0, {p.pixels})", 5)
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         # always valid as there are no parameters with constraints

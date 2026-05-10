@@ -250,7 +250,8 @@ class WorkflowListPresenter:
             )
             self._refresh_view()
 
-    def _on_duplicate_step(self, step: StepScrapingModel, _: int) -> StepScrapingModel:
+    @staticmethod
+    def _on_duplicate_step(step: StepScrapingModel, _: int) -> StepScrapingModel:
         """Returns an independent copy of the given step.
 
         Args:

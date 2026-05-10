@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 from urllib.parse import urljoin
 
 from interfaces.i_step_executor import IStepExecutor
@@ -52,10 +52,12 @@ class DownloadImageExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.DOWNLOAD_IMAGE
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return DownloadImageParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = DownloadImageParams.from_dict(params)
@@ -86,10 +88,7 @@ class DownloadImageExecutor(IStepExecutor):
             url_path = full_url.split("?")[0]
             suffix = Path(url_path).suffix or ".jpg"
             filename = (
-                Path(url_path).stem
-                + datetime.now().strftime("_%Y%m%d_%H%M%S%f")
-                + f"_{downloaded_count + 1}"
-                + suffix
+                Path(url_path).stem + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + f"_{downloaded_count + 1}" + suffix
             )
             dest = folder / filename
             with dest.open("wb") as fh:
@@ -100,6 +99,7 @@ class DownloadImageExecutor(IStepExecutor):
         if downloaded_count == 0:
             raise ValueError(f"No image was downloaded (but found={len(targets)}).")
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = DownloadImageParams.from_dict(model.params)

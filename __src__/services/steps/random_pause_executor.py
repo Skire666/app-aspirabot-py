@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 import time
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -22,16 +22,19 @@ class RandomPauseExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.WAIT_RANDOM_PAUSE
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return RandomPauseParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = RandomPauseParams.from_dict(params)
         delay = random.uniform(float(p.min_val), float(p.max_val))
         time.sleep(delay * _MULTIPLIERS.get(p.unit, 1.0))
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = RandomPauseParams.from_dict(model.params)

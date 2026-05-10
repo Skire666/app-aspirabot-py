@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -56,6 +56,7 @@ class DownloadImageFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.DOWNLOAD_IMAGE)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         mode_var = tk.StringVar(value=C_INPUT_DEFAULT_MODE_DDL)
@@ -107,6 +108,7 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["width_min"] = width_min_var
         widgets["width_max"] = width_max_var
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         widgets["mode"].set(model.params.get("mode", "largest"))
@@ -116,6 +118,7 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["width_min"].set(str(model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
         widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
@@ -127,6 +130,7 @@ class DownloadImageFormDef(IStepFormDef):
             "width_max": safe_int_widget(widgets, "width_max", C_MAXIMUM_SIZE_IMAGE),
         }
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
@@ -154,6 +158,7 @@ class DownloadImageFormDef(IStepFormDef):
 
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         mode = model.params.get("mode", "")

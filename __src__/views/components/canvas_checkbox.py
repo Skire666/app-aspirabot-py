@@ -10,6 +10,16 @@ class CanvasCheckbox(tk.Frame):
     TEXT_MARGIN = 6
 
     def __init__(self, master, text="", variable=None, command=None, font=None, **kwargs):
+        """Initialize the canvas-based checkbox.
+
+        Args:
+            master: Parent widget.
+            text: Label text shown next to the checkbox.
+            variable: Optional Tkinter variable bound to the state.
+            command: Optional callback invoked on toggle.
+            font: Optional font override.
+            **kwargs: Additional Tkinter frame options.
+        """
         super().__init__(master, **kwargs)
 
         self._text = text

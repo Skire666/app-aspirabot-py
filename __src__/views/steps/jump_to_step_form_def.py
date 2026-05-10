@@ -9,7 +9,7 @@ from __future__ import annotations
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -35,6 +35,7 @@ class JumpToStepFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.JUMP_TO_STEP)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         # ROW 0
@@ -82,6 +83,7 @@ class JumpToStepFormDef(IStepFormDef):
         )
 
     # à partir du model, alimente view
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         # consition
@@ -107,7 +109,8 @@ class JumpToStepFormDef(IStepFormDef):
         print(f"B) {datetime.now()} target_hexastring = {target_hexastring!r}")
         print(f"B) {datetime.now()} choice_str = {choice_str!r}")
 
-    def compute_string_displayed_in_combobox(self, index: int, model: StepScrapingModel) -> str:
+    @staticmethod
+    def compute_string_displayed_in_combobox(index: int, model: StepScrapingModel) -> str:
         """Compute the string to be displayed in the combobox based on the model parameters."""
         if index >= 0 and model is not None:
             return f"{str(index + 1).zfill(2)}.  -  #{model.step_id}  - {JumpToStepFormDef.label()}"
@@ -115,6 +118,7 @@ class JumpToStepFormDef(IStepFormDef):
 
     # le dictionne qui est retourné, c'est les '.params' du StepScrapingModel
     # il doit contenir la condition et la cible du saut (hexastring de l'étape cible)
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         cond_display = widgets["condition"].get()
@@ -128,7 +132,8 @@ class JumpToStepFormDef(IStepFormDef):
             "target_hexastring": hexastring,
         }
 
-    def _extract_after_hash_hexastring(self, choice_target_hexastring: str) -> str:
+    @staticmethod
+    def _extract_after_hash_hexastring(choice_target_hexastring: str) -> str:
         """Trouve '#' et retourne les 4 caractères suivants."""
         # Extrait l'hexastring de la sélection de la combobox
         # qui est au format "01. - #hxst - label_xxxx".
@@ -138,6 +143,7 @@ class JumpToStepFormDef(IStepFormDef):
                 return choice_target_hexastring[hash_index + 1 : hash_index + 5]
         return ""
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
@@ -155,6 +161,7 @@ class JumpToStepFormDef(IStepFormDef):
             return [f"L'étape cible '#{hexastring}' : doit être valide"]
         return []
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         target_hexastring = model.params.get("target_hexastring", "????")

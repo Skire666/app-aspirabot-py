@@ -87,8 +87,8 @@ class StepItemRenderer:
             return self._colors_deactive
         return self._colors_normal
 
+    @staticmethod
     def _draw_background(
-        self,
         canvas: tk.Canvas,
         x: int,
         y: int,
@@ -131,9 +131,7 @@ class StepItemRenderer:
 
         canvas.create_text(start_w, pos_h, text=txt_prefix, anchor="w", fill=colors["fg"], font=self._C_FONT)
         canvas.create_line(start_w + 50, y, start_w + 50, y + h, fill=colors["border"])
-        canvas.create_text(
-            start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT
-        )
+        canvas.create_text(start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT)
         self._draw_overflow_mask(canvas, x, y, w, h, idx)
 
     def get_label_from_store(self, item, idx):
@@ -149,7 +147,8 @@ class StepItemRenderer:
             self._cached_labels[key] = get_form(item.step_type).format_label(item, idx)
         return self._cached_labels[key]
 
-    def _draw_overflow_mask(self, canvas: tk.Canvas, x: int, y: int, w: int, h: int, idx: int) -> None:
+    @staticmethod
+    def _draw_overflow_mask(canvas: tk.Canvas, x: int, y: int, w: int, h: int, idx: int) -> None:
         """Draws (or removes) the overflow mask, tagged for resize reuse."""
         clip_x = x + w
         canvas_w = canvas.winfo_width()

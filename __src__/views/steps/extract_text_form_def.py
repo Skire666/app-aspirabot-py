@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -35,6 +35,7 @@ class ExtractTextFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.EXTRACT_TEXT)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         # ROW 0
@@ -68,6 +69,7 @@ class ExtractTextFormDef(IStepFormDef):
         )
         widgets["target"] = target_var
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         widgets["selector"].set(model.params.get("selector", ""))
@@ -78,6 +80,7 @@ class ExtractTextFormDef(IStepFormDef):
             EXTRACT_TARGET_MODEL_TO_VIEW.get(model.params.get("target", "first"), EXTRACT_TARGET_DISPLAY[0])
         )
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
@@ -86,6 +89,7 @@ class ExtractTextFormDef(IStepFormDef):
             "target": EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets["target"].get(), "first"),
         }
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
@@ -93,6 +97,7 @@ class ExtractTextFormDef(IStepFormDef):
             errors.append("Sélecteur CSS : valeur obligatoire")
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         selector = model.params.get("selector", "<vide>")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -32,6 +32,7 @@ class EndProcessFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.END_PROCESS)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         row0 = ttk.Frame(frame)
@@ -50,6 +51,7 @@ class EndProcessFormDef(IStepFormDef):
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets["wait_unit"] = unit_var
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         widgets["wait_duration"].set(str(model.params.get("wait_duration", 5)))
@@ -59,6 +61,7 @@ class EndProcessFormDef(IStepFormDef):
             )
         )
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
@@ -66,6 +69,7 @@ class EndProcessFormDef(IStepFormDef):
             "wait_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["wait_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
@@ -73,6 +77,7 @@ class EndProcessFormDef(IStepFormDef):
             errors.append("Durée d'attente : doit être >= 1")
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         unit_time = model.params.get("wait_unit", "")

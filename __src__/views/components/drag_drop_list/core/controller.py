@@ -44,7 +44,8 @@ class DragDropController:
 
     # ── Drag lifecycle ───────────────────────────────────────────────
 
-    def begin_drag(self, idx: int, offset_y: int) -> DragState:
+    @staticmethod
+    def begin_drag(idx: int, offset_y: int) -> DragState:
         """Creates an initial drag state for a new drag operation.
 
         Args:
@@ -61,8 +62,8 @@ class DragDropController:
             expand_gap=None,
         )
 
+    @staticmethod
     def update(
-        self,
         state: DragState,
         fy: int,
         insert_pos: int | None,
@@ -105,7 +106,8 @@ class DragDropController:
             return False
         return self._all_thresholds_block(state, fy)
 
-    def record_redraw(self, state: DragState, fy: int) -> DragState:
+    @staticmethod
+    def record_redraw(state: DragState, fy: int) -> DragState:
         """Records that a redraw occurred for throttle tracking.
 
         Args:
@@ -117,7 +119,8 @@ class DragDropController:
         """
         return state.with_redraw(fy)
 
-    def record_skip(self, state: DragState) -> DragState:
+    @staticmethod
+    def record_skip(state: DragState) -> DragState:
         """Records a skipped redraw.
 
         Args:
@@ -130,8 +133,8 @@ class DragDropController:
 
     # ── List mutation ────────────────────────────────────────────────
 
+    @staticmethod
     def apply_reorder(
-        self,
         items: list[T],
         origin: int,
         new_pos: int,

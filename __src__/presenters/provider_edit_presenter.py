@@ -102,7 +102,8 @@ class ProviderEditPresenter:
         self._view.load_data(self._provider_to_dict(self._current_provider))
         self._view.show_inline_form(None)
 
-    def _provider_to_dict(self, provider: ProviderModel) -> dict[str, Any]:
+    @staticmethod
+    def _provider_to_dict(provider: ProviderModel) -> dict[str, Any]:
         """Converts provider model fields to a form-data dictionary.
 
         Args:

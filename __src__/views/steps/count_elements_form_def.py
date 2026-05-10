@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -31,6 +31,7 @@ class CountElementsFormDef(IStepFormDef):
     """Form definition for the count element scraping step."""
 
     def __init__(self) -> None:
+        """Initialize the form state references."""
         self._value_area_frame: ttk.Frame | None = None
         self._form_widgets_ref: dict[str, Any] | None = None
 
@@ -44,6 +45,7 @@ class CountElementsFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_ELEMENTS)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         self._form_widgets_ref = widgets
@@ -106,6 +108,7 @@ class CountElementsFormDef(IStepFormDef):
             )
             self._form_widgets_ref["value"] = val_var
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         self._form_widgets_ref = widgets
@@ -124,6 +127,7 @@ class CountElementsFormDef(IStepFormDef):
         if "value" in widgets:
             widgets["value"].set(str(model.params.get("value", 0)))
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         si_display = widgets["success_if"].get()
@@ -144,6 +148,7 @@ class CountElementsFormDef(IStepFormDef):
             result["value"] = safe_int_widget(widgets, "value", -1)
         return result
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
@@ -166,6 +171,7 @@ class CountElementsFormDef(IStepFormDef):
                 errors.append("La valeur doit être >= 0.")
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         op_labels = {

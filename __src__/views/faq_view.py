@@ -22,6 +22,11 @@ class FaqView(ttk.Frame):
     """
 
     def __init__(self, parent: tk.Widget) -> None:
+        """Initialize the FAQ view widgets.
+
+        Args:
+            parent: Parent widget that owns this view.
+        """
         super().__init__(parent)
         self._item_texts: dict[str, str] = {}
         self._create_widgets()

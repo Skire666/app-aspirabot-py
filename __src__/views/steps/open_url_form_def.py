@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -49,6 +49,7 @@ class OpenUrlFormDef(IStepFormDef):
         """Returns the label shown in the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.OPEN_URL)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates all widgets used by the Open URL form."""
         frame.columnconfigure(1, weight=1)
@@ -62,7 +63,8 @@ class OpenUrlFormDef(IStepFormDef):
         # timeout configuration + units.
         self._build_subform_timeout(frame, widgets)
 
-    def _build_subform_timeout(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+    @staticmethod
+    def _build_subform_timeout(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the timeout controls."""
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 4))
@@ -81,7 +83,8 @@ class OpenUrlFormDef(IStepFormDef):
         widgets["timeout_duration"] = td_var
         widgets["timeout_unit"] = tu_var
 
-    def _build_subform_wait_state(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+    @staticmethod
+    def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the wait-state selector."""
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 4))
@@ -92,7 +95,8 @@ class OpenUrlFormDef(IStepFormDef):
         ttk.Label(line2, text="(dom >load >idle)").pack(side=tk.LEFT, padx=(0, 4))
         widgets["wait_state"] = ws_var
 
-    def _build_subform_url(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+    @staticmethod
+    def _build_subform_url(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the URL input field."""
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 4))
@@ -102,6 +106,7 @@ class OpenUrlFormDef(IStepFormDef):
         ttk.Entry(line1, textvariable=url_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["url"] = url_var
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Loads persisted parameters into the widgets."""
         widgets["url"].set(model.params.get("url", C_INPUT_DEFAULT_URL))
@@ -113,6 +118,7 @@ class OpenUrlFormDef(IStepFormDef):
             )
         )
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Reads the current widget values as step parameters."""
         return {
@@ -122,6 +128,7 @@ class OpenUrlFormDef(IStepFormDef):
             "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validates the form and returns user-facing errors."""
         errors: list[str] = []
@@ -131,6 +138,7 @@ class OpenUrlFormDef(IStepFormDef):
             errors.append("Durée de timeout : doit être >= 1")
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Formats the label displayed in the workflow list."""
         url = model.params.get("url", "")

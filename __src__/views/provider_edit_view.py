@@ -295,7 +295,8 @@ class ProviderEditView(ttk.Frame):
         self._var_version.set("")
         self.set_workflow_validation_message("", False)
 
-    def ask_overwrite_confirmation(self) -> bool:
+    @staticmethod
+    def ask_overwrite_confirmation() -> bool:
         """Shows a popup asking if the user wants to overwrite an existing file.
 
         Returns:
@@ -303,7 +304,8 @@ class ProviderEditView(ttk.Frame):
         """
         return messagebox.askyesno("Écraser?", "Un fournisseur avec cette ID existe déjà. Voulez-vous l'écraser ?")
 
-    def show_error(self, message: str) -> None:
+    @staticmethod
+    def show_error(message: str) -> None:
         """Shows an error message popup.
 
         Args:

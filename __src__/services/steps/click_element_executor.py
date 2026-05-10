@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -19,10 +19,12 @@ class ClickElementExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.CLICK_ELEMENT
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return ClickElementParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = ClickElementParams.from_dict(params)
@@ -51,6 +53,7 @@ class ClickElementExecutor(IStepExecutor):
         else:
             raise ValueError(f"Unsupported click mode: {p.click_mode}")
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = ClickElementParams.from_dict(model.params)

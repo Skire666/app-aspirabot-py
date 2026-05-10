@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -32,6 +32,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_RANDOM_PAUSE)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         min_var = tk.StringVar(value="500")
@@ -57,6 +58,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
             line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT)
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         widgets["min"].set(str(model.params.get("min", 0)))
@@ -65,6 +67,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
             WAIT_UNIT_MODEL_TO_VIEW.get(model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
         )
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
@@ -73,6 +76,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
             "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
         }
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
@@ -87,6 +91,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
             errors.append("La valeur min. doit être <= à valeur max.")
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         unit_time = model.params.get("unit", "")

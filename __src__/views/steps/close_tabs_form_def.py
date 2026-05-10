@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -42,6 +42,7 @@ class CloseTabsFormDef(IStepFormDef):
         """Return the human-readable label for the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepType.CLOSE_TABS)
 
+    @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         frame.columnconfigure(1, weight=1)
@@ -62,11 +63,13 @@ class CloseTabsFormDef(IStepFormDef):
         )
         widgets["max_tabs"] = max_var
 
+    @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         widgets["url_filter"].set(model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER))
         widgets["max_tabs"].set(str(model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)))
 
+    @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
@@ -74,6 +77,7 @@ class CloseTabsFormDef(IStepFormDef):
             "max_tabs": safe_int_widget(widgets, "max_tabs", C_INPUT_DEFAULT_MAX_TABS),
         }
 
+    @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
@@ -86,6 +90,7 @@ class CloseTabsFormDef(IStepFormDef):
             errors.append("Filtre URL : valeur obligatoire")
         return errors
 
+    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         max_tabs = model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)

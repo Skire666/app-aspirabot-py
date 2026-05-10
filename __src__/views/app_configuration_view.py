@@ -102,7 +102,8 @@ class AppConfigurationView(ttk.Frame):
         combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=6, pady=4)
         self._log_level_combo = combo
 
-    def _add_text_row(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
+    @staticmethod
+    def _add_text_row(frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
         ttk.Entry(frame, textvariable=var).grid(
             row=row,
@@ -124,11 +125,13 @@ class AppConfigurationView(ttk.Frame):
             pady=4,
         )
 
-    def _add_bool_row(self, frame: ttk.Frame, row: int, label: str, var: tk.BooleanVar) -> None:
+    @staticmethod
+    def _add_bool_row(frame: ttk.Frame, row: int, label: str, var: tk.BooleanVar) -> None:
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
         CanvasCheckbox(frame, variable=var).grid(row=row, column=1, sticky="w", padx=6, pady=6)
 
-    def _browse_directory(self, target_var: tk.StringVar) -> None:
+    @staticmethod
+    def _browse_directory(target_var: tk.StringVar) -> None:
         current = target_var.get().strip()
         if current:
             directory = filedialog.askdirectory(initialdir=current)
@@ -258,7 +261,8 @@ class AppConfigurationView(ttk.Frame):
             return
         self._lbl_last_write.config(text=f"Dernière écriture : {display_value}")
 
-    def ask_reset_confirmation(self) -> bool:
+    @staticmethod
+    def ask_reset_confirmation() -> bool:
         """Asks the user to confirm a reset action.
 
         Returns:
@@ -266,7 +270,8 @@ class AppConfigurationView(ttk.Frame):
         """
         return messagebox.askyesno("Confirmation", "Réinitialiser la configuration ?")
 
-    def show_error(self, message: str) -> None:
+    @staticmethod
+    def show_error(message: str) -> None:
         """Displays an error dialog.
 
         Args:

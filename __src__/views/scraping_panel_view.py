@@ -784,7 +784,8 @@ class ScrapingView(ttk.Frame):
     # Message boxes
     # ------------------------------------------------------------------
 
-    def show_warning(self, message: str) -> None:
+    @staticmethod
+    def show_warning(message: str) -> None:
         """Display a warning message box.
 
         Args:

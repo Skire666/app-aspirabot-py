@@ -172,7 +172,8 @@ class ProvidersListView(ttk.Frame):
 
         self.grid.render_data(providers_data)
 
-    def show_info(self, message: str) -> None:
+    @staticmethod
+    def show_info(message: str) -> None:
         """Shows an info message box.
 
         Args:
@@ -180,7 +181,8 @@ class ProvidersListView(ttk.Frame):
         """
         messagebox.showinfo("Information", message)
 
-    def show_error(self, message: str) -> None:
+    @staticmethod
+    def show_error(message: str) -> None:
         """Shows an error message box.
 
         Args:
@@ -188,7 +190,8 @@ class ProvidersListView(ttk.Frame):
         """
         messagebox.showerror("Erreur", message)
 
-    def show_warning(self, message: str) -> None:
+    @staticmethod
+    def show_warning(message: str) -> None:
         """Shows a warning message box.
 
         Args:
@@ -196,7 +199,8 @@ class ProvidersListView(ttk.Frame):
         """
         messagebox.showwarning("Avertissement", message)
 
-    def show_validation_report(self, report_data: dict[str, Any]) -> None:
+    @staticmethod
+    def show_validation_report(report_data: dict[str, Any]) -> None:
         """Displays a validation summary to the user.
 
         Args:
@@ -229,7 +233,8 @@ class ProvidersListView(ttk.Frame):
         lines.append("Aucun fichier fournisseur invalide n'a été détecté.")
         messagebox.showinfo("Validation des fournisseurs", "\n".join(lines))
 
-    def ask_delete_confirmation(self) -> bool:
+    @staticmethod
+    def ask_delete_confirmation() -> bool:
         """Prompts the user for deletion confirmation.
 
         Returns:

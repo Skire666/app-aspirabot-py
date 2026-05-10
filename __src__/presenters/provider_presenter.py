@@ -100,7 +100,8 @@ class ProviderPresenter:
         providers_data = self._format_providers(self._all_providers)
         self._view.render_providers(providers_data)
 
-    def _format_providers(self, providers: list[ProviderModel]) -> list[dict[str, str]]:
+    @staticmethod
+    def _format_providers(providers: list[ProviderModel]) -> list[dict[str, str]]:
         """Formate une liste de modèles en données tabulaires pour la vue.
 
         Args:
@@ -198,7 +199,8 @@ class ProviderPresenter:
         finally:
             self._view.set_validation_state(False)
 
-    def _format_validation_report(self, report: ProviderValidationReport) -> dict[str, Any]:
+    @staticmethod
+    def _format_validation_report(report: ProviderValidationReport) -> dict[str, Any]:
         """Converts a domain validation report into a view-friendly dict.
 
         Args:

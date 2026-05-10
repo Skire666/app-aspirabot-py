@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
@@ -22,10 +22,12 @@ class ExtractTextExecutor(IStepExecutor):
         """Return the step type."""
         return StepType.EXTRACT_TEXT
 
+    @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
         return ExtractTextParams.default().to_dict()
 
+    @override
     def execute(self, page: Any, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = ExtractTextParams.from_dict(params)
@@ -37,6 +39,7 @@ class ExtractTextExecutor(IStepExecutor):
         texts = [extract_from_element(el, p.extract_mode) for el in selected]
         _logger.info("EXTRACT_TEXT [%s]: %s", p.selector, "\n".join(texts)[:500])
 
+    @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = ExtractTextParams.from_dict(model.params)
