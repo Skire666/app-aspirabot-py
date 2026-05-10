@@ -10,6 +10,7 @@ from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.count_element_params import CountElementsParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
+from shared.exception_util import CountElementsConditionNotMetError
 
 _logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class CountElementExecutor(IStepExecutor):
         step_success = condition_met if p.success_if == "success" else not condition_met
         if not step_success:
             val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between"} else str(p.value)
-            raise ValueError(f"COUNT_ELEMENTS : condition non satisfaite (COUNT={count}, {p.operator} {val_desc})")
+            raise CountElementsConditionNotMetError(count, p.operator, val_desc)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

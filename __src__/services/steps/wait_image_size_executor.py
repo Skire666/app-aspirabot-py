@@ -11,6 +11,7 @@ from models.steps.wait_image_size_params import WaitImageSizeParams
 from services.steps._helpers import evaluate_script_with_safe_retry, resolve_timeout_ms
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.exception_util import ImageWaitTimeoutError
 
 
 def _get_filtered_images(page: Any, p: WaitImageSizeParams) -> list[dict]:
@@ -51,7 +52,7 @@ class WaitImageSizeExecutor(IStepExecutor):
             if _get_filtered_images(page, p):
                 return
             time.sleep(0.4)
-        raise TimeoutError(f"No image matching size constraints appeared within {wait_seconds}s.")
+        raise ImageWaitTimeoutError(wait_seconds)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

@@ -11,9 +11,11 @@ from repositories.app_configuration_repository import AppConfigurationRepository
 from services.logging_service import LoggingService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
 from shared.exception_util import (
+    ConfigurationNotLoadedError,
     FailedToCreateRequiredDirectoriesDuringRuntimeError,
     FailedToInitializeLoggingDuringRuntimeError,
     FailedToLoadConfigurationDuringRuntimeError,
+    LoggingNotInitializedError,
 )
 from shared.path_util import make_all_folders_if_not_exists
 
@@ -86,7 +88,7 @@ class StartupService:
         """
         # Guard against out-of-order calls.
         if self._config_model is None:
-            raise ValueError("Call load_configuration() before create_required_directories().")
+            raise ConfigurationNotLoadedError("create_required_directories()")
 
         try:
             # Create each runtime folder declared in the configuration.
@@ -105,7 +107,7 @@ class StartupService:
         """
         # Guard against out-of-order calls.
         if self._config_model is None:
-            raise ValueError("Call load_configuration() before initialize_logging().")
+            raise ConfigurationNotLoadedError("initialize_logging()")
 
         try:
             # Derive the log file path from the configured folder.
@@ -144,7 +146,7 @@ class StartupService:
             ValueError: If load_configuration() has not been called yet.
         """
         if self._config_model is None:
-            raise ValueError("Configuration not loaded. Call load_configuration() first.")
+            raise ConfigurationNotLoadedError()
         return self._config_model
 
     @property
@@ -158,7 +160,7 @@ class StartupService:
             ValueError: If initialize_logging() has not been called yet.
         """
         if self._logging_service is None:
-            raise ValueError("Logging not initialized. Call initialize_logging() first.")
+            raise LoggingNotInitializedError()
         return self._logging_service
 
 

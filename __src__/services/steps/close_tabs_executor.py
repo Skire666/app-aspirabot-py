@@ -8,6 +8,7 @@ from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.close_tabs_params import CloseTabsParams
 from services.workflow_service import register_step_executor
+from shared.exception_util import CurrentPageClosedUnexpectedlyError
 
 
 class CloseTabsExecutor(IStepExecutor):
@@ -31,7 +32,7 @@ class CloseTabsExecutor(IStepExecutor):
             if p.url_filter and p_tab.url.find(p.url_filter) == -1:
                 p_tab.close()
         if page.context.pages.count(page) == 0:
-            raise ValueError("Current page was closed unexpectedly.")
+            raise CurrentPageClosedUnexpectedlyError()
         if p.max_tabs > 0:
             others = [t for t in page.context.pages if t is not page]
             for t in others[p.max_tabs - 1 :]:

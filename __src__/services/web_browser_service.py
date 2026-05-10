@@ -23,6 +23,7 @@ from pathlib import Path
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import ProviderModel
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
+from shared.exception_util import BrowserAlreadyLaunchedError, BrowserNotLaunchedError
 
 # ---------------------------------------------------------------------------
 # Class
@@ -81,7 +82,7 @@ class BrowserService(IWebBrowserService):
             RuntimeError: If the browser is already launched.
         """
         if self._pw is not None:
-            raise RuntimeError("Browser is already launched. Call close_browser() first.")
+            raise BrowserAlreadyLaunchedError()
 
         # Start Playwright and create the browser + context.
         self._pw = sync_playwright().start()
@@ -98,7 +99,7 @@ class BrowserService(IWebBrowserService):
             RuntimeError: If ``launch()`` has not been called yet.
         """
         if self._context is None:
-            raise RuntimeError("Browser is not launched. Call launch() first.")
+            raise BrowserNotLaunchedError()
 
         page = self._context.new_page()
 

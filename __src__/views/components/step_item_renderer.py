@@ -134,7 +134,7 @@ class StepItemRenderer:
         canvas.create_text(start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT)
         self._draw_overflow_mask(canvas, x, y, w, h, idx)
 
-    def get_label_from_store(self, item, idx):
+    def get_label_from_store(self, item: StepScrapingModel, idx: int) -> str:
         """Return the display label for a step item, using cache where possible."""
         # always (because of the dynamic nature of the label)
         # get the label for jump_to_step without caching

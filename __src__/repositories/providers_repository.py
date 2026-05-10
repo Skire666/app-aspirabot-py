@@ -27,6 +27,13 @@ from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
 from repositories.json_repository import JsonFileRepository
+from shared.exception_util import (
+    InvalidProviderJsonContentError,
+    InvalidProvidersFolderPathError,
+    ProviderDataMissingError,
+    ProviderNotFoundError,
+    UnsupportedOperatingSystemError,
+)
 from shared.operating_system_util import OperatingSystem, detect_os
 
 # ---------------------------------------------------------------------------
@@ -114,7 +121,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             content = json.load(file_handle)
 
         if not isinstance(content, dict):
-            raise ValueError(f"Contenu JSON invalide dans {file_path.name}")
+            raise InvalidProviderJsonContentError(file_path.name)
 
         return cast(dict[str, Any], content)
 
@@ -229,7 +236,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
         try:
             if not full_filepath.exists():
-                raise FileNotFoundError(f"Fournisseur non trouvé: {id_file}")
+                raise ProviderNotFoundError(id_file)
 
             # Charge le fichier JSON via JsonFileRepository
             json_repo = JsonFileRepository(full_filepath, {})
@@ -237,7 +244,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
 
             if not provider_data:
                 self._logger.warning(f"Le fichier {full_filepath} est vide.")
-                raise ValueError(f"Données manquantes pour {id_file}")
+                raise ProviderDataMissingError(id_file)
 
             provider_model = self._dict_to_provider_model(provider_data)
             self._logger.info(f"Fournisseur chargé: {full_filepath}")
@@ -357,7 +364,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             self._logger.error(f"Erreur lors de la MAJ du fournisseur: {e}")
             raise
 
-    def create_folder_if_missing(self):
+    def create_folder_if_missing(self) -> None:
         """Create the providers folder if it does not already exist."""
         if not self._folder_path.exists():
             Path(self._folder_path).mkdir(exist_ok=True, parents=True)
@@ -387,7 +394,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_file)
 
         if not full_pathfile_to_delete.exists():
-            raise FileNotFoundError(f"Fournisseur non trouvé pour suppression: {id_file}")
+            raise ProviderNotFoundError(id_file, context="suppression")
 
         try:
             Path(full_pathfile_to_delete).unlink()
@@ -414,7 +421,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         self.create_folder_if_missing()
 
         if not self._folder_path.is_dir():
-            raise NotADirectoryError(f"Le chemin spécifié n'est pas un dossier: {self._folder_path}")
+            raise InvalidProvidersFolderPathError(self._folder_path)
 
         # Utilise le système d'exploitation pour ouvrir le dossier
         try:
@@ -428,7 +435,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
                 subprocess.Popen(["xdg-open", self._folder_path])
             else:
                 self.logger.warning(f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}")
-                raise OSError(f"Système d'exploitation non pris en charge: {enum_os}")
+                raise UnsupportedOperatingSystemError(enum_os)
             self.logger.info(f"Dossier ouvert: {self._folder_path}")
         except Exception as e:
             self.logger.error(f"Erreur lors de l'ouverture du dossier: {e}")

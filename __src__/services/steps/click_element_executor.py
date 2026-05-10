@@ -9,6 +9,7 @@ from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.click_element_params import ClickElementParams
 from services.steps._helpers import evaluate_script_with_safe_retry
 from services.workflow_service import register_step_executor
+from shared.exception_util import ElementNotFoundForClickError, UnsupportedClickModeError
 
 
 class ClickElementExecutor(IStepExecutor):
@@ -36,7 +37,7 @@ class ClickElementExecutor(IStepExecutor):
         except Exception:
             pass
         if p.click_mode == "Normal":
-            raise ValueError(f"Element {p.selector!r} not found for normal click.")
+            raise ElementNotFoundForClickError(p.selector, "normal")
         # Tentative 2 : click forcé
         try:
             if p.click_mode == "Forced":
@@ -45,13 +46,13 @@ class ClickElementExecutor(IStepExecutor):
         except Exception:
             pass
         if p.click_mode == "Forced":
-            raise ValueError(f"Element {p.selector!r} not found for forced click.")
+            raise ElementNotFoundForClickError(p.selector, "forced")
         # Tentative 3 : JS direct
         if p.click_mode == "JS Direct":
             script = f"document.querySelector('{p.selector}')?.click();"
             evaluate_script_with_safe_retry(page, script, 5)
         else:
-            raise ValueError(f"Unsupported click mode: {p.click_mode}")
+            raise UnsupportedClickModeError(p.click_mode)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

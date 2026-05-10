@@ -228,7 +228,7 @@ class LoggingService:
             Attaching a callback to display logs in a text widget:
 
             >>> def display_in_widget(entry: LogEntryModel):
-            ...     widget.insert("end", f"{entry.level}: {entry.message}\\n")
+            ...     widget.insert("end", f"{entry.level}: {entry.message}")
             >>>
             >>> service = LoggingService("app.log", "INFO")
             >>> service.attach_ui_callback(display_in_widget)

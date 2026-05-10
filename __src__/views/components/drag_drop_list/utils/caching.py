@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections import OrderedDict
 from typing import Generic, TypeVar
 
+from shared.exception_util import InvalidLruCacheCapacityError
+
 K = TypeVar("K")
 V = TypeVar("V")
 
@@ -32,7 +34,7 @@ class LRUCache(Generic[K, V]):
             ValueError: If capacity < 1.
         """
         if capacity < 1:
-            raise ValueError(f"LRUCache capacity must be >= 1, got {capacity}")
+            raise InvalidLruCacheCapacityError(capacity)
         self._capacity = capacity
         self._cache: OrderedDict[K, V] = OrderedDict()
 
@@ -78,4 +80,5 @@ class LRUCache(Generic[K, V]):
         self._cache.clear()
 
     def __len__(self) -> int:
+        """Return the number of cached entries."""
         return len(self._cache)

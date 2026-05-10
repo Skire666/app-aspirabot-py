@@ -344,9 +344,7 @@ class DataGrid(ttk.Frame):
             return
 
         row_bg = (
-            self._bg_hover
-            if self._hover_row == row_index
-            else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
+            self._bg_hover if self._hover_row == row_index else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
         )
         self.body_canvas.itemconfigure(f"row-bg-{row_index}", fill=row_bg)
 
@@ -481,7 +479,14 @@ class DataGrid(ttk.Frame):
                 else:
                     self._draw_text_in_cell(y0, row_data, x0, x1, col_id)
 
-    def _draw_text_in_cell(self, y0, row_data, x0, x1, col_id):
+    def _draw_text_in_cell(
+        self,
+        y0: int,
+        row_data: dict[str, Any],
+        x0: int,
+        x1: int,
+        col_id: str,
+    ) -> None:
         self.body_canvas.create_text(
             x0 + 8,
             y0 + (self._row_height / 2),
@@ -493,7 +498,17 @@ class DataGrid(ttk.Frame):
             tags=("cell",),
         )
 
-    def _draw_button_in_cell(self, row_index, y0, y1, row_id, x0, x1, col, col_id):
+    def _draw_button_in_cell(
+        self,
+        row_index: int,
+        y0: int,
+        y1: int,
+        row_id: str,
+        x0: int,
+        x1: int,
+        col: dict[str, Any],
+        col_id: str,
+    ) -> None:
         btn = self._acquire_button(col_id, str(col.get("button_text", "Action")))
         btn.configure(command=lambda action=col_id, rid=row_id: self._handle_action(action, rid))
         btn.bind("<Enter>", lambda _event, idx=row_index: self._set_hover_row(idx))

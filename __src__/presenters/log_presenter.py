@@ -13,7 +13,7 @@ from views.log_view import LogView
 class LogPresenter:
     """Coordinates logging UI interactions and log data retrieval."""
 
-    def __init__(self, view: LogView, service: LoggingService, repository: LogRepository):
+    def __init__(self, view: LogView, service: LoggingService, repository: LogRepository) -> None:
         """Initializes Presenter linking a LogView and a LoggingService.
 
         Args:

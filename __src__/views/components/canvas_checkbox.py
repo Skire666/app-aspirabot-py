@@ -1,5 +1,7 @@
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import font as tkfont
+from typing import Any
 
 
 class CanvasCheckbox(tk.Frame):
@@ -9,7 +11,15 @@ class CanvasCheckbox(tk.Frame):
     PADDING = 2
     TEXT_MARGIN = 6
 
-    def __init__(self, master, text="", variable=None, command=None, font=None, **kwargs):
+    def __init__(
+        self,
+        master: tk.Misc,
+        text: str = "",
+        variable: tk.Variable | None = None,
+        command: Callable[[], None] | None = None,
+        font: tkfont.Font | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the canvas-based checkbox.
 
         Args:
@@ -44,16 +54,16 @@ class CanvasCheckbox(tk.Frame):
     # -------------------------
     # Public API
     # -------------------------
-    def get(self):
+    def get(self) -> bool:
         """Return the current boolean value."""
         return self._var.get()
 
-    def set(self, value: bool):
+    def set(self, value: bool) -> None:
         """Set the checkbox state and redraw."""
         self._var.set(bool(value))
         self._draw()
 
-    def config_text(self, text: str):
+    def config_text(self, text: str) -> None:
         """Update the label text and redraw."""
         self._text = text
         self._draw()
@@ -61,16 +71,16 @@ class CanvasCheckbox(tk.Frame):
     # -------------------------
     # Internal logic
     # -------------------------
-    def _toggle(self, event=None):
+    def _toggle(self, event: tk.Event | None = None) -> None:
         self.set(not self.get())
 
         if self._command:
             self._command()
 
-    def _on_var_change(self, *_):
+    def _on_var_change(self, *_: object) -> None:
         self._draw()
 
-    def _draw(self):
+    def _draw(self) -> None:
         self.canvas.delete("all")
 
         checked = self.get()

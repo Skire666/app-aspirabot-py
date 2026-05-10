@@ -24,6 +24,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from shared.exception_util import FormNotRegisteredError
+
 if TYPE_CHECKING:
     from interfaces.i_step_form_def import IStepFormDef
     from models.step_scraping_model import StepType
@@ -74,5 +76,5 @@ def get_form(step_type: StepType) -> IStepFormDef:
     """
     form = _forms.get(step_type)
     if form is None:
-        raise ValueError(f"No form registered for step type: {step_type}")
+        raise FormNotRegisteredError(step_type)
     return form

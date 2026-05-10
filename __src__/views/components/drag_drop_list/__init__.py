@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from shared.exception_util import LazyAttributeNotFoundError
+
 if TYPE_CHECKING:
     # At type-check time only (mypy / pyright). No runtime import.
     from views.components.drag_drop_list.widgets.drag_drop_list import (
@@ -53,7 +55,7 @@ def __getattr__(name: str) -> object:
         AttributeError: If name is not part of the public API.
     """
     if name not in _LAZY_ATTRS:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+        raise LazyAttributeNotFoundError(__name__, name)
     from views.components.drag_drop_list.widgets import drag_drop_list as _w
 
     return getattr(_w, name)

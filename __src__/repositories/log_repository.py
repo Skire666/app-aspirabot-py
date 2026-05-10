@@ -14,7 +14,7 @@ class LogRepository:
         _logs (List[LogEntryModel]): The internal list of log entries.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes an empty log repository."""
         self._logs: list[LogEntryModel] = []
 

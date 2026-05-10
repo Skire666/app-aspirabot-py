@@ -100,7 +100,7 @@ class CloseTabsFormDef(IStepFormDef):
 
         # si plusieurs
         label = f"Fermer les onglets  -  {max_tabs} onglet(s) max.\n"
-        label += f"Ne garder que les URL contenant '{url_filter}'"
+        label += f"Ne garder que les URL avec '{url_filter}'"
         return label
 
 

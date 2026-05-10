@@ -16,6 +16,11 @@ Example:
 
 from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel, StepType
+from shared.exception_util import (
+    ExecutorNotRegisteredError,
+    NoExecutorsRegisteredError,
+    WorkflowStepsContextRequiredError,
+)
 
 # ---------------------------------------------------------------------------
 # Variables
@@ -69,10 +74,10 @@ class WorkflowService:
             ValueError: When no executor has been registered for the type.
         """
         if not _all_step_executors:
-            raise ValueError("Executors are empty. No executors have been registered.")
+            raise NoExecutorsRegisteredError()
         executor = _all_step_executors.get(step_type)
         if executor is None:
-            raise ValueError(f"No executor registered for step type {step_type}.")
+            raise ExecutorNotRegisteredError(step_type)
         return executor
 
     def validate_step(
@@ -96,7 +101,7 @@ class WorkflowService:
         """
         try:
             if steps is None:
-                raise ValueError("Workflow steps context is required for validation.")
+                raise WorkflowStepsContextRequiredError()
 
             executor: IStepExecutor = self.get_step_executor(step.step_type)
             step.parent_context = steps  # type: ignore

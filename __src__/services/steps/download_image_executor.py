@@ -13,6 +13,11 @@ from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import evaluate_script_with_safe_retry
 from services.workflow_service import register_step_executor
+from shared.exception_util import (
+    ImageDownloadFailedError,
+    ImageNotDownloadedError,
+    NoMatchingImageFoundError,
+)
 from shared.path_util import make_all_folders_if_not_exists
 
 _logger = logging.getLogger(__name__)
@@ -67,7 +72,7 @@ class DownloadImageExecutor(IStepExecutor):
         bounds = _extract_bounds(p)
         images = _get_filtered_images(page, bounds)
         if not images:
-            raise ValueError("No image matching the size constraints found on the page.")
+            raise NoMatchingImageFoundError()
 
         targets = _select_by_mode(images, p.mode)
         make_all_folders_if_not_exists(folder, is_file_path=False)
@@ -84,7 +89,7 @@ class DownloadImageExecutor(IStepExecutor):
                 headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")},
             )
             if not response.ok:
-                raise ValueError(f"Failed to download image: HTTP {response.status}")
+                raise ImageDownloadFailedError(response.status)
             url_path = full_url.split("?")[0]
             suffix = Path(url_path).suffix or ".jpg"
             filename = (
@@ -97,7 +102,7 @@ class DownloadImageExecutor(IStepExecutor):
             downloaded_count += 1
 
         if downloaded_count == 0:
-            raise ValueError(f"No image was downloaded (but found={len(targets)}).")
+            raise ImageNotDownloadedError(len(targets))
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

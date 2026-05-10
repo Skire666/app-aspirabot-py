@@ -35,6 +35,7 @@ from shared.constants import (
     C_APP_CONFIG_FILE,
     C_BROWSER_ENGINE_PLAYWRIGHT,
 )
+from shared.exception_util import UnsupportedBrowserEngineError
 from shared.i18n_fra import (
     C_TITLE_MODULE_CONFIG,
     C_TITLE_MODULE_FAQ,
@@ -271,7 +272,7 @@ def _init_scraping_component(
     if config_model.browser_engine == C_BROWSER_ENGINE_PLAYWRIGHT:
         browser_service = BrowserService(config_model.folder_scraping)
     else:
-        raise Exception(f"Unsupported browser engine: {config_model.browser_engine}")
+        raise UnsupportedBrowserEngineError(config_model.browser_engine)
     workflow_service = WorkflowService()
     scraping_service = ScrapingService(config_model.folder_scraping, browser_service, workflow_service)
     scraping_view = ScrapingView(main_view.content_area)
@@ -307,18 +308,21 @@ def _wire_provider_navigation(
         # Open the edit form in creation mode and navigate to it.
         provider_edit_presenter.create_new()
         main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
+        main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.DISABLED)
         main_view.show_view(C_TITLE_MODULE_WORKFLOW)
 
     def on_request_edit_provider(id_file: str) -> None:
         # Load the selected provider into the edit form and navigate to it.
         provider_edit_presenter.load_provider(id_file)
         main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
+        main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.DISABLED)
         main_view.show_view(C_TITLE_MODULE_WORKFLOW)
 
     def on_edit_done() -> None:
         # Return to the list and disable the edit tab after save/cancel.
         provider_presenter.refresh()
         main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
+        main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.NORMAL)
         main_view.show_view(C_TITLE_MODULE_PROVIDER)
 
     # Inject all navigation callbacks into the two presenters.

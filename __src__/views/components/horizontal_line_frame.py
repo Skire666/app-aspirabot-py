@@ -1,4 +1,5 @@
 import tkinter as tk
+from typing import Any
 
 from shared.constants import C_COLOR_GRAY_SEPARATOR
 
@@ -6,7 +7,7 @@ from shared.constants import C_COLOR_GRAY_SEPARATOR
 class HorizontalLineFrame(tk.Frame):
     """Frame widget that renders a labeled horizontal separator."""
 
-    def __init__(self, parent, text="", **kwargs):
+    def __init__(self, parent: tk.Misc, text: str = "", **kwargs: Any) -> None:
         """Initialize the separator frame.
 
         Args:
@@ -33,7 +34,7 @@ class HorizontalLineFrame(tk.Frame):
         # Mettre à jour la ligne quand la fenêtre est redimensionnée
         self.bind("<Configure>", lambda e: self.draw_line())
 
-    def draw_line(self):
+    def draw_line(self) -> None:
         """Draw or redraw the horizontal line."""
         self.line_canvas.delete("all")
         width = self.winfo_width()
