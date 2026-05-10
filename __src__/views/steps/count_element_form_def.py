@@ -29,9 +29,7 @@ from views.steps._constants import (
 
 from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
-C_INPUT_DEFAULT_CSS_SELECTOR = (
-    "<div class='ds-theme' >> div.ds-theme  ||  id='header' >> #header  ||  copy selector dans chrome/debug"
-)
+C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_TIME_WAIT = 100
 
 
