@@ -14,10 +14,9 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 
 class EndProcessFormDef(IStepFormDef):
@@ -36,12 +35,12 @@ class EndProcessFormDef(IStepFormDef):
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=4)
+        row0.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(row0, text="Attendre avant de fermer:").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Label(row0, text="Attendre avant de fermer:").pack(side=tk.LEFT, padx=(0, 4))
         dur_var = tk.StringVar(value="5")
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 4)
         )
         widgets["wait_duration"] = dur_var
 

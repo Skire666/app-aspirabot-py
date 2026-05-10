@@ -39,18 +39,18 @@ class JumpToStepFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=4)
+        row0.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(row0, text="Condition:").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Label(row0, text="Condition:").pack(side=tk.LEFT, padx=(0, 4))
         cond_var = tk.StringVar(value=CONDITION_DISPLAY[0])
         ttk.Combobox(row0, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
         )
         widgets["condition"] = cond_var
 
         # ROW 1
         row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=4)
+        row1.pack(fill="x", pady=(0, 4))
 
         available_steps: list[StepScrapingModel] = widgets.get("_all_steps_available", [])
 
@@ -76,9 +76,9 @@ class JumpToStepFormDef(IStepFormDef):
         target_var = tk.StringVar(value=default_choice)
         widgets["_choice_from_listbox"] = target_var  # important de passer le stringvar
 
-        ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(0, 4))
         ttk.Combobox(row1, textvariable=target_var, values=all_choices_listbox, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
         )
 
     # à partir du model, alimente view

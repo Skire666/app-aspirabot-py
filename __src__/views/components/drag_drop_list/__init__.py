@@ -55,4 +55,5 @@ def __getattr__(name: str) -> object:
     if name not in _LAZY_ATTRS:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     from views.components.drag_drop_list.widgets import drag_drop_list as _w
+
     return getattr(_w, name)

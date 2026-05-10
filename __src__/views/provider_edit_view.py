@@ -11,6 +11,7 @@ from typing import Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from views.components.horizontal_line_frame import HorizontalLineFrame
 from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 from views.workflow_list_view import WorkflowListView
 
@@ -44,29 +45,29 @@ class ProviderEditView(ttk.Frame):
         self.rowconfigure(0, weight=1)
 
         main_container = ttk.Frame(self)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=(5, 10))
+        main_container.pack(fill=tk.BOTH, expand=True, padx=0)
 
         # Top Section (Informations + Metadonnees)
         top_frame = ttk.Frame(main_container)
-        top_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 10))
+        top_frame.pack(side=tk.TOP, fill=tk.X)
         top_frame.columnconfigure(0, weight=1)
         top_frame.columnconfigure(1, weight=1)
 
         # 1. Informations générales (fusionné)
-        info_lf = ttk.LabelFrame(top_frame, text="Informations")
+        info_lf = HorizontalLineFrame(top_frame, text="Informations")
         info_lf.grid(row=0, column=0, columnspan=2, sticky="nwes", padx=(5, 5))
 
         # Ligne 1 : Nom + ID Fichier
         line1_frame = ttk.Frame(info_lf)
-        line1_frame.pack(fill="x", padx=5, pady=5)
+        line1_frame.pack(fill="x", padx=5)
 
         # Label Nom
-        ttk.Label(line1_frame, text="Nom : ", width=7).pack(side="left")
+        ttk.Label(line1_frame, text="Nom : ", width=7).pack(side="left", pady=(0, 5))
 
         # Zone de texte éditable Nom (occupe l'espace restant)
         self._var_name = tk.StringVar()
         self._entry_name = ttk.Entry(line1_frame, textvariable=self._var_name)
-        self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=(0, 5))
 
         # Label ID Fichier
         ttk.Label(line1_frame, text="ID Fichier : ", width=10).pack(side="left", padx=(20, 0))
@@ -74,11 +75,11 @@ class ProviderEditView(ttk.Frame):
         # Label en lecture seule ID Fichier
         self._var_id_file = tk.StringVar()
         self._entry_id_file = ttk.Entry(line1_frame, textvariable=self._var_id_file, state="readonly", width=15)
-        self._entry_id_file.pack(side="left")
+        self._entry_id_file.pack(side="left", pady=(0, 5))
 
         # Ligne 2 : URL + Version
         line2_frame = ttk.Frame(info_lf)
-        line2_frame.pack(fill="x", padx=5, pady=(0, 10))
+        line2_frame.pack(fill="x", padx=5)
 
         # Label URL
         ttk.Label(line2_frame, text="URL : ", width=7).pack(side="left")
@@ -100,10 +101,10 @@ class ProviderEditView(ttk.Frame):
         top_frame.columnconfigure(0, weight=1)
 
         # Gestion des étapes.
-        self._gestion_container = ttk.LabelFrame(
+        self._gestion_container = HorizontalLineFrame(
             main_container, text="Gestion des étapes", height=_HEIGHT_FRAME_GESTION
         )
-        self._gestion_container.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(0, 5))
+        self._gestion_container.pack(side=tk.TOP, fill=tk.X, padx=5)
         self._gestion_container.pack_propagate(False)
         self._create_gestion_widgets()
 
@@ -120,11 +121,11 @@ class ProviderEditView(ttk.Frame):
         self._lbl_workflow_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         # 3. fills all remaining vertical space
-        workflow_lf = ttk.LabelFrame(main_container, text="Liste des étapes")
+        workflow_lf = HorizontalLineFrame(main_container, text="Liste des étapes")
         workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5), padx=(5))
 
         self._workflow_builder_view = WorkflowListView(workflow_lf)
-        self._workflow_builder_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self._workflow_builder_view.pack(fill=tk.BOTH, expand=True)
 
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder le fournisseur", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
@@ -135,13 +136,11 @@ class ProviderEditView(ttk.Frame):
     def _create_gestion_widgets(self) -> None:
         labels = list(C_STEP_TYPE_TO_LABELS.values())
 
-        left_frame = ttk.Frame(self._gestion_container, width=180)
-        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 2), pady=5)
+        left_frame = ttk.Frame(self._gestion_container, width=175)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 15), pady=0)  # spération verticale
         left_frame.pack_propagate(False)
 
-        self._type_listbox = tk.Listbox(
-            left_frame, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
-        )
+        self._type_listbox = tk.Listbox(left_frame, selectmode=tk.SINGLE, exportselection=False, activestyle="none")
         sb = ttk.Scrollbar(left_frame, orient="vertical", command=self._type_listbox.yview)
         self._type_listbox.configure(yscrollcommand=sb.set)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -153,7 +152,7 @@ class ProviderEditView(ttk.Frame):
         self._type_listbox.bind("<<ListboxSelect>>", self._on_type_list_select)
 
         self._inline_form = StepInlineFormPanel(self._gestion_container)
-        self._inline_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 5), pady=5)
+        self._inline_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self._is_edit_mode: bool = False
         self._inline_form.on_confirm = self._on_inline_confirm

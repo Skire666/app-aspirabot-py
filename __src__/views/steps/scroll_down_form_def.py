@@ -9,10 +9,9 @@ from typing import Any
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import safe_int_widget
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 
 class ScrollDownFormDef(IStepFormDef):
@@ -32,10 +31,10 @@ class ScrollDownFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Pixels:").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+        ttk.Label(frame, text="Pixels:").grid(row=0, column=0, sticky="w", padx=(0, 4), pady=(0, 4))
         pixels_var = tk.StringVar(value="1000")
         ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=pixels_var, width=10).grid(
-            row=0, column=1, sticky="w", padx=5, pady=4
+            row=0, column=1, sticky="w", padx=(0, 4), pady=(0, 4)
         )
         widgets["pixels"] = pixels_var
 

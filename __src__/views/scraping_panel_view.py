@@ -23,7 +23,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from __src__.shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
+from shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -768,10 +768,7 @@ class ScrapingView(ttk.Frame):
         Returns:
             Ordered list of row tuples (date, step_started, duration, result, message).
         """
-        return [
-            tuple(str(v) for v in self._tree.item(item, "values"))
-            for item in self._tree.get_children()
-        ]
+        return [tuple(str(v) for v in self._tree.item(item, "values")) for item in self._tree.get_children()]
 
     def _export_journal(self) -> None:
         """Open a save dialog and fire on_export_journal with the chosen path."""

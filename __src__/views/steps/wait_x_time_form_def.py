@@ -14,10 +14,9 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 C_INPUT_DEFAULT_DURATION = 3
 
@@ -38,12 +37,12 @@ class WaitXTimeFormDef(IStepFormDef):
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         timeout_frame = ttk.Frame(frame)
-        timeout_frame.pack(fill="x", pady=4)
+        timeout_frame.pack(fill="x")
 
-        ttk.Label(timeout_frame, text="Attendre une durée de : ").pack(side=tk.LEFT, padx=5, pady=4)
+        ttk.Label(timeout_frame, text="Attendre une durée de : ").pack(side=tk.LEFT, padx=(0, 4), pady=(0, 4))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_DURATION))
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5), pady=4
+            side=tk.LEFT, padx=(0, 4), pady=(0, 4)
         )
         widgets["duration"] = dur_var
 
@@ -57,9 +56,7 @@ class WaitXTimeFormDef(IStepFormDef):
         """Load step parameters into form widgets."""
         widgets["duration"].set(str(model.params.get("duration", C_INPUT_DEFAULT_DURATION)))
         widgets["unit"].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+            WAIT_UNIT_MODEL_TO_VIEW.get(model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:

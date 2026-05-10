@@ -20,7 +20,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepType, str] = {
     StepType.CLOSE_TABS: "Fermer des onglets",
     StepType.REFRESH_PAGE: "Rafraîchir la page",
     StepType.WAIT_X_TIME: "Attendre une durée fixe",
-    StepType.RANDOM_PAUSE: "Attendre aléatoirement",
+    StepType.WAIT_RANDOM_PAUSE: "Attendre aléatoirement",
     StepType.WAIT_USER_ACTION: "Attendre action utilisateur",
     StepType.DOWNLOAD_IMAGE: "Télécharger les images",
     StepType.WAIT_IMAGE_SIZE: "Présence taille d'image",

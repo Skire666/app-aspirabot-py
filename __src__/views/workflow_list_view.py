@@ -109,7 +109,7 @@ class WorkflowListView(ttk.Frame):
         toolbar = ttk.Frame(self)
 
         self._btn_clear = ttk.Button(toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps)
-        self._btn_clear.pack(side=tk.RIGHT, padx=5, pady=4)
+        self._btn_clear.pack(side=tk.RIGHT, padx=(0, 20))
 
         return toolbar
 

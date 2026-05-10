@@ -20,7 +20,7 @@ class RandomPauseExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.RANDOM_PAUSE
+        return StepType.WAIT_RANDOM_PAUSE
 
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""

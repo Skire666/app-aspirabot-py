@@ -8,6 +8,7 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
+from shared.constants import C_COLOR_GRAY_BACKGROUND
 from shared.i18n_fra import (
     C_TITLE_MODULE_CONFIG,
     C_TITLE_MODULE_FAQ,
@@ -55,7 +56,7 @@ C_LISTING_MODULES: dict[str, tuple[str, str]] = {
 # Sidebar button color constants
 C_COLOR_SIDEBAR_ACTIVE_BG = "#6164B7"
 C_COLOR_SIDEBAR_ACTIVE_FG = "#ffffff"
-C_COLOR_SIDEBAR_NORMAL_BG = "#F0F0F0"
+C_COLOR_SIDEBAR_NORMAL_BG = C_COLOR_GRAY_BACKGROUND
 C_COLOR_SIDEBAR_NORMAL_FG = "#191919"
 C_COLOR_SIDEBAR_HOVER_BG = "#d0d0d0"
 C_COLOR_SIDEBAR_HOVER_FG = "#000000"

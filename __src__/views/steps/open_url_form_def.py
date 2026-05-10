@@ -18,10 +18,9 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_STATES, WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -66,7 +65,7 @@ class OpenUrlFormDef(IStepFormDef):
     def _build_subform_timeout(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the timeout controls."""
         line3 = ttk.Frame(frame)
-        line3.pack(fill="x", pady=4)
+        line3.pack(fill="x", pady=(0, 4))
 
         # timeout duration
         ttk.Label(line3, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 4))
@@ -76,29 +75,27 @@ class OpenUrlFormDef(IStepFormDef):
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
 
-        ttk.Combobox(
-            line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
-        ).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Combobox(line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
         widgets["timeout_duration"] = td_var
         widgets["timeout_unit"] = tu_var
 
     def _build_subform_wait_state(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the wait-state selector."""
         line2 = ttk.Frame(frame)
-        line2.pack(fill="x", pady=2)
+        line2.pack(fill="x", pady=(0, 4))
 
         ttk.Label(line2, text="L'état à attendre :").pack(side=tk.LEFT, padx=(0, 4))
         ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_STATE)
-        ttk.Combobox(line2, textvariable=ws_var, values=WAIT_STATES, state="readonly").pack(
-            side=tk.LEFT, padx=5, pady=4
-        )
+        ttk.Combobox(line2, textvariable=ws_var, values=WAIT_STATES, state="readonly").pack(side=tk.LEFT, padx=5)
         ttk.Label(line2, text="(dom >load >idle)").pack(side=tk.LEFT, padx=(0, 4))
         widgets["wait_state"] = ws_var
 
     def _build_subform_url(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the URL input field."""
         line1 = ttk.Frame(frame)
-        line1.pack(fill="x", pady=2)
+        line1.pack(fill="x", pady=(0, 4))
 
         ttk.Label(line1, text="URL : ").pack(side=tk.LEFT, padx=(0, 4))
         url_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
@@ -109,9 +106,7 @@ class OpenUrlFormDef(IStepFormDef):
         """Loads persisted parameters into the widgets."""
         widgets["url"].set(model.params.get("url", C_INPUT_DEFAULT_URL))
         widgets["wait_state"].set(model.params.get("wait_state", C_INPUT_DEFAULT_WAIT_STATE))
-        widgets["timeout_duration"].set(
-            str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION))
-        )
+        widgets["timeout_duration"].set(str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION)))
         widgets["timeout_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW

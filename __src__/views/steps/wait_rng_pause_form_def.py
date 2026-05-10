@@ -14,24 +14,23 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
-
-class RandomPauseFormDef(IStepFormDef):
+class WaitRandomPauseFormDef(IStepFormDef):
     """Form definition for the random pause scraping step."""
 
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.RANDOM_PAUSE
+        return StepType.WAIT_RANDOM_PAUSE
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.RANDOM_PAUSE)
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_RANDOM_PAUSE)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
@@ -47,14 +46,14 @@ class RandomPauseFormDef(IStepFormDef):
 
         # line for min and max values
         row0 = ttk.Frame(frame)
-        row0.grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+        row0.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
         ttk.Label(row0, text="Pause aléatoire entre : ").pack(side=tk.LEFT, padx=(0, 4))
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
         ttk.Label(row0, text=" et ").pack(side=tk.LEFT)
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=7).pack(
-            side=tk.LEFT, padx=5
+            side=tk.LEFT, padx=(0, 4)
         )
         ttk.Combobox(
             row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
@@ -65,9 +64,7 @@ class RandomPauseFormDef(IStepFormDef):
         widgets["min"].set(str(model.params.get("min", 0)))
         widgets["max"].set(str(model.params.get("max", 1)))
         widgets["unit"].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+            WAIT_UNIT_MODEL_TO_VIEW.get(model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
         )
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -96,7 +93,9 @@ class RandomPauseFormDef(IStepFormDef):
         """Return a compact human-readable label for this step instance."""
         unit_time = model.params.get("unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return f"Attendre aléatoirement\nEntre {model.params.get('min', 0)} et {model.params.get('max', 1)} {unit_display}"
+        return (
+            f"Attendre aléatoirement\nEntre {model.params.get('min', 0)} et {model.params.get('max', 1)} {unit_display}"
+        )
 
 
-register_form(RandomPauseFormDef())
+register_form(WaitRandomPauseFormDef())

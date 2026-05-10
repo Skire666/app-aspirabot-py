@@ -14,10 +14,9 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
@@ -44,35 +43,25 @@ class WaitImageSizeFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         # LIGNE 1 : Hauteur (px) + Min + Spinbox + Max + Spinbox
         line1 = ttk.Frame(frame)
-        line1.pack(fill="x", pady=2)
+        line1.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(line1, text="Hauteur entre : ", width=10).pack(side="left")
+        ttk.Label(line1, text="Hauteur : ").pack(side="left")
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=8).pack(
-            side="left", padx=5
-        )
-        ttk.Label(line1, text="et").pack(side="left", padx=2)
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=6).pack(side="left")
+        ttk.Label(line1, text="<").pack(side="left")
         height_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=8).pack(
-            side="left", padx=5
-        )
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=7).pack(side="left")
         widgets["height_min"] = height_min_var
         widgets["height_max"] = height_max_var
 
-        # LIGNE 2 : Largeur (px) + Min + Spinbox + Max + Spinbox
-        line2 = ttk.Frame(frame)
-        line2.pack(fill="x", pady=2)
+        # # LIGNE 2 : Largeur (px) + Min + Spinbox + Max + Spinbox
 
-        ttk.Label(line2, text="Largeur entre : ", width=10).pack(side="left")
+        ttk.Label(line1, text="Largeur : ").pack(side="left")
         width_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
-        ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_min_var, width=8).pack(
-            side="left", padx=5
-        )
-        ttk.Label(line2, text="et").pack(side="left", padx=2)
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_min_var, width=6).pack(side="left")
+        ttk.Label(line1, text="<").pack(side="left")
         width_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
-        ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=8).pack(
-            side="left", padx=5
-        )
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=7).pack(side="left")
         widgets["width_min"] = width_min_var
         widgets["width_max"] = width_max_var
 
@@ -83,7 +72,7 @@ class WaitImageSizeFormDef(IStepFormDef):
         widgets["timeout_unit"] = tu_var
 
         timeout_frame = ttk.Frame(frame)
-        timeout_frame.pack(fill="x", pady=2)
+        timeout_frame.pack(fill="x", pady=(0, 4))
         ttk.Label(timeout_frame, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 4))
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
@@ -103,9 +92,7 @@ class WaitImageSizeFormDef(IStepFormDef):
         widgets["height_max"].set(str(model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
         widgets["width_min"].set(str(model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
         widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
-        widgets["timeout_duration"].set(
-            str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION))
-        )
+        widgets["timeout_duration"].set(str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION)))
         widgets["timeout_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW

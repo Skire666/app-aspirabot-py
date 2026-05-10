@@ -93,6 +93,9 @@ C_UNITS_TIME_CONVERSION_TO_MS: dict[str, int] = {"m": 60 * 1000, "s": 1000, "ms"
 
 # ---------------------------------------------------------------------------
 
+# default color background
+C_COLOR_GRAY_BACKGROUND: str = "#F0F0F0"
+C_COLOR_GRAY_SEPARATOR: str = "#A8A8A8"
 
 # Minimum time each step is displayed (milliseconds).
 C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 100  # x4 < 800 ms total

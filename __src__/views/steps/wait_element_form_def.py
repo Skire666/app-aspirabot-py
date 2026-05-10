@@ -14,10 +14,9 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
@@ -39,18 +38,16 @@ class WaitElementFormDef(IStepFormDef):
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the selector and timeout widgets into the given frame."""
-        frame.columnconfigure(0, weight=1)
+        line1 = ttk.Frame(frame)
+        line1.pack(fill="x", pady=(0, 4))
 
-        selector_frame = ttk.Frame(frame)
-        selector_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=5, pady=4)
-
-        ttk.Label(selector_frame, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(line1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(selector_frame, textvariable=sel_var).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Entry(line1, textvariable=sel_var).pack(side=tk.LEFT, fill=tk.X, expand=True)
         widgets["selector"] = sel_var
 
         timeout_frame = ttk.Frame(frame)
-        timeout_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=4)
+        timeout_frame.pack(fill="x", pady=(0, 4))
         ttk.Label(timeout_frame, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 4))
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(

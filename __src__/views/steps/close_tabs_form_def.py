@@ -13,10 +13,9 @@ from typing import Any
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import safe_int_widget
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -48,18 +47,18 @@ class CloseTabsFormDef(IStepFormDef):
         frame.columnconfigure(1, weight=1)
 
         ttk.Label(frame, text="Garder uniquement ce qui contient : ").grid(
-            row=0, column=0, sticky="w", padx=5, pady=4
+            row=0, column=0, sticky="w", padx=(0, 4), pady=(0, 4)
         )
         filter_var = tk.StringVar(value=C_INPUT_DEFAULT_URL_FILTER)
-        ttk.Entry(frame, textvariable=filter_var).grid(row=0, column=1, sticky="ew", padx=5, pady=4)
+        ttk.Entry(frame, textvariable=filter_var).grid(row=0, column=1, sticky="ew", padx=(0, 4), pady=(0, 4))
         widgets["url_filter"] = filter_var
 
-        ttk.Label(frame, text="<<URL>> ou bien .com").grid(row=1, column=1, sticky="w", padx=5, pady=(0, 4))
+        ttk.Label(frame, text="<<URL>> ou bien .com").grid(row=1, column=1, sticky="w", padx=(0, 4), pady=(0, 4))
 
-        ttk.Label(frame, text="Max. onglets ouverts:").grid(row=2, column=0, sticky="w", padx=5, pady=4)
+        ttk.Label(frame, text="Max. onglets ouverts:").grid(row=2, column=0, sticky="w", padx=(0, 4), pady=(0, 4))
         max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MAX_TABS))
         ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).grid(
-            row=2, column=1, sticky="w", padx=5, pady=4
+            row=2, column=1, sticky="w", padx=(0, 4), pady=(0, 4)
         )
         widgets["max_tabs"] = max_var
 

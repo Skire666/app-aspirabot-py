@@ -8,10 +8,9 @@ from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 
 class RefreshPageFormDef(IStepFormDef):
@@ -30,9 +29,7 @@ class RefreshPageFormDef(IStepFormDef):
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         cache_var = tk.BooleanVar(value=False)
-        CanvasCheckbox(frame, text="Vider le cache (Ctrl + F5)", variable=cache_var).grid(
-            row=0, column=0, sticky="w", padx=5, pady=4
-        )
+        CanvasCheckbox(frame, text="Vider le cache (Ctrl + F5)", variable=cache_var).grid(row=0, column=0, sticky="w")
         widgets["clear_cache"] = cache_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:

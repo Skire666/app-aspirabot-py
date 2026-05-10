@@ -20,9 +20,8 @@ from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
+from views.provider_edit_view import ProviderEditView
 from views.workflow_list_view import WorkflowListView
-
-from __src__.views.provider_edit_view import ProviderEditView
 
 # ---------------------------------------------------------------------------
 # Classes

@@ -12,6 +12,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Generic, Protocol, TypeVar
 
+from shared.constants import C_COLOR_GRAY_BACKGROUND
 from shared.resources_icons_util import (
     C_RESS_ICON_WHITE_COPY,
     C_RESS_ICON_WHITE_DELETE,
@@ -33,7 +34,7 @@ T = TypeVar("T")
 # ── Theme ─────────────────────────────────────────────────────────────────────
 
 DEFAULT_THEME: dict[str, str] = {
-    "bg": "#F0F0F0",
+    "bg": C_COLOR_GRAY_BACKGROUND,
     "drag_bg": "#5286d9",
     "insert": "#8fb1e8",
     "btn_move": "#64748b",
@@ -225,9 +226,7 @@ class DragDropList(tk.Frame, Generic[T]):
         self._on_reorder = on_reorder
 
         # Only show buttons with registered callbacks.
-        self._visible_btns: list[_BtnDef] = [
-            b for b in C_MINI_BUTTONS_WORKFLOW if self._cbs.get(b.key) is not None
-        ]
+        self._visible_btns: list[_BtnDef] = [b for b in C_MINI_BUTTONS_WORKFLOW if self._cbs.get(b.key) is not None]
 
         # ── Drag state ────────────────────────────────────────────────
         self._drag_state: DragState | None = None

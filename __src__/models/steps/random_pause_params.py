@@ -39,4 +39,4 @@ class RandomPauseParams(IStepParams):
     @classmethod
     def get_step_type(cls):
         """Return the step type."""
-        return StepType.RANDOM_PAUSE
+        return StepType.WAIT_RANDOM_PAUSE

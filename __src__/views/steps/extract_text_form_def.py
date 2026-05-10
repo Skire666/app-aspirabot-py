@@ -8,6 +8,7 @@ from typing import Any
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
     EXTRACT_MODE_DISPLAY,
@@ -17,8 +18,6 @@ from views.steps._constants import (
     EXTRACT_TARGET_MODEL_TO_VIEW,
     EXTRACT_TARGET_VIEW_TO_MODEL,
 )
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 
@@ -40,32 +39,32 @@ class ExtractTextFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=4)
+        row0.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 4))
         widgets["selector"] = sel_var
 
         # ROW 1
         row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=4)
+        row1.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(row1, text="Mode d'extraction : ").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Label(row1, text="Mode d'extraction : ").pack(side=tk.LEFT, padx=(0, 4))
         mode_var = tk.StringVar(value=EXTRACT_MODE_DISPLAY[0])
         ttk.Combobox(row1, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
         )
         widgets["extract_mode"] = mode_var
 
         # ROW 2
         row2 = ttk.Frame(frame)
-        row2.pack(fill="x", pady=4)
+        row2.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(row2, text="Cible : ").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Label(row2, text="Cible : ").pack(side=tk.LEFT, padx=(0, 4))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[0])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
         )
         widgets["target"] = target_var
 

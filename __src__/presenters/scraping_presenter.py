@@ -25,9 +25,8 @@ from models.step_scraping_model import StepScrapingModel
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
+from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff
 from views.scraping_panel_view import ScrapingView
-
-from __src__.shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff
 
 # ---------------------------------------------------------------------------
 # Classes

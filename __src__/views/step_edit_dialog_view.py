@@ -82,18 +82,18 @@ class StepInlineFormPanel(ttk.Frame):
         pack reserves their space before the expanding form_frame claims the rest.
         """
         top_area = ttk.Frame(self)
-        top_area.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5)
+        top_area.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self._form_frame = ttk.Frame(top_area)
-        self._form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 5), pady=5)
+        self._form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self._create_bottom()
 
     def _create_bottom(self) -> None:
         """Creates the Confirm and Cancel buttons at the bottom."""
         btn_frame = ttk.Frame(self)
-        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X)
         self._btn_create = ttk.Button(btn_frame, text="Ajouter une étape", command=self._btn_confirm_create)
-        self._btn_create.pack(side=tk.LEFT, padx=5)
+        self._btn_create.pack(side=tk.LEFT, padx=0)
         self._btn_edit = ttk.Button(btn_frame, text="Modifier l'étape", command=self._btn_confirm_update)
         self._btn_edit.pack(side=tk.LEFT, padx=5)
         self._btn_cancel = ttk.Button(btn_frame, text="Annuler", command=self._btn_cancel_edition)

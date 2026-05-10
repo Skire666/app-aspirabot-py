@@ -14,6 +14,7 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
     COUNT_OP_DISPLAY,
@@ -26,8 +27,6 @@ from views.steps._constants import (
     WAIT_UNIT_VIEW_TO_MODEL,
     safe_int_widget,
 )
-
-from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_TIME_WAIT = 100
@@ -56,9 +55,9 @@ class CountElementFormDef(IStepFormDef):
 
         # ROW 0 — pre-wait
         row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=2)
+        row0.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(row0, text="Attendre avant évaluation : ").pack(side=tk.LEFT, padx=(5, 4))
+        ttk.Label(row0, text="Attendre avant évaluation : ").pack(side=tk.LEFT, padx=(0, 4))
         wd_var = tk.StringVar(value=C_INPUT_DEFAULT_TIME_WAIT)
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=wd_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
@@ -73,22 +72,22 @@ class CountElementFormDef(IStepFormDef):
 
         # ROW 1 — CSS selector
         row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=2)
+        row1.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 4))
         widgets["selector"] = sel_var
 
         # ROW 2 — success_if + operator + dynamic value area
         row2 = ttk.Frame(frame)
-        row2.pack(fill="x", pady=4)
+        row2.pack(fill="x", pady=(0, 4))
 
         si_var = tk.StringVar(value=COUNT_SUCCESS_IF_DISPLAY[0])
         ttk.Combobox(row2, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8).pack(
-            side=tk.LEFT, padx=(5)
+            side=tk.LEFT, padx=(0, 4)
         )
-        ttk.Label(row2, text="si").pack(side=tk.LEFT, padx=(5))
+        ttk.Label(row2, text="si").pack(side=tk.LEFT, padx=(0, 4))
         widgets["success_if"] = si_var
 
         op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])  # supérieur ou égal
@@ -117,7 +116,7 @@ class CountElementFormDef(IStepFormDef):
             ttk.Label(self._value_area_frame, text=" et ").pack(side=tk.LEFT)
             vmax_var = tk.StringVar(value="0")
             ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmax_var, width=7).pack(
-                side=tk.LEFT
+                side=tk.LEFT, padx=(0, 4)
             )
             self._form_widgets_ref["value_min"] = vmin_var
             self._form_widgets_ref["value_max"] = vmax_var
