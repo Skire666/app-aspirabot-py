@@ -1,22 +1,22 @@
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import secrets
 
 from shared.exception_util import ValueMustBePositiveAndEvenError
 
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
 # forbidden characters: i, l, n, o, r, s, u, v, z AND 0, 1, 2 -> to avoid confusion with 0o, I1l, uv, AR...
 # and ensure strings are easily distinguishable and less prone to errors when read or transcribed.
 _ALPHABET_PATTERN = "aAbBcCdDeEFgGHkNpPqtTxyZY23456789"
 
-## ---------------------------------------------------------------------------
-## Classes & Functions
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes & Functions
+# ---------------------------------------------------------------------------
 
 g_unique_list_id_step = set()
 
@@ -56,7 +56,7 @@ def generate_rng_id_step() -> str:
             g_unique_list_id_step.add(value)
             return value
 
-    ## +2 char ?
+    # +2 char ?
     return "".join(secrets.choice(_ALPHABET_PATTERN) for _ in range(6))
 
 
@@ -83,4 +83,4 @@ def generate_rng_hexastring(nbr_char: int) -> str:
     return secrets.token_hex(nbr_char // 2)  # Generates a random string of length
 
 
-## EOF
+# EOF

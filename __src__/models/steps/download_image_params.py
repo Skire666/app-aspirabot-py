@@ -49,7 +49,7 @@ class DownloadImageParams(IStepParams):
         """Deserialize from dict."""
         return cls(
             mode=data.get("mode", "largest"),
-            unique_only=bool(data.get("unique_only", False)),
+            unique_only=bool(data.get("unique_only")),
             height_min=int(data.get("height_min", 0)),
             height_max=int(data.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
             width_min=int(data.get("width_min", 0)),

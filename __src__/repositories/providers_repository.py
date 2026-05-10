@@ -10,9 +10,9 @@ Exemples d'utilisation:
     >>> liste_providers = repo.list_providers()
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import json
 import logging
@@ -29,9 +29,9 @@ from models.step_scraping_model import StepScrapingModel
 from repositories.json_repository import JsonFileRepository
 from shared.operating_system_util import OperatingSystem, detect_os
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ProvidersRepository(ProviderRepositoryInterface):
@@ -358,7 +358,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
     def create_folder_if_missing(self):
         """Create the providers folder if it does not already exist."""
         if not self._folder_path.exists():
-            os.makedirs(self._folder_path, exist_ok=True)
+            Path(self._folder_path).mkdir(exist_ok=True, parents=True)
             self._logger.info(f"Dossier créé: {self._folder_path}")
 
     def delete_provider(self, id_file: str) -> None:
@@ -388,7 +388,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
             raise FileNotFoundError(f"Fournisseur non trouvé pour suppression: {id_file}")
 
         try:
-            os.remove(full_pathfile_to_delete)
+            Path(full_pathfile_to_delete).unlink()
             self._logger.info(f"Fournisseur supprimé: {full_pathfile_to_delete}")
         except Exception as e:
             self._logger.error(f"Erreur lors de la suppression du fournisseur: {e}")

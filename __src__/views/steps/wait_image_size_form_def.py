@@ -76,7 +76,7 @@ class WaitImageSizeFormDef(IStepFormDef):
         widgets["width_min"] = width_min_var
         widgets["width_max"] = width_max_var
 
-        ## dernière ligne
+        # dernière ligne
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         tu_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         widgets["timeout_duration"] = td_var

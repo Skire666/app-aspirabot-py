@@ -1,8 +1,8 @@
 """Service pour la gestion des fournisseurs de scraping."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import logging
 from pathlib import Path
@@ -12,9 +12,9 @@ from models.provider_model import ProviderModel
 from models.provider_validation_issue_model import ProviderValidationIssue
 from models.provider_validation_report_model import ProviderValidationReport
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ProviderService:

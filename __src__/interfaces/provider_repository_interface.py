@@ -4,9 +4,9 @@ Définit le contrat que doit respecter toute implémentation de dépôt pour les
 fournisseurs, conformément à l'architecture propre.
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from pathlib import Path
 from typing import Any, Protocol

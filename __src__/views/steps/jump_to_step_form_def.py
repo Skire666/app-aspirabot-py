@@ -1,8 +1,8 @@
 """IStepFormDef for JUMP_TO_STEP."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from __future__ import annotations
 
@@ -17,9 +17,9 @@ from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, CONDITION_VIEW_TO_MODEL
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class JumpToStepFormDef(IStepFormDef):
@@ -54,12 +54,13 @@ class JumpToStepFormDef(IStepFormDef):
 
         available_steps: list[StepScrapingModel] = widgets.get("_all_steps_available", [])
 
-        # liste des étapes disponibles pour la cible du saut, au format d'affichage dans la combobox : "01. - #hexastring - label"
+        # liste des étapes disponibles pour la cible du saut
+        # au format d'affichage dans la combobox : "01. - #hexastring - label"
         all_choices_listbox = []
         all_steps_id_to_index = []
         all_hexastring_to_model = {}
         for index, s in enumerate(available_steps):
-            choice_str = f"{str(index + 1).zfill(2)}.  -  #{s.step_id}  - {C_STEP_TYPE_TO_LABELS.get(s.step_type, s.step_type.value)}"
+            choice_str = self.compute_string_displayed_in_combobox(index, s)
             all_choices_listbox.append(choice_str)
             all_steps_id_to_index.append(s.step_id)
             all_hexastring_to_model[s.step_id] = s
@@ -73,7 +74,7 @@ class JumpToStepFormDef(IStepFormDef):
         print(f"A) {datetime.now()} default_choice = {default_choice!r}")
 
         target_var = tk.StringVar(value=default_choice)
-        widgets["_choice_from_listbox"] = target_var  ## important de passer le stringvar
+        widgets["_choice_from_listbox"] = target_var  # important de passer le stringvar
 
         ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(5, 5))
         ttk.Combobox(row1, textvariable=target_var, values=all_choices_listbox, state="readonly").pack(
@@ -97,19 +98,22 @@ class JumpToStepFormDef(IStepFormDef):
         if target_hexastring is not None and all_choices_listbox:
             all_steps_id_to_index = widgets.get("_all_steps_id_to_index", [])
             index_target = (
-                all_steps_id_to_index.index(target_hexastring)
-                if target_hexastring in all_steps_id_to_index
-                else -1
+                all_steps_id_to_index.index(target_hexastring) if target_hexastring in all_steps_id_to_index else -1
             )
             model_target = all_hexastring_to_model.get(target_hexastring)
-            if index_target != -1 and model_target is not None:
-                choice_str = f"{str(index_target + 1).zfill(2)}.  -  #{model_target.step_id}  - {C_STEP_TYPE_TO_LABELS.get(model_target.step_type, model_target.step_type.value)}"
+            choice_str = self.compute_string_displayed_in_combobox(index_target, model_target)
 
         widgets["_choice_from_listbox"].set(choice_str)  # Clear selection if target is invalid.
         print(f"B) {datetime.now()} target_hexastring = {target_hexastring!r}")
         print(f"B) {datetime.now()} choice_str = {choice_str!r}")
 
-    ## le dictionne qui est retourné, c'est les '.params' du StepScrapingModel
+    def compute_string_displayed_in_combobox(self, index: int, model: StepScrapingModel) -> str:
+        """Compute the string to be displayed in the combobox based on the model parameters."""
+        if index >= 0 and model is not None:
+            return f"{str(index + 1).zfill(2)}.  -  #{model.step_id}  - {JumpToStepFormDef.label()}"
+        return ""
+
+    # le dictionne qui est retourné, c'est les '.params' du StepScrapingModel
     # il doit contenir la condition et la cible du saut (hexastring de l'étape cible)
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
@@ -125,7 +129,7 @@ class JumpToStepFormDef(IStepFormDef):
         }
 
     def _extract_after_hash_hexastring(self, choice_target_hexastring: str) -> str:
-        """Trouve '#' et retourne les 4 caractères suivants"""
+        """Trouve '#' et retourne les 4 caractères suivants."""
         # Extrait l'hexastring de la sélection de la combobox
         # qui est au format "01. - #hxst - label_xxxx".
         if choice_target_hexastring is not None:
@@ -155,22 +159,22 @@ class JumpToStepFormDef(IStepFormDef):
         """Return a compact human-readable label for this step instance."""
         target_hexastring = model.params.get("target_hexastring", "????")
 
-        str_target_index = ""
+        target_index = ""
         for index_target, step_item in enumerate(model.parent_context):
             if step_item.step_id == target_hexastring:
-                str_target_index = f"{index_target + 1}".zfill(2)
+                target_index = f"{index_target + 1}".zfill(2)
                 break
 
-        if not str_target_index:
+        if not target_index:
             target_hexastring = "????"
-            str_target_index = "??"
+            target_index = "??"
 
         cond = model.params.get("condition", "success")
         if cond == "success":
-            return f"Si le résultat est un succès\nSe rendre à l'étape {str_target_index}.  #{target_hexastring}"
+            return f"Si le résultat est un succès\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
         if cond == "failure":
-            return f"Si le résultat est un échec\nSe rendre à l'étape {str_target_index}.  #{target_hexastring}"
-        return f"Si le résultat est un succès/échec\nToujours aller à l'étape {str_target_index}.  #{target_hexastring}"
+            return f"Si le résultat est un échec\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
+        return f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_index}.  #{target_hexastring}"
 
 
 register_form(JumpToStepFormDef())

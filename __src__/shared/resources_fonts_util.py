@@ -1,14 +1,14 @@
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import tkinter.font as tkfont
 
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
-## TODO PCO
+# TODO PCO
 # on ne peut pas installer de font, donc faut prendre existant sur le système
 # ou alors fournir une font dans les ressources et l'installer à l'exécution (mais c'est plus lourd)
 # le mieux de ce que j'ai lu c'est de faire un rendering de la font via PIL et de l'afficher en image dans Tkinter
@@ -17,9 +17,9 @@ import tkinter.font as tkfont
 # et encore, quid de la taille de la police, l'empatement, etc.
 # ça peut faire des différences d'affichage selon les systèmes...
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ResourcesFonts:
@@ -103,4 +103,4 @@ class ResourcesFonts:
         return self._cache[key]
 
 
-## END
+# END

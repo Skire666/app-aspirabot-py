@@ -1,8 +1,8 @@
 """Module contenant le presentateur pour la modification de fournisseur."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import logging
 from collections.abc import Callable
@@ -15,9 +15,9 @@ from services.workflow_service import WorkflowService
 from shared.random_util import merge_unique_list_id_step
 from views.provider_edit_view import ProviderEditView
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ProviderEditPresenter:

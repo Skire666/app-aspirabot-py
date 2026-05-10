@@ -1,8 +1,8 @@
 """IStepFormDef for CLOSE_TABS."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from __future__ import annotations
 
@@ -18,16 +18,16 @@ from views.steps._constants import safe_int_widget
 
 from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
 C_INPUT_DEFAULT_URL_FILTER: str = "<<URL>>"
 C_INPUT_DEFAULT_MAX_TABS: int = 1
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class CloseTabsFormDef(IStepFormDef):
@@ -94,7 +94,7 @@ class CloseTabsFormDef(IStepFormDef):
         if max_tabs == 0:
             return "Fermer tous les onglets\nIl ne restera aucun onglet d'ouvert"
 
-        ## si plusieurs
+        # si plusieurs
         label = f"Fermer les onglets  -  {max_tabs} onglet(s) max.\n"
         label += f"Ne garder que les URL contenant '{url_filter}'"
         return label

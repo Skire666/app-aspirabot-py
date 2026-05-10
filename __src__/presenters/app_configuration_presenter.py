@@ -1,8 +1,8 @@
 """Presenter for the configuration module."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import logging
 from datetime import datetime
@@ -16,9 +16,9 @@ from __src__.shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class AppConfigurationPresenter:
@@ -107,7 +107,7 @@ class AppConfigurationPresenter:
             "folder_providers": str(data.get("folder_providers", "")),
             "folder_scraping": str(data.get("folder_scraping", "")),
             "gui_booting_size": str(data.get("gui_booting_size", "")),
-            "gui_booting_fullscreen": bool(data.get("gui_booting_fullscreen", False)),
+            "gui_booting_fullscreen": bool(data.get("gui_booting_fullscreen")),
         }
 
     def _apply_configuration(self, config: AppConfigurationModel) -> None:

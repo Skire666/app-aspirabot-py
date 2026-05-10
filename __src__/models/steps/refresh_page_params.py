@@ -28,7 +28,7 @@ class RefreshPageParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            clear_cache=bool(data.get("clear_cache", False)),
+            clear_cache=bool(data.get("clear_cache")),
         )
 
     @classmethod

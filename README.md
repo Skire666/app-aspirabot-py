@@ -159,11 +159,11 @@ ruff check --fix ./__src__/
 ruff format ./__src__/
 ```
 
-### Mypy — static type checking
+### Basedpyright — static type checking
 
 ```bash
-pip install mypy
-mypy ./__src__/
+pip install basedpyright
+basedpyright
 ```
 
 ---

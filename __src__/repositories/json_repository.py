@@ -11,9 +11,9 @@ Exemples d'utilisation:
     >>> repo.set_value("theme", "dark")
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import json
 import logging
@@ -21,9 +21,9 @@ import os
 from pathlib import Path
 from typing import Any
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class JsonFileRepository:
@@ -66,13 +66,13 @@ class JsonFileRepository:
         Returns:
             None
         """
-        if not os.path.exists(self.file_path):
+        if not Path(self.file_path).exists():
             self._logger.warning(f"Fichier '{self.file_path}' introuvable. Création par défaut.")
             self.all_data = self.default_data.copy()
             self.save_to_file()
         else:
             try:
-                with open(self.file_path, encoding="utf-8") as f:
+                with Path(self.file_path).open(encoding="utf-8") as f:
                     self.all_data = json.load(f)
                 self._logger.info(f"Données chargées depuis '{self.file_path}'.")
             except Exception:
@@ -95,9 +95,9 @@ class JsonFileRepository:
 
             dir_name = os.path.dirname(self.file_path)
             if dir_name:
-                os.makedirs(dir_name, exist_ok=True)
+                Path(dir_name).mkdir(exist_ok=True, parents=True)
 
-            with open(self.file_path, "w", encoding="utf-8") as f:
+            with Path(self.file_path).open("w", encoding="utf-8") as f:
                 json.dump(self.all_data, f, indent=4)
         except Exception:
             self._logger.error("Une erreur s'est produite", exc_info=True)

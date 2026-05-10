@@ -1,8 +1,8 @@
 """Tkinter view for rendering the configuration form."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import tkinter as tk
 from collections.abc import Callable
@@ -227,7 +227,7 @@ class AppConfigurationView(ttk.Frame):
         self._folder_providers_var.set(self._safe_text(data.get("folder_providers")))
         self._folder_scraping_var.set(self._safe_text(data.get("folder_scraping")))
         self._gui_booting_size_var.set(self._safe_text(data.get("gui_booting_size")))
-        self._gui_booting_fullscreen_var.set(bool(data.get("gui_booting_fullscreen", False)))
+        self._gui_booting_fullscreen_var.set(bool(data.get("gui_booting_fullscreen")))
         # Loaded data represents a clean state: record original snapshot and disable buttons
         self._original_data = self.get_data()
         self.set_cancel_enabled(False)

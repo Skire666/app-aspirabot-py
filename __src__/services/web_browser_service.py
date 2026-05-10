@@ -12,9 +12,9 @@ Example:
     >>> svc.close_browser()
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import logging
 from collections.abc import Callable
@@ -24,9 +24,9 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import ProviderModel
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 
-## ---------------------------------------------------------------------------
-## Class
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Class
+# ---------------------------------------------------------------------------
 
 
 class BrowserService(IWebBrowserService):
@@ -169,8 +169,8 @@ class BrowserService(IWebBrowserService):
         # Obfuscated mode uses custom args; standard mode uses a plain context.
         args = ["--disable-blink-features=AutomationControlled"]
 
-        ## NOTE PCO : Ne plus faire un dossier au démarrage, dans l'optique de préserver la session.
-        ## Les détections de bot n'aiment pas du tout ça. Surtout CloudFlare.
+        # NOTE PCO : Ne plus faire un dossier au démarrage, dans l'optique de préserver la session.
+        # Les détections de bot n'aiment pas du tout ça. Surtout CloudFlare.
         # Les trucs de 'stealth', avec headless false, ils ne servent à rien (utile que si mode 'caché').
         # Donc autant ne pas le mettre, surtout qu'avec cloudflare, le stealth ne suffit pas.
 

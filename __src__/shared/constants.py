@@ -10,20 +10,20 @@ This module defines various constants used throughout the Aspirabot application,
 These constants are intended to centralize configuration values and make them easily maintainable.
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from shared.path_util import get_current_working_directory
 
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
 # Expected = './'   ('_src_' must be visible)
 C_CURRENT_WORKING_DIR = get_current_working_directory()
 
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # Name of the application
 C_APP_NAME: str = "Aspirabot"
@@ -37,7 +37,7 @@ C_APP_VERSION: str = "1.0.0"
 # JSON configuration file for Aspirabot
 C_APP_CONFIG_FILE: str = "config-aspirabot.json"
 
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # Base name for log files
 C_LOGS_FILE_NAME_WITH_EXT: str = f"aspirabot_{C_APP_VERSION}_trace.log"
@@ -54,7 +54,7 @@ C_LOGS_DEFAULT_LEVEL_TRACE: str = "DEBUG"
 # Default folder for log files (relative to current working directory)
 C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 # Default folders for data storage (relative to current working directory)
@@ -67,13 +67,13 @@ C_DATA_DEFAULT_FOLDER_SCRAPPING: str = "data_scraping"
 C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 4  # must be even (aka % 2 == 0)
 C_SIZE_HEXASTRING_PROVIDER_ID: int = 12  # must be even (aka % 2 == 0)
 
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # Supported browser engine identifiers for the scraping service.
 C_BROWSER_ENGINE_PLAYWRIGHT: str = "playwright"
 C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # Maximum size for images to be scraped (in pixels) - used as default value for image size filters
 C_MAXIMUM_SIZE_IMAGE: int = 99999
@@ -91,7 +91,7 @@ C_UNITS_TIME_ALLOWED_FOR_MODEL: list[str] = ["m", "s", "ms"]
 C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
 C_UNITS_TIME_CONVERSION_TO_MS: dict[str, int] = {"m": 60 * 1000, "s": 1000, "ms": 1}
 
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 # Minimum time each step is displayed (milliseconds).
@@ -107,4 +107,4 @@ C_SPLASHSCREEN_STEP_LABELS = (" ._. ", " -_- ", " o_O ", " ^_^ ")
 C_SPLASHSCREEN_SIZE_WIDTH = 280
 C_SPLASHSCREEN_SIZE_HEIGHT = 170
 
-## END
+# END

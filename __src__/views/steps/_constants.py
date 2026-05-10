@@ -5,9 +5,9 @@ every IStepFormDef implementation.  Centralising these avoids duplication
 across the 15 form-def files.
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from typing import Any
 
@@ -16,9 +16,9 @@ from shared.constants import (
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
 )
 
-## ---------------------------------------------------------------------------
-## Unit display / model mappings
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Unit display / model mappings
+# ---------------------------------------------------------------------------
 
 # Display strings shown in Comboboxes.
 WAIT_UNIT_DISPLAY: list[str] = list(C_UNITS_TIME_ALLOWED_FOR_VIEW)
@@ -29,36 +29,36 @@ WAIT_UNIT_VIEW_TO_MODEL: dict[str, str] = dict(zip(WAIT_UNIT_DISPLAY, C_UNITS_TI
 # Internal model value → display ("s" → "sec").
 WAIT_UNIT_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_UNITS_TIME_ALLOWED_FOR_MODEL, WAIT_UNIT_DISPLAY))
 
-## ---------------------------------------------------------------------------
-## Playwright wait-state values
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Playwright wait-state values
+# ---------------------------------------------------------------------------
 
 WAIT_STATES: list[str] = ["commit", "domcontentloaded", "load", "networkidle"]
 
-## ---------------------------------------------------------------------------
-## Download mode values
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Download mode values
+# ---------------------------------------------------------------------------
 
 DOWNLOAD_MODES: list[str] = ["largest", "first", "last", "all"]
 
-## ---------------------------------------------------------------------------
-## Click mode values
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Click mode values
+# ---------------------------------------------------------------------------
 
 CLICK_MODES: list[str] = ["Normal", "Forced", "JS Direct"]
 
-## ---------------------------------------------------------------------------
-## JUMP_TO_STEP condition display / model mappings
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# JUMP_TO_STEP condition display / model mappings
+# ---------------------------------------------------------------------------
 
-CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]  ## GARDER 'Toujours' à la fin
+CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]  # GARDER 'Toujours' à la fin
 CONDITION_VALUES: list[str] = ["success", "failure", "always"]
 CONDITION_VIEW_TO_MODEL: dict[str, str] = dict(zip(CONDITION_DISPLAY, CONDITION_VALUES))
 CONDITION_MODEL_TO_VIEW: dict[str, str] = dict(zip(CONDITION_VALUES, CONDITION_DISPLAY))
 
-## ---------------------------------------------------------------------------
-## EXTRACT_TEXT display / model mappings
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# EXTRACT_TEXT display / model mappings
+# ---------------------------------------------------------------------------
 
 EXTRACT_MODE_DISPLAY: list[str] = [
     "innerText — Texte visible",
@@ -80,9 +80,9 @@ EXTRACT_TARGET_VALUES: list[str] = ["first", "last", "all"]
 EXTRACT_TARGET_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_VALUES))
 EXTRACT_TARGET_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_TARGET_VALUES, EXTRACT_TARGET_DISPLAY))
 
-## ---------------------------------------------------------------------------
-## COUNT_ELEMENT operator display / model mappings
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# COUNT_ELEMENT operator display / model mappings
+# ---------------------------------------------------------------------------
 
 COUNT_OP_DISPLAY: list[str] = [
     "égale à",
@@ -110,9 +110,9 @@ COUNT_SUCCESS_IF_VALUES: list[str] = ["success", "failure"]
 COUNT_SUCCESS_IF_VIEW_TO_MODEL: dict[str, str] = dict(zip(COUNT_SUCCESS_IF_DISPLAY, COUNT_SUCCESS_IF_VALUES))
 COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY))
 
-## ---------------------------------------------------------------------------
-## Shared widget helper
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Shared widget helper
+# ---------------------------------------------------------------------------
 
 
 def safe_int_widget(widgets: dict[str, Any], key: str, default: int) -> int:

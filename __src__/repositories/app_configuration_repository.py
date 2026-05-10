@@ -37,9 +37,9 @@ Example:
     >>> repo.save_config(config)
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import json
 import logging
@@ -50,9 +50,9 @@ from interfaces.config_repository_interface import ConfigRepositoryInterface
 from models.app_configuration_model import AppConfigurationModel
 from shared.path_util import make_all_folders_if_not_exists
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class AppConfigurationRepository(ConfigRepositoryInterface):
@@ -83,16 +83,16 @@ class AppConfigurationRepository(ConfigRepositoryInterface):
         >>> repo.save_config(current_config)
     """
 
-    ## ---------------------------------------------------------------------------
-    ## Variables
-    ## ---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
+    # Variables
+    # ---------------------------------------------------------------------------
 
     _full_pathfile: Path
     _logger: logging.Logger
 
-    ## ---------------------------------------------------------------------------
-    ## Methods
-    ## ---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
+    # Methods
+    # ---------------------------------------------------------------------------
 
     def __init__(self, file_path: Path | str) -> None:
         """Initialize the repository with a target JSON file path.
@@ -246,7 +246,7 @@ class AppConfigurationRepository(ConfigRepositoryInterface):
         """
         # Attempt to load persisted data from disk.
         try:
-            with open(self._full_pathfile, encoding="utf-8") as file:
+            with Path(self._full_pathfile).open(encoding="utf-8") as file:
                 # Parse JSON with UTF-8 encoding to handle special characters.
                 return AppConfigurationModel(**json.load(file))
         except Exception:
@@ -283,7 +283,7 @@ class AppConfigurationRepository(ConfigRepositoryInterface):
             make_all_folders_if_not_exists(self._full_pathfile, is_file_path=True)
 
             # Open file in write mode with UTF-8 encoding.
-            with open(self._full_pathfile, "w", encoding="utf-8") as file:
+            with Path(self._full_pathfile).open("w", encoding="utf-8") as file:
                 # Write JSON with indentation and UTF-8 character preservation.
                 json.dump(data.to_dict(), file, indent=4, ensure_ascii=False)
 
@@ -298,4 +298,4 @@ class AppConfigurationRepository(ConfigRepositoryInterface):
             )
 
 
-## END
+# END

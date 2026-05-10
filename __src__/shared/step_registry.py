@@ -16,9 +16,9 @@ Example:
     <StepType.WAIT_ELEMENT: 'WAIT_ELEMENT'>
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from __future__ import annotations
 
@@ -28,16 +28,16 @@ if TYPE_CHECKING:
     from interfaces.i_step_form_def import IStepFormDef
     from models.step_scraping_model import StepType
 
-## ---------------------------------------------------------------------------
-## Internal storage
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Internal storage
+# ---------------------------------------------------------------------------
 
 # Populated at import time by each concrete executor / form-def module.
 _forms: dict[StepType, IStepFormDef] = {}
 
-## ---------------------------------------------------------------------------
-## Registration helpers (called by concrete classes at module level)
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Registration helpers (called by concrete classes at module level)
+# ---------------------------------------------------------------------------
 
 
 def register_form(form: IStepFormDef) -> None:
@@ -55,9 +55,9 @@ def register_form(form: IStepFormDef) -> None:
     _forms[form.step_type()] = form
 
 
-## ---------------------------------------------------------------------------
-## Lookup helpers (called by orchestrators at runtime)
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Lookup helpers (called by orchestrators at runtime)
+# ---------------------------------------------------------------------------
 
 
 def get_form(step_type: StepType) -> IStepFormDef:

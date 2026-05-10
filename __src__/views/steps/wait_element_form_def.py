@@ -19,7 +19,9 @@ from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MO
 
 from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
-C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+C_INPUT_DEFAULT_CSS_SELECTOR = (
+    "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+)
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
@@ -66,9 +68,7 @@ class WaitElementFormDef(IStepFormDef):
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load stored parameters into the form widgets."""
         widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
-        widgets["timeout_duration"].set(
-            str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION))
-        )
+        widgets["timeout_duration"].set(str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION)))
         widgets["timeout_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW

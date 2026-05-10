@@ -12,9 +12,9 @@ Example:
     >>> panel.reset()
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import tkinter as tk
 from collections.abc import Callable
@@ -25,18 +25,18 @@ from typing import Any
 
 from __src__.shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
 
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
 # Labels for the three URL-source radio buttons.
 _URL_SOURCE_MANUAL = "manual"
 _URL_SOURCE_FOLDER = "folder"
 _URL_SOURCE_CSV = "csv"
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ScrapingView(ttk.Frame):
@@ -587,7 +587,7 @@ class ScrapingView(ttk.Frame):
             date: Timestamp at step start.
             step_started: Step type label.
         """
-        ## TODO PCO : ordre des colonnes pas explicite
+        # TODO PCO : ordre des colonnes pas explicite
         values = (date, step_started, "en cours", "...", "...")
         self._tree.insert("", tk.END, iid=item_id, values=values)
 
@@ -631,7 +631,7 @@ class ScrapingView(ttk.Frame):
 
         result_label = "OK" if success else "ERREUR"
         # Preserve date (col 0) and step_started (col 1); replace cols 2-4.
-        ## TODO PCO : ordre des colonnes pas explicite
+        # TODO PCO : ordre des colonnes pas explicite
         updated = (current[0], current[1], f"{duration_s:.3f}", result_label, msg_step_ended)
         self._tree.item(item_id, values=updated)
 

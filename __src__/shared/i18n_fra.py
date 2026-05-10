@@ -42,4 +42,4 @@ C_VIEW_SCRAPING_HEADINGS = {
     "msg_step_ended": ("Message de fin", 160, tk.W, True),
 }
 
-## END
+# END

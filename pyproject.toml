@@ -55,7 +55,7 @@ target-version = "py312"
 
 # Maximum number of characters per line.
 # 88 is the default value used by Black, now a de facto standard.
-line-length = 115
+line-length = 120
 
 # Show the rule code and a detailed fix suggestion in the terminal output.
 output-format = "full"
@@ -87,6 +87,9 @@ select = [
     "PTH",  # Use pathlib instead of os.path
 ]
 
+# Activate preview
+preview = true
+
 # Individual rules to disable despite the families enabled above.
 ignore = [
     "D104",   # Missing docstring in public package (empty __init__.py tolerated)
@@ -112,8 +115,8 @@ convention = "google"
 
 # for PLR -> refactoring (recommanded : 6 / 12 / 50)
 max-args = 10
-max-branches = 15
-max-statements = 60
+max-branches = 14
+max-statements = 55
 
 [tool.ruff.lint.per-file-ignores]
 
@@ -122,24 +125,49 @@ max-statements = 60
 "__tests__/**" = ["D"]
 
 # ---------------------------------------------------------------------------
-# Mypy — Static Type Checking
+# Basedpyright — Static Type Checking
 # ---------------------------------------------------------------------------
 
-[tool.mypy]
+[tool.basedpyright]
 
 # Python version used for static type analysis.
-python_version = "3.14"
+pythonVersion = "3.14"
 
-# Strict mode: enables all available type checks.
-# Equivalent to passing --disallow-untyped-defs, --warn-return-any, etc.
-strict = true
+# Folders containing source code to analyse.
+include = ["__src__", "interfaces", "models", "services", "repositories", "presenters", "views", "shared"]
 
-# Suppresses errors on third-party libraries without type stubs.
-# Avoids false positives on Playwright, Tkinter, etc.
-ignore_missing_imports = true
+# Folders excluded from analysis — tests do not need to be type-checked.
+exclude = ["__tests__"]
 
-# Folders excluded from analysis — tests do not need to be checked by Mypy.
-exclude = ["__tests__/"]
+# Strictest level available in basedpyright (superset of "strict").
+typeCheckingMode = "strict"
+
+# Suppresses errors on third-party libraries without type stubs (py.typed / stubs missing).
+reportMissingModuleSource = "none"
+
+# Forbid useless `type: ignore` comments (already correct type).
+reportUnnecessaryTypeIgnoreComment = "error"
+
+# Forbid redundant cast() calls.
+reportUnnecessaryCast = "error"
+
+# Forbid isinstance() checks that are always true or always false.
+reportUnnecessaryIsInstance = "error"
+
+# Forbid comparisons whose result is always true or always false.
+reportUnnecessaryComparison = "error"
+
+# Require exhaustive matching of all Union / Literal branches.
+reportMatchNotExhaustive = "error"
+
+# Flag implicitly Unknown variable types.
+reportUnknownVariableType = "error"
+
+# Flag implicitly Unknown parameter types.
+reportUnknownParameterType = "error"
+
+# Flag implicitly Unknown member/attribute types.
+reportUnknownMemberType = "error"
 
 # ---------------------------------------------------------------------------
 # Pytest — Test Runner

@@ -4,9 +4,9 @@ This module provides a reusable table built only with Tkinter widgets.
 It avoids ttk.Treeview and keeps rendering fast by drawing only visible cells.
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from __future__ import annotations
 
@@ -16,9 +16,9 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class DataGrid(ttk.Frame):
@@ -423,7 +423,7 @@ class DataGrid(ttk.Frame):
                 arrow = "▲" if self._sort_ascending else "▼"
                 title = f"{title} {arrow}"
 
-            ## TODO PCO header
+            # TODO PCO header
             self.header_canvas.create_text(
                 x0 + 8,
                 self._header_height / 2,
@@ -458,11 +458,11 @@ class DataGrid(ttk.Frame):
             row_data = self._data[row_index]
             row_id = str(row_data.get("id", row_index))
 
-            ## TODO PCO background de la ligne
+            # TODO PCO background de la ligne
             self.body_canvas.create_rectangle(
                 0,
                 y0,
-                self._total_width * 2,  ## TODO PCO ne remplit pas le reste
+                self._total_width * 2,  # TODO PCO ne remplit pas le reste
                 y1,
                 fill=row_bg,
                 outline=self._grid_line,

@@ -1,8 +1,8 @@
 """Tkinter view for the main application shell with vertical tabs."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import tkinter as tk
 from collections.abc import Callable
@@ -36,9 +36,9 @@ from shared.resources_icons_util import (
     get_resource_icon_32px,
 )
 
-## ---------------------------------------------------------------------------
-## Constants
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
 # Mapping of module names to their corresponding black and white icon resource names.
 # Order of modules is determined by the order of entries in this dictionary.
@@ -60,9 +60,9 @@ C_COLOR_SIDEBAR_NORMAL_FG = "#191919"
 C_COLOR_SIDEBAR_HOVER_BG = "#d0d0d0"
 C_COLOR_SIDEBAR_HOVER_FG = "#000000"
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class MainView(ttk.Frame):
@@ -132,7 +132,6 @@ class MainView(ttk.Frame):
             # Hover bindings — use default-argument capture to avoid late-binding closure
             btn.bind("<Enter>", lambda _e, n=name: self._on_button_enter(n))
             btn.bind("<Leave>", lambda _e, n=name: self._on_button_leave(n))
-
 
     def add_view(self, name: str, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a sidebar module button.

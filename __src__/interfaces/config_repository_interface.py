@@ -4,18 +4,18 @@ Ce module définit le contrat pour accéder et modifier la configuration
 de l'application, indépendamment de son support de stockage physique.
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 from datetime import datetime
 from typing import Protocol
 
 from models.app_configuration_model import AppConfigurationModel
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ConfigRepositoryInterface(Protocol):

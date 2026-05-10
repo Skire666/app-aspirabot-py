@@ -4,9 +4,9 @@ Left: clickable summary of step labels (keys from WorkflowStepTextHint.BY_LABEL)
 Right: displays the help text for the selected key.
 """
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import tkinter as tk
 from tkinter import ttk

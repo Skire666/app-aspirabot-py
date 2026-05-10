@@ -1,8 +1,8 @@
 """Presenter orchestrating the splash screen startup sequence."""
 
-## ---------------------------------------------------------------------------
-## Imports
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 
 import traceback
 from collections.abc import Callable
@@ -15,9 +15,9 @@ from shared.constants import (
 )
 from views.splashscreen_view import SplashscreenView
 
-## ---------------------------------------------------------------------------
-## Classes
-## ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class SplashscreenPresenter:
@@ -58,9 +58,9 @@ class SplashscreenPresenter:
         self._on_success = on_success
         self._on_failure = on_failure
 
-    ## ---------------------------------------------------------------------------
-    ## Public interface
-    ## ---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
+    # Public interface
+    # ---------------------------------------------------------------------------
 
     def start(self) -> None:
         """Schedule step 1 to run as soon as the event loop processes it.
@@ -71,9 +71,9 @@ class SplashscreenPresenter:
         # splash window is fully painted before the first step runs.
         self._view.after(0, self._run_step_1)
 
-    ## ---------------------------------------------------------------------------
-    ## Startup steps
-    ## ---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
+    # Startup steps
+    # ---------------------------------------------------------------------------
 
     def _run_step_1(self) -> None:
         """Execute step 1: load configuration from persistent storage."""
@@ -117,9 +117,9 @@ class SplashscreenPresenter:
         except Exception as exc:
             self._handle_error(str(exc))
 
-    ## ---------------------------------------------------------------------------
-    ## Outcome handlers
-    ## ---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
+    # Outcome handlers
+    # ---------------------------------------------------------------------------
 
     def _on_startup_complete(self) -> None:
         """Destroy the splash screen and trigger the success callback."""
@@ -139,4 +139,4 @@ class SplashscreenPresenter:
         self._on_failure()
 
 
-## END
+# END
