@@ -29,7 +29,9 @@ from views.steps._constants import (
 
 from __src__.shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 
-C_INPUT_DEFAULT_CSS_SELECTOR = "<div class='ds-theme' >> div.ds-theme   ||  id='header' >> #header  ||  ou sinon copy selector dans chrome/debug"
+C_INPUT_DEFAULT_CSS_SELECTOR = (
+    "<div class='ds-theme' >> div.ds-theme  ||  id='header' >> #header  ||  copy selector dans chrome/debug"
+)
 C_INPUT_DEFAULT_TIME_WAIT = 100
 
 
@@ -64,9 +66,9 @@ class CountElementFormDef(IStepFormDef):
             side=tk.LEFT, padx=(0, 4)
         )
         wu_var = tk.StringVar(value=C_UNITS_TIME_ALLOWED_FOR_VIEW[-1])
-        ttk.Combobox(
-            row0, textvariable=wu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
-        ).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Combobox(row0, textvariable=wu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
         ttk.Label(row0, text="(0 = immédiat)").pack(side=tk.LEFT)
         widgets["wait_duration"] = wd_var
         widgets["wait_unit"] = wu_var
@@ -111,22 +113,22 @@ class CountElementFormDef(IStepFormDef):
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
         if op_value in {"between"}:
             vmin_var = tk.StringVar(value="0")
-            ttk.Spinbox(
-                self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmin_var, width=7
-            ).pack(side=tk.LEFT, padx=(0, 6))
+            ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmin_var, width=7).pack(
+                side=tk.LEFT, padx=(0, 6)
+            )
             ttk.Label(self._value_area_frame, text=" et ").pack(side=tk.LEFT)
             vmax_var = tk.StringVar(value="0")
-            ttk.Spinbox(
-                self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmax_var, width=7
-            ).pack(side=tk.LEFT)
+            ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmax_var, width=7).pack(
+                side=tk.LEFT
+            )
             self._form_widgets_ref["value_min"] = vmin_var
             self._form_widgets_ref["value_max"] = vmax_var
         else:
             ttk.Label(self._value_area_frame, text="valeur").pack(side=tk.LEFT, padx=(0, 2))
             val_var = tk.StringVar(value="0")
-            ttk.Spinbox(
-                self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=val_var, width=7
-            ).pack(side=tk.LEFT)
+            ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=val_var, width=7).pack(
+                side=tk.LEFT
+            )
             self._form_widgets_ref["value"] = val_var
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:

@@ -80,7 +80,8 @@ class SplashscreenView(tk.Toplevel):
         self._build_title(inner)
         self._build_status_label(inner)
 
-    def _build_title(self, parent: tk.Frame) -> None:
+    @staticmethod
+    def _build_title(parent: tk.Frame) -> None:
         """Render the application name and subtitle labels.
 
         Args:
