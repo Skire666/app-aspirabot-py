@@ -2,7 +2,7 @@
 
 from models.steps.click_element_params import ClickElementParams
 from models.steps.close_tabs_params import CloseTabsParams
-from models.steps.count_element_params import CountElementParams
+from models.steps.count_element_params import CountElementsParams
 from models.steps.download_image_params import DownloadImageParams
 from models.steps.end_process_params import EndProcessParams
 from models.steps.extract_text_params import ExtractTextParams
@@ -19,7 +19,7 @@ from models.steps.wait_x_time_params import WaitXTimeParams
 __all__ = [
     "ClickElementParams",
     "CloseTabsParams",
-    "CountElementParams",
+    "CountElementsParams",
     "DownloadImageParams",
     "EndProcessParams",
     "ExtractTextParams",

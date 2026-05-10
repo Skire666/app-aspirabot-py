@@ -59,4 +59,4 @@ class WaitImageSizeParams(IStepParams):
     @classmethod
     def get_step_type(cls):
         """Return the step type."""
-        return StepType.WAIT_IMAGE_SIZE
+        return StepType.WAIT_IMAGES

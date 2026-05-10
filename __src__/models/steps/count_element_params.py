@@ -7,16 +7,13 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from models.step_scraping_model import StepType
-from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 
 @dataclass(frozen=True)
-class CountElementParams(IStepParams):
+class CountElementsParams(IStepParams):
     """Parameters for the count element scraping step."""
 
     selector: str
-    wait_duration: int
-    wait_unit: str
     success_if: str
     operator: str
     value_min: int
@@ -28,8 +25,6 @@ class CountElementParams(IStepParams):
         """Return default instance."""
         return cls(
             selector="",
-            wait_duration=1,
-            wait_unit=C_UNITS_TIME_DEFAULT_MODEL,
             success_if="success",
             operator="equal",
             value_min=0,
@@ -41,8 +36,6 @@ class CountElementParams(IStepParams):
         """Serialize to dict."""
         return {
             "selector": self.selector,
-            "wait_duration": self.wait_duration,
-            "wait_unit": self.wait_unit,
             "success_if": self.success_if,
             "operator": self.operator,
             "value_min": self.value_min,
@@ -55,8 +48,6 @@ class CountElementParams(IStepParams):
         """Deserialize from dict."""
         return cls(
             selector=data.get("selector", ""),
-            wait_duration=int(data.get("wait_duration", 1)),
-            wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
             success_if=data.get("success_if", "success"),
             operator=data.get("operator", "equal"),
             value_min=int(data.get("value_min", 0)),
@@ -67,4 +58,4 @@ class CountElementParams(IStepParams):
     @classmethod
     def get_step_type(cls):
         """Return the step type."""
-        return StepType.COUNT_ELEMENT
+        return StepType.COUNT_ELEMENTS

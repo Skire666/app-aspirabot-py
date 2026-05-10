@@ -32,12 +32,12 @@ class WaitImageSizeFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the StepType handled by this form definition."""
-        return StepType.WAIT_IMAGE_SIZE
+        return StepType.WAIT_IMAGES
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_IMAGE_SIZE)
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_IMAGES)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""

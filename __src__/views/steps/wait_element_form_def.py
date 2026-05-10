@@ -29,12 +29,12 @@ class WaitElementFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the StepType handled by this form."""
-        return StepType.WAIT_ELEMENT
+        return StepType.WAIT_ELEMENTS
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_ELEMENT)
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_ELEMENTS)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the selector and timeout widgets into the given frame."""
@@ -43,7 +43,7 @@ class WaitElementFormDef(IStepFormDef):
 
         ttk.Label(line1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(line1, textvariable=sel_var).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Entry(line1, textvariable=sel_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
         widgets["selector"] = sel_var
 
         timeout_frame = ttk.Frame(frame)

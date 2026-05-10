@@ -18,7 +18,7 @@ class WaitElementExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.WAIT_ELEMENT
+        return StepType.WAIT_ELEMENTS
 
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""

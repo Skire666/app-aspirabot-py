@@ -33,7 +33,7 @@ class WaitImageSizeExecutor(IStepExecutor):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.WAIT_IMAGE_SIZE
+        return StepType.WAIT_IMAGES
 
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""

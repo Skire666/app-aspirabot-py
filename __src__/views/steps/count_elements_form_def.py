@@ -10,9 +10,6 @@ from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
     C_MAXIMUM_SIZE_IMAGE,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_MODEL,
-    C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -23,8 +20,6 @@ from views.steps._constants import (
     COUNT_SUCCESS_IF_DISPLAY,
     COUNT_SUCCESS_IF_MODEL_TO_VIEW,
     COUNT_SUCCESS_IF_VIEW_TO_MODEL,
-    WAIT_UNIT_MODEL_TO_VIEW,
-    WAIT_UNIT_VIEW_TO_MODEL,
     safe_int_widget,
 )
 
@@ -32,7 +27,7 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_TIME_WAIT = 100
 
 
-class CountElementFormDef(IStepFormDef):
+class CountElementsFormDef(IStepFormDef):
     """Form definition for the count element scraping step."""
 
     def __init__(self) -> None:
@@ -42,33 +37,16 @@ class CountElementFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.COUNT_ELEMENT
+        return StepType.COUNT_ELEMENTS
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_ELEMENT)
+        return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_ELEMENTS)
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         self._form_widgets_ref = widgets
-
-        # ROW 0 — pre-wait
-        row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=(0, 4))
-
-        ttk.Label(row0, text="Attendre avant évaluation : ").pack(side=tk.LEFT, padx=(0, 4))
-        wd_var = tk.StringVar(value=C_INPUT_DEFAULT_TIME_WAIT)
-        ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=wd_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4)
-        )
-        wu_var = tk.StringVar(value=C_UNITS_TIME_ALLOWED_FOR_VIEW[-1])
-        ttk.Combobox(row0, textvariable=wu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
-            side=tk.LEFT, padx=(0, 4)
-        )
-        ttk.Label(row0, text="(0 = immédiat)").pack(side=tk.LEFT)
-        widgets["wait_duration"] = wd_var
-        widgets["wait_unit"] = wu_var
 
         # ROW 1 — CSS selector
         row1 = ttk.Frame(frame)
@@ -132,9 +110,6 @@ class CountElementFormDef(IStepFormDef):
         """Load step parameters into form widgets."""
         self._form_widgets_ref = widgets
         widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
-        widgets["wait_duration"].set(str(model.params.get("wait_duration", 0)))
-        unit_model = model.params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL)
-        widgets["wait_unit"].set(WAIT_UNIT_MODEL_TO_VIEW.get(unit_model, C_UNITS_TIME_DEFAULT_VIEW))
         si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(
             model.params.get("success_if", "success"), COUNT_SUCCESS_IF_DISPLAY[0]
         )
@@ -151,14 +126,11 @@ class CountElementFormDef(IStepFormDef):
 
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
-        unit_display = widgets["wait_unit"].get()
         si_display = widgets["success_if"].get()
         op_display = widgets["operator"].get()
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
         result = {
             "selector": widgets["selector"].get().strip(),
-            "wait_duration": safe_int_widget(widgets, "wait_duration", 0),
-            "wait_unit": WAIT_UNIT_VIEW_TO_MODEL.get(unit_display, C_UNITS_TIME_DEFAULT_MODEL),
             "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display, "success"),
             "operator": op_value,
         }
@@ -175,8 +147,6 @@ class CountElementFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
-        if safe_int_widget(widgets, "wait_duration", -1) < 0:
-            errors.append("Durée d'attente : doit être >= 0")
         if not widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Sélecteur CSS : valeur obligatoire")
 
@@ -199,7 +169,7 @@ class CountElementFormDef(IStepFormDef):
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         op_labels = {
-            "between": "compris entre",
+            "between": "entre",
             "equal": "==",
             "not_equal": "!=",
             "greater_than": ">",
@@ -216,4 +186,4 @@ class CountElementFormDef(IStepFormDef):
         return f"Compter les éléments  -  Attendu {op} {val_str}\nSél. : {selector}"
 
 
-register_form(CountElementFormDef())
+register_form(CountElementsFormDef())

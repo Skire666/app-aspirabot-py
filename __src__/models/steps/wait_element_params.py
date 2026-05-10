@@ -43,4 +43,4 @@ class WaitElementParams(IStepParams):
     @classmethod
     def get_step_type(cls):
         """Return the step type."""
-        return StepType.WAIT_ELEMENT
+        return StepType.WAIT_ELEMENTS

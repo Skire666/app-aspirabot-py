@@ -37,12 +37,12 @@ class WaitXTimeFormDef(IStepFormDef):
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         timeout_frame = ttk.Frame(frame)
-        timeout_frame.pack(fill="x")
+        timeout_frame.pack(fill="x", pady=(0, 4))
 
         ttk.Label(timeout_frame, text="Attendre une durée de : ").pack(side=tk.LEFT, padx=(0, 4), pady=(0, 4))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_DURATION))
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4), pady=(0, 4)
+            side=tk.LEFT, padx=(0, 4)
         )
         widgets["duration"] = dur_var
 

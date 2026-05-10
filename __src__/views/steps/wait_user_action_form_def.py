@@ -44,27 +44,29 @@ class WaitUserActionFormDef(IStepFormDef):
 
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
-        frame.columnconfigure(1, weight=1)
+        line1 = ttk.Frame(frame)
+        line1.pack(fill="x", pady=(0, 4))
 
-        ttk.Label(frame, text="Condition:").grid(row=0, column=0, sticky="w", padx=(0, 4), pady=(0, 4))
+        ttk.Label(line1, text="Condition:").pack(side=tk.LEFT, padx=(0, 4))
         cond_var = tk.StringVar(value=C_INPUT_DEFAULT_CONDITION)
-        ttk.Combobox(frame, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").grid(
-            row=0, column=1, sticky="ew", padx=(0, 4), pady=(0, 4)
+        ttk.Combobox(line1, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
+            side=tk.LEFT, padx=(0, 4)
         )
         widgets["condition"] = cond_var
 
-        delay_frame = ttk.Frame(frame)
-        delay_frame.grid(row=1, column=0, columnspan=2, sticky="w", padx=(0, 4), pady=(0, 4))
-        ttk.Label(delay_frame, text="Délai post-reprise :").pack(side=tk.LEFT, padx=(0, 4))
+        line2 = ttk.Frame(frame)
+        line2.pack(fill="x", pady=(0, 4))
+
+        ttk.Label(line2, text="Délai post-reprise :").pack(side=tk.LEFT, padx=(0, 4))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_POST_WAIT_DURATION))
-        ttk.Spinbox(delay_frame, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
+        ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            delay_frame, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
+            line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(delay_frame, text="(0 = immédiat)").pack(side=tk.LEFT)
+        ttk.Label(line2, text="(0 = immédiat)").pack(side=tk.LEFT)
         widgets["wait_duration"] = dur_var
         widgets["wait_unit"] = unit_var
 

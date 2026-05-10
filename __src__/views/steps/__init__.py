@@ -2,7 +2,7 @@
 
 from views.steps.click_element_form_def import ClickElementFormDef
 from views.steps.close_tabs_form_def import CloseTabsFormDef
-from views.steps.count_element_form_def import CountElementFormDef
+from views.steps.count_elements_form_def import CountElementsFormDef
 from views.steps.download_image_form_def import DownloadImageFormDef
 from views.steps.end_process_form_def import EndProcessFormDef
 from views.steps.extract_text_form_def import ExtractTextFormDef
@@ -19,7 +19,7 @@ from views.steps.wait_x_time_form_def import WaitXTimeFormDef
 __all__ = [
     "ClickElementFormDef",
     "CloseTabsFormDef",
-    "CountElementFormDef",
+    "CountElementsFormDef",
     "DownloadImageFormDef",
     "EndProcessFormDef",
     "ExtractTextFormDef",

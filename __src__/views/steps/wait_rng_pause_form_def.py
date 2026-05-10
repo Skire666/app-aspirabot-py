@@ -41,22 +41,20 @@ class WaitRandomPauseFormDef(IStepFormDef):
         widgets["max"] = max_var
         widgets["unit"] = unit_var
 
-        # To make the second column expand and keep the form compact on the left.
-        frame.columnconfigure(1, weight=1)
+        line1 = ttk.Frame(frame)
+        line1.pack(fill="x", pady=(0, 4))
 
         # line for min and max values
-        row0 = ttk.Frame(frame)
-        row0.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
-        ttk.Label(row0, text="Pause aléatoire entre : ").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=7).pack(
+        ttk.Label(line1, text="Pause aléatoire entre : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
-        ttk.Label(row0, text=" et ").pack(side=tk.LEFT)
-        ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=7).pack(
+        ttk.Label(line1, text=" et ").pack(side=tk.LEFT)
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=7).pack(
             side=tk.LEFT, padx=(0, 4)
         )
         ttk.Combobox(
-            row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+            line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT)
 
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
