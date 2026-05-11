@@ -60,7 +60,7 @@ class IWebBrowserService(ABC):
         """
 
     @abstractmethod
-    def new_page(self) -> Any:
+    def append_new_page(self) -> Any:
         """Open a new browser page, applying stealth patches if configured.
 
         Returns:

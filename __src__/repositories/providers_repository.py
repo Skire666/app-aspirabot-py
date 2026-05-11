@@ -234,24 +234,20 @@ class ProvidersRepository(ProviderRepositoryInterface):
         # Construit le chemin complet du fichier
         full_filepath = self._folder_path / str(id_file + ".json")
 
-        try:
-            if not full_filepath.exists():
-                raise ProviderNotFoundError(id_file)
+        if not full_filepath.exists():
+            raise ProviderNotFoundError(id_file)
 
-            # Charge le fichier JSON via JsonFileRepository
-            json_repo = JsonFileRepository(full_filepath, {})
-            provider_data = json_repo.all_data
+        # Charge le fichier JSON via JsonFileRepository
+        json_repo = JsonFileRepository(full_filepath, {})
+        provider_data = json_repo.all_data
 
-            if not provider_data:
-                self._logger.warning(f"Le fichier {full_filepath} est vide.")
-                raise ProviderDataMissingError(id_file)
+        if not provider_data:
+            self._logger.warning(f"Le fichier {full_filepath} est vide.")
+            raise ProviderDataMissingError(id_file)
 
-            provider_model = self._dict_to_provider_model(provider_data)
-            self._logger.info(f"Fournisseur chargé: {full_filepath}")
-            return provider_model
-        except Exception as e:
-            self._logger.warning(f"Impossible de lire le fournisseur {full_filepath}: {e}")
-            raise
+        provider_model = self._dict_to_provider_model(provider_data)
+        self._logger.info(f"Fournisseur chargé: {full_filepath}")
+        return provider_model
 
     def list_all_providers(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs disponibles.

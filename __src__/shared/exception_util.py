@@ -370,9 +370,7 @@ class CountElementsConditionNotMetError(ValueError, AspirabotError):
             operator: Operator used for comparison.
             value_desc: Display string describing the expected value.
         """
-        super().__init__(
-            f"COUNT_ELEMENTS : condition non satisfaite (COUNT={count}, {operator} {value_desc})"
-        )
+        super().__init__(f"COUNT_ELEMENTS : condition non satisfaite (COUNT={count}, {operator} {value_desc})")
 
 
 class NoMatchingImageFoundError(ValueError, AspirabotError):
