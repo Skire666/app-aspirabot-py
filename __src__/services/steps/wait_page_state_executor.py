@@ -25,7 +25,7 @@ def _get_filtered_images(browser: IWebBrowserService, p: WaitHtmlImagesParams) -
     all_imgs = browser.evaluate_script_with_safe_retry(script, 5)
     return [
         img
-        for img in all_imgs  # type: ignore[union-attr]
+        for img in all_imgs
         if p.width_min <= img["width"] <= p.width_max and p.height_min <= img["height"] <= p.height_max
     ]
 

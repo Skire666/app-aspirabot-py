@@ -20,8 +20,8 @@ from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
-from views.provider_edit_view import ProviderEditView
-from views.workflow_list_view import WorkflowListView
+from views.workflow_list_crud_view import WorkflowListCrudView
+from views.workflow_view import WorkflowView
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -44,10 +44,10 @@ class WorkflowListPresenter:
 
     def __init__(
         self,
-        view: WorkflowListView,
+        view: WorkflowListCrudView,
         service_provider: ProviderService,
         workflow_service: WorkflowService,
-        gestion_view: ProviderEditView | None = None,
+        gestion_view: WorkflowView | None = None,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
@@ -60,7 +60,7 @@ class WorkflowListPresenter:
         """
         self._logger = logging.getLogger(__name__)
         self._view = view
-        self._gestion_view: ProviderEditView = gestion_view
+        self._gestion_view: WorkflowView = gestion_view
         self._service_provider: ProviderService = service_provider
         self._workflow_service: WorkflowService = workflow_service
 

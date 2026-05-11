@@ -35,7 +35,7 @@ def _get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) ->
             .filter(img => img.naturalWidth > 0)
             .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight}))
     """
-    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(script, 5)  # type: ignore[assignment]
+    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(script, 5)
     return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
 

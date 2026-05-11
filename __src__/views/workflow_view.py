@@ -13,7 +13,7 @@ from models.step_scraping_model import StepScrapingModel, StepType
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from views.components.horizontal_line_frame import HorizontalLineFrame
 from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
-from views.workflow_list_view import WorkflowListView
+from views.workflow_list_crud_view import WorkflowListCrudView
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -24,7 +24,7 @@ _STATUS_COLOR_ERROR = "#b00020"
 _HEIGHT_FRAME_GESTION = 200
 
 
-class ProviderEditView(ttk.Frame):
+class WorkflowView(ttk.Frame):
     """View component that renders the provider modification form."""
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -124,7 +124,7 @@ class ProviderEditView(ttk.Frame):
         workflow_lf = HorizontalLineFrame(main_container, text="Liste des étapes")
         workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5), padx=(5))
 
-        self._workflow_builder_view = WorkflowListView(workflow_lf)
+        self._workflow_builder_view = WorkflowListCrudView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True)
 
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder le fournisseur", command=self._notify_save)
@@ -240,7 +240,7 @@ class ProviderEditView(ttk.Frame):
                 self._inline_form._rebuild_form(step_type)
 
     @property
-    def workflow_builder_view(self) -> WorkflowListView:
+    def workflow_builder_view(self) -> WorkflowListCrudView:
         """Returns the embedded WorkflowBuilderView widget.
 
         Returns:

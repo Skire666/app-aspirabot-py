@@ -127,8 +127,8 @@ This project enforces a high standard of code quality. All contributions must fo
 ### General Style
 - Strict **PEP 8** compliance
 - **Docstrings** required on all public classes and functions, **Google style**
-- **Method length**: 30 lines maximum — if a method exceeds this, break it down
-- **Comments**: one comment per logical block, approximately every 4 lines of code
+- **Method length**: 25 lines maximum — if a method exceeds this, break it down
+- **Comments**: one comment per logical block, approximately every 5 lines of code
 - **Language**: English only
 
 ### Expected Docstring Format (Google Style)

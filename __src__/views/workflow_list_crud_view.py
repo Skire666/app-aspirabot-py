@@ -40,7 +40,7 @@ _DND_VIRTUALIZE_BUFFER = 2
 # ---------------------------------------------------------------------------
 
 
-class WorkflowListView(ttk.Frame):
+class WorkflowListCrudView(ttk.Frame):
     """Drag-and-drop step list with toolbar and inline form, embedded in a parent frame.
 
     The presenter sets callback attributes and calls render methods.

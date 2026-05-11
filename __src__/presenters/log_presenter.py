@@ -26,6 +26,7 @@ class LogPresenter:
         self._repository = repository
 
         self._view.set_filter_callback(self._on_filter_changed)
+        self._view.set_open_logs_folder_callback(self._on_open_logs_folder)
         self._service.attach_ui_callback(self._on_new_log)
 
     def _on_new_log(self, entry: LogEntryModel) -> None:
@@ -36,6 +37,13 @@ class LogPresenter:
     def _on_filter_changed(self) -> None:
         """Handles user filter updates from the View."""
         self._update_view()
+
+    def _on_open_logs_folder(self) -> None:
+        """Requests the repository to open the logs folder; shows error on failure."""
+        try:
+            self._repository.open_logs_folder()
+        except Exception as e:
+            self._view.show_error("Erreur", f"Impossible d'ouvrir le dossier des logs :\n{e}")
 
     def _update_view(self) -> None:
         """Fetches logs from repository, applies filters, and renders to the View."""

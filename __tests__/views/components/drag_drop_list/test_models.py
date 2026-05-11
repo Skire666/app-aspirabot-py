@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from views.components.drag_drop_list.core.models import DirtyRegion, DragState
 
 
@@ -26,7 +25,7 @@ class TestDragState:
         """DragState must be immutable."""
         ds = DragState(drag_idx=1, offset_y=5, insert_pos=None, expand_gap=None)
         with pytest.raises(Exception):
-            ds.drag_idx = 2  # type: ignore[misc]
+            ds.drag_idx = 2
 
     def test_with_position_increments_move_count(self) -> None:
         """with_position() returns a new instance with move_count += 1."""
@@ -54,7 +53,7 @@ class TestDragState:
         assert updated.last_y == 50
         assert updated.last_insert_pos == 1
         assert updated.redraw_count == 1
-        assert before <= updated.last_redraw_ts <= after  # type: ignore[operator]
+        assert before <= updated.last_redraw_ts <= after
 
     def test_with_skip_increments_skip_count(self) -> None:
         """with_skip() returns a copy with skip_count += 1."""

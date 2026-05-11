@@ -5,9 +5,7 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from views.components.drag_drop_list.core.controller import DragDropController
-from views.components.drag_drop_list.core.models import DragState
 
 
 @pytest.fixture()
@@ -107,7 +105,7 @@ class TestRecordRedraw:
         before = time.perf_counter()
         state = ctrl.record_redraw(state, fy=0)
         after = time.perf_counter()
-        assert before <= state.last_redraw_ts <= after  # type: ignore[operator]
+        assert before <= state.last_redraw_ts <= after
 
 
 class TestRecordSkip:

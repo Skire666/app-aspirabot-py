@@ -9,7 +9,7 @@ from typing import ClassVar
 # ---------------------------------------------------------------------------
 
 
-class WorkflowStepTextHint:
+class FaqTextTextHint:
     """Centralised help strings displayed in the 'Aide à la saisie' panel.
 
     Update values in BY_CATEGORY to customise guidance without touching layout

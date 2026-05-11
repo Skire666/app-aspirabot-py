@@ -11,7 +11,7 @@ Right: displays the help text for the selected item.
 import tkinter as tk
 from tkinter import ttk
 
-from views.workflow_step_text_hint_view import WorkflowStepTextHint
+from shared.faq_text_hint_view import FaqTextTextHint
 
 
 class FaqView(ttk.Frame):
@@ -92,9 +92,9 @@ class FaqView(ttk.Frame):
         self._item_texts.clear()
 
         # Insert categories and their child items
-        for category, items in WorkflowStepTextHint.BY_CATEGORY.items():
+        for category, items in FaqTextTextHint.BY_CATEGORY.items():
             category_id = self._tree.insert("", tk.END, text=category, open=True)
-            category_hint = WorkflowStepTextHint.CATEGORY_HINTS.get(category, "")
+            category_hint = FaqTextTextHint.CATEGORY_HINTS.get(category, "")
             self._item_texts[category_id] = category_hint
 
             for label, hint_text in items.items():

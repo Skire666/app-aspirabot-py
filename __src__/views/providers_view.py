@@ -16,7 +16,7 @@ from views.components.data_grid import DataGrid
 # ---------------------------------------------------------------------------
 
 
-class ProvidersListView(ttk.Frame):
+class ProvidersView(ttk.Frame):
     """View component that renders the list of providers."""
 
     def __init__(self, parent: tk.Widget) -> None:

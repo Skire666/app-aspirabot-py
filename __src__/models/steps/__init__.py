@@ -3,6 +3,7 @@
 from models.steps.click_element_params import ClickElementParams
 from models.steps.close_tabs_params import CloseTabsParams
 from models.steps.count_html_elements_params import CountHtmlElementsParams
+from models.steps.count_html_images_params import CountHtmlImagesParams
 from models.steps.download_image_params import DownloadImageParams
 from models.steps.end_process_params import EndProcessParams
 from models.steps.extract_text_params import ExtractTextParams
@@ -13,6 +14,7 @@ from models.steps.refresh_page_params import RefreshPageParams
 from models.steps.scroll_down_params import ScrollDownParams
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
+from models.steps.wait_page_state_params import WaitPageStateParams
 from models.steps.wait_user_action_params import WaitUserActionParams
 from models.steps.wait_x_time_params import WaitXTimeParams
 
@@ -20,6 +22,7 @@ __all__ = [
     "ClickElementParams",
     "CloseTabsParams",
     "CountHtmlElementsParams",
+    "CountHtmlImagesParams",
     "DownloadImageParams",
     "EndProcessParams",
     "ExtractTextParams",
@@ -30,6 +33,7 @@ __all__ = [
     "ScrollDownParams",
     "WaitHtmlElementsParams",
     "WaitHtmlImagesParams",
+    "WaitPageStateParams",
     "WaitUserActionParams",
     "WaitXTimeParams",
 ]

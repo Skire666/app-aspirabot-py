@@ -13,14 +13,14 @@ from presenters.workflow_list_presenter import WorkflowListPresenter
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
 from shared.random_util import merge_unique_list_id_step
-from views.provider_edit_view import ProviderEditView
+from views.workflow_view import WorkflowView
 
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
 
 
-class ProviderEditPresenter:
+class WorkflowPresenter:
     """Présentateur (Presenter) pour gerer la creation et modification d'un fournisseur.
 
     Owns both the provider form and the embedded WorkflowBuilderPresenter.
@@ -29,7 +29,7 @@ class ProviderEditPresenter:
 
     def __init__(
         self,
-        view: ProviderEditView,
+        view: WorkflowView,
         provider_service: ProviderService,
     ) -> None:
         """Initialise le présentateur.
@@ -40,7 +40,7 @@ class ProviderEditPresenter:
             provider_service: Service de gestion des fournisseurs.
         """
         self._logger = logging.getLogger(__name__)
-        self._view: ProviderEditView = view
+        self._view: WorkflowView = view
         self._service = provider_service
         self._is_creation_mode = False
         self._current_provider: ProviderModel | None = None

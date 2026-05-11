@@ -6,6 +6,7 @@
 
 import sys
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 import models.steps  # noqa: F401
@@ -14,7 +15,6 @@ import views.steps  # noqa: F401
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.log_presenter import LogPresenter
-from presenters.provider_edit_presenter import ProviderEditPresenter
 from presenters.provider_presenter import ProviderPresenter
 from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
@@ -49,10 +49,12 @@ from views.app_configuration_view import AppConfigurationView
 from views.faq_view import FaqView
 from views.log_view import LogView
 from views.main_view import MainView
-from views.provider_edit_view import ProviderEditView
-from views.providers_list_view import ProvidersListView
+from views.providers_view import ProvidersView
 from views.scraping_panel_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
+from views.workflow_view import WorkflowView
+
+from __src__.presenters.workflow_presenter import WorkflowPresenter
 
 # ---------------------------------------------------------------------------
 # Entry point
@@ -131,7 +133,7 @@ def _launch_main_app(
     main_view = _build_main_view(root)
 
     # Instantiate all MVP component groups.
-    log_view, log_presenter = _init_log_component(main_view, logging_service)
+    log_view, log_presenter = _init_log_component(main_view, logging_service, config_model.folder_logs)
     config_view, config_presenter = _init_config_component(main_view, config_repo)
     provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service = (
         _init_provider_components(main_view, config_model)
@@ -183,17 +185,19 @@ def _build_main_view(root: tk.Tk) -> MainView:
 def _init_log_component(
     main_view: MainView,
     logging_service: LoggingService,
+    folder_logs: Path,
 ) -> tuple[LogView, LogPresenter]:
     """Create and wire the journal (log display) component.
 
     Args:
         main_view: Main container providing the content area as parent.
         logging_service: Service that broadcasts log events to the presenter.
+        folder_logs: Path to the directory where log files are stored on disk.
 
     Returns:
         A (LogView, LogPresenter) tuple.
     """
-    log_repository = LogRepository()
+    log_repository = LogRepository(folder_logs)
     log_view = LogView(main_view.content_area)
     # Presenter self-registers on logging_service via attach_ui_callback.
     log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
@@ -223,10 +227,10 @@ def _init_provider_components(
     main_view: MainView,
     config_model: AppConfigurationModel,
 ) -> tuple[
-    ProvidersListView,
+    ProvidersView,
     ProviderPresenter,
-    ProviderEditView,
-    ProviderEditPresenter,
+    WorkflowView,
+    WorkflowPresenter,
     ProviderService,
 ]:
     """Create and wire the provider list and edit components.
@@ -244,12 +248,12 @@ def _init_provider_components(
     provider_service = ProviderService(provider_repo)
 
     # Provider list view and presenter.
-    provider_view = ProvidersListView(main_view.content_area)
+    provider_view = ProvidersView(main_view.content_area)
     provider_presenter = ProviderPresenter(view=provider_view, service=provider_service)
 
     # Provider edit view and presenter.
-    provider_edit_view = ProviderEditView(main_view.content_area)
-    provider_edit_presenter = ProviderEditPresenter(view=provider_edit_view, provider_service=provider_service)
+    provider_edit_view = WorkflowView(main_view.content_area)
+    provider_edit_presenter = WorkflowPresenter(view=provider_edit_view, provider_service=provider_service)
 
     return provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service
 
@@ -294,7 +298,7 @@ def _init_scraping_component(
 def _wire_provider_navigation(
     main_view: MainView,
     provider_presenter: ProviderPresenter,
-    provider_edit_presenter: ProviderEditPresenter,
+    provider_edit_presenter: WorkflowPresenter,
 ) -> None:
     """Connect create / edit / done navigation between provider views.
 
@@ -392,8 +396,8 @@ def _register_views(
     main_view: MainView,
     log_view: LogView,
     config_view: AppConfigurationView,
-    provider_view: ProvidersListView,
-    provider_edit_view: ProviderEditView,
+    provider_view: ProvidersView,
+    provider_edit_view: WorkflowView,
     scraping_view: ScrapingView,
     faq_view: FaqView,
 ) -> None:
@@ -427,7 +431,7 @@ def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:
         root: The root Tk window that outlives all presenters.
         presenters: Presenter instances to keep alive for the application lifetime.
     """
-    root._app_presenters = presenters  # type: ignore[attr-defined]
+    root._app_presenters = presenters
 
 
 # ---------------------------------------------------------------------------

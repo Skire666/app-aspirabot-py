@@ -321,7 +321,7 @@ class DragDropList(tk.Frame, Generic[T]):
 
     # ─── Resize handling ──────────────────────────────────────────────────────
 
-    def _on_canvas_configure(self, event: tk.Event) -> None:  # type: ignore[type-arg]
+    def _on_canvas_configure(self, event: tk.Event) -> None:
         """Handles canvas size changes and schedules debounced redraws."""
         if not self._calc.set_canvas_w(event.width):
             return  # height-only change; skip (layout is width-derived)

@@ -6,11 +6,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
-import pytest
-
 from interfaces.i_web_browser_service import IWebBrowserService
 from services.steps.download_image_executor import DownloadImageExecutor, _select_by_mode
-
 
 # ---------------------------------------------------------------------------
 # Fakes
@@ -133,7 +130,7 @@ def _fake_page_with_images(base_url: str, srcs: list[str]) -> _FakePage:
     """Return a FakePage whose evaluate() returns image metadata for given srcs."""
     page = _FakePage(base_url)
     img_data = [{"src": s, "width": 100, "height": 100} for s in srcs]
-    page.evaluate = lambda _script: img_data  # type: ignore[method-assign]
+    page.evaluate = lambda _script: img_data
     return page
 
 
