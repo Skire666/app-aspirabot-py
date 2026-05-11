@@ -1,4 +1,4 @@
-"""IStepExecutor for COUNT_ELEMENT."""
+"""IStepExecutor for COUNT_HTML_ELEMENTS."""
 
 from __future__ import annotations
 
@@ -8,45 +8,45 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
-from models.steps.count_element_params import CountElementsParams
+from models.steps.count_html_elements_params import CountHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
-from shared.exception_util import CountElementsConditionNotMetError
+from shared.exception_util import CountHtmlElementsConditionNotMetError
 
 _logger = logging.getLogger(__name__)
 
 
-class CountElementExecutor(IStepExecutor):
+class CountHtmlElementsExecutor(IStepExecutor):
     """Executor for the count element scraping step."""
 
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.COUNT_ELEMENTS
+        return StepType.COUNT_HTML_ELEMENTS
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
-        return CountElementsParams.default().to_dict()
+        return CountHtmlElementsParams.default().to_dict()
 
     @override
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
-        p = CountElementsParams.from_dict(params)
+        p = CountHtmlElementsParams.from_dict(params)
         page = browser.get_current_page()
 
         count = page.locator(p.selector).count()
-        _logger.info("COUNT_ELEMENTS: %d élément(s) pour %r", count, p.selector)
+        _logger.info("COUNT_HTML_ELEMENTS: %d élément(s) pour %r", count, p.selector)
         condition_met = evaluate_count_condition(count, p.operator, p.value, p.value_min, p.value_max)
         step_success = condition_met if p.success_if == "success" else not condition_met
         if not step_success:
             val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between"} else str(p.value)
-            raise CountElementsConditionNotMetError(count, p.operator, val_desc)
+            raise CountHtmlElementsConditionNotMetError(count, p.operator, val_desc)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
-        p = CountElementsParams.from_dict(model.params)
+        p = CountHtmlElementsParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_operators = {
             "between",
@@ -69,4 +69,4 @@ class CountElementExecutor(IStepExecutor):
         return errors
 
 
-register_step_executor(CountElementExecutor())
+register_step_executor(CountHtmlElementsExecutor())

@@ -1,4 +1,4 @@
-"""Typed parameter model for the WAIT_IMAGE_SIZE step."""
+"""Typed parameter model for the WAIT_PAGE_STATE step."""
 
 from __future__ import annotations
 
@@ -11,13 +11,9 @@ from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_DEFAULT_MODEL
 
 
 @dataclass(frozen=True)
-class WaitImageSizeParams(IStepParams):
-    """Parameters for the wait image size scraping step."""
+class WaitPageStateParams(IStepParams):
+    """Parameters for the wait page state scraping step."""
 
-    height_min: int
-    height_max: int
-    width_min: int
-    width_max: int
     timeout_duration: int
     timeout_unit: str
 
@@ -57,6 +53,6 @@ class WaitImageSizeParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls):
+    def get_step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.WAIT_IMAGES
+        return StepType.WAIT_PAGE_STATE

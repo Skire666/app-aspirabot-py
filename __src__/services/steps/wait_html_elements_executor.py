@@ -1,4 +1,4 @@
-"""IStepExecutor for WAIT_ELEMENT."""
+"""IStepExecutor for WAIT_HTML_ELEMENTS."""
 
 from __future__ import annotations
 
@@ -7,29 +7,29 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
-from models.steps.wait_element_params import WaitElementParams
+from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from services.steps._helpers import resolve_timeout_ms
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 
 
-class WaitElementExecutor(IStepExecutor):
+class WaitHtmlElementsExecutor(IStepExecutor):
     """Executor for the wait element scraping step."""
 
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.WAIT_ELEMENTS
+        return StepType.WAIT_HTML_ELEMENTS
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
-        return WaitElementParams.default().to_dict()
+        return WaitHtmlElementsParams.default().to_dict()
 
     @override
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
-        p = WaitElementParams.from_dict(params)
+        p = WaitHtmlElementsParams.from_dict(params)
         page = browser.get_current_page()
 
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
@@ -42,7 +42,7 @@ class WaitElementExecutor(IStepExecutor):
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         errors: list[str] = []
-        p = WaitElementParams.from_dict(model.params)
+        p = WaitHtmlElementsParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
 
         if not p.selector.strip():
@@ -54,4 +54,4 @@ class WaitElementExecutor(IStepExecutor):
         return errors
 
 
-register_step_executor(WaitElementExecutor())
+register_step_executor(WaitHtmlElementsExecutor())

@@ -1,4 +1,4 @@
-"""IStepFormDef for WAIT_ELEMENT."""
+"""IStepFormDef for WAIT_HTML_ELEMENTS."""
 
 from __future__ import annotations
 
@@ -23,18 +23,18 @@ C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
 
-class WaitElementFormDef(IStepFormDef):
+class WaitHtmlElementsFormDef(IStepFormDef):
     """Form definition for waiting until an element is present."""
 
     @classmethod
     def step_type(cls) -> StepType:
         """Return the StepType handled by this form."""
-        return StepType.WAIT_ELEMENTS
+        return StepType.WAIT_HTML_ELEMENTS
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_ELEMENTS)
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_HTML_ELEMENTS)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -103,4 +103,4 @@ class WaitElementFormDef(IStepFormDef):
         return f"Présence d'un élément  -  timeout : {timeout} {unit_display}\nSél. : {selector}"
 
 
-register_form(WaitElementFormDef())
+register_form(WaitHtmlElementsFormDef())

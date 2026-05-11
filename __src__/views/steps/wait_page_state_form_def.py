@@ -1,4 +1,4 @@
-"""IStepFormDef for WAIT_IMAGE_SIZE."""
+"""IStepFormDef for WAIT_PAGE_STATE."""
 
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
 
-class WaitImageSizeFormDef(IStepFormDef):
-    """Form definition for waiting until an image of a given size appears.
+class WaitPageStateFormDef(IStepFormDef):
+    """Form definition for waiting until a page reaches a certain state.
 
     Provides widget construction, parameter (de)serialization and validation.
     """
@@ -32,12 +32,12 @@ class WaitImageSizeFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the StepType handled by this form definition."""
-        return StepType.WAIT_IMAGES
+        return StepType.WAIT_PAGE_STATE
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_IMAGES)
+        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_PAGE_STATE)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -159,4 +159,4 @@ class WaitImageSizeFormDef(IStepFormDef):
         return label + f"{width_min}x{height_min} -> {width_max}x{height_max}"
 
 
-register_form(WaitImageSizeFormDef())
+register_form(WaitPageStateFormDef())

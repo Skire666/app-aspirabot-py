@@ -1,4 +1,4 @@
-"""Typed parameter model for the COUNT_ELEMENT step."""
+"""Typed parameter model for the COUNT_HTML_IMAGES step."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from models.step_scraping_model import StepType
 
 
 @dataclass(frozen=True)
-class CountElementsParams(IStepParams):
-    """Parameters for the count element scraping step."""
+class CountHtmlImagesParams(IStepParams):
+    """Parameters for the count HTML images step."""
 
     selector: str
     success_if: str
@@ -56,6 +56,6 @@ class CountElementsParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls):
+    def get_step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.COUNT_ELEMENTS
+        return StepType.COUNT_HTML_IMAGES

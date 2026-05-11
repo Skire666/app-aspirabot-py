@@ -27,7 +27,7 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_TIME_WAIT = 100
 
 
-class CountElementsFormDef(IStepFormDef):
+class CountHtmlElementsFormDef(IStepFormDef):
     """Form definition for the count element scraping step."""
 
     def __init__(self) -> None:
@@ -38,12 +38,12 @@ class CountElementsFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.COUNT_ELEMENTS
+        return StepType.COUNT_HTML_ELEMENTS
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_ELEMENTS)
+        return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_HTML_ELEMENTS)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -192,4 +192,4 @@ class CountElementsFormDef(IStepFormDef):
         return f"Compter les éléments  -  Attendu {op} {val_str}\nSél. : {selector}"
 
 
-register_form(CountElementsFormDef())
+register_form(CountHtmlElementsFormDef())

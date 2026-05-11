@@ -11,7 +11,7 @@ from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 
 @dataclass(frozen=True)
-class WaitElementParams(IStepParams):
+class WaitHtmlElementsParams(IStepParams):
     """Parameters for the wait element scraping step."""
 
     selector: str
@@ -41,6 +41,6 @@ class WaitElementParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls):
+    def get_step_type(cls) -> StepType:
         """Return the step type."""
-        return StepType.WAIT_ELEMENTS
+        return StepType.WAIT_HTML_ELEMENTS

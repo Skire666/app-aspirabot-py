@@ -35,6 +35,6 @@ class WaitXTimeParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls):
+    def get_step_type(cls) -> StepType:
         """Return the step type."""
         return StepType.WAIT_X_TIME

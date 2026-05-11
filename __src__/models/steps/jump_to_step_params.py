@@ -35,6 +35,6 @@ class JumpToStepParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls):
+    def get_step_type(cls) -> StepType:
         """Return the step type."""
         return StepType.JUMP_TO_STEP

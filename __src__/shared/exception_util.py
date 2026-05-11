@@ -359,8 +359,8 @@ class CurrentPageClosedUnexpectedlyError(ValueError, AspirabotError):
         super().__init__("Current page was closed unexpectedly.")
 
 
-class CountElementsConditionNotMetError(ValueError, AspirabotError):
-    """Raised when the COUNT_ELEMENTS condition is not satisfied."""
+class CountHtmlElementsConditionNotMetError(ValueError, AspirabotError):
+    """Raised when the COUNT_HTML_ELEMENTS condition is not satisfied."""
 
     def __init__(self, count: int, operator: str, value_desc: str) -> None:
         """Initialize the error message.
@@ -370,7 +370,7 @@ class CountElementsConditionNotMetError(ValueError, AspirabotError):
             operator: Operator used for comparison.
             value_desc: Display string describing the expected value.
         """
-        super().__init__(f"COUNT_ELEMENTS : condition non satisfaite (COUNT={count}, {operator} {value_desc})")
+        super().__init__(f"COUNT_HTML_ELEMENTS : condition non satisfaite (COUNT={count}, {operator} {value_desc})")
 
 
 class NoMatchingImageFoundError(ValueError, AspirabotError):

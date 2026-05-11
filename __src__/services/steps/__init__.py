@@ -2,7 +2,7 @@
 
 from services.steps.click_element_executor import ClickElementExecutor
 from services.steps.close_tabs_executor import CloseTabsExecutor
-from services.steps.count_element_executor import CountElementExecutor
+from services.steps.count_html_images_executor import CountHtmlElementsExecutor
 from services.steps.download_image_executor import DownloadImageExecutor
 from services.steps.end_process_executor import EndProcessExecutor
 from services.steps.extract_text_executor import ExtractTextExecutor
@@ -11,15 +11,15 @@ from services.steps.open_url_executor import OpenUrlExecutor
 from services.steps.random_pause_executor import RandomPauseExecutor
 from services.steps.refresh_page_executor import RefreshPageExecutor
 from services.steps.scroll_down_executor import ScrollDownExecutor
-from services.steps.wait_element_executor import WaitElementExecutor
-from services.steps.wait_image_size_executor import WaitImageSizeExecutor
+from services.steps.wait_html_elements_executor import WaitHtmlElementsExecutor
+from services.steps.wait_html_images_executor import WaitHtmlImagesExecutor
 from services.steps.wait_user_action_executor import WaitUserActionExecutor
 from services.steps.wait_x_time_executor import WaitXTimeExecutor
 
 __all__ = [
     "ClickElementExecutor",
     "CloseTabsExecutor",
-    "CountElementExecutor",
+    "CountHtmlElementsExecutor",
     "DownloadImageExecutor",
     "EndProcessExecutor",
     "ExtractTextExecutor",
@@ -28,8 +28,8 @@ __all__ = [
     "RandomPauseExecutor",
     "RefreshPageExecutor",
     "ScrollDownExecutor",
-    "WaitElementExecutor",
-    "WaitImageSizeExecutor",
+    "WaitHtmlElementsExecutor",
+    "WaitHtmlImagesExecutor",
     "WaitUserActionExecutor",
     "WaitXTimeExecutor",
 ]
