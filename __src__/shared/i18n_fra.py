@@ -3,7 +3,7 @@ import tkinter as tk
 
 from models.step_scraping_model import StepType
 
-C_VIEW_SIDEBAR_LEFT_WIDTH = 88
+C_VIEW_SIDEBAR_LEFT_WIDTH = 80
 
 # All title labels for sidebar buttons
 C_TITLE_MODULE_LOGS = "Journal"

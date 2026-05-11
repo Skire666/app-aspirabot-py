@@ -16,15 +16,16 @@ class WaitXTimeParams(IStepParams):
 
     duration: int
     unit: str
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(duration=0, unit=C_UNITS_TIME_DEFAULT_MODEL)
+        return cls(duration=0, unit=C_UNITS_TIME_DEFAULT_MODEL, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"duration": self.duration, "unit": self.unit}
+        return {"duration": self.duration, "unit": self.unit, "comment": self.comment}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -32,6 +33,7 @@ class WaitXTimeParams(IStepParams):
         return cls(
             duration=int(data.get("duration", 0)),
             unit=data.get("unit", C_UNITS_TIME_DEFAULT_MODEL),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

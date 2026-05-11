@@ -21,7 +21,7 @@ from views.workflow_list_crud_view import WorkflowListCrudView
 
 _STATUS_COLOR_OK = "#1b5e20"
 _STATUS_COLOR_ERROR = "#b00020"
-_HEIGHT_FRAME_GESTION = 200
+_HEIGHT_FRAME_GESTION = 196
 
 
 class WorkflowView(ttk.Frame):
@@ -59,15 +59,15 @@ class WorkflowView(ttk.Frame):
 
         # Ligne 1 : Nom + ID Fichier
         line1_frame = ttk.Frame(info_lf)
-        line1_frame.pack(fill="x", padx=5)
+        line1_frame.pack(fill="x", padx=5, pady=(0, 8))
 
         # Label Nom
-        ttk.Label(line1_frame, text="Nom : ", width=7).pack(side="left", pady=(0, 5))
+        ttk.Label(line1_frame, text="Nom : ", width=7).pack(side="left")
 
         # Zone de texte éditable Nom (occupe l'espace restant)
         self._var_name = tk.StringVar()
         self._entry_name = ttk.Entry(line1_frame, textvariable=self._var_name)
-        self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=(0, 5))
+        self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         # Label ID Fichier
         ttk.Label(line1_frame, text="ID Fichier : ", width=10).pack(side="left", padx=(20, 0))
@@ -75,7 +75,7 @@ class WorkflowView(ttk.Frame):
         # Label en lecture seule ID Fichier
         self._var_id_file = tk.StringVar()
         self._entry_id_file = ttk.Entry(line1_frame, textvariable=self._var_id_file, state="readonly", width=15)
-        self._entry_id_file.pack(side="left", pady=(0, 5))
+        self._entry_id_file.pack(side="left")
 
         # Ligne 2 : URL + Version
         line2_frame = ttk.Frame(info_lf)
@@ -110,7 +110,7 @@ class WorkflowView(ttk.Frame):
 
         # 4. Footer — packed before workflow so side=BOTTOM reserves space correctly
         footer_frame = ttk.Frame(main_container)
-        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 5))
 
         self._lbl_workflow_status = ttk.Label(
             footer_frame,
@@ -137,7 +137,7 @@ class WorkflowView(ttk.Frame):
         labels = list(C_STEP_TYPE_TO_LABELS.values())
 
         left_frame = ttk.Frame(self._gestion_container, width=175)
-        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 15), pady=0)  # spération verticale
+        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 20), pady=0)  # spération verticale
         left_frame.pack_propagate(False)
 
         self._type_listbox = tk.Listbox(left_frame, selectmode=tk.SINGLE, exportselection=False, activestyle="none")

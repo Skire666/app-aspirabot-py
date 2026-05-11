@@ -20,6 +20,7 @@ class DownloadImageParams(IStepParams):
     height_max: int
     width_min: int
     width_max: int
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
@@ -31,6 +32,7 @@ class DownloadImageParams(IStepParams):
             height_max=C_MAXIMUM_SIZE_IMAGE,
             width_min=0,
             width_max=C_MAXIMUM_SIZE_IMAGE,
+            comment="",
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -42,6 +44,7 @@ class DownloadImageParams(IStepParams):
             "height_max": self.height_max,
             "width_min": self.width_min,
             "width_max": self.width_max,
+            "comment": self.comment,
         }
 
     @classmethod
@@ -54,6 +57,7 @@ class DownloadImageParams(IStepParams):
             height_max=int(data.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
             width_min=int(data.get("width_min", 0)),
             width_max=int(data.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

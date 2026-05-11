@@ -18,6 +18,7 @@ from presenters.log_presenter import LogPresenter
 from presenters.provider_presenter import ProviderPresenter
 from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
+from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
@@ -53,8 +54,6 @@ from views.providers_view import ProvidersView
 from views.scraping_panel_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
 from views.workflow_view import WorkflowView
-
-from __src__.presenters.workflow_presenter import WorkflowPresenter
 
 # ---------------------------------------------------------------------------
 # Entry point

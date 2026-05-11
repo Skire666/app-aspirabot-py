@@ -16,15 +16,21 @@ class ExtractTextParams(IStepParams):
     selector: str
     extract_mode: str
     target: str
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(selector="", extract_mode="innerText", target="first")
+        return cls(selector="", extract_mode="innerText", target="first", comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"selector": self.selector, "extract_mode": self.extract_mode, "target": self.target}
+        return {
+            "selector": self.selector,
+            "extract_mode": self.extract_mode,
+            "target": self.target,
+            "comment": self.comment,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -33,6 +39,7 @@ class ExtractTextParams(IStepParams):
             selector=data.get("selector", ""),
             extract_mode=data.get("extract_mode", "innerText"),
             target=data.get("target", "first"),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

@@ -20,6 +20,7 @@ class WaitHtmlImagesParams(IStepParams):
     width_max: int
     timeout_duration: int
     timeout_unit: str
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
@@ -31,6 +32,7 @@ class WaitHtmlImagesParams(IStepParams):
             width_max=C_MAXIMUM_SIZE_IMAGE,
             timeout_duration=1,
             timeout_unit=C_UNITS_TIME_DEFAULT_MODEL,
+            comment="",
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -42,6 +44,7 @@ class WaitHtmlImagesParams(IStepParams):
             "width_max": self.width_max,
             "timeout_duration": self.timeout_duration,
             "timeout_unit": self.timeout_unit,
+            "comment": self.comment,
         }
 
     @classmethod
@@ -54,6 +57,7 @@ class WaitHtmlImagesParams(IStepParams):
             width_max=int(data.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
             timeout_duration=int(data.get("timeout_duration", 1)),
             timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

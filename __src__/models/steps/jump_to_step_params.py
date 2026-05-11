@@ -15,15 +15,16 @@ class JumpToStepParams(IStepParams):
 
     condition: str
     target_hexastring: str
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(condition="success", target_hexastring="")
+        return cls(condition="success", target_hexastring="", comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"condition": self.condition, "target_hexastring": self.target_hexastring}
+        return {"condition": self.condition, "target_hexastring": self.target_hexastring, "comment": self.comment}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -32,6 +33,7 @@ class JumpToStepParams(IStepParams):
         return cls(
             condition=data.get("condition", "success"),
             target_hexastring=str(target_value) if target_value is not None else "",
+            comment=data.get("comment", ""),
         )
 
     @classmethod

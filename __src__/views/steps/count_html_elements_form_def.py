@@ -1,5 +1,9 @@
 """IStepFormDef for COUNT_ELEMENT."""
 
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -23,8 +27,16 @@ from views.steps._constants import (
     safe_int_widget,
 )
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_TIME_WAIT = 100
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class CountHtmlElementsFormDef(IStepFormDef):

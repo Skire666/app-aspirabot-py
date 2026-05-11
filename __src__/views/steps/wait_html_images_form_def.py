@@ -18,9 +18,17 @@ from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class WaitHtmlImagesFormDef(IStepFormDef):
@@ -44,7 +52,7 @@ class WaitHtmlImagesFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         # LIGNE 1 : Hauteur (px) + Min + Spinbox + Max + Spinbox
         line1 = ttk.Frame(frame)
-        line1.pack(fill="x", pady=(0, 4))
+        line1.pack(fill="x", pady=(0, 8))
 
         ttk.Label(line1, text="Hauteur : ").pack(side="left")
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
@@ -73,14 +81,23 @@ class WaitHtmlImagesFormDef(IStepFormDef):
         widgets["timeout_unit"] = tu_var
 
         timeout_frame = ttk.Frame(frame)
-        timeout_frame.pack(fill="x", pady=(0, 4))
-        ttk.Label(timeout_frame, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 4))
+        timeout_frame.pack(fill="x", pady=(0, 8))
+        ttk.Label(timeout_frame, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 5))
         ttk.Spinbox(timeout_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4)
+            side=tk.LEFT, padx=(0, 5)
         )
         ttk.Combobox(
             timeout_frame, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
-        ).pack(side=tk.LEFT, padx=(0, 4))
+        ).pack(side=tk.LEFT, padx=(0, 5))
+
+        # Dernière ligne — comment
+        comment_frame = ttk.Frame(frame)
+        comment_frame.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(comment_frame, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(comment_frame, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
@@ -100,6 +117,7 @@ class WaitHtmlImagesFormDef(IStepFormDef):
                 model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
+        widgets["comment"].set(model.params.get("comment", ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -111,6 +129,7 @@ class WaitHtmlImagesFormDef(IStepFormDef):
             "width_max": safe_int_widget(widgets, "width_max", C_MAXIMUM_SIZE_IMAGE),
             "timeout_duration": safe_int_widget(widgets, "timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION),
             "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
+            "comment": widgets["comment"].get().strip(),
         }
 
     @override

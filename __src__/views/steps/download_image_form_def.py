@@ -14,33 +14,16 @@ from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import DOWNLOAD_MODES, safe_int_widget
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_MODE_DDL = DOWNLOAD_MODES[-1]  # all
 
-
-def _add_dimension_row(
-    frame: ttk.Frame,
-    widgets: dict[str, Any],
-    row: int,
-    label: str,
-    min_key: str,
-    max_key: str,
-    default_min: int,
-    default_max: int,
-) -> None:
-    ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=4)
-    ttk.Label(frame, text="Min:").grid(row=row, column=1, sticky="w", padx=2)
-    min_var = tk.StringVar(value=str(default_min))
-    ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=min_var, width=8).grid(
-        row=row, column=2, padx=5, pady=4
-    )
-    ttk.Label(frame, text="Max:").grid(row=row, column=3, sticky="w", padx=2)
-    max_var = tk.StringVar(value=str(default_max))
-    ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=max_var, width=8).grid(
-        row=row, column=4, padx=5, pady=4
-    )
-    widgets[min_key] = min_var
-    widgets[max_key] = max_var
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class DownloadImageFormDef(IStepFormDef):
@@ -66,9 +49,9 @@ class DownloadImageFormDef(IStepFormDef):
 
         # LIGNE 1 : Cible + Combobox + Checkbox
         line1 = ttk.Frame(frame)
-        line1.pack(fill="x", pady=(0, 4))
+        line1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line1, text="Cible : ").pack(side="left", padx=(0, 4))
+        ttk.Label(line1, text="Cible : ").pack(side="left", padx=(0, 5))
         ttk.Combobox(line1, textvariable=mode_var, values=DOWNLOAD_MODES, state="readonly", width=7).pack(
             side="left", fill="x", expand=False, padx=(0, 25)
         )
@@ -76,37 +59,46 @@ class DownloadImageFormDef(IStepFormDef):
 
         # LIGNE 2 : Hauteur (px) + Min + Spinbox + Max + Spinbox
         line2 = ttk.Frame(frame)
-        line2.pack(fill="x", pady=(0, 4))
+        line2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line2, text="Hauteur entre : ", width=15).pack(side="left", padx=(0, 4))
+        ttk.Label(line2, text="Hauteur entre : ", width=15).pack(side="left", padx=(0, 5))
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=8).pack(
-            side="left", padx=(0, 4)
+            side="left", padx=(0, 5)
         )
-        ttk.Label(line2, text=" et ").pack(side="left", padx=(0, 4))
+        ttk.Label(line2, text=" et ").pack(side="left", padx=(0, 5))
         height_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=8).pack(
-            side="left", padx=(0, 4)
+            side="left", padx=(0, 5)
         )
         widgets["height_min"] = height_min_var
         widgets["height_max"] = height_max_var
 
         # LIGNE 3 : Largeur (px) + Min + Spinbox + Max + Spinbox
         line3 = ttk.Frame(frame)
-        line3.pack(fill="x", pady=(0, 4))
+        line3.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line3, text="Largeur entre : ", width=15).pack(side="left", padx=(0, 4))
+        ttk.Label(line3, text="Largeur entre : ", width=15).pack(side="left", padx=(0, 5))
         width_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_min_var, width=8).pack(
-            side="left", padx=(0, 4)
+            side="left", padx=(0, 5)
         )
-        ttk.Label(line3, text=" et ").pack(side="left", padx=(0, 4))
+        ttk.Label(line3, text=" et ").pack(side="left", padx=(0, 5))
         width_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=8).pack(
-            side="left", padx=(0, 4)
+            side="left", padx=(0, 5)
         )
         widgets["width_min"] = width_min_var
         widgets["width_max"] = width_max_var
+
+        # LIGNE 4 — comment
+        line4 = ttk.Frame(frame)
+        line4.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(line4, text="Commentaire : ").pack(side="left", padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(line4, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
@@ -117,6 +109,7 @@ class DownloadImageFormDef(IStepFormDef):
         widgets["height_max"].set(str(model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
         widgets["width_min"].set(str(model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
         widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
+        widgets["comment"].set(model.params.get("comment", ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -128,6 +121,7 @@ class DownloadImageFormDef(IStepFormDef):
             "height_max": safe_int_widget(widgets, "height_max", C_MAXIMUM_SIZE_IMAGE),
             "width_min": safe_int_widget(widgets, "width_min", C_INPUT_DEFAULT_MINIMUM_SIZE),
             "width_max": safe_int_widget(widgets, "width_max", C_MAXIMUM_SIZE_IMAGE),
+            "comment": widgets["comment"].get().strip(),
         }
 
     @override

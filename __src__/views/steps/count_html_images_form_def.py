@@ -1,5 +1,9 @@
 """IStepFormDef for COUNT_HTML_IMAGES."""
 
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -23,8 +27,16 @@ from views.steps._constants import (
     safe_int_widget,
 )
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_TIME_WAIT = 100
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class CountHtmlImagesFormDef(IStepFormDef):
@@ -52,22 +64,23 @@ class CountHtmlImagesFormDef(IStepFormDef):
 
         # ROW 1 — CSS selector
         row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=(0, 4))
+        row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 4))
+        ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
 
         # ROW 2 — success_if + operator + dynamic value area
         row2 = ttk.Frame(frame)
-        row2.pack(fill="x", pady=(0, 4))
+        row2.pack(fill="x", pady=(0, 8))
 
+        ttk.Label(row2, text="Est un ").pack(side=tk.LEFT, padx=(0, 5))
         si_var = tk.StringVar(value=COUNT_SUCCESS_IF_DISPLAY[0])
         ttk.Combobox(row2, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8).pack(
-            side=tk.LEFT, padx=(0, 4)
+            side=tk.LEFT, padx=(0, 5)
         )
-        ttk.Label(row2, text="si").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row2, text="si").pack(side=tk.LEFT, padx=(0, 5))
         widgets["success_if"] = si_var
 
         op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])  # supérieur ou égal
@@ -79,6 +92,18 @@ class CountHtmlImagesFormDef(IStepFormDef):
         self._value_area_frame.pack(side=tk.LEFT)
         self._rebuild_value_area(COUNT_OP_DISPLAY[2])
         op_cb.bind("<<ComboboxSelected>>", lambda _: self._rebuild_value_area(op_var.get()))
+
+        # ROW 3 — comment
+        self._build_form_comment(frame, widgets)
+
+    def _build_form_comment(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        row3 = ttk.Frame(frame)
+        row3.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row3, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(row3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     def _rebuild_value_area(self, op_display: str) -> None:
         if self._value_area_frame is None or self._form_widgets_ref is None:
@@ -96,12 +121,11 @@ class CountHtmlImagesFormDef(IStepFormDef):
             ttk.Label(self._value_area_frame, text=" et ").pack(side=tk.LEFT)
             vmax_var = tk.StringVar(value="0")
             ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmax_var, width=7).pack(
-                side=tk.LEFT, padx=(0, 4)
+                side=tk.LEFT, padx=(0, 5)
             )
             self._form_widgets_ref["value_min"] = vmin_var
             self._form_widgets_ref["value_max"] = vmax_var
         else:
-            ttk.Label(self._value_area_frame, text="valeur").pack(side=tk.LEFT, padx=(0, 2))
             val_var = tk.StringVar(value="0")
             ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=val_var, width=7).pack(
                 side=tk.LEFT
@@ -126,6 +150,7 @@ class CountHtmlImagesFormDef(IStepFormDef):
             widgets["value_max"].set(str(model.params.get("value_max", 0)))
         if "value" in widgets:
             widgets["value"].set(str(model.params.get("value", 0)))
+        widgets["comment"].set(model.params.get("comment", ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -137,6 +162,7 @@ class CountHtmlImagesFormDef(IStepFormDef):
             "selector": widgets["selector"].get().strip(),
             "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display, "success"),
             "operator": op_value,
+            "comment": widgets["comment"].get().strip(),
         }
         if op_value in {"between"}:
             result["value_min"] = safe_int_widget(widgets, "value_min", 0)

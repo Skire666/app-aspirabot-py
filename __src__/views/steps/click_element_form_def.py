@@ -12,7 +12,15 @@ from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import CLICK_MODES
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ClickElementFormDef(IStepFormDef):
@@ -33,29 +41,39 @@ class ClickElementFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=(0, 4))
+        row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 4))
+        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
 
         # ROW 1
         row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=(0, 4))
+        row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) : ").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value="Normal")
         ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["click_mode"] = mode_var
+
+        # ROW 2 — comment
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row2, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(row2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets["click_mode"].set(model.params.get("click_mode", "Normal"))
+        widgets["comment"].set(model.params.get("comment", ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -63,6 +81,7 @@ class ClickElementFormDef(IStepFormDef):
         return {
             "selector": widgets["selector"].get().strip(),
             "click_mode": widgets["click_mode"].get(),
+            "comment": widgets["comment"].get().strip(),
         }
 
     @override

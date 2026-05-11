@@ -33,7 +33,7 @@ WAIT_UNIT_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_UNITS_TIME_ALLOWED_FOR_MODE
 # Playwright wait-state values
 # ---------------------------------------------------------------------------
 
-WAIT_STATES: list[str] = ["commit", "domcontentloaded", "load", "networkidle"]
+C_CHOICES_WAIT_PAGE_STATE: list[str] = ["domcontentloaded", "load", "networkidle"]
 
 # ---------------------------------------------------------------------------
 # Download mode values

@@ -7,7 +7,7 @@ from typing import Any
 class CanvasCheckbox(tk.Frame):
     """Checkbox custom basée sur Canvas, compatible variable Tkinter."""
 
-    BOX_SIZE = 20
+    BOX_SIZE = 18
     PADDING = 2
     TEXT_MARGIN = 6
 

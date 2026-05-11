@@ -19,7 +19,15 @@ from views.steps._constants import (
     EXTRACT_TARGET_VIEW_TO_MODEL,
 )
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
 
 
 class ExtractTextFormDef(IStepFormDef):
@@ -40,34 +48,43 @@ class ExtractTextFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=(0, 4))
+        row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 4))
+        ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
 
         # ROW 1
         row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=(0, 4))
+        row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Mode d'extraction : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row1, text="Mode d'extraction : ").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value=EXTRACT_MODE_DISPLAY[0])
         ttk.Combobox(row1, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["extract_mode"] = mode_var
 
         # ROW 2
         row2 = ttk.Frame(frame)
-        row2.pack(fill="x", pady=(0, 4))
+        row2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row2, text="Cible : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row2, text="Cible : ").pack(side=tk.LEFT, padx=(0, 5))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[0])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["target"] = target_var
+
+        # ROW 3 — comment
+        row3 = ttk.Frame(frame)
+        row3.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row3, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(row3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
@@ -79,6 +96,7 @@ class ExtractTextFormDef(IStepFormDef):
         widgets["target"].set(
             EXTRACT_TARGET_MODEL_TO_VIEW.get(model.params.get("target", "first"), EXTRACT_TARGET_DISPLAY[0])
         )
+        widgets["comment"].set(model.params.get("comment", ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -87,6 +105,7 @@ class ExtractTextFormDef(IStepFormDef):
             "selector": widgets["selector"].get().strip(),
             "extract_mode": EXTRACT_MODE_VIEW_TO_MODEL.get(widgets["extract_mode"].get(), "innerText"),
             "target": EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets["target"].get(), "first"),
+            "comment": widgets["comment"].get().strip(),
         }
 
     @override

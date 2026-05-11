@@ -14,21 +14,23 @@ class ScrollDownParams(IStepParams):
     """Parameters for the scroll down scraping step."""
 
     pixels: int
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(pixels=1000)
+        return cls(pixels=1000, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"pixels": self.pixels}
+        return {"pixels": self.pixels, "comment": self.comment}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
             pixels=int(data.get("pixels", 1000)),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

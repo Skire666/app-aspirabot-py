@@ -18,6 +18,10 @@ from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
+
 
 class WaitRandomPauseFormDef(IStepFormDef):
     """Form definition for the random pause scraping step."""
@@ -43,20 +47,29 @@ class WaitRandomPauseFormDef(IStepFormDef):
         widgets["unit"] = unit_var
 
         line1 = ttk.Frame(frame)
-        line1.pack(fill="x", pady=(0, 4))
+        line1.pack(fill="x", pady=(0, 8))
 
         # line for min and max values
-        ttk.Label(line1, text="Pause aléatoire entre : ").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(line1, text="Pause aléatoire entre : ").pack(side=tk.LEFT, padx=(0, 5))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4)
+            side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(line1, text=" et ").pack(side=tk.LEFT)
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 4)
+            side=tk.LEFT, padx=(0, 5)
         )
         ttk.Combobox(
             line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT)
+
+        # ROW 2 — comment
+        line2 = ttk.Frame(frame)
+        line2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(line2, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(line2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
@@ -66,6 +79,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
         widgets["unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
         )
+        widgets["comment"].set(model.params.get("comment", ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -74,6 +88,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
             "min": safe_int_widget(widgets, "min", 0),
             "max": safe_int_widget(widgets, "max", 1),
             "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
+            "comment": widgets["comment"].get().strip(),
         }
 
     @override

@@ -95,7 +95,7 @@ class MainView(ttk.Frame):
         self.sidebar.pack_propagate(False)
 
         self.content_area = ttk.Frame(self)
-        self.content_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=5)
+        self.content_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
 
         # Build sidebar header and navigation buttons
         self._build_sidebar_buttons()
@@ -123,9 +123,9 @@ class MainView(ttk.Frame):
                 bd=0,
                 font=(
                     "Segoe UI",
-                    10,
+                    9,
                 ),
-                disabledforeground="#8f8f8f",
+                disabledforeground="#8e8e8e",  # disable text
             )
             btn.pack(fill=tk.X, padx=0, pady=0, ipady=6)
             self._buttons[name] = btn

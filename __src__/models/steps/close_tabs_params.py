@@ -15,15 +15,16 @@ class CloseTabsParams(IStepParams):
 
     url_filter: str
     max_tabs: int
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(url_filter="", max_tabs=1)
+        return cls(url_filter="", max_tabs=1, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"url_filter": self.url_filter, "max_tabs": self.max_tabs}
+        return {"url_filter": self.url_filter, "max_tabs": self.max_tabs, "comment": self.comment}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -31,6 +32,7 @@ class CloseTabsParams(IStepParams):
         return cls(
             url_filter=data.get("url_filter", ""),
             max_tabs=int(data.get("max_tabs", 1)),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

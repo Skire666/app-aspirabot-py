@@ -15,15 +15,16 @@ class ClickElementParams(IStepParams):
 
     selector: str
     click_mode: str
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(selector="", click_mode="Normal")
+        return cls(selector="", click_mode="Normal", comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"selector": self.selector, "click_mode": self.click_mode}
+        return {"selector": self.selector, "click_mode": self.click_mode, "comment": self.comment}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -31,6 +32,7 @@ class ClickElementParams(IStepParams):
         return cls(
             selector=data.get("selector", ""),
             click_mode=data.get("click_mode", "Normal"),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

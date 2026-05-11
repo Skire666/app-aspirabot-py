@@ -45,29 +45,42 @@ class CloseTabsFormDef(IStepFormDef):
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
-        frame.columnconfigure(1, weight=1)
+        # ROW 0
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(frame, text="Garder uniquement ce qui contient : ").grid(
-            row=0, column=0, sticky="w", padx=(0, 4), pady=(0, 4)
-        )
+        ttk.Label(row0, text="Garder uniquement ce qui contient : ").pack(side="left", padx=(0, 5))
         filter_var = tk.StringVar(value=C_INPUT_DEFAULT_URL_FILTER)
-        ttk.Entry(frame, textvariable=filter_var).grid(row=0, column=1, sticky="ew", padx=(0, 4), pady=(0, 4))
+        ttk.Entry(row0, textvariable=filter_var).pack(side="left", padx=(0, 5))
         widgets["url_filter"] = filter_var
 
-        ttk.Label(frame, text="<<URL>> ou bien .com").grid(row=1, column=1, sticky="w", padx=(0, 4), pady=(0, 4))
+        ttk.Label(row0, text="<<URL>> ou bien .com").pack(side="left", padx=(0, 5))
 
-        ttk.Label(frame, text="Max. onglets ouverts:").grid(row=2, column=0, sticky="w", padx=(0, 4), pady=(0, 4))
+        # ROW 1
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row1, text="Max. onglets ouverts:").pack(side="left", padx=(0, 5))
         max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MAX_TABS))
-        ttk.Spinbox(frame, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).grid(
-            row=2, column=1, sticky="w", padx=(0, 4), pady=(0, 4)
+        ttk.Spinbox(row1, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).pack(
+            side="left", padx=(0, 5)
         )
         widgets["max_tabs"] = max_var
+
+        # ROW 3 — comment
+        row3 = ttk.Frame(frame)
+        row3.pack(fill="x", pady=(0, 8))
+        ttk.Label(row3, text="Commentaire : ").pack(side="left", padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(row3, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         widgets["url_filter"].set(model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER))
         widgets["max_tabs"].set(str(model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)))
+        widgets["comment"].set(model.params.get("comment", ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -75,6 +88,7 @@ class CloseTabsFormDef(IStepFormDef):
         return {
             "url_filter": widgets["url_filter"].get().strip(),
             "max_tabs": safe_int_widget(widgets, "max_tabs", C_INPUT_DEFAULT_MAX_TABS),
+            "comment": widgets["comment"].get().strip(),
         }
 
     @override

@@ -17,11 +17,12 @@ class WaitHtmlElementsParams(IStepParams):
     selector: str
     timeout_duration: int
     timeout_unit: str
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(selector="", timeout_duration=1, timeout_unit=C_UNITS_TIME_DEFAULT_MODEL)
+        return cls(selector="", timeout_duration=1, timeout_unit=C_UNITS_TIME_DEFAULT_MODEL, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
@@ -29,6 +30,7 @@ class WaitHtmlElementsParams(IStepParams):
             "selector": self.selector,
             "timeout_duration": self.timeout_duration,
             "timeout_unit": self.timeout_unit,
+            "comment": self.comment,
         }
 
     @classmethod
@@ -38,6 +40,7 @@ class WaitHtmlElementsParams(IStepParams):
             selector=data.get("selector", ""),
             timeout_duration=int(data.get("timeout_duration", 1)),
             timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

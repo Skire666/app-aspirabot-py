@@ -19,6 +19,7 @@ class CountHtmlImagesParams(IStepParams):
     value_min: int
     value_max: int
     value: int
+    comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
@@ -30,6 +31,7 @@ class CountHtmlImagesParams(IStepParams):
             value_min=0,
             value_max=0,
             value=0,
+            comment="",
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,6 +43,7 @@ class CountHtmlImagesParams(IStepParams):
             "value_min": self.value_min,
             "value_max": self.value_max,
             "value": self.value,
+            "comment": self.comment,
         }
 
     @classmethod
@@ -53,6 +56,7 @@ class CountHtmlImagesParams(IStepParams):
             value_min=int(data.get("value_min", 0)),
             value_max=int(data.get("value_max", 0)),
             value=int(data.get("value", 0)),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

@@ -18,15 +18,17 @@ class OpenUrlParams(IStepParams):
     wait_state: str
     timeout_duration: int
     timeout_unit: str
+    comment: str
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
         return cls(
             url="https://example.com/",
-            wait_state="domcontentloaded",
+            wait_state="load",
             timeout_duration=1,
             timeout_unit=C_UNITS_TIME_DEFAULT_MODEL,
+            comment="",
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -36,6 +38,7 @@ class OpenUrlParams(IStepParams):
             "wait_state": self.wait_state,
             "timeout_duration": self.timeout_duration,
             "timeout_unit": self.timeout_unit,
+            "comment": self.comment,
         }
 
     @classmethod
@@ -43,9 +46,10 @@ class OpenUrlParams(IStepParams):
         """Deserialize from dict."""
         return cls(
             url=data.get("url", "https://example.com/"),
-            wait_state=data.get("wait_state", "domcontentloaded"),
+            wait_state=data.get("wait_state", "load"),
             timeout_duration=int(data.get("timeout_duration", 1)),
             timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            comment=data.get("comment", ""),
         )
 
     @classmethod

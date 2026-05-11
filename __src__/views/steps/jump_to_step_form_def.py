@@ -40,18 +40,18 @@ class JumpToStepFormDef(IStepFormDef):
         """Build the form widgets into the given frame."""
         # ROW 0
         row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=(0, 4))
+        row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Condition:").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row0, text="Condition:").pack(side=tk.LEFT, padx=(0, 5))
         cond_var = tk.StringVar(value=CONDITION_DISPLAY[0])
         ttk.Combobox(row0, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets["condition"] = cond_var
 
         # ROW 1
         row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=(0, 4))
+        row1.pack(fill="x", pady=(0, 8))
 
         available_steps: list[StepScrapingModel] = widgets.get("_all_steps_available", [])
 
@@ -77,10 +77,19 @@ class JumpToStepFormDef(IStepFormDef):
         target_var = tk.StringVar(value=default_choice)
         widgets["_choice_from_listbox"] = target_var  # important de passer le stringvar
 
-        ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(0, 5))
         ttk.Combobox(row1, textvariable=target_var, values=all_choices_listbox, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 4)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
+
+        # ROW 2 — comment
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row2, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(row2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
 
     # à partir du model, alimente view
     @override
@@ -106,6 +115,7 @@ class JumpToStepFormDef(IStepFormDef):
             choice_str = self.compute_string_displayed_in_combobox(index_target, model_target)
 
         widgets["_choice_from_listbox"].set(choice_str)  # Clear selection if target is invalid.
+        widgets["comment"].set(model.params.get("comment", ""))
         print(f"B) {datetime.now()} target_hexastring = {target_hexastring!r}")
         print(f"B) {datetime.now()} choice_str = {choice_str!r}")
 
@@ -130,6 +140,7 @@ class JumpToStepFormDef(IStepFormDef):
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(cond_display, "success"),
             "target_hexastring": hexastring,
+            "comment": widgets["comment"].get().strip(),
         }
 
     @staticmethod
