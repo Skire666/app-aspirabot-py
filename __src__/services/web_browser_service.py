@@ -18,6 +18,7 @@ Example:
 # ---------------------------------------------------------------------------
 
 import logging
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -189,6 +190,33 @@ class BrowserService(IWebBrowserService):
             None.
         """
         self._log_callback = callback
+
+    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float = 0.300) -> object:
+        """Evaluate a JS snippet on the current page with retries on failure.
+
+        Args:
+            script: JavaScript expression or function to evaluate.
+            retries: Maximum number of attempts.
+            delay: Seconds to wait between attempts.
+
+        Returns:
+            The value returned by the JS expression.
+
+        Raises:
+            Exception: The last exception raised if all retries are exhausted.
+        """
+        page = self.get_current_page()
+
+        # Retry loop — re-raises on the final failed attempt.
+        for attempt in range(1, retries + 1):
+            try:
+                return page.evaluate(script)
+            except Exception as exc:
+                self._logger.warning("Script eval failed attempt %d/%d: %s", attempt, retries, exc)
+                if attempt == retries:
+                    raise
+                time.sleep(delay)
+        return None
 
     # ------------------------------------------------------------------
     # Private helpers — browser creation

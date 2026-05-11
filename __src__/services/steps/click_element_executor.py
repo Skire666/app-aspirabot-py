@@ -8,7 +8,6 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.click_element_params import ClickElementParams
-from services.steps._helpers import evaluate_script_with_safe_retry
 from services.workflow_service import register_step_executor
 from shared.exception_util import ElementNotFoundForClickError, UnsupportedClickModeError
 
@@ -55,7 +54,7 @@ class ClickElementExecutor(IStepExecutor):
         # Tentative 3 : JS direct
         if p.click_mode == "JS Direct":
             script = f"document.querySelector('{p.selector}')?.click();"
-            evaluate_script_with_safe_retry(page, script, 5)
+            browser.evaluate_script_with_safe_retry(script, 5)
         else:
             raise UnsupportedClickModeError(p.click_mode)
 

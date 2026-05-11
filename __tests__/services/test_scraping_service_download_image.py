@@ -140,21 +140,15 @@ def _fake_page_with_images(base_url: str, srcs: list[str]) -> _FakePage:
 def test_execute_logical_skips_duplicates_when_unique_only(tmp_path: Path) -> None:
     srcs = ["/img/a.png", "/img/a.png", "/img/b.png"]
     page = _fake_page_with_images("https://example.com/page", srcs)
-    browser = _make_browser(page)
-
-    # Patch evaluate_script_with_safe_retry to return fixed image list.
     images = [{"src": s, "width": 100, "height": 100} for s in srcs]
+
+    # Mock evaluate_script_with_safe_retry on the browser service directly.
+    browser = _make_browser(page)
+    browser.evaluate_script_with_safe_retry.return_value = images
+
     executor = DownloadImageExecutor()
     params = _make_params(tmp_path, mode="all", unique_only=True)
-
-    import services.steps.download_image_executor as mod
-
-    original = mod.evaluate_script_with_safe_retry
-    mod.evaluate_script_with_safe_retry = lambda *_a, **_kw: images  # type: ignore[assignment]
-    try:
-        executor.execute_logical(browser, params)
-    finally:
-        mod.evaluate_script_with_safe_retry = original  # type: ignore[assignment]
+    executor.execute_logical(browser, params)
 
     # Two unique URLs: a.png and b.png → 2 files saved.
     saved_files = list(tmp_path.iterdir())
@@ -168,20 +162,15 @@ def test_execute_logical_skips_duplicates_when_unique_only(tmp_path: Path) -> No
 def test_execute_logical_counts_duplicates_when_not_unique(tmp_path: Path) -> None:
     srcs = ["/img/a.png", "/img/a.png", "/img/b.png"]
     page = _fake_page_with_images("https://example.com/page", srcs)
-    browser = _make_browser(page)
-
     images = [{"src": s, "width": 100, "height": 100} for s in srcs]
+
+    # Mock evaluate_script_with_safe_retry on the browser service directly.
+    browser = _make_browser(page)
+    browser.evaluate_script_with_safe_retry.return_value = images
+
     executor = DownloadImageExecutor()
     params = _make_params(tmp_path, mode="all", unique_only=False)
-
-    import services.steps.download_image_executor as mod
-
-    original = mod.evaluate_script_with_safe_retry
-    mod.evaluate_script_with_safe_retry = lambda *_a, **_kw: images  # type: ignore[assignment]
-    try:
-        executor.execute_logical(browser, params)
-    finally:
-        mod.evaluate_script_with_safe_retry = original  # type: ignore[assignment]
+    executor.execute_logical(browser, params)
 
     saved_files = list(tmp_path.iterdir())
     assert len(saved_files) == 3

@@ -136,3 +136,23 @@ class IWebBrowserService(ABC):
         Returns:
             None.
         """
+
+    @abstractmethod
+    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float = 0.300) -> object:
+        """Evaluate a JS snippet on the current page with retries on failure.
+
+        Calls ``get_current_page().evaluate(script)`` and retries up to
+        ``retries`` times on any exception, sleeping ``delay`` seconds between
+        attempts. Re-raises the last exception when all attempts are exhausted.
+
+        Args:
+            script: JavaScript expression or function to evaluate.
+            retries: Maximum number of attempts.
+            delay: Seconds to wait between attempts.
+
+        Returns:
+            The value returned by the JS expression.
+
+        Raises:
+            Exception: The last exception raised if all retries are exhausted.
+        """

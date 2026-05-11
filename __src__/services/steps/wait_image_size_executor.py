@@ -9,22 +9,22 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_image_size_params import WaitImageSizeParams
-from services.steps._helpers import evaluate_script_with_safe_retry, resolve_timeout_ms
+from services.steps._helpers import resolve_timeout_ms
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.exception_util import ImageWaitTimeoutError
 
 
-def _get_filtered_images(page: Any, p: WaitImageSizeParams) -> list[dict]:
+def _get_filtered_images(browser: IWebBrowserService, p: WaitImageSizeParams) -> list[dict]:
     script = """
         () => Array.from(document.querySelectorAll('img'))
             .filter(img => img.naturalWidth > 0)
             .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight}))
     """
-    all_imgs = evaluate_script_with_safe_retry(page, script, 5)
+    all_imgs = browser.evaluate_script_with_safe_retry(script, 5)
     return [
         img
-        for img in all_imgs
+        for img in all_imgs  # type: ignore[union-attr]
         if p.width_min <= img["width"] <= p.width_max and p.height_min <= img["height"] <= p.height_max
     ]
 
@@ -46,13 +46,12 @@ class WaitImageSizeExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitImageSizeParams.from_dict(params)
-        page = browser.get_current_page()
 
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 15
         deadline = time.time() + wait_seconds
         while time.time() < deadline:
-            if _get_filtered_images(page, p):
+            if _get_filtered_images(browser, p):
                 return
             time.sleep(0.4)
         raise ImageWaitTimeoutError(wait_seconds)

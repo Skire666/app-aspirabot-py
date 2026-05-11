@@ -12,7 +12,6 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.download_image_params import DownloadImageParams
-from services.steps._helpers import evaluate_script_with_safe_retry
 from services.workflow_service import register_step_executor
 from shared.exception_util import (
     ImageDownloadFailedError,
@@ -28,7 +27,7 @@ def _extract_bounds(p: DownloadImageParams) -> dict[str, int]:
     return {"h_min": p.height_min, "h_max": p.height_max, "w_min": p.width_min, "w_max": p.width_max}
 
 
-def _get_filtered_images(page: Any, bounds: dict[str, int]) -> list[dict[str, Any]]:
+def _get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) -> list[dict[str, Any]]:
     h_min, h_max = bounds["h_min"], bounds["h_max"]
     w_min, w_max = bounds["w_min"], bounds["w_max"]
     script = """
@@ -36,7 +35,7 @@ def _get_filtered_images(page: Any, bounds: dict[str, int]) -> list[dict[str, An
             .filter(img => img.naturalWidth > 0)
             .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight}))
     """
-    all_imgs: list[dict[str, Any]] = evaluate_script_with_safe_retry(page, script, 5)
+    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(script, 5)  # type: ignore[assignment]
     return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
 
@@ -72,7 +71,7 @@ class DownloadImageExecutor(IStepExecutor):
         downloaded_urls: set[str] = params.get("_downloaded_urls", set())
 
         bounds = _extract_bounds(p)
-        images = _get_filtered_images(page, bounds)
+        images = _get_filtered_images(browser, bounds)
         if not images:
             raise NoMatchingImageFoundError()
 
