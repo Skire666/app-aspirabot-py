@@ -6,6 +6,7 @@ import time
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_image_size_params import WaitImageSizeParams
 from services.steps._helpers import evaluate_script_with_safe_retry, resolve_timeout_ms
@@ -42,9 +43,11 @@ class WaitImageSizeExecutor(IStepExecutor):
         return WaitImageSizeParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitImageSizeParams.from_dict(params)
+        page = browser.get_current_page()
+
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 15
         deadline = time.time() + wait_seconds

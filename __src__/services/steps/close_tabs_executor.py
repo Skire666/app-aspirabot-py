@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.close_tabs_params import CloseTabsParams
 from services.workflow_service import register_step_executor
@@ -25,16 +26,23 @@ class CloseTabsExecutor(IStepExecutor):
         return CloseTabsParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = CloseTabsParams.from_dict(params)
-        for p_tab in list(page.context.pages):
+        current_page = browser.get_current_page()
+
+        # Close tabs that do not match the URL filter.
+        for p_tab in list(browser.get_all_pages()):
             if p.url_filter and p_tab.url.find(p.url_filter) == -1:
                 p_tab.close()
-        if page.context.pages.count(page) == 0:
+
+        # Ensure the primary workflow page was not accidentally closed.
+        if current_page not in browser.get_all_pages():
             raise CurrentPageClosedUnexpectedlyError()
+
+        # Enforce the max-tabs limit on the remaining non-primary pages.
         if p.max_tabs > 0:
-            others = [t for t in page.context.pages if t is not page]
+            others = [t for t in browser.get_all_pages() if t is not current_page]
             for t in others[p.max_tabs - 1 :]:
                 t.close()
 

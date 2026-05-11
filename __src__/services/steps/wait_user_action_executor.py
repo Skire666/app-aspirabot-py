@@ -6,6 +6,7 @@ import time
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_user_action_params import WaitUserActionParams
 from services.workflow_service import register_step_executor
@@ -28,7 +29,7 @@ class WaitUserActionExecutor(IStepExecutor):
         return WaitUserActionParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitUserActionParams.from_dict(params)
         prev_success: bool = params.get("_prev_success", True)

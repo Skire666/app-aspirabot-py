@@ -1,14 +1,15 @@
 """Playwright-based implementation of IWebBrowserService.
 
-Uses Playwright Chromium with optional playwright-stealth patches and a local
-Cloudflare bypass proxy. Chromium is launched with custom
-args and stealth init scripts, then sets up hostname-level request routing.
+Uses Playwright Chromium with custom args. Tracks all open pages internally —
+including those opened by JavaScript — via context-level events. When a page
+is closed (by an executor or by the browser), it is removed automatically from
+the internal list.
 
 Example:
-    >>> svc = PlaywrightBrowserService(folder)
+    >>> svc = BrowserService(folder)
     >>> svc.launch(provider)
-    >>> page = svc.new_page()
-    >>> page.goto("https://example.com")
+    >>> svc.append_new_page()
+    >>> page = svc.get_current_page()
     >>> svc.close_browser()
 """
 
@@ -31,15 +32,19 @@ from shared.exception_util import BrowserAlreadyLaunchedError, BrowserNotLaunche
 
 
 class BrowserService(IWebBrowserService):
-    """Playwright + playwright-stealth browser service for scraping workflows.
+    """Playwright + stealth browser service for scraping workflows.
 
-    Handles Chromium launch with optional anti-detection hardening, stealth
-    page creation, and Cloudflare bypass request routing.
+    Handles Chromium launch with anti-detection hardening and manages all
+    open pages in an internal list. Pages opened programmatically via
+    ``append_new_page()`` and pages opened by JavaScript (target="_blank")
+    are both tracked. Closed pages are removed automatically via Playwright
+    page-close events.
 
     Example:
-        >>> svc = PlaywrightBrowserService(Path("."))
+        >>> svc = BrowserService(Path("."))
         >>> svc.launch(provider)
-        >>> page = svc.new_page()
+        >>> svc.append_new_page()
+        >>> page = svc.get_current_page()
         >>> svc.close_browser()
     """
 
@@ -65,6 +70,9 @@ class BrowserService(IWebBrowserService):
         self._context: BrowserContext | None = None
         self._provider: ProviderModel | None = None
 
+        # Internal page registry — updated via context/page events.
+        self._pages: list[Page] = []
+
     # ------------------------------------------------------------------
     # IWebBrowserService — public API
     # ------------------------------------------------------------------
@@ -89,11 +97,14 @@ class BrowserService(IWebBrowserService):
         self._provider = provider
         self._browser, self._context = self._create_browser_and_context(provider)
 
-    def new_page(self) -> Page:
-        """Open a new browser page with stealth patches applied if configured.
+    def append_new_page(self) -> None:
+        """Open a new browser page and register it via the context page event.
+
+        The page is not returned — use ``get_current_page()`` or
+        ``get_all_pages()`` to access it after this call.
 
         Returns:
-            A ready-to-navigate browser Page.
+            None.
 
         Raises:
             RuntimeError: If ``launch()`` has not been called yet.
@@ -101,17 +112,43 @@ class BrowserService(IWebBrowserService):
         if self._context is None:
             raise BrowserNotLaunchedError()
 
-        page = self._context.new_page()
+        # The context "page" event fires for all new pages, including this one.
+        # _on_context_new_page handles registration — do not append here.
+        self._context.new_page()
 
-        return page
+    def get_current_page(self) -> Page:
+        """Return the primary browser page (the first one opened).
+
+        Returns:
+            The main workflow Page object.
+
+        Raises:
+            RuntimeError: If no page is available.
+        """
+        if not self._pages:
+            raise BrowserNotLaunchedError()
+
+        # First page in the list is always the primary workflow page.
+        return self._pages[0]
+
+    def get_all_pages(self) -> list[Page]:
+        """Return all currently open pages tracked by this service.
+
+        Returns:
+            A snapshot list of all open Page objects.
+        """
+        return list(self._pages)
 
     def close_browser(self) -> None:
-        """Close the context, the browser, and the Playwright runtime.
+        """Close all pages, the context, the browser, and Playwright runtime.
 
         Returns:
             None.
         """
         try:
+            # Clear page registry before closing so stale references are gone.
+            self._pages.clear()
+
             # Close in reverse-creation order: context → browser → playwright.
             if self._context is not None:
                 self._context.close()
@@ -127,12 +164,11 @@ class BrowserService(IWebBrowserService):
 
             self._provider = None
 
-            is_closed = self.is_launched
-            self._logger.info(f"Browser closed successfully. is_launched={is_closed}")
+            self._logger.info("Browser closed successfully. is_launched=%s", self.is_launched)
 
         except Exception:
-            self._logger.error("Une erreur s'est produite", exc_info=True)
-            # Don't re-raise; we want to ensure all resources are attempted to be cleaned up
+            self._logger.error("Une erreur s'est produite lors de la fermeture du navigateur", exc_info=True)
+            # Don't re-raise; ensure all resources are attempted to be cleaned up.
 
     @property
     def is_launched(self) -> bool:
@@ -159,7 +195,7 @@ class BrowserService(IWebBrowserService):
     # ------------------------------------------------------------------
 
     def _create_browser_and_context(self, provider: ProviderModel) -> tuple[Browser, BrowserContext]:
-        """Launch Chromium and open a matching browser context.
+        """Launch Chromium, open a matching context, and register page tracking.
 
         Args:
             provider: Provides headless and obfuscation configuration flags.
@@ -176,7 +212,39 @@ class BrowserService(IWebBrowserService):
         # Donc autant ne pas le mettre, surtout qu'avec cloudflare, le stealth ne suffit pas.
 
         browser = self._pw.chromium.launch(headless=False, args=args)
-        return browser, browser.new_context()
+        context = browser.new_context()
+
+        # Track every page opened in this context, including JS-opened tabs.
+        context.on("page", self._on_context_new_page)
+
+        return browser, context
+
+    # ------------------------------------------------------------------
+    # Private helpers — page tracking
+    # ------------------------------------------------------------------
+
+    def _on_context_new_page(self, page: Page) -> None:
+        """Register a page in the internal list and attach its close handler.
+
+        Called automatically by Playwright for every new page in the context,
+        whether opened programmatically (``append_new_page``) or by JavaScript.
+
+        Args:
+            page: The newly opened Playwright Page.
+        """
+        page.on("close", self._on_page_closed)
+        self._pages.append(page)
+
+    def _on_page_closed(self, page: Page) -> None:
+        """Remove a closed page from the internal tracking list.
+
+        Called automatically by Playwright when any tracked page is closed.
+
+        Args:
+            page: The Page that was just closed.
+        """
+        if page in self._pages:
+            self._pages.remove(page)
 
     # ------------------------------------------------------------------
     # Private helpers — logging

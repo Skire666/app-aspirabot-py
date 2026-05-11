@@ -7,6 +7,7 @@ import time
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.random_pause_params import RandomPauseParams
 from services.workflow_service import register_step_executor
@@ -28,7 +29,7 @@ class RandomPauseExecutor(IStepExecutor):
         return RandomPauseParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = RandomPauseParams.from_dict(params)
         delay = random.uniform(float(p.min_val), float(p.max_val))

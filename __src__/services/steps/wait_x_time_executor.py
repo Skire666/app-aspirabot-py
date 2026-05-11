@@ -6,6 +6,7 @@ import time
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_x_time_params import WaitXTimeParams
 from services.workflow_service import register_step_executor
@@ -27,7 +28,7 @@ class WaitXTimeExecutor(IStepExecutor):
         return WaitXTimeParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitXTimeParams.from_dict(params)
         time.sleep(p.duration * _MULTIPLIERS.get(p.unit, 1.0))

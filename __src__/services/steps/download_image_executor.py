@@ -9,6 +9,7 @@ from typing import Any, override
 from urllib.parse import urljoin
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import evaluate_script_with_safe_retry
@@ -63,9 +64,10 @@ class DownloadImageExecutor(IStepExecutor):
         return DownloadImageParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = DownloadImageParams.from_dict(params)
+        page = browser.get_current_page()
         folder: Path = params.get("_folder", Path())
         downloaded_urls: set[str] = params.get("_downloaded_urls", set())
 
@@ -81,15 +83,17 @@ class DownloadImageExecutor(IStepExecutor):
         for image in targets:
             img_src = str(image.get("src", ""))
             full_url = urljoin(page.url, img_src)
-            print(f"Attempting to download image: {full_url}")
             if p.unique_only and full_url in downloaded_urls:
                 continue
+
+            # Download via the page context request to preserve session cookies.
             response = page.context.request.get(
                 full_url,
                 headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")},
             )
             if not response.ok:
                 raise ImageDownloadFailedError(response.status)
+
             url_path = full_url.split("?")[0]
             suffix = Path(url_path).suffix or ".jpg"
             filename = (
@@ -107,7 +111,6 @@ class DownloadImageExecutor(IStepExecutor):
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
-        p = DownloadImageParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []
         for key in ("height_min", "height_max", "width_min", "width_max"):

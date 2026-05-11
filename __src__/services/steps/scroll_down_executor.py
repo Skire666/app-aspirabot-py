@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.scroll_down_params import ScrollDownParams
 from services.steps._helpers import evaluate_script_with_safe_retry
@@ -25,9 +26,11 @@ class ScrollDownExecutor(IStepExecutor):
         return ScrollDownParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = ScrollDownParams.from_dict(params)
+        page = browser.get_current_page()
+
         evaluate_script_with_safe_retry(page, f"window.scrollBy(0, {p.pixels})", 5)
 
     @override

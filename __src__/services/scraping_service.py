@@ -2,8 +2,8 @@
 
 Orchestrates the browser lifecycle (via IWebBrowserService), iterates over
 workflow steps, handles pause/cancel/jump signals, and produces a final report.
-All browser-level concerns (launch, stealth, routing) are delegated to the
-injected IWebBrowserService implementation.
+All browser-level concerns (launch, page management, stealth, routing) are
+delegated to the injected IWebBrowserService implementation.
 
 Example:
     >>> from services.web_browser_service import BrowserService
@@ -39,7 +39,7 @@ from services.workflow_service import WorkflowService
 class ScrapingService:
     """Executes a provider workflow step by step using a pluggable browser service.
 
-    All browser concerns are delegated to IWebBrowserService. Cross-step
+    All browser and page concerns are delegated to IWebBrowserService. Cross-step
     state (pending jump, end-process flag, image dedup set, statistics) is
     owned here and injected into each executor via runtime params.
 
@@ -63,7 +63,7 @@ class ScrapingService:
             folder_scraping: Working folder forwarded to step executors via
                 the ``_folder`` runtime param key.
             browser_service: Concrete browser service implementation to use
-                for all browser lifecycle operations.
+                for all browser lifecycle and page operations.
             workflow_service: Service for resolving step executors by type.
         """
         self._logger = logging.getLogger(__name__)
@@ -86,8 +86,6 @@ class ScrapingService:
         self._clicks_count: int = 0
         self._urls_opened_count: int = 0
 
-        # Active page reference — set during run, cleared on close.
-        self._page: Any = None
         self._started_at: datetime | None = None
 
         # Run-scoped references stored for stateful step executors.
@@ -135,7 +133,7 @@ class ScrapingService:
         self._on_step_done = on_step_done
         self._started_at = datetime.now()
 
-        # Initialise the browser and page, then run all steps.
+        # Initialise the browser and run all steps.
         cancelled = self._run_browser_lifecycle(provider, cancel_event, pause_event, on_init_step)
         return self._build_report(cancelled)
 
@@ -148,12 +146,13 @@ class ScrapingService:
         Returns:
             A ``(url, tabs_count)`` tuple.
         """
-        if self._page is None:
+        if not self._browser_service.is_launched:
             return "", 0
         try:
-            # Playwright page exposes .url and .context.pages directly.
-            url = self._page.url or ""
-            tabs = len(self._page.context.pages)
+            # Delegate page access entirely to the browser service.
+            page = self._browser_service.get_current_page()
+            url = page.url or ""
+            tabs = len(self._browser_service.get_all_pages())
         except Exception:  # noqa: BLE001
             return "", 0
         else:
@@ -184,7 +183,7 @@ class ScrapingService:
         pause_event: threading.Event,
         on_init_step: Callable[[str], None] | None,
     ) -> bool:
-        """Launch browser, run steps, close browser, return cancelled flag.
+        """Launch browser, open initial page, run steps, close browser.
 
         Args:
             provider: Provider model with browser config and workflow steps.
@@ -199,13 +198,12 @@ class ScrapingService:
         self._browser_service.launch(provider)
         try:
             self._emit_init("Création du contexte de navigation…", on_init_step)
-            self._page = self._browser_service.new_page()
+            self._browser_service.append_new_page()
             self._emit_init("Démarrage des étapes du workflow…", on_init_step)
-            self._run_steps(self._page, provider.steps, cancel_event, pause_event)
+            self._run_steps(provider.steps, cancel_event, pause_event)
         finally:
             # Always close the browser even if a step raised an exception.
             self._browser_service.close_browser()
-            self._page = None
 
         return cancel_event.is_set()
 
@@ -246,7 +244,6 @@ class ScrapingService:
 
     def _run_steps(
         self,
-        page: Any,
         steps: list[StepScrapingModel],
         cancel_event: threading.Event,
         pause_event: threading.Event,
@@ -258,7 +255,6 @@ class ScrapingService:
         is cleared.
 
         Args:
-            page: The active browser page.
             steps: Ordered list of scraping steps to run.
             cancel_event: Abort signal.
             pause_event: Pause/resume signal.
@@ -276,7 +272,7 @@ class ScrapingService:
             pause_event.wait()
             if cancel_event.is_set():
                 break
-            i = self._run_one_step(page, steps[i], i)
+            i = self._run_one_step(steps[i], i)
             if self._end_process_requested:
                 break
 
@@ -304,11 +300,10 @@ class ScrapingService:
         self._step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
         self._steps_count = len(steps)
 
-    def _run_one_step(self, page: Any, step: StepScrapingModel, index: int) -> int:
+    def _run_one_step(self, step: StepScrapingModel, index: int) -> int:
         """Execute one step, update stats, fire callback, return next index.
 
         Args:
-            page: The active browser page.
             step: The step model to execute.
             index: Zero-based position of this step in the workflow.
 
@@ -320,7 +315,7 @@ class ScrapingService:
             self._on_step_start(step)
 
         start = time.time()
-        success, message = self._execute_step(page, step)
+        success, message = self._execute_step(step)
         elapsed = time.time() - start
 
         # Update run-level statistics based on the outcome.
@@ -399,11 +394,10 @@ class ScrapingService:
     # Step execution
     # ------------------------------------------------------------------
 
-    def _execute_step(self, page: Any, step: StepScrapingModel) -> tuple[bool, str]:
+    def _execute_step(self, step: StepScrapingModel) -> tuple[bool, str]:
         """Dispatch a step to its registered executor and convert exceptions.
 
         Args:
-            page: The active browser page.
             step: The step model to execute.
 
         Returns:
@@ -415,7 +409,7 @@ class ScrapingService:
         runtime_params = self._build_runtime_params(step)
         try:
             executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
-            executor.execute(page, runtime_params)
+            executor.execute_logical(self._browser_service, runtime_params)
             # Read back output signals written by stateful executors.
             self._read_back_output_signals(runtime_params)
         except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors

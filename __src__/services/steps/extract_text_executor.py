@@ -6,6 +6,7 @@ import logging
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.extract_text_params import ExtractTextParams
 from services.steps._helpers import extract_from_element
@@ -28,9 +29,11 @@ class ExtractTextExecutor(IStepExecutor):
         return ExtractTextParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = ExtractTextParams.from_dict(params)
+        page = browser.get_current_page()
+
         elements = page.query_selector_all(p.selector)
         if not elements:
             _logger.warning("EXTRACT_TEXT: no element matches %r", p.selector)

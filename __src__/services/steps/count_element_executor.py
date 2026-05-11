@@ -6,6 +6,7 @@ import logging
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.count_element_params import CountElementsParams
 from services.steps._helpers import evaluate_count_condition
@@ -29,9 +30,11 @@ class CountElementExecutor(IStepExecutor):
         return CountElementsParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = CountElementsParams.from_dict(params)
+        page = browser.get_current_page()
+
         count = page.locator(p.selector).count()
         _logger.info("COUNT_ELEMENTS: %d élément(s) pour %r", count, p.selector)
         condition_met = evaluate_count_condition(count, p.operator, p.value, p.value_min, p.value_max)

@@ -14,10 +14,15 @@ Example:
 # Imports
 # ---------------------------------------------------------------------------
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from models.step_scraping_model import StepScrapingModel, StepType
+
+if TYPE_CHECKING:
+    from interfaces.i_web_browser_service import IWebBrowserService
 
 # ---------------------------------------------------------------------------
 # Interface
@@ -31,9 +36,13 @@ class IStepExecutor(ABC):
     All public methods receive and return plain ``dict[str, Any]`` to remain
     decoupled from the view and model layers.
 
+    Executors receive a ``IWebBrowserService`` instance instead of a raw page.
+    When page access is needed, call ``browser.get_current_page()``. When
+    multi-tab management is needed, call ``browser.get_all_pages()``.
+
     Example:
         >>> executor = ConcreteExecutor()
-        >>> errors = executor.validate({"selector": ""}, 0)
+        >>> errors = executor.validate_model(model, 0)
         >>> bool(errors)
         True
     """
@@ -62,12 +71,16 @@ class IStepExecutor(ABC):
         """
 
     @abstractmethod
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
-        """Executes the step against the active browser page.
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+        """Executes the step using the browser service.
+
+        Use ``browser.get_current_page()`` to access the active page, or
+        ``browser.get_all_pages()`` when multi-tab management is required.
 
         Args:
-            page: The active Playwright page.
-            params: Raw parameter dict from the step model.
+            browser: The active browser service instance.
+            params: Raw parameter dict from the step model, enriched with
+                runtime keys (``_folder``, ``_prev_success``, etc.).
 
         Returns:
             None.

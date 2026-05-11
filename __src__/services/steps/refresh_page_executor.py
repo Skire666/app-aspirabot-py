@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.refresh_page_params import RefreshPageParams
 from services.workflow_service import register_step_executor
@@ -24,9 +25,12 @@ class RefreshPageExecutor(IStepExecutor):
         return RefreshPageParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = RefreshPageParams.from_dict(params)
+        page = browser.get_current_page()
+
+        # Clear session cookies before reload when requested.
         if p.clear_cache:
             page.context.clear_cookies()
         page.reload()

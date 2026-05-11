@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.click_element_params import ClickElementParams
 from services.steps._helpers import evaluate_script_with_safe_retry
@@ -26,9 +27,11 @@ class ClickElementExecutor(IStepExecutor):
         return ClickElementParams.default().to_dict()
 
     @override
-    def execute(self, page: Any, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = ClickElementParams.from_dict(params)
+        page = browser.get_current_page()
+
         # Tentative 1 : click normal
         try:
             if p.click_mode == "Normal":
@@ -38,6 +41,7 @@ class ClickElementExecutor(IStepExecutor):
             pass
         if p.click_mode == "Normal":
             raise ElementNotFoundForClickError(p.selector, "normal")
+
         # Tentative 2 : click forcé
         try:
             if p.click_mode == "Forced":
@@ -47,6 +51,7 @@ class ClickElementExecutor(IStepExecutor):
             pass
         if p.click_mode == "Forced":
             raise ElementNotFoundForClickError(p.selector, "forced")
+
         # Tentative 3 : JS direct
         if p.click_mode == "JS Direct":
             script = f"document.querySelector('{p.selector}')?.click();"
