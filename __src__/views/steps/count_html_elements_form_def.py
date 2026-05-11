@@ -51,36 +51,46 @@ class CountHtmlElementsFormDef(IStepFormDef):
         self._form_widgets_ref = widgets
 
         # ROW 1 — CSS selector
-        row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=(0, 4))
-
-        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 4))
-        sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
-        ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 4))
-        widgets["selector"] = sel_var
+        self._build_form_selector_css(frame, widgets)
 
         # ROW 2 — success_if + operator + dynamic value area
-        row2 = ttk.Frame(frame)
-        row2.pack(fill="x", pady=(0, 4))
+        self._build_success_if_operator(frame, widgets)
 
+        # ROW 3 — comment
+        self._build_form_comment(frame, widgets)
+
+    def _build_form_selector_css(self, frame, widgets):
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 5))
+        sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
+        ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["selector"] = sel_var
+
+    def _build_success_if_operator(self, frame, widgets):
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row2, text="Est un ").pack(side=tk.LEFT, padx=(0, 5))
         si_var = tk.StringVar(value=COUNT_SUCCESS_IF_DISPLAY[0])
         ttk.Combobox(row2, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8).pack(
-            side=tk.LEFT, padx=(0, 4)
+            side=tk.LEFT, padx=(0, 5)
         )
-        ttk.Label(row2, text="si").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row2, text="si ").pack(side=tk.LEFT, padx=(0, 5))
         widgets["success_if"] = si_var
 
         op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])  # supérieur ou égal
         op_cb = ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18)
-        op_cb.pack(side=tk.LEFT, padx=(0, 6))
+        op_cb.pack(side=tk.LEFT, padx=(0, 5))
         widgets["operator"] = op_var
 
         self._value_area_frame = ttk.Frame(row2)
         self._value_area_frame.pack(side=tk.LEFT)
-        self._rebuild_value_area(COUNT_OP_DISPLAY[2])
-        op_cb.bind("<<ComboboxSelected>>", lambda _: self._rebuild_value_area(op_var.get()))
+        self._rebuild_dyanmiac_values_area(COUNT_OP_DISPLAY[2])
+        op_cb.bind("<<ComboboxSelected>>", lambda _: self._rebuild_dyanmiac_values_area(op_var.get()))
 
-    def _rebuild_value_area(self, op_display: str) -> None:
+    def _rebuild_dyanmiac_values_area(self, op_display: str) -> None:
         if self._value_area_frame is None or self._form_widgets_ref is None:
             return
         for w in self._value_area_frame.winfo_children():
@@ -91,35 +101,47 @@ class CountHtmlElementsFormDef(IStepFormDef):
         if op_value in {"between"}:
             vmin_var = tk.StringVar(value="0")
             ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmin_var, width=7).pack(
-                side=tk.LEFT, padx=(0, 6)
+                side=tk.LEFT, padx=(0, 5)
             )
             ttk.Label(self._value_area_frame, text=" et ").pack(side=tk.LEFT)
             vmax_var = tk.StringVar(value="0")
             ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmax_var, width=7).pack(
-                side=tk.LEFT, padx=(0, 4)
+                side=tk.LEFT, padx=(0, 5)
             )
             self._form_widgets_ref["value_min"] = vmin_var
             self._form_widgets_ref["value_max"] = vmax_var
         else:
-            ttk.Label(self._value_area_frame, text="valeur").pack(side=tk.LEFT, padx=(0, 2))
             val_var = tk.StringVar(value="0")
             ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=val_var, width=7).pack(
                 side=tk.LEFT
             )
             self._form_widgets_ref["value"] = val_var
 
+    def _build_form_comment(self, frame, widgets):
+        row3 = ttk.Frame(frame)
+        row3.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row3, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(row3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["comment"] = comm_var
+
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
         self._form_widgets_ref = widgets
+
+        # sélecteur CSS
         widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(
             model.params.get("success_if", "success"), COUNT_SUCCESS_IF_DISPLAY[0]
         )
+
+        # opérateur et zone de saisie dynamique
         widgets["success_if"].set(si_display)
         op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get("operator", "equal"), COUNT_OP_DISPLAY[2])
         widgets["operator"].set(op_display)
-        self._rebuild_value_area(op_display)
+        self._rebuild_dyanmiac_values_area(op_display)
         if "value_min" in widgets:
             widgets["value_min"].set(str(model.params.get("value_min", 0)))
         if "value_max" in widgets:
@@ -127,22 +149,30 @@ class CountHtmlElementsFormDef(IStepFormDef):
         if "value" in widgets:
             widgets["value"].set(str(model.params.get("value", 0)))
 
+        # commentaire
+        widgets["comment"].set(model.params.get("comment", ""))
+
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         si_display = widgets["success_if"].get()
         op_display = widgets["operator"].get()
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
+
+        # Valeurs communes à tous les opérateurs
         result = {
             "selector": widgets["selector"].get().strip(),
             "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display, "success"),
             "operator": op_value,
+            "comment": widgets["comment"].get().strip(),
         }
+        # 2 valeurs à lire si opérateur "between"
         if op_value in {"between"}:
             result["value_min"] = safe_int_widget(widgets, "value_min", 0)
             result["value_max"] = safe_int_widget(widgets, "value_max", 0)
             result["value"] = 0
         else:
+            # 1 seule valeur à lire
             result["value_min"] = 0
             result["value_max"] = 0
             result["value"] = safe_int_widget(widgets, "value", -1)

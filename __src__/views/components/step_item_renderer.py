@@ -138,8 +138,9 @@ class StepItemRenderer:
         """Return the display label for a step item, using cache where possible."""
         # always (because of the dynamic nature of the label)
         # get the label for jump_to_step without caching
-        if item.step_type == StepType.JUMP_TO_STEP:
-            return get_form(item.step_type).format_label(item, idx)
+        # TODO PCO : faut gérer la date, c'est chiant, il refresh jamais
+        # if item.step_type == StepType.JUMP_TO_STEP:
+        return get_form(item.step_type).format_label(item, idx)
 
         # cache the label for other step types to avoid unnecessary recomputation on each redraw
         key = f"{item.step_id}_{idx}"

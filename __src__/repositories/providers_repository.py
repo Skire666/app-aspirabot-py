@@ -139,7 +139,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         destination_name = f"{mini_timestamp}_{file_path.stem}.broken"
         destination_path = self._folder_path / destination_name
 
-        self.logger.warning(
+        self._logger.warning(
             "Déplacement du fichier invalide %s vers %s (%s)",
             file_path,
             destination_path,
@@ -411,7 +411,7 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Exemples d'utilisation:
             >>> repo.open_providers_folder()
         """
-        self.logger.info("Ouverture du dossier des fournisseurs...")
+        self._logger.info("Ouverture du dossier des fournisseurs...")
 
         # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
@@ -430,11 +430,13 @@ class ProvidersRepository(ProviderRepositoryInterface):
             elif enum_os == OperatingSystem.LINUX:  # Linux
                 subprocess.Popen(["xdg-open", self._folder_path])
             else:
-                self.logger.warning(f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}")
+                self._logger.warning(
+                    f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}"
+                )
                 raise UnsupportedOperatingSystemError(enum_os)
-            self.logger.info(f"Dossier ouvert: {self._folder_path}")
+            self._logger.info(f"Dossier ouvert: {self._folder_path}")
         except Exception as e:
-            self.logger.error(f"Erreur lors de l'ouverture du dossier: {e}")
+            self._logger.error(f"Erreur lors de l'ouverture du dossier: {e}")
             raise
 
     def _compute_fullpath_from_id_file(self, id_file: str) -> Path:
