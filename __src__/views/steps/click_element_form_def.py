@@ -43,7 +43,7 @@ class ClickElementFormDef(IStepFormDef):
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row0, text="Sélecteur CSS :").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
         ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
@@ -52,7 +52,7 @@ class ClickElementFormDef(IStepFormDef):
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) :").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value="Normal")
         ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
@@ -63,7 +63,7 @@ class ClickElementFormDef(IStepFormDef):
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row2, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var

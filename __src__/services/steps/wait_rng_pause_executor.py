@@ -9,11 +9,9 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
+from models.steps.wait_rng_pause_params import WaitRngPauseParams
 from services.workflow_service import register_step_executor
-
-from __src__.models.steps.wait_rng_pause_params import WaitRngPauseParams
-
-_MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
+from shared.constants import C_UNITS_TIME_CONVERSION_TO_SEC
 
 
 class WaitRngPauseExecutor(IStepExecutor):
@@ -34,15 +32,19 @@ class WaitRngPauseExecutor(IStepExecutor):
         """Execute the step."""
         p = WaitRngPauseParams.from_dict(params)
         delay = random.uniform(float(p.min_val), float(p.max_val))
-        time.sleep(delay * _MULTIPLIERS.get(p.unit, 1.0))
+        time.sleep(delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.unit, 1.0))
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
         p = WaitRngPauseParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
-        if p.min_val >= p.max_val:
-            return [f"Dans l'étape {index_display}. : min doit être strictement inférieur à max."]
+        if p.min_val <= 0:
+            return [f"Dans l'étape {index_display}. : min doit être >= 1"]
+        if p.max_val <= 0:
+            return [f"Dans l'étape {index_display}. : max doit être >= 1"]
+        if p.min_val > p.max_val:
+            return [f"Dans l'étape {index_display}. : min doit être inférieur ou égale à max."]
         return []
 
 

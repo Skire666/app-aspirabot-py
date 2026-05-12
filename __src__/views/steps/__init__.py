@@ -14,7 +14,7 @@ from views.steps.scroll_down_form_def import ScrollDownFormDef
 from views.steps.wait_html_elements_form_def import WaitHtmlElementsFormDef
 from views.steps.wait_html_images_form_def import WaitHtmlImagesFormDef
 from views.steps.wait_page_state_form_def import WaitPageStateFormDef
-from views.steps.wait_rng_pause_form_def import WaitRandomPauseFormDef
+from views.steps.wait_rng_pause_form_def import WaitRngPauseFormDef
 from views.steps.wait_user_action_form_def import WaitUserActionFormDef
 from views.steps.wait_x_time_form_def import WaitXTimeFormDef
 
@@ -33,7 +33,7 @@ __all__ = [
     "WaitHtmlElementsFormDef",
     "WaitHtmlImagesFormDef",
     "WaitPageStateFormDef",
-    "WaitRandomPauseFormDef",
+    "WaitRngPauseFormDef",
     "WaitUserActionFormDef",
     "WaitXTimeFormDef",
 ]

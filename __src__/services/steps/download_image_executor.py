@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, override
@@ -13,33 +12,38 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.download_image_params import DownloadImageParams
 from services.workflow_service import register_step_executor
+from shared.constants import (
+    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
+    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
+)
 from shared.exception_util import (
     ImageDownloadFailedError,
     ImageNotDownloadedError,
-    NoMatchingImageFoundError,
 )
 from shared.path_util import make_all_folders_if_not_exists
 
-_logger = logging.getLogger(__name__)
-
-
-def _extract_bounds(p: DownloadImageParams) -> dict[str, int]:
-    return {"h_min": p.height_min, "h_max": p.height_max, "w_min": p.width_min, "w_max": p.width_max}
-
 
 def _get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) -> list[dict[str, Any]]:
-    h_min, h_max = bounds["h_min"], bounds["h_max"]
-    w_min, w_max = bounds["w_min"], bounds["w_max"]
     script = """
         () => Array.from(document.querySelectorAll('img'))
             .filter(img => img.naturalWidth > 0)
-            .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight}))
+            .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight, complete: img.complete}))
     """
-    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(script, 5)
+    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(
+        script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+    )
+
+    if all_imgs is None:
+        return []
+    # filter images that do not match the dimension criteria
+    h_min, h_max = bounds["height_min"], bounds["height_max"]
+    w_min, w_max = bounds["width_min"], bounds["width_max"]
     return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
 
-def _select_by_mode(images: list[dict[str, Any]], mode: str) -> list[dict[str, Any]]:
+def _select_images_by_mode(images: list[dict[str, Any]], mode: str) -> list[dict[str, Any]]:
+    if not images or len(images) == 0:
+        return []
     if mode == "first":
         return [images[0]]
     if mode == "last":
@@ -67,15 +71,11 @@ class DownloadImageExecutor(IStepExecutor):
         """Execute the step."""
         p = DownloadImageParams.from_dict(params)
         page = browser.get_current_page()
-        folder: Path = params.get("_folder", Path())
         downloaded_urls: set[str] = params.get("_downloaded_urls", set())
 
-        bounds = _extract_bounds(p)
-        images = _get_filtered_images(browser, bounds)
-        if not images:
-            raise NoMatchingImageFoundError()
-
-        targets = _select_by_mode(images, p.mode)
+        images = _get_filtered_images(browser, p)
+        targets = _select_images_by_mode(images, p.mode)
+        folder: Path = params.get("_folder", Path())
         make_all_folders_if_not_exists(folder, is_file_path=False)
         downloaded_count = 0
 
@@ -114,9 +114,11 @@ class DownloadImageExecutor(IStepExecutor):
         errors: list[str] = []
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
-                int(model.params.get(key, 0))
+                result = int(model.params.get(key, -1))
+                if result < 0:
+                    errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un entier positif.")
             except (ValueError, TypeError):
-                errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un entier.")
+                errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un nombre.")
         return errors
 
 

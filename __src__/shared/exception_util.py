@@ -186,7 +186,7 @@ class InvalidGuiBootingSizeError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Invalid GUI booting size. Must be in format 'WIDTHxHEIGHT' with numeric values.")
+        super().__init__("Invalid GUI booting size. Must be 'WIDTHxHEIGHT' with numeric values.")
 
 
 class InvalidBrowserEngineError(AspirabotError):
@@ -362,6 +362,20 @@ class CurrentPageClosedUnexpectedlyError(ValueError, AspirabotError):
 class CountHtmlElementsConditionNotMetError(ValueError, AspirabotError):
     """Raised when the COUNT_HTML_ELEMENTS condition is not satisfied."""
 
+    def __init__(self, count: int, operator: str, value_ask: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            count: Measured element count.
+            operator: Operator used for comparison.
+            value_ask: Display string describing the expected value.
+        """
+        super().__init__(f"Condition non satisfaite (COUNT={count}, {operator} {value_ask})")
+
+
+class CountHtmlImagesConditionNotMetError(ValueError, AspirabotError):
+    """Raised when the COUNT_HTML_IMAGES condition is not satisfied."""
+
     def __init__(self, count: int, operator: str, value_desc: str) -> None:
         """Initialize the error message.
 
@@ -370,7 +384,7 @@ class CountHtmlElementsConditionNotMetError(ValueError, AspirabotError):
             operator: Operator used for comparison.
             value_desc: Display string describing the expected value.
         """
-        super().__init__(f"COUNT_HTML_ELEMENTS : condition non satisfaite (COUNT={count}, {operator} {value_desc})")
+        super().__init__(f"Condition non satisfaite (COUNT={count}, {operator} {value_desc})")
 
 
 class NoMatchingImageFoundError(ValueError, AspirabotError):

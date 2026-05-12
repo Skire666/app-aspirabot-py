@@ -62,7 +62,7 @@ class WorkflowView(ttk.Frame):
         line1_frame.pack(fill="x", padx=5, pady=(0, 8))
 
         # Label Nom
-        ttk.Label(line1_frame, text="Nom : ", width=7).pack(side="left")
+        ttk.Label(line1_frame, text="Nom :", width=7).pack(side="left")
 
         # Zone de texte éditable Nom (occupe l'espace restant)
         self._var_name = tk.StringVar()
@@ -70,7 +70,7 @@ class WorkflowView(ttk.Frame):
         self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         # Label ID Fichier
-        ttk.Label(line1_frame, text="ID Fichier : ", width=10).pack(side="left", padx=(20, 0))
+        ttk.Label(line1_frame, text="ID Fichier :", width=10).pack(side="left", padx=(20, 0))
 
         # Label en lecture seule ID Fichier
         self._var_id_file = tk.StringVar()
@@ -82,7 +82,7 @@ class WorkflowView(ttk.Frame):
         line2_frame.pack(fill="x", padx=5)
 
         # Label URL
-        ttk.Label(line2_frame, text="URL : ", width=7).pack(side="left")
+        ttk.Label(line2_frame, text="URL :", width=7).pack(side="left")
 
         # Zone de texte éditable URL (occupe l'espace restant)
         self._var_url = tk.StringVar()
@@ -90,7 +90,7 @@ class WorkflowView(ttk.Frame):
         self._entry_url.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         # Label Version
-        ttk.Label(line2_frame, text="Version : ", width=10).pack(side="left", padx=(20, 0))
+        ttk.Label(line2_frame, text="Version :", width=10).pack(side="left", padx=(20, 0))
 
         # Zone de texte éditable Version
         self._var_version = tk.StringVar()

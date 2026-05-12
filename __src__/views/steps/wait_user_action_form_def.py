@@ -56,7 +56,7 @@ class WaitUserActionFormDef(IStepFormDef):
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line1, text="Condition:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line1, text="Déclenche l'attente lorsque :").pack(side=tk.LEFT, padx=(0, 5))
         cond_var = tk.StringVar(value=C_INPUT_DEFAULT_CONDITION)
         ttk.Combobox(line1, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
             side=tk.LEFT, padx=(0, 5)
@@ -68,14 +68,13 @@ class WaitUserActionFormDef(IStepFormDef):
 
         ttk.Label(line2, text="Délai post-reprise :").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_POST_WAIT_DURATION))
-        ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
+        ttk.Spinbox(line2, from_=1, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
             side=tk.LEFT, padx=(0, 5)
         )
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
             line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Label(line2, text="(0 = immédiat)").pack(side=tk.LEFT)
         widgets["wait_duration"] = dur_var
         widgets["wait_unit"] = unit_var
 
@@ -83,7 +82,7 @@ class WaitUserActionFormDef(IStepFormDef):
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line3, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
@@ -116,8 +115,8 @@ class WaitUserActionFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
-        if safe_int_widget(widgets, "wait_duration", -1) < 0:
-            errors.append("Délai post-reprise : doit être >= 0")
+        if safe_int_widget(widgets, "wait_duration", -1) <= 0:
+            errors.append("Délai post-reprise : doit être >= 1")
         return errors
 
     @override

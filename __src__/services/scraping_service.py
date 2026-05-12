@@ -74,6 +74,7 @@ class ScrapingService:
         # Per-run mutable state — reset at the start of each run.
         self._prev_step_success: bool = True
         self._pending_jump: str | int | None = None
+        self._last_message_step: str = ""
         self._end_process_requested: bool = False
         self._downloaded_image_urls: set[str] = set()
         self._step_id_by_index: list[str] = []
@@ -415,7 +416,8 @@ class ScrapingService:
         except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors
             return False, f"Unexpected error: {exc}"
         else:
-            return True, "OK"
+            last_message = runtime_params.get("_last_message_step", "OK")
+            return True, last_message
 
     def _build_runtime_params(self, step: StepScrapingModel) -> dict[str, Any]:
         """Build a runtime-enriched parameter dict for the step executor.
@@ -439,6 +441,7 @@ class ScrapingService:
                 "_pause_event": self._pause_event_ref,
                 "_cancel_event": self._cancel_event_ref,
                 "_on_user_wait": self._on_user_wait,
+                "_last_message_step": "",  # clear
             }
         )
         return runtime_params
@@ -450,6 +453,8 @@ class ScrapingService:
             runtime_params: The enriched params dict after executor.execute().
         """
         # Stateful executors write these keys to communicate with the orchestrator.
+        if runtime_params.get("_last_message_step") is not None:
+            self._last_message_step = runtime_params["_last_message_step"]
         if runtime_params.get("_pending_jump") is not None:
             self._pending_jump = runtime_params["_pending_jump"]
         if runtime_params.get("_end_process"):

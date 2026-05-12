@@ -89,16 +89,6 @@ def test_select_by_mode_all() -> None:
     assert _select_by_mode(images, "all") == images
 
 
-def test_select_by_mode_largest() -> None:
-    images = [
-        {"src": "a.jpg", "width": 10, "height": 10},
-        {"src": "b.jpg", "width": 20, "height": 5},
-        {"src": "c.jpg", "width": 20, "height": 10},
-    ]
-    # largest by area: c.jpg (20*10=200 > 20*5=100 > 10*10=100)
-    assert _select_by_mode(images, "largest") == [images[2]]
-
-
 # ---------------------------------------------------------------------------
 # Tests for execute_logical (integration via executor + mock browser)
 # ---------------------------------------------------------------------------

@@ -77,7 +77,7 @@ class OpenUrlFormDef(IStepFormDef):
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line1, text="URL : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line1, text="URL :").pack(side=tk.LEFT, padx=(0, 5))
         url_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
         ttk.Entry(line1, textvariable=url_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["url"] = url_var
@@ -93,7 +93,7 @@ class OpenUrlFormDef(IStepFormDef):
         ttk.Combobox(line2, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_STATE, state="readonly").pack(
             side=tk.LEFT, padx=(0, 5)
         )
-        ttk.Label(line2, text="(dom >load >idle)").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line2, text="(dom > load > idle 500ms)").pack(side=tk.LEFT, padx=(0, 5))
         widgets["wait_state"] = ws_var
 
     @staticmethod
@@ -103,7 +103,7 @@ class OpenUrlFormDef(IStepFormDef):
         line3.pack(fill="x", pady=(0, 8))
 
         # timeout duration
-        ttk.Label(line3, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line3, text="Timeout :").pack(side=tk.LEFT, padx=(0, 5))
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 5)
@@ -122,7 +122,7 @@ class OpenUrlFormDef(IStepFormDef):
         line4 = ttk.Frame(frame)
         line4.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line4, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line4, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line4, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var

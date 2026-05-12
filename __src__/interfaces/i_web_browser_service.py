@@ -138,7 +138,7 @@ class IWebBrowserService(ABC):
         """
 
     @abstractmethod
-    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float = 0.300) -> object:
+    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> object:
         """Evaluate a JS snippet on the current page with retries on failure.
 
         Calls ``get_current_page().evaluate(script)`` and retries up to

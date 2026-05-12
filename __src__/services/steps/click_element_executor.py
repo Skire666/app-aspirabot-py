@@ -9,7 +9,13 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.click_element_params import ClickElementParams
 from services.workflow_service import register_step_executor
-from shared.exception_util import ElementNotFoundForClickError, UnsupportedClickModeError
+from shared.constants import (
+    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
+    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
+)
+from shared.exception_util import ElementNotFoundForClickError
+
+C_LIMIT_TIMEOUT_CLICK_MS = 8000
 
 
 class ClickElementExecutor(IStepExecutor):
@@ -29,34 +35,41 @@ class ClickElementExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = ClickElementParams.from_dict(params)
+
+        params["_last_message_step"] = (
+            f"Élément cliqué avec succès pour le sélecteur {p.selector!r} avec le mode {p.click_mode!r}."
+        )
+
+    def _do_click(browser: IWebBrowserService, mode_click: str, selector: str) -> str:
         page = browser.get_current_page()
 
         # Tentative 1 : click normal
         try:
-            if p.click_mode == "Normal":
-                page.click(p.selector, timeout=1000)
-                return
+            if mode_click == "Normal":
+                page.click(selector, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
+                return "Normal"
         except Exception:
             pass
-        if p.click_mode == "Normal":
-            raise ElementNotFoundForClickError(p.selector, "normal")
+        if mode_click == "Normal":
+            raise ElementNotFoundForClickError(selector, "Normal")
 
         # Tentative 2 : click forcé
         try:
-            if p.click_mode == "Forced":
-                page.click(p.selector, force=True, timeout=1000)
-                return
+            if mode_click == "Forced":
+                page.click(selector, force=True, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
+                return "Forced"
         except Exception:
             pass
-        if p.click_mode == "Forced":
-            raise ElementNotFoundForClickError(p.selector, "forced")
+        if mode_click == "Forced":
+            raise ElementNotFoundForClickError(selector, "Forced")
 
         # Tentative 3 : JS direct
-        if p.click_mode == "JS Direct":
-            script = f"document.querySelector('{p.selector}')?.click();"
-            browser.evaluate_script_with_safe_retry(script, 5)
-        else:
-            raise UnsupportedClickModeError(p.click_mode)
+        script = f"document.querySelector('{selector}')?.click();"
+        browser.evaluate_script_with_safe_retry(
+            script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+        )  # can throw
+
+        return "JS Direct"
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

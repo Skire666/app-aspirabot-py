@@ -22,7 +22,7 @@ class WaitUserActionParams(IStepParams):
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(condition="always", wait_duration=0, wait_unit=C_UNITS_TIME_DEFAULT_MODEL, comment="")
+        return cls(condition="always", wait_duration=1, wait_unit=C_UNITS_TIME_DEFAULT_MODEL, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
@@ -38,7 +38,7 @@ class WaitUserActionParams(IStepParams):
         """Deserialize from dict."""
         return cls(
             condition=data.get("condition", "always"),
-            wait_duration=int(data.get("wait_duration", 0)),
+            wait_duration=int(data.get("wait_duration", 1)),
             wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
             comment=data.get("comment", ""),
         )

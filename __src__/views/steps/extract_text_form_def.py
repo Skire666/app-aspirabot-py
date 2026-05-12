@@ -50,7 +50,7 @@ class ExtractTextFormDef(IStepFormDef):
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row0, text="Sélecteur CSS :").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
         ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
@@ -59,7 +59,7 @@ class ExtractTextFormDef(IStepFormDef):
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Mode d'extraction : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text="Mode d'extraction :").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value=EXTRACT_MODE_DISPLAY[0])
         ttk.Combobox(row1, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
@@ -70,7 +70,7 @@ class ExtractTextFormDef(IStepFormDef):
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row2, text="Cible : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text="Cible :").pack(side=tk.LEFT, padx=(0, 5))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[0])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
@@ -81,7 +81,7 @@ class ExtractTextFormDef(IStepFormDef):
         row3 = ttk.Frame(frame)
         row3.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row3, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var

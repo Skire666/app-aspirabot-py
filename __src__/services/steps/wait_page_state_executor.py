@@ -42,10 +42,10 @@ class WaitPageStateExecutor(IStepExecutor):
         index_display = str(step_index + 1).zfill(2)
 
         errors: list[str] = []
-        if p.timeout_duration < 0:
-            errors.append(f"Dans l'étape {index_display}. : timeout_duration doit être >= 0.")
-        if p.timeout_duration > 0 and p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(f"Dans l'étape {index_display}. : timeout_unit invalide - {p.timeout_unit}.")
+        if p.timeout_duration <= 0:
+            errors.append(f"Dans l'étape {index_display}. : timeout_duration doit être >= 1.")
+        if p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
+            errors.append(f"Dans l'étape {index_display}. : L'unité de timeout est invalide.")
         return errors
 
 

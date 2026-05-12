@@ -16,17 +16,17 @@ class DownloadImageParams(IStepParams):
 
     mode: str
     unique_only: bool
-    height_min: int
-    height_max: int
     width_min: int
     width_max: int
+    height_min: int
+    height_max: int
     comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
         return cls(
-            mode="largest",
+            mode="all",
             unique_only=False,
             height_min=0,
             height_max=C_MAXIMUM_SIZE_IMAGE,
@@ -51,7 +51,7 @@ class DownloadImageParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            mode=data.get("mode", "largest"),
+            mode=data.get("mode", "all"),
             unique_only=bool(data.get("unique_only")),
             height_min=int(data.get("height_min", 0)),
             height_max=int(data.get("height_max", C_MAXIMUM_SIZE_IMAGE)),

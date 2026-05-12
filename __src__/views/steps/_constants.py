@@ -39,7 +39,7 @@ C_CHOICES_WAIT_PAGE_STATE: list[str] = ["domcontentloaded", "load", "networkidle
 # Download mode values
 # ---------------------------------------------------------------------------
 
-DOWNLOAD_MODES: list[str] = ["largest", "first", "last", "all"]
+DOWNLOAD_MODES: list[str] = ["first", "last", "all"]
 
 # ---------------------------------------------------------------------------
 # Click mode values
@@ -85,8 +85,7 @@ EXTRACT_TARGET_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_TARGET_VALUES, E
 # ---------------------------------------------------------------------------
 
 COUNT_OP_DISPLAY: list[str] = [
-    "égale à",
-    "compris entre",
+    "égal à",
     "différent de",
     "inférieur à",
     "supérieur à",
@@ -95,7 +94,6 @@ COUNT_OP_DISPLAY: list[str] = [
 ]
 COUNT_OP_VALUES: list[str] = [
     "equal",
-    "between",
     "not_equal",
     "less_than",
     "greater_than",

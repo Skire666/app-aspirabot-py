@@ -36,12 +36,15 @@ class CountHtmlElementsExecutor(IStepExecutor):
         page = browser.get_current_page()
 
         count = page.locator(p.selector).count()
-        _logger.info("COUNT_HTML_ELEMENTS: %d élément(s) pour %r", count, p.selector)
-        condition_met = evaluate_count_condition(count, p.operator, p.value, p.value_min, p.value_max)
+        condition_met = evaluate_count_condition(count, p.operator, p.value)
         step_success = condition_met if p.success_if == "success" else not condition_met
         if not step_success:
-            val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between"} else str(p.value)
+            val_desc = str(p.value)
             raise CountHtmlElementsConditionNotMetError(count, p.operator, val_desc)
+
+        params["_last_message_step"] = (
+            f"Trouvé {count} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
+        )
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -49,7 +52,6 @@ class CountHtmlElementsExecutor(IStepExecutor):
         p = CountHtmlElementsParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_operators = {
-            "between",
             "equal",
             "not_equal",
             "greater_than",
@@ -64,8 +66,6 @@ class CountHtmlElementsExecutor(IStepExecutor):
             errors.append(f"Erreur dans l'étape {index_display}. : success_if invalide — {p.success_if!r}.")
         if p.operator not in allowed_operators:
             errors.append(f"Erreur dans l'étape {index_display}. : operator invalide — {p.operator!r}.")
-        if p.operator in {"between"} and p.value_min > p.value_max:
-            errors.append(f"Erreur dans l'étape {index_display}. : value_min doit être <= value_max.")
         return errors
 
 

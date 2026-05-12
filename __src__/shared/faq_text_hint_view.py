@@ -133,8 +133,6 @@ class FaqTextTextHint:
                 "• Pré-attente : délai appliqué avant le comptage (0 = immédiat)\n\n"
                 "• Condition : lecture naturelle\n"
                 "  ex. 'C'est un succès si COUNT est supérieur à 3'\n\n"
-                "• Opérateurs de plage :\n"
-                "  - compris entre (inclus) : value_min ≤ COUNT ≤ value_max\n"
                 "Le nombre brut d'éléments et le résultat final\n"
                 "sont tous deux consignés dans le journal d'exécution."
             ),
@@ -172,7 +170,6 @@ class FaqTextTextHint:
             "Télécharger une image": (
                 "Capture et sauvegarde une image présente sur la page.\n\n"
                 "• Mode :\n"
-                "  -largest : image la plus grande (surface en pixels)\n"
                 "  -first / last : première ou dernière image du DOM\n"
                 "  -all : toutes les images de la page\n"
                 "• Hauteur / Largeur : filtres optionnels sur les dimensions (px)"

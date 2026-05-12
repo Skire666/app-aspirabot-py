@@ -51,7 +51,7 @@ class DownloadImageFormDef(IStepFormDef):
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line1, text="Cible : ").pack(side="left", padx=(0, 5))
+        ttk.Label(line1, text="Cible :").pack(side="left", padx=(0, 5))
         ttk.Combobox(line1, textvariable=mode_var, values=DOWNLOAD_MODES, state="readonly", width=7).pack(
             side="left", fill="x", expand=False, padx=(0, 25)
         )
@@ -61,7 +61,7 @@ class DownloadImageFormDef(IStepFormDef):
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line2, text="Hauteur entre : ", width=15).pack(side="left", padx=(0, 5))
+        ttk.Label(line2, text="Hauteur entre :", width=15).pack(side="left", padx=(0, 5))
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=8).pack(
             side="left", padx=(0, 5)
@@ -78,7 +78,7 @@ class DownloadImageFormDef(IStepFormDef):
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line3, text="Largeur entre : ", width=15).pack(side="left", padx=(0, 5))
+        ttk.Label(line3, text="Largeur entre :", width=15).pack(side="left", padx=(0, 5))
         width_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_min_var, width=8).pack(
             side="left", padx=(0, 5)
@@ -95,7 +95,7 @@ class DownloadImageFormDef(IStepFormDef):
         line4 = ttk.Frame(frame)
         line4.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line4, text="Commentaire : ").pack(side="left", padx=(0, 5))
+        ttk.Label(line4, text="Commentaire :").pack(side="left", padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line4, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
@@ -103,7 +103,7 @@ class DownloadImageFormDef(IStepFormDef):
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
-        widgets["mode"].set(model.params.get("mode", "largest"))
+        widgets["mode"].set(model.params.get("mode", "all"))
         widgets["unique_only"].set(bool(model.params.get("unique_only", False)))
         widgets["height_min"].set(str(model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
         widgets["height_max"].set(str(model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
@@ -162,7 +162,7 @@ class DownloadImageFormDef(IStepFormDef):
         width_max = model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
         height_max = model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
         dup_str = "(doublons refusés)" if unique_only else "(doublons autorisés)"
-        return f"Télécharger images {dup_str}\n{mode} - {width_min}x{height_min} -> {width_max}x{height_max}"
+        return f"Télécharger images {dup_str}\n{mode}  -  Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
 
 
 register_form(DownloadImageFormDef())

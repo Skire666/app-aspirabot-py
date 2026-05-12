@@ -31,10 +31,9 @@ def extract_from_element(element: Any, mode: str) -> str:
     return element.inner_text()
 
 
-def evaluate_count_condition(count: int, operator: str, value: int, value_min: int, value_max: int) -> bool:
+def evaluate_count_condition(count: int, operator: str, value: int) -> bool:
     """Evaluates a COUNT_ELEMENT condition."""
     conditions: dict[str, bool] = {
-        "between": value_min <= count <= value_max,
         "equal": count == value,
         "not_equal": count != value,
         "greater_than": count > value,

@@ -49,12 +49,10 @@ class CloseTabsFormDef(IStepFormDef):
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Garder uniquement ce qui contient : ").pack(side="left", padx=(0, 5))
+        ttk.Label(row0, text="URL doit contenir (sinon <<URL>>) :").pack(side="left", padx=(0, 5))
         filter_var = tk.StringVar(value=C_INPUT_DEFAULT_URL_FILTER)
         ttk.Entry(row0, textvariable=filter_var).pack(side="left", padx=(0, 5))
         widgets["url_filter"] = filter_var
-
-        ttk.Label(row0, text="<<URL>> ou bien .com").pack(side="left", padx=(0, 5))
 
         # ROW 1
         row1 = ttk.Frame(frame)
@@ -62,7 +60,7 @@ class CloseTabsFormDef(IStepFormDef):
 
         ttk.Label(row1, text="Max. onglets ouverts:").pack(side="left", padx=(0, 5))
         max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MAX_TABS))
-        ttk.Spinbox(row1, from_=0, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).pack(
+        ttk.Spinbox(row1, from_=1, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).pack(
             side="left", padx=(0, 5)
         )
         widgets["max_tabs"] = max_var
@@ -70,7 +68,7 @@ class CloseTabsFormDef(IStepFormDef):
         # ROW 3 — comment
         row3 = ttk.Frame(frame)
         row3.pack(fill="x", pady=(0, 8))
-        ttk.Label(row3, text="Commentaire : ").pack(side="left", padx=(0, 5))
+        ttk.Label(row3, text="Commentaire :").pack(side="left", padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row3, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
@@ -101,7 +99,7 @@ class CloseTabsFormDef(IStepFormDef):
         if max_tb <= 0:
             errors.append("Nombre max. d'onglets : doit être >= 1")
         if not url:
-            errors.append("Filtre URL : valeur obligatoire")
+            errors.append("Filtrage URL : valeur obligatoire")
         return errors
 
     @override

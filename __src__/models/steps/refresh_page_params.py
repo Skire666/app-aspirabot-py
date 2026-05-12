@@ -26,7 +26,7 @@ class RefreshPageParams(IStepParams):
         return cls(
             clear_cache=False,
             wait_state="load",
-            timeout_duration=1,
+            timeout_duration=8,
             timeout_unit=C_UNITS_TIME_DEFAULT_MODEL,
             comment="",
         )
@@ -47,7 +47,7 @@ class RefreshPageParams(IStepParams):
         return cls(
             clear_cache=bool(data.get("clear_cache")),
             wait_state=data.get("wait_state", "load"),
-            timeout_duration=data.get("timeout_duration", 1),
+            timeout_duration=data.get("timeout_duration", 8),
             timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
             comment=data.get("comment", ""),
         )

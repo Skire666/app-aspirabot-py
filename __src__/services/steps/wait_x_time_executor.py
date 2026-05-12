@@ -10,8 +10,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_x_time_params import WaitXTimeParams
 from services.workflow_service import register_step_executor
-
-_MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
+from shared.constants import C_UNITS_TIME_CONVERSION_TO_SEC
 
 
 class WaitXTimeExecutor(IStepExecutor):
@@ -31,7 +30,7 @@ class WaitXTimeExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitXTimeParams.from_dict(params)
-        time.sleep(p.duration * _MULTIPLIERS.get(p.unit, 1.0))
+        time.sleep(p.duration * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.unit, 1.0))
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

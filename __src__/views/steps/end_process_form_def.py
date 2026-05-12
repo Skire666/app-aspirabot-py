@@ -59,7 +59,7 @@ class EndProcessFormDef(IStepFormDef):
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row1, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var

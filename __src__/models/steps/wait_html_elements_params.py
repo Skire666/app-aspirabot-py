@@ -7,7 +7,6 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from models.step_scraping_model import StepType
-from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 
 
 @dataclass(frozen=True)
@@ -15,21 +14,27 @@ class WaitHtmlElementsParams(IStepParams):
     """Parameters for the wait element scraping step."""
 
     selector: str
-    timeout_duration: int
-    timeout_unit: str
+    operator: str
+    quantity: int
+    retry_delay: int
+    retry_unit: str
+    retry_max: int
     comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(selector="", timeout_duration=1, timeout_unit=C_UNITS_TIME_DEFAULT_MODEL, comment="")
+        return cls(selector="", operator="equal", quantity=1, retry_delay=500, retry_unit="ms", retry_max=5, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "selector": self.selector,
-            "timeout_duration": self.timeout_duration,
-            "timeout_unit": self.timeout_unit,
+            "operator": self.operator,
+            "quantity": self.quantity,
+            "retry_delay": self.retry_delay,
+            "retry_unit": self.retry_unit,
+            "retry_max": self.retry_max,
             "comment": self.comment,
         }
 
@@ -38,8 +43,11 @@ class WaitHtmlElementsParams(IStepParams):
         """Deserialize from dict."""
         return cls(
             selector=data.get("selector", ""),
-            timeout_duration=int(data.get("timeout_duration", 1)),
-            timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            operator=data.get("operator", "equal"),
+            quantity=int(data.get("quantity", 1)),
+            retry_delay=int(data.get("retry_delay", 500)),
+            retry_unit=data.get("retry_unit", "ms"),
+            retry_max=int(data.get("retry_max", 5)),
             comment=data.get("comment", ""),
         )
 

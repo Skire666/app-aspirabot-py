@@ -9,6 +9,10 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.scroll_down_params import ScrollDownParams
 from services.workflow_service import register_step_executor
+from shared.constants import (
+    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
+    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
+)
 
 
 class ScrollDownExecutor(IStepExecutor):
@@ -29,7 +33,9 @@ class ScrollDownExecutor(IStepExecutor):
         """Execute the step."""
         p = ScrollDownParams.from_dict(params)
 
-        browser.evaluate_script_with_safe_retry(f"window.scrollBy(0, {p.pixels})", 5)
+        browser.evaluate_script_with_safe_retry(
+            f"window.scrollBy(0, {p.pixels})", C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+        )
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

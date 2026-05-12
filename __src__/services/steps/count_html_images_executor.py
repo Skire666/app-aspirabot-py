@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
-from models.steps.count_html_elements_params import CountHtmlElementsParams
+from models.steps.count_html_images_params import CountHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
-from shared.exception_util import CountHtmlElementsConditionNotMetError
-
-_logger = logging.getLogger(__name__)
+from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
+from shared.exception_util import CountHtmlImagesConditionNotMetError
 
 
 class CountHtmlImagesExecutor(IStepExecutor):
@@ -27,29 +25,57 @@ class CountHtmlImagesExecutor(IStepExecutor):
     @override
     def default_params_dict(self) -> dict[str, Any]:
         """Return default parameters as dict."""
-        return CountHtmlElementsParams.default().to_dict()
+        return CountHtmlImagesParams.default().to_dict()
 
     @override
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
-        p = CountHtmlElementsParams.from_dict(params)
-        page = browser.get_current_page()
-
-        count = page.locator(p.selector).count()
-        _logger.info("COUNT_HTML_IMAGES: %d image(s) pour %r", count, p.selector)
-        condition_met = evaluate_count_condition(count, p.operator, p.value, p.value_min, p.value_max)
+        p = CountHtmlImagesParams.from_dict(params)
+        all_images = self._get_filtered_images(browser, params)
+        condition_met = evaluate_count_condition(len(all_images), p.operator, p.value)
         step_success = condition_met if p.success_if == "success" else not condition_met
         if not step_success:
-            val_desc = f"{p.value_min}-{p.value_max}" if p.operator in {"between"} else str(p.value)
-            raise CountHtmlElementsConditionNotMetError(count, p.operator, val_desc)
+            val_desc = str(p.value)
+            raise CountHtmlImagesConditionNotMetError(len(all_images), p.operator, val_desc)
+
+        params["_last_message_step"] = f"Trouvé {len(all_images)} image(s), condition vérifiée."
+
+    @staticmethod
+    def _get_filtered_images(browser: IWebBrowserService, params: dict[str, int]) -> list[dict[str, Any]]:
+        script = """
+            () => Array.from(document.querySelectorAll('img'))
+                .filter(img => img.naturalWidth > 0)
+                .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight, complete: img.complete}))
+        """
+        all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(
+            script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+        )
+        # return an empty list if the script evaluation failed after all retries
+        if all_imgs is None:
+            return []
+        # filter images that do not match the dimension criteria
+        h_min, h_max = params["height_min"], params["height_max"]
+        w_min, w_max = params["width_min"], params["width_max"]
+        return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
-        p = CountHtmlElementsParams.from_dict(model.params)
+        errors: list[str] = []
+        p = CountHtmlImagesParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
+
+        # Validate that width and height parameters are integers.
+        for key in ("height_min", "height_max", "width_min", "width_max"):
+            try:
+                result = int(model.params.get(key, -1))
+                if result < 0:
+                    errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un entier positif.")
+            except (ValueError, TypeError):
+                errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un nombre.")
+
+        # condition validations
         allowed_operators = {
-            "between",
             "equal",
             "not_equal",
             "greater_than",
@@ -57,15 +83,10 @@ class CountHtmlImagesExecutor(IStepExecutor):
             "greater_or_equal",
             "less_or_equal",
         }
-        errors: list[str] = []
-        if not p.selector.strip():
-            errors.append(f"Erreur dans l'étape {index_display}. : le sélecteur CSS est obligatoire.")
         if p.success_if not in {"success", "failure"}:
             errors.append(f"Erreur dans l'étape {index_display}. : success_if invalide — {p.success_if!r}.")
         if p.operator not in allowed_operators:
             errors.append(f"Erreur dans l'étape {index_display}. : operator invalide — {p.operator!r}.")
-        if p.operator in {"between"} and p.value_min > p.value_max:
-            errors.append(f"Erreur dans l'étape {index_display}. : value_min doit être <= value_max.")
         return errors
 
 

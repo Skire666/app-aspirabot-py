@@ -24,7 +24,7 @@ class WaitPageStateParams(IStepParams):
         """Return default instance."""
         return cls(
             wait_state="load",
-            timeout_duration=1,
+            timeout_duration=8,
             timeout_unit=C_UNITS_TIME_DEFAULT_MODEL,
             comment="",
         )
@@ -43,7 +43,7 @@ class WaitPageStateParams(IStepParams):
         """Deserialize from dict."""
         return cls(
             wait_state=data.get("wait_state", "load"),
-            timeout_duration=data.get("timeout_duration", 1),
+            timeout_duration=data.get("timeout_duration", 8),
             timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
             comment=data.get("comment", ""),
         )

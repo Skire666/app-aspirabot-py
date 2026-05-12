@@ -191,7 +191,7 @@ class BrowserService(IWebBrowserService):
         """
         self._log_callback = callback
 
-    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float = 0.300) -> object:
+    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> object:
         """Evaluate a JS snippet on the current page with retries on failure.
 
         Args:
@@ -214,8 +214,12 @@ class BrowserService(IWebBrowserService):
             except Exception as exc:
                 self._logger.warning("Script eval failed attempt %d/%d: %s", attempt, retries, exc)
                 if attempt == retries:
+                    # if this was the last attempt, re-raise the exception to signal failure
                     raise
                 time.sleep(delay)
+
+        # This line should never be reached due to the re-raise in the except block
+        # but is required for type checking.
         return None
 
     # ------------------------------------------------------------------

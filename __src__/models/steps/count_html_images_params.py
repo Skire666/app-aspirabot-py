@@ -13,11 +13,12 @@ from models.step_scraping_model import StepType
 class CountHtmlImagesParams(IStepParams):
     """Parameters for the count HTML images step."""
 
-    selector: str
+    width_min: int
+    width_max: int
+    height_min: int
+    height_max: int
     success_if: str
     operator: str
-    value_min: int
-    value_max: int
     value: int
     comment: str = ""
 
@@ -25,11 +26,12 @@ class CountHtmlImagesParams(IStepParams):
     def default(cls) -> Self:
         """Return default instance."""
         return cls(
-            selector="",
+            width_min=0,
+            width_max=1,
+            height_min=0,
+            height_max=1,
             success_if="success",
             operator="equal",
-            value_min=0,
-            value_max=0,
             value=0,
             comment="",
         )
@@ -37,11 +39,12 @@ class CountHtmlImagesParams(IStepParams):
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
-            "selector": self.selector,
+            "width_min": self.width_min,
+            "width_max": self.width_max,
+            "height_min": self.height_min,
+            "height_max": self.height_max,
             "success_if": self.success_if,
             "operator": self.operator,
-            "value_min": self.value_min,
-            "value_max": self.value_max,
             "value": self.value,
             "comment": self.comment,
         }
@@ -50,11 +53,12 @@ class CountHtmlImagesParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            selector=data.get("selector", ""),
+            width_min=int(data.get("width_min", 0)),
+            width_max=int(data.get("width_max", 1)),
+            height_min=int(data.get("height_min", 0)),
+            height_max=int(data.get("height_max", 1)),
             success_if=data.get("success_if", "success"),
             operator=data.get("operator", "equal"),
-            value_min=int(data.get("value_min", 0)),
-            value_max=int(data.get("value_max", 0)),
             value=int(data.get("value", 0)),
             comment=data.get("comment", ""),
         )

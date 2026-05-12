@@ -23,7 +23,7 @@ from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MO
 # ---------------------------------------------------------------------------
 
 
-class WaitRandomPauseFormDef(IStepFormDef):
+class WaitRngPauseFormDef(IStepFormDef):
     """Form definition for the random pause scraping step."""
 
     @classmethod
@@ -50,7 +50,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
         line1.pack(fill="x", pady=(0, 8))
 
         # line for min and max values
-        ttk.Label(line1, text="Pause aléatoire entre : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line1, text="Pause aléatoire entre :").pack(side=tk.LEFT, padx=(0, 5))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=7).pack(
             side=tk.LEFT, padx=(0, 5)
         )
@@ -66,7 +66,7 @@ class WaitRandomPauseFormDef(IStepFormDef):
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line2, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line2, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
@@ -98,8 +98,8 @@ class WaitRandomPauseFormDef(IStepFormDef):
         min_val = safe_int_widget(widgets, "min", -1)
         max_val = safe_int_widget(widgets, "max", -1)
 
-        if min_val < 0:
-            errors.append("Valeur min. : doit être >= 0")
+        if min_val <= 0:
+            errors.append("Valeur min. : doit être >= 1")
         if max_val <= 0:
             errors.append("Valeur max. : doit être >= 1")
         if min_val > max_val:
@@ -116,4 +116,4 @@ class WaitRandomPauseFormDef(IStepFormDef):
         )
 
 
-register_form(WaitRandomPauseFormDef())
+register_form(WaitRngPauseFormDef())

@@ -14,10 +14,9 @@ from services.steps.scroll_down_executor import ScrollDownExecutor
 from services.steps.wait_html_elements_executor import WaitHtmlElementsExecutor
 from services.steps.wait_html_images_executor import WaitHtmlImagesExecutor
 from services.steps.wait_page_state_executor import WaitPageStateExecutor
+from services.steps.wait_rng_pause_executor import WaitRngPauseExecutor
 from services.steps.wait_user_action_executor import WaitUserActionExecutor
 from services.steps.wait_x_time_executor import WaitXTimeExecutor
-
-from __src__.services.steps.wait_rng_pause_executor import WaitRngPauseExecutor
 
 __all__ = [
     "ClickElementExecutor",

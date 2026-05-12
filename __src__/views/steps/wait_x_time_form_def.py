@@ -48,7 +48,7 @@ class WaitXTimeFormDef(IStepFormDef):
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line1, text="Attendre une durée de : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line1, text="Attendre une durée de :").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_DURATION))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
             side=tk.LEFT, padx=(0, 5)
@@ -65,7 +65,7 @@ class WaitXTimeFormDef(IStepFormDef):
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(line2, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line2, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var

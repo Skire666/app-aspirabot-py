@@ -13,7 +13,7 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel, StepType
 from shared.constants import (
-    C_MAXIMUM_SIZE_IMAGE,
+    C_MAXIMUM_QTY_COUNTER,
 )
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -44,8 +44,6 @@ class CountHtmlElementsFormDef(IStepFormDef):
 
     def __init__(self) -> None:
         """Initialize the form state references."""
-        self._value_area_frame: ttk.Frame | None = None
-        self._form_widgets_ref: dict[str, Any] | None = None
 
     @classmethod
     def step_type(cls) -> StepType:
@@ -65,7 +63,7 @@ class CountHtmlElementsFormDef(IStepFormDef):
         # ROW 1 — CSS selector
         self._build_form_selector_css(frame, widgets)
 
-        # ROW 2 — success_if + operator + dynamic value area
+        # ROW 2 — success_if + operator + value area
         self._build_success_if_operator(frame, widgets)
 
         # ROW 3 — comment
@@ -75,7 +73,7 @@ class CountHtmlElementsFormDef(IStepFormDef):
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Sélecteur CSS : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text="Sélecteur CSS :").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
         ttk.Entry(row1, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["selector"] = sel_var
@@ -84,12 +82,12 @@ class CountHtmlElementsFormDef(IStepFormDef):
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row2, text="Est un ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text="Est un").pack(side=tk.LEFT, padx=(0, 5))
         si_var = tk.StringVar(value=COUNT_SUCCESS_IF_DISPLAY[0])
         ttk.Combobox(row2, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8).pack(
             side=tk.LEFT, padx=(0, 5)
         )
-        ttk.Label(row2, text="si ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text="si compte").pack(side=tk.LEFT, padx=(0, 5))
         widgets["success_if"] = si_var
 
         op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])  # supérieur ou égal
@@ -97,43 +95,15 @@ class CountHtmlElementsFormDef(IStepFormDef):
         op_cb.pack(side=tk.LEFT, padx=(0, 5))
         widgets["operator"] = op_var
 
-        self._value_area_frame = ttk.Frame(row2)
-        self._value_area_frame.pack(side=tk.LEFT)
-        self._rebuild_dyanmiac_values_area(COUNT_OP_DISPLAY[2])
-        op_cb.bind("<<ComboboxSelected>>", lambda _: self._rebuild_dyanmiac_values_area(op_var.get()))
-
-    def _rebuild_dyanmiac_values_area(self, op_display: str) -> None:
-        if self._value_area_frame is None or self._form_widgets_ref is None:
-            return
-        for w in self._value_area_frame.winfo_children():
-            w.destroy()
-        for key in ("value", "value_min", "value_max"):
-            self._form_widgets_ref.pop(key, None)
-        op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
-        if op_value in {"between"}:
-            vmin_var = tk.StringVar(value="0")
-            ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmin_var, width=7).pack(
-                side=tk.LEFT, padx=(0, 5)
-            )
-            ttk.Label(self._value_area_frame, text=" et ").pack(side=tk.LEFT)
-            vmax_var = tk.StringVar(value="0")
-            ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=vmax_var, width=7).pack(
-                side=tk.LEFT, padx=(0, 5)
-            )
-            self._form_widgets_ref["value_min"] = vmin_var
-            self._form_widgets_ref["value_max"] = vmax_var
-        else:
-            val_var = tk.StringVar(value="0")
-            ttk.Spinbox(self._value_area_frame, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=val_var, width=7).pack(
-                side=tk.LEFT
-            )
-            self._form_widgets_ref["value"] = val_var
+        val_var = tk.StringVar(value="1")
+        ttk.Spinbox(row2, from_=0, to=C_MAXIMUM_QTY_COUNTER, textvariable=val_var, width=6).pack(side=tk.LEFT)
+        widgets["value"] = val_var
 
     def _build_form_comment(self, frame, widgets):
         row3 = ttk.Frame(frame)
         row3.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row3, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
@@ -141,8 +111,6 @@ class CountHtmlElementsFormDef(IStepFormDef):
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
-        self._form_widgets_ref = widgets
-
         # sélecteur CSS
         widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
         si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(
@@ -153,13 +121,7 @@ class CountHtmlElementsFormDef(IStepFormDef):
         widgets["success_if"].set(si_display)
         op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get("operator", "equal"), COUNT_OP_DISPLAY[2])
         widgets["operator"].set(op_display)
-        self._rebuild_dyanmiac_values_area(op_display)
-        if "value_min" in widgets:
-            widgets["value_min"].set(str(model.params.get("value_min", 0)))
-        if "value_max" in widgets:
-            widgets["value_max"].set(str(model.params.get("value_max", 0)))
-        if "value" in widgets:
-            widgets["value"].set(str(model.params.get("value", 0)))
+        widgets["value"].set(str(model.params.get("value", 0)))
 
         # commentaire
         widgets["comment"].set(model.params.get("comment", ""))
@@ -172,23 +134,13 @@ class CountHtmlElementsFormDef(IStepFormDef):
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
 
         # Valeurs communes à tous les opérateurs
-        result = {
+        return {
             "selector": widgets["selector"].get().strip(),
             "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display, "success"),
             "operator": op_value,
+            "value": safe_int_widget(widgets, "value", -1),
             "comment": widgets["comment"].get().strip(),
         }
-        # 2 valeurs à lire si opérateur "between"
-        if op_value in {"between"}:
-            result["value_min"] = safe_int_widget(widgets, "value_min", 0)
-            result["value_max"] = safe_int_widget(widgets, "value_max", 0)
-            result["value"] = 0
-        else:
-            # 1 seule valeur à lire
-            result["value_min"] = 0
-            result["value_max"] = 0
-            result["value"] = safe_int_widget(widgets, "value", -1)
-        return result
 
     @override
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
@@ -197,27 +149,16 @@ class CountHtmlElementsFormDef(IStepFormDef):
         if not widgets.get("selector", tk.StringVar()).get().strip():
             errors.append("Sélecteur CSS : valeur obligatoire")
 
-        # Validate operator-specific value constraints.
-        op_display = widgets.get("operator", tk.StringVar()).get()
-        op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
-        if op_value in {"between"}:
-            # 2 valeurs à valider : min et max, avec contraintes de non-négativité et de min <= max.
-            val_min = safe_int_widget(widgets, "value_min", 0)
-            val_max = safe_int_widget(widgets, "value_max", 0)
-            if not (val_min <= val_max):
-                errors.append("Valeur min. doit être <= à valeur max.")
-        else:
-            # 1 seule valeur à valider, avec contrainte de non-négativité.
-            val = safe_int_widget(widgets, "value", -1)
-            if val < 0:
-                errors.append("La valeur doit être >= 0.")
+        # 1 seule valeur à valider, avec contrainte de non-négativité.
+        val = safe_int_widget(widgets, "value", -1)
+        if val < 0:
+            errors.append("La valeur doit être >= 0.")
         return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         op_labels = {
-            "between": "entre",
             "equal": "==",
             "not_equal": "!=",
             "greater_than": ">",
@@ -227,11 +168,8 @@ class CountHtmlElementsFormDef(IStepFormDef):
         }
         op = op_labels.get(model.params.get("operator", "equal"), "?")
         selector = model.params.get("selector", "<vide>")
-        if model.params.get("operator") in {"between"}:
-            val_str = f"{model.params.get('value_min', 0)} et {model.params.get('value_max', 0)}"
-        else:
-            val_str = str(model.params.get("value", 0))
-        return f"Compter les éléments  -  Attendu {op} {val_str}\nSél. : {selector}"
+        val_str = str(model.params.get("value", 0))
+        return f"Compter les éléments  -  Doit être {op} {val_str}\nSél. : {selector}"
 
 
 register_form(CountHtmlElementsFormDef())

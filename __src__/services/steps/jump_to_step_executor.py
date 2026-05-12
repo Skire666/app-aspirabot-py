@@ -39,6 +39,10 @@ class JumpToStepExecutor(IStepExecutor):
             # Signal the service by writing to the mutable params dict.
             params["_pending_jump"] = target_step_id
 
+        params["_last_message_step"] = (
+            f"Condition de saut vérifiée : {'saut' if should_jump else 'pas de saut'} vers l'étape [{target_step_id}]."
+        )
+
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""

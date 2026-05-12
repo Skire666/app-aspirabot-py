@@ -9,6 +9,8 @@ from interfaces.i_step_params import IStepParams
 from models.step_scraping_model import StepType
 from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_DEFAULT_MODEL
 
+from __src__.views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
+
 
 @dataclass(frozen=True)
 class WaitHtmlImagesParams(IStepParams):
@@ -18,8 +20,11 @@ class WaitHtmlImagesParams(IStepParams):
     height_max: int
     width_min: int
     width_max: int
-    timeout_duration: int
-    timeout_unit: str
+    operator: str
+    quantity: int
+    retry_delay: int
+    retry_unit: str
+    retry_max: int
     comment: str = ""
 
     @classmethod
@@ -30,8 +35,11 @@ class WaitHtmlImagesParams(IStepParams):
             height_max=C_MAXIMUM_SIZE_IMAGE,
             width_min=0,
             width_max=C_MAXIMUM_SIZE_IMAGE,
-            timeout_duration=1,
-            timeout_unit=C_UNITS_TIME_DEFAULT_MODEL,
+            operator="equal",
+            quantity=1,
+            retry_delay=C_INPUT_DEFAULT_RETRY_DELAY,
+            retry_unit=C_UNITS_TIME_DEFAULT_MODEL,
+            retry_max=10,
             comment="",
         )
 
@@ -42,8 +50,11 @@ class WaitHtmlImagesParams(IStepParams):
             "height_max": self.height_max,
             "width_min": self.width_min,
             "width_max": self.width_max,
-            "timeout_duration": self.timeout_duration,
-            "timeout_unit": self.timeout_unit,
+            "operator": self.operator,
+            "quantity": self.quantity,
+            "retry_delay": self.retry_delay,
+            "retry_unit": self.retry_unit,
+            "retry_max": self.retry_max,
             "comment": self.comment,
         }
 
@@ -55,8 +66,11 @@ class WaitHtmlImagesParams(IStepParams):
             height_max=int(data.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
             width_min=int(data.get("width_min", 0)),
             width_max=int(data.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
-            timeout_duration=int(data.get("timeout_duration", 1)),
-            timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            operator=data.get("operator", "equal"),
+            quantity=int(data.get("quantity", 1)),
+            retry_delay=int(data.get("retry_delay", C_INPUT_DEFAULT_RETRY_DELAY)),
+            retry_unit=data.get("retry_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            retry_max=int(data.get("retry_max", 10)),
             comment=data.get("comment", ""),
         )
 

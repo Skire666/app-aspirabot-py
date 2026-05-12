@@ -10,9 +10,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.end_process_params import EndProcessParams
 from services.workflow_service import register_step_executor
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
-
-_MULTIPLIERS = {"m": 60.0, "s": 1.0, "ms": 0.001}
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_SEC
 
 
 class EndProcessExecutor(IStepExecutor):
@@ -32,7 +30,7 @@ class EndProcessExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = EndProcessParams.from_dict(params)
-        delay = float(p.wait_duration) * _MULTIPLIERS.get(p.wait_unit, 1.0)
+        delay = float(p.wait_duration) * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.wait_unit, 1.0)
         if delay > 0:
             time.sleep(delay)
         # Signal end-process to the service via the mutable params dict.

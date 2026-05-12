@@ -9,19 +9,34 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
-from services.steps._helpers import resolve_timeout_ms
+from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
-from shared.exception_util import ImageWaitTimeoutError
+from shared.constants import (
+    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
+    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
+    C_UNITS_TIME_ALLOWED_FOR_MODEL,
+    C_UNITS_TIME_CONVERSION_TO_SEC,
+)
+
+from __src__.shared.exception_util import CountHtmlImagesConditionNotMetError
 
 
 def _get_filtered_images(browser: IWebBrowserService, p: WaitHtmlImagesParams) -> list[dict]:
+    # result of the script is expected to be a list of dict with keys: src, width, height
     script = """
         () => Array.from(document.querySelectorAll('img'))
-            .filter(img => img.naturalWidth > 0)
+            .filter(img => img.naturalWidth >= 1)
             .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight}))
     """
-    all_imgs = browser.evaluate_script_with_safe_retry(script, 5)
+
+    # get all images on the page with their dimensions, with retries in case of failure
+    all_imgs = browser.evaluate_script_with_safe_retry(
+        script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+    )
+    # return "#N/A" as a string if the script evaluation failed after all retries
+    if all_imgs is None:
+        return []
+    # all images that match the dimension criteria
     return [
         img
         for img in all_imgs
@@ -46,15 +61,40 @@ class WaitHtmlImagesExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
         """Execute the step."""
         p = WaitHtmlImagesParams.from_dict(params)
+        nbr_delay_in_sec = p.retry_delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.retry_unit, 1.0)
+        count: int = -1
 
-        timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
-        wait_seconds = timeout_ms / 1000 if timeout_ms is not None else 15
-        deadline = time.time() + wait_seconds
-        while time.time() < deadline:
-            if _get_filtered_images(browser, p):
-                return
-            time.sleep(0.4)
-        raise ImageWaitTimeoutError(wait_seconds)
+        for i in range(p.retry_max):
+            all_images = self._get_filtered_images(browser, p)
+            count = len(all_images)
+            condition_met = evaluate_count_condition(count, p.operator, p.quantity)
+            step_success = condition_met if p.success_if == "success" else not condition_met
+            if step_success:
+                break
+            if i == p.retry_max - 1:  # i=5 -> max=6
+                raise CountHtmlImagesConditionNotMetError(count, p.operator, str(p.quantity))
+            time.sleep(nbr_delay_in_sec)
+
+        # success case: store a message in the mutable params dict to be used by potential next steps (e.g. for logging or user feedback).
+        params["_last_message_step"] = f"Trouvé {count} image(s), condition vérifiée."
+
+    @staticmethod
+    def _get_filtered_images(browser: IWebBrowserService, params: dict[str, int]) -> list[dict[str, Any]]:
+        script = """
+            () => Array.from(document.querySelectorAll('img'))
+                .filter(img => img.naturalWidth > 0)
+                .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight, complete: img.complete}))
+        """
+        all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(
+            script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+        )
+        # return an empty list if the script evaluation failed after all retries
+        if all_imgs is None:
+            return []
+        # filter images that do not match the dimension criteria
+        h_min, h_max = params["height_min"], params["height_max"]
+        w_min, w_max = params["width_min"], params["width_max"]
+        return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -67,10 +107,20 @@ class WaitHtmlImagesExecutor(IStepExecutor):
                 int(model.params.get(key, 0))
             except (ValueError, TypeError):
                 errors.append(f"Dans l'étape {index_display}. : {key} doit être un entier.")
-        if p.timeout_duration < 0:
-            errors.append(f"Dans l'étape {index_display}. : timeout_duration doit être >= 0.")
-        if p.timeout_duration > 0 and p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(f"Dans l'étape {index_display}. : timeout_unit invalide — {p.timeout_unit!r}.")
+        if p.operator not in {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}:
+            errors.append(
+                f"Dans l'étape {index_display}. : l'opérateur doit être l'un des suivants : equal, not_equal, greater_than, less_than, greater_or_equal, less_or_equal."
+            )
+        if p.quantity < 0:
+            errors.append(f"Dans l'étape {index_display}. : la quantité doit être >= 0")
+        if p.retry_delay <= 0:
+            errors.append(f"Dans l'étape {index_display}. : le délai de retry doit être >= 1")
+        if p.retry_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
+            errors.append(
+                f"Dans l'étape {index_display}. : l'unité de retry doit être l'une des suivantes : {', '.join(C_UNITS_TIME_ALLOWED_FOR_MODEL)}."
+            )
+        if p.retry_max <= 0:
+            errors.append(f"Dans l'étape {index_display}. : le nombre maximum de retry doit être >= 1")
         return errors
 
 

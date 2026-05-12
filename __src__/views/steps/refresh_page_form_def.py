@@ -73,7 +73,7 @@ class RefreshPageFormDef(IStepFormDef):
         # comment
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
-        ttk.Label(row1, text="Commentaire : ").pack(side="left", padx=(0, 5))
+        ttk.Label(row1, text="Commentaire :").pack(side="left", padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row1, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
@@ -89,7 +89,7 @@ class RefreshPageFormDef(IStepFormDef):
         ttk.Combobox(line1, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_STATE, state="readonly").pack(
             side=tk.LEFT, padx=(0, 5)
         )
-        ttk.Label(line1, text="(dom >load >idle)").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line1, text="(dom > load > idle 500ms)").pack(side=tk.LEFT, padx=(0, 5))
         widgets["wait_state"] = ws_var
 
     @staticmethod
@@ -99,7 +99,7 @@ class RefreshPageFormDef(IStepFormDef):
         line3.pack(fill="x", pady=(0, 8))
 
         # timeout duration
-        ttk.Label(line3, text="Timeout : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(line3, text="Timeout :").pack(side=tk.LEFT, padx=(0, 5))
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 5)
@@ -131,7 +131,7 @@ class RefreshPageFormDef(IStepFormDef):
         return {
             "clear_cache": bool(widgets["clear_cache"].get()),
             "wait_state": widgets["wait_state"].get(),
-            "timeout_duration": safe_int_widget(widgets, "timeout_duration", 0),
+            "timeout_duration": safe_int_widget(widgets, "timeout_duration", 1),
             "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
             "comment": widgets["comment"].get().strip(),
         }
@@ -140,7 +140,7 @@ class RefreshPageFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validates the form and returns user-facing errors."""
         errors: list[str] = []
-        if safe_int_widget(widgets, "timeout_duration", -1) < 1:
+        if safe_int_widget(widgets, "timeout_duration", -1) <= 0:
             errors.append("Durée de timeout : doit être >= 1")
         return errors
 

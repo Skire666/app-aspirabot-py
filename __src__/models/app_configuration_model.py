@@ -39,7 +39,7 @@ from shared.exception_util import (
 # Constants
 # ---------------------------------------------------------------------------
 
-# number of parts to split the GUI booting process : "WxH"
+# number of parts to split the GUI booting process -> "WxH"
 _C_NBR_PARTS_GUI_BOOTING_SIZE = 2
 
 # ---------------------------------------------------------------------------

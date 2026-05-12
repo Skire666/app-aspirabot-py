@@ -56,7 +56,7 @@ class JumpToStepFormDef(IStepFormDef):
         available_steps: list[StepScrapingModel] = widgets.get("_all_steps_available", [])
 
         # liste des étapes disponibles pour la cible du saut
-        # au format d'affichage dans la combobox : "01. - #hexastring - label"
+        # au format d'affichage dans la combobox "01. - #hexastring - label"
         all_choices_listbox = []
         all_steps_id_to_index = []
         all_hexastring_to_model = {}
@@ -86,7 +86,7 @@ class JumpToStepFormDef(IStepFormDef):
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row2, text="Commentaire : ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var

@@ -45,10 +45,10 @@ class ScrapingPresenter:
         _view: The scraping panel view.
         _service_scraping: Service that drives Playwright step execution.
         _service_provider: Service for listing and loading providers.
-        _provider: Currently loaded provider model (None when idle).
+        _provider: Currently loaded provider model.
         _cancel_event: Abort signal passed to the scraping service.
         _pause_event: Pause/resume signal passed to the scraping service.
-        _thread: Background worker thread (None when idle).
+        _thread: Background worker thread.
         is_workflow_active: Optional guard injected from main; returns True
             when a Workflow edit session is already open.
 
