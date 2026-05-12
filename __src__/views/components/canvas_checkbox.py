@@ -38,7 +38,7 @@ class CanvasCheckbox(tk.Frame):
         self._var = variable if variable else tk.BooleanVar(value=False)
         self._var.trace_add("write", self._on_var_change)
 
-        self._font = font or tkfont.Font(family="Segoe UI", size=10)
+        self._font = font or tkfont.Font(family="Segoe UI", size=9)
 
         self.canvas = tk.Canvas(self, highlightthickness=0, bd=0)
         self.canvas.pack(side="left", anchor="w")

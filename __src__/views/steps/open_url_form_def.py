@@ -72,6 +72,31 @@ class OpenUrlFormDef(IStepFormDef):
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
+    def _build_subform_url(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Creates the URL input field."""
+        line1 = ttk.Frame(frame)
+        line1.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(line1, text="URL : ").pack(side=tk.LEFT, padx=(0, 5))
+        url_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
+        ttk.Entry(line1, textvariable=url_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["url"] = url_var
+
+    @staticmethod
+    def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Creates the wait-state selector."""
+        line2 = ttk.Frame(frame)
+        line2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(line2, text="Attendre le chargement :").pack(side=tk.LEFT, padx=(0, 5))
+        ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_STATE)
+        ttk.Combobox(line2, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_STATE, state="readonly").pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
+        ttk.Label(line2, text="(dom >load >idle)").pack(side=tk.LEFT, padx=(0, 5))
+        widgets["wait_state"] = ws_var
+
+    @staticmethod
     def _build_subform_timeout(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the timeout controls."""
         line3 = ttk.Frame(frame)
@@ -92,20 +117,6 @@ class OpenUrlFormDef(IStepFormDef):
         widgets["timeout_unit"] = tu_var
 
     @staticmethod
-    def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the wait-state selector."""
-        line2 = ttk.Frame(frame)
-        line2.pack(fill="x", pady=(0, 8))
-
-        ttk.Label(line2, text="Attendre le chargement :").pack(side=tk.LEFT, padx=(0, 5))
-        ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_STATE)
-        ttk.Combobox(line2, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_STATE, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
-        ttk.Label(line2, text="(dom >load >idle)").pack(side=tk.LEFT, padx=(0, 5))
-        widgets["wait_state"] = ws_var
-
-    @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Creates the comment input field."""
         line4 = ttk.Frame(frame)
@@ -115,17 +126,6 @@ class OpenUrlFormDef(IStepFormDef):
         comm_var = tk.StringVar(value="")
         ttk.Entry(line4, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
-
-    @staticmethod
-    def _build_subform_url(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the URL input field."""
-        line1 = ttk.Frame(frame)
-        line1.pack(fill="x", pady=(0, 8))
-
-        ttk.Label(line1, text="URL : ").pack(side=tk.LEFT, padx=(0, 5))
-        url_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
-        ttk.Entry(line1, textvariable=url_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["url"] = url_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
@@ -146,7 +146,7 @@ class OpenUrlFormDef(IStepFormDef):
         return {
             "url": widgets["url"].get().strip(),
             "wait_state": widgets["wait_state"].get(),
-            "timeout_duration": safe_int_widget(widgets, "timeout_duration", 0),
+            "timeout_duration": safe_int_widget(widgets, "timeout_duration", 1),
             "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
             "comment": widgets["comment"].get().strip(),
         }
@@ -157,7 +157,7 @@ class OpenUrlFormDef(IStepFormDef):
         errors: list[str] = []
         if not widgets.get("url", tk.StringVar()).get().strip():
             errors.append("URL : valeur obligatoire")
-        if safe_int_widget(widgets, "timeout_duration", -1) < 1:
+        if safe_int_widget(widgets, "timeout_duration", -1) <= 0:
             errors.append("Durée de timeout : doit être >= 1")
         return errors
 
