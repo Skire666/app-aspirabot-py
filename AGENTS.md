@@ -272,7 +272,7 @@ view.on_start = service.run  # ← the presenter must be the bridge
 
 ### Code Quality Violations
 
-❌ Never write a method longer than 30 lines — break it down instead
+❌ Never write a method longer than 25 lines — break it down instead
 
 ❌ Never omit type hints on a function or method signature
 ```python

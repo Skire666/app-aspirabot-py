@@ -238,8 +238,17 @@ class ScrapingPresenter:
         started_at = datetime.now()
         self._view.start_elapsed_timer(started_at)
 
+        # Collect URL source selection from the view before spawning the thread.
+        url_source = self._view.get_url_source()
+        source_type: str = url_source["type"]
+        source_value: list[str] | str = url_source["value"]
+
         # Launch workflow in a daemon thread so the UI stays responsive.
-        self._thread = threading.Thread(target=self._run_workflow, daemon=True)
+        self._thread = threading.Thread(
+            target=self._run_workflow,
+            args=(source_type, source_value),
+            daemon=True,
+        )
         self._thread.start()
 
     def _on_cancel(self) -> None:
@@ -357,8 +366,13 @@ class ScrapingPresenter:
     # Workflow thread target
     # ------------------------------------------------------------------
 
-    def _run_workflow(self) -> None:
+    def _run_workflow(self, url_source_type: str, url_source_value: list[str] | str) -> None:
         """Thread target: run the workflow and dispatch the result to the view.
+
+        Args:
+            url_source_type: URL source type string (``"manual"``, ``"csv"``,
+                ``"folder"``, or ``""`` when no source is configured).
+            url_source_value: Matching value — list of URLs or path string.
 
         Returns:
             None.
@@ -370,6 +384,8 @@ class ScrapingPresenter:
         try:
             report = self._service_scraping.run_workflow(
                 self._provider,
+                url_source_type,
+                url_source_value,
                 self._cancel_event,
                 self._pause_event,
                 self._on_user_wait_step,

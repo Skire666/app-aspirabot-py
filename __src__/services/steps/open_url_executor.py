@@ -33,13 +33,36 @@ class OpenUrlExecutor(IStepExecutor):
         p = OpenUrlParams.from_dict(context.step_params)
         page = browser.get_current_page()
 
-        # TODO PCO Url ou <<URL>> ou <<CUSTOM>>
+        # Resolve the target URL from the source provider or the custom field.
+        target_url = self._resolve_url(p, context)
 
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         if timeout_ms is not None:
-            page.goto(p.url_custom, wait_until=p.wait_state, timeout=timeout_ms)
+            page.goto(target_url, wait_until=p.wait_state, timeout=timeout_ms)
         else:
-            page.goto(p.url_custom, wait_until=p.wait_state)
+            page.goto(target_url, wait_until=p.wait_state)
+
+    @staticmethod
+    def _resolve_url(p: OpenUrlParams, context: ScrapingContextModel) -> str:
+        """Return the URL to navigate to, sourced from the provider or params.
+
+        Args:
+            p: Typed parameter model for this step.
+            context: Runtime context carrying the optional URL source provider.
+
+        Returns:
+            The resolved URL string.
+
+        Raises:
+            ValueError: When url_mode is ``"<<URL>>"`` but no source is available.
+        """
+        if p.url_mode != "<<URL>>":
+            return p.url_custom
+
+        # Consume the next URL from the injected source provider.
+        if context.url_source is None or not context.url_source.has_next():
+            raise ValueError("Aucune URL disponible dans la source configurée.")
+        return context.url_source.next_url()
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

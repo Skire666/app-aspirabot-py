@@ -70,8 +70,8 @@ class ScrapingView(ttk.Frame):
         # Provider id_file index — maps combobox values to id_file strings.
         self._provider_id_by_display: dict[str, str] = {}
 
-        # URL-source state.
-        self._url_source_type: str = _URL_SOURCE_MANUAL
+        # URL-source state — empty until the user explicitly picks a source.
+        self._url_source_type: str = ""
         self._url_source_value: list[str] | str = []
 
         # Export folder path.
@@ -641,9 +641,29 @@ class ScrapingView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _notify_launch(self) -> None:
-        """Fire the on_launch callback when the Lancer button is clicked."""
+        """Fire the on_launch callback when the Lancer button is clicked.
+
+        When no URL source has been selected, a confirmation dialog is shown.
+        The launch is aborted if the user declines.
+        """
+        if not self._url_source_type and not self._confirm_launch_without_source():
+            return
         if self._on_launch:
             self._on_launch()
+
+    @staticmethod
+    def _confirm_launch_without_source() -> bool:
+        """Show a confirmation dialog when no URL source is selected.
+
+        Returns:
+            True when the user accepts to continue despite the missing source.
+        """
+        return messagebox.askokcancel(
+            "Aucune source d'URLs",
+            "Aucune source d'URLs n'est selectionnee.\n\n"
+            "Les etapes OPEN_URL en mode '<<URL>>' seront en erreur.\n\n"
+            "Souhaitez-vous continuer quand meme ?",
+        )
 
     def _notify_cancel(self) -> None:
         """Fire the on_cancel callback when the Annuler button is clicked."""

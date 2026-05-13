@@ -32,7 +32,10 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from interfaces.i_url_source_provider import IUrlSourceProvider
 
 # ---------------------------------------------------------------------------
 # Model
@@ -53,6 +56,7 @@ class ScrapingContextModel:
         cancel_event: Threading event set when the run is cancelled.
         on_user_wait: Optional callback fired by WAIT_USER_ACTION steps.
         step_params: Raw step-specific parameter dict from the step model.
+        url_source: Optional URL source provider consumed by OPEN_URL steps.
         last_message_step: Output — human-readable result set by the executor.
         pending_jump: Output — jump target (index or step_id) set by the executor.
         end_process: Output — set to True by the executor to stop the workflow.
@@ -71,6 +75,8 @@ class ScrapingContextModel:
         ...     on_user_wait=None,
         ...     step_params={"selector": ".btn"},
         ... )
+        >>> ctx.url_source is None
+        True
         >>> ctx.end_process
         False
     """
@@ -87,6 +93,9 @@ class ScrapingContextModel:
 
     # Step-specific raw params (used to construct typed param models).
     step_params: dict[str, Any]
+
+    # Optional URL source provider injected by the service before each run.
+    url_source: IUrlSourceProvider | None = field(default=None)
 
     # Output signals written by executors and read back by the orchestrator.
     last_message_step: str = field(default="")

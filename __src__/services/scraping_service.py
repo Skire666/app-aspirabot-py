@@ -24,11 +24,13 @@ from datetime import datetime
 from pathlib import Path
 
 from interfaces.i_step_executor import IStepExecutor
+from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel, StepType
+from services.url_sources.url_source_factory import build_url_source_provider
 from services.workflow_service import WorkflowService
 
 # ---------------------------------------------------------------------------
@@ -103,8 +105,10 @@ class ScrapingService:
     def run_workflow(
         self,
         provider: ProviderModel,
-        cancel_event: threading.Event,
-        pause_event: threading.Event,
+        url_source_type: str = "",
+        url_source_value: list[str] | str | None = None,
+        cancel_event: threading.Event | None = None,
+        pause_event: threading.Event | None = None,
         on_user_wait: Callable[[], None] | None = None,
         on_step_start: Callable[[StepScrapingModel], None] | None = None,
         on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None,
@@ -114,6 +118,10 @@ class ScrapingService:
 
         Args:
             provider: The provider model containing the steps to execute.
+            url_source_type: Source type string — ``"manual"``, ``"csv"``,
+                ``"folder"``, or ``""`` to disable the URL source.
+            url_source_value: URLs list (manual) or path string (csv/folder).
+                Ignored when ``url_source_type`` is empty.
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
@@ -127,16 +135,40 @@ class ScrapingService:
             A ScrapingReportModel summarising the completed run.
         """
         # Store run-scoped references on the context and as service callbacks.
-        self._context.pause_event = pause_event
-        self._context.cancel_event = cancel_event
+        self._context.pause_event = pause_event or threading.Event()
+        self._context.cancel_event = cancel_event or threading.Event()
         self._context.on_user_wait = on_user_wait
         self._on_step_start = on_step_start
         self._on_step_done = on_step_done
         self._started_at = datetime.now()
 
+        # Build and attach the URL source provider when requested.
+        self._context.url_source = self._build_url_source(url_source_type, url_source_value)
+
         # Initialise the browser and run all steps.
         cancelled = self._run_browser_lifecycle(provider, on_init_step)
         return self._build_report(cancelled)
+
+    def _build_url_source(
+        self,
+        source_type: str,
+        source_value: list[str] | str | None,
+    ) -> IUrlSourceProvider | None:
+        """Build the URL source provider when type and value are supplied.
+
+        Args:
+            source_type: One of ``"manual"``, ``"csv"``, ``"folder"``, or ``""``.
+            source_value: Matching value for the given type, or None.
+
+        Returns:
+            A concrete ``IUrlSourceProvider`` or ``None``.
+
+        Raises:
+            None — errors are not raised here; the executor handles missing source.
+        """
+        if source_type and source_value is not None:
+            return build_url_source_provider(source_type, source_value)
+        return None
 
     def get_page_info(self) -> tuple[str, int]:
         """Return the current page URL and number of open tabs.
@@ -273,6 +305,10 @@ class ScrapingService:
         Args:
             steps: The full ordered list of steps for the upcoming run.
         """
+        # Rewind the URL source so it can be replayed in a new run.
+        if self._context.url_source is not None:
+            self._context.url_source.reset()
+
         self._context.prev_success = True
         self._context.pending_jump = None
         self._context.end_process = False
