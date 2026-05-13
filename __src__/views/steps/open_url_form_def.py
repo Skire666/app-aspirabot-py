@@ -196,6 +196,11 @@ class OpenUrlFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validates the form and returns user-facing errors."""
         errors: list[str] = []
+
+        url_mode = widgets["url_mode"].get()
+        url_custom = widgets["url_custom"].get().strip()
+        if url_mode == "<<CUSTOM>>" and not url_custom:
+            errors.append("L'URL personnalisée est obligatoire.")
         if safe_int_widget(widgets, "timeout_duration", -1) <= 0:
             errors.append("Durée de timeout : doit être >= 1")
         return errors

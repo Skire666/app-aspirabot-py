@@ -24,8 +24,7 @@ from views.steps._constants import (
     WAIT_UNIT_VIEW_TO_MODEL,
     safe_int_widget,
 )
-
-from __src__.views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
+from views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
 
 # ---------------------------------------------------------------------------
 # Constants

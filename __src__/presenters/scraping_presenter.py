@@ -125,6 +125,9 @@ class ScrapingPresenter:
         self._provider = self._service_provider.read_provider(id_file)
         self._cancel_event.clear()
 
+        # Ensure the provider dropdown is populated before selecting.
+        self.ensure_providers_loaded()
+
         # Refresh the view provider selection and reset run-specific state.
         self._view.set_selected_provider(id_file)
         self._view.reset()

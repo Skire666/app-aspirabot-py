@@ -18,8 +18,7 @@ from shared.constants import (
     C_UNITS_TIME_ALLOWED_FOR_MODEL,
     C_UNITS_TIME_CONVERSION_TO_SEC,
 )
-
-from __src__.shared.exception_util import CountHtmlImagesConditionNotMetError
+from shared.exception_util import CountHtmlImagesConditionNotMetError
 
 
 def _get_filtered_images(browser: IWebBrowserService, p: WaitHtmlImagesParams) -> list[dict]:

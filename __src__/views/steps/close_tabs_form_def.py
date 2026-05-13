@@ -21,7 +21,8 @@ from views.steps._constants import safe_int_widget
 # Constants
 # ---------------------------------------------------------------------------
 
-C_INPUT_DEFAULT_URL_FILTER: str = "<<URL>>"
+C_INPUT_DEFAULT_FILTER_MODE: str = "<<URL>>"
+C_INPUT_IS_FILTER_CUSTOM: str = "<<CUSTOM>>"
 C_INPUT_DEFAULT_MAX_TABS: int = 1
 
 # ---------------------------------------------------------------------------
@@ -46,13 +47,7 @@ class CloseTabsFormDef(IStepFormDef):
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         # ROW 0
-        row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=(0, 8))
-
-        ttk.Label(row0, text="URL doit contenir (sinon <<URL>>) :").pack(side="left", padx=(0, 5))
-        filter_var = tk.StringVar(value=C_INPUT_DEFAULT_URL_FILTER)
-        ttk.Entry(row0, textvariable=filter_var).pack(side="left", padx=(0, 5))
-        widgets["url_filter"] = filter_var
+        self._build_subform_filters(frame, widgets)
 
         # ROW 1
         row1 = ttk.Frame(frame)
@@ -73,10 +68,61 @@ class CloseTabsFormDef(IStepFormDef):
         ttk.Entry(row3, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
 
+    @staticmethod
+    def _build_subform_filters(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Creates the URL input field."""
+        line1 = ttk.Frame(frame)
+        line1.pack(fill="x", pady=(0, 8))
+
+        filter_mode_var = tk.StringVar(value=C_INPUT_DEFAULT_FILTER_MODE)
+        filter_url_var = tk.StringVar(value=".com")
+
+        # Mode selection.
+        CloseTabsFormDef._build_url_mode_buttons(line1, filter_mode_var)
+
+        filter_url_entry = ttk.Entry(line1, textvariable=filter_url_var)
+        filter_url_entry.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["filter_mode"] = filter_mode_var  # '<<URL>>' or '<<CUSTOM>>'
+        widgets["filter_custom"] = filter_url_var
+
+        # Keep the entry state in sync with the selected mode.
+        CloseTabsFormDef._bind_url_mode_entry(filter_mode_var, filter_url_entry)
+
+    @staticmethod
+    def _build_url_mode_buttons(line1: ttk.Frame, filter_mode_var: tk.StringVar) -> None:
+        """Creates the URL mode radio buttons."""
+        # URL source selection.
+        tk.Radiobutton(
+            line1,
+            text="Garder l'URL d'origine",
+            variable=filter_mode_var,
+            value="<<URL>>",
+        ).pack(side=tk.LEFT, padx=(0, 20))
+
+        tk.Radiobutton(
+            line1,
+            text="Filtre contenant",
+            variable=filter_mode_var,
+            value="<<CUSTOM>>",
+        ).pack(side=tk.LEFT, padx=(0, 5))
+
+    @staticmethod
+    def _bind_url_mode_entry(filter_mode_var: tk.StringVar, filter_url_entry: ttk.Entry) -> None:
+        """Synchronizes the URL entry state with mode selection."""
+
+        def _sync_url_entry_state(*_args: object) -> None:
+            state = "readonly" if filter_mode_var.get() == "<<URL>>" else "normal"
+            filter_url_entry.configure(state=state)
+
+        # React to mode changes and initialize the current state.
+        filter_mode_var.trace_add("write", _sync_url_entry_state)
+        _sync_url_entry_state()
+
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
         """Load step parameters into form widgets."""
-        widgets["url_filter"].set(model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER))
+        widgets["filter_mode"].set(model.params.get("filter_mode", "<<URL>>"))
+        widgets["filter_custom"].set(model.params.get("filter_custom", ""))
         widgets["max_tabs"].set(str(model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)))
         widgets["comment"].set(model.params.get("comment", ""))
 
@@ -84,7 +130,8 @@ class CloseTabsFormDef(IStepFormDef):
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
-            "url_filter": widgets["url_filter"].get().strip(),
+            "filter_mode": widgets["filter_mode"].get(),
+            "filter_custom": widgets["filter_custom"].get().strip(),
             "max_tabs": safe_int_widget(widgets, "max_tabs", C_INPUT_DEFAULT_MAX_TABS),
             "comment": widgets["comment"].get().strip(),
         }
@@ -93,27 +140,29 @@ class CloseTabsFormDef(IStepFormDef):
     def validate_form(self, widgets: dict[str, Any]) -> list[str]:
         """Validate current widget values and return a list of error messages."""
         errors: list[str] = []
-        url = widgets["url_filter"].get().strip()
+
+        filter_mode = widgets["filter_mode"].get()
+        filter_custom = widgets["filter_custom"].get().strip()
+
         max_tb = safe_int_widget(widgets, "max_tabs", -1)
 
+        if filter_mode == C_INPUT_IS_FILTER_CUSTOM and not filter_custom:
+            errors.append("Le filtre URL est obligatoire.")
         if max_tb <= 0:
             errors.append("Nombre max. d'onglets : doit être >= 1")
-        if not url:
-            errors.append("Filtrage URL : valeur obligatoire")
         return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         max_tabs = model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)
-        url_filter = model.params.get("url_filter", C_INPUT_DEFAULT_URL_FILTER)
-        if max_tabs == 0:
-            return "Fermer tous les onglets\nIl ne restera aucun onglet d'ouvert"
 
-        # si plusieurs
-        label = f"Fermer les onglets  -  {max_tabs} onglet(s) max.\n"
-        label += f"Ne garder que les URL avec '{url_filter}'"
-        return label
+        # si mode "<<CUSTOM>>"
+        if model.params.get("filter_mode") == C_INPUT_IS_FILTER_CUSTOM:
+            filter_custom = model.params.get("filter_custom", "")
+            return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre URL: {filter_custom!r}\n"
+        # si mode "<<URL>>"
+        return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre : Garde l'URL de départ."
 
 
 register_form(CloseTabsFormDef())

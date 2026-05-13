@@ -8,8 +8,7 @@ from typing import Any, Self
 from interfaces.i_step_params import IStepParams
 from models.step_scraping_model import StepType
 from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_DEFAULT_MODEL
-
-from __src__.views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
+from views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
 
 
 @dataclass(frozen=True)

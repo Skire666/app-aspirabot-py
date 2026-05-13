@@ -16,9 +16,8 @@ from shared.constants import (
 )
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
+from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
-
-from __src__.views.components.canvas_checkbox import CanvasCheckbox
 
 # ---------------------------------------------------------------------------
 # Classes

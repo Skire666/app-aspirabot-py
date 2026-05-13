@@ -148,7 +148,8 @@ class ScrapingView(ttk.Frame):
         ttk.Label(row, text="URLs à scraper :").pack(side=tk.LEFT, padx=(0, 8))
 
         # StringVar tracks the active radio selection.
-        self._var_url_source = tk.StringVar(value=_URL_SOURCE_MANUAL)
+        self._var_url_source = tk.StringVar()
+        self._var_url_source.set(None)
         radio_defs = [
             ("Saisie manuelle", _URL_SOURCE_MANUAL),
             ("Depuis un dossier", _URL_SOURCE_FOLDER),

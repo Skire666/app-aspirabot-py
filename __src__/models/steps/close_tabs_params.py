@@ -13,24 +13,31 @@ from models.step_scraping_model import StepType
 class CloseTabsParams(IStepParams):
     """Parameters for the close tabs scraping step."""
 
-    url_filter: str
+    filter_mode: str
+    filter_custom: str
     max_tabs: int
     comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(url_filter="", max_tabs=1, comment="")
+        return cls(filter_mode="<<URL>>", filter_custom="", max_tabs=1, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"url_filter": self.url_filter, "max_tabs": self.max_tabs, "comment": self.comment}
+        return {
+            "filter_mode": self.filter_mode,
+            "filter_custom": self.filter_custom,
+            "max_tabs": self.max_tabs,
+            "comment": self.comment,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            url_filter=data.get("url_filter", ""),
+            filter_mode=data.get("filter_mode", "<<URL>>"),
+            filter_custom=data.get("filter_custom", ""),
             max_tabs=int(data.get("max_tabs", 1)),
             comment=data.get("comment", ""),
         )
