@@ -68,8 +68,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
             all_images = self._get_filtered_images(browser, p)
             count = len(all_images)
             condition_met = evaluate_count_condition(count, p.operator, p.quantity)
-            step_success = condition_met if p.success_if == "success" else not condition_met
-            if step_success:
+            if condition_met:
                 break
             if i == p.retry_max - 1:  # i=5 -> max=6
                 raise CountHtmlImagesConditionNotMetError(count, p.operator, str(p.quantity))

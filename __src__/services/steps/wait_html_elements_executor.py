@@ -34,21 +34,20 @@ class WaitHtmlElementsExecutor(IStepExecutor):
         p = WaitHtmlElementsParams.from_dict(params)
         page = browser.get_current_page()
         nbr_delay_in_sec = p.retry_delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.retry_unit, 1.0)
-        count: int = -1
+        counted_items: int = -1
 
         for i in range(p.retry_max):
-            count = page.locator(p.selector).count()
-            condition_met = evaluate_count_condition(count, p.operator, p.quantity)
-            step_success = condition_met if p.success_if == "success" else not condition_met
-            if step_success:
+            counted_items = page.locator(p.selector).count()
+            condition_met = evaluate_count_condition(counted_items, p.operator, p.quantity)
+            if condition_met:
                 break
             if i == p.retry_max - 1:  # i=5 -> max=6
-                raise CountHtmlElementsConditionNotMetError(count, p.operator, str(p.quantity))
+                raise CountHtmlElementsConditionNotMetError(counted_items, p.operator, str(p.quantity))
             time.sleep(nbr_delay_in_sec)
 
         # success case: store a message in the mutable params dict to be used by potential next steps (e.g. for logging or user feedback).
         params["_last_message_step"] = (
-            f"Trouvé {count} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
+            f"Trouvé {counted_items} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
         )
 
     @override
