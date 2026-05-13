@@ -25,13 +25,18 @@ from pathlib import Path
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_url_source_provider import IUrlSourceProvider
-from interfaces.i_web_browser_service import IWebBrowserService
+from models.app_configuration_model import AppConfigurationModel
 from models.provider_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel, StepType
+from services.browser_playwright_service import BrowserPlaywrightService
 from services.url_sources.url_source_factory import build_url_source_provider
 from services.workflow_service import WorkflowService
+from shared.constants import (
+    C_BROWSER_ENGINE_PLAYWRIGHT,
+)
+from shared.exception_util import UnsupportedBrowserEngineError
 
 # ---------------------------------------------------------------------------
 # Class
@@ -48,7 +53,7 @@ class ScrapingService:
 
     Example:
         >>> from services.web_browser_service import BrowserService
-        >>> svc = ScrapingService(Path("."), BrowserService(Path(".")), WorkflowService())
+        >>> svc = ScrapingService(AppConfigModel(), BrowserService(Path(".")), WorkflowService())
         >>> report = svc.run_workflow(provider, cancel, pause)
         >>> report.steps_total
         0
@@ -56,27 +61,26 @@ class ScrapingService:
 
     def __init__(
         self,
-        folder_scraping: Path,
-        browser_service: IWebBrowserService,
+        model_config: AppConfigurationModel,
         workflow_service: WorkflowService,
     ) -> None:
         """Initialise the service and its per-run execution state.
 
         Args:
-            folder_scraping: Working folder forwarded to step executors via
-                ``context.folder``.
+            model_config: Application configuration model.
             browser_service: Concrete browser service implementation to use
                 for all browser lifecycle and page operations.
             workflow_service: Service for resolving step executors by type.
         """
         self._logger = logging.getLogger(__name__)
-        self._browser_service = browser_service
+        self._browser_service = None
         self._workflow_service = workflow_service
 
         # Single context reference — initialized to safe defaults, updated each run.
         self._context: ScrapingContextModel = ScrapingContextModel(
             prev_success=True,
-            folder=folder_scraping,
+            app_config=model_config,
+            folder_export=Path(),
             downloaded_urls=set(),
             step_id_by_index=[],
             step_index_by_id={},
@@ -107,6 +111,7 @@ class ScrapingService:
         provider: ProviderModel,
         url_source_type: str = "",
         url_source_value: list[str] | str | None = None,
+        export_folder: str = "",
         cancel_event: threading.Event | None = None,
         pause_event: threading.Event | None = None,
         on_user_wait: Callable[[], None] | None = None,
@@ -124,6 +129,7 @@ class ScrapingService:
                 Ignored when ``url_source_type`` is empty.
             cancel_event: Threading event that aborts the run when set.
             pause_event: Threading event that blocks step execution when cleared.
+            export_folder: Path to the folder where results should be exported.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
             on_step_start: Optional callback fired before each step with (step,).
             on_step_done: Optional callback fired after each step with
@@ -144,6 +150,13 @@ class ScrapingService:
 
         # Build and attach the URL source provider when requested.
         self._context.url_source = self._build_url_source(url_source_type, url_source_value)
+        self._context.folder_export = Path(export_folder)
+
+        engine_used: str = self._context.app_config.browser_engine
+        if engine_used == C_BROWSER_ENGINE_PLAYWRIGHT:
+            self._browser_service = BrowserPlaywrightService()
+        else:
+            raise UnsupportedBrowserEngineError(self._context.app_config.browser_engine)
 
         # Initialise the browser and run all steps.
         cancelled = self._run_browser_lifecycle(provider, on_init_step)

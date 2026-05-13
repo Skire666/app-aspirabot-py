@@ -36,6 +36,8 @@ class OpenUrlExecutor(IStepExecutor):
         # Resolve the target URL from the source provider or the custom field.
         target_url = self._resolve_url(p, context)
 
+        print(f"Navigating to URL: {target_url}")  # TODO PCO
+
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         if timeout_ms is not None:
             page.goto(target_url, wait_until=p.wait_state, timeout=timeout_ms)

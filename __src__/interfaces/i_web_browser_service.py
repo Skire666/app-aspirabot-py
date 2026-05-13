@@ -1,7 +1,7 @@
 """Contract for the web browser service used during scraping.
 
 Decouples the scraping orchestration from any specific browser library
-(Playwright, Patchright, etc.). Concrete implementations handle all browser
+(Playwright, etc.). Concrete implementations handle all browser
 lifecycle details: launching, page management, stealth patching, and shutdown.
 
 Example:

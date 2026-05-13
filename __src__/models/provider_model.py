@@ -58,7 +58,7 @@ class ProviderModel:
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
 
     @classmethod
-    def get_default_data(cls) -> "ProviderModel":
+    def get_default_data(cls) -> ProviderModel:
         """Builds a new provider instance with default values.
 
         Returns:

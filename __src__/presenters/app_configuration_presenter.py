@@ -10,10 +10,14 @@ from typing import Any
 
 from models.app_configuration_model import AppConfigurationModel
 from services.app_configuration_service import ConfigService
+from shared.constants import C_BROWSER_ENGINE_PLAYWRIGHT
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from views.app_configuration_view import AppConfigurationView
 
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+# Camoufox fonctionne, Scrapling change rien comparé à playwright
+_BROWSER_ENGINE_OPTIONS = [C_BROWSER_ENGINE_PLAYWRIGHT]
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -42,6 +46,7 @@ class AppConfigurationPresenter:
         )
         self._view.set_on_change_callback(self._on_form_change)
         self._view.set_log_level_options(_LOG_LEVEL_OPTIONS)
+        self._view.set_browser_engine_options(_BROWSER_ENGINE_OPTIONS)
         self._load_configuration()
 
     def _load_configuration(self) -> None:
@@ -105,9 +110,9 @@ class AppConfigurationPresenter:
             "log_level_enum": str(data.get("log_level_enum", "")),
             "folder_logs": str(data.get("folder_logs", "")),
             "folder_providers": str(data.get("folder_providers", "")),
-            "folder_scraping": str(data.get("folder_scraping", "")),
             "gui_booting_size": str(data.get("gui_booting_size", "")),
             "gui_booting_fullscreen": bool(data.get("gui_booting_fullscreen")),
+            "browser_engine": str(data.get("browser_engine", "")),
         }
 
     def _apply_configuration(self, config: AppConfigurationModel) -> None:

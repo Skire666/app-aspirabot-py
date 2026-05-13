@@ -49,16 +49,56 @@ include = ["__src__*", "interfaces*", "models*", "services*", "repositories*", "
 
 [tool.ruff]
 
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
 # The Python version targeted by the project.
 # Ruff uses it to know which syntax features are available.
-target-version = "py312"
+target-version = "py314"
 
 # Maximum number of characters per line.
 # 88 is the default value used by Black, now a de facto standard.
-line-length = 120
+line-length = 115
+
+indent-width = 4
 
 # Show the rule code and a detailed fix suggestion in the terminal output.
 output-format = "full"
+
+[tool.ruff.format]
+
+# use double quote tyhan simple quote
+quote-style = "double"
+
+# indent with spaces, rather than tabs.
+indent-style = "space"
 
 [tool.ruff.lint]
 
@@ -94,8 +134,6 @@ preview = true
 ignore = [
     "D104",   # Missing docstring in public package (empty __init__.py tolerated)
     "D100",   # Missing docstring at module level (relaxed for simple modules)
-    "ANN101", # Missing type annotation for 'self' (unnecessary noise)
-    "ANN102", # Missing type annotation for 'cls' (unnecessary noise)
 ]
 
 [tool.ruff.lint.mccabe]
@@ -113,10 +151,11 @@ convention = "google"
 
 [tool.ruff.lint.pylint]
 
-# for PLR -> refactoring (recommanded : 6 / 12 / 50)
+# for PLR -> refactoring (recommanded : 6 / 12 / 50 / 20)
 max-args = 10
 max-branches = 14
 max-statements = 55
+max-public-methods = 25
 
 [tool.ruff.lint.per-file-ignores]
 

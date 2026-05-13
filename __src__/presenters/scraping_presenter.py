@@ -239,6 +239,7 @@ class ScrapingPresenter:
         self._view.start_elapsed_timer(started_at)
 
         # Collect URL source selection from the view before spawning the thread.
+        export_folder = self._view.get_export_folder()
         url_source = self._view.get_url_source()
         source_type: str = url_source["type"]
         source_value: list[str] | str = url_source["value"]
@@ -246,7 +247,7 @@ class ScrapingPresenter:
         # Launch workflow in a daemon thread so the UI stays responsive.
         self._thread = threading.Thread(
             target=self._run_workflow,
-            args=(source_type, source_value),
+            args=(source_type, source_value, export_folder),
             daemon=True,
         )
         self._thread.start()
@@ -366,13 +367,14 @@ class ScrapingPresenter:
     # Workflow thread target
     # ------------------------------------------------------------------
 
-    def _run_workflow(self, url_source_type: str, url_source_value: list[str] | str) -> None:
+    def _run_workflow(self, url_source_type: str, url_source_value: list[str] | str, export_folder: str) -> None:
         """Thread target: run the workflow and dispatch the result to the view.
 
         Args:
             url_source_type: URL source type string (``"manual"``, ``"csv"``,
                 ``"folder"``, or ``""`` when no source is configured).
             url_source_value: Matching value — list of URLs or path string.
+            export_folder: Path to the folder where results should be exported.
 
         Returns:
             None.
@@ -386,6 +388,7 @@ class ScrapingPresenter:
                 self._provider,
                 url_source_type,
                 url_source_value,
+                export_folder,
                 self._cancel_event,
                 self._pause_event,
                 self._on_user_wait_step,

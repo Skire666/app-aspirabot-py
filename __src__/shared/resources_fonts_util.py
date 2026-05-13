@@ -33,9 +33,9 @@ class ResourcesFonts:
         font = font_manager.get_font(family="Arial", size=12, weight="bold")
     """
 
-    _instance: "ResourcesFonts" | None = None
+    _instance: ResourcesFonts | None = None
 
-    def __new__(cls) -> "ResourcesFonts":
+    def __new__(cls) -> ResourcesFonts:
         """Initialize a resource manager.
 
         Returns:

@@ -94,7 +94,6 @@ class StartupService:
             # Create each runtime folder declared in the configuration.
             make_all_folders_if_not_exists(self._config_model.folder_logs, is_file_path=False)
             make_all_folders_if_not_exists(self._config_model.folder_providers, is_file_path=False)
-            make_all_folders_if_not_exists(self._config_model.folder_scraping, is_file_path=False)
         except OSError as exc:
             raise FailedToCreateRequiredDirectoriesDuringRuntimeError() from exc
 

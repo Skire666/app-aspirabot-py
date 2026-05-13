@@ -439,6 +439,14 @@ class BrowserAlreadyLaunchedError(RuntimeError, AspirabotError):
         super().__init__("Browser is already launched. Call close_browser() first.")
 
 
+class BrowserLaunchFailedError(RuntimeError, AspirabotError):
+    """Raised when the browser fails to launch."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Browser launch failed. Check logs for details.")
+
+
 class BrowserNotLaunchedError(RuntimeError, AspirabotError):
     """Raised when a browser operation requires a launched instance."""
 

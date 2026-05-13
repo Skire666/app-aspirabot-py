@@ -28,15 +28,12 @@ from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
-from services.web_browser_service import BrowserService
 
 # Bootstrap: import all step packages to populate the central registry.
 from services.workflow_service import WorkflowService
 from shared.constants import (
     C_APP_CONFIG_FILE,
-    C_BROWSER_ENGINE_PLAYWRIGHT,
 )
-from shared.exception_util import UnsupportedBrowserEngineError
 from shared.i18n_fra import (
     C_TITLE_MODULE_CONFIG,
     C_TITLE_MODULE_FAQ,
@@ -272,12 +269,8 @@ def _init_scraping_component(
     Returns:
         A (ScrapingPanelView, ScrapingPresenter) tuple.
     """
-    if config_model.browser_engine == C_BROWSER_ENGINE_PLAYWRIGHT:
-        browser_service = BrowserService(config_model.folder_scraping)
-    else:
-        raise UnsupportedBrowserEngineError(config_model.browser_engine)
     workflow_service = WorkflowService()
-    scraping_service = ScrapingService(config_model.folder_scraping, browser_service, workflow_service)
+    scraping_service = ScrapingService(config_model, workflow_service)
     scraping_view = ScrapingView(main_view.content_area)
     journal_repository = ScrapingJournalRepository()
     scraping_presenter = ScrapingPresenter(

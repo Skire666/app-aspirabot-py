@@ -17,7 +17,6 @@ Example:
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -127,7 +126,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         Raises:
             FileNotFoundError: If ``self._folder_path`` does not exist.
         """
-        if not os.path.isdir(self._folder_path):
+        if not Path(self._folder_path).is_dir():
             raise FileNotFoundError(f"URL source folder not found: {self._folder_path}")
 
         folder = Path(self._folder_path)
@@ -164,7 +163,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         Raises:
             None.
         """
-        with open(file_path, encoding="utf-8") as fh:
+        with Path(file_path).open(encoding="utf-8") as fh:
             for line in fh:
                 stripped = line.strip()
                 if stripped:

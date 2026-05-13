@@ -9,7 +9,8 @@ Example:
     >>> from pathlib import Path
     >>> ctx = ScrapingContextModel(
     ...     prev_success=True,
-    ...     folder=Path("."),
+    ...     app_config=AppConfigurationModel(),
+    ...     folder_export=Path("."),
     ...     downloaded_urls=set(),
     ...     step_id_by_index=[],
     ...     step_index_by_id={},
@@ -33,6 +34,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from models.app_configuration_model import AppConfigurationModel
 
 if TYPE_CHECKING:
     from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -66,7 +69,8 @@ class ScrapingContextModel:
         >>> from pathlib import Path
         >>> ctx = ScrapingContextModel(
         ...     prev_success=False,
-        ...     folder=Path("."),
+        ...     app_config=AppConfigurationModel(),
+        ...     folder_export=Path("."),
         ...     downloaded_urls=set(),
         ...     step_id_by_index=["a", "b"],
         ...     step_index_by_id={"a": 0, "b": 1},
@@ -83,7 +87,8 @@ class ScrapingContextModel:
 
     # Inputs from the orchestrator.
     prev_success: bool
-    folder: Path
+    app_config: AppConfigurationModel
+    folder_export: Path
     downloaded_urls: set[str]
     step_id_by_index: list[str]
     step_index_by_id: dict[str, int]

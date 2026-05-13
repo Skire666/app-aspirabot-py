@@ -70,14 +70,13 @@ class DownloadImageExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = DownloadImageParams.from_dict(context.step_params)
+        p: DownloadImageParams = DownloadImageParams.from_dict(context.step_params)
         page = browser.get_current_page()
         downloaded_urls = context.downloaded_urls
 
-        images = _get_filtered_images(browser, p)
+        images = _get_filtered_images(browser, p.to_dict())
         targets = _select_images_by_mode(images, p.mode)
-        folder = context.folder
-        make_all_folders_if_not_exists(folder, is_file_path=False)
+        make_all_folders_if_not_exists(context.folder_export, is_file_path=False)
         downloaded_count = 0
 
         for image in targets:
@@ -96,12 +95,11 @@ class DownloadImageExecutor(IStepExecutor):
             if not response.ok:
                 raise ImageDownloadFailedError(response.status)
 
-            url_path = full_url.split("?")[0]
+            url_path = full_url.split("?")[0]  # Remove query parameters for filename generation
             suffix = Path(url_path).suffix or ".jpg"
-            filename = (
-                Path(url_path).stem + datetime.now().strftime("_%Y%m%d_%H%M%S%f") + f"_{downloaded_count + 1}" + suffix
-            )
-            dest = folder / filename
+            filename = Path(url_path).stem if len(Path(url_path).stem) < 100 else Path(url_path).stem[:100]
+            timestamp_ms = datetime.now().strftime("_%Y%m%d_%H%M%S%f")
+            dest = context.folder_export / (filename + timestamp_ms + suffix)
             with dest.open("wb") as fh:
                 fh.write(response.body())
             downloaded_urls.add(full_url)
@@ -120,7 +118,7 @@ class DownloadImageExecutor(IStepExecutor):
                 result = int(model.params.get(key, -1))
                 if result < 0:
                     errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un entier positif.")
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un nombre.")
         return errors
 

@@ -22,7 +22,6 @@ from shared.constants import (
     C_BROWSER_ENGINE_DEFAULT,
     C_BROWSER_ENGINE_PLAYWRIGHT,
     C_DATA_DEFAULT_FOLDER_PROVIDER,
-    C_DATA_DEFAULT_FOLDER_SCRAPPING,
     C_LOGS_DEFAULT_FOLDER,
     C_LOGS_DEFAULT_LEVEL_TRACE,
 )
@@ -30,7 +29,6 @@ from shared.exception_util import (
     InvalidBrowserEngineError,
     InvalidFolderLogsError,
     InvalidFolderProvidersError,
-    InvalidFolderScrapingError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
 )
@@ -55,7 +53,6 @@ class AppConfigurationModel:
         log_level: Logging level used by the application.
         folder_logs: Directory where log files are stored.
         folder_providers: Directory containing provider definitions.
-        folder_scraping: Directory for storing the scraped output.
 
     Example:
         >>> model = AppConfigurationModel(log_level_enum="DEBUG")
@@ -70,7 +67,6 @@ class AppConfigurationModel:
     _log_level_enum: str
     _folder_logs: Path
     _folder_providers: Path
-    _folder_scraping: Path
     _gui_booting_size: str
     _gui_booting_fullscreen: bool
     _browser_engine: str
@@ -84,7 +80,6 @@ class AppConfigurationModel:
         log_level_enum: str = C_LOGS_DEFAULT_LEVEL_TRACE,
         folder_logs: Path | str = C_LOGS_DEFAULT_FOLDER,
         folder_providers: Path | str = C_DATA_DEFAULT_FOLDER_PROVIDER,
-        folder_scraping: Path | str = C_DATA_DEFAULT_FOLDER_SCRAPPING,
         gui_booting_size: str = C_APP_DEFAULT_SIZE_GUI,
         gui_booting_fullscreen: bool = False,
         browser_engine: str = C_BROWSER_ENGINE_DEFAULT,
@@ -93,7 +88,6 @@ class AppConfigurationModel:
         self.log_level_enum = log_level_enum
         self.folder_logs = folder_logs
         self.folder_providers = folder_providers
-        self.folder_scraping = folder_scraping
         self.gui_booting_size = gui_booting_size
         self.gui_booting_fullscreen = gui_booting_fullscreen
         self.browser_engine = browser_engine
@@ -104,7 +98,6 @@ class AppConfigurationModel:
             "log_level_enum": self.log_level_enum,
             "folder_logs": str(self.folder_logs),
             "folder_providers": str(self.folder_providers),
-            "folder_scraping": str(self.folder_scraping),
             "gui_booting_size": self.gui_booting_size,
             "gui_booting_fullscreen": self.gui_booting_fullscreen,
             "browser_engine": self.browser_engine,
@@ -152,18 +145,6 @@ class AppConfigurationModel:
         self._folder_providers = Path(value) if isinstance(value, str) else value
 
     @property
-    def folder_scraping(self) -> Path:
-        """Returns the folder path for scraping data."""
-        return self._folder_scraping
-
-    @folder_scraping.setter
-    def folder_scraping(self, value: Path | str) -> None:
-        """Sets the folder path for scraping data."""
-        if not value or str(value).strip() == "":
-            raise InvalidFolderScrapingError()
-        self._folder_scraping = Path(value) if isinstance(value, str) else value
-
-    @property
     def gui_booting_size(self) -> str:
         """Returns the default size of the GUI at booting."""
         return self._gui_booting_size
@@ -194,7 +175,7 @@ class AppConfigurationModel:
         """Returns the browser engine identifier used for scraping.
 
         Returns:
-            str: One of ``"playwright"`` or ``"patchright"``.
+            str: One of ``"playwright"`` or ``"scrapling"``.
         """
         return self._browser_engine
 
@@ -203,12 +184,12 @@ class AppConfigurationModel:
         """Sets the browser engine, validating against the allowed identifiers.
 
         Args:
-            value: Engine identifier — must be ``"playwright"`` or ``"patchright"``.
+            value: Engine identifier — must be ``"playwright"`` or ``"scrapling"``.
 
         Raises:
             ValueError: If the value is not a supported engine identifier.
         """
-        valid = [C_BROWSER_ENGINE_PLAYWRIGHT]  # , C_BROWSER_ENGINE_PATCHRIGHT --- IGNORE ---
+        valid = [C_BROWSER_ENGINE_PLAYWRIGHT]
         if value not in valid:
             raise InvalidBrowserEngineError(valid)
         self._browser_engine = value

@@ -97,7 +97,7 @@ class StepScrapingModel:
         self.parent_context = parent_context
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> "StepScrapingModel":
+    def import_from_data_json(cls, data: dict[str, Any]) -> StepScrapingModel:
         """Deserializes a step from a raw dictionary.
 
         Args:
@@ -143,7 +143,7 @@ class StepScrapingModel:
             "params": dict(self.params),
         }
 
-    def copy_business(self) -> "StepScrapingModel":
+    def copy_business(self) -> StepScrapingModel:
         """Creates a duplicate of the given step with a new unique ID.
 
         Args:

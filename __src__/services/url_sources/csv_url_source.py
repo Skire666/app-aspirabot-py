@@ -16,6 +16,7 @@ Example:
 from __future__ import annotations
 
 import csv
+import pathlib
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
 
@@ -117,7 +118,7 @@ class CsvUrlSourceProvider(IUrlSourceProvider):
             FileNotFoundError: If the file at ``self._path`` does not exist.
         """
         try:
-            with open(self._path, newline="", encoding="utf-8") as fh:
+            with pathlib.Path(self._path).open(newline="", encoding="utf-8") as fh:
                 reader = csv.reader(fh)
                 rows = [row for row in reader if row]
         except FileNotFoundError:

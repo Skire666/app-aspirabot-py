@@ -160,7 +160,7 @@ class CloseTabsFormDef(IStepFormDef):
         # si mode "<<CUSTOM>>"
         if model.params.get("filter_mode") == C_INPUT_IS_FILTER_CUSTOM:
             filter_custom = model.params.get("filter_custom", "")
-            return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre URL : '*{filter_custom!r}*'"
+            return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre URL : *{filter_custom}*"
         # si mode "<<URL>>"
         return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre : Garde l'URL de départ."
 

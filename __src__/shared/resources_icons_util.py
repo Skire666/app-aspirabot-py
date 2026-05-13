@@ -82,9 +82,9 @@ class ResourcesIcons:
         icon = icon_manager.get_icon("icon.png", (24, 24))
     """
 
-    _instance: "ResourcesIcons" | None = None
+    _instance: ResourcesIcons | None = None
 
-    def __new__(cls) -> "ResourcesIcons":
+    def __new__(cls) -> ResourcesIcons:
         """Initialize a resource manager.
 
         Args:
