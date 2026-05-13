@@ -272,7 +272,7 @@ class WorkflowView(ttk.Frame):
         self._var_name.set(data.get("provider_name", ""))
         self._var_url.set(data.get("url", ""))
         self._var_version.set(data.get("version", ""))
-        self.set_workflow_validation_message("(aucune vérification effectuée)", False)
+        self.set_workflow_validation_message("Vérification : --", False)
 
     def get_data(self) -> dict[str, Any]:
         """Reads data from the interface fields.

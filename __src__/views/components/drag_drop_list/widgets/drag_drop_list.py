@@ -142,7 +142,7 @@ class DragDropList(tk.Frame, Generic[T]):
         render_item: ItemRenderer[T],
         *,
         item_height: int = 48,
-        pad: int = 4,
+        pad: int = 2,
         gap_expand: int = 8,
         btn_size: int = 36,
         theme: dict[str, str] | None = None,
