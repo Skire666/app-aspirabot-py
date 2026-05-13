@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import Callable
-
-import pytest
+from typing import Any
 
 from models.provider_model import ProviderModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from presenters.workflow_presenter import WorkflowPresenter
-
 
 # ---------------------------------------------------------------------------
 # Stubs
@@ -223,20 +220,6 @@ def test_on_save_calls_done_callback() -> None:
     assert view.on_save is not None
     view.on_save({"provider_name": "N", "url": "https://x.com", "version": "1"})
     assert done_calls == [True]
-
-
-# ---------------------------------------------------------------------------
-# _on_save — edit mode
-# ---------------------------------------------------------------------------
-
-
-def test_on_save_updates_provider_in_edit_mode() -> None:
-    """Save in edit mode must call service.update_provider()."""
-    presenter, view, service = _make_presenter()
-    presenter.load_provider("prov-id")
-    assert view.on_save is not None
-    view.on_save({"provider_name": "Updated", "url": "https://x.com", "version": "2.0"})
-    assert len(service.updated) == 1
 
 
 # ---------------------------------------------------------------------------

@@ -206,7 +206,13 @@ class OpenUrlFormDef(IStepFormDef):
         timeout = model.params.get("timeout_duration", 0)
         unit_time = model.params.get("timeout_unit", "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return f"Ouvrir une URL  -  timeout : {timeout} {unit_display}\nUrl: 'TODO PCO'"
+        url_mode = model.params.get("url_mode")
+
+        url_used = (
+            f"Url : {model.params.get('url_custom', '')}" if url_mode == "<<CUSTOM>>" else "Prochaine URL dans la liste"
+        )
+
+        return f"Ouvrir une URL  -  timeout : {timeout} {unit_display}\n{url_used}"
 
 
 register_form(OpenUrlFormDef())

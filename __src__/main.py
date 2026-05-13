@@ -316,10 +316,10 @@ def _wire_provider_navigation(
 
     def on_request_edit_provider(id_file: str) -> None:
         # Load the selected provider into the edit form and navigate to it.
-        provider_edit_presenter.load_provider(id_file)
-        main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
-        main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.DISABLED)
-        main_view.show_view(C_TITLE_MODULE_WORKFLOW)
+        if provider_edit_presenter.load_provider(id_file):
+            main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
+            main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.DISABLED)
+            main_view.show_view(C_TITLE_MODULE_WORKFLOW)
 
     def on_edit_done() -> None:
         # Return to the list and disable the edit tab after save/cancel.

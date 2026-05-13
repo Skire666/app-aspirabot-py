@@ -33,20 +33,27 @@ class OpenUrlExecutor(IStepExecutor):
         p = OpenUrlParams.from_dict(context.step_params)
         page = browser.get_current_page()
 
+        # TODO PCO Url ou <<URL>> ou <<wCUSTOM>>
+
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
         if timeout_ms is not None:
-            page.goto(p.url, wait_until=p.wait_state, timeout=timeout_ms)
+            page.goto(p.url_custom, wait_until=p.wait_state, timeout=timeout_ms)
         else:
-            page.goto(p.url, wait_until=p.wait_state)
+            page.goto(p.url_custom, wait_until=p.wait_state)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
+        # ensure URL is clear it if switching back to <<URL>> mode to avoid confusion
+        if model.params["url_mode"] == "<<URL>>":  # else "<<CUSTOM>>"
+            model.params["url_custom"] = ""
+
+        # var
         p = OpenUrlParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
 
         errors: list[str] = []
-        if not p.url.strip():
+        if p.url_mode is None or (p.url_mode == "<<CUSTOM>>" and not p.url_custom):
             errors.append(f"Dans l'étape {index_display}. : l'URL est obligatoire.")
         if p.timeout_duration <= 0:
             errors.append(f"Dans l'étape {index_display}. : Timeout doit être >= 1.")

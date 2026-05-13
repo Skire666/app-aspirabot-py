@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import tkinter as tk
-from datetime import datetime
 from tkinter import ttk
 from typing import Any, override
 
@@ -72,7 +71,6 @@ class JumpToStepFormDef(IStepFormDef):
         default_choice = all_choices_listbox[0] if all_choices_listbox else ""
 
         # GUI
-        print(f"A) {datetime.now()} default_choice = {default_choice!r}")
 
         target_var = tk.StringVar(value=default_choice)
         widgets["_choice_from_listbox"] = target_var  # important de passer le stringvar
@@ -116,8 +114,6 @@ class JumpToStepFormDef(IStepFormDef):
 
         widgets["_choice_from_listbox"].set(choice_str)  # Clear selection if target is invalid.
         widgets["comment"].set(model.params.get("comment", ""))
-        print(f"B) {datetime.now()} target_hexastring = {target_hexastring!r}")
-        print(f"B) {datetime.now()} choice_str = {choice_str!r}")
 
     @staticmethod
     def compute_string_displayed_in_combobox(index: int, model: StepScrapingModel) -> str:
@@ -135,8 +131,6 @@ class JumpToStepFormDef(IStepFormDef):
 
         choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
         hexastring = self._extract_after_hash_hexastring(choice_target_hexastring)
-        print(f"C) {datetime.now()} hexastring : {hexastring!r}")
-        print(f"C) {datetime.now()} choice_target_hexastring : {choice_target_hexastring!r}")
         return {
             "condition": CONDITION_VIEW_TO_MODEL.get(cond_display, "success"),
             "target_hexastring": hexastring,
@@ -166,7 +160,6 @@ class JumpToStepFormDef(IStepFormDef):
 
         all_hexastring_to_model = widgets.get("_all_hexastring_to_model", {})
 
-        print(f"D) {datetime.now()} hexastring : {hexastring!r}")
         # si n'existe pas dans la liste des cibles possibles, c'est une erreur
         if hexastring not in all_hexastring_to_model:
             return [f"L'étape cible '#{hexastring}' : doit être valide"]

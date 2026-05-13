@@ -41,7 +41,8 @@ class ScrapingService:
 
     All browser and page concerns are delegated to IWebBrowserService. Cross-step
     state (pending jump, end-process flag, image dedup set, statistics) is
-    owned here and injected into each executor via runtime params.
+    owned by a single ScrapingContextModel reference and injected into each
+    executor directly.
 
     Example:
         >>> from services.web_browser_service import BrowserService
@@ -61,7 +62,7 @@ class ScrapingService:
 
         Args:
             folder_scraping: Working folder forwarded to step executors via
-                the ``_folder`` runtime param key.
+                ``context.folder``.
             browser_service: Concrete browser service implementation to use
                 for all browser lifecycle and page operations.
             workflow_service: Service for resolving step executors by type.
@@ -70,19 +71,18 @@ class ScrapingService:
         self._browser_service = browser_service
         self._workflow_service = workflow_service
 
-        # contexte
-        self._folder_scraping = folder_scraping
-        self._prev_step_success: bool = True
-        self._downloaded_image_urls: set[str] = set()
-        self._step_id_by_index: list[str] = []
-        self._step_index_by_id: dict[str, int] = {}
-        self._pause_event_ref: threading.Event | None = None
-        self._cancel_event_ref: threading.Event | None = None
-        self._on_user_wait: Callable[[], None] | None = None
-        self._pending_jump: str | int | None = None
-        self._last_message_step: str = ""
-        self._end_process_requested: bool = False
-        self._total_steps_available: int = 0
+        # Single context reference — initialized to safe defaults, updated each run.
+        self._context: ScrapingContextModel = ScrapingContextModel(
+            prev_success=True,
+            folder=folder_scraping,
+            downloaded_urls=set(),
+            step_id_by_index=[],
+            step_index_by_id={},
+            pause_event=threading.Event(),
+            cancel_event=threading.Event(),
+            on_user_wait=None,
+            step_params={},
+        )
 
         # Run-level statistics counters.
         self._steps_success_count: int = 0
@@ -92,7 +92,7 @@ class ScrapingService:
 
         self._started_at: datetime | None = None
 
-        # Run-scoped references stored for stateful step executors.
+        # Run-scoped callbacks.
         self._on_step_start: Callable[[StepScrapingModel], None] | None = None
         self._on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None
 
@@ -126,16 +126,16 @@ class ScrapingService:
         Returns:
             A ScrapingReportModel summarising the completed run.
         """
-        # Store run-scoped references used by executors and callbacks.
-        self._pause_event_ref = pause_event
-        self._cancel_event_ref = cancel_event
-        self._on_user_wait = on_user_wait
+        # Store run-scoped references on the context and as service callbacks.
+        self._context.pause_event = pause_event
+        self._context.cancel_event = cancel_event
+        self._context.on_user_wait = on_user_wait
         self._on_step_start = on_step_start
         self._on_step_done = on_step_done
         self._started_at = datetime.now()
 
         # Initialise the browser and run all steps.
-        cancelled = self._run_browser_lifecycle(provider, cancel_event, pause_event, on_init_step)
+        cancelled = self._run_browser_lifecycle(provider, on_init_step)
         return self._build_report(cancelled)
 
     def get_page_info(self) -> tuple[str, int]:
@@ -150,7 +150,6 @@ class ScrapingService:
         if not self._browser_service.is_launched:
             return "", 0
         try:
-            # Delegate page access entirely to the browser service.
             page = self._browser_service.get_current_page()
             url = page.url or ""
             tabs = len(self._browser_service.get_all_pages())
@@ -180,16 +179,12 @@ class ScrapingService:
     def _run_browser_lifecycle(
         self,
         provider: ProviderModel,
-        cancel_event: threading.Event,
-        pause_event: threading.Event,
         on_init_step: Callable[[str], None] | None,
     ) -> bool:
         """Launch browser, open initial page, run steps, close browser.
 
         Args:
             provider: Provider model with browser config and workflow steps.
-            cancel_event: Abort signal.
-            pause_event: Pause/resume signal.
             on_init_step: Callback for init-phase status messages.
 
         Returns:
@@ -201,12 +196,12 @@ class ScrapingService:
             self._emit_init("Création du contexte de navigation…", on_init_step)
             self._browser_service.append_new_page()
             self._emit_init("Démarrage des étapes du workflow…", on_init_step)
-            self._run_steps(provider.steps, cancel_event, pause_event)
+            self._run_steps(provider.steps)
         finally:
             # Always close the browser even if a step raised an exception.
             self._browser_service.close_browser()
 
-        return cancel_event.is_set()
+        return self._context.cancel_event.is_set()
 
     def _emit_init(self, message: str, callback: Callable[[str], None] | None) -> None:
         """Log an init-phase message and forward it to the optional callback.
@@ -231,7 +226,7 @@ class ScrapingService:
         return ScrapingReportModel(
             started_at=self._started_at or datetime.now(),
             finished_at=datetime.now(),
-            steps_total=self._total_steps_available,
+            steps_total=len(self._context.step_id_by_index),
             steps_success=self._steps_success_count,
             steps_failed=self._steps_failed_count,
             clicks_performed=self._clicks_count,
@@ -243,22 +238,15 @@ class ScrapingService:
     # Step iteration
     # ------------------------------------------------------------------
 
-    def _run_steps(
-        self,
-        steps: list[StepScrapingModel],
-        cancel_event: threading.Event,
-        pause_event: threading.Event,
-    ) -> int:
+    def _run_steps(self, steps: list[StepScrapingModel]) -> int:
         """Iterate over steps, execute each, and return the failure count.
 
         Supports non-sequential execution via JUMP_TO_STEP and early
-        termination via END_PROCESS. Blocks between steps when pause_event
-        is cleared.
+        termination via END_PROCESS. Blocks between steps when the context
+        pause_event is cleared.
 
         Args:
             steps: Ordered list of scraping steps to run.
-            cancel_event: Abort signal.
-            pause_event: Pause/resume signal.
 
         Returns:
             The number of steps that failed.
@@ -267,14 +255,14 @@ class ScrapingService:
         i = 0
 
         while i < len(steps):
-            if cancel_event.is_set():
+            if self._context.cancel_event.is_set():
                 break
             # Block here while the run is paused.
-            pause_event.wait()
-            if cancel_event.is_set():
+            self._context.pause_event.wait()
+            if self._context.cancel_event.is_set():
                 break
             i = self._run_one_step(steps[i], i)
-            if self._end_process_requested:
+            if self._context.end_process:
                 break
 
         return self._steps_failed_count
@@ -285,21 +273,21 @@ class ScrapingService:
         Args:
             steps: The full ordered list of steps for the upcoming run.
         """
-        self._prev_step_success = True
-        self._pending_jump = None
-        self._end_process_requested = False
-        self._downloaded_image_urls = set()
+        self._context.prev_success = True
+        self._context.pending_jump = None
+        self._context.end_process = False
+        self._context.downloaded_urls = set()
+        self._context.last_message_step = ""
+
+        # Build fast-lookup maps used by JUMP_TO_STEP resolution.
+        self._context.step_id_by_index = [step.step_id for step in steps]
+        self._context.step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
 
         # Reset per-run statistics counters.
         self._steps_success_count = 0
         self._steps_failed_count = 0
         self._clicks_count = 0
         self._urls_opened_count = 0
-
-        # Build fast-lookup maps used by JUMP_TO_STEP resolution.
-        self._step_id_by_index = [step.step_id for step in steps]
-        self._step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
-        self._total_steps_available = len(steps)
 
     def _run_one_step(self, step: StepScrapingModel, index: int) -> int:
         """Execute one step, update stats, fire callback, return next index.
@@ -328,7 +316,7 @@ class ScrapingService:
 
         # Resolve any pending jump or simply advance to the next step.
         next_index = self._consume_pending_jump(index)
-        self._prev_step_success = success
+        self._context.prev_success = success
         return next_index
 
     def _update_step_stats(self, step: StepScrapingModel, success: bool) -> None:
@@ -358,12 +346,12 @@ class ScrapingService:
         Returns:
             The resolved next step index.
         """
-        if self._pending_jump is None:
+        if self._context.pending_jump is None:
             return current_index + 1
 
         # Resolve the target and clear the signal before returning.
-        next_index = self._resolve_jump_index(self._pending_jump, current_index)
-        self._pending_jump = None
+        next_index = self._resolve_jump_index(self._context.pending_jump, current_index)
+        self._context.pending_jump = None
         return next_index
 
     def _resolve_jump_index(self, pending_jump: str | int, current_index: int) -> int:
@@ -377,14 +365,14 @@ class ScrapingService:
             A valid step index to jump to.
         """
         if isinstance(pending_jump, int):
-            if 0 <= pending_jump < self._total_steps_available:
+            if 0 <= pending_jump < len(self._context.step_id_by_index):
                 return pending_jump
             self._logger.warning("JUMP_TO_STEP: invalid index %s.", pending_jump)
             return current_index + 1
 
         if isinstance(pending_jump, str):
             # Look up the step_id in the pre-built map.
-            next_index = self._step_index_by_id.get(pending_jump)
+            next_index = self._context.step_index_by_id.get(pending_jump)
             if next_index is not None:
                 return next_index
             self._logger.warning("JUMP_TO_STEP: step_id not found %s.", pending_jump)
@@ -398,6 +386,11 @@ class ScrapingService:
     def _execute_step(self, step: StepScrapingModel) -> tuple[bool, str]:
         """Dispatch a step to its registered executor and convert exceptions.
 
+        The context is updated in place before calling the executor; output
+        signals (last_message_step, pending_jump, end_process) are written
+        directly onto self._context by the executor and read back by the
+        orchestration methods after this call returns.
+
         Args:
             step: The step model to execute.
 
@@ -407,46 +400,16 @@ class ScrapingService:
         if not step.is_active:
             return True, "SKIP"
 
-        context = self._build_context(step)
+        # Prepare per-step state on the shared context.
+        self._context.step_params = dict(step.params)
+        self._context.last_message_step = ""
+        self._context.pending_jump = None
+        self._context.end_process = False
+
         try:
             executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
-            executor.execute_logical(self._browser_service, context)
-            # Read back output signals written by stateful executors.
-            self._read_back_output_signals(context)
+            executor.execute_logical(self._browser_service, self._context)
         except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors
             return False, f"Unexpected error: {exc}"
         else:
-            return True, context.last_message_step or "OK"
-
-    def _build_context(self, step: StepScrapingModel) -> ScrapingContextModel:
-        """Build the typed runtime context for the step executor.
-
-        Args:
-            step: The step model providing base params and metadata.
-
-        Returns:
-            A ScrapingContextModel carrying step params and orchestrator state.
-        """
-        return ScrapingContextModel(
-            prev_success=self._prev_step_success,
-            folder=self._folder_scraping,
-            downloaded_urls=self._downloaded_image_urls,
-            step_id_by_index=self._step_id_by_index,
-            step_index_by_id=self._step_index_by_id,
-            pause_event=self._pause_event_ref,
-            cancel_event=self._cancel_event_ref,
-            on_user_wait=self._on_user_wait,
-            step_params=dict(step.params),
-        )
-
-    def _read_back_output_signals(self, context: ScrapingContextModel) -> None:
-        """Read stateful output signals written back by executors into the context.
-
-        Args:
-            context: The context object after executor.execute_logical().
-        """
-        self._last_message_step = context.last_message_step
-        if context.pending_jump is not None:
-            self._pending_jump = context.pending_jump
-        if context.end_process:
-            self._end_process_requested = True
+            return True, self._context.last_message_step or "OK"

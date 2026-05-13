@@ -82,13 +82,18 @@ class WorkflowPresenter:
         self._view.load_data(self._provider_to_dict(self._current_provider))
         self._view.show_inline_form(None)
 
-    def load_provider(self, id_file: str) -> None:
+    def load_provider(self, id_file: str) -> bool:
         """Passe le presentateur en mode modification et charge le modele specifie.
 
         Args:
             id_file: L'ID fichier du fournisseur à supprimer.
         """
         self._is_creation_mode = False
+
+        if not self._service.exists_provider(id_file):
+            self._view.show_error(f"Le fournisseur avec l'ID '{id_file}' n'existe pas.")
+            return False
+
         self._current_provider = self._service.read_provider(id_file)
 
         unique_list_id_step: set[str] = set()
@@ -101,6 +106,7 @@ class WorkflowPresenter:
         self._workflow_presenter.load(self._current_provider.id_file)
         self._view.load_data(self._provider_to_dict(self._current_provider))
         self._view.show_inline_form(None)
+        return True
 
     @staticmethod
     def _provider_to_dict(provider: ProviderModel) -> dict[str, Any]:
@@ -148,7 +154,7 @@ class WorkflowPresenter:
             self._persist_provider()
 
         except Exception as exc:
-            self._logger.error("Une erreur s'est produite", exc_info=True)
+            self._logger.exception("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
 
     def _persist_provider(self) -> None:
