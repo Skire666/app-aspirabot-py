@@ -18,6 +18,8 @@ from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
+from __src__.views.components.canvas_checkbox import CanvasCheckbox
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -55,6 +57,9 @@ class EndProcessFormDef(IStepFormDef):
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets["wait_unit"] = unit_var
 
+        # export data
+        self._build_subform_clear_cache(frame, widgets)
+
         # ROW 1 — comment
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
@@ -63,6 +68,16 @@ class EndProcessFormDef(IStepFormDef):
         comm_var = tk.StringVar(value="")
         ttk.Entry(row1, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
+
+    def _build_subform_clear_cache(self, frame, widgets):
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=(0, 8))
+
+        export_var = tk.BooleanVar(value=False)
+        CanvasCheckbox(row0, text="Exporter enregistrements textuels", variable=export_var).pack(
+            side="left", padx=(0, 5)
+        )
+        widgets["export_data"] = export_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:

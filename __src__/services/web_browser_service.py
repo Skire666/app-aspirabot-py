@@ -19,7 +19,6 @@ Example:
 
 import logging
 import time
-from collections.abc import Callable
 from pathlib import Path
 
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -49,21 +48,15 @@ class BrowserService(IWebBrowserService):
         >>> svc.close_browser()
     """
 
-    def __init__(
-        self,
-        folder_scraping: Path,
-        log_callback: Callable[[str], None] | None = None,
-    ) -> None:
+    def __init__(self, folder_scraping: Path) -> None:
         """Initialise the service without launching the browser yet.
 
         Args:
             folder_scraping: Base folder used to locate browser profiles
                 and extension directories.
-            log_callback: Optional callback for user-visible log messages.
         """
         self._logger = logging.getLogger(__name__)
         self._folder_scraping = folder_scraping
-        self._log_callback = log_callback
 
         # Lifecycle state — populated by launch(), cleared by close_browser().
         self._pw: Playwright | None = None
@@ -117,6 +110,23 @@ class BrowserService(IWebBrowserService):
         # _on_context_new_page handles registration — do not append here.
         self._context.new_page()
 
+    def close_all_tabs(self) -> None:
+        """Close all open pages/tabs in the browser.
+
+        Returns:
+            None.
+
+        Raises:
+            RuntimeError: If ``launch()`` has not been called yet.
+        """
+        if self._context is None:
+            raise BrowserNotLaunchedError()
+
+        # Close each page; the context event will handle de-registration.
+        for page in self._pages:
+            page.close()
+        self._pages.clear()
+
     def get_current_page(self) -> Page:
         """Return the primary browser page (the first one opened).
 
@@ -126,7 +136,7 @@ class BrowserService(IWebBrowserService):
         Raises:
             RuntimeError: If no page is available.
         """
-        if not self._pages:
+        if not self._pages or len(self._pages) == 0 or self._pages[0].is_closed():
             raise BrowserNotLaunchedError()
 
         # First page in the list is always the primary workflow page.
@@ -148,7 +158,7 @@ class BrowserService(IWebBrowserService):
         """
         try:
             # Clear page registry before closing so stale references are gone.
-            self._pages.clear()
+            self.close_all_tabs()
 
             # Close in reverse-creation order: context → browser → playwright.
             if self._context is not None:
@@ -179,17 +189,6 @@ class BrowserService(IWebBrowserService):
             bool: current launch state.
         """
         return self._pw is not None
-
-    def set_log_callback(self, callback: Callable[[str], None] | None) -> None:
-        """Register or clear the user-visible log callback.
-
-        Args:
-            callback: Callable receiving a log message string, or ``None``.
-
-        Returns:
-            None.
-        """
-        self._log_callback = callback
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> object:
         """Evaluate a JS snippet on the current page with retries on failure.
@@ -277,22 +276,3 @@ class BrowserService(IWebBrowserService):
         """
         if page in self._pages:
             self._pages.remove(page)
-
-    # ------------------------------------------------------------------
-    # Private helpers — logging
-    # ------------------------------------------------------------------
-
-    def _log(self, message: str) -> None:
-        """Emit a message via the internal logger and the optional callback.
-
-        Args:
-            message: Human-readable log message.
-
-        Returns:
-            None.
-        """
-        self._logger.info(message)
-
-        # Forward to the user-visible callback when one is registered.
-        if self._log_callback is not None:
-            self._log_callback(message)

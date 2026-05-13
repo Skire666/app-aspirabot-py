@@ -33,6 +33,8 @@ class EndProcessExecutor(IStepExecutor):
         delay = float(p.wait_duration) * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.wait_unit, 1.0)
         if delay > 0:
             time.sleep(delay)
+
+        browser.close_all_tabs()  # ensure all tabs are closed before signaling end-process
         # Signal end-process to the service via the mutable params dict.
         params["_end_process"] = True
 

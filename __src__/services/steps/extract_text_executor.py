@@ -41,6 +41,7 @@ class ExtractTextExecutor(IStepExecutor):
         selected = [elements[0]] if p.target == "first" else [elements[-1]] if p.target == "last" else elements
         texts = [extract_from_element(el, p.extract_mode) for el in selected]
         _logger.info("EXTRACT_TEXT [%s]: %s", p.selector, "\n".join(texts)[:500])
+        # TODO PCO
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

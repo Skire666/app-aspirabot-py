@@ -58,12 +58,7 @@ class RefreshPageFormDef(IStepFormDef):
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the form widgets into the given frame."""
         # ROW 0
-        row0 = ttk.Frame(frame)
-        row0.pack(fill="x", pady=(0, 8))
-
-        cache_var = tk.BooleanVar(value=False)
-        CanvasCheckbox(row0, text="Vider le cache (Ctrl + F5)", variable=cache_var).pack(side="left", padx=(0, 5))
-        widgets["clear_cache"] = cache_var
+        self._build_subform_clear_cache(frame, widgets)
 
         self._build_subform_wait_state(frame, widgets)
 
@@ -77,6 +72,14 @@ class RefreshPageFormDef(IStepFormDef):
         comm_var = tk.StringVar(value="")
         ttk.Entry(row1, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
         widgets["comment"] = comm_var
+
+    def _build_subform_clear_cache(self, frame, widgets):
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=(0, 8))
+
+        cache_var = tk.BooleanVar(value=False)
+        CanvasCheckbox(row0, text="Vider le cache (Ctrl + F5)", variable=cache_var).pack(side="left", padx=(0, 5))
+        widgets["clear_cache"] = cache_var
 
     @staticmethod
     def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:

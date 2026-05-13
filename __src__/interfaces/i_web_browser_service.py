@@ -19,7 +19,6 @@ Example:
 # ---------------------------------------------------------------------------
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 
 from models.provider_model import ProviderModel
 from playwright.sync_api import Page
@@ -124,14 +123,13 @@ class IWebBrowserService(ABC):
         """
 
     @abstractmethod
-    def set_log_callback(self, callback: Callable[[str], None] | None) -> None:
-        """Register or clear a callback for browser-level log messages.
+    def close_all_tabs(self) -> None:
+        """Close all open tabs but keep the browser running.
 
-        The callback is invoked with a plain string for every significant
-        browser event (launch, warmup, routing). Pass ``None`` to remove it.
-
-        Args:
-            callback: Callable receiving a log message string, or ``None``.
+        This is a helper method that can be called by executors to ensure a
+        clean state (e.g. after a failed step). The implementation should
+        close all tracked pages and clear the internal page list, but not
+        close the browser itself.
 
         Returns:
             None.

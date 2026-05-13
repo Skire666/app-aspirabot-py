@@ -82,6 +82,8 @@ class DownloadImageExecutor(IStepExecutor):
         for image in targets:
             img_src = str(image.get("src", ""))
             full_url = urljoin(page.url, img_src)
+
+            # If unique_only is True, skip downloading if the URL has already been downloaded
             if p.unique_only and full_url in downloaded_urls:
                 continue
 

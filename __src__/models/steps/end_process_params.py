@@ -16,16 +16,22 @@ class EndProcessParams(IStepParams):
 
     wait_duration: int
     wait_unit: str
+    export_data: bool
     comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(wait_duration=1, wait_unit=C_UNITS_TIME_DEFAULT_MODEL, comment="")
+        return cls(wait_duration=1, wait_unit=C_UNITS_TIME_DEFAULT_MODEL, export_data=False, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"wait_duration": self.wait_duration, "wait_unit": self.wait_unit, "comment": self.comment}
+        return {
+            "wait_duration": self.wait_duration,
+            "wait_unit": self.wait_unit,
+            "export_data": self.export_data,
+            "comment": self.comment,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
@@ -33,6 +39,7 @@ class EndProcessParams(IStepParams):
         return cls(
             wait_duration=int(data.get("wait_duration", 1)),
             wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            export_data=data.get("export_data", False),
             comment=data.get("comment", ""),
         )
 
