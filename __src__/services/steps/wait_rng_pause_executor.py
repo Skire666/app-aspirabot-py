@@ -8,6 +8,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_rng_pause_params import WaitRngPauseParams
 from services.workflow_service import register_step_executor
@@ -28,9 +29,9 @@ class WaitRngPauseExecutor(IStepExecutor):
         return WaitRngPauseParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitRngPauseParams.from_dict(params)
+        p = WaitRngPauseParams.from_dict(context.step_params)
         delay = random.uniform(float(p.min_val), float(p.max_val))
         time.sleep(delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.unit, 1.0))
 

@@ -7,6 +7,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.count_html_elements_params import CountHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
@@ -30,9 +31,9 @@ class CountHtmlElementsExecutor(IStepExecutor):
         return CountHtmlElementsParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = CountHtmlElementsParams.from_dict(params)
+        p = CountHtmlElementsParams.from_dict(context.step_params)
         page = browser.get_current_page()
 
         count = page.locator(p.selector).count()
@@ -42,7 +43,7 @@ class CountHtmlElementsExecutor(IStepExecutor):
             val_desc = str(p.value)
             raise CountHtmlElementsConditionNotMetError(count, p.operator, val_desc)
 
-        params["_last_message_step"] = (
+        context.last_message_step = (
             f"Trouvé {count} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
         )
 

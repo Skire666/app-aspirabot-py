@@ -7,6 +7,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_x_time_params import WaitXTimeParams
 from services.workflow_service import register_step_executor
@@ -27,9 +28,9 @@ class WaitXTimeExecutor(IStepExecutor):
         return WaitXTimeParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitXTimeParams.from_dict(params)
+        p = WaitXTimeParams.from_dict(context.step_params)
         time.sleep(p.duration * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.unit, 1.0))
 
     @override

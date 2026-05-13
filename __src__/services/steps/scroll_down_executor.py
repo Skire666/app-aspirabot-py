@@ -6,6 +6,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.scroll_down_params import ScrollDownParams
 from services.workflow_service import register_step_executor
@@ -29,9 +30,9 @@ class ScrollDownExecutor(IStepExecutor):
         return ScrollDownParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = ScrollDownParams.from_dict(params)
+        p = ScrollDownParams.from_dict(context.step_params)
 
         browser.evaluate_script_with_safe_retry(
             f"window.scrollBy(0, {p.pixels})", C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT

@@ -6,6 +6,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.close_tabs_params import CloseTabsParams
 from services.workflow_service import register_step_executor
@@ -26,9 +27,9 @@ class CloseTabsExecutor(IStepExecutor):
         return CloseTabsParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = CloseTabsParams.from_dict(params)
+        p = CloseTabsParams.from_dict(context.step_params)
         current_page = browser.get_current_page()
 
         counter_closed = 0
@@ -38,7 +39,7 @@ class CloseTabsExecutor(IStepExecutor):
                 p_tab.close()
                 counter_closed += 1
 
-        params["_last_message_step"] = (
+        context.last_message_step = (
             f"Fermé {counter_closed} onglet(s) ne correspondant pas au filtre URL {p.url_filter!r}."
             if p.url_filter
             else ""

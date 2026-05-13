@@ -22,11 +22,11 @@ import time
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.provider_model import ProviderModel
+from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from services.workflow_service import WorkflowService
@@ -67,19 +67,22 @@ class ScrapingService:
             workflow_service: Service for resolving step executors by type.
         """
         self._logger = logging.getLogger(__name__)
-        self._folder_scraping = folder_scraping
         self._browser_service = browser_service
         self._workflow_service = workflow_service
 
-        # Per-run mutable state — reset at the start of each run.
+        # contexte
+        self._folder_scraping = folder_scraping
         self._prev_step_success: bool = True
-        self._pending_jump: str | int | None = None
-        self._last_message_step: str = ""
-        self._end_process_requested: bool = False
         self._downloaded_image_urls: set[str] = set()
         self._step_id_by_index: list[str] = []
         self._step_index_by_id: dict[str, int] = {}
-        self._steps_count: int = 0
+        self._pause_event_ref: threading.Event | None = None
+        self._cancel_event_ref: threading.Event | None = None
+        self._on_user_wait: Callable[[], None] | None = None
+        self._pending_jump: str | int | None = None
+        self._last_message_step: str = ""
+        self._end_process_requested: bool = False
+        self._total_steps_available: int = 0
 
         # Run-level statistics counters.
         self._steps_success_count: int = 0
@@ -90,9 +93,6 @@ class ScrapingService:
         self._started_at: datetime | None = None
 
         # Run-scoped references stored for stateful step executors.
-        self._pause_event_ref: threading.Event | None = None
-        self._cancel_event_ref: threading.Event | None = None
-        self._on_user_wait: Callable[[], None] | None = None
         self._on_step_start: Callable[[StepScrapingModel], None] | None = None
         self._on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None
 
@@ -231,7 +231,7 @@ class ScrapingService:
         return ScrapingReportModel(
             started_at=self._started_at or datetime.now(),
             finished_at=datetime.now(),
-            steps_total=self._steps_count,
+            steps_total=self._total_steps_available,
             steps_success=self._steps_success_count,
             steps_failed=self._steps_failed_count,
             clicks_performed=self._clicks_count,
@@ -299,7 +299,7 @@ class ScrapingService:
         # Build fast-lookup maps used by JUMP_TO_STEP resolution.
         self._step_id_by_index = [step.step_id for step in steps]
         self._step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
-        self._steps_count = len(steps)
+        self._total_steps_available = len(steps)
 
     def _run_one_step(self, step: StepScrapingModel, index: int) -> int:
         """Execute one step, update stats, fire callback, return next index.
@@ -377,7 +377,7 @@ class ScrapingService:
             A valid step index to jump to.
         """
         if isinstance(pending_jump, int):
-            if 0 <= pending_jump < self._steps_count:
+            if 0 <= pending_jump < self._total_steps_available:
                 return pending_jump
             self._logger.warning("JUMP_TO_STEP: invalid index %s.", pending_jump)
             return current_index + 1
@@ -407,55 +407,46 @@ class ScrapingService:
         if not step.is_active:
             return True, "SKIP"
 
-        runtime_params = self._build_runtime_params(step)
+        context = self._build_context(step)
         try:
             executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
-            executor.execute_logical(self._browser_service, runtime_params)
+            executor.execute_logical(self._browser_service, context)
             # Read back output signals written by stateful executors.
-            self._read_back_output_signals(runtime_params)
+            self._read_back_output_signals(context)
         except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors
             return False, f"Unexpected error: {exc}"
         else:
-            last_message = runtime_params.get("_last_message_step", "OK")
-            return True, last_message
+            return True, context.last_message_step or "OK"
 
-    def _build_runtime_params(self, step: StepScrapingModel) -> dict[str, Any]:
-        """Build a runtime-enriched parameter dict for the step executor.
+    def _build_context(self, step: StepScrapingModel) -> ScrapingContextModel:
+        """Build the typed runtime context for the step executor.
 
         Args:
             step: The step model providing base params and metadata.
 
         Returns:
-            A mutable dict combining step params and injected runtime keys.
+            A ScrapingContextModel carrying step params and orchestrator state.
         """
-        runtime_params: dict[str, Any] = dict(step.params)
-
-        # Inject cross-step state and run-scoped references.
-        runtime_params.update(
-            {
-                "_prev_success": self._prev_step_success,
-                "_folder": self._folder_scraping,
-                "_downloaded_urls": self._downloaded_image_urls,
-                "_step_id_by_index": self._step_id_by_index,
-                "_step_index_by_id": self._step_index_by_id,
-                "_pause_event": self._pause_event_ref,
-                "_cancel_event": self._cancel_event_ref,
-                "_on_user_wait": self._on_user_wait,
-                "_last_message_step": "",  # clear
-            }
+        return ScrapingContextModel(
+            prev_success=self._prev_step_success,
+            folder=self._folder_scraping,
+            downloaded_urls=self._downloaded_image_urls,
+            step_id_by_index=self._step_id_by_index,
+            step_index_by_id=self._step_index_by_id,
+            pause_event=self._pause_event_ref,
+            cancel_event=self._cancel_event_ref,
+            on_user_wait=self._on_user_wait,
+            step_params=dict(step.params),
         )
-        return runtime_params
 
-    def _read_back_output_signals(self, runtime_params: dict[str, Any]) -> None:
-        """Read stateful output signals written back by executors into params.
+    def _read_back_output_signals(self, context: ScrapingContextModel) -> None:
+        """Read stateful output signals written back by executors into the context.
 
         Args:
-            runtime_params: The enriched params dict after executor.execute().
+            context: The context object after executor.execute_logical().
         """
-        # Stateful executors write these keys to communicate with the orchestrator.
-        if runtime_params.get("_last_message_step") is not None:
-            self._last_message_step = runtime_params["_last_message_step"]
-        if runtime_params.get("_pending_jump") is not None:
-            self._pending_jump = runtime_params["_pending_jump"]
-        if runtime_params.get("_end_process"):
+        self._last_message_step = context.last_message_step
+        if context.pending_jump is not None:
+            self._pending_jump = context.pending_jump
+        if context.end_process:
             self._end_process_requested = True

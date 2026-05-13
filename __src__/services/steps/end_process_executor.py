@@ -7,6 +7,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.end_process_params import EndProcessParams
 from services.workflow_service import register_step_executor
@@ -27,16 +28,15 @@ class EndProcessExecutor(IStepExecutor):
         return EndProcessParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = EndProcessParams.from_dict(params)
+        p = EndProcessParams.from_dict(context.step_params)
         delay = float(p.wait_duration) * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.wait_unit, 1.0)
         if delay > 0:
             time.sleep(delay)
 
         browser.close_all_tabs()  # ensure all tabs are closed before signaling end-process
-        # Signal end-process to the service via the mutable params dict.
-        params["_end_process"] = True
+        context.end_process = True
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

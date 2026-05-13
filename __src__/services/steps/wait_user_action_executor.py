@@ -7,6 +7,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_user_action_params import WaitUserActionParams
 from services.workflow_service import register_step_executor
@@ -27,26 +28,21 @@ class WaitUserActionExecutor(IStepExecutor):
         return WaitUserActionParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitUserActionParams.from_dict(params)
-        prev_success: bool = params.get("_prev_success", True)
+        p = WaitUserActionParams.from_dict(context.step_params)
         should_pause = (
             p.condition == "always"
-            or (p.condition == "success" and prev_success)
-            or (p.condition == "failure" and not prev_success)
+            or (p.condition == "success" and context.prev_success)
+            or (p.condition == "failure" and not context.prev_success)
         )
         if not should_pause:
             return
-        on_user_wait = params.get("_on_user_wait")
-        if callable(on_user_wait):
-            on_user_wait()
-        pause_event = params.get("_pause_event")
-        if pause_event is not None:
-            pause_event.clear()
-            pause_event.wait()
-        cancel_event = params.get("_cancel_event")
-        cancelled = cancel_event is not None and cancel_event.is_set()
+        if callable(context.on_user_wait):
+            context.on_user_wait()
+        context.pause_event.clear()
+        context.pause_event.wait()
+        cancelled = context.cancel_event.is_set()
         if p.wait_duration >= 1 and not cancelled:
             time.sleep(float(p.wait_duration) * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.wait_unit, 1.0))
 

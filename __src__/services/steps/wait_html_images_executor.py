@@ -7,6 +7,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition
@@ -58,9 +59,9 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         return WaitHtmlImagesParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitHtmlImagesParams.from_dict(params)
+        p = WaitHtmlImagesParams.from_dict(context.step_params)
         nbr_delay_in_sec = p.retry_delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.retry_unit, 1.0)
         count: int = -1
 
@@ -74,8 +75,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
                 raise CountHtmlImagesConditionNotMetError(count, p.operator, str(p.quantity))
             time.sleep(nbr_delay_in_sec)
 
-        # success case: store a message in the mutable params dict to be used by potential next steps (e.g. for logging or user feedback).
-        params["_last_message_step"] = f"Trouvé {count} image(s), condition vérifiée."
+        context.last_message_step = f"Trouvé {count} image(s), condition vérifiée."
 
     @staticmethod
     def _get_filtered_images(browser: IWebBrowserService, params: dict[str, int]) -> list[dict[str, Any]]:

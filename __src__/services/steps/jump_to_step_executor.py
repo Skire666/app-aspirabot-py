@@ -6,6 +6,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.jump_to_step_params import JumpToStepParams
 from services.workflow_service import register_step_executor
@@ -25,21 +26,19 @@ class JumpToStepExecutor(IStepExecutor):
         return JumpToStepParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = JumpToStepParams.from_dict(params)
-        prev_success: bool = params.get("_prev_success", True)
+        p = JumpToStepParams.from_dict(context.step_params)
         should_jump = (
             p.condition == "always"
-            or (prev_success and p.condition == "success")
-            or (not prev_success and p.condition == "failure")
+            or (context.prev_success and p.condition == "success")
+            or (not context.prev_success and p.condition == "failure")
         )
-        target_step_id = params.get("target_hexastring", "")
+        target_step_id = context.step_params.get("target_hexastring", "")
         if should_jump and target_step_id:
-            # Signal the service by writing to the mutable params dict.
-            params["_pending_jump"] = target_step_id
+            context.pending_jump = target_step_id
 
-        params["_last_message_step"] = (
+        context.last_message_step = (
             f"Condition de saut vérifiée : {'saut' if should_jump else 'pas de saut'} vers l'étape [{target_step_id}]."
         )
 

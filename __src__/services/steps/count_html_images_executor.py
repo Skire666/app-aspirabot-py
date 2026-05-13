@@ -6,6 +6,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.count_html_images_params import CountHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition
@@ -28,17 +29,17 @@ class CountHtmlImagesExecutor(IStepExecutor):
         return CountHtmlImagesParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = CountHtmlImagesParams.from_dict(params)
-        all_images = self._get_filtered_images(browser, params)
+        p = CountHtmlImagesParams.from_dict(context.step_params)
+        all_images = self._get_filtered_images(browser, context.step_params)
         condition_met = evaluate_count_condition(len(all_images), p.operator, p.value)
         step_success = condition_met if p.success_if == "success" else not condition_met
         if not step_success:
             val_desc = str(p.value)
             raise CountHtmlImagesConditionNotMetError(len(all_images), p.operator, val_desc)
 
-        params["_last_message_step"] = f"Trouvé {len(all_images)} image(s), condition vérifiée."
+        context.last_message_step = f"Trouvé {len(all_images)} image(s), condition vérifiée."
 
     @staticmethod
     def _get_filtered_images(browser: IWebBrowserService, params: dict[str, int]) -> list[dict[str, Any]]:

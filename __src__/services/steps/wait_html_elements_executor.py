@@ -7,6 +7,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
@@ -29,9 +30,9 @@ class WaitHtmlElementsExecutor(IStepExecutor):
         return WaitHtmlElementsParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitHtmlElementsParams.from_dict(params)
+        p = WaitHtmlElementsParams.from_dict(context.step_params)
         page = browser.get_current_page()
         nbr_delay_in_sec = p.retry_delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.retry_unit, 1.0)
         counted_items: int = -1
@@ -45,8 +46,7 @@ class WaitHtmlElementsExecutor(IStepExecutor):
                 raise CountHtmlElementsConditionNotMetError(counted_items, p.operator, str(p.quantity))
             time.sleep(nbr_delay_in_sec)
 
-        # success case: store a message in the mutable params dict to be used by potential next steps (e.g. for logging or user feedback).
-        params["_last_message_step"] = (
+        context.last_message_step = (
             f"Trouvé {counted_items} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
         )
 

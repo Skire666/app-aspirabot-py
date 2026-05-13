@@ -80,15 +80,28 @@ class OpenUrlFormDef(IStepFormDef):
         url_mode_var = tk.StringVar(value="<<URL>>")
         url_custom_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
 
-        # Radiobutton 1
+        # Mode selection.
+        OpenUrlFormDef._build_url_mode_buttons(line1, url_mode_var)
+
+        url_entry = ttk.Entry(line1, textvariable=url_custom_var)
+        url_entry.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets["url_mode"] = url_mode_var  # '<<URL>>' or '<<CUSTOM>>'
+        widgets["url_custom"] = url_custom_var
+
+        # Keep the entry state in sync with the selected mode.
+        OpenUrlFormDef._bind_url_mode_entry(url_mode_var, url_entry)
+
+    @staticmethod
+    def _build_url_mode_buttons(line1: ttk.Frame, url_mode_var: tk.StringVar) -> None:
+        """Creates the URL mode radio buttons."""
+        # URL source selection.
         tk.Radiobutton(
             line1,
-            text="Consommer la prochaine URL",
+            text="Lire la prochaine URL",
             variable=url_mode_var,
             value="<<URL>>",
         ).pack(side=tk.LEFT, padx=(0, 20))
 
-        # Radiobutton 2
         tk.Radiobutton(
             line1,
             text="URL personnalisée",
@@ -96,9 +109,17 @@ class OpenUrlFormDef(IStepFormDef):
             value="<<CUSTOM>>",
         ).pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Entry(line1, textvariable=url_custom_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["url_mode"] = url_mode_var
-        widgets["url_custom"] = url_custom_var
+    @staticmethod
+    def _bind_url_mode_entry(url_mode_var: tk.StringVar, url_entry: ttk.Entry) -> None:
+        """Synchronizes the URL entry state with mode selection."""
+
+        def _sync_url_entry_state(*_args: object) -> None:
+            state = "readonly" if url_mode_var.get() == "<<URL>>" else "normal"
+            url_entry.configure(state=state)
+
+        # React to mode changes and initialize the current state.
+        url_mode_var.trace_add("write", _sync_url_entry_state)
+        _sync_url_entry_state()
 
     @staticmethod
     def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:

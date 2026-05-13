@@ -19,6 +19,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 
 if TYPE_CHECKING:
@@ -33,8 +34,11 @@ class IStepExecutor(ABC):
     """Service-layer contract for one step type.
 
     Implementations handle both Playwright execution and parameter validation.
-    All public methods receive and return plain ``dict[str, Any]`` to remain
-    decoupled from the view and model layers.
+    Step-specific parameters are accessed via ``context.step_params`` and
+    converted to typed param models.  Cross-step runtime state (previous
+    result, folder, events, …) is accessed via named attributes on
+    ``ScrapingContextModel``.  Output signals (last message, jump target,
+    end-process flag) are written back to the same context object.
 
     Executors receive a ``IWebBrowserService`` instance instead of a raw page.
     When page access is needed, call ``browser.get_current_page()``. When
@@ -71,16 +75,19 @@ class IStepExecutor(ABC):
         """
 
     @abstractmethod
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
-        """Executes the step using the browser service.
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+        """Executes the step using the browser service and the runtime context.
 
-        Use ``browser.get_current_page()`` to access the active page, or
-        ``browser.get_all_pages()`` when multi-tab management is required.
+        Step-specific parameters are read from ``context.step_params`` (via a
+        typed param model).  Cross-step runtime state is read from the typed
+        attributes of ``context``.  Output signals are written back to
+        ``context.last_message_step``, ``context.pending_jump``, or
+        ``context.end_process``.
 
         Args:
             browser: The active browser service instance.
-            params: Raw parameter dict from the step model, enriched with
-                runtime keys (``_folder``, ``_prev_success``, etc.).
+            context: Runtime context carrying step params, orchestrator state,
+                and mutable output-signal slots.
 
         Returns:
             None.

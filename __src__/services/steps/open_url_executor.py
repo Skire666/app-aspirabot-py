@@ -6,6 +6,7 @@ from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.open_url_params import OpenUrlParams
 from services.steps._helpers import resolve_timeout_ms
@@ -27,9 +28,9 @@ class OpenUrlExecutor(IStepExecutor):
         return OpenUrlParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = OpenUrlParams.from_dict(params)
+        p = OpenUrlParams.from_dict(context.step_params)
         page = browser.get_current_page()
 
         timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)

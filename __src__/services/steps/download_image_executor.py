@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
+from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel, StepType
 from models.steps.download_image_params import DownloadImageParams
 from services.workflow_service import register_step_executor
@@ -67,15 +68,15 @@ class DownloadImageExecutor(IStepExecutor):
         return DownloadImageParams.default().to_dict()
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, params: dict[str, Any]) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = DownloadImageParams.from_dict(params)
+        p = DownloadImageParams.from_dict(context.step_params)
         page = browser.get_current_page()
-        downloaded_urls: set[str] = params.get("_downloaded_urls", set())
+        downloaded_urls = context.downloaded_urls
 
         images = _get_filtered_images(browser, p)
         targets = _select_images_by_mode(images, p.mode)
-        folder: Path = params.get("_folder", Path())
+        folder = context.folder
         make_all_folders_if_not_exists(folder, is_file_path=False)
         downloaded_count = 0
 
