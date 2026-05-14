@@ -23,10 +23,9 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
+from models.app_configuration_model import AppConfigurationModel
 from shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
 from shared.operating_system_util import open_folder
-
-from __src__.models.app_configuration_model import AppConfigurationModel
 
 # ---------------------------------------------------------------------------
 # Constants

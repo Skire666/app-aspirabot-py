@@ -47,13 +47,16 @@ class OpenUrlExecutor(IStepExecutor):
                 raise ValueError("Aucune URL disponible dans la source configurée.")
             target_url = context.url_source.next_url()
 
+        # obligé de le mettre avant de goto
+        # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
+        context.last_url_opened = target_url
+
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
         if timeout_ms is not None:
             page.goto(target_url, wait_until=p.wait_state, timeout=timeout_ms)
         else:
             page.goto(target_url, wait_until=p.wait_state)
 
-        context.last_url_opened = target_url
         context.last_message_step = f"Page ouverte : {target_url}"
 
     @override

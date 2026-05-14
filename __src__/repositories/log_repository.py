@@ -8,8 +8,7 @@ import logging
 from pathlib import Path
 
 from models.log_entry_model import LogEntryModel
-
-from __src__.shared.operating_system_util import open_folder
+from shared.operating_system_util import open_folder
 
 # ---------------------------------------------------------------------------
 # Classes
