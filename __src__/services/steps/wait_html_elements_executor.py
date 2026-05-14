@@ -8,21 +8,23 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_SEC
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlElementsConditionNotMetError
+from shared.time_util import convert_to_sec
 
 
 class WaitHtmlElementsExecutor(IStepExecutor):
     """Executor for the wait element scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_HTML_ELEMENTS
+        return StepTypeEnum.E_WAIT_HTML_ELEMENTS
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -34,7 +36,7 @@ class WaitHtmlElementsExecutor(IStepExecutor):
         """Execute the step."""
         p = WaitHtmlElementsParams.from_dict(context.step_params)
         page = browser.get_current_page()
-        nbr_delay_in_sec = p.retry_delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.retry_unit, 1.0)
+        nbr_delay_in_sec = convert_to_sec(p.retry_delay, p.retry_unit)
         counted_items: int = -1
 
         for i in range(p.retry_max):
@@ -59,7 +61,14 @@ class WaitHtmlElementsExecutor(IStepExecutor):
 
         if not p.selector.strip():
             errors.append(f"Dans l'étape {index_display}. : le sélecteur CSS est obligatoire.")
-        if p.operator not in {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}:
+        if p.operator not in {
+            "equal",
+            "not_equal",
+            "greater_than",
+            "less_than",
+            "greater_or_equal",
+            "less_or_equal",
+        }:
             errors.append(
                 f"Dans l'étape {index_display}. : l'opérateur doit être l'un des suivants : equal, not_equal, greater_than, less_than, greater_or_equal, less_or_equal."
             )

@@ -8,19 +8,21 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.end_process_params import EndProcessParams
 from services.workflow_service import register_step_executor
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_SEC
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.enums import StepTypeEnum
+from shared.time_util import convert_to_sec
 
 
 class EndProcessExecutor(IStepExecutor):
     """Executor for the end process scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.END_PROCESS
+        return StepTypeEnum.E_END_PROCESS
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -31,7 +33,7 @@ class EndProcessExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = EndProcessParams.from_dict(context.step_params)
-        delay = float(p.wait_duration) * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.wait_unit, 1.0)
+        delay = convert_to_sec(p.wait_duration, p.wait_unit)
         if delay > 0:
             time.sleep(delay)
 

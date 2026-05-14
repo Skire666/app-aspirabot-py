@@ -8,19 +8,20 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_x_time_params import WaitXTimeParams
 from services.workflow_service import register_step_executor
-from shared.constants import C_UNITS_TIME_CONVERSION_TO_SEC
+from shared.enums import StepTypeEnum
+from shared.time_util import convert_to_sec
 
 
 class WaitXTimeExecutor(IStepExecutor):
     """Executor for the wait X time scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_X_TIME
+        return StepTypeEnum.E_WAIT_X_TIME
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -31,7 +32,11 @@ class WaitXTimeExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = WaitXTimeParams.from_dict(context.step_params)
-        time.sleep(p.duration * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.unit, 1.0))
+        time_sec = convert_to_sec(p.duration, p.unit)
+        if time_sec > 0:
+            time.sleep(time_sec)
+
+        context.last_message_step = f"Attente de {time_sec:.3f} secondes effectuée."
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

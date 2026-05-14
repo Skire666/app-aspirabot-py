@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
-from models.step_scraping_model import StepType
 
 
 @dataclass(frozen=True)
@@ -43,6 +42,6 @@ class ExtractTextParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls) -> StepType:
+    def get_step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.EXTRACT_TEXT
+        return StepTypeEnum.E_EXTRACT_TEXT

@@ -17,8 +17,6 @@ Example:
 from abc import ABC, abstractmethod
 from typing import Any, Self
 
-from models.step_scraping_model import StepType
-
 # ---------------------------------------------------------------------------
 # Interface
 # ---------------------------------------------------------------------------
@@ -79,7 +77,7 @@ class IStepParams(ABC):
 
     @classmethod
     @abstractmethod
-    def get_step_type(cls) -> StepType:
+    def get_step_type(cls) -> StepTypeEnum:
         """Returns the step type string associated with these parameters.
 
         This is used to link the params instance to its step type and form

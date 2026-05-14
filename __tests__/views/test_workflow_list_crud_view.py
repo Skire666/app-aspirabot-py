@@ -6,15 +6,14 @@ import tkinter as tk
 from unittest.mock import patch
 
 import pytest
-
 import views.steps  # noqa: F401  — registers all step form defs needed by StepItemRenderer
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from views.workflow_list_crud_view import WorkflowListCrudView
 
 
 def _make_step(step_id: str) -> StepScrapingModel:
     """Return a minimal step for test setup."""
-    return StepScrapingModel(step_type=StepType.OPEN_URL, step_id=step_id)
+    return StepScrapingModel(step_type=StepTypeEnum.E_OPEN_URL, step_id=step_id)
 
 
 @pytest.fixture()

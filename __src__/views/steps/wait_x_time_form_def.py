@@ -7,13 +7,14 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
@@ -33,14 +34,14 @@ class WaitXTimeFormDef(IStepFormDef):
     """Form definition for the wait X time scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_X_TIME
+        return StepTypeEnum.E_WAIT_X_TIME
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.WAIT_X_TIME)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_WAIT_X_TIME)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -75,7 +76,9 @@ class WaitXTimeFormDef(IStepFormDef):
         """Load step parameters into form widgets."""
         widgets["duration"].set(str(model.params.get("duration", C_INPUT_DEFAULT_DURATION)))
         widgets["unit"].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW)
+            WAIT_UNIT_MODEL_TO_VIEW.get(
+                model.params.get("unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+            )
         )
         widgets["comment"].set(model.params.get("comment", ""))
 

@@ -8,19 +8,21 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_user_action_params import WaitUserActionParams
 from services.workflow_service import register_step_executor
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_CONVERSION_TO_SEC
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.enums import StepTypeEnum
+from shared.time_util import convert_to_sec
 
 
 class WaitUserActionExecutor(IStepExecutor):
     """Executor for the wait user action scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_USER_ACTION
+        return StepTypeEnum.E_WAIT_USER_ACTION
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -44,7 +46,14 @@ class WaitUserActionExecutor(IStepExecutor):
         context.pause_event.wait()
         cancelled = context.cancel_event.is_set()
         if p.wait_duration >= 1 and not cancelled:
-            time.sleep(float(p.wait_duration) * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.wait_unit, 1.0))
+            time_sec = convert_to_sec(p.wait_duration, p.wait_unit)
+            time.sleep(time_sec)
+
+        context.last_message_step = (
+            "Action utilisateur détectée, reprise du processus."
+            if not cancelled
+            else "Attente annulée, reprise du processus."
+        )
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

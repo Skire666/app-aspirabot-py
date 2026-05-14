@@ -11,10 +11,11 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from shared.constants import (
     C_MAXIMUM_QTY_COUNTER,
 )
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
@@ -46,14 +47,14 @@ class CountHtmlElementsFormDef(IStepFormDef):
         """Initialize the form state references."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.COUNT_HTML_ELEMENTS
+        return StepTypeEnum.E_COUNT_HTML_ELEMENTS
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_HTML_ELEMENTS)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_COUNT_HTML_ELEMENTS)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

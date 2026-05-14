@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
-from models.step_scraping_model import StepType
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -44,6 +44,6 @@ class EndProcessParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls) -> StepType:
+    def get_step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.END_PROCESS
+        return StepTypeEnum.E_END_PROCESS

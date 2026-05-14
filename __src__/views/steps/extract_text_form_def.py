@@ -7,7 +7,8 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
@@ -34,14 +35,14 @@ class ExtractTextFormDef(IStepFormDef):
     """Form definition for the extract text scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.EXTRACT_TEXT
+        return StepTypeEnum.E_EXTRACT_TEXT
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.EXTRACT_TEXT)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_EXTRACT_TEXT)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

@@ -20,7 +20,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 
 if TYPE_CHECKING:
     from interfaces.i_web_browser_service import IWebBrowserService
@@ -53,7 +54,7 @@ class IStepExecutor(ABC):
 
     @classmethod
     @abstractmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Returns the StepType this executor handles.
 
         Returns:

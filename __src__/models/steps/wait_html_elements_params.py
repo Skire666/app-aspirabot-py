@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
-from models.step_scraping_model import StepType
 
 
 @dataclass(frozen=True)
@@ -24,7 +23,9 @@ class WaitHtmlElementsParams(IStepParams):
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(selector="", operator="equal", quantity=1, retry_delay=500, retry_unit="ms", retry_max=5, comment="")
+        return cls(
+            selector="", operator="equal", quantity=1, retry_delay=500, retry_unit="ms", retry_max=5, comment=""
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
@@ -52,6 +53,6 @@ class WaitHtmlElementsParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls) -> StepType:
+    def get_step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_HTML_ELEMENTS
+        return StepTypeEnum.E_WAIT_HTML_ELEMENTS

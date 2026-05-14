@@ -9,19 +9,20 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_rng_pause_params import WaitRngPauseParams
 from services.workflow_service import register_step_executor
-from shared.constants import C_UNITS_TIME_CONVERSION_TO_SEC
+from shared.enums import StepTypeEnum
+from shared.time_util import convert_to_sec
 
 
 class WaitRngPauseExecutor(IStepExecutor):
     """Executor for the random pause scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_RANDOM_PAUSE
+        return StepTypeEnum.E_WAIT_RANDOM_PAUSE
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -33,7 +34,11 @@ class WaitRngPauseExecutor(IStepExecutor):
         """Execute the step."""
         p = WaitRngPauseParams.from_dict(context.step_params)
         delay = random.uniform(float(p.min_val), float(p.max_val))
-        time.sleep(delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.unit, 1.0))
+        time_sec = convert_to_sec(delay, p.unit)
+        if time_sec > 0:
+            time.sleep(time_sec)
+
+        context.last_message_step = f"Pause aléatoire de {time_sec:.3f} secondes effectuée."
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

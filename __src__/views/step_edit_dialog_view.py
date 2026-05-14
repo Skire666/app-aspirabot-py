@@ -22,7 +22,8 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.random_util import generate_rng_id_step
 from shared.step_registry import get_form
@@ -32,7 +33,7 @@ from shared.step_registry import get_form
 # ---------------------------------------------------------------------------
 
 # Reverse mapping for label → StepType lookup.
-_LABEL_TO_TYPE: dict[str, StepType] = {v: k for k, v in C_STEP_TYPE_TO_LABELS.items()}
+_LABEL_TO_TYPE: dict[str, StepTypeEnum] = {v: k for k, v in C_STEP_TYPE_TO_LABELS.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +134,7 @@ class StepInlineFormPanel(ttk.Frame):
         self._available_steps = list(steps)
         self._form_widgets["_all_steps_available"] = self._available_steps
 
-    def reset(self, step_type: StepType) -> None:
+    def reset(self, step_type: StepTypeEnum) -> None:
         """Resets to a blank form for the given step type without firing on_type_changed."""
         label = C_STEP_TYPE_TO_LABELS[step_type]
         self._type_var.set(label)
@@ -146,7 +147,7 @@ class StepInlineFormPanel(ttk.Frame):
         Args:
             step: Existing step to pre-fill, or None to show a blank form.
         """
-        initial_type = step.step_type if step else StepType.OPEN_URL
+        initial_type = step.step_type if step else StepTypeEnum.E_OPEN_URL
 
         label = C_STEP_TYPE_TO_LABELS[initial_type]
         self._type_var.set(label)
@@ -172,7 +173,7 @@ class StepInlineFormPanel(ttk.Frame):
         if self.on_type_changed and label:
             self.on_type_changed(label)
 
-    def _rebuild_form(self, step_type: StepType) -> None:
+    def _rebuild_form(self, step_type: StepTypeEnum) -> None:
         """Clears and rebuilds the dynamic form via the registered IStepFormDef."""
         for widget in self._form_frame.winfo_children():
             widget.destroy()
@@ -185,7 +186,7 @@ class StepInlineFormPanel(ttk.Frame):
         self._logger.debug(f"Rebuilding form for step type {step_type} with steps={len(self._available_steps)}")
 
         try:
-            if step_type is not None and step_type != StepType.UNSET:
+            if step_type is not None and step_type != StepTypeEnum.E_UNSET:
                 get_form(step_type).build_form(self._form_frame, self._form_widgets)
         except ValueError:
             pass
@@ -201,7 +202,7 @@ class StepInlineFormPanel(ttk.Frame):
         except ValueError:
             pass
 
-    def _get_params(self, step_type: StepType) -> dict[str, Any]:
+    def _get_params(self, step_type: StepTypeEnum) -> dict[str, Any]:
         """Reads current widget values and returns the params dict."""
         try:
             return get_form(step_type).read_params_from_view(self._form_widgets)
@@ -212,7 +213,7 @@ class StepInlineFormPanel(ttk.Frame):
     # Validation — delegated to form defs
     # ---------------------------------------------------------------
 
-    def _validate_form(self, step_type: StepType) -> list[str]:
+    def _validate_form(self, step_type: StepTypeEnum) -> list[str]:
         """Validates the current form for the given step type."""
         try:
             return get_form(step_type).validate_form(self._form_widgets)

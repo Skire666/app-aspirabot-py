@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from tkinter import ttk
 from typing import Any
 
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 
 # ---------------------------------------------------------------------------
 # Interface
@@ -48,7 +48,7 @@ class IStepFormDef(ABC):
 
     @classmethod
     @abstractmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Returns the StepType this definition handles.
 
         Returns:

@@ -8,7 +8,7 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
@@ -16,41 +16,19 @@ from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
     C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
     C_UNITS_TIME_ALLOWED_FOR_MODEL,
-    C_UNITS_TIME_CONVERSION_TO_SEC,
 )
+from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
-
-
-def _get_filtered_images(browser: IWebBrowserService, p: WaitHtmlImagesParams) -> list[dict]:
-    # result of the script is expected to be a list of dict with keys: src, width, height
-    script = """
-        () => Array.from(document.querySelectorAll('img'))
-            .filter(img => img.naturalWidth >= 1)
-            .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight}))
-    """
-
-    # get all images on the page with their dimensions, with retries in case of failure
-    all_imgs = browser.evaluate_script_with_safe_retry(
-        script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
-    )
-    # return "#N/A" as a string if the script evaluation failed after all retries
-    if all_imgs is None:
-        return []
-    # all images that match the dimension criteria
-    return [
-        img
-        for img in all_imgs
-        if p.width_min <= img["width"] <= p.width_max and p.height_min <= img["height"] <= p.height_max
-    ]
+from shared.time_util import convert_to_sec
 
 
 class WaitHtmlImagesExecutor(IStepExecutor):
     """Executor for the wait html images step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_HTML_IMAGES
+        return StepTypeEnum.E_WAIT_HTML_IMAGES
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -61,7 +39,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = WaitHtmlImagesParams.from_dict(context.step_params)
-        nbr_delay_in_sec = p.retry_delay * C_UNITS_TIME_CONVERSION_TO_SEC.get(p.retry_unit, 1.0)
+        nbr_delay_in_sec = convert_to_sec(p.retry_delay, p.retry_unit)
         count: int = -1
 
         for i in range(p.retry_max):
@@ -103,9 +81,16 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
                 int(model.params.get(key, 0))
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 errors.append(f"Dans l'étape {index_display}. : {key} doit être un entier.")
-        if p.operator not in {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}:
+        if p.operator not in {
+            "equal",
+            "not_equal",
+            "greater_than",
+            "less_than",
+            "greater_or_equal",
+            "less_or_equal",
+        }:
             errors.append(
                 f"Dans l'étape {index_display}. : l'opérateur doit être l'un des suivants : equal, not_equal, greater_than, less_than, greater_or_equal, less_or_equal."
             )

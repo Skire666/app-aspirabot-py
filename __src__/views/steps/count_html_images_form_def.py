@@ -11,8 +11,9 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_MAXIMUM_QTY_COUNTER, C_MAXIMUM_SIZE_IMAGE
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
@@ -43,14 +44,14 @@ class CountHtmlImagesFormDef(IStepFormDef):
         """Initialize the form state references."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.COUNT_HTML_IMAGES
+        return StepTypeEnum.E_COUNT_HTML_IMAGES
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.COUNT_HTML_IMAGES)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_COUNT_HTML_IMAGES)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -81,10 +82,14 @@ class CountHtmlImagesFormDef(IStepFormDef):
 
         ttk.Label(line1, text="Hauteur entre").pack(side="left", padx=(24, 5))
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=5).pack(side="left")
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=5).pack(
+            side="left"
+        )
         ttk.Label(line1, text=" et ").pack(side="left")
         height_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=6).pack(side="left")
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=6).pack(
+            side="left"
+        )
         widgets["height_min"] = height_min_var
         widgets["height_max"] = height_max_var
 

@@ -93,8 +93,6 @@ C_UNITS_TIME_DEFAULT_MODEL: str = "s"
 C_UNITS_TIME_DEFAULT_VIEW: str = "sec"
 C_UNITS_TIME_ALLOWED_FOR_MODEL: list[str] = ["m", "s", "ms"]
 C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
-C_UNITS_TIME_CONVERSION_TO_MS: dict[str, int] = {"m": 60 * 1000, "s": 1000, "ms": 1}
-C_UNITS_TIME_CONVERSION_TO_SEC: dict[str, float] = {"m": 60.0, "s": 1.0, "ms": 0.001}
 
 
 # ---------------------------------------------------------------------------

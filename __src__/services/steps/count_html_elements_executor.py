@@ -8,10 +8,11 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.count_html_elements_params import CountHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
+from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlElementsConditionNotMetError
 
 _logger = logging.getLogger(__name__)
@@ -21,9 +22,9 @@ class CountHtmlElementsExecutor(IStepExecutor):
     """Executor for the count element scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.COUNT_HTML_ELEMENTS
+        return StepTypeEnum.E_COUNT_HTML_ELEMENTS
 
     @override
     def default_params_dict(self) -> dict[str, Any]:

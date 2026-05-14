@@ -15,7 +15,8 @@ Example:
 # ---------------------------------------------------------------------------
 
 from interfaces.i_step_executor import IStepExecutor
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from shared.exception_util import (
     ExecutorNotRegisteredError,
     NoExecutorsRegisteredError,
@@ -26,7 +27,7 @@ from shared.exception_util import (
 # Variables
 # ---------------------------------------------------------------------------
 
-_all_step_executors: dict[StepType, IStepExecutor] = {}
+_all_step_executors: dict[StepTypeEnum, IStepExecutor] = {}
 
 
 def register_step_executor(executor: IStepExecutor) -> None:
@@ -61,11 +62,11 @@ class WorkflowService:
         """Initialize the workflow service."""
 
     @staticmethod
-    def get_step_executor(step_type: StepType) -> IStepExecutor:
+    def get_step_executor(step_type: StepTypeEnum) -> IStepExecutor:
         """Returns the registered executor for the given step type.
 
         Args:
-            step_type: The StepType to look up.
+            step_type: The StepTypeEnum to look up.
 
         Returns:
             The IStepExecutor instance registered for that type.

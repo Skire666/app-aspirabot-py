@@ -14,9 +14,9 @@ Example:
 # ---------------------------------------------------------------------------
 
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, TypeVar
 
+from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
 
 ParentContextType = TypeVar("ParentContextType")
@@ -24,33 +24,6 @@ ParentContextType = TypeVar("ParentContextType")
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-
-
-class StepType(Enum):
-    """Enumerates all supported scraping step types.
-
-    Each member maps to a distinct browser or scraping action.
-    """
-
-    UNSET = "UNSET"
-    OPEN_URL = "OPEN_URL"
-    CLOSE_TABS = "CLOSE_TABS"
-    REFRESH_PAGE = "REFRESH_PAGE"
-    WAIT_PAGE_STATE = "WAIT_STATE_PAGE"
-    WAIT_X_TIME = "WAIT_X_TIME"
-    WAIT_RANDOM_PAUSE = "RANDOM_PAUSE"
-    WAIT_USER_ACTION = "WAIT_USER_ACTION"
-    COUNT_HTML_ELEMENTS = "COUNT_HTML_ELEMENTS"
-    COUNT_HTML_IMAGES = "COUNT_HTML_IMAGES"
-    WAIT_HTML_ELEMENTS = "WAIT_HTML_ELEMENTS"
-    WAIT_HTML_IMAGES = "WAIT_HTML_IMAGES"
-    CLICK_ELEMENT = "CLICK_ELEMENT"
-    DOWNLOAD_IMAGE = "DOWNLOAD_IMAGE"
-    EXTRACT_TEXT = "EXTRACT_TEXT"
-    JUMP_TO_STEP = "JUMP_TO_STEP"
-    SCROLL_DOWN = "SCROLL_DOWN"
-    END_PROCESS = "END_PROCESS"
-    UNKNOWN = "UNKNOWN"
 
 
 @dataclass
@@ -62,12 +35,12 @@ class StepScrapingModel:
         params: Type-specific parameters for the action.
 
     Example:
-        >>> step = StepScrapingModel.create_default(StepType.WAIT_X_TIME)
+        >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_X_TIME)
         >>> step.params["duration"]
         0
     """
 
-    step_type: StepType
+    step_type: StepTypeEnum
     step_id: str
     is_active: bool = True
     params: dict[str, Any] = field(default_factory=dict)
@@ -75,7 +48,7 @@ class StepScrapingModel:
 
     def __init__(
         self,
-        step_type: StepType,
+        step_type: StepTypeEnum,
         step_id: str,
         is_active: bool = True,
         params: dict[str, Any] | None = None,
@@ -115,7 +88,7 @@ class StepScrapingModel:
             500
         """
         return cls(
-            step_type=StepType(data["step_type"]),
+            step_type=StepTypeEnum(data["step_type"]),
             step_id=data.get("step_id", generate_rng_id_step()),
             is_active=data.get("is_active", True),
             params=data.get("params", {}),
@@ -132,7 +105,7 @@ class StepScrapingModel:
             None.
 
         Example:
-            >>> step = StepScrapingModel.create_default(StepType.WAIT_X_TIME)
+            >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_X_TIME)
             >>> step.export_to_data_json()["step_type"]
             'WAIT_X_TIME'
         """

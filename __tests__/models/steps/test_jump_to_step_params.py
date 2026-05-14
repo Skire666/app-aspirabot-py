@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
-from models.step_scraping_model import StepType
 from models.steps.jump_to_step_params import JumpToStepParams
 
 
@@ -17,8 +15,8 @@ def test_default_returns_expected_values() -> None:
 
 
 def test_get_step_type_returns_jump_to_step() -> None:
-    """get_step_type() must return StepType.JUMP_TO_STEP."""
-    assert JumpToStepParams.get_step_type() == StepType.JUMP_TO_STEP
+    """get_step_type() must return StepTypeEnum.E_JUMP_TO_STEP."""
+    assert JumpToStepParams.get_step_type() == StepTypeEnum.E_JUMP_TO_STEP
 
 
 def test_to_dict_serializes_all_fields() -> None:

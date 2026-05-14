@@ -343,3 +343,101 @@ data_scraping/
 data_providers/
 config-aspirabot.json
 ```
+
+## Error Messages
+
+### Ownership by layer
+
+| What | Where |
+|------|-------|
+| Raw errors (code + context) | `models/` — `ValidationError` dataclass |
+| Message templates | `presenters/messages.py` |
+| Formatting logic | `presenters/` — converts raw errors into `list[str]` |
+| Display | `views/` — receives `list[str]`, renders, nothing else |
+
+### `ValidationError` — `models/`
+
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class ValidationError:
+    code: str
+    context: dict  # Raw data used for formatting
+```
+
+### Message templates — `presenters/messages.py`
+
+All user-facing strings live here. No string is ever written inline in
+business logic or view code.
+
+```python
+ERROR_TEMPLATES: dict[str, str] = {
+    "invalid_operator": (
+        "Step {step}: operator must be one of: "
+        "equal, not_equal, greater_than, less_than, "
+        "greater_or_equal, less_or_equal."
+    ),
+    "empty_field": "Step {step}: field '{field}' cannot be empty.",
+}
+```
+
+### Presenter — formats and delegates
+
+```python
+from presenters.messages import ERROR_TEMPLATES
+
+messages = [
+    ERROR_TEMPLATES[e.code].format(**e.context)
+    for e in raw_errors
+]
+self._view.show_errors(messages)   # or clear_errors()
+```
+
+### View — passive display only
+
+```python
+def show_errors(self, messages: list[str]) -> None: ...
+def clear_errors(self) -> None: ...
+```
+
+The View receives ready-to-display strings. It never formats,
+conditions, or owns any message text.
+
+### Interface — `interfaces/`
+
+```python
+class IErrorDisplayView(Protocol):
+    def show_errors(self, messages: list[str]) -> None: ...
+    def clear_errors(self) -> None: ...
+```
+
+Presenters depend on this protocol, never on the concrete View —
+enabling tests without Tkinter.
+
+---
+
+### Anti-patterns — Error Messages
+
+❌ Never write a user-facing string inline in a service or presenter
+
+```python
+# BAD — string belongs in presenters/messages.py
+errors.append(f"Step {index}: operator must be one of: equal, ...")
+```
+
+❌ Never format or build error messages inside the View
+
+```python
+# BAD — the View must receive ready-to-display strings
+def show_errors(self, raw_errors: list[ValidationError]) -> None:
+    for e in raw_errors:
+        msg = ERROR_TEMPLATES[e.code].format(**e.context)  # ← Presenter's job
+```
+
+❌ Never pass `ValidationError` objects to the View
+
+```python
+# BAD — the View must only receive list[str]
+self._view.show_errors(raw_errors)  # ← format first in the Presenter
+```

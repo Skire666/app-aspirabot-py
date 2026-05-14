@@ -2,27 +2,25 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.extract_text_params import ExtractTextParams
 from services.steps._helpers import extract_from_element
 from services.workflow_service import register_step_executor
-
-_logger = logging.getLogger(__name__)
+from shared.enums import StepTypeEnum
 
 
 class ExtractTextExecutor(IStepExecutor):
     """Executor for the extract text scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.EXTRACT_TEXT
+        return StepTypeEnum.E_EXTRACT_TEXT
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -37,12 +35,13 @@ class ExtractTextExecutor(IStepExecutor):
 
         elements = page.query_selector_all(p.selector)
         if not elements:
-            _logger.warning("EXTRACT_TEXT: no element matches %r", p.selector)
             return
         selected = [elements[0]] if p.target == "first" else [elements[-1]] if p.target == "last" else elements
         texts = [extract_from_element(el, p.extract_mode) for el in selected]
-        _logger.info("EXTRACT_TEXT [%s]: %s", p.selector, "\n".join(texts)[:500])
-        # TODO PCO
+
+        context.last_message_step = (
+            f"Texte extrait : {len(texts)} élément(s). Sél. : {p.selector!r}. Mode : {p.extract_mode!r}."
+        )
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

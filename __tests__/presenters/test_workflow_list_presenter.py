@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-import pytest
-
 from models.provider_model import ProviderModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from presenters.workflow_list_presenter import WorkflowListPresenter
-
+from shared.enums import StepTypeEnum
 
 # ---------------------------------------------------------------------------
 # Stubs
@@ -81,7 +77,7 @@ class _StubWorkflowService:
         return list(self._errors)
 
 
-def _make_step(step_id: str, step_type: StepType = StepType.OPEN_URL) -> StepScrapingModel:
+def _make_step(step_id: str, step_type: StepTypeEnum = StepTypeEnum.E_OPEN_URL) -> StepScrapingModel:
     """Return a minimal StepScrapingModel for test setup."""
     return StepScrapingModel(step_type=step_type, step_id=step_id)
 
@@ -123,8 +119,7 @@ def _make_presenter(
 # ---------------------------------------------------------------------------
 
 
-def test_init_new_clears_steps_and_renders(  # noqa: ANN201
-) -> None:
+def test_init_new_clears_steps_and_renders() -> None:
     """init_new() must start with an empty step list and call render_steps."""
     presenter, list_view, _ = _make_presenter()
     presenter.init_new("new-id")

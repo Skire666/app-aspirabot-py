@@ -9,7 +9,7 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from views.components.horizontal_line_frame import HorizontalLineFrame
 from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
@@ -140,7 +140,9 @@ class WorkflowView(ttk.Frame):
         left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 20), pady=0)  # spération verticale
         left_frame.pack_propagate(False)
 
-        self._type_listbox = tk.Listbox(left_frame, selectmode=tk.SINGLE, exportselection=False, activestyle="none")
+        self._type_listbox = tk.Listbox(
+            left_frame, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
+        )
         sb = ttk.Scrollbar(left_frame, orient="vertical", command=self._type_listbox.yview)
         self._type_listbox.configure(yscrollcommand=sb.set)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -159,14 +161,14 @@ class WorkflowView(ttk.Frame):
         self._inline_form.on_cancel = self._on_inline_cancel
         self._inline_form.on_type_changed = self._on_inline_type_changed
 
-    def _get_current_listbox_type(self) -> StepType:
+    def _get_current_listbox_type(self) -> StepTypeEnum:
         sel = self._type_listbox.curselection()
         if sel:
             label = self._type_listbox.get(sel[0])
             step_type = _LABEL_TO_TYPE.get(label)
             if step_type:
                 return step_type
-        return StepType.OPEN_URL
+        return StepTypeEnum.E_OPEN_URL
 
     def _on_inline_confirm(self, step: StepScrapingModel) -> None:
         was_creation = not self._is_edit_mode
@@ -194,7 +196,7 @@ class WorkflowView(ttk.Frame):
             self._type_listbox.selection_clear(0, tk.END)
             self._type_listbox.selection_set(idx)
             self._type_listbox.see(idx)
-        except (ValueError, tk.TclError):
+        except ValueError, tk.TclError:
             pass
 
     def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
@@ -234,7 +236,7 @@ class WorkflowView(ttk.Frame):
         self._inline_form._type_var.set(label)
         try:
             self._inline_form._on_type_changed(None)
-        except (AttributeError, KeyError, tk.TclError, ValueError):
+        except AttributeError, KeyError, tk.TclError, ValueError:
             step_type = _LABEL_TO_TYPE.get(label)
             if step_type is not None:
                 self._inline_form._rebuild_form(step_type)

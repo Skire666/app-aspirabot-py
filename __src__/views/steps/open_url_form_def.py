@@ -11,13 +11,14 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from shared.constants import (
     C_MAXIMUM_SIZE_IMAGE,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
@@ -45,14 +46,14 @@ class OpenUrlFormDef(IStepFormDef):
     """Builds the Open URL step form and handles its validation."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Returns the workflow step handled by this form definition."""
-        return StepType.OPEN_URL
+        return StepTypeEnum.E_OPEN_URL
 
     @classmethod
     def label(cls) -> str:
         """Returns the label shown in the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.OPEN_URL)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_OPEN_URL)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -149,9 +150,9 @@ class OpenUrlFormDef(IStepFormDef):
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
 
-        ttk.Combobox(line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
+        ttk.Combobox(
+            line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
+        ).pack(side=tk.LEFT, padx=(0, 5))
         widgets["timeout_duration"] = td_var
         widgets["timeout_unit"] = tu_var
 
@@ -172,7 +173,9 @@ class OpenUrlFormDef(IStepFormDef):
         widgets["url_mode"].set(model.params.get("url_mode", "<<URL>>"))
         widgets["url_custom"].set(model.params.get("url_custom", C_INPUT_DEFAULT_URL))
         widgets["wait_state"].set(model.params.get("wait_state", C_INPUT_DEFAULT_WAIT_STATE))
-        widgets["timeout_duration"].set(str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION)))
+        widgets["timeout_duration"].set(
+            str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION))
+        )
         widgets["timeout_unit"].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
@@ -214,7 +217,9 @@ class OpenUrlFormDef(IStepFormDef):
         url_mode = model.params.get("url_mode")
 
         url_used = (
-            f"Url : {model.params.get('url_custom', '')}" if url_mode == "<<CUSTOM>>" else "Prochaine URL dans la liste"
+            f"Url : {model.params.get('url_custom', '')}"
+            if url_mode == "<<CUSTOM>>"
+            else "Prochaine URL dans la liste"
         )
 
         return f"Ouvrir une URL  -  timeout : {timeout} {unit_display}\n{url_used}"

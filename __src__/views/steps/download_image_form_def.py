@@ -7,8 +7,9 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
@@ -30,14 +31,14 @@ class DownloadImageFormDef(IStepFormDef):
     """Form definition for the download image scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.DOWNLOAD_IMAGE
+        return StepTypeEnum.E_DOWNLOAD_IMAGE
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.DOWNLOAD_IMAGE)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_DOWNLOAD_IMAGE)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

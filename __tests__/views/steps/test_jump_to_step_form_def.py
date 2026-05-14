@@ -7,11 +7,10 @@ from tkinter import ttk
 from typing import Any
 
 import pytest
-
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW
 from views.steps.jump_to_step_form_def import JumpToStepFormDef
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -33,12 +32,12 @@ class _Var:
 
 def _make_step(step_id: str) -> StepScrapingModel:
     """Return a minimal StepScrapingModel for test setup."""
-    return StepScrapingModel(step_type=StepType.OPEN_URL, step_id=step_id)
+    return StepScrapingModel(step_type=StepTypeEnum.E_OPEN_URL, step_id=step_id)
 
 
 def _make_jump_step(step_id: str, condition: str, target: str) -> StepScrapingModel:
     """Return a JUMP_TO_STEP model with the given params."""
-    s = StepScrapingModel(step_type=StepType.JUMP_TO_STEP, step_id=step_id)
+    s = StepScrapingModel(step_type=StepTypeEnum.E_JUMP_TO_STEP, step_id=step_id)
     s.params = {"condition": condition, "target_hexastring": target}
     return s
 
@@ -55,8 +54,8 @@ def root(tk_root: tk.Tk) -> tk.Tk:
 
 
 def test_step_type_returns_jump_to_step() -> None:
-    """step_type() must return StepType.JUMP_TO_STEP."""
-    assert JumpToStepFormDef.step_type() == StepType.JUMP_TO_STEP
+    """step_type() must return StepTypeEnum.E_JUMP_TO_STEP."""
+    assert JumpToStepFormDef.step_type() == StepTypeEnum.E_JUMP_TO_STEP
 
 
 def test_label_is_non_empty_string() -> None:

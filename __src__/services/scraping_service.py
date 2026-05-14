@@ -29,13 +29,14 @@ from models.app_configuration_model import AppConfigurationModel
 from models.provider_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.url_sources.url_source_factory import build_url_source_provider
 from services.workflow_service import WorkflowService
 from shared.constants import (
     C_BROWSER_ENGINE_PLAYWRIGHT,
 )
+from shared.enums import StepTypeEnum
 from shared.exception_util import UnsupportedBrowserEngineError
 
 # ---------------------------------------------------------------------------
@@ -381,9 +382,9 @@ class ScrapingService:
             self._steps_failed_count += 1
 
         # Track step-type-specific action counters.
-        if step.step_type == StepType.CLICK_ELEMENT:
+        if step.step_type == StepTypeEnum.E_CLICK_ELEMENT:
             self._clicks_count += 1
-        elif step.step_type == StepType.OPEN_URL:
+        elif step.step_type == StepTypeEnum.E_OPEN_URL:
             self._urls_opened_count += 1
 
     def _consume_pending_jump(self, current_index: int) -> int:

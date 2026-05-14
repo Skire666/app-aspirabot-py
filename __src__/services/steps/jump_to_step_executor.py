@@ -7,18 +7,19 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.jump_to_step_params import JumpToStepParams
 from services.workflow_service import register_step_executor
+from shared.enums import StepTypeEnum
 
 
 class JumpToStepExecutor(IStepExecutor):
     """Executor for the jump to step scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.JUMP_TO_STEP
+        return StepTypeEnum.E_JUMP_TO_STEP
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -38,9 +39,7 @@ class JumpToStepExecutor(IStepExecutor):
         if should_jump and target_step_id:
             context.pending_jump = target_step_id
 
-        context.last_message_step = (
-            f"Condition de saut vérifiée : {'saut' if should_jump else 'pas de saut'} vers l'étape [{target_step_id}]."
-        )
+        context.last_message_step = f"Condition de saut vérifiée : {'saut' if should_jump else 'pas de saut'} vers l'étape [{target_step_id}]."
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

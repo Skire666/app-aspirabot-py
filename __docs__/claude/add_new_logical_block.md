@@ -224,7 +224,7 @@ Add an entry for `"Compter les éléments"`:
 Add one `if` branch to `_format_step_label()`:
 
 ```python
-if t == StepType.COUNT_ELEMENT:
+if t == StepTypeEnum.E_COUNT_ELEMENT:
     op_labels = {
         "between": "compris entre", "not_between": "non compris entre",
         "equal": "=", "not_equal": "≠",

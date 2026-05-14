@@ -154,24 +154,24 @@ Do not modify any existing entry in `StepType` or `_DEFAULT_PARAMS`.
 Extend `_format_step_label()` only. Add 4 new `if` branches.
 
 ```python
-if t == StepType.CLOSE_TABS:
+if t == StepTypeEnum.E_CLOSE_TABS:
     f = p.get("url_filter", "")
     max_t = p.get("max_tabs", 0)
     filter_str = f" (filtre : {f})" if f else ""
     return f"Fermer onglets — max {max_t}{filter_str}"
 
-if t == StepType.EXTRACT_TEXT:
+if t == StepTypeEnum.E_EXTRACT_TEXT:
     mode = p.get("extract_mode", "innerText")
     target = p.get("target", "first")
     selector = p.get("selector", "")
     return f"Extraire texte — {selector} [{mode} / {target}]"
 
-if t == StepType.JUMP_TO_STEP:
+if t == StepTypeEnum.E_JUMP_TO_STEP:
     cond = p.get("condition", "success")
     target = p.get("target_hexastring", 0)
     return f"Sauter à l'étape {target + 1} — si {cond}"
 
-if t == StepType.END_PROCESS:
+if t == StepTypeEnum.E_END_PROCESS:
     return f"Fin du processus — attendre {p.get('wait_duration', 0)} {p.get('wait_unit', '')}"
 ```
 

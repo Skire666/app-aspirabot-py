@@ -7,20 +7,21 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_page_state_params import WaitPageStateParams
-from services.steps._helpers import resolve_timeout_ms
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.enums import StepTypeEnum
+from shared.time_util import convert_to_ms
 
 
 class WaitPageStateExecutor(IStepExecutor):
     """Executor for the wait page state scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_PAGE_STATE
+        return StepTypeEnum.E_WAIT_PAGE_STATE
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -33,7 +34,7 @@ class WaitPageStateExecutor(IStepExecutor):
         p = WaitPageStateParams.from_dict(context.step_params)
         page = browser.get_current_page()
 
-        timeout_ms = resolve_timeout_ms(p.timeout_duration, p.timeout_unit)
+        timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
         page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
 
     @override

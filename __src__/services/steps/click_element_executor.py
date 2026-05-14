@@ -7,13 +7,14 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.click_element_params import ClickElementParams
 from services.workflow_service import register_step_executor
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
     C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
 )
+from shared.enums import StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
 
 C_LIMIT_TIMEOUT_CLICK_MS = 8000
@@ -23,9 +24,9 @@ class ClickElementExecutor(IStepExecutor):
     """Executor for the click element scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.CLICK_ELEMENT
+        return StepTypeEnum.E_CLICK_ELEMENT
 
     @override
     def default_params_dict(self) -> dict[str, Any]:

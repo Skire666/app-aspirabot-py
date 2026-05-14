@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from services.steps.jump_to_step_executor import JumpToStepExecutor
+from shared.enums import StepTypeEnum
 
 
-def _make_step(step_id: str, step_type: StepType = StepType.OPEN_URL) -> StepScrapingModel:
+def _make_step(step_id: str, step_type: StepTypeEnum = StepTypeEnum.E_OPEN_URL) -> StepScrapingModel:
     """Return a minimal StepScrapingModel for test setup."""
     return StepScrapingModel(step_type=step_type, step_id=step_id)
 
@@ -18,7 +19,7 @@ def _make_step(step_id: str, step_type: StepType = StepType.OPEN_URL) -> StepScr
 
 def test_step_type_returns_jump_to_step() -> None:
     """step_type() class method must return JUMP_TO_STEP."""
-    assert JumpToStepExecutor.step_type() == StepType.JUMP_TO_STEP
+    assert JumpToStepExecutor.step_type() == StepTypeEnum.E_JUMP_TO_STEP
 
 
 def test_default_params_dict_has_expected_keys() -> None:
@@ -97,7 +98,7 @@ def test_default_prev_success_is_true() -> None:
 def test_validate_valid_step_returns_no_errors() -> None:
     """A valid JUMP_TO_STEP pointing to an existing step must have no errors."""
     target = _make_step("abcd")
-    source = _make_step("efgh", StepType.JUMP_TO_STEP)
+    source = _make_step("efgh", StepTypeEnum.E_JUMP_TO_STEP)
     source.params = {"condition": "success", "target_hexastring": "abcd"}
     source.parent_context = [source, target]
     errors = JumpToStepExecutor().validate_model(source, 0)
@@ -107,7 +108,7 @@ def test_validate_valid_step_returns_no_errors() -> None:
 def test_validate_invalid_condition_returns_error() -> None:
     """An unrecognised condition value must produce a validation error."""
     target = _make_step("abcd")
-    source = _make_step("efgh", StepType.JUMP_TO_STEP)
+    source = _make_step("efgh", StepTypeEnum.E_JUMP_TO_STEP)
     source.params = {"condition": "bad_cond", "target_hexastring": "abcd"}
     source.parent_context = [source, target]
     errors = JumpToStepExecutor().validate_model(source, 0)
@@ -116,7 +117,7 @@ def test_validate_invalid_condition_returns_error() -> None:
 
 def test_validate_missing_target_returns_error() -> None:
     """An empty target_hexastring must produce a validation error."""
-    source = _make_step("efgh", StepType.JUMP_TO_STEP)
+    source = _make_step("efgh", StepTypeEnum.E_JUMP_TO_STEP)
     source.params = {"condition": "success", "target_hexastring": ""}
     source.parent_context = [source]
     errors = JumpToStepExecutor().validate_model(source, 0)
@@ -125,7 +126,7 @@ def test_validate_missing_target_returns_error() -> None:
 
 def test_validate_self_referencing_jump_returns_error() -> None:
     """A step pointing to itself must produce a validation error."""
-    source = _make_step("efgh", StepType.JUMP_TO_STEP)
+    source = _make_step("efgh", StepTypeEnum.E_JUMP_TO_STEP)
     source.params = {"condition": "success", "target_hexastring": "efgh"}
     source.parent_context = [source]
     errors = JumpToStepExecutor().validate_model(source, 0)
@@ -134,7 +135,7 @@ def test_validate_self_referencing_jump_returns_error() -> None:
 
 def test_validate_target_not_found_returns_error() -> None:
     """A target_hexastring absent from parent_context must be flagged."""
-    source = _make_step("efgh", StepType.JUMP_TO_STEP)
+    source = _make_step("efgh", StepTypeEnum.E_JUMP_TO_STEP)
     source.params = {"condition": "success", "target_hexastring": "zzzz"}
     source.parent_context = [source]
     errors = JumpToStepExecutor().validate_model(source, 0)
@@ -143,7 +144,7 @@ def test_validate_target_not_found_returns_error() -> None:
 
 def test_validate_step_index_appears_in_error_messages() -> None:
     """Error messages must include the 1-based step index, zero-padded."""
-    source = _make_step("efgh", StepType.JUMP_TO_STEP)
+    source = _make_step("efgh", StepTypeEnum.E_JUMP_TO_STEP)
     source.params = {"condition": "success", "target_hexastring": ""}
     source.parent_context = [source]
     # Step at index 2 → displayed as "03."

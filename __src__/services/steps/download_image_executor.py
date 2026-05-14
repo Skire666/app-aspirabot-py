@@ -10,13 +10,14 @@ from urllib.parse import urljoin
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.download_image_params import DownloadImageParams
 from services.workflow_service import register_step_executor
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
     C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
 )
+from shared.enums import StepTypeEnum
 from shared.exception_util import (
     ImageDownloadFailedError,
     ImageNotDownloadedError,
@@ -58,9 +59,9 @@ class DownloadImageExecutor(IStepExecutor):
     """Executor for the download image scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.DOWNLOAD_IMAGE
+        return StepTypeEnum.E_DOWNLOAD_IMAGE
 
     @override
     def default_params_dict(self) -> dict[str, Any]:

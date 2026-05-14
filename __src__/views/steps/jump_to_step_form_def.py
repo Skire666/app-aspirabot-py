@@ -11,7 +11,8 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, CONDITION_VIEW_TO_MODEL
@@ -25,14 +26,14 @@ class JumpToStepFormDef(IStepFormDef):
     """Form definition for the jump to step scraping step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.JUMP_TO_STEP
+        return StepTypeEnum.E_JUMP_TO_STEP
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepType.JUMP_TO_STEP)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_JUMP_TO_STEP)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -107,7 +108,9 @@ class JumpToStepFormDef(IStepFormDef):
         if target_hexastring is not None and all_choices_listbox:
             all_steps_id_to_index = widgets.get("_all_steps_id_to_index", [])
             index_target = (
-                all_steps_id_to_index.index(target_hexastring) if target_hexastring in all_steps_id_to_index else -1
+                all_steps_id_to_index.index(target_hexastring)
+                if target_hexastring in all_steps_id_to_index
+                else -1
             )
             model_target = all_hexastring_to_model.get(target_hexastring)
             choice_str = self.compute_string_displayed_in_combobox(index_target, model_target)
@@ -185,7 +188,9 @@ class JumpToStepFormDef(IStepFormDef):
             return f"Si le résultat est un succès\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
         if cond == "failure":
             return f"Si le résultat est un échec\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
-        return f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_index}.  #{target_hexastring}"
+        return (
+            f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_index}.  #{target_hexastring}"
+        )
 
 
 register_form(JumpToStepFormDef())

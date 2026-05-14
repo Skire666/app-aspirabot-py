@@ -7,11 +7,12 @@ from typing import Any, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
 from models.steps.count_html_images_params import CountHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
+from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
 
 
@@ -19,9 +20,9 @@ class CountHtmlImagesExecutor(IStepExecutor):
     """Executor for the count HTML images step."""
 
     @classmethod
-    def step_type(cls) -> StepType:
+    def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.COUNT_HTML_IMAGES
+        return StepTypeEnum.E_COUNT_HTML_IMAGES
 
     @override
     def default_params_dict(self) -> dict[str, Any]:
@@ -72,7 +73,7 @@ class CountHtmlImagesExecutor(IStepExecutor):
                 result = int(model.params.get(key, -1))
                 if result < 0:
                     errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un entier positif.")
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un nombre.")
 
         # condition validations

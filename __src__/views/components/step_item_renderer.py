@@ -18,7 +18,8 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Callable
 
-from models.step_scraping_model import StepScrapingModel, StepType
+from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from shared.step_registry import get_form
 
 # ---------------------------------------------------------------------------
@@ -125,13 +126,15 @@ class StepItemRenderer:
         """Draws the step label text centered vertically within the item area."""
         txt_prefix = f"{str(idx + 1).zfill(2)}.\n#{item.step_id}"
         txt_item = self.get_label_from_store(item, idx)
-        offset_w = 80 if item.step_type == StepType.JUMP_TO_STEP else 58
+        offset_w = 80 if item.step_type == StepTypeEnum.E_JUMP_TO_STEP else 58
         start_w = x + 8
         pos_h = y + h // 2
 
         canvas.create_text(start_w, pos_h, text=txt_prefix, anchor="w", fill=colors["fg"], font=self._C_FONT)
         canvas.create_line(start_w + 50, y, start_w + 50, y + h, fill=colors["border"])
-        canvas.create_text(start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT)
+        canvas.create_text(
+            start_w + offset_w, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT
+        )
         self._draw_overflow_mask(canvas, x, y, w, h, idx)
 
     def get_label_from_store(self, item: StepScrapingModel, idx: int) -> str:
@@ -139,7 +142,7 @@ class StepItemRenderer:
         # always (because of the dynamic nature of the label)
         # get the label for jump_to_step without caching
         # TODO PCO : faut gérer la date, c'est chiant, il refresh jamais
-        # if item.step_type == StepType.JUMP_TO_STEP:
+        # if item.step_type == StepTypeEnum.E_JUMP_TO_STEP:
         return get_form(item.step_type).format_label(item, idx)
 
         # cache the label for other step types to avoid unnecessary recomputation on each redraw

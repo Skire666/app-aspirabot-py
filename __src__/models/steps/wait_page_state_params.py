@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
-from models.step_scraping_model import StepType
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -49,6 +49,6 @@ class WaitPageStateParams(IStepParams):
         )
 
     @classmethod
-    def get_step_type(cls) -> StepType:
+    def get_step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepType.WAIT_PAGE_STATE
+        return StepTypeEnum.E_WAIT_PAGE_STATE
