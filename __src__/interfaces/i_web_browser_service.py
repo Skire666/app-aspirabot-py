@@ -20,7 +20,6 @@ Example:
 
 from abc import ABC, abstractmethod
 
-from models.provider_model import ProviderModel
 from playwright.sync_api import Page
 
 # ---------------------------------------------------------------------------
@@ -50,7 +49,7 @@ class IWebBrowserService(ABC):
     """
 
     @abstractmethod
-    def launch(self, provider: ProviderModel) -> None:
+    def launch(self) -> None:
         """Initialize and launch the browser according to provider config.
 
         Args:

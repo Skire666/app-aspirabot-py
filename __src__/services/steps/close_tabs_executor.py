@@ -9,9 +9,9 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.close_tabs_params import CloseTabsParams
+from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
-from presenters.messages import ERROR_TEMPLATES
 from shared.exception_util import CurrentPageClosedUnexpectedlyError
 from views.steps.close_tabs_form_def import C_INPUT_IS_FILTER_CUSTOM
 

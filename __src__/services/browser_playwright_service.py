@@ -21,7 +21,6 @@ import logging
 import time
 
 from interfaces.i_web_browser_service import IWebBrowserService
-from models.provider_model import ProviderModel
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 from shared.exception_util import BrowserAlreadyLaunchedError, BrowserNotLaunchedError
 
@@ -55,7 +54,6 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._pw: Playwright | None = None
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
-        self._provider: ProviderModel | None = None
 
         # Internal page registry — updated via context/page events.
         self._pages: list[Page] = []
@@ -64,7 +62,7 @@ class BrowserPlaywrightService(IWebBrowserService):
     # IWebBrowserService — public API
     # ------------------------------------------------------------------
 
-    def launch(self, provider: ProviderModel) -> None:
+    def launch(self) -> None:
         """Initialize and launch Chromium with provider configuration.
 
         Args:
@@ -84,7 +82,6 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         # Start Playwright and create the browser + context.
         self._pw = sync_playwright().start()
-        self._provider = provider
         self._browser = self._pw.chromium.launch(headless=False, args=args)
         self._context = self._browser.new_context(no_viewport=True)
         self._context.on("page", self._on_context_new_page)  # Track every page opened
@@ -183,8 +180,6 @@ class BrowserPlaywrightService(IWebBrowserService):
                 self._pw.stop()
                 self._pw = None
 
-            self._provider = None
-
             self._logger.info("Browser closed successfully. is_launched=%s", self.is_launched)
 
         except Exception:
@@ -230,21 +225,6 @@ class BrowserPlaywrightService(IWebBrowserService):
         # This line should never be reached due to the re-raise in the except block
         # but is required for type checking.
         return None
-
-    # ------------------------------------------------------------------
-    # Private helpers — browser creation
-    # ------------------------------------------------------------------
-
-    def _create_browser_and_context(self, provider: ProviderModel) -> tuple[Browser, BrowserContext]:
-        """Launch Chromium, open a matching context, and register page tracking.
-
-        Args:
-            provider: Provides headless and obfuscation configuration flags.
-
-        Returns:
-            A ``(Browser, BrowserContext)`` tuple ready for page creation.
-        """
-        return browser, context
 
     # ------------------------------------------------------------------
     # Private helpers — page tracking

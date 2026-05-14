@@ -13,6 +13,7 @@ Example:
 # Imports
 # ---------------------------------------------------------------------------
 
+import datetime
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
@@ -43,6 +44,7 @@ class StepScrapingModel:
     step_type: StepTypeEnum
     step_id: str
     is_active: bool = True
+    modified_date: str | None = None
     params: dict[str, Any] = field(default_factory=dict)
     parent_context: ParentContextType = field(default=None, repr=False, compare=False)
 
@@ -51,6 +53,7 @@ class StepScrapingModel:
         step_type: StepTypeEnum,
         step_id: str,
         is_active: bool = True,
+        modified_date: str | None = None,
         params: dict[str, Any] | None = None,
         parent_context: ParentContextType = None,
     ) -> None:
@@ -66,6 +69,7 @@ class StepScrapingModel:
         self.step_type = step_type
         self.step_id = step_id
         self.is_active = is_active
+        self.modified_date = modified_date or str(datetime.datetime.now())
         self.params = params if params is not None else {}
         self.parent_context = parent_context
 
@@ -91,6 +95,7 @@ class StepScrapingModel:
             step_type=StepTypeEnum(data["step_type"]),
             step_id=data.get("step_id", generate_rng_id_step()),
             is_active=data.get("is_active", True),
+            modified_date=data.get("modified_date"),
             params=data.get("params", {}),
             parent_context=None,
         )
@@ -113,6 +118,7 @@ class StepScrapingModel:
             "step_type": self.step_type.value,
             "step_id": self.step_id,
             "is_active": self.is_active,
+            "modified_date": self.modified_date,
             "params": dict(self.params),
         }
 
@@ -131,4 +137,9 @@ class StepScrapingModel:
             is_active=self.is_active,
             params=dict(self.params),
             parent_context=self.parent_context,
+            modified_date=str(datetime.datetime.now()),
         )
+
+    def update_modified_date(self) -> None:
+        """Updates the step's modified date to the current time."""
+        self.modified_date = str(datetime.datetime.now())

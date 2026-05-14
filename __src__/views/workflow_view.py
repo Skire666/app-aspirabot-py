@@ -15,6 +15,8 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 from views.workflow_list_crud_view import WorkflowListCrudView
 
+from __src__.shared.enums import StepTypeEnum
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -172,8 +174,8 @@ class WorkflowView(ttk.Frame):
 
     def _on_inline_confirm(self, step: StepScrapingModel) -> None:
         was_creation = not self._is_edit_mode
-        cb = self._workflow_builder_view.on_confirm_inline_step
-        accepted = cb(step) if cb else False
+        validator_callable = self._workflow_builder_view.on_confirm_inline_step
+        accepted = validator_callable(step) if validator_callable else False
 
         # Keep the form open so the presenter can display errors on it.
         if not accepted:
