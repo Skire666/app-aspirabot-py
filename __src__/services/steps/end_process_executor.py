@@ -11,6 +11,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.end_process_params import EndProcessParams
 from services.workflow_service import register_step_executor
+from presenters.messages import ERROR_TEMPLATES
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
 from shared.time_util import convert_to_sec
@@ -47,9 +48,11 @@ class EndProcessExecutor(IStepExecutor):
         index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []
         if p.wait_duration < 0:
-            errors.append(f"Erreur dans l'étape {index_display}. : wait_duration doit être >= 0.")
+            errors.append(ERROR_TEMPLATES["end_process_wait_duration_invalid"].format(step=index_display))
         if p.wait_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(f"Erreur dans l'étape {index_display}. : unité de temps invalide — {p.wait_unit!r}.")
+            errors.append(
+                ERROR_TEMPLATES["end_process_wait_unit_invalid"].format(step=index_display, value=p.wait_unit)
+            )
         return errors
 
 

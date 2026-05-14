@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -28,11 +29,10 @@ class JumpToStepParams(IStepParams):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
-        target_value = data.get("target_hexastring", "")
         return cls(
-            condition=data.get("condition", "success"),
-            target_hexastring=str(target_value) if target_value is not None else "",
-            comment=data.get("comment", ""),
+            condition=data.get("condition"),
+            target_hexastring=data.get("target_hexastring"),
+            comment=data.get("comment"),
         )
 
     @classmethod

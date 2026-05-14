@@ -7,6 +7,7 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -47,12 +48,12 @@ class OpenUrlParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            url_mode=data.get("url_mode", "<<URL>>"),
-            url_custom=data.get("url_custom", ""),
-            wait_state=data.get("wait_state", "load"),
-            timeout_duration=int(data.get("timeout_duration", 1)),
-            timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
-            comment=data.get("comment", ""),
+            url_mode=data.get("url_mode"),
+            url_custom=data.get("url_custom"),
+            wait_state=data.get("wait_state"),
+            timeout_duration=int(data.get("timeout_duration")),
+            timeout_unit=data.get("timeout_unit"),
+            comment=data.get("comment"),
         )
 
     @classmethod

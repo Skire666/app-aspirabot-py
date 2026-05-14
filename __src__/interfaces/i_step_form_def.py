@@ -75,8 +75,7 @@ class IStepFormDef(ABC):
         """Populates ``frame`` with the step-specific form widgets.
 
         Widget variables are stored in ``widgets`` under their parameter key
-        so that ``load_params``, ``read_params_from_view``, and ``validate_form`` can
-        access them by name.
+        so that ``load_params`` and ``read_params_from_view`` can access them by name.
 
         Args:
             frame: Empty ttk.Frame to populate.
@@ -115,20 +114,6 @@ class IStepFormDef(ABC):
 
         Returns:
             A plain dict suitable for JSON storage.
-
-        Raises:
-            None.
-        """
-
-    @abstractmethod
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validates the current form state and returns error messages.
-
-        Args:
-            widgets: Dict populated by ``build_form``.
-
-        Returns:
-            A list of French error strings; empty when valid.
 
         Raises:
             None.

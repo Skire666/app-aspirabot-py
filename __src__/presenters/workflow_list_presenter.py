@@ -169,13 +169,17 @@ class WorkflowListPresenter:
         self._gestion_view.set_available_steps(self._steps)
         self._gestion_view.show_inline_form(self._steps[index])
 
-    def _on_confirm_inline_step(self, step: StepScrapingModel) -> None:
+    def _on_confirm_inline_step(self, step: StepScrapingModel) -> bool:
         """Validates then applies the confirmed step (add or update).
 
-        Shows validation feedback and keeps the form open when the candidate step fails.
+        Sends errors to the inline form and keeps it open when the candidate
+        step fails validation.
 
         Args:
             step: The newly created or updated step from the inline form.
+
+        Returns:
+            True when the step is accepted; False when it fails validation.
         """
         # Build candidate list so full validation includes the new/updated step.
         target_index = len(self._steps) if self._edit_index is None else self._edit_index
@@ -185,11 +189,13 @@ class WorkflowListPresenter:
         else:
             candidate_steps[self._edit_index] = step
 
-        first_error, candidate_error = self._validate_workflow_steps(candidate_steps, target_index)
-        self._notify_validation_feedback(first_error)
+        candidate_errors = self._validate_solo_step(candidate_steps, target_index)
 
-        if candidate_error:
-            return
+        # Reject: show errors on the inline form and keep it open.
+        if candidate_errors:
+            if self._gestion_view:
+                self._gestion_view.show_inline_form_errors(candidate_errors)
+            return False
 
         if self._edit_index is None:
             # Add mode: append the new step at the end.
@@ -200,6 +206,7 @@ class WorkflowListPresenter:
         self._edit_index = None
         self._view.clear_selection()
         self._refresh_view()
+        return True
 
     def _on_cancel_inline_step(self) -> None:
         """Clears the pending edit state after the view hides the panel."""
@@ -215,7 +222,7 @@ class WorkflowListPresenter:
         if 0 <= index < len(self._steps):
             del self._steps[index]
             self._refresh_view()
-            first_error, _ = self._validate_workflow_steps(self._steps, index)
+            first_error, _ = self._validate_all_steps(self._steps, index)
             self._notify_validation_feedback(first_error)
 
     def _on_clear_all_steps(self) -> None:
@@ -289,19 +296,53 @@ class WorkflowListPresenter:
         else:
             self._on_validation_feedback("Workflow valide.", False)
 
-    def _validate_workflow_steps(
+    def _validate_all_steps(
         self,
         steps: list[StepScrapingModel],
         candidate_index: int,
-    ) -> tuple[str | None, bool]:
-        """Validates a full step list and detects candidate step errors."""
+    ) -> tuple[str | None, list[str]]:
+        """Validates a full step list and collects candidate step errors.
+
+        Args:
+            steps: Full ordered workflow step list to validate.
+            candidate_index: Index of the step being confirmed.
+
+        Returns:
+            A tuple of (first_error_in_workflow, candidate_step_errors).
+        """
         first_error: str | None = None
-        candidate_error = False
+        candidate_errors: list[str] = []
+
+        # Validate every step; track the first error and the candidate's errors.
         for index, current in enumerate(steps):
             errors = self._workflow_service.validate_step(index, current, steps)
             if errors:
                 if first_error is None:
                     first_error = errors[0]
                 if index == candidate_index:
-                    candidate_error = True
-        return first_error, candidate_error
+                    candidate_errors = errors
+        return first_error, candidate_errors
+
+    def _validate_solo_step(
+        self,
+        steps: list[StepScrapingModel],
+        candidate_index: int,
+    ) -> list[str]:
+        """Validates a full step list and collects candidate step errors.
+
+        Args:
+            steps: Full ordered workflow step list to validate.
+            candidate_index: Index of the step being confirmed.
+
+        Returns:
+            A list of validation errors for the candidate step.
+        """
+        candidate_errors: list[str] = []
+
+        # Validate every step; track the first error and the candidate's errors.
+        for index, current in enumerate(steps):
+            errors = self._workflow_service.validate_step(index, current, steps)
+            if errors and index == candidate_index:
+                candidate_errors = errors
+                break
+        return candidate_errors

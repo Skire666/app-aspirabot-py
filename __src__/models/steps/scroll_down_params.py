@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -28,8 +29,8 @@ class ScrollDownParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            pixels=int(data.get("pixels", 1000)),
-            comment=data.get("comment", ""),
+            pixels=int(data.get("pixels")),
+            comment=data.get("comment"),
         )
 
     @classmethod

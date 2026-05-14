@@ -135,7 +135,7 @@ class JumpToStepFormDef(IStepFormDef):
         choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
         hexastring = self._extract_after_hash_hexastring(choice_target_hexastring)
         return {
-            "condition": CONDITION_VIEW_TO_MODEL.get(cond_display, "success"),
+            "condition": CONDITION_VIEW_TO_MODEL.get(cond_display),
             "target_hexastring": hexastring,
             "comment": widgets["comment"].get().strip(),
         }
@@ -150,23 +150,6 @@ class JumpToStepFormDef(IStepFormDef):
             if hash_index != -1:
                 return choice_target_hexastring[hash_index + 1 : hash_index + 5]
         return ""
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        choice_target_hexastring = widgets.get("_choice_from_listbox", "").get()
-        hexastring = self._extract_after_hash_hexastring(choice_target_hexastring)
-
-        # si vide ou "????" (valeur par défaut d'une cible non trouvée), c'est une erreur obligatoire
-        if not hexastring:
-            return ["L'étape cible : valeur obligatoire"]
-
-        all_hexastring_to_model = widgets.get("_all_hexastring_to_model", {})
-
-        # si n'existe pas dans la liste des cibles possibles, c'est une erreur
-        if hexastring not in all_hexastring_to_model:
-            return [f"L'étape cible '#{hexastring}' : doit être valide"]
-        return []
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

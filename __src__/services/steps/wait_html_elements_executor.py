@@ -12,6 +12,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
+from presenters.messages import ERROR_TEMPLATES
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlElementsConditionNotMetError
@@ -60,7 +61,7 @@ class WaitHtmlElementsExecutor(IStepExecutor):
         index_display = str(step_index + 1).zfill(2)
 
         if not p.selector.strip():
-            errors.append(f"Dans l'étape {index_display}. : le sélecteur CSS est obligatoire.")
+            errors.append(ERROR_TEMPLATES["wait_html_elements_selector_required"].format(step=index_display))
         if p.operator not in {
             "equal",
             "not_equal",
@@ -69,19 +70,15 @@ class WaitHtmlElementsExecutor(IStepExecutor):
             "greater_or_equal",
             "less_or_equal",
         }:
-            errors.append(
-                f"Dans l'étape {index_display}. : l'opérateur doit être l'un des suivants : equal, not_equal, greater_than, less_than, greater_or_equal, less_or_equal."
-            )
+            errors.append(ERROR_TEMPLATES["wait_html_elements_operator_invalid"].format(step=index_display))
         if p.quantity < 0:
-            errors.append(f"Dans l'étape {index_display}. : la quantité doit être >= 0")
+            errors.append(ERROR_TEMPLATES["wait_html_elements_quantity_negative"].format(step=index_display))
         if p.retry_delay <= 0:
-            errors.append(f"Dans l'étape {index_display}. : le délai de retry doit être >= 1")
+            errors.append(ERROR_TEMPLATES["wait_html_elements_retry_delay_invalid"].format(step=index_display))
         if p.retry_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(
-                f"Dans l'étape {index_display}. : l'unité de retry doit être l'une des suivantes : {', '.join(C_UNITS_TIME_ALLOWED_FOR_MODEL)}."
-            )
+            errors.append(ERROR_TEMPLATES["wait_html_elements_retry_unit_invalid"].format(step=index_display))
         if p.retry_max <= 0:
-            errors.append(f"Dans l'étape {index_display}. : le nombre maximum de retry doit être >= 1")
+            errors.append(ERROR_TEMPLATES["wait_html_elements_retry_max_invalid"].format(step=index_display))
         return errors
 
 

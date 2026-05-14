@@ -133,25 +133,9 @@ class CloseTabsFormDef(IStepFormDef):
         return {
             "filter_mode": widgets["filter_mode"].get(),
             "filter_custom": widgets["filter_custom"].get().strip(),
-            "max_tabs": safe_int_widget(widgets, "max_tabs", C_INPUT_DEFAULT_MAX_TABS),
+            "max_tabs": safe_int_widget(widgets, "max_tabs", -1),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        errors: list[str] = []
-
-        filter_mode = widgets["filter_mode"].get()
-        filter_custom = widgets["filter_custom"].get().strip()
-
-        max_tb = safe_int_widget(widgets, "max_tabs", -1)
-
-        if filter_mode == C_INPUT_IS_FILTER_CUSTOM and not filter_custom:
-            errors.append("Le filtre URL est obligatoire.")
-        if max_tb <= 0:
-            errors.append("Nombre max. d'onglets : doit être >= 1")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

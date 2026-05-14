@@ -150,48 +150,16 @@ class CountHtmlImagesFormDef(IStepFormDef):
         op_display = widgets["operator"].get()
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
         result = {
-            "height_min": safe_int_widget(widgets, "height_min", C_INPUT_DEFAULT_MINIMUM_SIZE),
-            "height_max": safe_int_widget(widgets, "height_max", C_MAXIMUM_SIZE_IMAGE),
-            "width_min": safe_int_widget(widgets, "width_min", C_INPUT_DEFAULT_MINIMUM_SIZE),
-            "width_max": safe_int_widget(widgets, "width_max", C_MAXIMUM_SIZE_IMAGE),
-            "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display, "success"),
+            "height_min": safe_int_widget(widgets, "height_min", -1),
+            "height_max": safe_int_widget(widgets, "height_max", -1),
+            "width_min": safe_int_widget(widgets, "width_min", -1),
+            "width_max": safe_int_widget(widgets, "width_max", -1),
+            "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display),
             "operator": op_value,
             "comment": widgets["comment"].get().strip(),
         }
         result["value"] = safe_int_widget(widgets, "value", -1)
         return result
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        errors: list[str] = []
-
-        v_height_min = safe_int_widget(widgets, "height_min", -1)
-        v_height_max = safe_int_widget(widgets, "height_max", -1)
-        v_width_min = safe_int_widget(widgets, "width_min", -1)
-        v_width_max = safe_int_widget(widgets, "width_max", -1)
-
-        # Validate non-negativity.
-        if v_height_min < 0:
-            errors.append("Hauteur min. doit être >= 0.")
-        if v_height_max < 1:
-            errors.append("Hauteur max. doit être >= 1.")
-        if v_width_min < 0:
-            errors.append("Largeur min. doit être >= 0.")
-        if v_width_max < 1:
-            errors.append("Largeur max. doit être >= 1.")
-
-        # Validate min <= max constraints.
-        if v_height_min > v_height_max:
-            errors.append("Hauteur min. doit être <= hauteur max.")
-        if v_width_min > v_width_max:
-            errors.append("Largeur min. doit être <= largeur max.")
-
-        # 1 seule valeur à valider, avec contrainte de non-négativité.
-        val = safe_int_widget(widgets, "value", -1)
-        if val < 0:
-            errors.append("La valeur doit être >= 0.")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

@@ -104,18 +104,10 @@ class ExtractTextFormDef(IStepFormDef):
         """Read current widget values and return them as a parameters dict."""
         return {
             "selector": widgets["selector"].get().strip(),
-            "extract_mode": EXTRACT_MODE_VIEW_TO_MODEL.get(widgets["extract_mode"].get(), "innerText"),
-            "target": EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets["target"].get(), "first"),
+            "extract_mode": EXTRACT_MODE_VIEW_TO_MODEL.get(widgets["extract_mode"].get()),
+            "target": EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets["target"].get()),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        errors: list[str] = []
-        if not widgets.get("selector", tk.StringVar()).get().strip():
-            errors.append("Sélecteur CSS : valeur obligatoire")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

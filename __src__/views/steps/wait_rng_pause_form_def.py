@@ -88,26 +88,11 @@ class WaitRngPauseFormDef(IStepFormDef):
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
-            "min": safe_int_widget(widgets, "min", 0),
-            "max": safe_int_widget(widgets, "max", 1),
-            "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
+            "min": safe_int_widget(widgets, "min", -1),
+            "max": safe_int_widget(widgets, "max", -1),
+            "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get()),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        errors: list[str] = []
-        min_val = safe_int_widget(widgets, "min", -1)
-        max_val = safe_int_widget(widgets, "max", -1)
-
-        if min_val <= 0:
-            errors.append("Valeur min. : doit être >= 1")
-        if max_val <= 0:
-            errors.append("Valeur max. : doit être >= 1")
-        if min_val > max_val:
-            errors.append("La valeur min. doit être <= à valeur max.")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

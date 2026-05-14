@@ -128,17 +128,10 @@ class WaitPageStateFormDef(IStepFormDef):
         """Read current widget values and return them as a parameters dict."""
         return {
             "wait_state": widgets["wait_state"].get(),
-            "timeout_duration": safe_int_widget(widgets, "timeout_duration", 1),
-            "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
+            "timeout_duration": safe_int_widget(widgets, "timeout_duration", -1),
+            "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get()),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        errors: list[str] = []
-        if safe_int_widget(widgets, "timeout_duration", -1) <= 0:
-            errors.append("Durée de timeout : doit être >= 1")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

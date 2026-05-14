@@ -7,6 +7,7 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -45,9 +46,9 @@ class RefreshPageParams(IStepParams):
         """Deserialize from dict."""
         return cls(
             clear_cache=bool(data.get("clear_cache")),
-            wait_state=data.get("wait_state", "load"),
-            timeout_duration=data.get("timeout_duration", 8),
-            timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
+            wait_state=data.get("wait_state"),
+            timeout_duration=data.get("timeout_duration"),
+            timeout_unit=data.get("timeout_unit"),
             comment=data.get("comment", ""),
         )
 

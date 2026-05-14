@@ -9,6 +9,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.count_html_images_params import CountHtmlImagesParams
+from presenters.messages import ERROR_TEMPLATES
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
@@ -62,33 +63,65 @@ class CountHtmlImagesExecutor(IStepExecutor):
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
-        """Validate the step model."""
-        errors: list[str] = []
+        """Validate the step model parameters."""
         p = CountHtmlImagesParams.from_dict(model.params)
-        index_display = str(step_index + 1).zfill(2)
+        step_label = str(step_index + 1).zfill(2)
+        bounds, errors = self._parse_bounds(model.params, step_label)
+        errors.extend(self._validate_ranges(bounds, step_label))
 
-        # Validate that width and height parameters are integers.
+        # Validate count comparison parameters.
+        allowed_operators = {
+            "equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"
+        }
+        if p.value < 0:
+            errors.append(ERROR_TEMPLATES["count_html_images_value_negative"].format(step=step_label))
+        if p.success_if not in {"success", "failure"}:
+            errors.append(
+                ERROR_TEMPLATES["count_html_images_success_if_invalid"].format(step=step_label, value=p.success_if)
+            )
+        if p.operator not in allowed_operators:
+            errors.append(
+                ERROR_TEMPLATES["count_html_images_operator_invalid"].format(step=step_label, value=p.operator)
+            )
+        return errors
+
+    @staticmethod
+    def _parse_bounds(params: dict[str, Any], step_label: str) -> tuple[dict[str, int], list[str]]:
+        """Parse dimension params as integers; return (bounds, errors)."""
+        errors: list[str] = []
+        bounds: dict[str, int] = {}
+
+        # Attempt integer conversion for each dimension key.
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
-                result = int(model.params.get(key, -1))
-                if result < 0:
-                    errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un entier positif.")
-            except ValueError, TypeError:
-                errors.append(f"Erreur dans l'étape {index_display}. : {key} doit être un nombre.")
+                bounds[key] = int(params.get(key, -1))
+            except (ValueError, TypeError):
+                errors.append(ERROR_TEMPLATES["image_dim_not_int"].format(step=step_label, key=key))
+        return bounds, errors
 
-        # condition validations
-        allowed_operators = {
-            "equal",
-            "not_equal",
-            "greater_than",
-            "less_than",
-            "greater_or_equal",
-            "less_or_equal",
-        }
-        if p.success_if not in {"success", "failure"}:
-            errors.append(f"Erreur dans l'étape {index_display}. : success_if invalide — {p.success_if!r}.")
-        if p.operator not in allowed_operators:
-            errors.append(f"Erreur dans l'étape {index_display}. : operator invalide — {p.operator!r}.")
+    @staticmethod
+    def _validate_ranges(bounds: dict[str, int], step_label: str) -> list[str]:
+        """Validate non-negativity, max >= 1, and min <= max constraints."""
+        errors: list[str] = []
+
+        # Check non-negativity for all bounds.
+        for key in ("height_min", "height_max", "width_min", "width_max"):
+            if bounds.get(key, 0) < 0:
+                errors.append(ERROR_TEMPLATES["image_dim_negative"].format(step=step_label, key=key))
+
+        # Check max bounds are at least 1.
+        for key in ("height_max", "width_max"):
+            if bounds.get(key, 1) < 1:
+                errors.append(ERROR_TEMPLATES["image_dim_max_below_one"].format(step=step_label, key=key))
+
+        # Check min <= max for each dimension.
+        for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):
+            if min_k in bounds and max_k in bounds and bounds[min_k] > bounds[max_k]:
+                errors.append(
+                    ERROR_TEMPLATES["image_dim_range_invalid"].format(
+                        step=step_label, min_key=min_k, max_key=max_k
+                    )
+                )
         return errors
 
 

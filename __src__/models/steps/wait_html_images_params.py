@@ -7,6 +7,7 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_DEFAULT_MODEL
+from shared.enums import StepTypeEnum
 from views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
 
 
@@ -60,16 +61,16 @@ class WaitHtmlImagesParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            height_min=int(data.get("height_min", 0)),
-            height_max=int(data.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
-            width_min=int(data.get("width_min", 0)),
-            width_max=int(data.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
-            operator=data.get("operator", "equal"),
-            quantity=int(data.get("quantity", 1)),
-            retry_delay=int(data.get("retry_delay", C_INPUT_DEFAULT_RETRY_DELAY)),
-            retry_unit=data.get("retry_unit", C_UNITS_TIME_DEFAULT_MODEL),
-            retry_max=int(data.get("retry_max", 10)),
-            comment=data.get("comment", ""),
+            height_min=int(data.get("height_min")),
+            height_max=int(data.get("height_max")),
+            width_min=int(data.get("width_min")),
+            width_max=int(data.get("width_max")),
+            operator=data.get("operator"),
+            quantity=int(data.get("quantity")),
+            retry_delay=int(data.get("retry_delay")),
+            retry_unit=data.get("retry_unit"),
+            retry_max=int(data.get("retry_max")),
+            comment=data.get("comment"),
         )
 
     @classmethod

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -43,13 +44,13 @@ class WaitHtmlElementsParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            selector=data.get("selector", ""),
-            operator=data.get("operator", "equal"),
-            quantity=int(data.get("quantity", 1)),
-            retry_delay=int(data.get("retry_delay", 500)),
-            retry_unit=data.get("retry_unit", "ms"),
-            retry_max=int(data.get("retry_max", 5)),
-            comment=data.get("comment", ""),
+            selector=data.get("selector"),
+            operator=data.get("operator"),
+            quantity=int(data.get("quantity")),
+            retry_delay=int(data.get("retry_delay")),
+            retry_unit=data.get("retry_unit"),
+            retry_max=int(data.get("retry_max")),
+            comment=data.get("comment"),
         )
 
     @classmethod

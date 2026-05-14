@@ -7,6 +7,7 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -31,10 +32,10 @@ class WaitRngPauseParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            min_val=int(data.get("min", 0)),
-            max_val=int(data.get("max", 1)),
-            unit=data.get("unit", C_UNITS_TIME_DEFAULT_MODEL),
-            comment=data.get("comment", ""),
+            min_val=int(data.get("min")),
+            max_val=int(data.get("max")),
+            unit=data.get("unit"),
+            comment=data.get("comment"),
         )
 
     @classmethod

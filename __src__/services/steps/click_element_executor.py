@@ -9,6 +9,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.click_element_params import ClickElementParams
+from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
@@ -81,7 +82,7 @@ class ClickElementExecutor(IStepExecutor):
 
         # if selecteur est vide ou ne contient que des espaces
         if not p.selector.strip():
-            return [f"Erreur dans l'étape {index_display}. : le sélecteur CSS est obligatoire."]
+            return [ERROR_TEMPLATES["click_element_selector_required"].format(step=index_display)]
         return []
 
 

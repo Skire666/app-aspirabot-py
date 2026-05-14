@@ -10,6 +10,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
+from presenters.messages import ERROR_TEMPLATES
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
 from shared.constants import (
@@ -74,36 +75,64 @@ class WaitHtmlImagesExecutor(IStepExecutor):
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
-        """Validate the step model."""
+        """Validate the step model parameters."""
         p = WaitHtmlImagesParams.from_dict(model.params)
         errors: list[str] = []
-        index_display = str(step_index + 1).zfill(2)
+        step_label = str(step_index + 1).zfill(2)
+
+        # Validate dimension bounds.
+        bounds = self._parse_dim_bounds(model.params, step_label, errors)
+        errors.extend(self._validate_dim_ranges(bounds, step_label))
+
+        # Validate count comparison and retry parameters.
+        allowed_operators = {
+            "equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"
+        }
+        if p.operator not in allowed_operators:
+            errors.append(ERROR_TEMPLATES["wait_html_images_operator_invalid"].format(step=step_label))
+        if p.quantity < 0:
+            errors.append(ERROR_TEMPLATES["wait_html_images_quantity_negative"].format(step=step_label))
+        if p.retry_delay <= 0:
+            errors.append(ERROR_TEMPLATES["wait_html_images_retry_delay_invalid"].format(step=step_label))
+        if p.retry_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
+            errors.append(ERROR_TEMPLATES["wait_html_images_retry_unit_invalid"].format(step=step_label))
+        if p.retry_max <= 0:
+            errors.append(ERROR_TEMPLATES["wait_html_images_retry_max_invalid"].format(step=step_label))
+        return errors
+
+    @staticmethod
+    def _parse_dim_bounds(
+        params: dict[str, Any], step_label: str, errors: list[str]
+    ) -> dict[str, int]:
+        """Parse dimension params as integers; append parse errors in-place."""
+        bounds: dict[str, int] = {}
+
+        # Attempt integer conversion for each dimension key.
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
-                int(model.params.get(key, 0))
-            except ValueError, TypeError:
-                errors.append(f"Dans l'étape {index_display}. : {key} doit être un entier.")
-        if p.operator not in {
-            "equal",
-            "not_equal",
-            "greater_than",
-            "less_than",
-            "greater_or_equal",
-            "less_or_equal",
-        }:
-            errors.append(
-                f"Dans l'étape {index_display}. : l'opérateur doit être l'un des suivants : equal, not_equal, greater_than, less_than, greater_or_equal, less_or_equal."
-            )
-        if p.quantity < 0:
-            errors.append(f"Dans l'étape {index_display}. : la quantité doit être >= 0")
-        if p.retry_delay <= 0:
-            errors.append(f"Dans l'étape {index_display}. : le délai de retry doit être >= 1")
-        if p.retry_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(
-                f"Dans l'étape {index_display}. : l'unité de retry doit être l'une des suivantes : {', '.join(C_UNITS_TIME_ALLOWED_FOR_MODEL)}."
-            )
-        if p.retry_max <= 0:
-            errors.append(f"Dans l'étape {index_display}. : le nombre maximum de retry doit être >= 1")
+                bounds[key] = int(params.get(key, 0))
+            except (ValueError, TypeError):
+                errors.append(ERROR_TEMPLATES["image_dim_not_int"].format(step=step_label, key=key))
+        return bounds
+
+    @staticmethod
+    def _validate_dim_ranges(bounds: dict[str, int], step_label: str) -> list[str]:
+        """Validate non-negativity and min <= max for dimension bounds."""
+        errors: list[str] = []
+
+        # Check non-negativity for all bounds (max only needs >= 0 here).
+        for key in ("height_min", "height_max", "width_min", "width_max"):
+            if bounds.get(key, 0) < 0:
+                errors.append(ERROR_TEMPLATES["image_dim_negative"].format(step=step_label, key=key))
+
+        # Check min <= max for each dimension.
+        for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):
+            if min_k in bounds and max_k in bounds and bounds[min_k] > bounds[max_k]:
+                errors.append(
+                    ERROR_TEMPLATES["image_dim_range_invalid"].format(
+                        step=step_label, min_key=min_k, max_key=max_k
+                    )
+                )
         return errors
 
 

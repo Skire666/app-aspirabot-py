@@ -173,13 +173,25 @@ class WorkflowView(ttk.Frame):
     def _on_inline_confirm(self, step: StepScrapingModel) -> None:
         was_creation = not self._is_edit_mode
         cb = self._workflow_builder_view.on_confirm_inline_step
-        if cb:
-            cb(step)
+        accepted = cb(step) if cb else False
+
+        # Keep the form open so the presenter can display errors on it.
+        if not accepted:
+            return
+
         self._is_edit_mode = False
         self._inline_form.set_creation_mode()
         self._inline_form.reset(self._get_current_listbox_type())
         if was_creation:
             self._workflow_builder_view.scroll_to_bottom()
+
+    def show_inline_form_errors(self, errors: list[str]) -> None:
+        """Forward validation errors to the inline form panel.
+
+        Args:
+            errors: List of error strings to display on the inline form.
+        """
+        self._inline_form.show_errors_of_edited_step(errors)
 
     def _on_inline_cancel(self) -> None:
         cb = self._workflow_builder_view.on_cancel_inline_step

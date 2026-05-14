@@ -151,26 +151,12 @@ class WaitHtmlElementsFormDef(IStepFormDef):
         return {
             "selector": widgets["selector"].get().strip(),
             "operator": op_value,
-            "quantity": safe_int_widget(widgets, "quantity", 1),
-            "retry_delay": safe_int_widget(widgets, "retry_delay", C_INPUT_DEFAULT_RETRY_DELAY),
-            "retry_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["retry_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
-            "retry_max": safe_int_widget(widgets, "retry_max", 10),
+            "quantity": safe_int_widget(widgets, "quantity", -1),
+            "retry_delay": safe_int_widget(widgets, "retry_delay", -1),
+            "retry_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["retry_unit"].get()),
+            "retry_max": safe_int_widget(widgets, "retry_max", -1),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate the current form values and return error messages."""
-        errors: list[str] = []
-        if not widgets.get("selector", tk.StringVar()).get().strip():
-            errors.append("Sélecteur CSS : valeur obligatoire")
-        if widgets.get("quantity") and safe_int_widget(widgets, "quantity", -1) < 0:
-            errors.append("Le nombre d'éléments doit être un nombre >= 0")
-        if widgets.get("retry_delay") and safe_int_widget(widgets, "retry_delay", -1) <= 0:
-            errors.append("La durée entre les essais doit être >= 1")
-        if widgets.get("retry_max") and safe_int_widget(widgets, "retry_max", -1) <= 0:
-            errors.append("Nombre d'essais max. doit être >= 1")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -43,11 +44,11 @@ class CountHtmlElementsParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            selector=data.get("selector", ""),
-            success_if=data.get("success_if", "success"),
-            operator=data.get("operator", "equal"),
-            value=int(data.get("value", 0)),
-            comment=data.get("comment", ""),
+            selector=data.get("selector"),
+            success_if=data.get("success_if"),
+            operator=data.get("operator"),
+            value=int(data.get("value")),
+            comment=data.get("comment"),
         )
 
     @classmethod

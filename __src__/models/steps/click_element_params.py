@@ -29,11 +29,7 @@ class ClickElementParams(IStepParams):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
-        return cls(
-            selector=data.get("selector", ""),
-            click_mode=data.get("click_mode", "Normal"),
-            comment=data.get("comment", ""),
-        )
+        return cls(selector=data.get("selector"), click_mode=data.get("click_mode"), comment=data.get("comment"))
 
     @classmethod
     def get_step_type(cls) -> StepTypeEnum:

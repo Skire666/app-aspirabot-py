@@ -7,6 +7,7 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -36,10 +37,10 @@ class WaitUserActionParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            condition=data.get("condition", "always"),
-            wait_duration=int(data.get("wait_duration", 1)),
-            wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
-            comment=data.get("comment", ""),
+            condition=data.get("condition"),
+            wait_duration=int(data.get("wait_duration")),
+            wait_unit=data.get("wait_unit"),
+            comment=data.get("comment"),
         )
 
     @classmethod

@@ -10,6 +10,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_x_time_params import WaitXTimeParams
+from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.time_util import convert_to_sec
@@ -44,7 +45,7 @@ class WaitXTimeExecutor(IStepExecutor):
         p = WaitXTimeParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         if p.duration < 0:
-            return [f"Dans l'étape {index_display}. : La durée d'attente doit être égale ou supérieure à 0."]
+            return [ERROR_TEMPLATES["wait_x_time_duration_invalid"].format(step=index_display)]
         return []
 
 

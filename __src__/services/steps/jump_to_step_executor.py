@@ -9,6 +9,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.jump_to_step_params import JumpToStepParams
+from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
 
@@ -50,18 +51,20 @@ class JumpToStepExecutor(IStepExecutor):
         errors: list[str] = []
         step_idx_display = str(step_index + 1).zfill(2)
         if condition not in {"success", "failure", "always"}:
-            errors.append(f"Dans l'étape {step_idx_display}. : condition invalide - {condition}.")
+            errors.append(
+                ERROR_TEMPLATES["jump_to_step_condition_invalid"].format(step=step_idx_display, value=condition)
+            )
 
         # Basic check for presence of target step ID.
         if not target_step_id:
-            errors.append(f"Dans l'étape {step_idx_display}. : Aucune étape de référencée.")
+            errors.append(ERROR_TEMPLATES["jump_to_step_target_missing"].format(step=step_idx_display))
             return errors
 
         # Additional checks if a target step ID is provided.
         if target_step_id:
             # Check for self-referencing jump.
             if target_step_id == model.step_id:
-                errors.append(f"Dans l'étape {step_idx_display}. : ne peut pas pointer vers elle-même.")
+                errors.append(ERROR_TEMPLATES["jump_to_step_self_reference"].format(step=step_idx_display))
 
             # TODO PCO : pas optimisé la recherche, un dictionnaire serait mieux.
             step_found = None
@@ -71,7 +74,11 @@ class JumpToStepExecutor(IStepExecutor):
                     break
 
             if step_found is None:
-                errors.append(f"Dans l'étape {step_idx_display}. : la cible [{target_step_id}] est introuvable.")
+                errors.append(
+                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(
+                        step=step_idx_display, value=target_step_id
+                    )
+                )
 
         # Note: We cannot check for jump loops here, as it would require analyzing the entire workflow
         return errors

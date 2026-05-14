@@ -190,23 +190,10 @@ class OpenUrlFormDef(IStepFormDef):
             "url_mode": widgets["url_mode"].get(),
             "url_custom": widgets["url_custom"].get().strip(),
             "wait_state": widgets["wait_state"].get(),
-            "timeout_duration": safe_int_widget(widgets, "timeout_duration", 1),
-            "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
+            "timeout_duration": safe_int_widget(widgets, "timeout_duration", -1),
+            "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get()),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validates the form and returns user-facing errors."""
-        errors: list[str] = []
-
-        url_mode = widgets["url_mode"].get()
-        url_custom = widgets["url_custom"].get().strip()
-        if url_mode == "<<CUSTOM>>" and not url_custom:
-            errors.append("L'URL personnalisée est obligatoire.")
-        if safe_int_widget(widgets, "timeout_duration", -1) <= 0:
-            errors.append("Durée de timeout : doit être >= 1")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

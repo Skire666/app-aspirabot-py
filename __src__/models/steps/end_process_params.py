@@ -37,10 +37,10 @@ class EndProcessParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            wait_duration=int(data.get("wait_duration", 1)),
-            wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
-            export_data=data.get("export_data", False),
-            comment=data.get("comment", ""),
+            wait_duration=int(data.get("wait_duration")),
+            wait_unit=data.get("wait_unit"),
+            export_data=data.get("export_data"),
+            comment=data.get("comment"),
         )
 
     @classmethod

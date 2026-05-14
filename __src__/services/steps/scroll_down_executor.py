@@ -9,6 +9,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.scroll_down_params import ScrollDownParams
+from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
@@ -43,8 +44,11 @@ class ScrollDownExecutor(IStepExecutor):
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
-        """Validate the step model."""
-        # always valid as there are no parameters with constraints
+        """Validate the step model parameters."""
+        p = ScrollDownParams.from_dict(model.params)
+        step_label = str(step_index + 1).zfill(2)
+        if p.pixels < 1:
+            return [ERROR_TEMPLATES["scroll_down_pixels_invalid"].format(step=step_label)]
         return []
 
 

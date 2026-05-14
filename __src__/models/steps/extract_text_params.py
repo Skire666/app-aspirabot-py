@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -35,10 +36,10 @@ class ExtractTextParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            selector=data.get("selector", ""),
-            extract_mode=data.get("extract_mode", "innerText"),
-            target=data.get("target", "first"),
-            comment=data.get("comment", ""),
+            selector=data.get("selector"),
+            extract_mode=data.get("extract_mode"),
+            target=data.get("target"),
+            comment=data.get("comment"),
         )
 
     @classmethod

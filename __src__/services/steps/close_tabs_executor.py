@@ -11,6 +11,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps.close_tabs_params import CloseTabsParams
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
+from presenters.messages import ERROR_TEMPLATES
 from shared.exception_util import CurrentPageClosedUnexpectedlyError
 from views.steps.close_tabs_form_def import C_INPUT_IS_FILTER_CUSTOM
 
@@ -66,9 +67,9 @@ class CloseTabsExecutor(IStepExecutor):
         index_display = str(step_index + 1).zfill(2)
 
         if p.filter_mode == C_INPUT_IS_FILTER_CUSTOM and not p.filter_custom.strip():
-            return [f"Erreur dans l'étape {index_display}. : Filtre URL ne peut pas être vide."]
+            return [ERROR_TEMPLATES["close_tabs_filter_required"].format(step=index_display)]
         if p.max_tabs <= 0:
-            return [f"Erreur dans l'étape {index_display}. : Max. onglets doit être >= 1."]
+            return [ERROR_TEMPLATES["close_tabs_max_tabs_invalid"].format(step=index_display)]
         return []
 
 

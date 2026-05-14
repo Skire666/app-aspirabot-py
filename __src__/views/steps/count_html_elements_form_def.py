@@ -137,24 +137,11 @@ class CountHtmlElementsFormDef(IStepFormDef):
         # Valeurs communes à tous les opérateurs
         return {
             "selector": widgets["selector"].get().strip(),
-            "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display, "success"),
+            "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display),
             "operator": op_value,
             "value": safe_int_widget(widgets, "value", -1),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        errors: list[str] = []
-        if not widgets.get("selector", tk.StringVar()).get().strip():
-            errors.append("Sélecteur CSS : valeur obligatoire")
-
-        # 1 seule valeur à valider, avec contrainte de non-négativité.
-        val = safe_int_widget(widgets, "value", -1)
-        if val < 0:
-            errors.append("La valeur doit être >= 0.")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

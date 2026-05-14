@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -35,10 +36,10 @@ class CloseTabsParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            filter_mode=data.get("filter_mode", "<<URL>>"),
-            filter_custom=data.get("filter_custom", ""),
-            max_tabs=int(data.get("max_tabs", 1)),
-            comment=data.get("comment", ""),
+            filter_mode=data.get("filter_mode"),
+            filter_custom=data.get("filter_custom"),
+            max_tabs=int(data.get("max_tabs")),
+            comment=data.get("comment"),
         )
 
     @classmethod

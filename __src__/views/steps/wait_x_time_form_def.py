@@ -86,18 +86,10 @@ class WaitXTimeFormDef(IStepFormDef):
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
-            "duration": safe_int_widget(widgets, "duration", C_INPUT_DEFAULT_DURATION),
-            "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get(), C_UNITS_TIME_DEFAULT_MODEL),
+            "duration": safe_int_widget(widgets, "duration", -1),
+            "unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["unit"].get()),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        errors: list[str] = []
-        if safe_int_widget(widgets, "duration", -1) <= 0:
-            errors.append("Durée d'attente : doit être >= 1")
-        return errors
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:

@@ -10,6 +10,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.refresh_page_params import RefreshPageParams
 from services.workflow_service import register_step_executor
+from presenters.messages import ERROR_TEMPLATES
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
 from shared.time_util import convert_to_ms
@@ -49,9 +50,13 @@ class RefreshPageExecutor(IStepExecutor):
 
         errors: list[str] = []
         if p.timeout_duration <= 0:
-            errors.append(f"Dans l'étape {index_display}. : Timeout doit être >= 1")
+            errors.append(ERROR_TEMPLATES["refresh_page_timeout_invalid"].format(step=index_display))
         if p.timeout_duration > 0 and p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(f"Dans l'étape {index_display}. : timeout_unit invalide - {p.timeout_unit}.")
+            errors.append(
+                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(
+                    step=index_display, value=p.timeout_unit
+                )
+            )
         return errors
 
 

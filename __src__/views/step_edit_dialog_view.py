@@ -209,31 +209,28 @@ class StepInlineFormPanel(ttk.Frame):
         except ValueError:
             return {}
 
-    # ---------------------------------------------------------------
-    # Validation — delegated to form defs
-    # ---------------------------------------------------------------
+    def show_errors_of_edited_step(self, errors: list[str]) -> None:
+        """Display the first error message in the error label.
 
-    def _validate_form(self, step_type: StepTypeEnum) -> list[str]:
-        """Validates the current form for the given step type."""
-        try:
-            return get_form(step_type).validate_form(self._form_widgets)
-        except ValueError:
-            return []
+        Args:
+            errors: List of error strings; only the first is shown.
+        """
+        final_text = errors[0] if errors else ""
+        if len(errors) > 1:
+            # tips for multiple errors -> display a second to help saving time for user
+            # but only if there are exactly 2 errors to avoid overwhelming them with too much text.
+            final_text = f"{errors[0]}\n{errors[1]}"
+        self._error_label.configure(text=final_text)
 
     # ---------------------------------------------------------------
     # Button handlers
     # ---------------------------------------------------------------
 
     def _btn_confirm_create(self) -> None:
-        """Validates the form, builds the step, and fires on_confirm."""
+        """Builds the step and fires on_confirm."""
         label = self._type_var.get()
         step_type = _LABEL_TO_TYPE.get(label)
         if step_type is None:
-            return
-
-        errors = self._validate_form(step_type)
-        if errors:
-            self._error_label.configure(text=errors[0])
             return
 
         self._error_label.configure(text="")
@@ -250,15 +247,10 @@ class StepInlineFormPanel(ttk.Frame):
             self.on_confirm(step)
 
     def _btn_confirm_update(self) -> None:
-        """Validates the form, builds the step, and fires on_confirm."""
+        """Builds the step and fires on_confirm."""
         label = self._type_var.get()
         step_type = _LABEL_TO_TYPE.get(label)
         if step_type is None:
-            return
-
-        errors = self._validate_form(step_type)
-        if errors:
-            self._error_label.configure(text=errors[0])
             return
 
         self._error_label.configure(text="")

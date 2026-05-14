@@ -42,10 +42,10 @@ class WaitPageStateParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            wait_state=data.get("wait_state", "load"),
-            timeout_duration=data.get("timeout_duration", 8),
-            timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
-            comment=data.get("comment", ""),
+            wait_state=data.get("wait_state"),
+            timeout_duration=data.get("timeout_duration"),
+            timeout_unit=data.get("timeout_unit"),
+            comment=data.get("comment"),
         )
 
     @classmethod

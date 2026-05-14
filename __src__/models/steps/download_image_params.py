@@ -7,6 +7,7 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
+from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -50,13 +51,13 @@ class DownloadImageParams(IStepParams):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
         return cls(
-            mode=data.get("mode", "all"),
+            mode=data.get("mode"),
             unique_only=bool(data.get("unique_only")),
-            height_min=int(data.get("height_min", 0)),
-            height_max=int(data.get("height_max", C_MAXIMUM_SIZE_IMAGE)),
-            width_min=int(data.get("width_min", 0)),
-            width_max=int(data.get("width_max", C_MAXIMUM_SIZE_IMAGE)),
-            comment=data.get("comment", ""),
+            height_min=int(data.get("height_min")),
+            height_max=int(data.get("height_max")),
+            width_min=int(data.get("width_min")),
+            width_max=int(data.get("width_max")),
+            comment=data.get("comment"),
         )
 
     @classmethod

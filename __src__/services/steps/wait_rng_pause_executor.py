@@ -11,6 +11,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_rng_pause_params import WaitRngPauseParams
+from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.time_util import convert_to_sec
@@ -46,11 +47,11 @@ class WaitRngPauseExecutor(IStepExecutor):
         p = WaitRngPauseParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         if p.min_val <= 0:
-            return [f"Dans l'étape {index_display}. : min doit être >= 1"]
+            return [ERROR_TEMPLATES["wait_rng_pause_min_invalid"].format(step=index_display)]
         if p.max_val <= 0:
-            return [f"Dans l'étape {index_display}. : max doit être >= 1"]
+            return [ERROR_TEMPLATES["wait_rng_pause_max_invalid"].format(step=index_display)]
         if p.min_val > p.max_val:
-            return [f"Dans l'étape {index_display}. : min doit être inférieur ou égale à max."]
+            return [ERROR_TEMPLATES["wait_rng_pause_range_invalid"].format(step=index_display)]
         return []
 
 

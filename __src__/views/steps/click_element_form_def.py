@@ -86,14 +86,6 @@ class ClickElementFormDef(IStepFormDef):
         }
 
     @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        errors: list[str] = []
-        if not widgets.get("selector", tk.StringVar()).get().strip():
-            errors.append("Sélecteur CSS : valeur obligatoire.")
-        return errors
-
-    @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
         """Return a compact human-readable label for this step instance."""
         selector = model.params.get("selector", "<vide>")

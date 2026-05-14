@@ -13,6 +13,7 @@ from models.steps.count_html_elements_params import CountHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
+from presenters.messages import ERROR_TEMPLATES
 from shared.exception_util import CountHtmlElementsConditionNotMetError
 
 _logger = logging.getLogger(__name__)
@@ -63,11 +64,21 @@ class CountHtmlElementsExecutor(IStepExecutor):
         }
         errors: list[str] = []
         if not p.selector.strip():
-            errors.append(f"Erreur dans l'étape {index_display}. : le sélecteur CSS est obligatoire.")
+            errors.append(ERROR_TEMPLATES["count_html_elements_selector_required"].format(step=index_display))
+        if p.value < 0:
+            errors.append(ERROR_TEMPLATES["count_html_elements_value_negative"].format(step=index_display))
         if p.success_if not in {"success", "failure"}:
-            errors.append(f"Erreur dans l'étape {index_display}. : success_if invalide — {p.success_if!r}.")
+            errors.append(
+                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(
+                    step=index_display, value=p.success_if
+                )
+            )
         if p.operator not in allowed_operators:
-            errors.append(f"Erreur dans l'étape {index_display}. : operator invalide — {p.operator!r}.")
+            errors.append(
+                ERROR_TEMPLATES["count_html_elements_operator_invalid"].format(
+                    step=index_display, value=p.operator
+                )
+            )
         return errors
 
 

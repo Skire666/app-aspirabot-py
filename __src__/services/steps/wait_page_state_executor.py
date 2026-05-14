@@ -10,6 +10,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_page_state_params import WaitPageStateParams
 from services.workflow_service import register_step_executor
+from presenters.messages import ERROR_TEMPLATES
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
 from shared.time_util import convert_to_ms
@@ -45,9 +46,9 @@ class WaitPageStateExecutor(IStepExecutor):
 
         errors: list[str] = []
         if p.timeout_duration <= 0:
-            errors.append(f"Dans l'étape {index_display}. : timeout_duration doit être >= 1.")
+            errors.append(ERROR_TEMPLATES["wait_page_state_timeout_invalid"].format(step=index_display))
         if p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(f"Dans l'étape {index_display}. : L'unité de timeout est invalide.")
+            errors.append(ERROR_TEMPLATES["wait_page_state_timeout_unit_invalid"].format(step=index_display))
         return errors
 
 

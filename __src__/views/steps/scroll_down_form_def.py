@@ -64,16 +64,9 @@ class ScrollDownFormDef(IStepFormDef):
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
         """Read current widget values and return them as a parameters dict."""
         return {
-            "pixels": safe_int_widget(widgets, "pixels", 1000),
+            "pixels": safe_int_widget(widgets, "pixels", -1),
             "comment": widgets["comment"].get().strip(),
         }
-
-    @override
-    def validate_form(self, widgets: dict[str, Any]) -> list[str]:
-        """Validate current widget values and return a list of error messages."""
-        if safe_int_widget(widgets, "pixels", -1) <= 0:
-            return ["Pixels : doit être >= 1"]
-        return []
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
