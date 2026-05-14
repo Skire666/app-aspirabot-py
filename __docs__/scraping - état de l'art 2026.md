@@ -1,3 +1,7 @@
+Rien à voir, mais alternative pour playwright :
+- camoufox (marche bien) : https://github.com/daijro/camoufox
+- scrapling : https://github.com/D4Vinci/Scrapling
+Mais en vrai, à ton niveau, ça change rien. Playwright fait déjà tout.
 
 -------------------------------------------------------------------------------
 NOTE PCO : 2026.05.06

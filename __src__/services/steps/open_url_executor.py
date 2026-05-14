@@ -53,6 +53,7 @@ class OpenUrlExecutor(IStepExecutor):
         else:
             page.goto(target_url, wait_until=p.wait_state)
 
+        context.last_url_opened = target_url
         context.last_message_step = f"Page ouverte : {target_url}"
 
     @override

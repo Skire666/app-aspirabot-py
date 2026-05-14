@@ -19,7 +19,6 @@ import logging
 import os
 import shutil
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -27,6 +26,7 @@ from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
 from repositories.json_repository import JsonFileRepository
+from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.exception_util import (
     InvalidProviderJsonContentError,
     InvalidProvidersFolderPathError,
@@ -135,8 +135,8 @@ class ProvidersRepository(ProviderRepositoryInterface):
         Returns:
             The destination path of the moved file.
         """
-        mini_timestamp = datetime.now().strftime("%H%M%S%f")
-        destination_name = f"{mini_timestamp}_{file_path.stem}.broken"
+        timestamp_str = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
+        destination_name = f"{timestamp_str}_{file_path.stem}.broken"
         destination_path = self._folder_path / destination_name
 
         self._logger.warning(

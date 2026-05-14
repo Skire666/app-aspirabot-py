@@ -10,12 +10,11 @@ from tkinter import messagebox, ttk
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from views.components.horizontal_line_frame import HorizontalLineFrame
 from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
 from views.workflow_list_crud_view import WorkflowListCrudView
-
-from __src__.shared.enums import StepTypeEnum
 
 # ---------------------------------------------------------------------------
 # Classes

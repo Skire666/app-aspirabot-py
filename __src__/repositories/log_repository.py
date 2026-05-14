@@ -5,13 +5,11 @@
 # ---------------------------------------------------------------------------
 
 import logging
-import os
-import subprocess
 from pathlib import Path
 
 from models.log_entry_model import LogEntryModel
-from shared.exception_util import UnsupportedOperatingSystemError
-from shared.operating_system_util import OperatingSystem, detect_os
+
+from __src__.shared.operating_system_util import open_folder
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -74,23 +72,5 @@ class LogRepository:
         if not self._folder_path.is_dir():
             raise NotADirectoryError(f"Path is not a directory: {self._folder_path}")
 
-        # Dispatch to the OS-specific open command.
-        try:
-            enum_os: OperatingSystem = detect_os()
-
-            if enum_os == OperatingSystem.WINDOWS:
-                os.startfile(self._folder_path)
-            elif enum_os == OperatingSystem.MACOS:
-                subprocess.Popen(["open", self._folder_path])
-            elif enum_os == OperatingSystem.LINUX:
-                subprocess.Popen(["xdg-open", self._folder_path])
-            else:
-                self._logger.warning("Unsupported OS for folder opening: %s", enum_os)
-                raise UnsupportedOperatingSystemError(enum_os)
-
-            self._logger.info("Logs folder opened: %s", self._folder_path)
-        except UnsupportedOperatingSystemError:
-            raise
-        except Exception as e:
-            self._logger.error("Error opening logs folder: %s", e)
-            raise
+        self._logger.info("Attempting to open logs folder: %s", self._folder_path)
+        open_folder(self._folder_path)

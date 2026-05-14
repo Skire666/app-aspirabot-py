@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any, override
 from urllib.parse import urljoin
@@ -18,6 +17,7 @@ from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
     C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
 )
+from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepTypeEnum
 from shared.exception_util import (
     ImageDownloadFailedError,
@@ -100,7 +100,7 @@ class DownloadImageExecutor(IStepExecutor):
             url_path = full_url.split("?")[0]  # Remove query parameters for filename generation
             suffix = Path(url_path).suffix or ".jpg"
             filename = Path(url_path).stem if len(Path(url_path).stem) < 100 else Path(url_path).stem[:100]
-            timestamp_ms = datetime.now().strftime("_%Y%m%d_%H%M%S%f")
+            timestamp_ms = "_" + get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
             dest = context.folder_export / (filename + timestamp_ms + suffix)
             with dest.open("wb") as fh:
                 fh.write(response.body())
@@ -127,9 +127,7 @@ class DownloadImageExecutor(IStepExecutor):
         return errors
 
     @staticmethod
-    def _parse_bounds(
-        params: dict[str, Any], step_label: str
-    ) -> tuple[dict[str, int], list[str]]:
+    def _parse_bounds(params: dict[str, Any], step_label: str) -> tuple[dict[str, int], list[str]]:
         """Parse dimension params as integers; return (bounds, errors).
 
         Args:
@@ -146,18 +144,12 @@ class DownloadImageExecutor(IStepExecutor):
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
                 bounds[key] = int(params.get(key, -1))
-            except (ValueError, TypeError):
-                errors.append(
-                    ERROR_TEMPLATES["image_dim_not_int"].format(
-                        step=step_label, key=key
-                    )
-                )
+            except ValueError, TypeError:
+                errors.append(ERROR_TEMPLATES["image_dim_not_int"].format(step=step_label, key=key))
         return bounds, errors
 
     @staticmethod
-    def _validate_ranges(
-        bounds: dict[str, int], step_label: str
-    ) -> list[str]:
+    def _validate_ranges(bounds: dict[str, int], step_label: str) -> list[str]:
         """Validate non-negativity, max >= 1, and min <= max constraints.
 
         Args:
@@ -172,20 +164,12 @@ class DownloadImageExecutor(IStepExecutor):
         # Check non-negativity for all bounds.
         for key in ("height_min", "height_max", "width_min", "width_max"):
             if bounds.get(key, 0) < 0:
-                errors.append(
-                    ERROR_TEMPLATES["image_dim_negative"].format(
-                        step=step_label, key=key
-                    )
-                )
+                errors.append(ERROR_TEMPLATES["image_dim_negative"].format(step=step_label, key=key))
 
         # Check max bounds are at least 1.
         for key in ("height_max", "width_max"):
             if bounds.get(key, 1) < 1:
-                errors.append(
-                    ERROR_TEMPLATES["image_dim_max_below_one"].format(
-                        step=step_label, key=key
-                    )
-                )
+                errors.append(ERROR_TEMPLATES["image_dim_max_below_one"].format(step=step_label, key=key))
 
         # Check min <= max for each dimension.
         for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):

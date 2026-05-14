@@ -455,6 +455,14 @@ class BrowserNotLaunchedError(RuntimeError, AspirabotError):
         super().__init__("Browser is not launched. Call launch() first.")
 
 
+class PageNotAvailableOrClosedError(RuntimeError, AspirabotError):
+    """Raised when a browser operation requires a launched instance."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Page is not available or closed.")
+
+
 class NoExecutorsRegisteredError(ValueError, AspirabotError):
     """Raised when the workflow registry is empty."""
 

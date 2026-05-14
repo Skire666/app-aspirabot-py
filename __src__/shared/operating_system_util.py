@@ -2,8 +2,13 @@
 # Imports
 # ---------------------------------------------------------------------------
 
+import os
 import platform
+import subprocess
 from enum import Enum, auto
+from pathlib import Path
+
+from shared.exception_util import UnsupportedOperatingSystemError
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -35,3 +40,17 @@ def detect_os() -> OperatingSystem:
     if os_name == "Darwin":
         return OperatingSystem.MACOS
     return OperatingSystem.UNKNOWN
+
+
+def open_folder(path: str | Path) -> None:
+    # Dispatch to the OS-specific open command.
+    enum_os: OperatingSystem = detect_os()
+
+    if enum_os == OperatingSystem.WINDOWS:
+        os.startfile(path)
+    elif enum_os == OperatingSystem.MACOS:
+        subprocess.Popen(["open", path])
+    elif enum_os == OperatingSystem.LINUX:
+        subprocess.Popen(["xdg-open", path])
+    else:
+        raise UnsupportedOperatingSystemError(enum_os)

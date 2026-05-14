@@ -83,6 +83,14 @@ class FaqTextTextHint:
                 '      - Ex: <a href="/api/user/123"> → a[href*="user"]\n'
                 '            (Le href contient "user")'
             ),
+            "Filtre pour fermer les onglets": (
+                "Pseudo code : Est un find, donc cherche partout dans l'URL.\n"
+                "Aucune idée si le https est dedans au moment du check (mais bon, je le ferais jamais)\n"
+                "N'est pas un regexp, juste une string plate, donc le '.' n'est pas interprété\n"
+                "mets tous en lowercase (donc pas sensible).\n"
+                "Si le mode n'est pas custom, utilise la dernière URL ouverte par l'event OpenURL\n"
+                "Le refresh ne change pas la dernière URL ouverte, donc si redirection il y a eu, le filtre peut planter\n"
+            ),
         },
         "Brique logique": {
             "Ouvrir une URL": (

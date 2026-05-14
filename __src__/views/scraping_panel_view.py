@@ -24,6 +24,9 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
 from shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
+from shared.operating_system_util import open_folder
+
+from __src__.models.app_configuration_model import AppConfigurationModel
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -50,7 +53,7 @@ class ScrapingView(ttk.Frame):
     5. Scraping journal (Treeview + Export button).
     """
 
-    def __init__(self, parent: tk.Widget) -> None:
+    def __init__(self, config_model: AppConfigurationModel, parent: tk.Widget) -> None:
         """Initialize the scraping panel and build all widgets.
 
         Args:
@@ -75,7 +78,8 @@ class ScrapingView(ttk.Frame):
         self._url_source_value: list[str] | str = []
 
         # Export folder path.
-        self._export_folder: str = str(Path.cwd())
+        self._app_config_model = config_model
+        self._export_folder: str = None
 
         # Elapsed timer state.
         self._elapsed_timer_id: str | None = None
@@ -130,11 +134,16 @@ class ScrapingView(ttk.Frame):
         ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=(0, 4))
 
         # StringVar keeps the displayed path in sync with internal state.
+        self._export_folder = str((Path.cwd() / self._app_config_model.folder_scraping).resolve())
+
         self._var_export_folder = tk.StringVar(value=self._export_folder)
-        ttk.Entry(row, textvariable=self._var_export_folder, state="readonly", width=60).pack(
+        ttk.Entry(row, textvariable=self._var_export_folder, width=60).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4)
         )
-        ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(side=tk.RIGHT)
+        ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(side=tk.LEFT)
+        ttk.Button(row, text="Ouvrir dossier d'export", command=self._open_export_folder).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
 
     def _create_url_source_row(self, parent: ttk.LabelFrame) -> None:
         """Build the URL-source radio-button row inside the launch profile frame.
@@ -173,7 +182,7 @@ class ScrapingView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(side=tk.TOP, fill=tk.X)
 
-        self._var_auto_export_journal = tk.BooleanVar(value=False)
+        self._var_auto_export_journal = tk.BooleanVar(value=True)
         ttk.Checkbutton(
             row,
             text="Exporter le journal scraping automatiquement à la fin du processus",
@@ -778,6 +787,13 @@ class ScrapingView(ttk.Frame):
         if folder:
             self._export_folder = folder
             self._var_export_folder.set(folder)
+
+    def _open_export_folder(self) -> None:
+        """Create the export folder if absent, then reveal it in the file explorer."""
+        # Ensure the folder exists before trying to open it.
+        path = Path(self._export_folder)
+        path.mkdir(parents=True, exist_ok=True)
+        open_folder(path)
 
     # ------------------------------------------------------------------
     # Journal export

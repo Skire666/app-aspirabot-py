@@ -236,7 +236,7 @@ class ScrapingService:
         Returns:
             True if the run was aborted by the cancel signal.
         """
-        self._emit_init("Initialisation de Playwright…", on_init_step)
+        self._emit_init("Initialisation du navigateur...", on_init_step)
         self._browser_service.launch()
         try:
             self._emit_init("Création du contexte de navigation…", on_init_step)

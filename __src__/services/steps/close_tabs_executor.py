@@ -33,20 +33,25 @@ class CloseTabsExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = CloseTabsParams.from_dict(context.step_params)
+        filter_used = p.filter_custom if p.filter_mode == C_INPUT_IS_FILTER_CUSTOM else context.last_url_opened
+        filter_used = filter_used.strip().lower()
+
+        if not filter_used:
+            raise ValueError("Aucun filtre URL disponible (configurez un mode ou ouvrez une page avant.")
+
         current_page = browser.get_current_page()
-
-        # TODO PCO Url ou <<URL>> ou <<CUSTOM>>
-
         counter_closed = 0
         # Close tabs that do not match the URL filter.
         for p_tab in list(browser.get_all_pages()):
-            if p.url_filter and p_tab.url.find(p.url_filter) == -1:
+            lowercase = p_tab.url.lower()
+            if filter_used and lowercase.find(filter_used) == -1:
+                # not in filters... will be closed
                 p_tab.close()
                 counter_closed += 1
 
         context.last_message_step = (
-            f"Fermé {counter_closed} onglet(s) ne correspondant pas au filtre URL {p.url_filter!r}."
-            if p.url_filter
+            f"Fermé {counter_closed} onglet(s) ne correspondant pas au filtre URL {filter_used!r}."
+            if filter_used
             else ""
         )
 

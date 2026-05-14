@@ -18,6 +18,7 @@ import logging
 import threading
 from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 
 from models.provider_model import ProviderModel
 from models.scraping_report_model import ScrapingReportModel
@@ -25,7 +26,10 @@ from models.step_scraping_model import StepScrapingModel
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
-from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff
+from shared.datetime_util import (
+    get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff,
+    get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
+)
 from views.scraping_panel_view import ScrapingView
 
 # ---------------------------------------------------------------------------
@@ -95,6 +99,9 @@ class ScrapingPresenter:
         self._current_journal_item_id: str | None = None
 
         self._providers_loaded: bool = False
+
+        # Captured at launch time (main thread) to avoid cross-thread Tkinter access.
+        self._auto_export_journal: bool = False
 
         # Wire all view callbacks to presenter handlers.
         self._wire_view_callbacks()
@@ -238,8 +245,9 @@ class ScrapingPresenter:
         started_at = datetime.now()
         self._view.start_elapsed_timer(started_at)
 
-        # Collect URL source selection from the view before spawning the thread.
+        # Collect launch profile from the view before spawning the thread.
         export_folder = self._view.get_export_folder()
+        self._auto_export_journal = self._view.get_auto_export_journal()
         url_source = self._view.get_url_source()
         source_type: str = url_source["type"]
         source_value: list[str] | str = url_source["value"]
@@ -399,13 +407,14 @@ class ScrapingPresenter:
         except (ValueError, RuntimeError, OSError) as exc:
             self._logging.exception("Workflow execution failed: %s", exc)
 
-        self._on_workflow_finished(report)
+        self._on_workflow_finished(report, export_folder)
 
-    def _on_workflow_finished(self, report: ScrapingReportModel | None) -> None:
+    def _on_workflow_finished(self, report: ScrapingReportModel | None, export_folder: str) -> None:
         """Restore idle state and display the final report in the view.
 
         Args:
             report: Completed report, or None when the run raised an exception.
+            export_folder: Destination folder used for auto-export when enabled.
         """
         # Ensure pause is released so the event is ready for the next run.
         self._pause_event.set()
@@ -437,3 +446,19 @@ class ScrapingPresenter:
                 status="erreur",
                 stats={"success": 0, "errors": 0, "clicks": 0, "urls": 0},
             )
+
+        # Schedule auto-export on the main thread (Treeview access is not thread-safe).
+        if self._auto_export_journal:
+            self._view.after(0, lambda: self._do_auto_export(export_folder))
+
+    def _do_auto_export(self, export_folder: str) -> None:
+        """Export the scraping journal automatically with a timestamped filename.
+
+        Must be called from the main thread — accesses Treeview rows via the view.
+
+        Args:
+            export_folder: Destination folder for the exported file.
+        """
+        timestamp = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
+        path = str(Path(export_folder) / f"journal_{timestamp}.txt")
+        self._on_export_journal(path)

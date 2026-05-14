@@ -104,5 +104,6 @@ class ScrapingContextModel:
 
     # Output signals written by executors and read back by the orchestrator.
     last_message_step: str = field(default="")
+    last_url_opened: str = field(default="")
     pending_jump: str | int | None = field(default=None)
     end_process: bool = field(default=False)
