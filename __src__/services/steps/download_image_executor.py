@@ -11,7 +11,6 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.download_image_params import DownloadImageParams
-from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
@@ -23,6 +22,7 @@ from shared.exception_util import (
     ImageDownloadFailedError,
     ImageNotDownloadedError,
 )
+from shared.i18n_fra import ERROR_TEMPLATES
 from shared.path_util import make_all_folders_if_not_exists
 
 

@@ -10,48 +10,17 @@ from tkinter import ttk
 
 from shared.constants import C_COLOR_GRAY_BACKGROUND
 from shared.i18n_fra import (
-    C_TITLE_MODULE_CONFIG,
-    C_TITLE_MODULE_FAQ,
-    C_TITLE_MODULE_LOGS,
-    C_TITLE_MODULE_PROJECTS,
-    C_TITLE_MODULE_PROVIDER,
-    C_TITLE_MODULE_SCRAPING,
-    C_TITLE_MODULE_WORKFLOW,
+    C_LISTING_MODULES,
     C_VIEW_SIDEBAR_LEFT_WIDTH,
+    TitleModuleEnum,
 )
 from shared.resources_icons_util import (
-    C_RESS_ICON_BLACK_CONFIG,
-    C_RESS_ICON_BLACK_FAQ,
-    C_RESS_ICON_BLACK_LOGS,
-    C_RESS_ICON_BLACK_PROJECTS,
-    C_RESS_ICON_BLACK_PROVIDER,
-    C_RESS_ICON_BLACK_SCRAPING,
-    C_RESS_ICON_BLACK_WORKFLOW,
-    C_RESS_ICON_WHITE_CONFIG,
-    C_RESS_ICON_WHITE_FAQ,
-    C_RESS_ICON_WHITE_LOGS,
-    C_RESS_ICON_WHITE_PROJECTS,
-    C_RESS_ICON_WHITE_PROVIDER,
-    C_RESS_ICON_WHITE_SCRAPING,
-    C_RESS_ICON_WHITE_WORKFLOW,
     get_resource_icon_32px,
 )
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-
-# Mapping of module names to their corresponding black and white icon resource names.
-# Order of modules is determined by the order of entries in this dictionary.
-C_LISTING_MODULES: dict[str, tuple[str, str]] = {
-    C_TITLE_MODULE_LOGS: [C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
-    C_TITLE_MODULE_PROJECTS: [C_RESS_ICON_BLACK_PROJECTS, C_RESS_ICON_WHITE_PROJECTS],
-    C_TITLE_MODULE_PROVIDER: [C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
-    C_TITLE_MODULE_WORKFLOW: [C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW],
-    C_TITLE_MODULE_SCRAPING: [C_RESS_ICON_BLACK_SCRAPING, C_RESS_ICON_WHITE_SCRAPING],
-    C_TITLE_MODULE_FAQ: [C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
-    C_TITLE_MODULE_CONFIG: [C_RESS_ICON_BLACK_CONFIG, C_RESS_ICON_WHITE_CONFIG],
-}
 
 # Sidebar button color constants
 C_COLOR_SIDEBAR_ACTIVE_BG = "#6164B7"
@@ -80,10 +49,10 @@ class MainView(ttk.Frame):
             parent: The parent Tkinter widget (usually RootFrameView).
         """
         super().__init__(parent)
-        self._views: dict[str, tk.Widget] = {}
-        self._buttons: dict[str, tk.Button] = {}
-        self._active_view: str | None = None
-        self._on_show_callbacks: dict[str, Callable[[], None]] = {}
+        self._views: dict[TitleModuleEnum, tk.Widget] = {}
+        self._buttons: dict[TitleModuleEnum, tk.Button] = {}
+        self._active_view: TitleModuleEnum | None = None
+        self._on_show_callbacks: dict[TitleModuleEnum, Callable[[], None]] = {}
         self._create_widgets()
 
     def _create_widgets(self) -> None:
@@ -110,13 +79,13 @@ class MainView(ttk.Frame):
     def _build_sidebar_buttons(self) -> None:
         """Creates and registers all module navigation buttons in the sidebar."""
         # Build each button and store it by name for later highlight management
-        for name in C_LISTING_MODULES:
+        for module, (display, icon_b, _) in C_LISTING_MODULES.items():
             btn = tk.Button(
                 self.sidebar,
-                text=name,
-                image=get_resource_icon_32px(C_LISTING_MODULES[name][0]),
+                text=display,
+                image=get_resource_icon_32px(icon_b),
                 compound=tk.TOP,
-                command=lambda n=name: self.show_view(n),
+                command=lambda n=module: self.show_view(n),
                 bg=C_COLOR_SIDEBAR_NORMAL_BG,
                 fg=C_COLOR_SIDEBAR_NORMAL_FG,
                 relief=tk.FLAT,
@@ -128,120 +97,120 @@ class MainView(ttk.Frame):
                 disabledforeground="#8e8e8e",  # disable text
             )
             btn.pack(fill=tk.X, padx=0, pady=0, ipady=6)
-            self._buttons[name] = btn
+            self._buttons[module] = btn
 
             # Hover bindings — use default-argument capture to avoid late-binding closure
-            btn.bind("<Enter>", lambda _e, n=name: self._on_button_enter(n))
-            btn.bind("<Leave>", lambda _e, n=name: self._on_button_leave(n))
+            btn.bind("<Enter>", lambda _e, n=module: self._on_button_enter(n))
+            btn.bind("<Leave>", lambda _e, n=module: self._on_button_leave(n))
 
-    def add_view(self, name: str, view_widget: tk.Widget) -> None:
+    def add_view(self, module: TitleModuleEnum, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a sidebar module button.
 
         Args:
-            name: The display name of the module.
+            module: The module for which to register a view.
             view_widget: The Tkinter widget to display in the content area.
         """
-        self._views[name] = view_widget
+        self._views[module] = view_widget
         view_widget.pack_forget()
 
-    def set_on_show(self, name: str, callback: Callable[[], None]) -> None:
+    def set_on_show(self, module: TitleModuleEnum, callback: Callable[[], None]) -> None:
         """Register a callback fired each time the named view is shown.
 
         Args:
-            name: The module name to watch.
+            module: The module for which to register the callback.
             callback: Zero-argument callable invoked when that view becomes visible.
         """
-        self._on_show_callbacks[name] = callback
+        self._on_show_callbacks[module] = callback
 
-    def show_view(self, name: str) -> None:
+    def show_view(self, module: TitleModuleEnum) -> None:
         """Displays the specified view, hides all others, and highlights the active button.
 
         Args:
-            name: The name of the module/view to show.
+            module: The module/view to show.
         """
         # Switch content area to the requested view
-        for view_name, widget in self._views.items():
-            if view_name == name:
+        for view_module, widget in self._views.items():
+            if view_module == module:
                 widget.pack(in_=self.content_area, fill=tk.BOTH, expand=True)
             else:
                 widget.pack_forget()
 
         # Reflect active state on the sidebar buttons
-        self._update_button_highlights(name)
-        self._active_view = name
+        self._update_button_highlights(module)
+        self._active_view = module
 
-        if name in self._on_show_callbacks:
-            self._on_show_callbacks[name]()
+        if module in self._on_show_callbacks:
+            self._on_show_callbacks[module]()
 
-    def _update_button_highlights(self, active_name: str) -> None:
+    def _update_button_highlights(self, active_module: TitleModuleEnum) -> None:
         """Applies highlight color to the active button and resets all others.
 
         Args:
-            active_name: The name of the currently active module.
+            active_module: The module that is currently active.
         """
-        for name, btn in self._buttons.items():
-            if name == active_name:
-                image_white = get_resource_icon_32px(C_LISTING_MODULES[name][1])
+        for module, btn in self._buttons.items():
+            if module == active_module:
+                image_white = get_resource_icon_32px(C_LISTING_MODULES[module][2])
                 btn.config(bg=C_COLOR_SIDEBAR_ACTIVE_BG, fg=C_COLOR_SIDEBAR_ACTIVE_FG, image=image_white)
             else:
-                image_black = get_resource_icon_32px(C_LISTING_MODULES[name][0])
+                image_black = get_resource_icon_32px(C_LISTING_MODULES[module][1])
                 btn.config(bg=C_COLOR_SIDEBAR_NORMAL_BG, fg=C_COLOR_SIDEBAR_NORMAL_FG, image=image_black)
 
-    def _on_button_enter(self, name: str) -> None:
+    def _on_button_enter(self, module: TitleModuleEnum) -> None:
         """Applies hover highlight when the cursor enters a sidebar button.
 
         Args:
-            name: The name of the button being hovered.
+            module: The module for which the button is being hovered.
         """
-        btn = self._buttons[name]
+        btn = self._buttons[module]
 
         # Skip disabled buttons — hover has no meaning for them
         if str(btn.cget("state")) == tk.DISABLED:
             return
 
         # Lighten the active button on hover; darken inactive ones
-        if name == self._active_view:
+        if module == self._active_view:
             btn.config(bg=C_COLOR_SIDEBAR_ACTIVE_BG, fg=C_COLOR_SIDEBAR_ACTIVE_FG)
         else:
             btn.config(bg=C_COLOR_SIDEBAR_HOVER_BG, fg=C_COLOR_SIDEBAR_HOVER_FG)
 
-    def _on_button_leave(self, name: str) -> None:
+    def _on_button_leave(self, module: TitleModuleEnum) -> None:
         """Restores the button's resting color when the cursor leaves it.
 
         Args:
-            name: The name of the button that was hovered.
+            module: The module for which the button is being left.
         """
-        btn = self._buttons[name]
+        btn = self._buttons[module]
 
         # Skip disabled buttons — they were untouched on enter
         if str(btn.cget("state")) == tk.DISABLED:
             return
 
         # Restore active or normal appearance depending on current state
-        if name == self._active_view:
+        if module == self._active_view:
             btn.config(bg=C_COLOR_SIDEBAR_ACTIVE_BG, fg=C_COLOR_SIDEBAR_ACTIVE_FG)
         else:
             btn.config(bg=C_COLOR_SIDEBAR_NORMAL_BG, fg=C_COLOR_SIDEBAR_NORMAL_FG)
 
-    def set_tab_state(self, name: str, state: str) -> None:
+    def set_tab_state(self, module: TitleModuleEnum, state: str) -> None:
         """Sets the enabled/disabled state of a sidebar module button.
 
         Args:
-            name: The name of the module tab.
+            module: The title module for which to set the state.
             state: The Tkinter state string (tk.NORMAL or tk.DISABLED).
         """
-        if name in self._buttons:
-            self._buttons[name].config(state=state)
+        if module in self._buttons:
+            self._buttons[module].config(state=state)
 
-    def get_tab_state(self, name: str) -> str:
+    def get_tab_state(self, module: TitleModuleEnum) -> str:
         """Returns the current state of a sidebar module button.
 
         Args:
-            name: The name of the module tab.
+            module: The title module for which to get the state.
 
         Returns:
             The Tkinter state string (tk.NORMAL or tk.DISABLED).
         """
-        if name in self._buttons:
-            return str(self._buttons[name].cget("state"))
+        if module in self._buttons:
+            return str(self._buttons[module].cget("state"))
         return tk.DISABLED

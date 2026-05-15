@@ -1,6 +1,23 @@
 from enum import Enum
 
 
+# All title labels for sidebar buttons
+class TitleModuleEnum(Enum):
+    """Enum for the main view sidebar button labels.
+
+    The values are the actual display labels in French.
+    Each enum name (e.g. E_LOGS) is used as a stable internal identifier for the module,
+    """
+
+    E_LOGS = "LOGS"
+    E_PROJECTS = "PROJECTS"
+    E_PROVIDER = "PROVIDER"
+    E_WORKFLOW = "WORKFLOW"
+    E_SCRAPING = "SCRAPING"
+    E_FAQ = "FAQ"
+    E_CONFIG = "PARAMS"
+
+
 class StepTypeEnum(Enum):
     """Enumerates all supported scraping step types.
 

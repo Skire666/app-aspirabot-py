@@ -330,7 +330,7 @@ class ProviderEditPresenter:
 
 For lazy tab initialization (content loaded only on first visit), use `MainView.set_on_show()`:
 ```python
-main_view.set_on_show(C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
+main_view.set_on_show(TitleModuleEnum.C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
 ```
 
 ---
@@ -385,7 +385,7 @@ ERROR_TEMPLATES: dict[str, str] = {
 ### Presenter — formats and delegates
 
 ```python
-from presenters.messages import ERROR_TEMPLATES
+from shared.i18n_fra import ERROR_TEMPLATES
 
 messages = [
     ERROR_TEMPLATES[e.code].format(**e.context)

@@ -34,21 +34,14 @@ from services.workflow_service import WorkflowService
 from shared.constants import (
     C_APP_CONFIG_FILE,
 )
-from shared.i18n_fra import (
-    C_TITLE_MODULE_CONFIG,
-    C_TITLE_MODULE_FAQ,
-    C_TITLE_MODULE_LOGS,
-    C_TITLE_MODULE_PROVIDER,
-    C_TITLE_MODULE_SCRAPING,
-    C_TITLE_MODULE_WORKFLOW,
-)
+from shared.i18n_fra import TitleModuleEnum
 from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
 from views.faq_view import FaqView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.providers_view import ProvidersView
-from views.scraping_panel_view import ScrapingView
+from views.scraping_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
 from views.workflow_view import WorkflowView
 
@@ -141,7 +134,7 @@ def _launch_main_app(
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
     _wire_scraping_launch(main_view, provider_presenter, provider_service, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
-    main_view.set_on_show(C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
+    main_view.set_on_show(TitleModuleEnum.E_SCRAPING, scraping_presenter.ensure_providers_loaded)
 
     _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view)
     _anchor_presenters(
@@ -303,23 +296,26 @@ def _wire_provider_navigation(
     def on_request_create_provider() -> None:
         # Open the edit form in creation mode and navigate to it.
         provider_edit_presenter.create_new()
-        main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
-        main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.DISABLED)
-        main_view.show_view(C_TITLE_MODULE_WORKFLOW)
+        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_PROVIDER, tk.DISABLED)
+        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
+        main_view.show_view(TitleModuleEnum.E_WORKFLOW)
 
     def on_request_edit_provider(id_file: str) -> None:
         # Load the selected provider into the edit form and navigate to it.
         if provider_edit_presenter.load_provider(id_file):
-            main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.NORMAL)
-            main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.DISABLED)
-            main_view.show_view(C_TITLE_MODULE_WORKFLOW)
+            main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
+            main_view.set_tab_state(TitleModuleEnum.E_PROVIDER, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
+            main_view.show_view(TitleModuleEnum.E_WORKFLOW)
 
     def on_edit_done() -> None:
         # Return to the list and disable the edit tab after save/cancel.
         provider_presenter.refresh()
-        main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
-        main_view.set_tab_state(C_TITLE_MODULE_PROVIDER, tk.NORMAL)
-        main_view.show_view(C_TITLE_MODULE_PROVIDER)
+        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
+        main_view.set_tab_state(TitleModuleEnum.E_PROVIDER, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
+        main_view.show_view(TitleModuleEnum.E_PROVIDER)
 
     # Inject all navigation callbacks into the two presenters.
     provider_presenter.on_request_create_provider = on_request_create_provider
@@ -327,7 +323,7 @@ def _wire_provider_navigation(
     provider_edit_presenter.set_on_done_callback(on_edit_done)
 
     # Initial state: workflow tab is disabled until a provider session is opened.
-    main_view.set_tab_state(C_TITLE_MODULE_WORKFLOW, tk.DISABLED)
+    main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
 
 
 def _wire_scraping_launch(
@@ -348,8 +344,8 @@ def _wire_scraping_launch(
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scraping.
         scraping_presenter.load_provider(id_file)
-        main_view.set_tab_state(C_TITLE_MODULE_SCRAPING, tk.NORMAL)
-        main_view.show_view(C_TITLE_MODULE_SCRAPING)
+        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
+        main_view.show_view(TitleModuleEnum.E_SCRAPING)
 
     provider_presenter.on_request_launch_provider = on_request_launch_provider
 
@@ -372,7 +368,7 @@ def _wire_workflow_guard(
     """
 
     def is_workflow_active() -> bool:
-        return main_view.get_tab_state(C_TITLE_MODULE_WORKFLOW) == tk.NORMAL
+        return main_view.get_tab_state(TitleModuleEnum.E_WORKFLOW) == tk.NORMAL
 
     # Inject into both presenters so either can check the guard independently.
     provider_presenter.is_workflow_active = is_workflow_active
@@ -405,15 +401,15 @@ def _register_views(
         faq_view: FAQ module view.
     """
     # Map each sidebar label to its corresponding view widget.
-    main_view.add_view(C_TITLE_MODULE_LOGS, log_view)
-    main_view.add_view(C_TITLE_MODULE_PROVIDER, provider_view)
-    main_view.add_view(C_TITLE_MODULE_WORKFLOW, provider_edit_view)
-    main_view.add_view(C_TITLE_MODULE_SCRAPING, scraping_view)
-    main_view.add_view(C_TITLE_MODULE_FAQ, faq_view)
-    main_view.add_view(C_TITLE_MODULE_CONFIG, config_view)
+    main_view.add_view(TitleModuleEnum.E_LOGS, log_view)
+    main_view.add_view(TitleModuleEnum.E_PROVIDER, provider_view)
+    main_view.add_view(TitleModuleEnum.E_WORKFLOW, provider_edit_view)
+    main_view.add_view(TitleModuleEnum.E_SCRAPING, scraping_view)
+    main_view.add_view(TitleModuleEnum.E_FAQ, faq_view)
+    main_view.add_view(TitleModuleEnum.E_CONFIG, config_view)
 
     # Land on the providers list as the startup default.
-    main_view.show_view(C_TITLE_MODULE_PROVIDER)
+    main_view.show_view(TitleModuleEnum.E_PROVIDER)
 
 
 def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:

@@ -9,12 +9,12 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.count_html_images_params import CountHtmlImagesParams
-from presenters.messages import ERROR_TEMPLATES
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
 class CountHtmlImagesExecutor(IStepExecutor):
@@ -71,7 +71,12 @@ class CountHtmlImagesExecutor(IStepExecutor):
 
         # Validate count comparison parameters.
         allowed_operators = {
-            "equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"
+            "equal",
+            "not_equal",
+            "greater_than",
+            "less_than",
+            "greater_or_equal",
+            "less_or_equal",
         }
         if p.value < 0:
             errors.append(ERROR_TEMPLATES["count_html_images_value_negative"].format(step=step_label))
@@ -95,7 +100,7 @@ class CountHtmlImagesExecutor(IStepExecutor):
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
                 bounds[key] = int(params.get(key, -1))
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 errors.append(ERROR_TEMPLATES["image_dim_not_int"].format(step=step_label, key=key))
         return bounds, errors
 

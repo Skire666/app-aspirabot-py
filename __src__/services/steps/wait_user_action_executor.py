@@ -10,10 +10,10 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_user_action_params import WaitUserActionParams
-from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
+from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_sec
 
 

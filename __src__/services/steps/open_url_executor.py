@@ -9,10 +9,10 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.open_url_params import OpenUrlParams
-from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
+from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_ms
 
 

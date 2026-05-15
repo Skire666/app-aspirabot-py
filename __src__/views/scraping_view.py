@@ -95,7 +95,6 @@ class ScrapingView(ttk.Frame):
         self._create_provider_selection_frame()
         self._create_launch_profile_frame()
         self._create_workflow_controls_frame()
-        self._create_progression_frame()
         self._create_journal_frame()
 
     def _create_provider_selection_frame(self) -> None:
@@ -136,13 +135,11 @@ class ScrapingView(ttk.Frame):
         self._export_folder = str((Path.cwd() / self._app_config_model.folder_scraping).resolve())
 
         self._var_export_folder = tk.StringVar(value=self._export_folder)
-        ttk.Entry(row, textvariable=self._var_export_folder, width=60).pack(
+        ttk.Entry(row, textvariable=self._var_export_folder, width=50).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4)
         )
         ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(side=tk.LEFT)
-        ttk.Button(row, text="Ouvrir dossier d'export", command=self._open_export_folder).pack(
-            side=tk.LEFT, padx=(0, 4)
-        )
+        ttk.Button(row, text="Ouvrir dossier", command=self._open_export_folder).pack(side=tk.LEFT, padx=(5, 5))
 
     def _create_url_source_row(self, parent: ttk.LabelFrame) -> None:
         """Build the URL-source radio-button row inside the launch profile frame.
@@ -189,26 +186,12 @@ class ScrapingView(ttk.Frame):
         ).pack(side=tk.LEFT)
 
     def _create_workflow_controls_frame(self) -> None:
-        """Build the 'Pilotage du workflow' section with the four action buttons."""
-        frame = ttk.LabelFrame(self, text="Pilotage du workflow", padding=(5, 5))
-        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
-
-        self._btn_launch = ttk.Button(frame, text="Lancer le scraping", command=self._notify_launch)
-        self._btn_launch.pack(side=tk.LEFT, padx=5)
-
-        self._btn_cancel = ttk.Button(frame, text="Annuler", command=self._notify_cancel, state=tk.DISABLED)
-        self._btn_cancel.pack(side=tk.LEFT, padx=5)
-
-        self._btn_pause = ttk.Button(frame, text="Pause", command=self._notify_pause, state=tk.DISABLED)
-        self._btn_pause.pack(side=tk.LEFT, padx=5)
-
-        self._btn_resume = ttk.Button(frame, text="Reprendre", command=self._notify_resume, state=tk.DISABLED)
-        self._btn_resume.pack(side=tk.LEFT, padx=5)
-
-    def _create_progression_frame(self) -> None:
         """Build the 'Progression' section with 7 live-updated info rows."""
-        frame = ttk.LabelFrame(self, text="Progression", padding=(5, 5))
+        frame = ttk.LabelFrame(self, text="Pilotage du scraping", padding=(5, 5))
         frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+
+        frame_stats = ttk.Frame(frame)
+        frame_stats.pack(side=tk.LEFT, fill=tk.X)
 
         # Build StringVars for each field, stored for external updates.
         self._var_prog_url = tk.StringVar(value="—")
@@ -230,7 +213,31 @@ class ScrapingView(ttk.Frame):
             ("Statistiques :", self._var_prog_stats),
         ]
         for label_text, var in rows_def:
-            self._add_progress_row(frame, label_text, var)
+            self._add_progress_row(frame_stats, label_text, var)
+
+        # buttson
+        div_buttons = ttk.Frame(frame)
+        div_buttons.pack(side=tk.RIGHT, fill=tk.X)
+
+        self._btn_launch = ttk.Button(
+            div_buttons, text="Lancer le scraping", width=20, command=self._notify_launch
+        )
+        self._btn_launch.pack(side=tk.TOP, pady=(0, 5))
+
+        self._btn_cancel = ttk.Button(
+            div_buttons, text="Annuler", command=self._notify_cancel, width=20, state=tk.DISABLED
+        )
+        self._btn_cancel.pack(side=tk.TOP, pady=(0, 5))
+
+        self._btn_pause = ttk.Button(
+            div_buttons, text="Pause", command=self._notify_pause, width=20, state=tk.DISABLED
+        )
+        self._btn_pause.pack(side=tk.TOP, pady=(0, 5))
+
+        self._btn_resume = ttk.Button(
+            div_buttons, text="Reprendre", command=self._notify_resume, width=20, state=tk.DISABLED
+        )
+        self._btn_resume.pack(side=tk.TOP, pady=(0, 5))
 
     @staticmethod
     def _add_progress_row(parent: ttk.LabelFrame, label_text: str, var: tk.StringVar) -> None:
@@ -254,7 +261,6 @@ class ScrapingView(ttk.Frame):
         # Top bar: export button aligned right.
         bar = ttk.Frame(frame)
         bar.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
-        ttk.Button(bar, text="Exporter (.txt)", command=self._export_journal).pack(side=tk.RIGHT)
 
         # Treeview with vertical scrollbar.
         columns = ("date", "step_started", "duration", "success", "msg_step_ended")
@@ -805,16 +811,6 @@ class ScrapingView(ttk.Frame):
             Ordered list of row tuples (date, step_started, duration, result, message).
         """
         return [tuple(str(v) for v in self._tree.item(item, "values")) for item in self._tree.get_children()]
-
-    def _export_journal(self) -> None:
-        """Open a save dialog and fire on_export_journal with the chosen path."""
-        path = filedialog.asksaveasfilename(
-            title="Exporter le journal",
-            defaultextension=".txt",
-            filetypes=[("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*")],
-        )
-        if path and self._on_export_journal:
-            self._on_export_journal(path)
 
     # ------------------------------------------------------------------
     # Message boxes

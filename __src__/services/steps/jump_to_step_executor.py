@@ -9,9 +9,9 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.jump_to_step_params import JumpToStepParams
-from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
 class JumpToStepExecutor(IStepExecutor):

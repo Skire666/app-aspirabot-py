@@ -9,10 +9,10 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.extract_text_params import ExtractTextParams
-from presenters.messages import ERROR_TEMPLATES
 from services.steps._helpers import extract_from_element
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
 class ExtractTextExecutor(IStepExecutor):
@@ -59,7 +59,9 @@ class ExtractTextExecutor(IStepExecutor):
                 ERROR_TEMPLATES["extract_text_mode_invalid"].format(step=index_display, value=p.extract_mode)
             )
         if p.target not in allowed_targets:
-            errors.append(ERROR_TEMPLATES["extract_text_target_invalid"].format(step=index_display, value=p.target))
+            errors.append(
+                ERROR_TEMPLATES["extract_text_target_invalid"].format(step=index_display, value=p.target)
+            )
         return errors
 
 

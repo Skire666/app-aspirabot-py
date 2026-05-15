@@ -30,7 +30,8 @@ from shared.datetime_util import (
     get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
-from views.scraping_panel_view import ScrapingView
+
+from __src__.views.scraping_view import ScrapingView
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -98,7 +99,7 @@ class ScrapingPresenter:
         self._journal_entry_counter: int = 0
         self._current_journal_item_id: str | None = None
 
-        self._providers_loaded: bool = False
+        self._providers_loaded: datetime | None = None
 
         # Captured at launch time (main thread) to avoid cross-thread Tkinter access.
         self._auto_export_journal: bool = False
@@ -112,6 +113,7 @@ class ScrapingPresenter:
 
     def ensure_providers_loaded(self) -> None:
         """Populate the provider dropdown on first show, skipped if already loaded."""
+        print(f"ensure_providers_loaded -> {self._providers_loaded}")
         if not self._providers_loaded:
             self._on_refresh_providers()
 
@@ -124,6 +126,7 @@ class ScrapingPresenter:
             id_file: The ID of the provider file to load.
         """
         # Unblock any active pause, then cancel the running workflow.
+        print(f"load_provider -> {id_file}")
         self._pause_event.set()
         self._cancel_event.set()
 
@@ -193,12 +196,13 @@ class ScrapingPresenter:
 
     def _on_refresh_providers(self) -> None:
         """Reload the providers list and forward it to the view dropdown."""
+        print(f"_on_refresh_providers -> {self._providers_loaded}")
         try:
             providers = self._service_provider.list_all_providers()
         except Exception as exc:  # noqa: BLE001
             self._logging.error("Failed to load providers list: %s", exc)
             providers = []
-        self._providers_loaded = True
+        self._providers_loaded = datetime.now()
 
         # Build display-ready dicts and push to the view.
         rows = [

@@ -10,7 +10,6 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
-from presenters.messages import ERROR_TEMPLATES
 from services.steps._helpers import evaluate_count_condition
 from services.workflow_service import register_step_executor
 from shared.constants import (
@@ -20,6 +19,7 @@ from shared.constants import (
 )
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
+from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_sec
 
 
@@ -86,7 +86,12 @@ class WaitHtmlImagesExecutor(IStepExecutor):
 
         # Validate count comparison and retry parameters.
         allowed_operators = {
-            "equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"
+            "equal",
+            "not_equal",
+            "greater_than",
+            "less_than",
+            "greater_or_equal",
+            "less_or_equal",
         }
         if p.operator not in allowed_operators:
             errors.append(ERROR_TEMPLATES["wait_html_images_operator_invalid"].format(step=step_label))
@@ -101,9 +106,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         return errors
 
     @staticmethod
-    def _parse_dim_bounds(
-        params: dict[str, Any], step_label: str, errors: list[str]
-    ) -> dict[str, int]:
+    def _parse_dim_bounds(params: dict[str, Any], step_label: str, errors: list[str]) -> dict[str, int]:
         """Parse dimension params as integers; append parse errors in-place."""
         bounds: dict[str, int] = {}
 
@@ -111,7 +114,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         for key in ("height_min", "height_max", "width_min", "width_max"):
             try:
                 bounds[key] = int(params.get(key, 0))
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 errors.append(ERROR_TEMPLATES["image_dim_not_int"].format(step=step_label, key=key))
         return bounds
 

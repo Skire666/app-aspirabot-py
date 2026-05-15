@@ -9,7 +9,6 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.click_element_params import ClickElementParams
-from presenters.messages import ERROR_TEMPLATES
 from services.workflow_service import register_step_executor
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
@@ -17,6 +16,7 @@ from shared.constants import (
 )
 from shared.enums import StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
+from shared.i18n_fra import ERROR_TEMPLATES
 
 C_LIMIT_TIMEOUT_CLICK_MS = 8000
 
