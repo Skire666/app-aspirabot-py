@@ -24,7 +24,6 @@ from typing import Any, cast
 
 from interfaces.provider_repository_interface import ProviderRepositoryInterface
 from models.provider_model import ProviderModel
-from models.step_scraping_model import StepScrapingModel
 from repositories.json_repository import JsonFileRepository
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.exception_util import (
@@ -148,56 +147,18 @@ class ProvidersRepository(ProviderRepositoryInterface):
         shutil.move(str(file_path), str(destination_path))
         return destination_path
 
-    def _dict_to_provider_model(self, data: dict[str, Any]) -> ProviderModel:
-        """Convertit un dictionnaire JSON en instance ProviderModel.
-
-        Filtre les clés du dictionnaire pour ne garder que celles définies dans ProviderModel.
-
-        Args:
-            data (Dict[str, Any]): Le dictionnaire contenant les données du fournisseur.
-
-        Returns:
-            ProviderModel: L'instance instanciée du modèle.
-        """
-        # Récupère uniquement les champs présents dans ProviderModel
-        provider_fields = {
-            "id_file",
-            "provider_name",
-            "url",
-            "created_date",
-            "modified_date",
-            "version",
-            "steps",
-        }
-        filtered_data = {k: v for k, v in data.items() if k in provider_fields}
-        filtered_data["steps"] = self._deserialize_steps(filtered_data.get("steps", []))
-        return ProviderModel(**filtered_data)
-
     @staticmethod
-    def _deserialize_steps(steps_data: object) -> list[StepScrapingModel]:
-        """Converts a raw JSON list into validated step model instances.
-
-        Silently skips entries that are not dicts or carry an unknown step type.
+    def _dict_to_provider_model(data: dict[str, Any]) -> ProviderModel:
+        """Deserialize a raw JSON dictionary into a ProviderModel instance.
 
         Args:
-            steps_data: Raw value loaded from the JSON file.
+            data: The decoded JSON content of a provider file.
 
         Returns:
-            A list of step models; empty when the input is missing or malformed.
+            ProviderModel: The fully reconstructed provider model.
         """
-        if not isinstance(steps_data, list):
-            return []
-
-        # Map each raw dict to a StepScrapingModel, skipping invalid entries
-        result: list[StepScrapingModel] = []
-        for raw_step in steps_data:
-            if not isinstance(raw_step, dict):
-                continue
-            try:
-                result.append(StepScrapingModel.import_from_data_json(raw_step))
-            except ValueError:
-                continue
-        return result
+        # Delegate full deserialization (steps + launch_profiles) to the model.
+        return ProviderModel.import_from_data_json(data)
 
     def exists_provider(self, id_file: str) -> bool:
         """Vérifie l'existence d'un fournisseur dans le dossier.

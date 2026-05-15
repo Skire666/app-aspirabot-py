@@ -8,6 +8,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+from models.launch_profile_model import LaunchProfileModel
 from models.provider_model import ProviderModel
 from presenters.workflow_list_presenter import WorkflowListPresenter
 from services.provider_service import ProviderService
@@ -76,6 +77,10 @@ class WorkflowPresenter:
         """Passe le presentateur en mode creation et charge un modele vide."""
         self._is_creation_mode = True
         self._current_provider = ProviderModel.get_default_data()
+
+        # Ensure every new provider starts with a default launch profile.
+        if not self._current_provider.launch_profiles:
+            self._current_provider.launch_profiles.append(LaunchProfileModel.get_default())
 
         # Initialize an empty workflow for the new provider.
         self._workflow_presenter.init_new(self._current_provider.id_file)
@@ -161,6 +166,10 @@ class WorkflowPresenter:
         """Creates or updates the provider in the service layer."""
         if not self._current_provider:
             return
+
+        # Guard: always provide at least one launch profile before persisting.
+        if not self._current_provider.launch_profiles:
+            self._current_provider.launch_profiles.append(LaunchProfileModel.get_default())
 
         if self._is_creation_mode:
             # Cancel when the ID file already exists and the user declines overwrite.

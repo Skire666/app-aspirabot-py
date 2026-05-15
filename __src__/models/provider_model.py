@@ -17,6 +17,7 @@ Example:
 from dataclasses import dataclass, field
 from typing import Any, cast
 
+from models.launch_profile_model import LaunchProfileModel
 from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
@@ -56,6 +57,7 @@ class ProviderModel:
     modified_date: str
     version: str
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
+    launch_profiles: list[LaunchProfileModel] = field(default_factory=list)
 
     @classmethod
     def get_default_data(cls) -> ProviderModel:
@@ -151,6 +153,81 @@ class ProviderModel:
 
         return normalized_value.isalnum()
 
+    @classmethod
+    def import_from_data_json(cls, data: dict[str, Any]) -> "ProviderModel":
+        """Reconstruct a provider model from a JSON-compatible dictionary.
+
+        Args:
+            data: A dict produced by ``export_to_data_json``.
+
+        Returns:
+            ProviderModel: A fully reconstructed provider instance.
+
+        Raises:
+            None.
+
+        Example:
+            >>> raw = ProviderModel.get_default_data().export_to_data_json()
+            >>> ProviderModel.import_from_data_json(raw).version
+            '1.0.0'
+        """
+        steps = cls._deserialize_steps(data.get("steps", []))
+        profiles = cls._deserialize_profiles(data.get("launch_profiles", []))
+        return cls(
+            id_file=data.get("id_file", ""),
+            provider_name=data.get("provider_name", ""),
+            url=data.get("url", ""),
+            created_date=data.get("created_date", ""),
+            modified_date=data.get("modified_date", ""),
+            version=data.get("version", "1.0.0"),
+            steps=steps,
+            launch_profiles=profiles,
+        )
+
+    @staticmethod
+    def _deserialize_steps(steps_data: object) -> list[StepScrapingModel]:
+        """Convert a raw JSON list into validated step model instances.
+
+        Args:
+            steps_data: Raw value loaded from the JSON file.
+
+        Returns:
+            A list of step models; empty when the input is missing or malformed.
+        """
+        if not isinstance(steps_data, list):
+            return []
+
+        # Map each raw dict to a StepScrapingModel, skipping invalid entries.
+        result: list[StepScrapingModel] = []
+        for raw_step in steps_data:
+            if not isinstance(raw_step, dict):
+                continue
+            try:
+                result.append(StepScrapingModel.import_from_data_json(raw_step))
+            except ValueError:
+                continue
+        return result
+
+    @staticmethod
+    def _deserialize_profiles(profiles_data: object) -> list[LaunchProfileModel]:
+        """Convert a raw JSON list into validated launch profile instances.
+
+        Args:
+            profiles_data: Raw value loaded from the JSON file.
+
+        Returns:
+            A list of profiles; empty when the input is missing or malformed.
+        """
+        if not isinstance(profiles_data, list):
+            return []
+
+        # Skip non-dict entries silently for forward-compatibility.
+        return [
+            LaunchProfileModel.import_from_data_json(raw)
+            for raw in profiles_data
+            if isinstance(raw, dict)
+        ]
+
     def export_to_data_json(self) -> dict[str, Any]:
         """Converts the provider model to a JSON-serializable dictionary.
 
@@ -166,7 +243,6 @@ class ProviderModel:
             >>> isinstance(data_json, dict)
             True
         """
-        # Use asdict to convert dataclass fields to a dictionary.
         return {
             "id_file": self.id_file,
             "provider_name": self.provider_name,
@@ -175,4 +251,5 @@ class ProviderModel:
             "modified_date": self.modified_date,
             "version": self.version,
             "steps": [step.export_to_data_json() for step in self.steps],
+            "launch_profiles": [p.export_to_data_json() for p in self.launch_profiles],
         }

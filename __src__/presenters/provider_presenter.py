@@ -8,6 +8,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+from models.launch_profile_model import LaunchProfileModel
 from models.provider_model import ProviderModel
 from models.provider_validation_report_model import ProviderValidationReport
 from services.provider_service import ProviderService
@@ -138,6 +139,9 @@ class ProviderPresenter:
             self.on_request_create_provider()
         else:
             new_provider = ProviderModel.get_default_data()
+            # Ensure every new provider starts with a default launch profile.
+            if not new_provider.launch_profiles:
+                new_provider.launch_profiles.append(LaunchProfileModel.get_default())
             self._service.create_provider(new_provider)
             self._load_providers()
 

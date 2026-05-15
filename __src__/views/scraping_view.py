@@ -16,11 +16,12 @@ Example:
 # Imports
 # ---------------------------------------------------------------------------
 
+import contextlib
 import tkinter as tk
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any
 
 from models.app_configuration_model import AppConfigurationModel
@@ -68,13 +69,24 @@ class ScrapingView(ttk.Frame):
         self._on_provider_selected: Callable[[str], None] | None = None
         self._on_refresh_providers: Callable[[], None] | None = None
         self._on_export_journal: Callable[[str], None] | None = None
+        self._on_profile_selected_cb: Callable[[str], None] | None = None
+        self._on_profile_new_cb: Callable[[str], None] | None = None
+        self._on_profile_save_cb: Callable[[], None] | None = None
+        self._on_profile_delete_cb: Callable[[str], None] | None = None
+        self._on_form_changed_cb: Callable[[], None] | None = None
+
+        # Profile list — parallel to the Listbox entries.
+        self._profile_ids: list[str] = []
 
         # Provider id_file index — maps combobox values to id_file strings.
         self._provider_id_by_display: dict[str, str] = {}
 
-        # URL-source state — empty until the user explicitly picks a source.
+        # URL-source state — None until the user explicitly picks a source.
         self._url_source_type: str = ""
-        self._url_source_value: list[str] | str = []
+        self._url_source_value: list[str] | str | None = None
+
+        # Suppresses the _var_export_folder trace during programmatic set_export_folder() calls.
+        self._suppress_form_changed: bool = False
 
         # Export folder path.
         self._app_config_model = config_model
@@ -91,8 +103,9 @@ class ScrapingView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _create_widgets(self) -> None:
-        """Build and pack all five section frames."""
+        """Build and pack all section frames."""
         self._create_provider_selection_frame()
+        self._create_profile_management_frame()
         self._create_launch_profile_frame()
         self._create_workflow_controls_frame()
         self._create_journal_frame()
@@ -111,14 +124,71 @@ class ScrapingView(ttk.Frame):
         btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._notify_refresh_providers)
         btn_refresh.pack(side=tk.RIGHT)
 
+    def _create_profile_management_frame(self) -> None:
+        """Build the 'Gestion des profils' section."""
+        self._frame_profile_management = ttk.LabelFrame(self, text="Gestion des profils", padding=(5, 5))
+        self._frame_profile_management.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+
+        # Left column: profile listbox with scrollbar.
+        left = ttk.Frame(self._frame_profile_management)
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        self._create_profiles_listbox(left)
+
+        # Right column: action buttons stacked vertically.
+        right = ttk.Frame(self._frame_profile_management)
+        right.pack(side=tk.RIGHT, fill=tk.Y)
+        self._create_profiles_buttons(right)
+
+        # Gray out until a provider is loaded.
+        self._apply_state_recursive(self._frame_profile_management, tk.DISABLED)
+
+    def _create_profiles_listbox(self, parent: ttk.Frame) -> None:
+        """Build the profile Listbox with scrollbar inside the management frame.
+
+        Args:
+            parent: Container frame for the listbox column.
+        """
+        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL)
+        self._lst_profiles = tk.Listbox(
+            parent,
+            height=4,
+            exportselection=False,
+            yscrollcommand=scrollbar.set,
+        )
+        scrollbar.config(command=self._lst_profiles.yview)
+        self._lst_profiles.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self._lst_profiles.bind("<<ListboxSelect>>", self._on_profile_listbox_selected)
+
+    def _create_profiles_buttons(self, parent: ttk.Frame) -> None:
+        """Build action buttons inside the profile management frame.
+
+        Args:
+            parent: Container frame for the button column.
+        """
+        ttk.Button(
+            parent, text="Nouveau profil", command=self._notify_profile_new, width=18
+        ).pack(side=tk.TOP, pady=(0, 4))
+
+        # Store reference so the presenter can control its enabled state.
+        self._btn_save_profile = ttk.Button(
+            parent, text="Sauvegarder profil", command=self._notify_profile_save, width=18
+        )
+        self._btn_save_profile.pack(side=tk.TOP, pady=(0, 4))
+
+        ttk.Button(
+            parent, text="Supprimer profil", command=self._notify_profile_delete, width=18
+        ).pack(side=tk.TOP)
+
     def _create_launch_profile_frame(self) -> None:
         """Build the 'Profil de lancement' section."""
-        frame = ttk.LabelFrame(self, text="Profil de lancement", padding=(5, 5))
-        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+        # Store reference so the frame can be enabled/disabled as a whole.
+        self._frame_launch_profile = ttk.LabelFrame(self, text="Profil de lancement", padding=(5, 5))
+        self._frame_launch_profile.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
 
-        self._create_export_folder_row(frame)
-        self._create_url_source_row(frame)
-        self._create_auto_export_row(frame)
+        self._create_export_folder_row(self._frame_launch_profile)
+        self._create_url_source_row(self._frame_launch_profile)
+        self._create_auto_export_row(self._frame_launch_profile)
 
     def _create_export_folder_row(self, parent: ttk.LabelFrame) -> None:
         """Build the export-folder selector row inside the launch profile frame.
@@ -135,6 +205,7 @@ class ScrapingView(ttk.Frame):
         self._export_folder = str((Path.cwd() / self._app_config_model.folder_scraping).resolve())
 
         self._var_export_folder = tk.StringVar(value=self._export_folder)
+        self._var_export_folder.trace_add("write", self._on_export_folder_var_changed)
         ttk.Entry(row, textvariable=self._var_export_folder, width=50).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4)
         )
@@ -336,6 +407,46 @@ class ScrapingView(ttk.Frame):
         """
         self._on_export_journal = callback
 
+    def set_on_profile_selected(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user selects a profile.
+
+        Args:
+            callback: Callable receiving the selected profile_id.
+        """
+        self._on_profile_selected_cb = callback
+
+    def set_on_profile_new(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user confirms a new profile name.
+
+        Args:
+            callback: Callable receiving the profile name entered by the user.
+        """
+        self._on_profile_new_cb = callback
+
+    def set_on_profile_save(self, callback: Callable[[], None]) -> None:
+        """Register the callback fired when the user clicks Sauvegarder profil.
+
+        Args:
+            callback: Zero-argument callable that persists the current form.
+        """
+        self._on_profile_save_cb = callback
+
+    def set_on_form_changed(self, callback: Callable[[], None]) -> None:
+        """Register the callback fired when the user modifies the launch profile form.
+
+        Args:
+            callback: Zero-argument callable notified on every user-driven change.
+        """
+        self._on_form_changed_cb = callback
+
+    def set_on_profile_delete(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user deletes a profile.
+
+        Args:
+            callback: Callable receiving the profile_id to remove.
+        """
+        self._on_profile_delete_cb = callback
+
     # ------------------------------------------------------------------
     # Public data feed (called by the presenter)
     # ------------------------------------------------------------------
@@ -367,6 +478,99 @@ class ScrapingView(ttk.Frame):
             if fid == id_file:
                 self._cmb_provider.set(display)
                 return
+
+    def render_profiles_list(self, profiles: list[dict[str, Any]]) -> None:
+        """Populate the profile Listbox with the given profile rows.
+
+        Args:
+            profiles: List of dicts with keys ``profile_id`` and ``name``.
+        """
+        self._lst_profiles.delete(0, tk.END)
+        self._profile_ids = []
+
+        # Insert each profile name and store the parallel id list.
+        for p in profiles:
+            self._lst_profiles.insert(tk.END, p["name"])
+            self._profile_ids.append(p["profile_id"])
+
+        # Gray out the launch profile section when no profiles exist.
+        if not profiles:
+            self.set_launch_profile_enabled(False)
+            self.set_save_profile_button_state(False)
+
+    def get_selected_profile_id(self) -> str | None:
+        """Return the profile_id of the highlighted Listbox entry.
+
+        Returns:
+            str | None: The profile_id of the selected entry, or None.
+        """
+        sel = self._lst_profiles.curselection()
+        if not sel:
+            return None
+
+        idx = sel[0]
+        return self._profile_ids[idx] if idx < len(self._profile_ids) else None
+
+    def set_selected_profile(self, profile_id: str) -> None:
+        """Highlight the Listbox entry matching profile_id.
+
+        Args:
+            profile_id: The profile identifier to select.
+        """
+        for idx, pid in enumerate(self._profile_ids):
+            if pid == profile_id:
+                self._lst_profiles.selection_clear(0, tk.END)
+                self._lst_profiles.selection_set(idx)
+                self._lst_profiles.see(idx)
+                return
+
+    def set_export_folder(self, folder: str) -> None:
+        """Set the export folder entry and internal state.
+
+        Args:
+            folder: Absolute path to apply to the export folder field.
+        """
+        self._export_folder = folder
+        self._suppress_form_changed = True
+        self._var_export_folder.set(folder)
+        self._suppress_form_changed = False
+
+    def set_url_source(self, source_type: str, source_value: list[str] | str | None) -> None:
+        """Restore the URL source radio selection and internal value.
+
+        Args:
+            source_type: One of "manual", "folder", "csv", or "".
+            source_value: Matching value — list of URLs, a path string, or None.
+        """
+        self._url_source_type = source_type
+        self._url_source_value = source_value
+        self._var_url_source.set(source_type if source_type else "")
+
+    def set_profile_management_enabled(self, enabled: bool) -> None:
+        """Enable or disable all widgets inside the 'Gestion des profils' frame.
+
+        Args:
+            enabled: True to make the frame interactive; False to gray it out.
+        """
+        state = tk.NORMAL if enabled else tk.DISABLED
+        self._apply_state_recursive(self._frame_profile_management, state)
+
+    def set_launch_profile_enabled(self, enabled: bool) -> None:
+        """Enable or disable all widgets inside the 'Profil de lancement' frame.
+
+        Args:
+            enabled: True to make the frame interactive; False to gray it out.
+        """
+        state = tk.NORMAL if enabled else tk.DISABLED
+        self._apply_state_recursive(self._frame_launch_profile, state)
+
+    def set_save_profile_button_state(self, enabled: bool) -> None:
+        """Enable or disable the 'Sauvegarder profil' button.
+
+        Args:
+            enabled: True when the form has unsaved changes.
+        """
+        self._btn_save_profile.config(state=tk.NORMAL if enabled else tk.DISABLED)
 
     # ------------------------------------------------------------------
     # Public getters
@@ -710,6 +914,66 @@ class ScrapingView(ttk.Frame):
         if id_file and self._on_provider_selected:
             self._on_provider_selected(id_file)
 
+    def _on_profile_listbox_selected(self, _event: Any) -> None:
+        """Resolve the listbox selection to a profile_id and fire the callback.
+
+        Args:
+            _event: The Tkinter <<ListboxSelect>> event (unused).
+        """
+        profile_id = self.get_selected_profile_id()
+        if profile_id and self._on_profile_selected_cb:
+            self._on_profile_selected_cb(profile_id)
+
+    def _notify_profile_new(self) -> None:
+        """Ask the user for a name then fire on_profile_new with it."""
+        name = simpledialog.askstring(
+            "Nouveau profil",
+            "Nom du profil :",
+            parent=self,
+        )
+        if name and self._on_profile_new_cb:
+            self._on_profile_new_cb(name.strip())
+
+    def _notify_profile_save(self) -> None:
+        """Fire on_profile_save to persist the current form values."""
+        if self._on_profile_save_cb:
+            self._on_profile_save_cb()
+
+    def _notify_profile_delete(self) -> None:
+        """Fire on_profile_delete with the currently selected profile_id."""
+        profile_id = self.get_selected_profile_id()
+        if profile_id and self._on_profile_delete_cb:
+            self._on_profile_delete_cb(profile_id)
+
+    def _on_export_folder_var_changed(self, *_: str) -> None:
+        """Fired by the StringVar trace when the export folder Entry content changes.
+
+        Args:
+            *_: Tkinter trace arguments (name, index, mode) — unused.
+        """
+        if self._suppress_form_changed:
+            return
+        self._export_folder = self._var_export_folder.get()
+        self._notify_form_changed()
+
+    def _notify_form_changed(self) -> None:
+        """Notify the presenter that the user has modified the launch form."""
+        if self._on_form_changed_cb:
+            self._on_form_changed_cb()
+
+    @staticmethod
+    def _apply_state_recursive(widget: tk.Widget, state: str) -> None:
+        """Recursively apply a Tkinter state to a widget and all its children.
+
+        Args:
+            widget: Root widget to start from.
+            state: "normal" or "disabled".
+        """
+        with contextlib.suppress(tk.TclError):
+            widget.configure(state=state)
+        for child in widget.winfo_children():
+            ScrapingView._apply_state_recursive(child, state)
+
     # ------------------------------------------------------------------
     # URL-source and folder dialogs
     # ------------------------------------------------------------------
@@ -749,6 +1013,7 @@ class ScrapingView(ttk.Frame):
             self._url_source_type = _URL_SOURCE_MANUAL
             self._url_source_value = urls
             popup.destroy()
+            self._notify_form_changed()
 
         def _on_cancel() -> None:
             # Revert radio button to the previous selection.
@@ -766,6 +1031,7 @@ class ScrapingView(ttk.Frame):
         if folder:
             self._url_source_type = _URL_SOURCE_FOLDER
             self._url_source_value = folder
+            self._notify_form_changed()
         else:
             # Revert radio to the previous source type on cancel.
             self._var_url_source.set(self._url_source_type)
@@ -779,6 +1045,7 @@ class ScrapingView(ttk.Frame):
         if path:
             self._url_source_type = _URL_SOURCE_CSV
             self._url_source_value = path
+            self._notify_form_changed()
         else:
             # Revert radio to the previous source type on cancel.
             self._var_url_source.set(self._url_source_type)
@@ -792,6 +1059,7 @@ class ScrapingView(ttk.Frame):
         if folder:
             self._export_folder = folder
             self._var_export_folder.set(folder)
+            self._notify_form_changed()
 
     def _open_export_folder(self) -> None:
         """Create the export folder if absent, then reveal it in the file explorer."""

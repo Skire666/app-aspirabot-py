@@ -20,6 +20,7 @@ from tkinter import ttk
 from typing import Any
 
 from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 
 # ---------------------------------------------------------------------------
 # Interface

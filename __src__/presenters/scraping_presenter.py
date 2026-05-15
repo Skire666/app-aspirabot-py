@@ -20,6 +20,7 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
+from models.launch_profile_model import LaunchProfileModel
 from models.provider_model import ProviderModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
@@ -30,8 +31,7 @@ from shared.datetime_util import (
     get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
-
-from __src__.views.scraping_view import ScrapingView
+from views.scraping_view import ScrapingView
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -104,11 +104,14 @@ class ScrapingPresenter:
         # Captured at launch time (main thread) to avoid cross-thread Tkinter access.
         self._auto_export_journal: bool = False
 
+        # Tracks whether the launch-profile form has unsaved changes.
+        self._is_profile_dirty: bool = False
+
         # Wire all view callbacks to presenter handlers.
         self._wire_view_callbacks()
 
     # ------------------------------------------------------------------
-    # Public API
+    # Public API — providers
     # ------------------------------------------------------------------
 
     def ensure_providers_loaded(self) -> None:
@@ -135,12 +138,22 @@ class ScrapingPresenter:
         self._provider = self._service_provider.read_provider(id_file)
         self._cancel_event.clear()
 
+        # Add a default profile if the provider has none, then persist.
+        if not self._provider.launch_profiles:
+            self._provider.launch_profiles.append(LaunchProfileModel.get_default())
+            self._service_provider.update_provider(self._provider)
+
         # Ensure the provider dropdown is populated before selecting.
         self.ensure_providers_loaded()
 
         # Refresh the view provider selection and reset run-specific state.
         self._view.set_selected_provider(id_file)
         self._view.reset()
+
+        # Unlock the profiles frame and populate it.
+        self._view.set_profile_management_enabled(True)
+        self._refresh_profiles_list()
+        self._load_last_used_profile()
 
     # ------------------------------------------------------------------
     # View callback wiring
@@ -159,6 +172,11 @@ class ScrapingPresenter:
         self._view.set_on_provider_selected(self._on_provider_selected)
         self._view.set_on_refresh_providers(self._on_refresh_providers)
         self._view.set_on_export_journal(self._on_export_journal)
+        self._view.set_on_profile_selected(self._on_profile_selected)
+        self._view.set_on_profile_new(self._on_profile_new)
+        self._view.set_on_profile_save(self._on_profile_save)
+        self._view.set_on_profile_delete(self._on_profile_delete)
+        self._view.set_on_form_changed(self._on_form_changed)
 
     # ------------------------------------------------------------------
     # Provider management callbacks
@@ -218,6 +236,173 @@ class ScrapingPresenter:
         self._view.render_providers_list(rows)
 
     # ------------------------------------------------------------------
+    # Profile management callbacks
+    # ------------------------------------------------------------------
+
+    def _on_profile_selected(self, profile_id: str) -> None:
+        """Apply the selected profile to the launch profile form.
+
+        Args:
+            profile_id: Unique identifier of the profile to restore.
+        """
+        profile = self._find_profile(profile_id)
+        if profile is None:
+            return
+
+        # Restore form values, then reset dirty state and enable the section.
+        self._view.set_export_folder(profile.export_folder)
+        self._view.set_url_source(profile.url_source_type, profile.url_source_value)
+        self._view.set_launch_profile_enabled(True)
+        self._is_profile_dirty = False
+        self._view.set_save_profile_button_state(False)
+
+    def _on_profile_new(self, name: str) -> None:
+        """Create a new named profile, persist it and select it in the view.
+
+        Args:
+            name: Profile name entered by the user.
+
+        Returns:
+            None.
+        """
+        if not self._provider:
+            return
+
+        # Build a new profile with default values and attach it to the provider.
+        new_profile = LaunchProfileModel.get_default(name)
+        self._provider.launch_profiles.append(new_profile)
+        self._service_provider.update_provider(self._provider)
+
+        self._refresh_profiles_list()
+        self._view.set_selected_profile(new_profile.profile_id)
+        self._on_profile_selected(new_profile.profile_id)
+
+    def _on_profile_save(self) -> None:
+        """Persist the current form values into the selected profile.
+
+        Returns:
+            None.
+        """
+        if not self._provider:
+            return
+
+        profile_id = self._view.get_selected_profile_id()
+        profile = self._find_profile(profile_id)
+        if profile is None:
+            return
+
+        export_folder = self._view.get_export_folder()
+        url_source = self._view.get_url_source()
+        profile.export_folder = export_folder
+        profile.url_source_type = url_source["type"]
+        profile.url_source_value = url_source["value"]
+        profile.mark_modified()
+
+        self._service_provider.update_provider(self._provider)
+        self._is_profile_dirty = False
+        self._view.set_save_profile_button_state(False)
+        self._refresh_profiles_list()
+        self._view.set_selected_profile(profile.profile_id)
+
+    def _on_profile_delete(self, profile_id: str) -> None:
+        """Remove a profile from the provider and persist the change.
+
+        Args:
+            profile_id: Unique identifier of the profile to delete.
+        """
+        if not self._provider:
+            return
+
+        # Remove the matching profile from the list.
+        self._provider.launch_profiles = [p for p in self._provider.launch_profiles if p.profile_id != profile_id]
+        self._service_provider.update_provider(self._provider)
+        self._refresh_profiles_list()
+
+    def _find_profile(self, profile_id: str | None) -> LaunchProfileModel | None:
+        """Search the current provider's profiles for a matching profile_id.
+
+        Args:
+            profile_id: The profile identifier to look for.
+
+        Returns:
+            LaunchProfileModel | None: The matching profile, or None if not found.
+        """
+        if not self._provider or not profile_id:
+            return None
+
+        for profile in self._provider.launch_profiles:
+            if profile.profile_id == profile_id:
+                return profile
+        return None
+
+    def _refresh_profiles_list(self) -> None:
+        """Rebuild the profile Listbox in the view from the current provider.
+
+        Returns:
+            None.
+        """
+        if not self._provider:
+            self._view.render_profiles_list([])
+            return
+
+        rows = [{"profile_id": p.profile_id, "name": p.name} for p in self._provider.launch_profiles]
+        self._view.render_profiles_list(rows)
+
+    def _on_form_changed(self) -> None:
+        """React to user-driven changes in the launch-profile form.
+
+        Sets the dirty flag and enables the save button only when a profile
+        is selected (otherwise the save button stays disabled).
+
+        Returns:
+            None.
+        """
+        self._is_profile_dirty = True
+        has_profile = self._view.get_selected_profile_id() is not None
+        self._view.set_save_profile_button_state(has_profile)
+
+    def _load_last_used_profile(self) -> None:
+        """Select and apply the most recently launched profile in the view.
+
+        Returns:
+            None.
+        """
+        if not self._provider or not self._provider.launch_profiles:
+            self._view.set_launch_profile_enabled(False)
+            return
+
+        # Select the profile with the most recent last_used_date if any.
+        used = [p for p in self._provider.launch_profiles if p.last_used_date]
+        target = max(used, key=lambda p: p.last_used_date or "") if used else self._provider.launch_profiles[0]
+
+        self._view.set_selected_profile(target.profile_id)
+        self._on_profile_selected(target.profile_id)
+
+    def _record_active_profile_launch(self) -> None:
+        """Increment the active profile's launch counter (no persistence here).
+
+        The caller is responsible for persisting the provider after this call.
+
+        Returns:
+            None.
+        """
+        profile_id = self._view.get_selected_profile_id()
+        profile = self._find_profile(profile_id)
+        if profile is None:
+            return
+
+        profile.increment_launch_count()
+
+    def _persist_provider_before_launch(self) -> None:
+        """Save the in-memory provider to disk before starting the workflow.
+
+        Returns:
+            None.
+        """
+        if self._provider:
+            self._service_provider.update_provider(self._provider)
+
+    # ------------------------------------------------------------------
     # Workflow control callbacks
     # ------------------------------------------------------------------
 
@@ -246,17 +431,26 @@ class ScrapingPresenter:
         self._current_journal_item_id = None
         self._view.set_running_state(True)
 
+        self._record_active_profile_launch()
+        self._persist_provider_before_launch()
+        self._start_workflow_thread()
+
+    def _start_workflow_thread(self) -> None:
+        """Collect view inputs and spawn the workflow daemon thread.
+
+        Returns:
+            None.
+        """
         started_at = datetime.now()
         self._view.start_elapsed_timer(started_at)
 
-        # Collect launch profile from the view before spawning the thread.
         export_folder = self._view.get_export_folder()
         self._auto_export_journal = self._view.get_auto_export_journal()
         url_source = self._view.get_url_source()
         source_type: str = url_source["type"]
-        source_value: list[str] | str = url_source["value"]
+        raw_value = url_source["value"]
+        source_value: list[str] | str = raw_value if raw_value is not None else []
 
-        # Launch workflow in a daemon thread so the UI stays responsive.
         self._thread = threading.Thread(
             target=self._run_workflow,
             args=(source_type, source_value, export_folder),
