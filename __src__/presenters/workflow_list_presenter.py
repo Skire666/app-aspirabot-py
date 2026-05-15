@@ -15,6 +15,7 @@ Example:
 import logging
 import threading
 from collections.abc import Callable
+from tkinter import messagebox
 
 from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
@@ -202,12 +203,32 @@ class WorkflowListPresenter:
             self._steps.append(step)
         else:
             # Edit mode: replace the step at the tracked index.
+            if self._steps[self._edit_index].step_id != step.step_id:
+                new_index_step = self.find_step_index_by_id(step.step_id)
+                if new_index_step is None:
+                    messagebox.showwarning("Attention", "L'étape n'existe plus. Impossible de mettre à jour.")
+                    return True
+                self._edit_index = new_index_step
             self._steps[self._edit_index] = step
         step.update_modified_date()
         self._edit_index = None
         self._view.clear_selection()
         self._refresh_view()
         return True
+
+    def find_step_index_by_id(self, step_id: str) -> int | None:
+        """Finds the index of the first step with the given step_id.
+
+        Args:
+            step_id: The step_id to search for.
+
+        Returns:
+            The zero-based index of the first matching step, or None if not found.
+        """
+        for index, step in enumerate(self._steps):
+            if step.step_id == step_id:
+                return index
+        return None
 
     def _on_cancel_inline_step(self) -> None:
         """Clears the pending edit state after the view hides the panel."""
@@ -339,6 +360,9 @@ class WorkflowListPresenter:
             A list of validation errors for the candidate step.
         """
         candidate_errors: list[str] = []
+
+        print(f"Validating candidate step at index {candidate_index}...")
+        print(f"Candidate step type: {steps[candidate_index].step_id}")
 
         # Validate every step; track the first error and the candidate's errors.
         for index, current in enumerate(steps):

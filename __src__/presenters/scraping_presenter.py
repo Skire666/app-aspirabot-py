@@ -117,7 +117,7 @@ class ScrapingPresenter:
     def ensure_providers_loaded(self) -> None:
         """Populate the provider dropdown on first show, skipped if already loaded."""
         print(f"ensure_providers_loaded -> {self._providers_loaded}")
-        if not self._providers_loaded:
+        if not self._providers_loaded or (datetime.now() - self._providers_loaded).total_seconds() > 5:
             self._on_refresh_providers()
 
     def load_provider(self, id_file: str) -> None:
@@ -379,7 +379,7 @@ class ScrapingPresenter:
         self._on_profile_selected(target.profile_id)
 
     def _record_active_profile_launch(self) -> None:
-        """Increment the active profile's launch counter (no persistence here).
+        """Snapshot view inputs into the active profile and increment its launch counter.
 
         The caller is responsible for persisting the provider after this call.
 
@@ -390,6 +390,14 @@ class ScrapingPresenter:
         profile = self._find_profile(profile_id)
         if profile is None:
             return
+
+        profile.export_folder = self._view.get_export_folder() or profile.export_folder
+
+        url_source = self._view.get_url_source()
+        profile.url_source_type = url_source.get("type", profile.url_source_type)
+        raw_value = url_source.get("value")
+        if raw_value is not None:
+            profile.url_source_value = raw_value
 
         profile.increment_launch_count()
 

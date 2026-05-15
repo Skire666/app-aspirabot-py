@@ -27,6 +27,9 @@ from typing import Any
 from models.app_configuration_model import AppConfigurationModel
 from shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
 from shared.operating_system_util import open_folder
+from views.components.horizontal_line_frame import HorizontalLineFrame
+
+from __src__.views.components.canvas_checkbox import CanvasCheckbox
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -112,26 +115,26 @@ class ScrapingView(ttk.Frame):
 
     def _create_provider_selection_frame(self) -> None:
         """Build the 'Sélectionner un fournisseur' section."""
-        frame = ttk.LabelFrame(self, text="Sélectionner un fournisseur", padding=(5, 5))
-        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+        frame = HorizontalLineFrame(self, text="Sélectionner un fournisseur")
+        frame.pack(side=tk.TOP, fill=tk.X)
 
         # Combobox shows "Name — URL — Version — modified_date".
         self._cmb_provider = ttk.Combobox(frame, state="readonly", width=80)
-        self._cmb_provider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+        self._cmb_provider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self._cmb_provider.bind("<<ComboboxSelected>>", self._on_combobox_selected)
 
         # Refresh button reloads the provider list from disk.
         btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._notify_refresh_providers)
-        btn_refresh.pack(side=tk.RIGHT)
+        btn_refresh.pack(side=tk.RIGHT, padx=5)
 
     def _create_profile_management_frame(self) -> None:
         """Build the 'Gestion des profils' section."""
-        self._frame_profile_management = ttk.LabelFrame(self, text="Gestion des profils", padding=(5, 5))
-        self._frame_profile_management.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+        self._frame_profile_management = HorizontalLineFrame(self, text="Gestion des profils")
+        self._frame_profile_management.pack(side=tk.TOP, fill=tk.X)
 
         # Left column: profile listbox with scrollbar.
         left = ttk.Frame(self._frame_profile_management)
-        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
         self._create_profiles_listbox(left)
 
         # Right column: action buttons stacked vertically.
@@ -151,7 +154,7 @@ class ScrapingView(ttk.Frame):
         scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL)
         self._lst_profiles = tk.Listbox(
             parent,
-            height=4,
+            height=3,
             exportselection=False,
             yscrollcommand=scrollbar.set,
         )
@@ -166,25 +169,25 @@ class ScrapingView(ttk.Frame):
         Args:
             parent: Container frame for the button column.
         """
-        ttk.Button(
-            parent, text="Nouveau profil", command=self._notify_profile_new, width=18
-        ).pack(side=tk.TOP, pady=(0, 4))
+        ttk.Button(parent, text="Nouveau profil", command=self._notify_profile_new, width=18).pack(
+            side=tk.TOP, pady=(0, 4), padx=5
+        )
 
         # Store reference so the presenter can control its enabled state.
         self._btn_save_profile = ttk.Button(
             parent, text="Sauvegarder profil", command=self._notify_profile_save, width=18
         )
-        self._btn_save_profile.pack(side=tk.TOP, pady=(0, 4))
+        self._btn_save_profile.pack(side=tk.TOP, pady=(0, 4), padx=5)
 
-        ttk.Button(
-            parent, text="Supprimer profil", command=self._notify_profile_delete, width=18
-        ).pack(side=tk.TOP)
+        ttk.Button(parent, text="Supprimer profil", command=self._notify_profile_delete, width=18).pack(
+            side=tk.TOP, padx=5
+        )
 
     def _create_launch_profile_frame(self) -> None:
         """Build the 'Profil de lancement' section."""
         # Store reference so the frame can be enabled/disabled as a whole.
-        self._frame_launch_profile = ttk.LabelFrame(self, text="Profil de lancement", padding=(5, 5))
-        self._frame_launch_profile.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+        self._frame_launch_profile = HorizontalLineFrame(self, text="Profil de lancement")
+        self._frame_launch_profile.pack(side=tk.TOP, fill=tk.X)
 
         self._create_export_folder_row(self._frame_launch_profile)
         self._create_url_source_row(self._frame_launch_profile)
@@ -199,7 +202,7 @@ class ScrapingView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
 
-        ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=5)
 
         # StringVar keeps the displayed path in sync with internal state.
         self._export_folder = str((Path.cwd() / self._app_config_model.folder_scraping).resolve())
@@ -209,7 +212,7 @@ class ScrapingView(ttk.Frame):
         ttk.Entry(row, textvariable=self._var_export_folder, width=50).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4)
         )
-        ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(side=tk.LEFT)
+        ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(side=tk.LEFT, padx=5)
         ttk.Button(row, text="Ouvrir dossier", command=self._open_export_folder).pack(side=tk.LEFT, padx=(5, 5))
 
     def _create_url_source_row(self, parent: ttk.LabelFrame) -> None:
@@ -221,7 +224,7 @@ class ScrapingView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
 
-        ttk.Label(row, text="URLs à scraper :").pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Label(row, text="URLs à scraper :").pack(side=tk.LEFT, padx=(5, 8))
 
         # StringVar tracks the active radio selection.
         self._var_url_source = tk.StringVar()
@@ -250,16 +253,17 @@ class ScrapingView(ttk.Frame):
         row.pack(side=tk.TOP, fill=tk.X)
 
         self._var_auto_export_journal = tk.BooleanVar(value=True)
-        ttk.Checkbutton(
+        export = CanvasCheckbox(
             row,
             text="Exporter le journal scraping automatiquement à la fin du processus",
             variable=self._var_auto_export_journal,
-        ).pack(side=tk.LEFT)
+        )
+        export.pack(side=tk.LEFT, padx=5, pady=(2, 0))
 
     def _create_workflow_controls_frame(self) -> None:
         """Build the 'Progression' section with 7 live-updated info rows."""
-        frame = ttk.LabelFrame(self, text="Pilotage du scraping", padding=(5, 5))
-        frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=(5, 0))
+        frame = HorizontalLineFrame(self, text="Pilotage du scraping")
+        frame.pack(side=tk.TOP, fill=tk.X)
 
         frame_stats = ttk.Frame(frame)
         frame_stats.pack(side=tk.LEFT, fill=tk.X)
@@ -293,22 +297,22 @@ class ScrapingView(ttk.Frame):
         self._btn_launch = ttk.Button(
             div_buttons, text="Lancer le scraping", width=20, command=self._notify_launch
         )
-        self._btn_launch.pack(side=tk.TOP, pady=(0, 5))
+        self._btn_launch.pack(side=tk.TOP, padx=5, pady=(0, 5))
 
         self._btn_cancel = ttk.Button(
-            div_buttons, text="Annuler", command=self._notify_cancel, width=20, state=tk.DISABLED
+            div_buttons, text="Annuler (kill)", command=self._notify_cancel, width=20, state=tk.DISABLED
         )
-        self._btn_cancel.pack(side=tk.TOP, pady=(0, 5))
+        self._btn_cancel.pack(side=tk.TOP, padx=5, pady=(0, 5))
 
         self._btn_pause = ttk.Button(
-            div_buttons, text="Pause", command=self._notify_pause, width=20, state=tk.DISABLED
+            div_buttons, text="Mettre en pause", command=self._notify_pause, width=20, state=tk.DISABLED
         )
-        self._btn_pause.pack(side=tk.TOP, pady=(0, 5))
+        self._btn_pause.pack(side=tk.TOP, padx=5, pady=(0, 5))
 
         self._btn_resume = ttk.Button(
             div_buttons, text="Reprendre", command=self._notify_resume, width=20, state=tk.DISABLED
         )
-        self._btn_resume.pack(side=tk.TOP, pady=(0, 5))
+        self._btn_resume.pack(side=tk.TOP, padx=5)
 
     @staticmethod
     def _add_progress_row(parent: ttk.LabelFrame, label_text: str, var: tk.StringVar) -> None:
@@ -320,14 +324,14 @@ class ScrapingView(ttk.Frame):
             var: StringVar whose value is displayed on the right.
         """
         row = ttk.Frame(parent)
-        row.pack(side=tk.TOP, fill=tk.X, pady=1)
+        row.pack(side=tk.TOP, fill=tk.X, pady=1, padx=5)
         ttk.Label(row, text=label_text, width=20, anchor=tk.W).pack(side=tk.LEFT)
         ttk.Label(row, textvariable=var, anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
     def _create_journal_frame(self) -> None:
         """Build the 'Journal scraping' section with a Treeview and Export button."""
-        frame = ttk.LabelFrame(self, text="Journal scraping", padding=(5, 5))
-        frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=(5, 5))
+        frame = HorizontalLineFrame(self, text="Journal du scraping")
+        frame.pack(side=tk.TOP, fill=tk.BOTH)
 
         # Top bar: export button aligned right.
         bar = ttk.Frame(frame)
@@ -345,7 +349,7 @@ class ScrapingView(ttk.Frame):
         self._tree.configure(yscrollcommand=scrollbar.set)
 
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
 
     # ------------------------------------------------------------------
     # Callback registration (called once by the presenter)

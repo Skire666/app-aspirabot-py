@@ -776,12 +776,40 @@ class DragDropList(tk.Frame, Generic[T]):
         """Refreshes the item at idx after a toggle-active action.
 
         The callback is responsible for mutating item.is_active.
+        Attempts a zero-allocation color update via update_colors; falls back
+        to a full clear-region redraw when the hook is absent or misses cache.
 
         Args:
             idx: Zero-based item index.
         """
         self._hovered_btn = None
-        self._redraw_item(idx)
+        if not self._try_update_item_colors(idx):
+            self._redraw_item(idx)
+
+    def _try_update_item_colors(self, idx: int) -> bool:
+        """Attempts a color-only item update via the renderer's update_colors hook.
+
+        When the renderer exposes update_colors, reconfigures the item's canvas
+        primitives in-place (no delete/create), then redraws only the buttons
+        so the toggle icon reflects the new is_active state.
+
+        Args:
+            idx: Zero-based item index.
+
+        Returns:
+            True when the renderer handled the update in-place; False when a
+            full clear-region redraw is required (hook absent or cache miss).
+        """
+        renderer = self._render_item
+        if not hasattr(renderer, "update_colors"):
+            return False
+
+        # Color-only update — no geometry recalculation needed.
+        updated = renderer.update_colors(self.canvas, self.items[idx], idx, "normal")
+        if updated:
+            self.canvas.delete(f"_btns{idx}")
+            self._draw_buttons_for(idx)
+        return updated
 
     def _notify_reorder(self) -> None:
         """Fires the on_reorder callback with the current item list."""

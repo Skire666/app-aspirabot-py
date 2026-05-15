@@ -67,6 +67,9 @@ class WorkflowListCrudView(ttk.Frame):
         self._logger = logging.getLogger(__name__)
         self._init_callbacks()
         self._selected_index: int | None = None
+        # Object reference for the currently selected step — updated on edit,
+        # cleared on deselect. Used to track the step across list mutations.
+        self._selected_step: StepScrapingModel | None = None
         self._last_steps: list[StepScrapingModel] = []
         # Guard: True while a DragDropList callback is executing, so that
         # re-entrant render_steps calls from the presenter are deferred.
@@ -173,6 +176,7 @@ class WorkflowListCrudView(ttk.Frame):
     def reset(self) -> None:
         """Resets transient view state: selection and cached step list."""
         self._selected_index = None
+        self._selected_step = None
         self._last_steps = []
 
     def scroll_to_bottom(self) -> None:
@@ -183,6 +187,7 @@ class WorkflowListCrudView(ttk.Frame):
         """Clears the current step selection and redraws only the deselected item."""
         prev = self._selected_index
         self._selected_index = None
+        self._selected_step = None
         if prev is not None:
             self._dnd_list.redraw_item(prev)
 
@@ -212,12 +217,8 @@ class WorkflowListCrudView(ttk.Frame):
     # ---------------------------------------------------------------
 
     def _on_dnd_move_up(self, _: StepScrapingModel, idx: int) -> None:
-        # Keep selection index aligned with the moved step.
-        if self._selected_index == idx:
-            self._selected_index = max(0, idx - 1)
-
-        # Notify the presenter; guard prevents re-entrant render_steps from
-        # corrupting the DragDropList's already-updated item list.
+        # Selection re-sync is handled by _sync_selection_after_mutation
+        # called from _on_dnd_reorder, which fires after the list mutation.
         self._dnd_busy = True
         try:
             if self.on_move_step:
@@ -226,9 +227,8 @@ class WorkflowListCrudView(ttk.Frame):
             self._dnd_busy = False
 
     def _on_dnd_move_down(self, _: StepScrapingModel, idx: int) -> None:
-        if self._selected_index == idx:
-            self._selected_index = min(len(self._dnd_list.items) - 1, idx + 1)
-
+        # Selection re-sync is handled by _sync_selection_after_mutation
+        # called from _on_dnd_reorder, which fires after the list mutation.
         self._dnd_busy = True
         try:
             if self.on_move_step:
@@ -236,9 +236,11 @@ class WorkflowListCrudView(ttk.Frame):
         finally:
             self._dnd_busy = False
 
-    def _on_dnd_edit(self, _: StepScrapingModel, idx: int) -> None:
+    def _on_dnd_edit(self, item: StepScrapingModel, idx: int) -> None:
         prev = self._selected_index
         self._selected_index = idx
+        # Track by object identity so mutations can relocate the selection.
+        self._selected_step = item
         if prev is not None and prev != idx:
             self._dnd_list.redraw_item(prev)
         self._dnd_list.redraw_item(idx)
@@ -251,9 +253,11 @@ class WorkflowListCrudView(ttk.Frame):
         if not confirmed:
             return False
 
-        # Clear stale selection before the presenter refreshes.
+        # Clear selection eagerly when the selected step is the one being deleted.
+        # _sync_selection_after_mutation in _on_dnd_reorder handles the shift case.
         if self._selected_index == idx:
             self._selected_index = None
+            self._selected_step = None
 
         # Guard against re-entrant render_steps while on_delete_step fires.
         self._dnd_busy = True
@@ -284,18 +288,57 @@ class WorkflowListCrudView(ttk.Frame):
             self._dnd_busy = False
 
     def _on_dnd_reorder(self, steps: list[StepScrapingModel]) -> None:
-        # Fires after every DragDropList mutation (move, delete, duplicate, drag).
-        # Gives the presenter a chance to sync its own step list without refreshing.
+        """Fires after every DragDropList mutation (move, delete, duplicate, drag).
+
+        Gives the presenter a chance to sync its own step list without refreshing.
+        Also relocates the selection highlight to follow the edited step.
+
+        Args:
+            steps: Complete mutated step list, in its new order.
+        """
         if self.on_reorder_steps:
             self.on_reorder_steps(list(steps))
+
+        # Relocate the selection highlight to the edited step's new position.
+        old_idx = self._selected_index
+        self._sync_selection_after_mutation(steps)
+        new_idx = self._selected_index
+
+        # Redraw only the two affected slots when the selected item shifted.
+        if old_idx != new_idx:
+            if old_idx is not None:
+                self._dnd_list.redraw_item(old_idx)
+            if new_idx is not None:
+                self._dnd_list.redraw_item(new_idx)
+
         # Defer rebind: DragDropList calls rebuild() AFTER this callback returns,
         # so the new internal canvas is not yet available at this point.
         self.after(0, self._bind_dnd_canvas_scroll)
-        # Double-deferred geometry: this callback fires before rebuild(), which
-        # queues pack's layout idle callback. A single after_idle would run before
-        # pack, reading stale winfo_reqheight(). The second after_idle fires after
-        # pack's layout idle, so the frame height is accurate.
+        # Double-deferred geometry update — see _defer_geometry_update docstring.
         self.after_idle(self._defer_geometry_update)
+
+    def _sync_selection_after_mutation(self, steps: list[StepScrapingModel]) -> None:
+        """Relocates _selected_index by finding _selected_step in the mutated list.
+
+        Searches by object identity so any reorder, move, delete, or duplicate
+        is handled correctly without comparing data fields. When the selected
+        step is no longer present (deleted), both selection fields are cleared.
+
+        Args:
+            steps: The new step list produced by the DragDropList mutation.
+        """
+        if self._selected_step is None:
+            return
+
+        # Search by identity — O(n) but list is short in practice.
+        for i, step in enumerate(steps):
+            if step is self._selected_step:
+                self._selected_index = i
+                return
+
+        # Step was removed — clear the selection entirely.
+        self._selected_step = None
+        self._selected_index = None
 
     def _defer_geometry_update(self) -> None:
         """Schedules a second idle geometry update.
@@ -375,4 +418,5 @@ class WorkflowListCrudView(ttk.Frame):
         )
         if confirmed and self.on_clear_all_steps:
             self._selected_index = None
+            self._selected_step = None
             self.on_clear_all_steps()
