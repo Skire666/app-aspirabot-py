@@ -152,7 +152,7 @@ class LayoutCalculator:
     def btn_rects(self, idx: int, n_buttons: int) -> list[tuple[int, int, int, int]]:
         """Returns bounding boxes for all action buttons of item at idx.
 
-        Boxes are ordered right-to-left, matching C_MINI_BUTTONS_WORKFLOW order.
+        Boxes are ordered right-to-left, matching C_MINI_BUTTONS_CRUD order.
 
         Args:
             idx: Zero-based item index.

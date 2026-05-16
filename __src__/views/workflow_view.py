@@ -13,8 +13,9 @@ from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from views.components.horizontal_line_frame import HorizontalLineFrame
-from views.step_edit_dialog_view import _LABEL_TO_TYPE, StepInlineFormPanel
-from views.workflow_list_crud_view import WorkflowListCrudView
+
+from __src__.views.workflow.edit_step_dialog_panel import _LABEL_TO_TYPE, EditStepDialogPanel
+from __src__.views.workflow.steps_list_crud_panel import StepsListCrudView
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -22,7 +23,7 @@ from views.workflow_list_crud_view import WorkflowListCrudView
 
 _STATUS_COLOR_OK = "#1b5e20"
 _STATUS_COLOR_ERROR = "#b00020"
-_HEIGHT_FRAME_GESTION = 196
+_HEIGHT_FRAME_GESTION = 194
 
 
 class WorkflowView(ttk.Frame):
@@ -125,7 +126,7 @@ class WorkflowView(ttk.Frame):
         workflow_lf = HorizontalLineFrame(main_container, text="Liste des étapes")
         workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5), padx=(5))
 
-        self._workflow_builder_view = WorkflowListCrudView(workflow_lf)
+        self._workflow_builder_view = StepsListCrudView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True)
 
         self._btn_save = ttk.Button(footer_frame, text="Sauvegarder le fournisseur", command=self._notify_save)
@@ -154,7 +155,7 @@ class WorkflowView(ttk.Frame):
         self._type_listbox.selection_set(0)
         self._type_listbox.bind("<<ListboxSelect>>", self._on_type_list_select)
 
-        self._inline_form = StepInlineFormPanel(self._gestion_container)
+        self._inline_form = EditStepDialogPanel(self._gestion_container)
         self._inline_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self._is_edit_mode: bool = False
@@ -255,7 +256,7 @@ class WorkflowView(ttk.Frame):
                 self._inline_form._rebuild_form(step_type)
 
     @property
-    def workflow_builder_view(self) -> WorkflowListCrudView:
+    def workflow_builder_view(self) -> StepsListCrudView:
         """Returns the embedded WorkflowBuilderView widget.
 
         Returns:

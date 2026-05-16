@@ -1,7 +1,7 @@
 """DragDropList tkinter widget — the public facade.
 
 This module re-exports DEFAULT_THEME, ItemRenderer, _BtnDef, and
-C_MINI_BUTTONS_WORKFLOW for backward compatibility with callers that
+C_MINI_BUTTONS_CRUD for backward compatibility with callers that
 import them directly from views.components.drag_drop_list.
 """
 
@@ -60,7 +60,7 @@ class _BtnDef:
     icon: str
 
 
-C_MINI_BUTTONS_WORKFLOW: list[_BtnDef] = [
+C_MINI_BUTTONS_CRUD: list[_BtnDef] = [
     _BtnDef("delete", "D", "btn_del", C_RESS_ICON_WHITE_DELETE),
     _BtnDef("edit", "E", "btn_edit", C_RESS_ICON_WHITE_EDIT),
     _BtnDef("duplicate", "C", "btn_dup", C_RESS_ICON_WHITE_COPY),
@@ -226,7 +226,7 @@ class DragDropList(tk.Frame, Generic[T]):
         self._on_reorder = on_reorder
 
         # Only show buttons with registered callbacks.
-        self._visible_btns: list[_BtnDef] = [b for b in C_MINI_BUTTONS_WORKFLOW if self._cbs.get(b.key) is not None]
+        self._visible_btns: list[_BtnDef] = [b for b in C_MINI_BUTTONS_CRUD if self._cbs.get(b.key) is not None]
 
         # ── Drag state ────────────────────────────────────────────────
         self._drag_state: DragState | None = None

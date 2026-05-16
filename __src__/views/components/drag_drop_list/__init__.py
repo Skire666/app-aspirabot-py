@@ -8,7 +8,7 @@ Public surface:
     - DragDropList: The widget class (use this).
     - ItemRenderer: Protocol for the render_item callable.
     - DEFAULT_THEME: Default color mapping.
-    - _BtnDef / C_MINI_BUTTONS_WORKFLOW: Button definitions.
+    - _BtnDef / C_MINI_BUTTONS_CRUD: Button definitions.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from shared.exception_util import LazyAttributeNotFoundError
 if TYPE_CHECKING:
     # At type-check time only (mypy / pyright). No runtime import.
     from views.components.drag_drop_list.widgets.drag_drop_list import (
-        C_MINI_BUTTONS_WORKFLOW,
+        C_MINI_BUTTONS_CRUD,
         DEFAULT_THEME,
         DragDropList,
         ItemRenderer,
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
-    "C_MINI_BUTTONS_WORKFLOW",
+    "C_MINI_BUTTONS_CRUD",
     "DEFAULT_THEME",
     "DragDropList",
     "ItemRenderer",

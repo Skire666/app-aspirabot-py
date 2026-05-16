@@ -6,7 +6,7 @@ Form building, loading, reading and validation are fully delegated to the
 registered IStepFormDef instance for the active step type.
 
 Example:
-    >>> panel = StepInlineFormPanel(parent_frame)
+    >>> panel = EditStepDialogPanel(parent_frame)
     >>> panel.on_confirm = lambda step: print(step)
     >>> panel.on_cancel = lambda: print("cancelled")
     >>> panel.load(existing_step)
@@ -41,7 +41,7 @@ _LABEL_TO_TYPE: dict[str, StepTypeEnum] = {v: k for k, v in C_STEP_TYPE_TO_LABEL
 # ---------------------------------------------------------------------------
 
 
-class StepInlineFormPanel(ttk.Frame):
+class EditStepDialogPanel(ttk.Frame):
     """Inline form panel for creating or editing a single scraping step.
 
     All form-specific logic (build / load / read / validate / label) is

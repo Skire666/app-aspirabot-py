@@ -4,7 +4,7 @@ Manages the in-memory step list, opens the inline step form through the
 view, and persists changes via the repository.
 
 Example:
-    >>> presenter = WorkflowListPresenter(view, service, repository)
+    >>> presenter = StepsListPresenter(view, service, repository)
     >>> presenter.load("some-provider-guid")
 """
 
@@ -21,15 +21,16 @@ from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
-from views.workflow_list_crud_view import WorkflowListCrudView
 from views.workflow_view import WorkflowView
+
+from __src__.views.workflow.steps_list_crud_panel import StepsListCrudView
 
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
 
 
-class WorkflowListPresenter:
+class StepsListPresenter:
     """Orchestrates the workflow list view with service and repository.
 
     Responsibilities:
@@ -45,7 +46,7 @@ class WorkflowListPresenter:
 
     def __init__(
         self,
-        view: WorkflowListCrudView,
+        view: StepsListCrudView,
         service_provider: ProviderService,
         workflow_service: WorkflowService,
         gestion_view: WorkflowView | None = None,
