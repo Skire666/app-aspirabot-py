@@ -74,3 +74,16 @@ class IUrlSourceProvider(ABC):
         Raises:
             None.
         """
+
+    @abstractmethod
+    def display_progress_tuple_text(self) -> str:
+        """Return a human-readable string summarising the provider's current state.
+
+        This is used to populate the progress tuple in the workflow status label.
+
+        Returns:
+            A string like "Provider: 3 URLs remaining" or "Provider: no more URLs".
+        """
+
+
+# EOF

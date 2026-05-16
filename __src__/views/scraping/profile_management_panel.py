@@ -231,7 +231,7 @@ class ProfileManagementPanel(ttk.Frame):
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _on_listbox_selected(self) -> None:
+    def _on_listbox_selected(self, _event: tk.Event) -> None:
         """Resolve the listbox selection to a profile_id and fire the callback.
 
         Args:

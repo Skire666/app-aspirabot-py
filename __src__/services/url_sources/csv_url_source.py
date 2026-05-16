@@ -142,3 +142,16 @@ class CsvUrlSourceProvider(IUrlSourceProvider):
         # Skip header row when the first cell does not look like a URL.
         start = 1 if rows and not rows[0][0].startswith("http") else 0
         return [row[0].strip() for row in rows[start:] if row[0].strip()]
+
+    def display_progress_tuple_text(self) -> str:
+        """Return a summary of the provider's current state for display.
+
+        Returns:
+            A string like "CSV: 3 URLs remaining" or "CSV: no more URLs".
+        """
+        if self._urls is None:
+            return "CSV: non chargé"
+        remaining = len(self._urls) - self._index
+        if remaining > 0:
+            return f"CSV: {self._index} sur {len(self._urls)} consommé(s)"
+        return "CSV: plus aucune URL"

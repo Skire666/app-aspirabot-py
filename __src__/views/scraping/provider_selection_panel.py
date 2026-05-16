@@ -94,7 +94,7 @@ class ProviderSelectionPanel(ttk.Frame):
 
         # Build display strings and id_file mapping.
         for p in providers:
-            display = f"{p['provider_name']}  —  {p['url']}  —  v{p['version']}"
+            display = f"{p['provider_name']}  —  {p['url']}  —  v{p['version']}  —  ({p['id_file']})"
             self._provider_id_by_display[display] = p["id_file"]
             values.append(display)
         self._cmb_provider["values"] = values
@@ -121,7 +121,7 @@ class ProviderSelectionPanel(ttk.Frame):
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _on_combobox_selected(self) -> None:
+    def _on_combobox_selected(self, _event: tk.Event) -> None:
         """Resolve the combobox selection to an id_file and fire the callback.
 
         Args:

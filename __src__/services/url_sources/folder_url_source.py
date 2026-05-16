@@ -17,6 +17,7 @@ Example:
 
 from __future__ import annotations
 
+import configparser
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -50,7 +51,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         self._folder_path: str = folder_path
         self._file_paths: list[Path] | None = None
         # _scan_index is the next file to read when filling the buffer.
-        self._scan_index: int = 0
+        self._index: int = 0
         # _buffered is either a URL string ready to return, or _SENTINEL.
         self._buffered: object = _SENTINEL
 
@@ -71,7 +72,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             FileNotFoundError: If the folder does not exist on first access.
         """
         self._ensure_discovered()
-        self._fill_buffer_if_empty()
+        self._fill_one_url_if_empty()
         return self._buffered is not _SENTINEL
 
     def next_url(self) -> str:
@@ -89,6 +90,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
 
         url = str(self._buffered)
         self._buffered = _SENTINEL
+        self._update_modified_time_of_current_file()
         return url
 
     def reset(self) -> None:
@@ -100,8 +102,24 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         Raises:
             None.
         """
-        self._scan_index = 0
+        self._index = 0
         self._buffered = _SENTINEL
+
+    def display_progress_tuple_text(self) -> str:
+        """Return a string describing the current progress for display purposes.
+
+        Returns:
+            A string like "3/10" indicating the current file index and total count.
+
+        Raises:
+            None.
+        """
+        if self._file_paths is None:
+            return "Dossier : 0/0"
+        remaining = len(self._file_paths) - self._index
+        if remaining > 0:
+            return f"Dossier : {self._index} sur {len(self._file_paths)} consommé(s)"
+        return "Dossier : plus aucune URL"
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -130,9 +148,12 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             raise FileNotFoundError(f"URL source folder not found: {self._folder_path}")
 
         folder = Path(self._folder_path)
-        return sorted(folder.glob("*.txt"), key=lambda p: p.name)
 
-    def _fill_buffer_if_empty(self) -> None:
+        # all RAC file have '.url' extension
+        # mtime -> modification time, used here to sort files by last modified time (oldest first)
+        return sorted(folder.glob("*.url"), key=lambda f: f.stat().st_mtime)
+
+    def _fill_one_url_if_empty(self) -> None:
         """Advance through files until a non-empty URL is found or list ends.
 
         Reads each .txt file in order and stores the first non-empty URL it
@@ -142,13 +163,37 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             return
 
         # Scan forward until a non-empty URL is found.
-        while self._scan_index < len(self._file_paths):  # type: ignore[arg-type]
-            file_path = self._file_paths[self._scan_index]  # type: ignore[index]
-            self._scan_index += 1
+        while self._index < len(self._file_paths):  # type: ignore[arg-type]
+            file_path = self._file_paths[self._index]  # type: ignore[index]
+            self._index += 1
             url = self._read_url_from_file(file_path)
             if url:
                 self._buffered = url
                 return
+
+    def _update_modified_time_of_current_file(self) -> None:
+        """Update the modified time of the current file to now.
+
+        This can be used to move the file to the end of the processing order
+        if the provider is reset and accessed again.
+
+        Returns:
+            None.
+
+        Raises:
+            FileNotFoundError: If the folder or current file does not exist.
+            RuntimeError: If called before any file has been buffered.
+        """
+        if self._file_paths is None:
+            raise RuntimeError("Cannot update modified time before discovery.")
+        if self._index == 0:
+            raise RuntimeError("Cannot update modified time before buffering a URL.")
+
+        current_file = self._file_paths[self._index - 1]  # type: ignore[index]
+        if not current_file.exists():
+            raise FileNotFoundError(f"Current URL file not found: {current_file}")
+
+        current_file.touch()  # Update modified time to now
 
     @staticmethod
     def _read_url_from_file(file_path: Path) -> str:
@@ -164,8 +209,12 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             None.
         """
         with Path(file_path).open(encoding="utf-8") as fh:
-            for line in fh:
-                stripped = line.strip()
-                if stripped:
-                    return stripped
+            config = configparser.ConfigParser()
+            config.read_file(fh)
+            url = config.get("InternetShortcut", "URL", fallback=None)
+            if url and url.strip():
+                return url.strip()
         return ""
+
+
+# EOF

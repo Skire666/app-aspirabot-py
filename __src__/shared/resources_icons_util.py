@@ -119,7 +119,7 @@ class ResourcesIcons:
             try:
                 img = Image.open(resolved_path)
                 img = img.resize(size, Image.BILINEAR)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 img = self._create_fallback(size)
 
             self._cache[key] = ImageTk.PhotoImage(img)

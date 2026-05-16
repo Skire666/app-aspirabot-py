@@ -86,3 +86,22 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
             None.
         """
         self._index = 0
+
+    def display_progress_tuple_text(self) -> str:
+        """Return a human-readable progress string for display in the journal.
+
+        Returns:
+            A string like "Manual URL source: 2/5 URLs consumed".
+
+        Raises:
+            None.
+        """
+        if self._urls is None:
+            return "Manuel : non chargé"
+        remaining = len(self._urls) - self._index
+        if remaining > 0:
+            return f"Manuel : {self._index} sur {len(self._urls)} consommé(s)"
+        return "Manuel : plus aucune URL"
+
+
+# EOF

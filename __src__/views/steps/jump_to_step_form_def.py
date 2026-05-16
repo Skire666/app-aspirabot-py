@@ -108,7 +108,7 @@ class JumpToStepFormDef(IStepFormDef):
         target_var = tk.StringVar(value=default_choice)
         widgets[C_KEY_CHOICE_FROM_LISTBOX] = target_var
 
-        ttk.Label(row1, text="Étape cible:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text="Sauter vers :").pack(side=tk.LEFT, padx=(0, 5))
         ttk.Combobox(row1, textvariable=target_var, values=all_choices_listbox, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
@@ -172,7 +172,9 @@ class JumpToStepFormDef(IStepFormDef):
             if the index is negative or the model is None.
         """
         if index >= 0 and model is not None:
-            return f"{str(index + 1).zfill(2)}.  -  #{model.step_id}  - {JumpToStepFormDef.label()}"
+            return (
+                f"{str(index + 1).zfill(2)}.  -  #{model.step_id}  - {C_STEP_TYPE_TO_LABELS.get(model.step_type)}"
+            )
         return ""
 
     @override

@@ -57,7 +57,8 @@ class OpenUrlExecutor(IStepExecutor):
         else:
             page.goto(target_url, wait_until=p.wait_state)
 
-        context.last_message_step = f"Page ouverte : {target_url}"
+        progress_txt = context.url_source.display_progress_tuple_text()
+        context.last_message_step = f"{progress_txt} - Page ouverte : {target_url}"
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

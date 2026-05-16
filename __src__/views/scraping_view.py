@@ -414,19 +414,19 @@ class ScrapingView(_WorkflowMixin, _ProviderMixin, _ProfileMixin, _LaunchFormMix
         self._create_panels(config_model)
 
     def _create_panels(self, config_model: AppConfigurationModel) -> None:
-        self._provider_panel = ProviderSelectionPanel(self)
+        self._provider_panel: ProviderSelectionPanel = ProviderSelectionPanel(self)
         self._provider_panel.pack(side=tk.TOP, fill=tk.X)
 
-        self._profile_panel = ProfileManagementPanel(self)
+        self._profile_panel: ProfileManagementPanel = ProfileManagementPanel(self)
         self._profile_panel.pack(side=tk.TOP, fill=tk.X)
 
-        self._launch_panel = LaunchProfilePanel(config_model, self)
+        self._launch_panel: LaunchProfilePanel = LaunchProfilePanel(config_model, self)
         self._launch_panel.pack(side=tk.TOP, fill=tk.X)
 
-        self._workflow_panel = WorkflowControlsPanel(self)
+        self._workflow_panel: WorkflowControlsPanel = WorkflowControlsPanel(self)
         self._workflow_panel.pack(side=tk.TOP, fill=tk.X)
 
-        self._journal_panel = ScrapingJournalPanel(self)
+        self._journal_panel: ScrapingJournalPanel = ScrapingJournalPanel(self)
         self._journal_panel.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def reset(self) -> None:
