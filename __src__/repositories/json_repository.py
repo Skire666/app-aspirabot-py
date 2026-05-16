@@ -101,30 +101,3 @@ class JsonFileRepository:
                 json.dump(self.all_data, f, indent=4)
         except Exception:
             self._logger.error("Une erreur s'est produite", exc_info=True)
-
-    def get_value(self, key: str, default: Any = None) -> Any:
-        """Récupère la valeur associée à une clé de base.
-
-        Args:
-            key (str): La clé textuelle de la valeur à récupérer.
-            default (Any, optional): La valeur de secours retournée si la clé
-                est absente de la configuration. Par défaut `None`.
-
-        Returns:
-            Any: La valeur trouvée ou la valeur de secours (`default`).
-        """
-        return self.all_data.get(key, default)
-
-    def set_value(self, key: str, value: Any) -> None:
-        """Associe une nouvelle valeur à une clé et sauvegarde sur le disque.
-
-        Args:
-            key (str): La clé textuelle à ajouter ou modifier.
-            value (Any): La valeur valide compatible JSON à lier à cette clé.
-
-        Returns:
-            None
-        """
-        self.all_data[key] = value
-        # Bugfix : On ajoute la sauvegarde qui manquait dans le code d'origine (vu la docstring)
-        self.save_to_file()

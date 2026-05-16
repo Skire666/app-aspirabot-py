@@ -136,6 +136,11 @@ ignore = [
     "D100",   # Missing docstring at module level (relaxed for simple modules)
 ]
 
+[tool.ruff.lint.flake8-annotations]
+
+# suppress ANN401 for dynamically typed *args and **kwargs arguments.
+allow-star-arg-any = true
+
 [tool.ruff.lint.mccabe]
 
 # Alert if cyclomatic complexity exceeds this threshold.
@@ -151,11 +156,11 @@ convention = "google"
 
 [tool.ruff.lint.pylint]
 
-# for PLR -> refactoring (recommanded : 6 / 12 / 50 / 25)
+# for PLR -> refactoring (recommanded : 6 / 12 / 50 / 20)
 max-args = 10
 max-branches = 12
 max-statements = 50
-max-public-methods = 25
+max-public-methods = 20
 
 [tool.ruff.lint.per-file-ignores]
 

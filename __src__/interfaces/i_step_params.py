@@ -17,6 +17,8 @@ Example:
 from abc import ABC, abstractmethod
 from typing import Any, Self
 
+from shared.enums import StepTypeEnum
+
 # ---------------------------------------------------------------------------
 # Interface
 # ---------------------------------------------------------------------------

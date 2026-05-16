@@ -10,12 +10,11 @@ from typing import Any
 
 from models.launch_profile_model import LaunchProfileModel
 from models.provider_model import ProviderModel
+from presenters.steps_list_presenter import StepsListPresenter
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
 from shared.random_util import merge_unique_list_id_step
 from views.workflow_view import WorkflowView
-
-from __src__.presenters.steps_list_presenter import StepsListPresenter
 
 # ---------------------------------------------------------------------------
 # Classes

@@ -21,9 +21,8 @@ from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
+from views.workflow.steps_list_crud_panel import StepsListCrudView
 from views.workflow_view import WorkflowView
-
-from __src__.views.workflow.steps_list_crud_panel import StepsListCrudView
 
 # ---------------------------------------------------------------------------
 # Classes
