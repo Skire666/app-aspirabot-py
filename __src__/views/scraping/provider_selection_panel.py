@@ -121,7 +121,7 @@ class ProviderSelectionPanel(ttk.Frame):
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _on_combobox_selected(self, _event: Any) -> None:
+    def _on_combobox_selected(self) -> None:
         """Resolve the combobox selection to an id_file and fire the callback.
 
         Args:
@@ -136,3 +136,6 @@ class ProviderSelectionPanel(ttk.Frame):
         """Fire the on_refresh_providers callback."""
         if self._on_refresh_providers:
             self._on_refresh_providers()
+
+
+# EOF

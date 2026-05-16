@@ -78,9 +78,7 @@ class _GestionEtapesPanelMixin:
             parent: Frame to embed the listbox into.
             labels: Human-readable step type labels to populate.
         """
-        self._type_listbox = tk.Listbox(
-            parent, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
-        )
+        self._type_listbox = tk.Listbox(parent, selectmode=tk.SINGLE, exportselection=False, activestyle="none")
         sb = ttk.Scrollbar(parent, orient="vertical", command=self._type_listbox.yview)
         self._type_listbox.configure(yscrollcommand=sb.set)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -161,7 +159,7 @@ class _GestionEtapesPanelMixin:
             self._type_listbox.selection_clear(0, tk.END)
             self._type_listbox.selection_set(idx)
             self._type_listbox.see(idx)
-        except (ValueError, tk.TclError):
+        except ValueError, tk.TclError:
             pass
 
     def _on_type_list_select(self, _: tk.Event) -> None:  # type: ignore[type-arg]
@@ -186,7 +184,7 @@ class _GestionEtapesPanelMixin:
         self._inline_form._type_var.set(label)
         try:
             self._inline_form._on_type_changed(None)  # type: ignore[arg-type]
-        except (AttributeError, KeyError, tk.TclError, ValueError):
+        except AttributeError, KeyError, tk.TclError, ValueError:
             step_type = _LABEL_TO_TYPE.get(label)
             if step_type is not None:
                 self._inline_form._rebuild_form(step_type)
@@ -223,3 +221,6 @@ class _GestionEtapesPanelMixin:
             steps: Current ordered workflow step list.
         """
         self._inline_form.set_available_steps(steps)
+
+
+# EOF

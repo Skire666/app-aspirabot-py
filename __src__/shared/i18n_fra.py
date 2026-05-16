@@ -46,9 +46,7 @@ C_SCRAPING_NO_URL_SOURCE_MSG = (
 )
 
 # Scraping panel — stats progress line template
-C_SCRAPING_STATS_FMT = (
-    "Succès : {success}  |  Erreurs : {errors}  |  Clics : {clicks}  |  URLs : {urls}"
-)
+C_SCRAPING_STATS_FMT = "Succès : {success}  |  Erreurs : {errors}  |  Clics : {clicks}  |  URLs : {urls}"
 
 # Scraping journal Treeview column configurations: (title, width, anchor, stretch)
 C_VIEW_SCRAPING_HEADINGS = {
@@ -83,7 +81,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_CLOSE_TABS: "Fermer des onglets",
     StepTypeEnum.E_REFRESH_PAGE: "Rafraîchir la page",
     StepTypeEnum.E_WAIT_PAGE_STATE: "Attendre un état de page",
-    StepTypeEnum.E_WAIT_X_TIME: "Attendre une durée fixe",
+    StepTypeEnum.E_WAIT_FIXED_TIME: "Attendre une durée fixe",
     StepTypeEnum.E_WAIT_RANDOM_PAUSE: "Attendre aléatoirement",
     StepTypeEnum.E_WAIT_USER_ACTION: "Attendre action manuelle",
     StepTypeEnum.E_COUNT_HTML_ELEMENTS: "Compter les éléments",
@@ -185,8 +183,8 @@ ERROR_TEMPLATES: dict[str, str] = {
     "wait_user_action_condition_invalid": "Étape {step} : condition invalide — {value!r}.",
     "wait_user_action_wait_duration_invalid": "Étape {step} : le délai post-reprise doit être >= 1.",
     "wait_user_action_wait_unit_invalid": "Étape {step} : l'unité de temps est invalide — {value!r}.",
-    # --- wait_x_time ---
-    "wait_x_time_duration_invalid": "Étape {step} : la durée d'attente doit être >= 0.",
+    # --- wait_fixed_time ---
+    "wait_fixed_time_duration_invalid": "Étape {step} : la durée d'attente doit être >= 0.",
 }
 
-# END
+# EOF

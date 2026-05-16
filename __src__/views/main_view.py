@@ -214,3 +214,6 @@ class MainView(ttk.Frame):
         if module in self._buttons:
             return str(self._buttons[module].cget("state"))
         return tk.DISABLED
+
+
+# EOF

@@ -33,6 +33,11 @@ from views.steps._constants import (
 C_INPUT_DEFAULT_POST_WAIT_DURATION: int = 3
 C_INPUT_DEFAULT_CONDITION: str = CONDITION_DISPLAY[-1]  # "Toujours"
 
+C_KEY_CONDITION = "condition"
+C_KEY_WAIT_DURATION = "wait_duration"
+C_KEY_WAIT_UNIT = "wait_unit"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -53,7 +58,24 @@ class WaitUserActionFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
+        """Build all form widgets into the given frame.
+
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
+        self._build_subform_condition(frame, widgets)
+        self._build_subform_post_wait(frame, widgets)
+        self._build_subform_comment(frame, widgets)
+
+    @staticmethod
+    def _build_subform_condition(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the trigger condition combobox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_CONDITION tk.Variable.
+        """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
@@ -62,8 +84,16 @@ class WaitUserActionFormDef(IStepFormDef):
         ttk.Combobox(line1, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
             side=tk.LEFT, padx=(0, 5)
         )
-        widgets["condition"] = cond_var
+        widgets[C_KEY_CONDITION] = cond_var
 
+    @staticmethod
+    def _build_subform_post_wait(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the post-resume delay spinbox and time unit combobox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_WAIT_DURATION and C_KEY_WAIT_UNIT tk.Variables.
+        """
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
 
@@ -76,49 +106,78 @@ class WaitUserActionFormDef(IStepFormDef):
         ttk.Combobox(
             line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 5))
-        widgets["wait_duration"] = dur_var
-        widgets["wait_unit"] = unit_var
+        widgets[C_KEY_WAIT_DURATION] = dur_var
+        widgets[C_KEY_WAIT_UNIT] = unit_var
 
-        # ROW 3 — comment
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 8))
 
         ttk.Label(line3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters into form widgets."""
-        widgets["condition"].set(
-            CONDITION_MODEL_TO_VIEW.get(model.params.get("condition", "always"), C_INPUT_DEFAULT_CONDITION)
+        """Load step parameters from the model into form widgets.
+
+        Args:
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
+        """
+        widgets[C_KEY_CONDITION].set(
+            CONDITION_MODEL_TO_VIEW.get(model.params.get(C_KEY_CONDITION, "always"), C_INPUT_DEFAULT_CONDITION)
         )
-        widgets["wait_duration"].set(str(model.params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)))
-        widgets["wait_unit"].set(
+        widgets[C_KEY_WAIT_DURATION].set(
+            str(model.params.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION))
+        )
+        widgets[C_KEY_WAIT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+                model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
-        widgets["comment"].set(model.params.get("comment", ""))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
         return {
-            "condition": CONDITION_VIEW_TO_MODEL.get(widgets["condition"].get()),
-            "wait_duration": safe_int_widget(widgets, "wait_duration", -1),
-            "wait_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["wait_unit"].get()),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_CONDITION: CONDITION_VIEW_TO_MODEL.get(widgets[C_KEY_CONDITION].get()),
+            C_KEY_WAIT_DURATION: safe_int_widget(widgets, C_KEY_WAIT_DURATION, -1),
+            C_KEY_WAIT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_WAIT_UNIT].get()),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Return a compact human-readable label for this step instance."""
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
         cond_labels = {"success": "Si succès", "failure": "Si échec", "always": "Toujours"}
-        condition = cond_labels.get(model.params.get("condition", "always"), "toujours")
-        wd = model.params.get("wait_duration", C_INPUT_DEFAULT_POST_WAIT_DURATION)
-        unit_time = model.params.get("wait_unit", "")
+        condition = cond_labels.get(model.params.get(C_KEY_CONDITION, "always"), "toujours")
+        wd = model.params.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION)
+        unit_time = model.params.get(C_KEY_WAIT_UNIT, "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
         delay_str = f"Si reprise demandée, patienter {wd} {unit_display}" if wd > 0 else ""

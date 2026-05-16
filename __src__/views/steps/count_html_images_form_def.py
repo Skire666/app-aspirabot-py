@@ -32,6 +32,15 @@ from views.steps._constants import (
 
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 
+C_KEY_WIDTH_MIN = "width_min"
+C_KEY_WIDTH_MAX = "width_max"
+C_KEY_HEIGHT_MIN = "height_min"
+C_KEY_HEIGHT_MAX = "height_max"
+C_KEY_SUCCESS_IF = "success_if"
+C_KEY_OPERATOR = "operator"
+C_KEY_VALUE = "value"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -55,19 +64,25 @@ class CountHtmlImagesFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
-        self._form_widgets_ref = widgets
+        """Build all form widgets into the given frame.
 
-        # ROW 1 — CSS selector
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
         self._build_subform_width_height(frame, widgets)
+        self._build_subform_success_if_operator(frame, widgets)
+        self._build_subform_comment(frame, widgets)
 
-        # ROW 2 — success_if + operator + value area
-        self._build_success_if_operator(frame, widgets)
+    @staticmethod
+    def _build_subform_width_height(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the width and height min/max spinbox row.
 
-        # ROW 3 — comment
-        self._build_form_comment(frame, widgets)
-
-    def _build_subform_width_height(self, frame, widgets):
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_WIDTH_MIN, C_KEY_WIDTH_MAX,
+                C_KEY_HEIGHT_MIN, and C_KEY_HEIGHT_MAX tk.Variables.
+        """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
@@ -77,8 +92,8 @@ class CountHtmlImagesFormDef(IStepFormDef):
         ttk.Label(line1, text=" et ").pack(side="left")
         width_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=6).pack(side="left")
-        widgets["width_min"] = width_min_var
-        widgets["width_max"] = width_max_var
+        widgets[C_KEY_WIDTH_MIN] = width_min_var
+        widgets[C_KEY_WIDTH_MAX] = width_max_var
 
         ttk.Label(line1, text="Hauteur entre").pack(side="left", padx=(24, 5))
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
@@ -90,10 +105,18 @@ class CountHtmlImagesFormDef(IStepFormDef):
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=6).pack(
             side="left"
         )
-        widgets["height_min"] = height_min_var
-        widgets["height_max"] = height_max_var
+        widgets[C_KEY_HEIGHT_MIN] = height_min_var
+        widgets[C_KEY_HEIGHT_MAX] = height_max_var
 
-    def _build_success_if_operator(self, frame, widgets):
+    @staticmethod
+    def _build_subform_success_if_operator(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the success condition, comparison operator, and threshold spinbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_SUCCESS_IF, C_KEY_OPERATOR,
+                and C_KEY_VALUE tk.Variables.
+        """
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
@@ -103,67 +126,93 @@ class CountHtmlImagesFormDef(IStepFormDef):
             side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(row2, text="si compte").pack(side=tk.LEFT, padx=(0, 5))
-        widgets["success_if"] = si_var
+        widgets[C_KEY_SUCCESS_IF] = si_var
 
-        op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])  # supérieur ou égal
-        op_cb = ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18)
-        op_cb.pack(side=tk.LEFT, padx=(0, 5))
-        widgets["operator"] = op_var
+        op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])
+        ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18).pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
+        widgets[C_KEY_OPERATOR] = op_var
 
         val_var = tk.StringVar(value="1")
         ttk.Spinbox(row2, from_=0, to=C_MAXIMUM_QTY_COUNTER, textvariable=val_var, width=6).pack(side=tk.LEFT)
-        widgets["value"] = val_var
+        widgets[C_KEY_VALUE] = val_var
 
-    def _build_form_comment(self, frame, widgets):
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         row3 = ttk.Frame(frame)
         row3.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters into form widgets."""
-        self._form_widgets_ref = widgets
-        widgets["width_min"].set(str(model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
-        widgets["height_min"].set(str(model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["height_max"].set(str(model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
+        """Load step parameters from the model into form widgets.
+
+        Args:
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
+        """
+        widgets[C_KEY_WIDTH_MIN].set(str(model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_WIDTH_MAX].set(str(model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)))
+        widgets[C_KEY_HEIGHT_MIN].set(str(model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_HEIGHT_MAX].set(str(model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)))
 
         si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(
-            model.params.get("success_if", "success"), COUNT_SUCCESS_IF_DISPLAY[0]
+            model.params.get(C_KEY_SUCCESS_IF, "success"), COUNT_SUCCESS_IF_DISPLAY[0]
         )
-        widgets["success_if"].set(si_display)
-        op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get("operator", "equal"), COUNT_OP_DISPLAY[2])
-        widgets["operator"].set(op_display)
-        widgets["value"].set(str(model.params.get("value", 0)))
+        widgets[C_KEY_SUCCESS_IF].set(si_display)
 
-        # comment
-        widgets["comment"].set(model.params.get("comment", ""))
+        op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get(C_KEY_OPERATOR, "equal"), COUNT_OP_DISPLAY[-1])
+        widgets[C_KEY_OPERATOR].set(op_display)
+        widgets[C_KEY_VALUE].set(str(model.params.get(C_KEY_VALUE, 0)))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
-        si_display = widgets["success_if"].get()
-        op_display = widgets["operator"].get()
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
+        si_display = widgets[C_KEY_SUCCESS_IF].get()
+        op_display = widgets[C_KEY_OPERATOR].get()
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
-        result = {
-            "height_min": safe_int_widget(widgets, "height_min", -1),
-            "height_max": safe_int_widget(widgets, "height_max", -1),
-            "width_min": safe_int_widget(widgets, "width_min", -1),
-            "width_max": safe_int_widget(widgets, "width_max", -1),
-            "success_if": COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display),
-            "operator": op_value,
-            "comment": widgets["comment"].get().strip(),
+
+        return {
+            C_KEY_HEIGHT_MIN: safe_int_widget(widgets, C_KEY_HEIGHT_MIN, -1),
+            C_KEY_HEIGHT_MAX: safe_int_widget(widgets, C_KEY_HEIGHT_MAX, -1),
+            C_KEY_WIDTH_MIN: safe_int_widget(widgets, C_KEY_WIDTH_MIN, -1),
+            C_KEY_WIDTH_MAX: safe_int_widget(widgets, C_KEY_WIDTH_MAX, -1),
+            C_KEY_SUCCESS_IF: COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display),
+            C_KEY_OPERATOR: op_value,
+            C_KEY_VALUE: safe_int_widget(widgets, C_KEY_VALUE, -1),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
-        result["value"] = safe_int_widget(widgets, "value", -1)
-        return result
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Return a compact human-readable label for this step instance."""
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
         op_labels = {
             "equal": "==",
             "not_equal": "!=",
@@ -172,15 +221,18 @@ class CountHtmlImagesFormDef(IStepFormDef):
             "greater_or_equal": ">=",
             "less_or_equal": "<=",
         }
-        op = op_labels.get(model.params.get("operator", "equal"), "?")
-        val_str = str(model.params.get("value", 0))
+        op = op_labels.get(model.params.get(C_KEY_OPERATOR, "equal"), "?")
+        val_str = str(model.params.get(C_KEY_VALUE, 0))
 
-        width_min = model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        height_min = model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        width_max = model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
-        height_max = model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
+        width_min = model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
+        height_min = model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
+        width_max = model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)
+        height_max = model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)
 
-        return f"Compter les images  -  Doit être {op} {val_str}\nTaille : {width_min}x{height_min} -> {width_max}x{height_max}"
+        return (
+            f"Compter les images  -  Doit être {op} {val_str}\n"
+            f"Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
+        )
 
 
 register_form(CountHtmlImagesFormDef())

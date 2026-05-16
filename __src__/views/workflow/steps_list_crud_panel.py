@@ -420,3 +420,6 @@ class StepsListCrudView(ttk.Frame):
             self._selected_index = None
             self._selected_step = None
             self.on_clear_all_steps()
+
+
+# EOF

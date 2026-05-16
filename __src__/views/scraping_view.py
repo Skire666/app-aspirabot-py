@@ -458,3 +458,6 @@ class ScrapingView(_WorkflowMixin, _ProviderMixin, _ProfileMixin, _LaunchFormMix
             message: The message to be displayed.
         """
         messagebox.showwarning("Avertissement", message)
+
+
+# EOF

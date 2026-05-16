@@ -125,3 +125,6 @@ class FaqView(ttk.Frame):
         self._text.delete("1.0", tk.END)
         self._text.insert(tk.END, text)
         self._text.config(state=tk.DISABLED)
+
+
+# EOF

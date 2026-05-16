@@ -26,6 +26,11 @@ from views.steps._constants import (
 
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 
+C_KEY_SELECTOR = "selector"
+C_KEY_EXTRACT_MODE = "extract_mode"
+C_KEY_TARGET_EXTRACTED = "target"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -46,17 +51,41 @@ class ExtractTextFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
-        # ROW 0
+        """Build all form widgets into the given frame.
+
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
+        self._build_subform_selector(frame, widgets)
+        self._build_subform_extract_mode(frame, widgets)
+        self._build_subform_target(frame, widgets)
+        self._build_subform_comment(frame, widgets)
+
+    @staticmethod
+    def _build_subform_selector(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the CSS selector input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_SELECTOR tk.Variable.
+        """
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row0, text="Sélecteur CSS :").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
         ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["selector"] = sel_var
+        widgets[C_KEY_SELECTOR] = sel_var
 
-        # ROW 1
+    @staticmethod
+    def _build_subform_extract_mode(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the extraction mode combobox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_EXTRACT_MODE tk.Variable.
+        """
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
@@ -65,9 +94,16 @@ class ExtractTextFormDef(IStepFormDef):
         ttk.Combobox(row1, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
-        widgets["extract_mode"] = mode_var
+        widgets[C_KEY_EXTRACT_MODE] = mode_var
 
-        # ROW 2
+    @staticmethod
+    def _build_subform_target(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the extraction target combobox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_TARGET_EXTRACTED tk.Variable.
+        """
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
@@ -76,45 +112,76 @@ class ExtractTextFormDef(IStepFormDef):
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
-        widgets["target"] = target_var
+        widgets[C_KEY_TARGET_EXTRACTED] = target_var
 
-        # ROW 3 — comment
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         row3 = ttk.Frame(frame)
         row3.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters into form widgets."""
-        widgets["selector"].set(model.params.get("selector", ""))
-        widgets["extract_mode"].set(
-            EXTRACT_MODE_MODEL_TO_VIEW.get(model.params.get("extract_mode", "innerText"), EXTRACT_MODE_DISPLAY[0])
+        """Load step parameters from the model into form widgets.
+
+        Args:
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
+        """
+        widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, ""))
+        widgets[C_KEY_EXTRACT_MODE].set(
+            EXTRACT_MODE_MODEL_TO_VIEW.get(
+                model.params.get(C_KEY_EXTRACT_MODE, "innerText"), EXTRACT_MODE_DISPLAY[0]
+            )
         )
-        widgets["target"].set(
-            EXTRACT_TARGET_MODEL_TO_VIEW.get(model.params.get("target", "first"), EXTRACT_TARGET_DISPLAY[0])
+        widgets[C_KEY_TARGET_EXTRACTED].set(
+            EXTRACT_TARGET_MODEL_TO_VIEW.get(
+                model.params.get(C_KEY_TARGET_EXTRACTED, "first"), EXTRACT_TARGET_DISPLAY[0]
+            )
         )
-        widgets["comment"].set(model.params.get("comment", ""))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
         return {
-            "selector": widgets["selector"].get().strip(),
-            "extract_mode": EXTRACT_MODE_VIEW_TO_MODEL.get(widgets["extract_mode"].get()),
-            "target": EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets["target"].get()),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_SELECTOR: widgets[C_KEY_SELECTOR].get().strip(),
+            C_KEY_EXTRACT_MODE: EXTRACT_MODE_VIEW_TO_MODEL.get(widgets[C_KEY_EXTRACT_MODE].get()),
+            C_KEY_TARGET_EXTRACTED: EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets[C_KEY_TARGET_EXTRACTED].get()),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Return a compact human-readable label for this step instance."""
-        selector = model.params.get("selector", "<vide>")
-        extract_mode = model.params.get("extract_mode", "")
-        target = model.params.get("target", "")
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
+        selector = model.params.get(C_KEY_SELECTOR, "<vide>")
+        extract_mode = model.params.get(C_KEY_EXTRACT_MODE, "")
+        target = model.params.get(C_KEY_TARGET_EXTRACTED, "")
         return f"Extraire contenu textuel\nSél. : {selector}  -  {extract_mode}  /  {target}"
 
 

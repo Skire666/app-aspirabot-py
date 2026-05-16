@@ -331,3 +331,6 @@ class AppConfigurationView(ttk.Frame):
     @staticmethod
     def _safe_text(value: Any) -> str:
         return "" if value is None else str(value)
+
+
+# EOF

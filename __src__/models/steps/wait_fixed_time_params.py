@@ -1,4 +1,4 @@
-"""Typed parameter model for the WAIT_X_TIME step."""
+"""Typed parameter model for the WAIT_FIXED_TIME step."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
-class WaitXTimeParams(IStepParams):
-    """Parameters for the wait X time scraping step."""
+class WaitFixedTimeParams(IStepParams):
+    """Parameters for the wait fixed time scraping step."""
 
     duration: int
     unit: str
@@ -39,4 +39,4 @@ class WaitXTimeParams(IStepParams):
     @classmethod
     def get_step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_WAIT_X_TIME
+        return StepTypeEnum.E_WAIT_FIXED_TIME

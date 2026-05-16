@@ -89,7 +89,8 @@ class FaqTextTextHint:
                 "N'est pas un regexp, juste une string plate, donc le '.' n'est pas interprété\n"
                 "mets tous en lowercase (donc pas sensible).\n"
                 "Si le mode n'est pas custom, utilise la dernière URL ouverte par l'event OpenURL\n"
-                "Le refresh ne change pas la dernière URL ouverte, donc si redirection il y a eu, le filtre peut planter\n"
+                "Le refresh ne change pas la dernière URL ouverte.\n"
+                "Donc si redirection il y a eu, le filtre peut planter\n"
             ),
         },
         "Brique logique": {
@@ -205,3 +206,6 @@ class FaqTextTextHint:
             ),
         },
     }
+
+
+# EOF

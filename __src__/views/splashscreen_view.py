@@ -153,4 +153,4 @@ class SplashscreenView(tk.Toplevel):
         )
 
 
-# END
+# EOF

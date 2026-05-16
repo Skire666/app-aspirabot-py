@@ -427,4 +427,4 @@ def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:
 if __name__ == "__main__":
     main()
 
-# END
+# EOF

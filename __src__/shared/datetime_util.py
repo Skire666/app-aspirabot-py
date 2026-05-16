@@ -55,3 +55,6 @@ def get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
         '2024-06-01_14h30m45s654321'
     """
     return datetime.now().strftime(C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF)
+
+
+# EOF

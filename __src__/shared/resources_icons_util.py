@@ -145,4 +145,4 @@ class ResourcesIcons:
         return img
 
 
-# END
+# EOF

@@ -231,7 +231,7 @@ class ProfileManagementPanel(ttk.Frame):
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _on_listbox_selected(self, _event: Any) -> None:
+    def _on_listbox_selected(self) -> None:
         """Resolve the listbox selection to a profile_id and fire the callback.
 
         Args:
@@ -261,3 +261,6 @@ class ProfileManagementPanel(ttk.Frame):
         new_name = simpledialog.askstring("Renommer profil", "Nouveau nom du profil :", parent=self)
         if new_name and new_name.strip():
             self._on_profile_rename_cb(profile_id, new_name.strip())
+
+
+# EOF

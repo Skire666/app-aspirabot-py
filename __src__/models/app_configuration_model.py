@@ -214,4 +214,4 @@ class AppConfigurationModel:
         self._browser_engine = value
 
 
-# END
+# EOF

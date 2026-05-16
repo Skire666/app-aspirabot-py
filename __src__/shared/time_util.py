@@ -5,18 +5,24 @@
 C_UNITS_TIME_CONVERSION_TO_MS: dict[str, int] = {
     "m": 60 * 1000,
     "min": 60 * 1000,
+    "min.": 60 * 1000,
     "s": 1000,
     "sec": 1000,
+    "sec.": 1000,
     "ms": 1,
+    "millisec": 1,
     "millisec.": 1,
 }
 
 C_UNITS_TIME_CONVERSION_TO_SEC: dict[str, float] = {
     "m": 60.0,
     "min": 60.0,
+    "min.": 60.0,
     "s": 1.0,
     "sec": 1.0,
+    "sec.": 1.0,
     "ms": 0.001,
+    "millisec": 0.001,
     "millisec.": 0.001,
 }
 

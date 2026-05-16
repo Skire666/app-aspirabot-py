@@ -20,6 +20,7 @@ from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
     COUNT_OP_DISPLAY,
+    COUNT_OP_MODEL_TO_VIEW,
     COUNT_OP_VIEW_TO_MODEL,
     WAIT_UNIT_MODEL_TO_VIEW,
     WAIT_UNIT_VIEW_TO_MODEL,
@@ -34,6 +35,17 @@ from views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_RETRY_UNIT = C_UNITS_TIME_ALLOWED_FOR_VIEW[-1]  # ms
+
+C_KEY_WIDTH_MIN = "width_min"
+C_KEY_WIDTH_MAX = "width_max"
+C_KEY_HEIGHT_MIN = "height_min"
+C_KEY_HEIGHT_MAX = "height_max"
+C_KEY_OPERATOR = "operator"
+C_KEY_QUANTITY_EXPECTED = "quantity"
+C_KEY_RETRY_DELAY = "retry_delay"
+C_KEY_RETRY_UNIT = "retry_unit"
+C_KEY_RETRY_MAX = "retry_max"
+C_KEY_COMMENT = "comment"
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -58,20 +70,26 @@ class WaitHtmlImagesFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
-        # LIGNE 1 : Hauteur (px) + Min + Spinbox + Max + Spinbox
+        """Build all form widgets into the given frame.
+
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
         self._build_subform_width_height(frame, widgets)
-
-        # ROW 2 — waiting elements
         self._build_subform_waiting_elements(frame, widgets)
-
-        # ROW 3 — retry every
         self._build_subform_retry_delay(frame, widgets)
-
-        # ROW 4 — comment
         self._build_subform_comment(frame, widgets)
 
-    def _build_subform_width_height(self, frame, widgets):
+    @staticmethod
+    def _build_subform_width_height(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the width and height min/max spinbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_WIDTH_MIN, C_KEY_WIDTH_MAX,
+                C_KEY_HEIGHT_MIN, and C_KEY_HEIGHT_MAX tk.Variables.
+        """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
@@ -81,8 +99,8 @@ class WaitHtmlImagesFormDef(IStepFormDef):
         ttk.Label(line1, text=" et ").pack(side="left")
         width_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=6).pack(side="left")
-        widgets["width_min"] = width_min_var
-        widgets["width_max"] = width_max_var
+        widgets[C_KEY_WIDTH_MIN] = width_min_var
+        widgets[C_KEY_WIDTH_MAX] = width_max_var
 
         ttk.Label(line1, text="Hauteur entre").pack(side="left", padx=(24, 5))
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
@@ -94,28 +112,44 @@ class WaitHtmlImagesFormDef(IStepFormDef):
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=6).pack(
             side="left"
         )
-        widgets["height_min"] = height_min_var
-        widgets["height_max"] = height_max_var
+        widgets[C_KEY_HEIGHT_MIN] = height_min_var
+        widgets[C_KEY_HEIGHT_MAX] = height_max_var
 
-    def _build_subform_waiting_elements(self, frame, widgets):
+    @staticmethod
+    def _build_subform_waiting_elements(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the image count operator and quantity spinbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_OPERATOR and C_KEY_QUANTITY_EXPECTED tk.Variables.
+        """
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row2, text="Attendre un nombre").pack(side=tk.LEFT, padx=(0, 5))
 
-        op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])  # supérieur ou égal
-        op_cb = ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18)
-        op_cb.pack(side=tk.LEFT, padx=(0, 5))
-        widgets["operator"] = op_var
+        op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])
+        ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18).pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
+        widgets[C_KEY_OPERATOR] = op_var
 
         val_var = tk.StringVar(value="1")
         ttk.Spinbox(row2, from_=0, to=C_MAXIMUM_QTY_COUNTER, textvariable=val_var, width=6).pack(
             side=tk.LEFT, padx=(0, 5)
         )
-        widgets["quantity"] = val_var
+        widgets[C_KEY_QUANTITY_EXPECTED] = val_var
         ttk.Label(row2, text="d'élément(s)").pack(side=tk.LEFT, padx=(0, 5))
 
-    def _build_subform_retry_delay(self, frame, widgets):
+    @staticmethod
+    def _build_subform_retry_delay(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the retry interval spinbox, time unit combobox, and max attempts spinbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_RETRY_DELAY, C_KEY_RETRY_UNIT,
+                and C_KEY_RETRY_MAX tk.Variables.
+        """
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
 
@@ -136,74 +170,101 @@ class WaitHtmlImagesFormDef(IStepFormDef):
         )
         ttk.Label(line2, text="essai(s) max.").pack(side=tk.LEFT)
 
-        widgets["retry_delay"] = every_var
-        widgets["retry_unit"] = unit_var
-        widgets["retry_max"] = max_var
+        widgets[C_KEY_RETRY_DELAY] = every_var
+        widgets[C_KEY_RETRY_UNIT] = unit_var
+        widgets[C_KEY_RETRY_MAX] = max_var
 
-    def _build_subform_comment(self, frame, widgets):
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 8))
 
         ttk.Label(line3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Populate widget values from stored parameters.
+        """Load step parameters from the model into form widgets.
 
         Args:
-            model: Step model containing stored parameters.
-            widgets: Mapping of form widgets to populate.
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets["height_min"].set(str(model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["height_max"].set(str(model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
-        widgets["width_min"].set(str(model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
-        widgets["operator"].set(model.params.get("operator", COUNT_OP_DISPLAY[-1]))
-        widgets["quantity"].set(str(model.params.get("quantity", 1)))
-        widgets["retry_delay"].set(str(model.params.get("retry_delay", C_INPUT_DEFAULT_RETRY_DELAY)))
-        widgets["retry_unit"].set(
+        widgets[C_KEY_HEIGHT_MIN].set(str(model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_HEIGHT_MAX].set(str(model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)))
+        widgets[C_KEY_WIDTH_MIN].set(str(model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_WIDTH_MAX].set(str(model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)))
+
+        op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get(C_KEY_OPERATOR, "equal"), COUNT_OP_DISPLAY[-1])
+        widgets[C_KEY_OPERATOR].set(op_display)
+        widgets[C_KEY_QUANTITY_EXPECTED].set(str(model.params.get(C_KEY_QUANTITY_EXPECTED, 1)))
+        widgets[C_KEY_RETRY_DELAY].set(str(model.params.get(C_KEY_RETRY_DELAY, C_INPUT_DEFAULT_RETRY_DELAY)))
+        widgets[C_KEY_RETRY_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get("retry_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+                model.params.get(C_KEY_RETRY_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
-        widgets["retry_max"].set(str(model.params.get("retry_max", 10)))
-        widgets["comment"].set(model.params.get("comment", ""))
+        widgets[C_KEY_RETRY_MAX].set(str(model.params.get(C_KEY_RETRY_MAX, 10)))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
-        op_display = widgets["operator"].get()
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
+        op_display = widgets[C_KEY_OPERATOR].get()
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
 
         return {
-            "height_min": safe_int_widget(widgets, "height_min", -1),
-            "height_max": safe_int_widget(widgets, "height_max", -1),
-            "width_min": safe_int_widget(widgets, "width_min", -1),
-            "width_max": safe_int_widget(widgets, "width_max", -1),
-            "operator": op_value,
-            "quantity": safe_int_widget(widgets, "quantity", -1),
-            "retry_delay": safe_int_widget(widgets, "retry_delay", -1),
-            "retry_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["retry_unit"].get()),
-            "retry_max": safe_int_widget(widgets, "retry_max", -1),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_HEIGHT_MIN: safe_int_widget(widgets, C_KEY_HEIGHT_MIN, -1),
+            C_KEY_HEIGHT_MAX: safe_int_widget(widgets, C_KEY_HEIGHT_MAX, -1),
+            C_KEY_WIDTH_MIN: safe_int_widget(widgets, C_KEY_WIDTH_MIN, -1),
+            C_KEY_WIDTH_MAX: safe_int_widget(widgets, C_KEY_WIDTH_MAX, -1),
+            C_KEY_OPERATOR: op_value,
+            C_KEY_QUANTITY_EXPECTED: safe_int_widget(widgets, C_KEY_QUANTITY_EXPECTED, -1),
+            C_KEY_RETRY_DELAY: safe_int_widget(widgets, C_KEY_RETRY_DELAY, -1),
+            C_KEY_RETRY_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_RETRY_UNIT].get()),
+            C_KEY_RETRY_MAX: safe_int_widget(widgets, C_KEY_RETRY_MAX, -1),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Return a compact label for the workflow list."""
-        retry_delay = model.params.get("retry_delay", C_INPUT_DEFAULT_RETRY_DELAY)
-        retry_unit = model.params.get("retry_unit", C_UNITS_TIME_DEFAULT_MODEL)
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
+        retry_delay = model.params.get(C_KEY_RETRY_DELAY, C_INPUT_DEFAULT_RETRY_DELAY)
+        retry_unit = model.params.get(C_KEY_RETRY_UNIT, C_UNITS_TIME_DEFAULT_MODEL)
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(retry_unit, retry_unit)
 
-        width_min = model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        height_min = model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        width_max = model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
-        height_max = model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
+        width_min = model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
+        height_min = model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
+        width_max = model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)
+        height_max = model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)
 
-        return f"Attendre images  -  Toutes les : {retry_delay} {unit_display}\n Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
+        return (
+            f"Attendre images  -  Toutes les : {retry_delay} {unit_display}\n"
+            f"Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
+        )
 
 
 register_form(WaitHtmlImagesFormDef())

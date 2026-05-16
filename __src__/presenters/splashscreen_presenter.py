@@ -139,4 +139,4 @@ class SplashscreenPresenter:
         self._on_failure()
 
 
-# END
+# EOF

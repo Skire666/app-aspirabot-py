@@ -35,7 +35,7 @@ __all__ = [
     "_BtnDef",
 ]
 
-_LAZY_ATTRS = frozenset(__all__)
+_LAZY_ATTRS = frozenset(__all__)  # noqa: RUF067
 
 
 def __getattr__(name: str) -> object:

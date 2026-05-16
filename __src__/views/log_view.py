@@ -141,3 +141,6 @@ class LogView(ttk.Frame):
             self.tree.selection_set(last_item_id)
             self.tree.focus(last_item_id)
             self.tree.see(last_item_id)
+
+
+# EOF

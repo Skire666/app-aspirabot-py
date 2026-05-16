@@ -44,3 +44,6 @@ class _ListeEtapesPanelMixin:
             The drag-and-drop step list instance.
         """
         return self._workflow_builder_view
+
+
+# EOF

@@ -241,3 +241,6 @@ class ProvidersView(ttk.Frame):
             True if user confirmed the deletion, False otherwise.
         """
         return messagebox.askyesno("Confirmer", "Voulez-vous vraiment supprimer ce fournisseur ?")
+
+
+# EOF

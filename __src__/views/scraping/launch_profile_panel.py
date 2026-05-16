@@ -289,6 +289,7 @@ class LaunchProfilePanel(ttk.Frame):
             popup: The Toplevel dialog to attach the buttons to.
             text: The Text widget whose content is passed to the confirmed callback.
         """
+
         def _on_ok() -> None:
             # Pass raw text to the presenter; it handles parsing and filtering.
             raw = text.get("1.0", tk.END)
@@ -365,3 +366,6 @@ class LaunchProfilePanel(ttk.Frame):
         """Notify the presenter that the user has modified the launch form."""
         if self._on_form_changed_cb:
             self._on_form_changed_cb()
+
+
+# EOF

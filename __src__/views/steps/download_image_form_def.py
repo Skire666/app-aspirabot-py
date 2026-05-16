@@ -22,6 +22,14 @@ from views.steps._constants import DOWNLOAD_MODES, safe_int_widget
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_MODE_DDL = DOWNLOAD_MODES[-1]  # all
 
+C_KEY_MODE = "mode"
+C_KEY_UNIQUE_ONLY = "unique_only"
+C_KEY_HEIGHT_MIN = "height_min"
+C_KEY_HEIGHT_MAX = "height_max"
+C_KEY_WIDTH_MIN = "width_min"
+C_KEY_WIDTH_MAX = "width_max"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -42,15 +50,32 @@ class DownloadImageFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
-        mode_var = tk.StringVar(value=C_INPUT_DEFAULT_MODE_DDL)
-        unique_var = tk.BooleanVar(value=True)
-        widgets["mode"] = mode_var
-        widgets["unique_only"] = unique_var
+        """Build all form widgets into the given frame.
 
-        # LIGNE 1 : Cible + Combobox + Checkbox
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
+        self._build_subform_mode(frame, widgets)
+        self._build_subform_height(frame, widgets)
+        self._build_subform_width(frame, widgets)
+        self._build_subform_comment(frame, widgets)
+
+    @staticmethod
+    def _build_subform_mode(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the download mode combobox and duplicate-filter checkbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_MODE and C_KEY_UNIQUE_ONLY tk.Variables.
+        """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
+
+        mode_var = tk.StringVar(value=C_INPUT_DEFAULT_MODE_DDL)
+        unique_var = tk.BooleanVar(value=True)
+        widgets[C_KEY_MODE] = mode_var
+        widgets[C_KEY_UNIQUE_ONLY] = unique_var
 
         ttk.Label(line1, text="Cible :").pack(side="left", padx=(0, 5))
         ttk.Combobox(line1, textvariable=mode_var, values=DOWNLOAD_MODES, state="readonly", width=7).pack(
@@ -58,7 +83,14 @@ class DownloadImageFormDef(IStepFormDef):
         )
         CanvasCheckbox(line1, text="Doublons interdits", variable=unique_var).pack(side="left", padx=(10, 4))
 
-        # LIGNE 2 : Hauteur (px) + Min + Spinbox + Max + Spinbox
+    @staticmethod
+    def _build_subform_height(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the height min/max spinbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_HEIGHT_MIN and C_KEY_HEIGHT_MAX tk.Variables.
+        """
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
 
@@ -72,10 +104,17 @@ class DownloadImageFormDef(IStepFormDef):
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=8).pack(
             side="left", padx=(0, 5)
         )
-        widgets["height_min"] = height_min_var
-        widgets["height_max"] = height_max_var
+        widgets[C_KEY_HEIGHT_MIN] = height_min_var
+        widgets[C_KEY_HEIGHT_MAX] = height_max_var
 
-        # LIGNE 3 : Largeur (px) + Min + Spinbox + Max + Spinbox
+    @staticmethod
+    def _build_subform_width(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the width min/max spinbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_WIDTH_MIN and C_KEY_WIDTH_MAX tk.Variables.
+        """
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 8))
 
@@ -89,53 +128,84 @@ class DownloadImageFormDef(IStepFormDef):
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=width_max_var, width=8).pack(
             side="left", padx=(0, 5)
         )
-        widgets["width_min"] = width_min_var
-        widgets["width_max"] = width_max_var
+        widgets[C_KEY_WIDTH_MIN] = width_min_var
+        widgets[C_KEY_WIDTH_MAX] = width_max_var
 
-        # LIGNE 4 — comment
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         line4 = ttk.Frame(frame)
         line4.pack(fill="x", pady=(0, 8))
 
         ttk.Label(line4, text="Commentaire :").pack(side="left", padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line4, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters into form widgets."""
-        widgets["mode"].set(model.params.get("mode", "all"))
-        widgets["unique_only"].set(bool(model.params.get("unique_only", False)))
-        widgets["height_min"].set(str(model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["height_max"].set(str(model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)))
-        widgets["width_min"].set(str(model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets["width_max"].set(str(model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)))
-        widgets["comment"].set(model.params.get("comment", ""))
+        """Load step parameters from the model into form widgets.
+
+        Args:
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
+        """
+        widgets[C_KEY_MODE].set(model.params.get(C_KEY_MODE, "all"))
+        widgets[C_KEY_UNIQUE_ONLY].set(bool(model.params.get(C_KEY_UNIQUE_ONLY, False)))
+        widgets[C_KEY_HEIGHT_MIN].set(str(model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_HEIGHT_MAX].set(str(model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)))
+        widgets[C_KEY_WIDTH_MIN].set(str(model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_WIDTH_MAX].set(str(model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
         return {
-            "mode": widgets["mode"].get(),
-            "unique_only": bool(widgets["unique_only"].get()),
-            "height_min": safe_int_widget(widgets, "height_min", -1),
-            "height_max": safe_int_widget(widgets, "height_max", -1),
-            "width_min": safe_int_widget(widgets, "width_min", -1),
-            "width_max": safe_int_widget(widgets, "width_max", -1),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_MODE: widgets[C_KEY_MODE].get(),
+            C_KEY_UNIQUE_ONLY: bool(widgets[C_KEY_UNIQUE_ONLY].get()),
+            C_KEY_HEIGHT_MIN: safe_int_widget(widgets, C_KEY_HEIGHT_MIN, -1),
+            C_KEY_HEIGHT_MAX: safe_int_widget(widgets, C_KEY_HEIGHT_MAX, -1),
+            C_KEY_WIDTH_MIN: safe_int_widget(widgets, C_KEY_WIDTH_MIN, -1),
+            C_KEY_WIDTH_MAX: safe_int_widget(widgets, C_KEY_WIDTH_MAX, -1),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Return a compact human-readable label for this step instance."""
-        mode = model.params.get("mode", "")
-        unique_only = model.params.get("unique_only", False)
-        width_min = model.params.get("width_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        height_min = model.params.get("height_min", C_INPUT_DEFAULT_MINIMUM_SIZE)
-        width_max = model.params.get("width_max", C_MAXIMUM_SIZE_IMAGE)
-        height_max = model.params.get("height_max", C_MAXIMUM_SIZE_IMAGE)
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
+        mode = model.params.get(C_KEY_MODE, "")
+        unique_only = model.params.get(C_KEY_UNIQUE_ONLY, False)
+        width_min = model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
+        height_min = model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
+        width_max = model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)
+        height_max = model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)
         dup_str = "(doublons refusés)" if unique_only else "(doublons autorisés)"
-        return f"Télécharger images {dup_str}\n{mode}  -  Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
+
+        return (
+            f"Télécharger images {dup_str}\n"
+            f"{mode}  -  Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
+        )
 
 
 register_form(DownloadImageFormDef())

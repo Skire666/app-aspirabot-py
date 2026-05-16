@@ -37,6 +37,13 @@ C_INPUT_DEFAULT_WAIT_STATE = "load"
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
+C_KEY_URL_MODE = "url_mode"
+C_KEY_URL_CUSTOM = "url_custom"
+C_KEY_WAIT_STATE = "wait_state"
+C_KEY_TIMEOUT_DURATION = "timeout_duration"
+C_KEY_TIMEOUT_UNIT = "timeout_unit"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -47,55 +54,62 @@ class OpenUrlFormDef(IStepFormDef):
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
-        """Returns the workflow step handled by this form definition."""
+        """Return the workflow step handled by this form definition."""
         return StepTypeEnum.E_OPEN_URL
 
     @classmethod
     def label(cls) -> str:
-        """Returns the label shown in the step picker."""
+        """Return the label shown in the step picker."""
         return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_OPEN_URL)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates all widgets used by the Open URL form."""
+        """Build all form widgets into the given frame.
+
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
         frame.columnconfigure(1, weight=1)
 
-        # URL input.
         self._build_subform_url(frame, widgets)
-
-        # Wait state selection.
         self._build_subform_wait_state(frame, widgets)
-
-        # timeout configuration + units.
         self._build_subform_timeout(frame, widgets)
-
-        # Comment.
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
     def _build_subform_url(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the URL input field."""
+        """Build the URL mode radio buttons and custom URL entry row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_URL_MODE and C_KEY_URL_CUSTOM tk.Variables.
+        """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
         url_mode_var = tk.StringVar(value="<<URL>>")
         url_custom_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
 
-        # Mode selection.
+        # Mode selection radio buttons
         OpenUrlFormDef._build_url_mode_buttons(line1, url_mode_var)
 
         url_entry = ttk.Entry(line1, textvariable=url_custom_var)
         url_entry.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["url_mode"] = url_mode_var  # '<<URL>>' or '<<CUSTOM>>'
-        widgets["url_custom"] = url_custom_var
+        widgets[C_KEY_URL_MODE] = url_mode_var
+        widgets[C_KEY_URL_CUSTOM] = url_custom_var
 
-        # Keep the entry state in sync with the selected mode.
+        # Keep the entry state in sync with the selected mode
         OpenUrlFormDef._bind_url_mode_entry(url_mode_var, url_entry)
 
     @staticmethod
     def _build_url_mode_buttons(line1: ttk.Frame, url_mode_var: tk.StringVar) -> None:
-        """Creates the URL mode radio buttons."""
-        # URL source selection.
+        """Build the URL source radio buttons.
+
+        Args:
+            line1: Frame to pack the radio buttons into.
+            url_mode_var: StringVar that receives the selected mode value.
+        """
         tk.Radiobutton(
             line1,
             text="Lire la prochaine URL",
@@ -112,19 +126,29 @@ class OpenUrlFormDef(IStepFormDef):
 
     @staticmethod
     def _bind_url_mode_entry(url_mode_var: tk.StringVar, url_entry: ttk.Entry) -> None:
-        """Synchronizes the URL entry state with mode selection."""
+        """Synchronize the URL entry enabled state with the selected mode.
+
+        Args:
+            url_mode_var: StringVar holding the current URL mode.
+            url_entry: Entry widget to enable or disable based on the mode.
+        """
 
         def _sync_url_entry_state(*_args: object) -> None:
             state = "readonly" if url_mode_var.get() == "<<URL>>" else "normal"
             url_entry.configure(state=state)
 
-        # React to mode changes and initialize the current state.
+        # React to mode changes and initialize the current state
         url_mode_var.trace_add("write", _sync_url_entry_state)
         _sync_url_entry_state()
 
     @staticmethod
     def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the wait-state selector."""
+        """Build the page load state combobox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_WAIT_STATE tk.Variable.
+        """
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
 
@@ -134,77 +158,105 @@ class OpenUrlFormDef(IStepFormDef):
             side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(line2, text="(dom > load > idle 500ms)").pack(side=tk.LEFT, padx=(0, 5))
-        widgets["wait_state"] = ws_var
+        widgets[C_KEY_WAIT_STATE] = ws_var
 
     @staticmethod
     def _build_subform_timeout(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the timeout controls."""
+        """Build the timeout duration spinbox and time unit combobox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_TIMEOUT_DURATION and C_KEY_TIMEOUT_UNIT tk.Variables.
+        """
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 8))
 
-        # timeout duration
         ttk.Label(line3, text="Timeout :").pack(side=tk.LEFT, padx=(0, 5))
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
             side=tk.LEFT, padx=(0, 5)
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
-
         ttk.Combobox(
             line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 5))
-        widgets["timeout_duration"] = td_var
-        widgets["timeout_unit"] = tu_var
+        widgets[C_KEY_TIMEOUT_DURATION] = td_var
+        widgets[C_KEY_TIMEOUT_UNIT] = tu_var
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the comment input field."""
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         line4 = ttk.Frame(frame)
         line4.pack(fill="x", pady=(0, 8))
 
         ttk.Label(line4, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line4, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Loads persisted parameters into the widgets."""
-        widgets["url_mode"].set(model.params.get("url_mode", "<<URL>>"))
-        widgets["url_custom"].set(model.params.get("url_custom", C_INPUT_DEFAULT_URL))
-        widgets["wait_state"].set(model.params.get("wait_state", C_INPUT_DEFAULT_WAIT_STATE))
-        widgets["timeout_duration"].set(
-            str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION))
+        """Load step parameters from the model into form widgets.
+
+        Args:
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
+        """
+        widgets[C_KEY_URL_MODE].set(model.params.get(C_KEY_URL_MODE, "<<URL>>"))
+        widgets[C_KEY_URL_CUSTOM].set(model.params.get(C_KEY_URL_CUSTOM, C_INPUT_DEFAULT_URL))
+        widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
+        widgets[C_KEY_TIMEOUT_DURATION].set(
+            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
         )
-        widgets["timeout_unit"].set(
+        widgets[C_KEY_TIMEOUT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
-        widgets["comment"].set(model.params.get("comment", ""))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Reads the current widget values as step parameters."""
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
         return {
-            "url_mode": widgets["url_mode"].get(),
-            "url_custom": widgets["url_custom"].get().strip(),
-            "wait_state": widgets["wait_state"].get(),
-            "timeout_duration": safe_int_widget(widgets, "timeout_duration", -1),
-            "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get()),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_URL_MODE: widgets[C_KEY_URL_MODE].get(),
+            C_KEY_URL_CUSTOM: widgets[C_KEY_URL_CUSTOM].get().strip(),
+            C_KEY_WAIT_STATE: widgets[C_KEY_WAIT_STATE].get(),
+            C_KEY_TIMEOUT_DURATION: safe_int_widget(widgets, C_KEY_TIMEOUT_DURATION, -1),
+            C_KEY_TIMEOUT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_TIMEOUT_UNIT].get()),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Formats the label displayed in the workflow list."""
-        timeout = model.params.get("timeout_duration", 0)
-        unit_time = model.params.get("timeout_unit", "")
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
+        timeout = model.params.get(C_KEY_TIMEOUT_DURATION, 0)
+        unit_time = model.params.get(C_KEY_TIMEOUT_UNIT, "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        url_mode = model.params.get("url_mode")
+        url_mode = model.params.get(C_KEY_URL_MODE)
 
         url_used = (
-            f"Url : {model.params.get('url_custom', '')}"
+            f"Url : {model.params.get(C_KEY_URL_CUSTOM, '')}"
             if url_mode == "<<CUSTOM>>"
             else "Prochaine URL dans la liste"
         )

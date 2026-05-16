@@ -343,8 +343,10 @@ class DataGrid(ttk.Frame):
         if row_index < row_start or row_index >= row_end:
             return
 
+        highlighted_by_mouse = self._hover_row == row_index
+        # gray for even, white for odd, blue hover override
         row_bg = (
-            self._bg_hover if self._hover_row == row_index else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
+            self._bg_hover if highlighted_by_mouse else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
         )
         self.body_canvas.itemconfigure(f"row-bg-{row_index}", fill=row_bg)
 
@@ -527,10 +529,7 @@ class DataGrid(ttk.Frame):
     def _acquire_button(self, action_id: str, text: str) -> ttk.Button:
         """Reuses or creates an action button."""
         pool = self._button_pool.setdefault(action_id, [])
-        if pool:
-            button = pool.pop()
-        else:
-            button = ttk.Button(self.body_canvas, takefocus=False)
+        button = pool.pop() if pool else ttk.Button(self.body_canvas, takefocus=False)
 
         button.configure(text=text)
         return button

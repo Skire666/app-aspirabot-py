@@ -270,3 +270,6 @@ class EditStepDialogPanel(ttk.Frame):
         """Fires the on_cancel callback without modifying the step list."""
         if self.on_cancel:
             self.on_cancel()
+
+
+# EOF

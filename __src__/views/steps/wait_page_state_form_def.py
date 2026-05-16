@@ -37,6 +37,11 @@ C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 C_INPUT_DEFAULT_WAIT_STATE = "load"
 
+C_KEY_WAIT_STATE = "wait_state"
+C_KEY_TIMEOUT_DURATION = "timeout_duration"
+C_KEY_TIMEOUT_UNIT = "timeout_unit"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -60,7 +65,24 @@ class WaitPageStateFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
+        """Build all form widgets into the given frame.
+
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
+        self._build_subform_wait_state(frame, widgets)
+        self._build_subform_timeout(frame, widgets)
+        self._build_subform_comment(frame, widgets)
+
+    @staticmethod
+    def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the page load state combobox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_WAIT_STATE tk.Variable.
+        """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
@@ -70,79 +92,101 @@ class WaitPageStateFormDef(IStepFormDef):
             side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(line1, text="(dom > load > idle 500ms)").pack(side=tk.LEFT, padx=(0, 5))
-        widgets["wait_state"] = ws_var
+        widgets[C_KEY_WAIT_STATE] = ws_var
 
-        # Build timeout controls
-        self._build_subform_timeout(frame, widgets)
+    @staticmethod
+    def _build_subform_timeout(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the timeout duration spinbox and time unit combobox row.
 
-        # Dernière ligne — comment
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_TIMEOUT_DURATION and C_KEY_TIMEOUT_UNIT tk.Variables.
+        """
+        line2 = ttk.Frame(frame)
+        line2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(line2, text="Timeout :").pack(side=tk.LEFT, padx=(0, 5))
+        td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
+        ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=td_var, width=7).pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
+        tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
+        ttk.Combobox(
+            line2, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
+        ).pack(side=tk.LEFT, padx=(0, 5))
+        widgets[C_KEY_TIMEOUT_DURATION] = td_var
+        widgets[C_KEY_TIMEOUT_UNIT] = tu_var
+
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         line3 = ttk.Frame(frame)
         line3.pack(fill="x", pady=(0, 8))
 
         ttk.Label(line3, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(line3, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
-
-    @staticmethod
-    def _build_subform_timeout(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the timeout controls."""
-        line3 = ttk.Frame(frame)
-        line3.pack(fill="x", pady=(0, 8))
-
-        # timeout duration
-        ttk.Label(line3, text="Timeout :").pack(side=tk.LEFT, padx=(0, 5))
-        td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
-        ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=td_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
-        tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
-
-        ttk.Combobox(
-            line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
-        ).pack(side=tk.LEFT, padx=(0, 5))
-        widgets["timeout_duration"] = td_var
-        widgets["timeout_unit"] = tu_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Populate widget values from stored parameters.
+        """Load step parameters from the model into form widgets.
 
         Args:
-            model: Step model containing stored parameters.
-            widgets: Mapping of form widgets to populate.
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets["wait_state"].set(model.params.get("wait_state", C_INPUT_DEFAULT_WAIT_STATE))
-        widgets["timeout_duration"].set(
-            str(model.params.get("timeout_duration", C_INPUT_DEFAULT_TIMEOUT_DURATION))
+        widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
+        widgets[C_KEY_TIMEOUT_DURATION].set(
+            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
         )
-        widgets["timeout_unit"].set(
+        widgets[C_KEY_TIMEOUT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
             )
         )
-        widgets["comment"].set(model.params.get("comment", ""))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
         return {
-            "wait_state": widgets["wait_state"].get(),
-            "timeout_duration": safe_int_widget(widgets, "timeout_duration", -1),
-            "timeout_unit": WAIT_UNIT_VIEW_TO_MODEL.get(widgets["timeout_unit"].get()),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_WAIT_STATE: widgets[C_KEY_WAIT_STATE].get(),
+            C_KEY_TIMEOUT_DURATION: safe_int_widget(widgets, C_KEY_TIMEOUT_DURATION, -1),
+            C_KEY_TIMEOUT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_TIMEOUT_UNIT].get()),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Produce a compact, human-readable label describing this step instance."""
-        timeout = model.params.get("timeout_duration", 0)
-        unit_time = model.params.get("timeout_unit", "")
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
+        timeout = model.params.get(C_KEY_TIMEOUT_DURATION, 0)
+        unit_time = model.params.get(C_KEY_TIMEOUT_UNIT, "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
         return (
             f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\n"
-            + f"Attendre : {model.params.get('wait_state', C_INPUT_DEFAULT_WAIT_STATE)}"
+            + f"Attendre : {model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE)}"
         )
 
 

@@ -78,3 +78,6 @@ def get_form(step_type: StepType) -> IStepFormDef:
     if form is None:
         raise FormNotRegisteredError(step_type)
     return form
+
+
+# EOF

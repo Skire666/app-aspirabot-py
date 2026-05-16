@@ -24,10 +24,10 @@ from shared.constants import (
 WAIT_UNIT_DISPLAY: list[str] = list(C_UNITS_TIME_ALLOWED_FOR_VIEW)
 
 # Display → internal model value ("sec" → "s").
-WAIT_UNIT_VIEW_TO_MODEL: dict[str, str] = dict(zip(WAIT_UNIT_DISPLAY, C_UNITS_TIME_ALLOWED_FOR_MODEL))
+WAIT_UNIT_VIEW_TO_MODEL: dict[str, str] = dict(zip(WAIT_UNIT_DISPLAY, C_UNITS_TIME_ALLOWED_FOR_MODEL, strict=True))
 
 # Internal model value → display ("s" → "sec").
-WAIT_UNIT_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_UNITS_TIME_ALLOWED_FOR_MODEL, WAIT_UNIT_DISPLAY))
+WAIT_UNIT_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_UNITS_TIME_ALLOWED_FOR_MODEL, WAIT_UNIT_DISPLAY, strict=True))
 
 # ---------------------------------------------------------------------------
 # Playwright wait-state values
@@ -53,8 +53,8 @@ CLICK_MODES: list[str] = ["Normal", "Forced", "JS Direct"]
 
 CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]  # GARDER 'Toujours' à la fin
 CONDITION_VALUES: list[str] = ["success", "failure", "always"]
-CONDITION_VIEW_TO_MODEL: dict[str, str] = dict(zip(CONDITION_DISPLAY, CONDITION_VALUES))
-CONDITION_MODEL_TO_VIEW: dict[str, str] = dict(zip(CONDITION_VALUES, CONDITION_DISPLAY))
+CONDITION_VIEW_TO_MODEL: dict[str, str] = dict(zip(CONDITION_DISPLAY, CONDITION_VALUES, strict=True))
+CONDITION_MODEL_TO_VIEW: dict[str, str] = dict(zip(CONDITION_VALUES, CONDITION_DISPLAY, strict=True))
 
 # ---------------------------------------------------------------------------
 # EXTRACT_TEXT display / model mappings
@@ -68,8 +68,8 @@ EXTRACT_MODE_DISPLAY: list[str] = [
     "value — Valeur du champ (input/textarea)",
 ]
 EXTRACT_MODE_VALUES: list[str] = ["innerText", "textContent", "outerHTML", "innerHTML", "value"]
-EXTRACT_MODE_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_MODE_DISPLAY, EXTRACT_MODE_VALUES))
-EXTRACT_MODE_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_MODE_VALUES, EXTRACT_MODE_DISPLAY))
+EXTRACT_MODE_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_MODE_DISPLAY, EXTRACT_MODE_VALUES, strict=True))
+EXTRACT_MODE_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_MODE_VALUES, EXTRACT_MODE_DISPLAY, strict=True))
 
 EXTRACT_TARGET_DISPLAY: list[str] = [
     "Premier élément uniquement",
@@ -77,8 +77,12 @@ EXTRACT_TARGET_DISPLAY: list[str] = [
     "Tous les éléments",
 ]
 EXTRACT_TARGET_VALUES: list[str] = ["first", "last", "all"]
-EXTRACT_TARGET_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_VALUES))
-EXTRACT_TARGET_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_TARGET_VALUES, EXTRACT_TARGET_DISPLAY))
+EXTRACT_TARGET_VIEW_TO_MODEL: dict[str, str] = dict(
+    zip(EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_VALUES, strict=True)
+)
+EXTRACT_TARGET_MODEL_TO_VIEW: dict[str, str] = dict(
+    zip(EXTRACT_TARGET_VALUES, EXTRACT_TARGET_DISPLAY, strict=True)
+)
 
 # ---------------------------------------------------------------------------
 # COUNT_ELEMENT operator display / model mappings
@@ -100,13 +104,17 @@ COUNT_OP_VALUES: list[str] = [
     "less_or_equal",
     "greater_or_equal",
 ]
-COUNT_OP_VIEW_TO_MODEL: dict[str, str] = dict(zip(COUNT_OP_DISPLAY, COUNT_OP_VALUES))
-COUNT_OP_MODEL_TO_VIEW: dict[str, str] = dict(zip(COUNT_OP_VALUES, COUNT_OP_DISPLAY))
+COUNT_OP_VIEW_TO_MODEL: dict[str, str] = dict(zip(COUNT_OP_DISPLAY, COUNT_OP_VALUES, strict=True))
+COUNT_OP_MODEL_TO_VIEW: dict[str, str] = dict(zip(COUNT_OP_VALUES, COUNT_OP_DISPLAY, strict=True))
 
 COUNT_SUCCESS_IF_DISPLAY: list[str] = ["succès", "échec"]
 COUNT_SUCCESS_IF_VALUES: list[str] = ["success", "failure"]
-COUNT_SUCCESS_IF_VIEW_TO_MODEL: dict[str, str] = dict(zip(COUNT_SUCCESS_IF_DISPLAY, COUNT_SUCCESS_IF_VALUES))
-COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY))
+COUNT_SUCCESS_IF_VIEW_TO_MODEL: dict[str, str] = dict(
+    zip(COUNT_SUCCESS_IF_DISPLAY, COUNT_SUCCESS_IF_VALUES, strict=True)
+)
+COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(
+    zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY, strict=True)
+)
 
 # ---------------------------------------------------------------------------
 # Shared widget helper
@@ -132,5 +140,8 @@ def safe_int_widget(widgets: dict[str, Any], key: str, default: int) -> int:
         return default
     try:
         return int(var.get())
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
+
+
+# EOF

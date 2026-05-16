@@ -103,4 +103,4 @@ class ResourcesFonts:
         return self._cache[key]
 
 
-# END
+# EOF

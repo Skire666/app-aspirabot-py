@@ -137,3 +137,6 @@ class _InformationsPanelMixin:
             message: Text to show inside the error dialog.
         """
         messagebox.showerror("Erreur", message)
+
+
+# EOF

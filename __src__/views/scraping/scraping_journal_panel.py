@@ -183,7 +183,7 @@ class ScrapingJournalPanel(ttk.Frame):
         Returns:
             Ordered list of row tuples (date, step_started, duration, result, message).
         """
-        return [
-            tuple(str(v) for v in self._tree.item(item, "values"))
-            for item in self._tree.get_children()
-        ]
+        return [tuple(str(v) for v in self._tree.item(item, "values")) for item in self._tree.get_children()]
+
+
+# EOF

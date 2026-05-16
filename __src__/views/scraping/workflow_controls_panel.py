@@ -94,9 +94,7 @@ class WorkflowControlsPanel(ttk.Frame):
         Args:
             parent: Container frame for the buttons.
         """
-        self._btn_launch = ttk.Button(
-            parent, text="Lancer le scraping", width=20, command=self._notify_launch
-        )
+        self._btn_launch = ttk.Button(parent, text="Lancer le scraping", width=20, command=self._notify_launch)
         self._btn_launch.pack(side=tk.TOP, padx=5, pady=(0, 5))
 
         self._btn_cancel = ttk.Button(
@@ -314,7 +312,7 @@ class WorkflowControlsPanel(ttk.Frame):
         hours, remainder = divmod(total_s, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        # Format: "Démarré à HH:MM:SS | Écoulé : HH:MM:SS"
+        # Format -> "Démarré à HH:MM:SS | Écoulé : HH:MM:SS"
         start_str = self._run_started_at.strftime("%H:%M:%S")
         elapsed_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         self._var_prog_elapsed.set(f"Démarré à {start_str}  |  Écoulé : {elapsed_str}")
@@ -370,3 +368,6 @@ class WorkflowControlsPanel(ttk.Frame):
         row.pack(side=tk.TOP, fill=tk.X, pady=1, padx=5)
         ttk.Label(row, text=label_text, width=20, anchor=tk.W).pack(side=tk.LEFT)
         ttk.Label(row, textvariable=var, anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+
+# EOF

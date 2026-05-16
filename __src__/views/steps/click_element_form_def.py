@@ -19,6 +19,10 @@ from views.steps._constants import CLICK_MODES
 
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 
+C_KEY_SELECTOR = "selector"
+C_KEY_CLICK_MODE = "click_mode"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -39,17 +43,40 @@ class ClickElementFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
-        # ROW 0
+        """Build all form widgets into the given frame.
+
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
+        self._build_subform_selector(frame, widgets)
+        self._build_subform_click_mode(frame, widgets)
+        self._build_subform_comment(frame, widgets)
+
+    @staticmethod
+    def _build_subform_selector(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the CSS selector input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_SELECTOR tk.Variable.
+        """
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row0, text="Sélecteur CSS :").pack(side=tk.LEFT, padx=(0, 5))
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_CSS_SELECTOR)
         ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["selector"] = sel_var
+        widgets[C_KEY_SELECTOR] = sel_var
 
-        # ROW 1
+    @staticmethod
+    def _build_subform_click_mode(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the click mode selector row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_CLICK_MODE tk.Variable.
+        """
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
@@ -58,38 +85,67 @@ class ClickElementFormDef(IStepFormDef):
         ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
-        widgets["click_mode"] = mode_var
+        widgets[C_KEY_CLICK_MODE] = mode_var
 
-        # ROW 2 — comment
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
         row2 = ttk.Frame(frame)
         row2.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row2, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
         ttk.Entry(row2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        widgets[C_KEY_COMMENT] = comm_var
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters into form widgets."""
-        widgets["selector"].set(model.params.get("selector", C_INPUT_DEFAULT_CSS_SELECTOR))
-        widgets["click_mode"].set(model.params.get("click_mode", "Normal"))
-        widgets["comment"].set(model.params.get("comment", ""))
+        """Load step parameters from the model into form widgets.
+
+        Args:
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
+        """
+        widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, C_INPUT_DEFAULT_CSS_SELECTOR))
+        widgets[C_KEY_CLICK_MODE].set(model.params.get(C_KEY_CLICK_MODE, "Normal"))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
         return {
-            "selector": widgets["selector"].get().strip(),
-            "click_mode": widgets["click_mode"].get(),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_SELECTOR: widgets[C_KEY_SELECTOR].get().strip(),
+            C_KEY_CLICK_MODE: widgets[C_KEY_CLICK_MODE].get(),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Return a compact human-readable label for this step instance."""
-        selector = model.params.get("selector", "<vide>")
+        """Return a compact human-readable label for this step instance.
+
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
+        selector = model.params.get(C_KEY_SELECTOR, "<vide>")
         return f"Cliquer sur un élément\nSél. {selector}"
 
 
 register_form(ClickElementFormDef())
+
+# EOF

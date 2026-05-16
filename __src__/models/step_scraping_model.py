@@ -36,7 +36,7 @@ class StepScrapingModel:
         params: Type-specific parameters for the action.
 
     Example:
-        >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_X_TIME)
+        >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_FIXED_TIME)
         >>> step.params["duration"]
         0
     """
@@ -110,9 +110,9 @@ class StepScrapingModel:
             None.
 
         Example:
-            >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_X_TIME)
+            >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_FIXED_TIME)
             >>> step.export_to_data_json()["step_type"]
-            'WAIT_X_TIME'
+            'WAIT_FIXED_TIME'
         """
         return {
             "step_type": self.step_type.value,

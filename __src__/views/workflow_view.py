@@ -84,9 +84,7 @@ class WorkflowView(_InformationsPanelMixin, _GestionEtapesPanelMixin, _ListeEtap
             parent: The footer frame to pack widgets into.
         """
         # Status label on the left expands to fill available width.
-        self._lbl_workflow_status = ttk.Label(
-            parent, text="", anchor="w", foreground=_STATUS_COLOR_OK
-        )
+        self._lbl_workflow_status = ttk.Label(parent, text="", anchor="w", foreground=_STATUS_COLOR_OK)
         self._lbl_workflow_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         # Action buttons anchored to the right in reverse visual order.
@@ -156,3 +154,6 @@ class WorkflowView(_InformationsPanelMixin, _GestionEtapesPanelMixin, _ListeEtap
         self._workflow_builder_view.reset()
         if self._on_cancel:
             self._on_cancel()
+
+
+# EOF

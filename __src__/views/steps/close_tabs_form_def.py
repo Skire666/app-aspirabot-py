@@ -26,6 +26,11 @@ C_INPUT_DEFAULT_FILTER_MODE: str = "<<URL>>"
 C_INPUT_IS_FILTER_CUSTOM: str = "<<CUSTOM>>"
 C_INPUT_DEFAULT_MAX_TABS: int = 1
 
+C_KEY_FILTER_MODE = "filter_mode"
+C_KEY_FILTER_CUSTOM = "filter_custom"
+C_KEY_MAX_TABS = "max_tabs"
+C_KEY_COMMENT = "comment"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -46,53 +51,49 @@ class CloseTabsFormDef(IStepFormDef):
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the form widgets into the given frame."""
-        # ROW 0
+        """Build all form widgets into the given frame.
+
+        Args:
+            frame: The tkinter frame to populate.
+            widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
+        """
         self._build_subform_filters(frame, widgets)
-
-        # ROW 1
-        row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=(0, 8))
-
-        ttk.Label(row1, text="Max. onglets ouverts:").pack(side="left", padx=(0, 5))
-        max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MAX_TABS))
-        ttk.Spinbox(row1, from_=1, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).pack(
-            side="left", padx=(0, 5)
-        )
-        widgets["max_tabs"] = max_var
-
-        # ROW 3 — comment
-        row3 = ttk.Frame(frame)
-        row3.pack(fill="x", pady=(0, 8))
-        ttk.Label(row3, text="Commentaire :").pack(side="left", padx=(0, 5))
-        comm_var = tk.StringVar(value="")
-        ttk.Entry(row3, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        widgets["comment"] = comm_var
+        self._build_subform_max_tabs(frame, widgets)
+        self._build_subform_comment(frame, widgets)
 
     @staticmethod
     def _build_subform_filters(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Creates the URL input field."""
+        """Build the URL filter mode radio buttons and custom filter entry row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with C_KEY_FILTER_MODE and C_KEY_FILTER_CUSTOM tk.Variables.
+        """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
         filter_mode_var = tk.StringVar(value=C_INPUT_DEFAULT_FILTER_MODE)
         filter_url_var = tk.StringVar(value=".com")
 
-        # Mode selection.
+        # Mode selection radio buttons
         CloseTabsFormDef._build_url_mode_buttons(line1, filter_mode_var)
 
         filter_url_entry = ttk.Entry(line1, textvariable=filter_url_var)
         filter_url_entry.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets["filter_mode"] = filter_mode_var  # '<<URL>>' or '<<CUSTOM>>'
-        widgets["filter_custom"] = filter_url_var
+        widgets[C_KEY_FILTER_MODE] = filter_mode_var
+        widgets[C_KEY_FILTER_CUSTOM] = filter_url_var
 
-        # Keep the entry state in sync with the selected mode.
+        # Keep the entry state in sync with the selected mode
         CloseTabsFormDef._bind_url_mode_entry(filter_mode_var, filter_url_entry)
 
     @staticmethod
     def _build_url_mode_buttons(line1: ttk.Frame, filter_mode_var: tk.StringVar) -> None:
-        """Creates the URL mode radio buttons."""
-        # URL source selection.
+        """Build the URL filter mode radio buttons.
+
+        Args:
+            line1: Frame to pack the radio buttons into.
+            filter_mode_var: StringVar that receives the selected mode value.
+        """
         tk.Radiobutton(
             line1,
             text="Garder l'URL d'origine",
@@ -109,45 +110,105 @@ class CloseTabsFormDef(IStepFormDef):
 
     @staticmethod
     def _bind_url_mode_entry(filter_mode_var: tk.StringVar, filter_url_entry: ttk.Entry) -> None:
-        """Synchronizes the URL entry state with mode selection."""
+        """Synchronize the filter entry enabled state with the selected mode.
+
+        Args:
+            filter_mode_var: StringVar holding the current filter mode.
+            filter_url_entry: Entry widget to enable or disable based on the mode.
+        """
 
         def _sync_url_entry_state(*_args: object) -> None:
             state = "readonly" if filter_mode_var.get() == "<<URL>>" else "normal"
             filter_url_entry.configure(state=state)
 
-        # React to mode changes and initialize the current state.
+        # React to mode changes and initialize the current state
         filter_mode_var.trace_add("write", _sync_url_entry_state)
         _sync_url_entry_state()
 
+    @staticmethod
+    def _build_subform_max_tabs(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the maximum open tabs spinbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_MAX_TABS tk.Variable.
+        """
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row1, text="Max. onglets ouverts:").pack(side="left", padx=(0, 5))
+        max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MAX_TABS))
+        ttk.Spinbox(row1, from_=1, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).pack(
+            side="left", padx=(0, 5)
+        )
+        widgets[C_KEY_MAX_TABS] = max_var
+
+    @staticmethod
+    def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the comment input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
+        """
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row2, text="Commentaire :").pack(side="left", padx=(0, 5))
+        comm_var = tk.StringVar(value="")
+        ttk.Entry(row2, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_COMMENT] = comm_var
+
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters into form widgets."""
-        widgets["filter_mode"].set(model.params.get("filter_mode", "<<URL>>"))
-        widgets["filter_custom"].set(model.params.get("filter_custom", ""))
-        widgets["max_tabs"].set(str(model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)))
-        widgets["comment"].set(model.params.get("comment", ""))
+        """Load step parameters from the model into form widgets.
+
+        Args:
+            model: The step model containing stored parameters.
+            widgets: Mutable mapping of widget name to tk.Variable reference.
+        """
+        widgets[C_KEY_FILTER_MODE].set(model.params.get(C_KEY_FILTER_MODE, "<<URL>>"))
+        widgets[C_KEY_FILTER_CUSTOM].set(model.params.get(C_KEY_FILTER_CUSTOM, ""))
+        widgets[C_KEY_MAX_TABS].set(str(model.params.get(C_KEY_MAX_TABS, C_INPUT_DEFAULT_MAX_TABS)))
+        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Read current widget values and return them as a parameters dict."""
+        """Read current widget values and return them as a step parameters dict.
+
+        Args:
+            widgets: Mapping of widget name to tk.Variable reference.
+
+        Returns:
+            Dictionary of step parameters ready for persistence in the model.
+        """
         return {
-            "filter_mode": widgets["filter_mode"].get(),
-            "filter_custom": widgets["filter_custom"].get().strip(),
-            "max_tabs": safe_int_widget(widgets, "max_tabs", -1),
-            "comment": widgets["comment"].get().strip(),
+            C_KEY_FILTER_MODE: widgets[C_KEY_FILTER_MODE].get(),
+            C_KEY_FILTER_CUSTOM: widgets[C_KEY_FILTER_CUSTOM].get().strip(),
+            C_KEY_MAX_TABS: safe_int_widget(widgets, C_KEY_MAX_TABS, -1),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Return a compact human-readable label for this step instance."""
-        max_tabs = model.params.get("max_tabs", C_INPUT_DEFAULT_MAX_TABS)
+        """Return a compact human-readable label for this step instance.
 
-        # si mode "<<CUSTOM>>"
-        if model.params.get("filter_mode") == C_INPUT_IS_FILTER_CUSTOM:
-            filter_custom = model.params.get("filter_custom", "")
+        Args:
+            model: The step model containing current parameters.
+            idx: Zero-based index of this step in the workflow.
+
+        Returns:
+            A two-line string suitable for display in the steps list.
+        """
+        max_tabs = model.params.get(C_KEY_MAX_TABS, C_INPUT_DEFAULT_MAX_TABS)
+
+        # Custom filter mode includes the filter pattern in the label
+        if model.params.get(C_KEY_FILTER_MODE) == C_INPUT_IS_FILTER_CUSTOM:
+            filter_custom = model.params.get(C_KEY_FILTER_CUSTOM, "")
             return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre URL : *{filter_custom}*"
-        # si mode "<<URL>>"
         return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre : Garde l'URL de départ."
 
 
 register_form(CloseTabsFormDef())
+
+# EOF
