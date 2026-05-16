@@ -26,6 +26,30 @@ from shared.resources_icons_util import (
 # Main view sidebar width in pixels
 C_VIEW_SIDEBAR_LEFT_WIDTH = 80
 
+# Scraping panel — status labels
+C_SCRAPING_STATUS_INACTIVE = "inactif"
+C_SCRAPING_JOURNAL_PENDING_STATUS = "en cours"
+C_SCRAPING_JOURNAL_PENDING_VALUE = "..."
+C_SCRAPING_JOURNAL_RESULT_OK = "OK"
+C_SCRAPING_JOURNAL_RESULT_ERROR = "ERREUR"
+
+# Scraping panel — profile date label
+C_SCRAPING_SAVED_DATE_FMT = "Sauvegardé le : {date}"
+C_SCRAPING_SAVED_DATE_EMPTY = "Sauvegardé le : --"
+
+# Scraping panel — no URL source confirmation dialog
+C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
+C_SCRAPING_NO_URL_SOURCE_MSG = (
+    "Aucune source d'URLs n'est selectionnee.\n\n"
+    "Les etapes OPEN_URL en mode '<<URL>>' seront en erreur.\n\n"
+    "Souhaitez-vous continuer quand meme ?"
+)
+
+# Scraping panel — stats progress line template
+C_SCRAPING_STATS_FMT = (
+    "Succès : {success}  |  Erreurs : {errors}  |  Clics : {clicks}  |  URLs : {urls}"
+)
+
 # Scraping journal Treeview column configurations: (title, width, anchor, stretch)
 C_VIEW_SCRAPING_HEADINGS = {
     "date": ("Date", 155, tk.W, False),

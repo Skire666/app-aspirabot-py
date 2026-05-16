@@ -31,6 +31,8 @@ from shared.datetime_util import (
     get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
+from shared.i18n_fra import C_SCRAPING_STATS_FMT
+from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView
 
 # ---------------------------------------------------------------------------
@@ -117,7 +119,7 @@ class ScrapingPresenter:
     def ensure_providers_loaded(self) -> None:
         """Populate the provider dropdown on first show, skipped if already loaded."""
         print(f"ensure_providers_loaded -> {self._providers_loaded}")
-        if not self._providers_loaded or (datetime.now() - self._providers_loaded).total_seconds() > 5:
+        if not self._providers_loaded or (datetime.now() - self._providers_loaded).total_seconds() > 1:
             self._on_refresh_providers()
 
     def load_provider(self, id_file: str) -> None:
@@ -155,6 +157,9 @@ class ScrapingPresenter:
         self._refresh_profiles_list()
         self._load_last_used_profile()
 
+        # Seed the date label with the file's current modification date.
+        self._view.set_profile_modified_date(self._provider.modified_date)
+
     # ------------------------------------------------------------------
     # View callback wiring
     # ------------------------------------------------------------------
@@ -174,9 +179,11 @@ class ScrapingPresenter:
         self._view.set_on_export_journal(self._on_export_journal)
         self._view.set_on_profile_selected(self._on_profile_selected)
         self._view.set_on_profile_new(self._on_profile_new)
-        self._view.set_on_profile_save(self._on_profile_save)
         self._view.set_on_profile_delete(self._on_profile_delete)
+        self._view.set_on_profile_rename(self._on_profile_rename)
         self._view.set_on_form_changed(self._on_form_changed)
+        self._view.set_on_manual_urls_confirmed(self._on_manual_urls_confirmed)
+        self._view.set_on_open_export_folder(self._on_open_export_folder)
 
     # ------------------------------------------------------------------
     # Provider management callbacks
@@ -254,7 +261,10 @@ class ScrapingPresenter:
         self._view.set_url_source(profile.url_source_type, profile.url_source_value)
         self._view.set_launch_profile_enabled(True)
         self._is_profile_dirty = False
-        self._view.set_save_profile_button_state(False)
+
+        # Enable rename and display the provider file's last modification date.
+        self._view.set_rename_profile_button_state(True)
+        self._view.set_profile_modified_date(self._provider.modified_date)
 
     def _on_profile_new(self, name: str) -> None:
         """Create a new named profile, persist it and select it in the view.
@@ -277,33 +287,6 @@ class ScrapingPresenter:
         self._view.set_selected_profile(new_profile.profile_id)
         self._on_profile_selected(new_profile.profile_id)
 
-    def _on_profile_save(self) -> None:
-        """Persist the current form values into the selected profile.
-
-        Returns:
-            None.
-        """
-        if not self._provider:
-            return
-
-        profile_id = self._view.get_selected_profile_id()
-        profile = self._find_profile(profile_id)
-        if profile is None:
-            return
-
-        export_folder = self._view.get_export_folder()
-        url_source = self._view.get_url_source()
-        profile.export_folder = export_folder
-        profile.url_source_type = url_source["type"]
-        profile.url_source_value = url_source["value"]
-        profile.mark_modified()
-
-        self._service_provider.update_provider(self._provider)
-        self._is_profile_dirty = False
-        self._view.set_save_profile_button_state(False)
-        self._refresh_profiles_list()
-        self._view.set_selected_profile(profile.profile_id)
-
     def _on_profile_delete(self, profile_id: str) -> None:
         """Remove a profile from the provider and persist the change.
 
@@ -317,6 +300,35 @@ class ScrapingPresenter:
         self._provider.launch_profiles = [p for p in self._provider.launch_profiles if p.profile_id != profile_id]
         self._service_provider.update_provider(self._provider)
         self._refresh_profiles_list()
+
+        # No profile is selected after deletion — disable rename, keep file date.
+        self._view.set_rename_profile_button_state(False)
+        self._view.set_profile_modified_date(self._provider.modified_date)
+
+    def _on_profile_rename(self, profile_id: str, new_name: str) -> None:
+        """Rename the given profile, persist the change, and refresh the list.
+
+        Args:
+            profile_id: Unique identifier of the profile to rename.
+            new_name: Name entered by the user.
+
+        Returns:
+            None.
+        """
+        profile = self._find_profile(profile_id)
+        if profile is None:
+            return
+
+        # Apply the new name and stamp the modification date.
+        profile.name = new_name
+        profile.mark_modified()
+        self._service_provider.update_provider(self._provider)
+
+        # Restore selection and update the date label with the provider file date.
+        self._refresh_profiles_list()
+        self._view.set_selected_profile(profile_id)
+        self._view.set_rename_profile_button_state(True)
+        self._view.set_profile_modified_date(self._provider.modified_date)
 
     def _find_profile(self, profile_id: str | None) -> LaunchProfileModel | None:
         """Search the current provider's profiles for a matching profile_id.
@@ -358,8 +370,23 @@ class ScrapingPresenter:
             None.
         """
         self._is_profile_dirty = True
-        has_profile = self._view.get_selected_profile_id() is not None
-        self._view.set_save_profile_button_state(has_profile)
+
+    def _on_manual_urls_confirmed(self, raw: str) -> None:
+        """Parse raw URL text from the view and update the active URL source.
+
+        Args:
+            raw: Multiline string typed by the user — one URL per line.
+        """
+        urls = [line.strip() for line in raw.splitlines() if line.strip()]
+        self._view.set_url_source("manual", urls)
+        self._on_form_changed()
+
+    def _on_open_export_folder(self) -> None:
+        """Create the export folder if absent, then reveal it in the file explorer."""
+        folder = self._view.get_export_folder()
+        path = Path(folder)
+        path.mkdir(parents=True, exist_ok=True)
+        open_folder(path)
 
     def _load_last_used_profile(self) -> None:
         """Select and apply the most recently launched profile in the view.
@@ -432,6 +459,11 @@ class ScrapingPresenter:
             )
             return
 
+        # No URL source selected — let the user confirm they want to proceed anyway.
+        url_source = self._view.get_url_source()
+        if not url_source.get("type") and not self._view.ask_confirm_launch_without_source():
+            return
+
         # Reset signals and journal counter from any previous run.
         self._pause_event.set()
         self._cancel_event.clear()
@@ -441,6 +473,9 @@ class ScrapingPresenter:
 
         self._record_active_profile_launch()
         self._persist_provider_before_launch()
+
+        # Refresh the date label — update_provider stamped a new modified_date.
+        self._view.set_profile_modified_date(self._provider.modified_date)
         self._start_workflow_thread()
 
     def _start_workflow_thread(self) -> None:
@@ -559,7 +594,7 @@ class ScrapingPresenter:
             current_step=step.step_type.value,
             last_result=last_result,
             status="en cours",
-            stats=self._service_scraping.current_stats,
+            stats_text=C_SCRAPING_STATS_FMT.format(**self._service_scraping.current_stats),
         )
 
     def _on_init_step(self, message: str) -> None:
@@ -574,7 +609,7 @@ class ScrapingPresenter:
             current_step=message,
             last_result="",
             status="en cours",
-            stats={"success": 0, "errors": 0, "clicks": 0, "urls": 0},
+            stats_text=C_SCRAPING_STATS_FMT.format(success=0, errors=0, clicks=0, urls=0),
         )
 
     # ------------------------------------------------------------------
@@ -630,18 +665,19 @@ class ScrapingPresenter:
         # Push final status and statistics to the progression frame.
         if report is not None:
             status = "annulé" if report.cancelled else "terminé"
+            stats_text = C_SCRAPING_STATS_FMT.format(
+                success=report.steps_success,
+                errors=report.steps_failed,
+                clicks=report.clicks_performed,
+                urls=report.urls_opened,
+            )
             self._view.update_progress(
                 url="",
                 tabs=0,
                 current_step="—",
                 last_result="Workflow terminé.",
                 status=status,
-                stats={
-                    "success": report.steps_success,
-                    "errors": report.steps_failed,
-                    "clicks": report.clicks_performed,
-                    "urls": report.urls_opened,
-                },
+                stats_text=stats_text,
             )
         else:
             self._view.update_progress(
@@ -650,7 +686,7 @@ class ScrapingPresenter:
                 current_step="—",
                 last_result="Erreur critique — voir les logs.",
                 status="erreur",
-                stats={"success": 0, "errors": 0, "clicks": 0, "urls": 0},
+                stats_text=C_SCRAPING_STATS_FMT.format(success=0, errors=0, clicks=0, urls=0),
             )
 
         # Schedule auto-export on the main thread (Treeview access is not thread-safe).

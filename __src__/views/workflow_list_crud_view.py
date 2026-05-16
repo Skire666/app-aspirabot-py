@@ -112,7 +112,7 @@ class WorkflowListCrudView(ttk.Frame):
         toolbar = ttk.Frame(self)
 
         self._btn_clear = ttk.Button(toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps)
-        self._btn_clear.pack(side=tk.RIGHT, padx=(0, 20))
+        self._btn_clear.pack(side=tk.RIGHT, padx=(0, 20), pady=(0, 5))
 
         return toolbar
 

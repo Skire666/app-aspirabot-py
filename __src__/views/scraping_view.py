@@ -25,8 +25,18 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any
 
 from models.app_configuration_model import AppConfigurationModel
-from shared.i18n_fra import C_VIEW_SCRAPING_HEADINGS
-from shared.operating_system_util import open_folder
+from shared.i18n_fra import (
+    C_SCRAPING_JOURNAL_PENDING_STATUS,
+    C_SCRAPING_JOURNAL_PENDING_VALUE,
+    C_SCRAPING_JOURNAL_RESULT_ERROR,
+    C_SCRAPING_JOURNAL_RESULT_OK,
+    C_SCRAPING_NO_URL_SOURCE_MSG,
+    C_SCRAPING_NO_URL_SOURCE_TITLE,
+    C_SCRAPING_SAVED_DATE_EMPTY,
+    C_SCRAPING_SAVED_DATE_FMT,
+    C_SCRAPING_STATUS_INACTIVE,
+    C_VIEW_SCRAPING_HEADINGS,
+)
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
 from __src__.views.components.canvas_checkbox import CanvasCheckbox
@@ -60,11 +70,16 @@ class ScrapingView(ttk.Frame):
         """Initialize the scraping panel and build all widgets.
 
         Args:
+            config_model: Application configuration providing the default export folder.
             parent: The parent Tkinter widget (e.g. main_view.content_area).
         """
         super().__init__(parent)
+        self._init_callbacks()
+        self._init_state(config_model)
+        self._create_widgets()
 
-        # Callback slots — populated by the presenter via set_on_*().
+    def _init_callbacks(self) -> None:
+        """Initialize all presenter callback slots to None."""
         self._on_launch: Callable[[], None] | None = None
         self._on_cancel: Callable[[], None] | None = None
         self._on_pause: Callable[[], None] | None = None
@@ -74,14 +89,20 @@ class ScrapingView(ttk.Frame):
         self._on_export_journal: Callable[[str], None] | None = None
         self._on_profile_selected_cb: Callable[[str], None] | None = None
         self._on_profile_new_cb: Callable[[str], None] | None = None
-        self._on_profile_save_cb: Callable[[], None] | None = None
         self._on_profile_delete_cb: Callable[[str], None] | None = None
+        self._on_profile_rename_cb: Callable[[str, str], None] | None = None
         self._on_form_changed_cb: Callable[[], None] | None = None
+        self._on_manual_urls_confirmed_cb: Callable[[str], None] | None = None
+        self._on_open_export_folder_cb: Callable[[], None] | None = None
 
-        # Profile list — parallel to the Listbox entries.
+    def _init_state(self, config_model: AppConfigurationModel) -> None:
+        """Initialize runtime state variables.
+
+        Args:
+            config_model: Application configuration providing the default export folder.
+        """
+        # Profile list and provider index.
         self._profile_ids: list[str] = []
-
-        # Provider id_file index — maps combobox values to id_file strings.
         self._provider_id_by_display: dict[str, str] = {}
 
         # URL-source state — None until the user explicitly picks a source.
@@ -91,15 +112,13 @@ class ScrapingView(ttk.Frame):
         # Suppresses the _var_export_folder trace during programmatic set_export_folder() calls.
         self._suppress_form_changed: bool = False
 
-        # Export folder path.
+        # Export folder and config.
         self._app_config_model = config_model
         self._export_folder: str = None
 
         # Elapsed timer state.
         self._elapsed_timer_id: str | None = None
         self._run_started_at: datetime | None = None
-
-        self._create_widgets()
 
     # ------------------------------------------------------------------
     # Widget construction
@@ -134,13 +153,13 @@ class ScrapingView(ttk.Frame):
 
         # Left column: profile listbox with scrollbar.
         left = ttk.Frame(self._frame_profile_management)
-        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+        left.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5)
         self._create_profiles_listbox(left)
 
-        # Right column: action buttons stacked vertically.
-        right = ttk.Frame(self._frame_profile_management)
-        right.pack(side=tk.RIGHT, fill=tk.Y)
-        self._create_profiles_buttons(right)
+        # action buttons stacked horizontally.
+        bottom_buttons = ttk.Frame(self._frame_profile_management)
+        bottom_buttons.pack(side=tk.TOP, fill=tk.BOTH)
+        self._create_profiles_buttons(bottom_buttons)
 
         # Gray out until a provider is loaded.
         self._apply_state_recursive(self._frame_profile_management, tk.DISABLED)
@@ -170,18 +189,22 @@ class ScrapingView(ttk.Frame):
             parent: Container frame for the button column.
         """
         ttk.Button(parent, text="Nouveau profil", command=self._notify_profile_new, width=18).pack(
-            side=tk.TOP, pady=(0, 4), padx=5
+            side=tk.LEFT, padx=5, pady=(5, 0)
         )
 
-        # Store reference so the presenter can control its enabled state.
-        self._btn_save_profile = ttk.Button(
-            parent, text="Sauvegarder profil", command=self._notify_profile_save, width=18
+        # Store reference so the presenter can enable/disable it based on selection.
+        self._btn_rename_profile = ttk.Button(
+            parent, text="Renommer profil", command=self._notify_profile_rename, width=18, state=tk.DISABLED
         )
-        self._btn_save_profile.pack(side=tk.TOP, pady=(0, 4), padx=5)
+        self._btn_rename_profile.pack(side=tk.LEFT, padx=5, pady=(5, 0))
 
         ttk.Button(parent, text="Supprimer profil", command=self._notify_profile_delete, width=18).pack(
-            side=tk.TOP, padx=5
+            side=tk.LEFT, padx=5, pady=(5, 0)
         )
+
+        # Label shows the last modification date of the selected profile.
+        self._lbl_modified_date = ttk.Label(parent, text="Sauvegardé le : --")
+        self._lbl_modified_date.pack(side=tk.RIGHT, padx=(10, 5), pady=(5, 0))
 
     def _create_launch_profile_frame(self) -> None:
         """Build the 'Profil de lancement' section."""
@@ -261,19 +284,30 @@ class ScrapingView(ttk.Frame):
         export.pack(side=tk.LEFT, padx=5, pady=(2, 0))
 
     def _create_workflow_controls_frame(self) -> None:
-        """Build the 'Progression' section with 7 live-updated info rows."""
+        """Build the 'Pilotage du scraping' section with stats rows and control buttons."""
         frame = HorizontalLineFrame(self, text="Pilotage du scraping")
         frame.pack(side=tk.TOP, fill=tk.X)
 
         frame_stats = ttk.Frame(frame)
         frame_stats.pack(side=tk.LEFT, fill=tk.X)
+        self._create_progress_stats_section(frame_stats)
 
+        div_buttons = ttk.Frame(frame)
+        div_buttons.pack(side=tk.RIGHT, fill=tk.X)
+        self._create_workflow_buttons_section(div_buttons)
+
+    def _create_progress_stats_section(self, parent: ttk.Frame) -> None:
+        """Build the 7 StringVar progress rows inside the controls frame.
+
+        Args:
+            parent: Container frame for the stats rows.
+        """
         # Build StringVars for each field, stored for external updates.
         self._var_prog_url = tk.StringVar(value="—")
         self._var_prog_tabs = tk.StringVar(value="—")
         self._var_prog_step = tk.StringVar(value="—")
         self._var_prog_last_result = tk.StringVar(value="—")
-        self._var_prog_status = tk.StringVar(value="inactif")
+        self._var_prog_status = tk.StringVar(value=C_SCRAPING_STATUS_INACTIVE)
         self._var_prog_elapsed = tk.StringVar(value="—")
         self._var_prog_stats = tk.StringVar(value="—")
 
@@ -288,29 +322,31 @@ class ScrapingView(ttk.Frame):
             ("Statistiques :", self._var_prog_stats),
         ]
         for label_text, var in rows_def:
-            self._add_progress_row(frame_stats, label_text, var)
+            self._add_progress_row(parent, label_text, var)
 
-        # buttson
-        div_buttons = ttk.Frame(frame)
-        div_buttons.pack(side=tk.RIGHT, fill=tk.X)
+    def _create_workflow_buttons_section(self, parent: ttk.Frame) -> None:
+        """Build the 4 workflow control buttons inside the controls frame.
 
+        Args:
+            parent: Container frame for the buttons.
+        """
         self._btn_launch = ttk.Button(
-            div_buttons, text="Lancer le scraping", width=20, command=self._notify_launch
+            parent, text="Lancer le scraping", width=20, command=self._notify_launch
         )
         self._btn_launch.pack(side=tk.TOP, padx=5, pady=(0, 5))
 
         self._btn_cancel = ttk.Button(
-            div_buttons, text="Annuler (kill)", command=self._notify_cancel, width=20, state=tk.DISABLED
+            parent, text="Annuler (kill)", command=self._notify_cancel, width=20, state=tk.DISABLED
         )
         self._btn_cancel.pack(side=tk.TOP, padx=5, pady=(0, 5))
 
         self._btn_pause = ttk.Button(
-            div_buttons, text="Mettre en pause", command=self._notify_pause, width=20, state=tk.DISABLED
+            parent, text="Mettre en pause", command=self._notify_pause, width=20, state=tk.DISABLED
         )
         self._btn_pause.pack(side=tk.TOP, padx=5, pady=(0, 5))
 
         self._btn_resume = ttk.Button(
-            div_buttons, text="Reprendre", command=self._notify_resume, width=20, state=tk.DISABLED
+            parent, text="Reprendre", command=self._notify_resume, width=20, state=tk.DISABLED
         )
         self._btn_resume.pack(side=tk.TOP, padx=5)
 
@@ -339,7 +375,7 @@ class ScrapingView(ttk.Frame):
 
         # Treeview with vertical scrollbar.
         columns = ("date", "step_started", "duration", "success", "msg_step_ended")
-        self._tree = ttk.Treeview(frame, columns=columns, show="headings", height=8)
+        self._tree = ttk.Treeview(frame, columns=columns, show="headings")
 
         for col, (title, width, anchor, stretch) in C_VIEW_SCRAPING_HEADINGS.items():
             self._tree.heading(col, text=title)
@@ -427,14 +463,6 @@ class ScrapingView(ttk.Frame):
         """
         self._on_profile_new_cb = callback
 
-    def set_on_profile_save(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user clicks Sauvegarder profil.
-
-        Args:
-            callback: Zero-argument callable that persists the current form.
-        """
-        self._on_profile_save_cb = callback
-
     def set_on_form_changed(self, callback: Callable[[], None]) -> None:
         """Register the callback fired when the user modifies the launch profile form.
 
@@ -451,6 +479,30 @@ class ScrapingView(ttk.Frame):
         """
         self._on_profile_delete_cb = callback
 
+    def set_on_profile_rename(self, callback: Callable[[str, str], None]) -> None:
+        """Register the callback fired when the user renames a profile.
+
+        Args:
+            callback: Callable receiving (profile_id, new_name).
+        """
+        self._on_profile_rename_cb = callback
+
+    def set_on_manual_urls_confirmed(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user confirms manual URLs.
+
+        Args:
+            callback: Callable receiving the raw multiline text entered by the user.
+        """
+        self._on_manual_urls_confirmed_cb = callback
+
+    def set_on_open_export_folder(self, callback: Callable[[], None]) -> None:
+        """Register the callback fired when the user clicks 'Ouvrir dossier'.
+
+        Args:
+            callback: Zero-argument callable that creates the folder and opens it.
+        """
+        self._on_open_export_folder_cb = callback
+
     # ------------------------------------------------------------------
     # Public data feed (called by the presenter)
     # ------------------------------------------------------------------
@@ -458,18 +510,33 @@ class ScrapingView(ttk.Frame):
     def render_providers_list(self, providers: list[dict[str, Any]]) -> None:
         """Populate the provider combobox with the given provider rows.
 
+        If the previously selected provider is absent from the refreshed list,
+        the selection is cleared and the profile management frame and the launch
+        button are grayed out until the user picks a new provider.
+
         Args:
             providers: List of dicts with keys ``id_file``, ``provider_name``,
                 ``url``, ``version``, ``modified_date``.
         """
+        # Capture current selection before rebuilding the mapping.
+        current_display = self._cmb_provider.get()
+
         self._provider_id_by_display.clear()
         values = []
         for p in providers:
-            display = f"{p['provider_name']}  —  {p['url']}  —  v{p['version']}  —  {p['modified_date']}"
+            display = f"{p['provider_name']}  —  {p['url']}  —  v{p['version']}"
             self._provider_id_by_display[display] = p["id_file"]
             values.append(display)
 
         self._cmb_provider["values"] = values
+
+        # Restore the selection when it still exists; otherwise lock dependent sections.
+        if current_display and current_display in self._provider_id_by_display:
+            self._cmb_provider.set(current_display)
+        else:
+            self._cmb_provider.set("")
+            self._apply_state_recursive(self._frame_profile_management, tk.DISABLED)
+            self._btn_launch.config(state=tk.DISABLED)
 
     def set_selected_provider(self, id_file: str) -> None:
         """Highlight the combobox entry matching id_file.
@@ -500,7 +567,7 @@ class ScrapingView(ttk.Frame):
         # Gray out the launch profile section when no profiles exist.
         if not profiles:
             self.set_launch_profile_enabled(False)
-            self.set_save_profile_button_state(False)
+            self.set_rename_profile_button_state(False)
 
     def get_selected_profile_id(self) -> str | None:
         """Return the profile_id of the highlighted Listbox entry.
@@ -568,13 +635,22 @@ class ScrapingView(ttk.Frame):
         state = tk.NORMAL if enabled else tk.DISABLED
         self._apply_state_recursive(self._frame_launch_profile, state)
 
-    def set_save_profile_button_state(self, enabled: bool) -> None:
-        """Enable or disable the 'Sauvegarder profil' button.
+    def set_rename_profile_button_state(self, enabled: bool) -> None:
+        """Enable or disable the 'Renommer profil' button.
 
         Args:
-            enabled: True when the form has unsaved changes.
+            enabled: True when a profile is selected.
         """
-        self._btn_save_profile.config(state=tk.NORMAL if enabled else tk.DISABLED)
+        self._btn_rename_profile.config(state=tk.NORMAL if enabled else tk.DISABLED)
+
+    def set_profile_modified_date(self, date_str: str | None) -> None:
+        """Update the last-modification date label next to 'Supprimer profil'.
+
+        Args:
+            date_str: ISO datetime string from the provider file, or None.
+        """
+        text = C_SCRAPING_SAVED_DATE_FMT.format(date=date_str) if date_str else C_SCRAPING_SAVED_DATE_EMPTY
+        self._lbl_modified_date.config(text=text)
 
     # ------------------------------------------------------------------
     # Public getters
@@ -620,7 +696,7 @@ class ScrapingView(ttk.Frame):
         self._var_prog_tabs.set("—")
         self._var_prog_step.set("—")
         self._var_prog_last_result.set("—")
-        self._var_prog_status.set("inactif")
+        self._var_prog_status.set(C_SCRAPING_STATUS_INACTIVE)
         self._var_prog_elapsed.set("—")
         self._var_prog_stats.set("—")
 
@@ -691,7 +767,7 @@ class ScrapingView(ttk.Frame):
         current_step: str,
         last_result: str,
         status: str,
-        stats: dict[str, int],
+        stats_text: str,
     ) -> None:
         """Push live progress values to the progression frame.
 
@@ -703,12 +779,11 @@ class ScrapingView(ttk.Frame):
             current_step: Label of the step currently executing.
             last_result: Short result string from the last completed step.
             status: Workflow status label (e.g. ``"en cours"``, ``"terminé"``).
-            stats: Dict with int values for ``success``, ``errors``,
-                ``clicks``, and ``urls``.
+            stats_text: Pre-formatted statistics string built by the presenter.
         """
         self.after(
             0,
-            lambda: self._apply_progress(url, tabs, current_step, last_result, status, stats),
+            lambda: self._apply_progress(url, tabs, current_step, last_result, status, stats_text),
         )
 
     def _apply_progress(
@@ -718,7 +793,7 @@ class ScrapingView(ttk.Frame):
         current_step: str,
         last_result: str,
         status: str,
-        stats: dict[str, int],
+        stats_text: str,
     ) -> None:
         """Update progression StringVars on the main thread.
 
@@ -728,21 +803,13 @@ class ScrapingView(ttk.Frame):
             current_step: Current step label.
             last_result: Last step result string.
             status: Workflow status string.
-            stats: Counters dict (success, errors, clicks, urls).
+            stats_text: Pre-formatted statistics string.
         """
         self._var_prog_url.set(url or "—")
         self._var_prog_tabs.set(str(tabs) if tabs else "—")
         self._var_prog_step.set(current_step or "—")
         self._var_prog_last_result.set(last_result or "—")
         self._var_prog_status.set(status or "—")
-
-        # Format the statistics line.
-        stats_text = (
-            f"Succès : {stats.get('success', 0)}  |  "
-            f"Erreurs : {stats.get('errors', 0)}  |  "
-            f"Clics : {stats.get('clicks', 0)}  |  "
-            f"URLs : {stats.get('urls', 0)}"
-        )
         self._var_prog_stats.set(stats_text)
 
     def start_elapsed_timer(self, started_at: datetime) -> None:
@@ -811,7 +878,12 @@ class ScrapingView(ttk.Frame):
             step_started: Step type label.
         """
         # TODO PCO : ordre des colonnes pas explicite
-        values = (date, step_started, "en cours", "...", "...")
+        values = (
+            date, step_started,
+            C_SCRAPING_JOURNAL_PENDING_STATUS,
+            C_SCRAPING_JOURNAL_PENDING_VALUE,
+            C_SCRAPING_JOURNAL_PENDING_VALUE,
+        )
         self._tree.insert("", tk.END, iid=item_id, values=values)
 
         # Auto-scroll so the newest row is always visible.
@@ -852,7 +924,7 @@ class ScrapingView(ttk.Frame):
         if not current:
             return
 
-        result_label = "OK" if success else "ERREUR"
+        result_label = C_SCRAPING_JOURNAL_RESULT_OK if success else C_SCRAPING_JOURNAL_RESULT_ERROR
         # Preserve date (col 0) and step_started (col 1); replace cols 2-4.
         # TODO PCO : ordre des colonnes pas explicite
         updated = (current[0], current[1], f"{duration_s:.3f}", result_label, msg_step_ended)
@@ -863,28 +935,20 @@ class ScrapingView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _notify_launch(self) -> None:
-        """Fire the on_launch callback when the Lancer button is clicked.
-
-        When no URL source has been selected, a confirmation dialog is shown.
-        The launch is aborted if the user declines.
-        """
-        if not self._url_source_type and not self._confirm_launch_without_source():
-            return
+        """Fire the on_launch callback when the Lancer button is clicked."""
         if self._on_launch:
             self._on_launch()
 
     @staticmethod
-    def _confirm_launch_without_source() -> bool:
-        """Show a confirmation dialog when no URL source is selected.
+    def ask_confirm_launch_without_source() -> bool:
+        """Show a confirmation dialog when no URL source has been selected.
 
         Returns:
             True when the user accepts to continue despite the missing source.
         """
         return messagebox.askokcancel(
-            "Aucune source d'URLs",
-            "Aucune source d'URLs n'est selectionnee.\n\n"
-            "Les etapes OPEN_URL en mode '<<URL>>' seront en erreur.\n\n"
-            "Souhaitez-vous continuer quand meme ?",
+            C_SCRAPING_NO_URL_SOURCE_TITLE,
+            C_SCRAPING_NO_URL_SOURCE_MSG,
         )
 
     def _notify_cancel(self) -> None:
@@ -938,16 +1002,22 @@ class ScrapingView(ttk.Frame):
         if name and self._on_profile_new_cb:
             self._on_profile_new_cb(name.strip())
 
-    def _notify_profile_save(self) -> None:
-        """Fire on_profile_save to persist the current form values."""
-        if self._on_profile_save_cb:
-            self._on_profile_save_cb()
-
     def _notify_profile_delete(self) -> None:
         """Fire on_profile_delete with the currently selected profile_id."""
         profile_id = self.get_selected_profile_id()
         if profile_id and self._on_profile_delete_cb:
             self._on_profile_delete_cb(profile_id)
+
+    def _notify_profile_rename(self) -> None:
+        """Ask the user for a new name then fire on_profile_rename with it."""
+        profile_id = self.get_selected_profile_id()
+        if not profile_id or not self._on_profile_rename_cb:
+            return
+
+        # Open a dialog pre-populated with nothing; user types the new name.
+        new_name = simpledialog.askstring("Renommer profil", "Nouveau nom du profil :", parent=self)
+        if new_name and new_name.strip():
+            self._on_profile_rename_cb(profile_id, new_name.strip())
 
     def _on_export_folder_var_changed(self, *_: str) -> None:
         """Fired by the StringVar trace when the export folder Entry content changes.
@@ -1012,15 +1082,13 @@ class ScrapingView(ttk.Frame):
             text.insert(tk.END, "\n".join(self._url_source_value))
 
         def _on_ok() -> None:
+            # Pass raw text to the presenter; it handles parsing and filtering.
             raw = text.get("1.0", tk.END)
-            urls = [line.strip() for line in raw.splitlines() if line.strip()]
-            self._url_source_type = _URL_SOURCE_MANUAL
-            self._url_source_value = urls
             popup.destroy()
-            self._notify_form_changed()
+            if self._on_manual_urls_confirmed_cb:
+                self._on_manual_urls_confirmed_cb(raw)
 
         def _on_cancel() -> None:
-            # Revert radio button to the previous selection.
             self._var_url_source.set(self._url_source_type)
             popup.destroy()
 
@@ -1066,11 +1134,9 @@ class ScrapingView(ttk.Frame):
             self._notify_form_changed()
 
     def _open_export_folder(self) -> None:
-        """Create the export folder if absent, then reveal it in the file explorer."""
-        # Ensure the folder exists before trying to open it.
-        path = Path(self._export_folder)
-        path.mkdir(parents=True, exist_ok=True)
-        open_folder(path)
+        """Notify the presenter to create the export folder and open it in the explorer."""
+        if self._on_open_export_folder_cb:
+            self._on_open_export_folder_cb()
 
     # ------------------------------------------------------------------
     # Journal export
