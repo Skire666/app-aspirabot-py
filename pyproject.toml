@@ -141,7 +141,7 @@ ignore = [
 # Alert if cyclomatic complexity exceeds this threshold.
 # 10 is the widely accepted standard (McCabe's own recommendation).
 # 1-5: simple | 6-10: acceptable | 11-15: refactor | 15+: high bug risk
-max-complexity = 9
+max-complexity = 8
 
 [tool.ruff.lint.pydocstyle]
 
@@ -151,10 +151,10 @@ convention = "google"
 
 [tool.ruff.lint.pylint]
 
-# for PLR -> refactoring (recommanded : 6 / 12 / 50 / 20)
+# for PLR -> refactoring (recommanded : 6 / 12 / 50 / 25)
 max-args = 10
-max-branches = 14
-max-statements = 55
+max-branches = 12
+max-statements = 50
 max-public-methods = 25
 
 [tool.ruff.lint.per-file-ignores]
