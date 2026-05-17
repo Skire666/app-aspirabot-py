@@ -97,6 +97,10 @@ class ScrapingService:
         self._clicks_count: int = 0
         self._urls_opened_count: int = 0
 
+        # Emergency stop configuration — set before each run.
+        self._emergency_stop_threshold: int = 0
+        self._on_emergency_stop: Callable[[], None] | None = None
+
         self._started_at: datetime | None = None
 
         # Run-scoped callbacks.
@@ -119,6 +123,8 @@ class ScrapingService:
         on_step_start: Callable[[StepScrapingModel], None] | None = None,
         on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None,
         on_init_step: Callable[[str], None] | None = None,
+        emergency_stop_threshold: int = 0,
+        on_emergency_stop: Callable[[], None] | None = None,
     ) -> ScrapingReportModel:
         """Execute all steps of a provider workflow sequentially.
 
@@ -137,6 +143,10 @@ class ScrapingService:
                 (step, success, message, elapsed_s).
             on_init_step: Optional callback fired with a status string during
                 browser initialisation (before any workflow step runs).
+            emergency_stop_threshold: Pause the run when failed steps reach this
+                count. Disabled when set to 0.
+            on_emergency_stop: Optional callback fired (from the worker thread)
+                when the emergency stop is triggered.
 
         Returns:
             A ScrapingReportModel summarising the completed run.
@@ -147,6 +157,8 @@ class ScrapingService:
         self._context.on_user_wait = on_user_wait
         self._on_step_start = on_step_start
         self._on_step_done = on_step_done
+        self._emergency_stop_threshold = emergency_stop_threshold
+        self._on_emergency_stop = on_emergency_stop
         self._started_at = datetime.now()
 
         # Build and attach the URL source provider when requested.
@@ -205,18 +217,22 @@ class ScrapingService:
             return url, tabs
 
     @property
-    def current_stats(self) -> dict[str, int]:
+    def current_stats(self) -> ScrapingReportModel:
         """Running counters for the current (or most recent) workflow run.
 
         Returns:
-            Dict with keys ``success``, ``errors``, ``clicks``, ``urls``.
+            A ``ScrapingReportModel`` instance.
         """
-        return {
-            "success": self._steps_success_count,
-            "errors": self._steps_failed_count,
-            "clicks": self._clicks_count,
-            "urls": self._urls_opened_count,
-        }
+        return ScrapingReportModel(
+            started_at=self._started_at,
+            finished_at=None,
+            steps_total=len(self._context.step_id_by_index),
+            steps_success=self._steps_success_count,
+            steps_failed=self._steps_failed_count,
+            clicks_performed=self._clicks_count,
+            urls_opened=self._urls_opened_count,
+            cancelled=False,
+        )
 
     # ------------------------------------------------------------------
     # Browser lifecycle
@@ -310,6 +326,8 @@ class ScrapingService:
             i = self._run_one_step(steps[i], i)
             if self._context.end_process:
                 break
+            # Pause when the failure quota reaches the configured threshold.
+            self._check_emergency_stop()
 
         return self._steps_failed_count
 
@@ -403,6 +421,25 @@ class ScrapingService:
         next_index = self._resolve_jump_index(self._context.pending_jump, current_index)
         self._context.pending_jump = None
         return next_index
+
+    def _check_emergency_stop(self) -> None:
+        """Pause the workflow when the failure count reaches the emergency threshold.
+
+        Clears the pause_event to block the next step and fires the optional
+        callback so the UI can reflect the paused state.
+
+        Returns:
+            None.
+        """
+        if self._emergency_stop_threshold <= 0:
+            return
+        if self._steps_failed_count < self._emergency_stop_threshold:
+            return
+
+        # Threshold reached — block execution at the next iteration.
+        self._context.pause_event.clear()
+        if callable(self._on_emergency_stop):
+            self._on_emergency_stop()
 
     def _resolve_jump_index(self, pending_jump: str | int, current_index: int) -> int:
         """Resolve a pending jump target into a valid workflow index.

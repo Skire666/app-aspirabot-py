@@ -33,7 +33,7 @@ from views.steps._constants import (
 # Constants
 # ---------------------------------------------------------------------------
 
-C_INPUT_DEFAULT_WAIT_STATE = "load"
+C_INPUT_DEFAULT_WAIT_STATE = C_CHOICES_WAIT_PAGE_STATE[-1]
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
@@ -125,9 +125,9 @@ class RefreshPageFormDef(IStepFormDef):
             side=tk.LEFT, padx=(0, 5)
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
-        ttk.Combobox(
-            line2, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
-        ).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Combobox(line2, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
         widgets[C_KEY_TIMEOUT_DURATION] = td_var
         widgets[C_KEY_TIMEOUT_UNIT] = tu_var
 
@@ -196,9 +196,7 @@ class RefreshPageFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        mode_clear_cache = (
-            "Vide le cache (Ctrl+F5)" if model.params.get(C_KEY_CLEAR_CACHE) else "Garde le cache (F5)"
-        )
+        mode_clear_cache = "Vide le cache (Ctrl+F5)" if model.params.get(C_KEY_CLEAR_CACHE) else "Garde le cache (F5)"
         timeout = model.params.get(C_KEY_TIMEOUT_DURATION, 0)
         unit_time = model.params.get(C_KEY_TIMEOUT_UNIT, "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)

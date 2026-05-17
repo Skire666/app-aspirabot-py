@@ -35,7 +35,7 @@ from views.steps._constants import (
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
-C_INPUT_DEFAULT_WAIT_STATE = "load"
+C_INPUT_DEFAULT_WAIT_STATE = C_CHOICES_WAIT_PAGE_STATE[-1]
 
 C_KEY_WAIT_STATE = "wait_state"
 C_KEY_TIMEOUT_DURATION = "timeout_duration"
@@ -111,9 +111,9 @@ class WaitPageStateFormDef(IStepFormDef):
             side=tk.LEFT, padx=(0, 5)
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
-        ttk.Combobox(
-            line2, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
-        ).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Combobox(line2, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
         widgets[C_KEY_TIMEOUT_DURATION] = td_var
         widgets[C_KEY_TIMEOUT_UNIT] = tu_var
 

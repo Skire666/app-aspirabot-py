@@ -85,7 +85,7 @@ target-version = "py314"
 
 # Maximum number of characters per line.
 # 88 is the default value used by Black, now a de facto standard.
-line-length = 115
+line-length = 120
 
 indent-width = 4
 

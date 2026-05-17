@@ -27,8 +27,8 @@ from shared.resources_icons_util import (
 C_VIEW_SIDEBAR_LEFT_WIDTH = 80
 
 # Scraping panel — status labels
-C_SCRAPING_STATUS_INACTIVE = "inactif"
-C_SCRAPING_JOURNAL_PENDING_STATUS = "en cours"
+C_SCRAPING_STATUS_INACTIVE = "Est inactif"
+C_SCRAPING_JOURNAL_PENDING_STATUS = "Scraping en cours"
 C_SCRAPING_JOURNAL_PENDING_VALUE = "..."
 C_SCRAPING_JOURNAL_RESULT_OK = "OK"
 C_SCRAPING_JOURNAL_RESULT_ERROR = "ERREUR"
@@ -37,6 +37,11 @@ C_SCRAPING_JOURNAL_RESULT_ERROR = "ERREUR"
 C_SCRAPING_SAVED_DATE_FMT = "Sauvegardé le : {date}"
 C_SCRAPING_SAVED_DATE_EMPTY = "Sauvegardé le : --"
 
+# Scraping panel — emergency stop threshold validation warning
+C_SCRAPING_EMERGENCY_STOP_INVALID_MSG = (
+    "La condition d'arrêt d'urgence doit être un nombre entier entre 1 et 9 999 999."
+)
+
 # Scraping panel — no URL source confirmation dialog
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
 C_SCRAPING_NO_URL_SOURCE_MSG = (
@@ -44,9 +49,6 @@ C_SCRAPING_NO_URL_SOURCE_MSG = (
     "Les etapes OPEN_URL en mode '<<URL>>' seront en erreur.\n\n"
     "Souhaitez-vous continuer quand meme ?"
 )
-
-# Scraping panel — stats progress line template
-C_SCRAPING_STATS_FMT = "Succès : {success}  |  Erreurs : {errors}  |  Clics : {clicks}  |  URLs : {urls}"
 
 # Scraping journal Treeview column configurations: (title, width, anchor, stretch)
 C_VIEW_SCRAPING_HEADINGS = {

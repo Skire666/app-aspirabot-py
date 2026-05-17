@@ -31,7 +31,7 @@ from shared.datetime_util import (
     get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
-from shared.i18n_fra import C_SCRAPING_STATS_FMT
+from shared.i18n_fra import C_SCRAPING_EMERGENCY_STOP_INVALID_MSG
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView
 
@@ -105,6 +105,7 @@ class ScrapingPresenter:
 
         # Captured at launch time (main thread) to avoid cross-thread Tkinter access.
         self._auto_export_journal: bool = False
+        self._emergency_stop_threshold: int = 0
 
         # Tracks whether the launch-profile form has unsaved changes.
         self._is_profile_dirty: bool = False
@@ -259,6 +260,7 @@ class ScrapingPresenter:
         # Restore form values, then reset dirty state and enable the section.
         self._view.set_export_folder(profile.export_folder)
         self._view.set_url_source(profile.url_source_type, profile.url_source_value)
+        self._view.set_emergency_stop_threshold(profile.emergency_stop_threshold)
         self._view.set_launch_profile_enabled(True)
         self._is_profile_dirty = False
 
@@ -426,6 +428,11 @@ class ScrapingPresenter:
         if raw_value is not None:
             profile.url_source_value = raw_value
 
+        # Persist validated threshold; keep existing value when the field is invalid.
+        threshold = self._view.get_emergency_stop_threshold()
+        if threshold is not None:
+            profile.emergency_stop_threshold = threshold
+
         profile.increment_launch_count()
 
     def _persist_provider_before_launch(self) -> None:
@@ -464,6 +471,11 @@ class ScrapingPresenter:
         if not url_source.get("type") and not self._view.ask_confirm_launch_without_source():
             return
 
+        # Abort launch when the emergency stop threshold is empty or out of range.
+        if self._view.get_emergency_stop_threshold() is None:
+            self._view.show_warning(C_SCRAPING_EMERGENCY_STOP_INVALID_MSG)
+            return
+
         # Reset signals and journal counter from any previous run.
         self._pause_event.set()
         self._cancel_event.clear()
@@ -489,6 +501,7 @@ class ScrapingPresenter:
 
         export_folder = self._view.get_export_folder()
         self._auto_export_journal = self._view.get_auto_export_journal()
+        self._emergency_stop_threshold = self._view.get_emergency_stop_threshold() or 0
         url_source = self._view.get_url_source()
         source_type: str = url_source["type"]
         raw_value = url_source["value"]
@@ -536,6 +549,15 @@ class ScrapingPresenter:
 
         Transitions the view to the paused state so the user sees the
         Reprendre button and knows manual action is expected.
+        """
+        # Called from the background thread; set_paused_state is thread-safe.
+        self._view.set_paused_state(True)
+
+    def _on_emergency_stop(self) -> None:
+        """Called by the service when the failure quota exceeds the threshold.
+
+        Transitions the view to the paused state from the background thread so
+        the user can review errors and choose to resume or cancel.
         """
         # Called from the background thread; set_paused_state is thread-safe.
         self._view.set_paused_state(True)
@@ -594,9 +616,8 @@ class ScrapingPresenter:
             url=url,
             tabs=tabs,
             current_step=step.step_type.value,
-            last_result=last_result,
-            status="en cours",
-            stats_text=C_SCRAPING_STATS_FMT.format(**self._service_scraping.current_stats),
+            status="Scraping en cours",
+            stats_text=self._service_scraping.current_stats,
         )
 
     def _on_init_step(self, message: str) -> None:
@@ -609,9 +630,8 @@ class ScrapingPresenter:
             url="",
             tabs=0,
             current_step=message,
-            last_result="",
-            status="en cours",
-            stats_text=C_SCRAPING_STATS_FMT.format(success=0, errors=0, clicks=0, urls=0),
+            status="Scraping en cours",
+            stats_text=None,
         )
 
     # ------------------------------------------------------------------
@@ -646,6 +666,8 @@ class ScrapingPresenter:
                 self._on_step_start,
                 self._on_step_done,
                 self._on_init_step,
+                self._emergency_stop_threshold,
+                self._on_emergency_stop,
             )
         except (ValueError, RuntimeError, OSError) as exc:
             self._logging.exception("Workflow execution failed: %s", exc)
@@ -665,29 +687,21 @@ class ScrapingPresenter:
 
         # Push final status and statistics to the progression frame.
         if report is not None:
-            status = "annulé" if report.cancelled else "terminé"
-            stats_text = C_SCRAPING_STATS_FMT.format(
-                success=report.steps_success,
-                errors=report.steps_failed,
-                clicks=report.clicks_performed,
-                urls=report.urls_opened,
-            )
+            status = "Scraping annulé" if report.cancelled else "Scraping terminé"
             self._view.update_progress(
                 url="",
                 tabs=0,
                 current_step="—",
-                last_result="Workflow terminé.",
                 status=status,
-                stats_text=stats_text,
+                stats_text=report,
             )
         else:
             self._view.update_progress(
                 url="",
                 tabs=0,
                 current_step="—",
-                last_result="Erreur critique — voir les logs.",
                 status="erreur",
-                stats_text=C_SCRAPING_STATS_FMT.format(success=0, errors=0, clicks=0, urls=0),
+                stats_text=None,
             )
 
         # Schedule auto-export on the main thread (Treeview access is not thread-safe).

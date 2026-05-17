@@ -50,12 +50,10 @@ class OpenUrlExecutor(IStepExecutor):
         # obligé de le mettre avant de goto
         # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
         context.last_url_opened = target_url
-
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
-        if timeout_ms is not None:
-            page.goto(target_url, wait_until=p.wait_state, timeout=timeout_ms)
-        else:
-            page.goto(target_url, wait_until=p.wait_state)
+
+        page.goto(target_url, wait_until="commit")
+        page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
 
         progress_txt = context.url_source.display_progress_tuple_text()
         context.last_message_step = f"{progress_txt} - Page ouverte : {target_url}"

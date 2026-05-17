@@ -28,6 +28,8 @@ from views.scraping.provider_selection_panel import ProviderSelectionPanel
 from views.scraping.scraping_journal_panel import ScrapingJournalPanel
 from views.scraping.workflow_controls_panel import WorkflowControlsPanel
 
+from __src__.models.scraping_report_model import ScrapingReportModel
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -136,9 +138,8 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         url: str,
         tabs: int,
         current_step: str,
-        last_result: str,
         status: str,
-        stats_text: str,
+        stats_text: ScrapingReportModel | None,
     ) -> None:
         """Push live progress values to the progression panel.
 
@@ -148,11 +149,10 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
             url: Current browser page URL.
             tabs: Number of open browser tabs.
             current_step: Label of the step currently executing.
-            last_result: Short result string from the last completed step.
             status: Workflow status label.
             stats_text: Pre-formatted statistics string built by the presenter.
         """
-        self._workflow_panel.update_progress(url, tabs, current_step, last_result, status, stats_text)
+        self._workflow_panel.update_progress(url, tabs, current_step, status, stats_text)
 
     def start_elapsed_timer(self, started_at: datetime) -> None:
         """Start the elapsed-time ticker in the progression panel.
@@ -370,6 +370,22 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
             bool: True when the journal should be exported automatically.
         """
         return self._launch_panel.get_auto_export_journal()
+
+    def get_emergency_stop_threshold(self) -> int | None:
+        """Return the emergency stop threshold from the launch profile panel.
+
+        Returns:
+            int | None: A valid threshold between 1 and 9999999, or None if invalid.
+        """
+        return self._launch_panel.get_emergency_stop_threshold()
+
+    def set_emergency_stop_threshold(self, value: int) -> None:
+        """Set the emergency stop threshold in the launch profile panel.
+
+        Args:
+            value: Threshold to display (must be between 1 and 9999999).
+        """
+        self._launch_panel.set_emergency_stop_threshold(value)
 
     # ---------------------------------------------------------------
     # Journal callbacks and entries — delegates to ScrapingJournalPanel

@@ -50,6 +50,7 @@ class LaunchProfileModel:
         export_folder: Absolute path of the export destination folder.
         url_source_type: One of "manual", "folder", "csv", or "" when unset.
         url_source_value: List of URLs for "manual"; path string for others.
+        emergency_stop_threshold: Pause the run when failed steps reach this count.
         launch_count: Number of times the profile was launched.
         last_used_date: Last launch timestamp in YYYY-MM-DD HH:MM:SS format.
         modified_date: Last manual-save timestamp in YYYY-MM-DD HH:MM:SS format.
@@ -65,6 +66,7 @@ class LaunchProfileModel:
     export_folder: str
     url_source_type: str
     url_source_value: list[str] | str | None
+    emergency_stop_threshold: int
     launch_count: int
     last_used_date: str | None
     modified_date: str | None
@@ -93,6 +95,7 @@ class LaunchProfileModel:
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
             url_source_value=None,
+            emergency_stop_threshold=100,
             launch_count=0,
             last_used_date=None,
             modified_date=None,
@@ -122,6 +125,7 @@ class LaunchProfileModel:
             export_folder=data.get("export_folder", _C_DEFAULT_EXPORT_FOLDER),
             url_source_type=data.get("url_source_type", ""),
             url_source_value=data.get("url_source_value"),
+            emergency_stop_threshold=int(data.get("emergency_stop_threshold", 100)),
             launch_count=int(data.get("launch_count", 0)),
             last_used_date=data.get("last_used_date"),
             modified_date=data.get("modified_date"),
@@ -147,6 +151,7 @@ class LaunchProfileModel:
             "export_folder": self.export_folder,
             "url_source_type": self.url_source_type,
             "url_source_value": self.url_source_value,
+            "emergency_stop_threshold": self.emergency_stop_threshold,
             "launch_count": self.launch_count,
             "last_used_date": self.last_used_date,
             "modified_date": self.modified_date,

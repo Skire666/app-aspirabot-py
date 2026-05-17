@@ -24,6 +24,10 @@ _URL_SOURCE_MANUAL = "manual"
 _URL_SOURCE_FOLDER = "folder"
 _URL_SOURCE_CSV = "csv"
 
+# Emergency stop threshold bounds.
+_C_EMERGENCY_STOP_MIN = 1
+_C_EMERGENCY_STOP_MAX = 9_999_999
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -79,7 +83,7 @@ class LaunchProfilePanel(ttk.Frame):
         self._build_widgets()
 
     def _build_widgets(self) -> None:
-        """Build and pack the three configuration rows."""
+        """Build and pack the four configuration rows."""
         self._frame = HorizontalLineFrame(self, text="Profil de lancement")
         self._frame.pack(side=tk.TOP, fill=tk.X)
 
@@ -89,8 +93,14 @@ class LaunchProfilePanel(ttk.Frame):
         # URL source radio row.
         self._build_url_source_row(self._frame)
 
+        # Source detail display row.
+        self._build_source_detail_row(self._frame)
+
         # Auto-export checkbox row.
         self._build_auto_export_row(self._frame)
+
+        # Emergency stop threshold row.
+        self._build_emergency_stop_row(self._frame)
 
     def _build_export_folder_row(self, parent: tk.Frame) -> None:
         """Build the export-folder selector row.
@@ -119,15 +129,15 @@ class LaunchProfilePanel(ttk.Frame):
             parent: Container frame to pack into.
         """
         row = ttk.Frame(parent)
-        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
+        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
 
-        ttk.Label(row, text="URLs à scraper :").pack(side=tk.LEFT, padx=(5, 8))
+        ttk.Label(row, text="Source des URLs :").pack(side=tk.LEFT, padx=(5))
 
         # StringVar tracks the active radio selection.
         self._var_url_source = tk.StringVar()
         self._var_url_source.set(None)
         radio_defs = [
-            ("Saisie manuelle", _URL_SOURCE_MANUAL),
+            ("Depuis une liste", _URL_SOURCE_MANUAL),
             ("Depuis un dossier", _URL_SOURCE_FOLDER),
             ("Depuis un fichier CSV", _URL_SOURCE_CSV),
         ]
@@ -138,7 +148,23 @@ class LaunchProfilePanel(ttk.Frame):
                 variable=self._var_url_source,
                 value=value,
                 command=lambda v=value: self._on_url_source_changed(v),
-            ).pack(side=tk.LEFT, padx=(0, 12))
+            ).pack(side=tk.LEFT, padx=(5), pady=(0, 5))
+
+    def _build_source_detail_row(self, parent: tk.Frame) -> None:
+        """Build the read-only source-detail row displayed below the radio buttons.
+
+        Args:
+            parent: Container frame to pack into.
+        """
+        row = ttk.Frame(parent)
+        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
+
+        ttk.Label(row, text="Détails source :").pack(side=tk.LEFT, padx=(5))
+
+        # Read-only entry reflecting the active source value.
+        self._var_source_detail = tk.StringVar()
+        self._detail_entry = ttk.Entry(row, textvariable=self._var_source_detail, state="readonly")
+        self._detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
     def _build_auto_export_row(self, parent: tk.Frame) -> None:
         """Build the auto-export journal checkbox row.
@@ -152,9 +178,31 @@ class LaunchProfilePanel(ttk.Frame):
         self._var_auto_export_journal = tk.BooleanVar(value=True)
         CanvasCheckbox(
             row,
-            text="Exporter le journal scraping automatiquement à la fin du processus",
+            text="Exporter journal scraping nt à la fin du processus",
             variable=self._var_auto_export_journal,
-        ).pack(side=tk.LEFT, padx=5, pady=(2, 0))
+        ).pack(side=tk.LEFT, padx=5, pady=(5))
+
+    def _build_emergency_stop_row(self, parent: tk.Frame) -> None:
+        """Build the emergency stop threshold label and Spinbox row.
+
+        Args:
+            parent: Container frame to pack into.
+        """
+        row = ttk.Frame(parent)
+        row.pack(side=tk.TOP, fill=tk.X, pady=(2, 4))
+
+        ttk.Label(row, text="Mettre en pause automatiquement après X erreurs :").pack(side=tk.LEFT, padx=5)
+
+        # StringVar allows trace-based change detection and text validation.
+        self._var_emergency_stop = tk.StringVar(value="10")
+        self._var_emergency_stop.trace_add("write", self._on_emergency_stop_threshold_changed)
+        ttk.Spinbox(
+            row,
+            from_=_C_EMERGENCY_STOP_MIN,
+            to=_C_EMERGENCY_STOP_MAX,
+            textvariable=self._var_emergency_stop,
+            width=10,
+        ).pack(side=tk.LEFT, padx=(0, 5))
 
     # ------------------------------------------------------------------
     # Callback registration
@@ -209,6 +257,7 @@ class LaunchProfilePanel(ttk.Frame):
         self._url_source_type = source_type
         self._url_source_value = source_value
         self._var_url_source.set(source_type if source_type else "")
+        self._refresh_source_detail()
 
     def set_enabled(self, enabled: bool) -> None:
         """Enable or disable all widgets in the panel.
@@ -217,6 +266,8 @@ class LaunchProfilePanel(ttk.Frame):
             enabled: True to make the panel interactive; False to gray it out.
         """
         _apply_state_recursive(self._frame, tk.NORMAL if enabled else tk.DISABLED)
+        # Keep the detail entry always read-only when the panel is enabled.
+        self._detail_entry.configure(state="readonly" if enabled else tk.DISABLED)
 
     # ------------------------------------------------------------------
     # Public getters
@@ -246,6 +297,33 @@ class LaunchProfilePanel(ttk.Frame):
             bool: True when the journal should be exported automatically.
         """
         return bool(self._var_auto_export_journal.get())
+
+    def get_emergency_stop_threshold(self) -> int | None:
+        """Return the emergency stop threshold, or None when the value is invalid.
+
+        Returns:
+            int | None: A valid threshold between 1 and 9999999, or None.
+        """
+        raw = self._var_emergency_stop.get().strip()
+        if not raw:
+            return None
+        try:
+            value = int(raw)
+        except ValueError:
+            return None
+        else:
+            return value if _C_EMERGENCY_STOP_MIN <= value <= _C_EMERGENCY_STOP_MAX else None
+
+    def set_emergency_stop_threshold(self, value: int) -> None:
+        """Set the emergency stop Spinbox to the given value without notifying.
+
+        Args:
+            value: Threshold to display (must be between 1 and 9999999).
+        """
+        # Suppress the form-changed notification during programmatic updates.
+        self._suppress_form_changed = True
+        self._var_emergency_stop.set(str(value))
+        self._suppress_form_changed = False
 
     # ------------------------------------------------------------------
     # URL-source and folder dialogs
@@ -312,6 +390,7 @@ class LaunchProfilePanel(ttk.Frame):
         if folder:
             self._url_source_type = _URL_SOURCE_FOLDER
             self._url_source_value = folder
+            self._refresh_source_detail()
             self._notify_form_changed()
         else:
             # Revert radio to the previous source type on cancel.
@@ -326,6 +405,7 @@ class LaunchProfilePanel(ttk.Frame):
         if path:
             self._url_source_type = _URL_SOURCE_CSV
             self._url_source_value = path
+            self._refresh_source_detail()
             self._notify_form_changed()
         else:
             # Revert radio to the previous source type on cancel.
@@ -351,6 +431,20 @@ class LaunchProfilePanel(ttk.Frame):
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _refresh_source_detail(self) -> None:
+        """Update the source-detail entry to reflect the current URL source state."""
+        if self._url_source_type == _URL_SOURCE_MANUAL:
+            # Show first URL from the list, or a placeholder when the list is empty.
+            urls = self._url_source_value if isinstance(self._url_source_value, list) else []
+            text = urls[0] if urls else "(aucune URL renseignée)"
+        elif self._url_source_type in {_URL_SOURCE_FOLDER, _URL_SOURCE_CSV}:
+            # Show the selected path, or a placeholder when none was chosen.
+            path = self._url_source_value if isinstance(self._url_source_value, str) else ""
+            text = path if path else "(aucun chemin renseigné)"
+        else:
+            text = ""
+        self._var_source_detail.set(text)
+
     def _on_export_folder_var_changed(self, *_: str) -> None:
         """Fired by the StringVar trace when the export folder Entry changes.
 
@@ -360,6 +454,16 @@ class LaunchProfilePanel(ttk.Frame):
         if self._suppress_form_changed:
             return
         self._export_folder = self._var_export_folder.get()
+        self._notify_form_changed()
+
+    def _on_emergency_stop_threshold_changed(self, *_: str) -> None:
+        """Fired by the StringVar trace when the emergency stop Spinbox changes.
+
+        Args:
+            *_: Tkinter trace arguments (name, index, mode) — unused.
+        """
+        if self._suppress_form_changed:
+            return
         self._notify_form_changed()
 
     def _notify_form_changed(self) -> None:

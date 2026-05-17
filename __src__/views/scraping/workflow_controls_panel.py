@@ -12,6 +12,16 @@ from tkinter import ttk
 from shared.i18n_fra import C_SCRAPING_STATUS_INACTIVE
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
+from __src__.models.scraping_report_model import ScrapingReportModel
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_BLINK_BLUE_A = "#C46F00"
+_BLINK_BLUE_B = "#0C5B9C"
+_BLINK_INTERVAL_MS = 600
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -43,6 +53,10 @@ class WorkflowControlsPanel(ttk.Frame):
 
         # Elapsed timer state.
         self._run_started_at: datetime | None = None
+
+        # Blink animation state for the Reprendre button.
+        self._blink_job_id: str | None = None
+        self._blink_phase: int = 0
         self._build_widgets()
 
     def _build_widgets(self) -> None:
@@ -72,8 +86,8 @@ class WorkflowControlsPanel(ttk.Frame):
 
         # Map each label to its StringVar for compact row construction.
         rows_def = [
-            ("Étape en cours :", self._var_prog_steps),
-            ("Onglets ouverts :", self._var_prog_tabs),
+            ("Processus :", self._var_prog_steps),
+            ("Onglets :", self._var_prog_tabs),
             ("Statistiques :", self._var_prog_stats),
         ]
         for label_text, var in rows_def:
@@ -86,22 +100,27 @@ class WorkflowControlsPanel(ttk.Frame):
             parent: Container frame for the buttons.
         """
         self._btn_launch = ttk.Button(parent, text="Lancer le scraping", width=20, command=self._notify_launch)
-        self._btn_launch.pack(side=tk.LEFT, padx=5, pady=(5, 0))
+        self._btn_launch.pack(side=tk.LEFT, padx=5)
 
         self._btn_cancel = ttk.Button(
             parent, text="Annuler (kill)", command=self._notify_cancel, width=20, state=tk.DISABLED
         )
-        self._btn_cancel.pack(side=tk.LEFT, padx=5, pady=(5, 0))
+        self._btn_cancel.pack(side=tk.LEFT, padx=5)
 
-        self._btn_resume = ttk.Button(
-            parent, text="Reprendre", command=self._notify_resume, width=20, state=tk.DISABLED
+        self._btn_resume = tk.Button(
+            parent,
+            text="Reprendre scraping",
+            command=self._notify_resume,
+            width=20,
+            state=tk.DISABLED,
+            relief=tk.RAISED,
         )
-        self._btn_resume.pack(side=tk.RIGHT, padx=5, pady=(5, 0))
+        self._btn_resume.pack(side=tk.RIGHT, padx=5)
 
         self._btn_pause = ttk.Button(
             parent, text="Mettre en pause", command=self._notify_pause, width=20, state=tk.DISABLED
         )
-        self._btn_pause.pack(side=tk.RIGHT, padx=5, pady=(5, 0))
+        self._btn_pause.pack(side=tk.RIGHT, padx=5)
 
     # ------------------------------------------------------------------
     # Callback registration
@@ -157,6 +176,7 @@ class WorkflowControlsPanel(ttk.Frame):
         self._btn_launch.config(state=tk.NORMAL)
         self._btn_cancel.config(state=tk.DISABLED)
         self._btn_pause.config(state=tk.DISABLED)
+        self._stop_resume_blink()
         self._btn_resume.config(state=tk.DISABLED)
 
     def set_launch_enabled(self, enabled: bool) -> None:
@@ -194,6 +214,7 @@ class WorkflowControlsPanel(ttk.Frame):
         self._btn_launch.config(state=launch_state)
         self._btn_cancel.config(state=cancel_state)
         self._btn_pause.config(state=pause_state)
+        self._stop_resume_blink()
         self._btn_resume.config(state=tk.DISABLED)
 
     def set_paused_state(self, paused: bool) -> None:
@@ -213,16 +234,19 @@ class WorkflowControlsPanel(ttk.Frame):
             paused: True to show paused state; False to restore running state.
         """
         self._btn_pause.config(state=tk.DISABLED if paused else tk.NORMAL)
-        self._btn_resume.config(state=tk.NORMAL if paused else tk.DISABLED)
+        if paused:
+            self._start_resume_blink()
+        else:
+            self._stop_resume_blink()
+            self._btn_resume.config(state=tk.DISABLED)
 
     def update_progress(
         self,
         url: str,
         tabs: int,
         current_step: str,
-        last_result: str,
         status: str,
-        stats_text: str,
+        stats_text: ScrapingReportModel | None,
     ) -> None:
         """Push live progress values to the progression rows.
 
@@ -232,20 +256,18 @@ class WorkflowControlsPanel(ttk.Frame):
             url: Current browser page URL.
             tabs: Number of open browser tabs.
             current_step: Label of the step currently executing.
-            last_result: Short result string from the last completed step.
             status: Workflow status label.
             stats_text: Pre-formatted statistics string built by the presenter.
         """
-        self.after(200, lambda: self._apply_progress(url, tabs, current_step, last_result, status, stats_text))
+        self.after(100, lambda: self._apply_progress(url, tabs, current_step, status, stats_text))
 
     def _apply_progress(
         self,
         url: str,
         tabs: int,
         current_step: str,
-        last_result: str,
         status: str,
-        stats_text: str,
+        stats: ScrapingReportModel | None,
     ) -> None:
         """Update progression StringVars on the main thread.
 
@@ -257,14 +279,17 @@ class WorkflowControlsPanel(ttk.Frame):
             status: Workflow status string.
             stats_text: Pre-formatted statistics string.
         """
-        steps_inprogress = f"{status or '—'} \t | \t {current_step or '—'} \t | \t Msg : {last_result or '—'}"
+        steps_inprogress = f"{status or '—'}    |     Type : {current_step or '—'}"
         self._var_prog_steps.set(steps_inprogress)
 
-        tabs_info = f"x{tabs!s} \t | \t Page[0] : {url or '—'}"
+        tabs_info = f"Ouverts : x{tabs:<3d}    |     Page[0] : {url or '—'}"
         self._var_prog_tabs.set(tabs_info)
 
-        start_str = self._run_started_at.strftime("%H:%M:%S")
-        self._var_prog_stats.set(f"{stats_text} \t | \t Démarré à {start_str}")
+        if stats:
+            txt1 = f"Démarré à {self._run_started_at.strftime('%H:%M:%S')}"
+            txt2 = f"    |     Succès : {stats.steps_success:<3d}    |     Erreurs : {stats.steps_failed:<3d}"
+            txt3 = f"    |     Clics : {stats.clicks_performed:<3d}    |     URL lues : {stats.urls_opened:<3d}"
+            self._var_prog_stats.set(txt1 + txt2 + txt3)
 
     # ------------------------------------------------------------------
     # Elapsed timer
@@ -279,6 +304,32 @@ class WorkflowControlsPanel(ttk.Frame):
             started_at: The datetime at which the workflow started.
         """
         self._run_started_at = started_at
+
+    # ------------------------------------------------------------------
+    # Blink animation
+    # ------------------------------------------------------------------
+
+    def _start_resume_blink(self) -> None:
+        self._stop_resume_blink()
+        self._blink_phase = 0
+        self._btn_resume.config(state=tk.NORMAL)
+        self._blink_resume()
+
+    def _blink_resume(self) -> None:
+        color = _BLINK_BLUE_A if self._blink_phase % 2 == 0 else _BLINK_BLUE_B
+        self._btn_resume.config(
+            bg=color, fg="white", activebackground=color, activeforeground="white", relief=tk.RAISED
+        )
+        self._blink_phase += 1
+        self._blink_job_id = self.after(_BLINK_INTERVAL_MS, self._blink_resume)
+
+    def _stop_resume_blink(self) -> None:
+        if self._blink_job_id is not None:
+            self.after_cancel(self._blink_job_id)
+            self._blink_job_id = None
+        self._btn_resume.config(
+            bg="SystemButtonFace", fg="SystemButtonText", activebackground="white", relief=tk.RAISED
+        )
 
     # ------------------------------------------------------------------
     # Internal notification helpers
@@ -318,8 +369,8 @@ class WorkflowControlsPanel(ttk.Frame):
             var: StringVar whose value is displayed on the right.
         """
         row = ttk.Frame(parent)
-        row.pack(side=tk.TOP, fill=tk.X, pady=1, padx=5)
-        ttk.Label(row, text=label_text, width=20, anchor=tk.W).pack(side=tk.LEFT)
+        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 5), padx=5)
+        ttk.Label(row, text=label_text, width=15, anchor=tk.W).pack(side=tk.LEFT)
         ttk.Label(row, textvariable=var, anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
 
