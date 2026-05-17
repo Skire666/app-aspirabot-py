@@ -4,6 +4,7 @@
 # Imports
 # ---------------------------------------------------------------------------
 
+import contextlib
 import tkinter as tk
 from collections.abc import Callable
 from datetime import datetime
@@ -13,13 +14,12 @@ from shared.i18n_fra import C_SCRAPING_STATUS_INACTIVE
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
 from __src__.models.scraping_report_model import ScrapingReportModel
+from __src__.shared.constants import C_COLOR_BLUE_HIGHLIGHT, C_COLOR_ORANGE_BLINKING
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
-_BLINK_BLUE_A = "#C46F00"
-_BLINK_BLUE_B = "#0C5B9C"
 _BLINK_INTERVAL_MS = 600
 
 # ---------------------------------------------------------------------------
@@ -107,13 +107,9 @@ class WorkflowControlsPanel(ttk.Frame):
         )
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
 
-        self._btn_resume = tk.Button(
-            parent,
-            text="Reprendre scraping",
-            command=self._notify_resume,
-            width=20,
-            state=tk.DISABLED,
-            relief=tk.RAISED,
+        self._setup_resume_styles()
+        self._btn_resume = ttk.Button(
+            parent, text="Reprendre scraping", command=self._notify_resume, width=20, state=tk.DISABLED
         )
         self._btn_resume.pack(side=tk.RIGHT, padx=5)
 
@@ -309,6 +305,37 @@ class WorkflowControlsPanel(ttk.Frame):
     # Blink animation
     # ------------------------------------------------------------------
 
+    def _setup_resume_styles(self) -> None:
+        """Register two colored ttk styles used to blink the Reprendre button.
+
+        Uses clam-theme elements so background color is respected on Windows.
+        """
+        s = ttk.Style(self)
+        for suffix, bg in (("A", C_COLOR_ORANGE_BLINKING), ("B", C_COLOR_BLUE_HIGHLIGHT)):
+            name = f"Resume{suffix}.TButton"  # ResumeA.TButton __OR__ ResumeB.TButton
+            for elem in ("border", "padding", "label"):
+                with contextlib.suppress(tk.TclError):
+                    s.element_create(f"Resume{suffix}.Button.{elem}", "from", "clam", f"Button.{elem}")
+            s.layout(
+                name,
+                [
+                    (
+                        f"Resume{suffix}.Button.border",
+                        {
+                            "sticky": "nswe",
+                            "children": [
+                                (
+                                    f"Resume{suffix}.Button.padding",
+                                    {"sticky": "nswe", "children": [(f"Resume{suffix}.Button.label", {"sticky": ""})]},
+                                )
+                            ],
+                        },
+                    )
+                ],
+            )
+            s.configure(name, background=bg, foreground="white", bordercolor=bg, darkcolor=bg, lightcolor=bg)
+            s.map(name, background=[("active", bg)], foreground=[("active", "white")])
+
     def _start_resume_blink(self) -> None:
         self._stop_resume_blink()
         self._blink_phase = 0
@@ -316,10 +343,8 @@ class WorkflowControlsPanel(ttk.Frame):
         self._blink_resume()
 
     def _blink_resume(self) -> None:
-        color = _BLINK_BLUE_A if self._blink_phase % 2 == 0 else _BLINK_BLUE_B
-        self._btn_resume.config(
-            bg=color, fg="white", activebackground=color, activeforeground="white", relief=tk.RAISED
-        )
+        style = "ResumeA.TButton" if self._blink_phase % 2 == 0 else "ResumeB.TButton"
+        self._btn_resume.config(style=style)
         self._blink_phase += 1
         self._blink_job_id = self.after(_BLINK_INTERVAL_MS, self._blink_resume)
 
@@ -327,9 +352,7 @@ class WorkflowControlsPanel(ttk.Frame):
         if self._blink_job_id is not None:
             self.after_cancel(self._blink_job_id)
             self._blink_job_id = None
-        self._btn_resume.config(
-            bg="SystemButtonFace", fg="SystemButtonText", activebackground="white", relief=tk.RAISED
-        )
+        self._btn_resume.config(style="TButton")
 
     # ------------------------------------------------------------------
     # Internal notification helpers

@@ -30,6 +30,8 @@ from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 from shared.step_registry import get_form
 
+from __src__.shared.constants import C_COLOR_BLUE_HIGHLIGHT
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -58,7 +60,7 @@ class StepItemRenderer:
     _C_BORDER_SEL: str = "#dbeafe"
     _C_FG_DEACTIVATE: str = "#6B6B6B"
     _C_FG_NORMAL: str = "#252D3A"
-    _C_FG_SEL: str = "#1d5bd8"
+    _C_FG_SEL: str = C_COLOR_BLUE_HIGHLIGHT
     _C_FG_FLOAT: str = "#ffffff"
     _C_FONT: tuple[str, int] = ("Segoe UI", 10)
 
@@ -194,20 +196,31 @@ class StepItemRenderer:
 
         # Draw the number / step-id prefix and the vertical separator.
         canvas.create_text(
-            start_w, pos_h,
-            text=txt_prefix, anchor="w", fill=colors["fg"], font=self._C_FONT,
+            start_w,
+            pos_h,
+            text=txt_prefix,
+            anchor="w",
+            fill=colors["fg"],
+            font=self._C_FONT,
             tags=(f"_txt_num{idx}",),
         )
         canvas.create_line(
-            start_w + 50, y, start_w + 50, y + h,
+            start_w + 50,
+            y,
+            start_w + 50,
+            y + h,
             fill=colors["border"],
             tags=(f"_sep{idx}",),
         )
 
         # Draw the label text and overflow mask.
         canvas.create_text(
-            start_w + offset_w, pos_h,
-            text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT,
+            start_w + offset_w,
+            pos_h,
+            text=txt_item,
+            anchor="w",
+            fill=colors["fg"],
+            font=self._C_FONT,
             tags=(f"_txt_lbl{idx}",),
         )
         self._draw_overflow_mask(canvas, x, y, w, h, idx, canvas_w)
@@ -312,8 +325,12 @@ class StepItemRenderer:
             return
         bg = canvas.cget("bg")
         canvas.create_rectangle(
-            clip_x, y + 1, canvas_w, y + h - 1,
-            fill=bg, outline=bg,
+            clip_x,
+            y + 1,
+            canvas_w,
+            y + h - 1,
+            fill=bg,
+            outline=bg,
             tags=(f"_msk{idx}",),
         )
 
@@ -481,8 +498,12 @@ class StepItemRenderer:
                 canvas.coords(msk_tag, clip_x, y + 1, canvas_w, y + h - 1)
             else:
                 canvas.create_rectangle(
-                    clip_x, y + 1, canvas_w, y + h - 1,
-                    fill=bg, outline=bg,
+                    clip_x,
+                    y + 1,
+                    canvas_w,
+                    y + h - 1,
+                    fill=bg,
+                    outline=bg,
                     tags=(msk_tag,),
                 )
         else:

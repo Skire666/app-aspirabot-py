@@ -102,7 +102,9 @@ C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
 
 # default color background
 C_COLOR_GRAY_BACKGROUND: str = "#F0F0F0"
-C_COLOR_GRAY_SEPARATOR: str = "#A8A8A8"
+C_COLOR_GRAY_SEPARATOR: str = "#B4B4B4"
+C_COLOR_ORANGE_BLINKING: str = "#C46F00"
+C_COLOR_BLUE_HIGHLIGHT: str = "#0C5B9C"
 
 # Minimum time each step is displayed (milliseconds).
 C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 100  # x4 < 800 ms total

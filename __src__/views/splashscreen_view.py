@@ -7,7 +7,7 @@
 import tkinter as tk
 from tkinter import messagebox
 
-from shared.constants import C_SPLASHSCREEN_SIZE_HEIGHT, C_SPLASHSCREEN_SIZE_WIDTH
+from shared.constants import C_COLOR_BLUE_HIGHLIGHT, C_SPLASHSCREEN_SIZE_HEIGHT, C_SPLASHSCREEN_SIZE_WIDTH
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -15,7 +15,7 @@ from shared.constants import C_SPLASHSCREEN_SIZE_HEIGHT, C_SPLASHSCREEN_SIZE_WID
 
 # Color palette
 _BG_COLOR = "#ffffff"
-_TITLE_COLOR = "#595DC0"
+_TITLE_COLOR = C_COLOR_BLUE_HIGHLIGHT
 _STATUS_COLOR = "#555555"
 _BORDER_COLOR = "#e0e0e0"
 
