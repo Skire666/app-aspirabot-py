@@ -661,7 +661,6 @@ class ScrapingPresenter:
         """
         # Ensure pause is released so the event is ready for the next run.
         self._pause_event.set()
-        self._view.stop_elapsed_timer()
         self._view.set_running_state(False)
 
         # Push final status and statistics to the progression frame.

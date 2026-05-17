@@ -21,7 +21,7 @@ class WorkflowControlsPanel(ttk.Frame):
     """Workflow piloting panel: seven progress rows, four control buttons, elapsed timer.
 
     Thread-safe methods (``set_running_state``, ``set_paused_state``,
-    ``update_progress``, ``start_elapsed_timer``, ``stop_elapsed_timer``)
+    ``update_progress``, ``start_elapsed_timer``)
     are safe to call from background threads — they schedule via ``self.after()``.
 
     Example:
@@ -42,7 +42,6 @@ class WorkflowControlsPanel(ttk.Frame):
         self._on_resume: Callable[[], None] | None = None
 
         # Elapsed timer state.
-        self._elapsed_timer_id: str | None = None
         self._run_started_at: datetime | None = None
         self._build_widgets()
 
@@ -67,22 +66,14 @@ class WorkflowControlsPanel(ttk.Frame):
             parent: Container frame for the stats rows.
         """
         # Initialize all StringVars with idle placeholders.
-        self._var_prog_url = tk.StringVar(value="—")
+        self._var_prog_steps = tk.StringVar(value=C_SCRAPING_STATUS_INACTIVE)
         self._var_prog_tabs = tk.StringVar(value="—")
-        self._var_prog_step = tk.StringVar(value="—")
-        self._var_prog_last_result = tk.StringVar(value="—")
-        self._var_prog_status = tk.StringVar(value=C_SCRAPING_STATUS_INACTIVE)
-        self._var_prog_elapsed = tk.StringVar(value="—")
         self._var_prog_stats = tk.StringVar(value="—")
 
         # Map each label to its StringVar for compact row construction.
         rows_def = [
-            ("URL courante :", self._var_prog_url),
+            ("Étape en cours :", self._var_prog_steps),
             ("Onglets ouverts :", self._var_prog_tabs),
-            ("Étape en cours :", self._var_prog_step),
-            ("Dernier résultat :", self._var_prog_last_result),
-            ("État :", self._var_prog_status),
-            ("Démarré / Écoulé :", self._var_prog_elapsed),
             ("Statistiques :", self._var_prog_stats),
         ]
         for label_text, var in rows_def:
@@ -95,22 +86,22 @@ class WorkflowControlsPanel(ttk.Frame):
             parent: Container frame for the buttons.
         """
         self._btn_launch = ttk.Button(parent, text="Lancer le scraping", width=20, command=self._notify_launch)
-        self._btn_launch.pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        self._btn_launch.pack(side=tk.LEFT, padx=5, pady=(5, 0))
 
         self._btn_cancel = ttk.Button(
             parent, text="Annuler (kill)", command=self._notify_cancel, width=20, state=tk.DISABLED
         )
-        self._btn_cancel.pack(side=tk.LEFT, padx=5, pady=(0, 5))
-
-        self._btn_pause = ttk.Button(
-            parent, text="Mettre en pause", command=self._notify_pause, width=20, state=tk.DISABLED
-        )
-        self._btn_pause.pack(side=tk.RIGHT, padx=5, pady=(0, 5))
+        self._btn_cancel.pack(side=tk.LEFT, padx=5, pady=(5, 0))
 
         self._btn_resume = ttk.Button(
             parent, text="Reprendre", command=self._notify_resume, width=20, state=tk.DISABLED
         )
-        self._btn_resume.pack(side=tk.RIGHT, padx=5)
+        self._btn_resume.pack(side=tk.RIGHT, padx=5, pady=(5, 0))
+
+        self._btn_pause = ttk.Button(
+            parent, text="Mettre en pause", command=self._notify_pause, width=20, state=tk.DISABLED
+        )
+        self._btn_pause.pack(side=tk.RIGHT, padx=5, pady=(5, 0))
 
     # ------------------------------------------------------------------
     # Callback registration
@@ -158,12 +149,8 @@ class WorkflowControlsPanel(ttk.Frame):
         Must be called from the main thread.
         """
         # Reset all progression StringVars to idle placeholders.
-        self._var_prog_url.set("—")
+        self._var_prog_steps.set(C_SCRAPING_STATUS_INACTIVE)
         self._var_prog_tabs.set("—")
-        self._var_prog_step.set("—")
-        self._var_prog_last_result.set("—")
-        self._var_prog_status.set(C_SCRAPING_STATUS_INACTIVE)
-        self._var_prog_elapsed.set("—")
         self._var_prog_stats.set("—")
 
         # Restore buttons to idle state.
@@ -249,10 +236,7 @@ class WorkflowControlsPanel(ttk.Frame):
             status: Workflow status label.
             stats_text: Pre-formatted statistics string built by the presenter.
         """
-        self.after(
-            0,
-            lambda: self._apply_progress(url, tabs, current_step, last_result, status, stats_text),
-        )
+        self.after(200, lambda: self._apply_progress(url, tabs, current_step, last_result, status, stats_text))
 
     def _apply_progress(
         self,
@@ -273,12 +257,14 @@ class WorkflowControlsPanel(ttk.Frame):
             status: Workflow status string.
             stats_text: Pre-formatted statistics string.
         """
-        self._var_prog_url.set(url or "—")
-        self._var_prog_tabs.set(str(tabs) if tabs else "—")
-        self._var_prog_step.set(current_step or "—")
-        self._var_prog_last_result.set(last_result or "—")
-        self._var_prog_status.set(status or "—")
-        self._var_prog_stats.set(stats_text)
+        steps_inprogress = f"{status or '—'} \t | \t {current_step or '—'} \t | \t Msg : {last_result or '—'}"
+        self._var_prog_steps.set(steps_inprogress)
+
+        tabs_info = f"x{tabs!s} \t | \t Page[0] : {url or '—'}"
+        self._var_prog_tabs.set(tabs_info)
+
+        start_str = self._run_started_at.strftime("%H:%M:%S")
+        self._var_prog_stats.set(f"{stats_text} \t | \t Démarré à {start_str}")
 
     # ------------------------------------------------------------------
     # Elapsed timer
@@ -293,39 +279,6 @@ class WorkflowControlsPanel(ttk.Frame):
             started_at: The datetime at which the workflow started.
         """
         self._run_started_at = started_at
-        self.after(0, self._tick_elapsed_timer)
-
-    def stop_elapsed_timer(self) -> None:
-        """Cancel the elapsed-time ticker.
-
-        Safe to call from a background thread.
-        """
-        self.after(0, self._cancel_elapsed_timer)
-
-    def _tick_elapsed_timer(self) -> None:
-        """Update the elapsed-time StringVar and reschedule for the next second."""
-        if self._run_started_at is None:
-            return
-
-        elapsed = datetime.now() - self._run_started_at
-        total_s = int(elapsed.total_seconds())
-        hours, remainder = divmod(total_s, 3600)
-        minutes, seconds = divmod(remainder, 60)
-
-        # Format -> "Démarré à HH:MM:SS | Écoulé : HH:MM:SS"
-        start_str = self._run_started_at.strftime("%H:%M:%S")
-        elapsed_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-        self._var_prog_elapsed.set(f"Démarré à {start_str}  |  Écoulé : {elapsed_str}")
-
-        # Schedule next tick and store the id for cancellation.
-        self._elapsed_timer_id = self.after(1000, self._tick_elapsed_timer)
-
-    def _cancel_elapsed_timer(self) -> None:
-        """Cancel any pending elapsed-timer callback on the main thread."""
-        if self._elapsed_timer_id is not None:
-            self.after_cancel(self._elapsed_timer_id)
-            self._elapsed_timer_id = None
-        self._run_started_at = None
 
     # ------------------------------------------------------------------
     # Internal notification helpers

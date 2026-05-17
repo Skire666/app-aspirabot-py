@@ -164,13 +164,6 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """
         self._workflow_panel.start_elapsed_timer(started_at)
 
-    def stop_elapsed_timer(self) -> None:
-        """Cancel the elapsed-time ticker.
-
-        Safe to call from a background thread.
-        """
-        self._workflow_panel.stop_elapsed_timer()
-
     # ---------------------------------------------------------------
     # Provider callbacks and data — delegates to ProviderSelectionPanel
     # ---------------------------------------------------------------
@@ -452,6 +445,18 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         return messagebox.askokcancel(
             C_SCRAPING_NO_URL_SOURCE_TITLE,
             C_SCRAPING_NO_URL_SOURCE_MSG,
+        )
+
+    @staticmethod
+    def ask_confirm_cancel_browsing() -> bool:
+        """Show a confirmation dialog when the user tries to cancel while browsing.
+
+        Returns:
+            True when the user confirms they want to cancel immediately.
+        """
+        return messagebox.askokcancel(
+            "Confirmer l'annulation",
+            "Le processus de navigation est en cours. Confirmez-vous que vous voulez annuler immédiatement ?",
         )
 
     @staticmethod
