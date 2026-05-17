@@ -31,19 +31,19 @@ class ScrapingJournalRepository:
             Path(path_folder).mkdir(exist_ok=True, parents=True)
             self._logger.info(f"Dossier créé: {path_folder}")
 
-    def save(self, path: str, rows: list[tuple[str, ...]]) -> None:
+    def save(self, path: str, rows: list[str]) -> None:
         """Writes journal rows to the given file path.
 
         Args:
             path: Absolute path of the destination .txt file.
-            rows: Ordered list of row tuples (date, step, duration, result, message).
+            rows: Ordered list of row strings (date, step, duration, result, message).
 
         Raises:
             OSError: If the file cannot be written.
         """
         self.create_folder_if_missing(Path(path).parent)
 
-        lines = [_JOURNAL_HEADER] + [" \t | ".join(str(v) for v in row) for row in rows]
+        lines = [_JOURNAL_HEADER, *rows]
         with Path(path).open("w", encoding="utf-8") as fh:
-            fh.write("\n".join(lines))
+            fh.write("".join(lines))
         self._logger.info("Journal exported to %s (%d rows)", path, len(rows))

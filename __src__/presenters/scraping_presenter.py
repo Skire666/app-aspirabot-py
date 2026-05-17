@@ -28,10 +28,13 @@ from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from shared.datetime_util import (
-    get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
-from shared.i18n_fra import C_SCRAPING_EMERGENCY_STOP_INVALID_MSG
+from shared.i18n_fra import (
+    C_SCRAPING_EMERGENCY_STOP_INVALID_MSG,
+    C_SCRAPING_JOURNAL_RESULT_ERROR,
+    C_SCRAPING_JOURNAL_RESULT_OK,
+)
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView
 
@@ -98,8 +101,7 @@ class ScrapingPresenter:
         self.is_workflow_active: Callable[[], bool] | None = None
 
         # Journal entry counter — provides a unique iid for each Treeview row.
-        self._journal_entry_counter: int = 0
-        self._current_journal_item_id: str | None = None
+        self._all_logs_scraping: list[str] = []
 
         self._providers_loaded: datetime | None = None
 
@@ -197,7 +199,7 @@ class ScrapingPresenter:
             path: Absolute path of the destination file chosen by the user.
         """
         try:
-            rows = self._view.get_journal_rows()
+            rows = self._all_logs_scraping
             self._journal_repository.save(path, rows)
         except OSError as exc:
             self._logging.error("Journal export failed: %s", exc)
@@ -479,8 +481,7 @@ class ScrapingPresenter:
         # Reset signals and journal counter from any previous run.
         self._pause_event.set()
         self._cancel_event.clear()
-        self._journal_entry_counter = 0
-        self._current_journal_item_id = None
+        self._all_logs_scraping = []
         self._view.set_running_state(True)
 
         self._record_active_profile_launch()
@@ -575,13 +576,11 @@ class ScrapingPresenter:
         Args:
             step: The step model about to execute.
         """
-        self._journal_entry_counter += 1
-        item_id = f"entry_{self._journal_entry_counter}"
-        self._current_journal_item_id = item_id
-
         # Pre-insert the journal row with a 'pending' placeholder.
-        date_str = get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff()
-        self._view.start_journal_entry(item_id, date_str, step.step_type.value)
+        # pas de \n, c'est normal, on veut une ligne unique qui sera complétée à la fin du step
+        str_entry = f"{get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()} | Début {step.step_type.value}"
+        self._all_logs_scraping.append(str_entry)
+        self._view.add_start_to_journal_entry(str_entry)
 
     def _on_step_done(
         self,
@@ -601,17 +600,13 @@ class ScrapingPresenter:
             elapsed_s: Wall-clock duration of the step in seconds.
         """
         # Complete the journal row started in _on_step_start.
-        if self._current_journal_item_id:
-            self._view.complete_journal_entry(
-                item_id=self._current_journal_item_id,
-                msg_step_ended=message,
-                success=success,
-                duration_s=elapsed_s,
-            )
+        result_label = C_SCRAPING_JOURNAL_RESULT_OK if success else C_SCRAPING_JOURNAL_RESULT_ERROR
+        line = f" |Fin {step.step_type.value} | {elapsed_s:.3f}s | {result_label} | {message}\n"
+        self._view.add_done_to_journal_entry(str_entry=line)
+        self._all_logs_scraping.append(line)
 
         # Push live progress values to the progression frame.
         url, tabs = self._service_scraping.get_page_info()
-        last_result = f"{'OK' if success else 'ERREUR'} — {message}"
         self._view.update_progress(
             url=url,
             tabs=tabs,

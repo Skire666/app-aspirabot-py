@@ -121,6 +121,9 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         Args:
             running: True while the workflow is running; False when idle.
         """
+        if running:
+            # true, but we want to reset the journal when starting a new run
+            self._journal_panel.clear()
         self._workflow_panel.set_running_state(running)
 
     def set_paused_state(self, paused: bool) -> None:
@@ -399,44 +402,28 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """
         self._journal_panel.set_on_export_journal(callback)
 
-    def start_journal_entry(self, item_id: str, date: str, step_started: str) -> None:
+    def add_start_to_journal_entry(self, str_entry: str) -> None:
         """Insert a pending journal row before the step executes.
 
         Safe to call from a background thread.
 
         Args:
-            item_id: Unique Treeview iid used to update the row later.
-            date: Timestamp string captured at step start.
-            step_started: Step type label (e.g. ``"OPEN_URL"``).
+            str_entry: The journal entry string to add.
         """
-        self._journal_panel.start_journal_entry(item_id, date, step_started)
+        self._journal_panel.add_journal_entry(str_entry)
 
-    def complete_journal_entry(
+    def add_done_to_journal_entry(
         self,
-        item_id: str,
-        msg_step_ended: str,
-        success: bool,
-        duration_s: float,
+        str_entry: str,
     ) -> None:
         """Update the pending journal row once the step has finished.
 
         Safe to call from a background thread.
 
         Args:
-            item_id: The iid returned by ``start_journal_entry``.
-            msg_step_ended: Result message from the executor.
-            success: True for a successful step; False for an error.
-            duration_s: Wall-clock duration of the step in seconds.
+            str_entry: The journal entry string to add.
         """
-        self._journal_panel.complete_journal_entry(item_id, msg_step_ended, success, duration_s)
-
-    def get_journal_rows(self) -> list[tuple[str, ...]]:
-        """Return the current journal rows as a list of value tuples.
-
-        Returns:
-            Ordered list of row tuples (date, step_started, duration, result, message).
-        """
-        return self._journal_panel.get_journal_rows()
+        self._journal_panel.add_journal_entry(str_entry)
 
     # ---------------------------------------------------------------
     # Panel-level operations
