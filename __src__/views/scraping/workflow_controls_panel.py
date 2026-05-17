@@ -53,11 +53,11 @@ class WorkflowControlsPanel(ttk.Frame):
 
         # Stats on the left, buttons on the right.
         frame_stats = ttk.Frame(frame)
-        frame_stats.pack(side=tk.LEFT, fill=tk.X)
+        frame_stats.pack(side=tk.TOP, fill=tk.X)
         self._build_progress_stats(frame_stats)
 
         div_buttons = ttk.Frame(frame)
-        div_buttons.pack(side=tk.RIGHT, fill=tk.X)
+        div_buttons.pack(side=tk.TOP, fill=tk.X)
         self._build_control_buttons(div_buttons)
 
     def _build_progress_stats(self, parent: ttk.Frame) -> None:
@@ -95,22 +95,22 @@ class WorkflowControlsPanel(ttk.Frame):
             parent: Container frame for the buttons.
         """
         self._btn_launch = ttk.Button(parent, text="Lancer le scraping", width=20, command=self._notify_launch)
-        self._btn_launch.pack(side=tk.TOP, padx=5, pady=(0, 5))
+        self._btn_launch.pack(side=tk.LEFT, padx=5, pady=(0, 5))
 
         self._btn_cancel = ttk.Button(
             parent, text="Annuler (kill)", command=self._notify_cancel, width=20, state=tk.DISABLED
         )
-        self._btn_cancel.pack(side=tk.TOP, padx=5, pady=(0, 5))
+        self._btn_cancel.pack(side=tk.LEFT, padx=5, pady=(0, 5))
 
         self._btn_pause = ttk.Button(
             parent, text="Mettre en pause", command=self._notify_pause, width=20, state=tk.DISABLED
         )
-        self._btn_pause.pack(side=tk.TOP, padx=5, pady=(0, 5))
+        self._btn_pause.pack(side=tk.RIGHT, padx=5, pady=(0, 5))
 
         self._btn_resume = ttk.Button(
             parent, text="Reprendre", command=self._notify_resume, width=20, state=tk.DISABLED
         )
-        self._btn_resume.pack(side=tk.TOP, padx=5)
+        self._btn_resume.pack(side=tk.RIGHT, padx=5)
 
     # ------------------------------------------------------------------
     # Callback registration

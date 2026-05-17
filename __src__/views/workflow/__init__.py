@@ -1,1 +1,1 @@
-"""Sub-panel mixin components for WorkflowView."""
+"""Sub-panel components for WorkflowView."""

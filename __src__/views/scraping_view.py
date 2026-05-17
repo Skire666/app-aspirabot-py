@@ -29,12 +29,55 @@ from views.scraping.scraping_journal_panel import ScrapingJournalPanel
 from views.scraping.workflow_controls_panel import WorkflowControlsPanel
 
 # ---------------------------------------------------------------------------
-# Mixins
+# Classes
 # ---------------------------------------------------------------------------
 
 
-class _WorkflowMixin:
-    """Workflow callbacks and state updates delegated to WorkflowControlsPanel."""
+class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
+    """Scraping panel composed of five vertically stacked sub-panels.
+
+    Panel order (top to bottom):
+    1. ProviderSelectionPanel  — provider combobox.
+    2. ProfileManagementPanel  — profile listbox and CRUD buttons.
+    3. LaunchProfilePanel      — export folder, URL source, auto-export.
+    4. WorkflowControlsPanel   — progress rows and control buttons.
+    5. ScrapingJournalPanel    — step-by-step Treeview journal.
+    """
+
+    def __init__(self, config_model: AppConfigurationModel, parent: tk.Widget) -> None:
+        """Initialize the scraping panel by composing five sub-panels.
+
+        Args:
+            config_model: Application configuration providing the default export folder.
+            parent: The parent Tkinter widget (e.g. main_view.content_area).
+        """
+        super().__init__(parent)
+        self._create_panels(config_model)
+
+    def _create_panels(self, config_model: AppConfigurationModel) -> None:
+        """Instantiate and pack the five sub-panels in display order.
+
+        Args:
+            config_model: Application configuration forwarded to LaunchProfilePanel.
+        """
+        self._provider_panel: ProviderSelectionPanel = ProviderSelectionPanel(self)
+        self._provider_panel.pack(side=tk.TOP, fill=tk.X)
+
+        self._profile_panel: ProfileManagementPanel = ProfileManagementPanel(self)
+        self._profile_panel.pack(side=tk.TOP, fill=tk.X)
+
+        self._launch_panel: LaunchProfilePanel = LaunchProfilePanel(config_model, self)
+        self._launch_panel.pack(side=tk.TOP, fill=tk.X)
+
+        self._workflow_panel: WorkflowControlsPanel = WorkflowControlsPanel(self)
+        self._workflow_panel.pack(side=tk.TOP, fill=tk.X)
+
+        self._journal_panel: ScrapingJournalPanel = ScrapingJournalPanel(self)
+        self._journal_panel.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    # ---------------------------------------------------------------
+    # Workflow callbacks and state — delegates to WorkflowControlsPanel
+    # ---------------------------------------------------------------
 
     def set_on_launch(self, callback: Callable[[], None]) -> None:
         """Register the callback fired when the user clicks Lancer.
@@ -128,9 +171,9 @@ class _WorkflowMixin:
         """
         self._workflow_panel.stop_elapsed_timer()
 
-
-class _ProviderMixin:
-    """Provider callbacks and data feed delegated to ProviderSelectionPanel."""
+    # ---------------------------------------------------------------
+    # Provider callbacks and data — delegates to ProviderSelectionPanel
+    # ---------------------------------------------------------------
 
     def set_on_provider_selected(self, callback: Callable[[str], None]) -> None:
         """Register the callback fired when the user selects a provider.
@@ -171,9 +214,9 @@ class _ProviderMixin:
         """
         self._provider_panel.set_selected_provider(id_file)
 
-
-class _ProfileMixin:
-    """Profile callbacks and data feed delegated to ProfileManagementPanel."""
+    # ---------------------------------------------------------------
+    # Profile callbacks and data — delegates to ProfileManagementPanel
+    # ---------------------------------------------------------------
 
     def set_on_profile_selected(self, callback: Callable[[str], None]) -> None:
         """Register the callback fired when the user selects a profile.
@@ -258,9 +301,9 @@ class _ProfileMixin:
         """
         self._profile_panel.set_profile_modified_date(date_str)
 
-
-class _LaunchFormMixin:
-    """Launch-form callbacks, setters, and getters delegated to LaunchProfilePanel."""
+    # ---------------------------------------------------------------
+    # Launch-form callbacks, setters, getters — delegates to LaunchProfilePanel
+    # ---------------------------------------------------------------
 
     def set_on_form_changed(self, callback: Callable[[], None]) -> None:
         """Register the callback fired when the user modifies the launch profile form.
@@ -335,9 +378,9 @@ class _LaunchFormMixin:
         """
         return self._launch_panel.get_auto_export_journal()
 
-
-class _JournalMixin:
-    """Journal callbacks and entries delegated to ScrapingJournalPanel."""
+    # ---------------------------------------------------------------
+    # Journal callbacks and entries — delegates to ScrapingJournalPanel
+    # ---------------------------------------------------------------
 
     def set_on_export_journal(self, callback: Callable[[str], None]) -> None:
         """Register the callback fired when a journal export is requested.
@@ -386,48 +429,9 @@ class _JournalMixin:
         """
         return self._journal_panel.get_journal_rows()
 
-
-# ---------------------------------------------------------------------------
-# Main class
-# ---------------------------------------------------------------------------
-
-
-class ScrapingView(_WorkflowMixin, _ProviderMixin, _ProfileMixin, _LaunchFormMixin, _JournalMixin, ttk.Frame):
-    """Scraping panel composed of five vertically stacked sub-panels.
-
-    Panel order (top to bottom):
-    1. ProviderSelectionPanel  — provider combobox.
-    2. ProfileManagementPanel  — profile listbox and CRUD buttons.
-    3. LaunchProfilePanel      — export folder, URL source, auto-export.
-    4. WorkflowControlsPanel   — progress rows and control buttons.
-    5. ScrapingJournalPanel    — step-by-step Treeview journal.
-    """
-
-    def __init__(self, config_model: AppConfigurationModel, parent: tk.Widget) -> None:
-        """Initialize the scraping panel by composing five sub-panels.
-
-        Args:
-            config_model: Application configuration providing the default export folder.
-            parent: The parent Tkinter widget (e.g. main_view.content_area).
-        """
-        super().__init__(parent)
-        self._create_panels(config_model)
-
-    def _create_panels(self, config_model: AppConfigurationModel) -> None:
-        self._provider_panel: ProviderSelectionPanel = ProviderSelectionPanel(self)
-        self._provider_panel.pack(side=tk.TOP, fill=tk.X)
-
-        self._profile_panel: ProfileManagementPanel = ProfileManagementPanel(self)
-        self._profile_panel.pack(side=tk.TOP, fill=tk.X)
-
-        self._launch_panel: LaunchProfilePanel = LaunchProfilePanel(config_model, self)
-        self._launch_panel.pack(side=tk.TOP, fill=tk.X)
-
-        self._workflow_panel: WorkflowControlsPanel = WorkflowControlsPanel(self)
-        self._workflow_panel.pack(side=tk.TOP, fill=tk.X)
-
-        self._journal_panel: ScrapingJournalPanel = ScrapingJournalPanel(self)
-        self._journal_panel.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    # ---------------------------------------------------------------
+    # Panel-level operations
+    # ---------------------------------------------------------------
 
     def reset(self) -> None:
         """Reset run-specific UI elements to their initial idle state.

@@ -529,6 +529,12 @@ class DragDropList(tk.Frame, Generic[T]):
         renderer = self._render_item
         has_resize_update = hasattr(renderer, "resize_update")
 
+        self._redraw_for_resize_visible_viewport(renderer, has_resize_update)
+
+        self._last_redraw_w = self._calc._canvas_w
+        self._dirty.clear()
+
+    def _redraw_for_resize_visible_viewport(self, renderer: Any, has_resize_update: bool) -> None:
         start, end = self._visible_range()
         btn_start, btn_end = self._buttons_range()
         if self._virtualize:
@@ -553,9 +559,6 @@ class DragDropList(tk.Frame, Generic[T]):
             else:
                 self._engine.clear_region(x, y, w, h)
                 self._draw_normal(i, draw_buttons=draw_btns)
-
-        self._last_redraw_w = self._calc._canvas_w
-        self._dirty.clear()
 
     # ─── Item redraw ──────────────────────────────────────────────────────────
 

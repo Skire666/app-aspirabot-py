@@ -508,8 +508,10 @@ class ScrapingPresenter:
             None.
         """
         # Unblock any pause so the cancel signal is observed immediately.
-        self._pause_event.set()
-        self._cancel_event.set()
+        asked_agree = self._view.ask_confirm_cancel_browsing()
+        if asked_agree:
+            self._pause_event.set()
+            self._cancel_event.set()
 
     def _on_pause(self) -> None:
         """Suspend the workflow before its next step.

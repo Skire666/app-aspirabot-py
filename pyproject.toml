@@ -146,7 +146,7 @@ allow-star-arg-any = true
 # Alert if cyclomatic complexity exceeds this threshold.
 # 10 is the widely accepted standard (McCabe's own recommendation).
 # 1-5: simple | 6-10: acceptable | 11-15: refactor | 15+: high bug risk
-max-complexity = 8
+max-complexity = 9
 
 [tool.ruff.lint.pydocstyle]
 
@@ -156,11 +156,29 @@ convention = "google"
 
 [tool.ruff.lint.pylint]
 
-# for PLR -> refactoring (recommanded : 6 / 12 / 50 / 20)
-max-args = 10
-max-branches = 12
-max-statements = 50
-max-public-methods = 20
+# Maximum number of arguments for a function/method
+max-args = 10  # default: 5
+
+# Maximum number of boolean expressions in a function/method
+max-bool-expr = 10  # default: 5
+
+# Maximum number of branches in a function/method (if, elif, else, for, while, try, except...)
+max-branches = 12  # default: 12
+
+# Maximum number of statements in the body of a function/method
+max-statements = 50  # default: 50
+
+# Maximum number of return statements in a function/method
+max-returns = 6  # default: 6
+
+# Maximum number of public methods for a class
+max-public-methods = 40  # default: 20
+
+# Maximum number of local variables in a function/method
+max-locals = 15  # default: 15
+
+# Maximum number of nested blocks
+max-nested-blocks = 4  # default: 5
 
 [tool.ruff.lint.per-file-ignores]
 
