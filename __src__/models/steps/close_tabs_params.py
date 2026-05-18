@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
-from shared.enums import StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -21,7 +21,7 @@ class CloseTabsParams(IStepParams):
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(filter_mode="<<URL>>", filter_custom="", max_tabs=1, comment="")
+        return cls(filter_mode=OpenUrlModeEnum.E_SOURCE.value, filter_custom="", max_tabs=1, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""

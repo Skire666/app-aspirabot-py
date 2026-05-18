@@ -13,7 +13,7 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
-from shared.enums import StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import safe_int_widget
@@ -22,8 +22,8 @@ from views.steps._constants import safe_int_widget
 # Constants
 # ---------------------------------------------------------------------------
 
-C_INPUT_DEFAULT_FILTER_MODE: str = "<<URL>>"
-C_INPUT_IS_FILTER_CUSTOM: str = "<<CUSTOM>>"
+C_INPUT_DEFAULT_FILTER_MODE: str = OpenUrlModeEnum.E_SOURCE.value
+C_INPUT_IS_FILTER_CUSTOM: str = OpenUrlModeEnum.E_CUSTOM.value
 C_INPUT_DEFAULT_MAX_TABS: int = 1
 
 C_KEY_FILTER_MODE = "filter_mode"
@@ -98,14 +98,14 @@ class CloseTabsFormDef(IStepFormDef):
             line1,
             text="Garder l'URL d'origine",
             variable=filter_mode_var,
-            value="<<URL>>",
+            value=OpenUrlModeEnum.E_SOURCE.value,
         ).pack(side=tk.LEFT, padx=(0, 20))
 
         tk.Radiobutton(
             line1,
             text="Filtre contenant",
             variable=filter_mode_var,
-            value="<<CUSTOM>>",
+            value=OpenUrlModeEnum.E_CUSTOM.value,
         ).pack(side=tk.LEFT, padx=(0, 5))
 
     @staticmethod
@@ -118,7 +118,7 @@ class CloseTabsFormDef(IStepFormDef):
         """
 
         def _sync_url_entry_state(*_args: object) -> None:
-            state = "readonly" if filter_mode_var.get() == "<<URL>>" else "normal"
+            state = "readonly" if filter_mode_var.get() == OpenUrlModeEnum.E_SOURCE.value else "normal"
             filter_url_entry.configure(state=state)
 
         # React to mode changes and initialize the current state
@@ -167,7 +167,7 @@ class CloseTabsFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_FILTER_MODE].set(model.params.get(C_KEY_FILTER_MODE, "<<URL>>"))
+        widgets[C_KEY_FILTER_MODE].set(model.params.get(C_KEY_FILTER_MODE, OpenUrlModeEnum.E_SOURCE.value))
         widgets[C_KEY_FILTER_CUSTOM].set(model.params.get(C_KEY_FILTER_CUSTOM, ""))
         widgets[C_KEY_MAX_TABS].set(str(model.params.get(C_KEY_MAX_TABS, C_INPUT_DEFAULT_MAX_TABS)))
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))

@@ -97,11 +97,11 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
             None.
         """
         if self._urls is None:
-            return "Manuel : non chargé"
+            return "Liste : non chargée"
         remaining = len(self._urls) - self._index
         if remaining > 0:
-            return f"Manuel : {self._index} sur {len(self._urls)} consommé(s)"
-        return "Manuel : plus aucune URL"
+            return f"Liste : {self._index} / {len(self._urls)} consommé(s)"
+        return "Liste : plus aucune URL"
 
 
 # EOF

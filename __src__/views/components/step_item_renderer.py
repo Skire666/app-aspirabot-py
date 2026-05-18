@@ -27,7 +27,7 @@ from collections import OrderedDict
 from collections.abc import Callable
 
 from models.step_scraping_model import StepScrapingModel
-from shared.constants import C_COLOR_BLUE_HIGHLIGHT
+from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_BLUE_HIGHLIGHT_LIGHT
 from shared.enums import StepTypeEnum
 from shared.step_registry import get_form
 
@@ -54,12 +54,12 @@ class StepItemRenderer:
 
     _C_BG_DEACTIVATE: str = "#f3f2f2"
     _C_BG_NORMAL: str = "#ffffff"
-    _C_BG_SEL: str = "#dbeafe"
+    _C_BG_SEL: str = C_COLOR_BLUE_HIGHLIGHT_LIGHT
     _C_BORDER_NORMAL: str = "#e2e8f0"
-    _C_BORDER_SEL: str = "#dbeafe"
+    _C_BORDER_SEL: str = C_COLOR_BLUE_HIGHLIGHT_LIGHT
     _C_FG_DEACTIVATE: str = "#6B6B6B"
     _C_FG_NORMAL: str = "#252D3A"
-    _C_FG_SEL: str = C_COLOR_BLUE_HIGHLIGHT
+    _C_FG_SEL: str = C_COLOR_BLUE_HIGHLIGHT_DARK
     _C_FG_FLOAT: str = "#ffffff"
     _C_FONT: tuple[str, int] = ("Segoe UI", 10)
 

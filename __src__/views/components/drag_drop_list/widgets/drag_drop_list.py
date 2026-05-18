@@ -534,7 +534,7 @@ class DragDropList(tk.Frame, Generic[T]):
         self._last_redraw_w = self._calc._canvas_w
         self._dirty.clear()
 
-    def _redraw_for_resize_visible_viewport(self, renderer: Any, has_resize_update: bool) -> None:
+    def _redraw_for_resize_visible_viewport(self, renderer: callable, has_resize_update: bool) -> None:
         start, end = self._visible_range()
         btn_start, btn_end = self._buttons_range()
         if self._virtualize:

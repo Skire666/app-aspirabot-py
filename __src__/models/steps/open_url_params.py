@@ -7,7 +7,7 @@ from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
-from shared.enums import StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -25,7 +25,7 @@ class OpenUrlParams(IStepParams):
     def default(cls) -> Self:
         """Return default instance."""
         return cls(
-            url_mode="<<URL>>",
+            url_mode=OpenUrlModeEnum.E_SOURCE.value,
             url_custom="",
             wait_state="load",
             timeout_duration=1,

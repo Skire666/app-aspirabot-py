@@ -33,14 +33,16 @@ class JumpToStepExecutor(IStepExecutor):
         p = JumpToStepParams.from_dict(context.step_params)
         should_jump = (
             p.condition == "always"
-            or (context.prev_success and p.condition == "success")
-            or (not context.prev_success and p.condition == "failure")
+            or (context.last_result_step and p.condition == "success")
+            or (not context.last_result_step and p.condition == "failure")
         )
         target_step_id = context.step_params.get("target_hexastring", "")
         if should_jump and target_step_id:
             context.pending_jump = target_step_id
 
-        context.last_message_step = f"Condition de saut vérifiée : {'saut' if should_jump else 'pas de saut'} vers l'étape [{target_step_id}]."
+        context.last_message_step = (
+            f"{'Doit sauter' if should_jump else 'Ne saute pas'} vers l'étape [{target_step_id}]."
+        )
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -75,9 +77,7 @@ class JumpToStepExecutor(IStepExecutor):
 
             if step_found is None:
                 errors.append(
-                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(
-                        step=step_idx_display, value=target_step_id
-                    )
+                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step_idx_display, value=target_step_id)
                 )
 
         # Note: We cannot check for jump loops here, as it would require analyzing the entire workflow

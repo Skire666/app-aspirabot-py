@@ -18,7 +18,7 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
-from shared.enums import StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
@@ -32,6 +32,7 @@ from views.steps._constants import (
 # Constants
 # ---------------------------------------------------------------------------
 
+C_INPUT_DEFAULT_URL_MODE = OpenUrlModeEnum.E_SOURCE.value
 C_INPUT_DEFAULT_URL = "https://example.com/"
 C_INPUT_DEFAULT_WAIT_STATE = C_CHOICES_WAIT_PAGE_STATE[-1]
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
@@ -88,7 +89,7 @@ class OpenUrlFormDef(IStepFormDef):
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
-        url_mode_var = tk.StringVar(value="<<URL>>")
+        url_mode_var = tk.StringVar(value=C_INPUT_DEFAULT_URL_MODE)
         url_custom_var = tk.StringVar(value=C_INPUT_DEFAULT_URL)
 
         # Mode selection radio buttons
@@ -114,14 +115,14 @@ class OpenUrlFormDef(IStepFormDef):
             line1,
             text="Lire la prochaine URL",
             variable=url_mode_var,
-            value="<<URL>>",
+            value=OpenUrlModeEnum.E_SOURCE.value,
         ).pack(side=tk.LEFT, padx=(0, 20))
 
         tk.Radiobutton(
             line1,
             text="URL personnalisée",
             variable=url_mode_var,
-            value="<<CUSTOM>>",
+            value=OpenUrlModeEnum.E_CUSTOM.value,
         ).pack(side=tk.LEFT, padx=(0, 5))
 
     @staticmethod
@@ -134,7 +135,7 @@ class OpenUrlFormDef(IStepFormDef):
         """
 
         def _sync_url_entry_state(*_args: object) -> None:
-            state = "readonly" if url_mode_var.get() == "<<URL>>" else "normal"
+            state = "readonly" if url_mode_var.get() == OpenUrlModeEnum.E_SOURCE.value else "normal"
             url_entry.configure(state=state)
 
         # React to mode changes and initialize the current state
@@ -207,7 +208,7 @@ class OpenUrlFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_URL_MODE].set(model.params.get(C_KEY_URL_MODE, "<<URL>>"))
+        widgets[C_KEY_URL_MODE].set(model.params.get(C_KEY_URL_MODE, C_INPUT_DEFAULT_URL_MODE))
         widgets[C_KEY_URL_CUSTOM].set(model.params.get(C_KEY_URL_CUSTOM, C_INPUT_DEFAULT_URL))
         widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
         widgets[C_KEY_TIMEOUT_DURATION].set(
@@ -256,9 +257,9 @@ class OpenUrlFormDef(IStepFormDef):
         url_mode = model.params.get(C_KEY_URL_MODE)
 
         url_used = (
-            f"Url : {model.params.get(C_KEY_URL_CUSTOM, '')}"
-            if url_mode == "<<CUSTOM>>"
-            else "Prochaine URL dans la liste"
+            "Prochaine URL dans la source"
+            if url_mode == OpenUrlModeEnum.E_SOURCE.value
+            else f"Url : {model.params.get(C_KEY_URL_CUSTOM, '')}"
         )
 
         return f"Ouvrir une URL  -  timeout : {timeout} {unit_display}\n{url_used}"

@@ -4,7 +4,7 @@ This module defines a strongly typed step entity used by providers.
 It includes the StepType enumeration and default parameter values for each type.
 
 Example:
-    >>> step = StepScrapingModel.create_default(StepType.OPEN_URL)
+    >>> step = StepScrapingModel.create_default(StepTypeEnum.E_OPEN_URL)
     >>> step.params["url"]
     'https://example.com/'
 """
@@ -63,6 +63,7 @@ class StepScrapingModel:
             step_type: The type of step.
             step_id: The unique step identifier.
             is_active: Whether the step is enabled.
+            modified_date: ISO string of the last modification date.
             params: Step-specific parameters.
             parent_context: The context of the parent step.
         """

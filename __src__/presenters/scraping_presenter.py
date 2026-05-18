@@ -22,14 +22,17 @@ from pathlib import Path
 
 from models.launch_profile_model import LaunchProfileModel
 from models.provider_model import ProviderModel
+from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from shared.datetime_util import (
+    get_datetime_now_hh_mm_ss,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
+from shared.enums import EventScrapingEnum, StepTypeEnum
 from shared.i18n_fra import (
     C_SCRAPING_EMERGENCY_STOP_INVALID_MSG,
     C_SCRAPING_JOURNAL_RESULT_ERROR,
@@ -37,6 +40,7 @@ from shared.i18n_fra import (
 )
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView
+from views.steps.open_url_form_def import C_INPUT_DEFAULT_URL_MODE, C_KEY_URL_MODE
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -567,7 +571,17 @@ class ScrapingPresenter:
     # Step lifecycle callbacks
     # ------------------------------------------------------------------
 
-    def _on_step_start(self, step: StepScrapingModel) -> None:
+    def _on_logging_event(
+        self, event: EventScrapingEnum, step: StepScrapingModel, context: ScrapingContextModel
+    ) -> None:
+        if event == EventScrapingEnum.E_STEP_START:
+            self._on_logging_event_start(step, context)
+        elif event == EventScrapingEnum.E_STEP_DONE:
+            self._on_logging_event_done(step, context)
+        elif event == EventScrapingEnum.E_EMERGENCY_STOP:
+            self._on_logging_event_stop(step, context)
+
+    def _on_logging_event_start(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
         """Called by the service just before a step executes.
 
         Inserts a pending row in the journal so the user sees the step
@@ -576,41 +590,60 @@ class ScrapingPresenter:
         Args:
             step: The step model about to execute.
         """
-        # Pre-insert the journal row with a 'pending' placeholder.
-        # pas de \n, c'est normal, on veut une ligne unique qui sera complétée à la fin du step
-        str_entry = f"{get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()} | Début {step.step_type.value}"
+        str_progress = ""
+        if step.step_type == StepTypeEnum.E_OPEN_URL and step.params[C_KEY_URL_MODE] == C_INPUT_DEFAULT_URL_MODE:
+            str_progress = " | " + context.url_source.display_progress_tuple_text()
+        str_entry = f"{get_datetime_now_hh_mm_ss()} | Début '{step.step_type.value}'{str_progress}\n"
+
+        # logs
         self._all_logs_scraping.append(str_entry)
-        self._view.add_start_to_journal_entry(str_entry)
+        self._view.add_journal_entry(str_entry)
 
-    def _on_step_done(
-        self,
-        step: StepScrapingModel,
-        success: bool,
-        message: str,
-        elapsed_s: float,
-    ) -> None:
-        """Called by the service after each step completes.
-
-        Updates the pre-inserted journal row and refreshes the progress frame.
+    def _on_logging_event_stop(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
+        """Called by the service when workflow stopped.
 
         Args:
-            step: The completed step model.
-            success: True when the step produced no error.
-            message: Short result message from the executor.
-            elapsed_s: Wall-clock duration of the step in seconds.
+            step: The step model about to execute.
+            context: The current scraping context, containing live stats and info.
         """
-        # Complete the journal row started in _on_step_start.
-        result_label = C_SCRAPING_JOURNAL_RESULT_OK if success else C_SCRAPING_JOURNAL_RESULT_ERROR
-        line = f" |Fin {step.step_type.value} | {elapsed_s:.3f}s | {result_label} | {message}\n"
-        self._view.add_done_to_journal_entry(str_entry=line)
-        self._all_logs_scraping.append(line)
+        str_entry = f"{get_datetime_now_hh_mm_ss()} | Emergency stop threshold reached\n"
+
+        # logs
+        self._all_logs_scraping.append(str_entry)
+        self._view.add_journal_entry(str_entry)
 
         # Push live progress values to the progression frame.
         url, tabs = self._service_scraping.get_page_info()
         self._view.update_progress(
             url=url,
             tabs=tabs,
-            current_step=step.step_type.value,
+            status="Processus mise en pause : seuil d'erreurs dépassé",
+            stats_text=self._service_scraping.current_stats,
+        )
+
+    def _on_logging_event_done(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
+        """Called by the service after each step completes.
+
+        Updates the pre-inserted journal row and refreshes the progress frame.
+
+        Args:
+            step: The completed step model.
+            context: The current scraping context, containing live stats and info.
+        """
+        # Complete the journal row started in _on_step_start.
+        date_str = get_datetime_now_hh_mm_ss()
+        is_success = C_SCRAPING_JOURNAL_RESULT_OK if context.last_result_step else C_SCRAPING_JOURNAL_RESULT_ERROR
+        line = f"{date_str} | {step.step_type.value} | {is_success} | {context.last_message_step}\n"
+
+        # logs
+        self._all_logs_scraping.append(line)
+        self._view.add_journal_entry(str_entry=line)
+
+        # Push live progress values to the progression frame.
+        url, tabs = self._service_scraping.get_page_info()
+        self._view.update_progress(
+            url=url,
+            tabs=tabs,
             status="Scraping en cours",
             stats_text=self._service_scraping.current_stats,
         )
@@ -624,7 +657,6 @@ class ScrapingPresenter:
         self._view.update_progress(
             url="",
             tabs=0,
-            current_step=message,
             status="Scraping en cours",
             stats_text=None,
         )
@@ -658,8 +690,7 @@ class ScrapingPresenter:
                 self._cancel_event,
                 self._pause_event,
                 self._on_user_wait_step,
-                self._on_step_start,
-                self._on_step_done,
+                self._on_logging_event,
                 self._on_init_step,
                 self._emergency_stop_threshold,
                 self._on_emergency_stop,
@@ -686,7 +717,6 @@ class ScrapingPresenter:
             self._view.update_progress(
                 url="",
                 tabs=0,
-                current_step="—",
                 status=status,
                 stats_text=report,
             )
@@ -694,7 +724,6 @@ class ScrapingPresenter:
             self._view.update_progress(
                 url="",
                 tabs=0,
-                current_step="—",
                 status="erreur",
                 stats_text=None,
             )

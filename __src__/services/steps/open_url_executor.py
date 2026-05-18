@@ -11,7 +11,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps.open_url_params import OpenUrlParams
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
-from shared.enums import StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_ms
 
@@ -37,14 +37,14 @@ class OpenUrlExecutor(IStepExecutor):
 
         # Resolve the target URL from the source provider or the custom field.
         target_url = ""
-        if p.url_mode == "<<CUSTOM>>":
+        if p.url_mode == OpenUrlModeEnum.E_CUSTOM.value:
             if not p.url_custom:
-                raise ValueError("Le champ URL personnalisée est obligatoire lorsque le mode est <<CUSTOM>>.")
+                raise ValueError("URL personnalisée vide")
             target_url = p.url_custom
         else:
             # Consume the next URL from the injected source provider.
             if context.url_source is None or not context.url_source.has_next():
-                raise ValueError("Aucune URL disponible dans la source configurée.")
+                raise ValueError("Aucune URL dans la source")
             target_url = context.url_source.next_url()
 
         # obligé de le mettre avant de goto
@@ -55,8 +55,7 @@ class OpenUrlExecutor(IStepExecutor):
         page.goto(target_url, wait_until="commit")
         page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
 
-        progress_txt = context.url_source.display_progress_tuple_text()
-        context.last_message_step = f"{progress_txt} - Page ouverte : {target_url}"
+        context.last_message_step = f"| Ouvert : {target_url}"
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -65,7 +64,7 @@ class OpenUrlExecutor(IStepExecutor):
         index_display = str(step_index + 1).zfill(2)
 
         errors: list[str] = []
-        if p.url_mode is None or (p.url_mode == "<<CUSTOM>>" and not p.url_custom):
+        if p.url_mode is None or (p.url_mode == OpenUrlModeEnum.E_CUSTOM.value and not p.url_custom):
             errors.append(ERROR_TEMPLATES["open_url_url_required"].format(step=index_display))
         if p.timeout_duration <= 0:
             errors.append(ERROR_TEMPLATES["open_url_timeout_invalid"].format(step=index_display))

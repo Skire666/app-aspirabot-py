@@ -139,7 +139,6 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         self,
         url: str,
         tabs: int,
-        current_step: str,
         status: str,
         stats_text: ScrapingReportModel | None,
     ) -> None:
@@ -150,11 +149,10 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         Args:
             url: Current browser page URL.
             tabs: Number of open browser tabs.
-            current_step: Label of the step currently executing.
             status: Workflow status label.
             stats_text: Pre-formatted statistics string built by the presenter.
         """
-        self._workflow_panel.update_progress(url, tabs, current_step, status, stats_text)
+        self._workflow_panel.update_progress(url, tabs, status, stats_text)
 
     def start_elapsed_timer(self, started_at: datetime) -> None:
         """Start the elapsed-time ticker in the progression panel.
@@ -401,21 +399,8 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """
         self._journal_panel.set_on_export_journal(callback)
 
-    def add_start_to_journal_entry(self, str_entry: str) -> None:
+    def add_journal_entry(self, str_entry: str) -> None:
         """Insert a pending journal row before the step executes.
-
-        Safe to call from a background thread.
-
-        Args:
-            str_entry: The journal entry string to add.
-        """
-        self._journal_panel.add_journal_entry(str_entry)
-
-    def add_done_to_journal_entry(
-        self,
-        str_entry: str,
-    ) -> None:
-        """Update the pending journal row once the step has finished.
 
         Safe to call from a background thread.
 

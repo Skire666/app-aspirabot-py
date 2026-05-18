@@ -49,8 +49,18 @@ class OpenUrlModeEnum(Enum):
     """Enumerates the modes for determining the URL to open in an OPEN_URL step."""
 
     E_UNSET = "UNSET"
-    E_URL_SOURCE = "<<URL>>"
+    E_SOURCE = "<<SOURCE>>"
     E_CUSTOM = "<<CUSTOM>>"
+    E_UNKNOWN = "UNKNOWN"
+
+
+class EventScrapingEnum(Enum):
+    """Enumerates the types of events that can be logged during scraping."""
+
+    E_UNSET = "UNSET"
+    E_STEP_START = "STEP_START"
+    E_STEP_DONE = "STEP_DONE"
+    E_EMERGENCY_STOP = "EMERGENCY_STOP"
     E_UNKNOWN = "UNKNOWN"
 
 

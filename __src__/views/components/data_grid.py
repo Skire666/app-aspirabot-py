@@ -16,6 +16,8 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
+from shared.constants import C_COLOR_BLUE_HIGHLIGHT_LIGHT
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -52,7 +54,7 @@ class DataGrid(ttk.Frame):
         self._bg_header = "#e0e0e0"
         self._bg_even = "#f4f4f4"
         self._bg_odd = "#ffffff"
-        self._bg_hover = "#e6f4ff"
+        self._bg_hover = C_COLOR_BLUE_HIGHLIGHT_LIGHT
         self._grid_line = "#cecece"
         self._text_color = "#222222"
 
@@ -345,9 +347,7 @@ class DataGrid(ttk.Frame):
 
         highlighted_by_mouse = self._hover_row == row_index
         # gray for even, white for odd, blue hover override
-        row_bg = (
-            self._bg_hover if highlighted_by_mouse else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
-        )
+        row_bg = self._bg_hover if highlighted_by_mouse else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
         self.body_canvas.itemconfigure(f"row-bg-{row_index}", fill=row_bg)
 
     def _column_index_from_x(self, x_coord: float) -> int | None:

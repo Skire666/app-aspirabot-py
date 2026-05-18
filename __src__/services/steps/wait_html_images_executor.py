@@ -10,11 +10,9 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
-from services.steps._helpers import evaluate_count_condition
+from services.steps._helpers import evaluate_count_condition, get_filtered_images
 from services.workflow_service import register_step_executor
 from shared.constants import (
-    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
-    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
     C_UNITS_TIME_ALLOWED_FOR_MODEL,
 )
 from shared.enums import StepTypeEnum
@@ -44,7 +42,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         count: int = -1
 
         for i in range(p.retry_max):
-            all_images = self._get_filtered_images(browser, p)
+            all_images = get_filtered_images(browser, p)
             count = len(all_images)
             condition_met = evaluate_count_condition(count, p.operator, p.quantity)
             if condition_met:
@@ -54,24 +52,6 @@ class WaitHtmlImagesExecutor(IStepExecutor):
             time.sleep(nbr_delay_in_sec)
 
         context.last_message_step = f"Trouvé {count} image(s), condition vérifiée."
-
-    @staticmethod
-    def _get_filtered_images(browser: IWebBrowserService, params: dict[str, int]) -> list[dict[str, Any]]:
-        script = """
-            () => Array.from(document.querySelectorAll('img'))
-                .filter(img => img.naturalWidth > 0)
-                .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight, complete: img.complete}))
-        """
-        all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(
-            script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
-        )
-        # return an empty list if the script evaluation failed after all retries
-        if all_imgs is None:
-            return []
-        # filter images that do not match the dimension criteria
-        h_min, h_max = params["height_min"], params["height_max"]
-        w_min, w_max = params["width_min"], params["width_max"]
-        return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -132,9 +112,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):
             if min_k in bounds and max_k in bounds and bounds[min_k] > bounds[max_k]:
                 errors.append(
-                    ERROR_TEMPLATES["image_dim_range_invalid"].format(
-                        step=step_label, min_key=min_k, max_key=max_k
-                    )
+                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k)
                 )
         return errors
 

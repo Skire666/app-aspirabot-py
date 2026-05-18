@@ -109,16 +109,14 @@ class LaunchProfilePanel(ttk.Frame):
             parent: Container frame to pack into.
         """
         row = ttk.Frame(parent)
-        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 4))
+        row.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
 
         ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=5)
 
         # StringVar keeps the Entry field in sync with internal state.
         self._var_export_folder = tk.StringVar(value=self._export_folder)
         self._var_export_folder.trace_add("write", self._on_export_folder_var_changed)
-        ttk.Entry(row, textvariable=self._var_export_folder, width=50).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4)
-        )
+        ttk.Entry(row, textvariable=self._var_export_folder).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(side=tk.LEFT, padx=5)
         ttk.Button(row, text="Ouvrir dossier", command=self._open_export_folder).pack(side=tk.LEFT, padx=(5, 5))
 

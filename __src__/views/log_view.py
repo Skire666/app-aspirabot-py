@@ -104,7 +104,8 @@ class LogView(ttk.Frame):
         """
         self._on_open_logs_folder = callback
 
-    def show_error(self, title: str, message: str) -> None:
+    @staticmethod
+    def show_error(title: str, message: str) -> None:
         """Displays a modal error dialog to the user.
 
         Args:

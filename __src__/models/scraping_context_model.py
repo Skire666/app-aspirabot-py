@@ -8,7 +8,6 @@ Example:
     >>> import threading
     >>> from pathlib import Path
     >>> ctx = ScrapingContextModel(
-    ...     prev_success=True,
     ...     app_config=AppConfigurationModel(),
     ...     folder_export=Path("."),
     ...     downloaded_urls=set(),
@@ -19,8 +18,6 @@ Example:
     ...     on_user_wait=None,
     ...     step_params={},
     ... )
-    >>> ctx.prev_success
-    True
 """
 
 # ---------------------------------------------------------------------------
@@ -30,12 +27,14 @@ Example:
 from __future__ import annotations
 
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from models.app_configuration_model import AppConfigurationModel
+from models.step_scraping_model import StepScrapingModel
 
 if TYPE_CHECKING:
     from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -50,7 +49,6 @@ class ScrapingContextModel:
     """Typed runtime context injected into each step executor.
 
     Attributes:
-        prev_success: Whether the immediately preceding step succeeded.
         folder: Working folder for file-producing steps (download, etc.).
         downloaded_urls: Deduplication set of already-downloaded image URLs.
         step_id_by_index: Ordered list of step IDs for the current workflow.
@@ -68,7 +66,6 @@ class ScrapingContextModel:
         >>> import threading
         >>> from pathlib import Path
         >>> ctx = ScrapingContextModel(
-        ...     prev_success=False,
         ...     app_config=AppConfigurationModel(),
         ...     folder_export=Path("."),
         ...     downloaded_urls=set(),
@@ -86,7 +83,6 @@ class ScrapingContextModel:
     """
 
     # Inputs from the orchestrator.
-    prev_success: bool
     app_config: AppConfigurationModel
     folder_export: Path
     downloaded_urls: set[str]
@@ -104,6 +100,38 @@ class ScrapingContextModel:
 
     # Output signals written by executors and read back by the orchestrator.
     last_message_step: str = field(default="")
+    last_result_step: bool = field(default=True)
     last_url_opened: str = field(default="")  # peut être en erreur, pas grave
+    last_time_elapsed: float = field(default=0.0)
     pending_jump: str | int | None = field(default=None)
     end_process: bool = field(default=False)
+
+    # ------------------------------------------------------------------
+    # Public methods
+    # ------------------------------------------------------------------
+
+    def prepare_step_execution(self, step: StepScrapingModel) -> None:
+        """Prepare the context for a new step execution.
+
+        Args:
+            step: The step about to be executed.
+        """
+        self._time_started = time.time()
+        self.step_params = step.params
+        self.last_result_step = True
+        self.last_message_step = ""
+        self.last_time_elapsed = 0.0
+        self.pending_jump = None
+        self.end_process = False
+
+    def set_result_execution(self, is_success: bool, message: str) -> None:
+        """Set the result of the step execution and update related state.
+
+        Args:
+            is_success: True when the step completed without error.
+            message: Human-readable result message.
+        """
+        self.last_result_step = is_success
+        if not self.last_message_step:
+            self.last_message_step = message
+        self.last_time_elapsed = time.time() - self._time_started

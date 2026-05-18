@@ -36,8 +36,8 @@ class WaitUserActionExecutor(IStepExecutor):
         p = WaitUserActionParams.from_dict(context.step_params)
         should_pause = (
             p.condition == "always"
-            or (p.condition == "success" and context.prev_success)
-            or (p.condition == "failure" and not context.prev_success)
+            or (p.condition == "success" and context.last_result_step)
+            or (p.condition == "failure" and not context.last_result_step)
         )
         if not should_pause:
             return
@@ -51,9 +51,7 @@ class WaitUserActionExecutor(IStepExecutor):
             time.sleep(time_sec)
 
         context.last_message_step = (
-            "Action utilisateur détectée, reprise du processus."
-            if not cancelled
-            else "Attente annulée, reprise du processus."
+            "Reprise utilisateur détectée" if not cancelled else "Attente annulée par l'utilisateur"
         )
 
     @override

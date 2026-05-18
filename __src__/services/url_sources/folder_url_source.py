@@ -115,10 +115,10 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             None.
         """
         if self._file_paths is None:
-            return "Dossier : 0/0"
+            return "Dossier : 0/0 (vide)"
         remaining = len(self._file_paths) - self._index
         if remaining > 0:
-            return f"Dossier : {self._index} sur {len(self._file_paths)} consommé(s)"
+            return f"Dossier : {self._index} / {len(self._file_paths)} consommé(s)"
         return "Dossier : plus aucune URL"
 
     # ------------------------------------------------------------------

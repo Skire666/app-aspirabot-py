@@ -154,7 +154,7 @@ class ProviderModel:
         return normalized_value.isalnum()
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> "ProviderModel":
+    def import_from_data_json(cls, data: dict[str, Any]) -> ProviderModel:
         """Reconstruct a provider model from a JSON-compatible dictionary.
 
         Args:

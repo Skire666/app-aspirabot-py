@@ -11,7 +11,7 @@ from datetime import datetime
 from tkinter import ttk
 
 from models.scraping_report_model import ScrapingReportModel
-from shared.constants import C_COLOR_BLUE_HIGHLIGHT, C_COLOR_ORANGE_BLINKING
+from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_ORANGE_BLINKING
 from shared.i18n_fra import C_SCRAPING_STATUS_INACTIVE
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
@@ -239,7 +239,6 @@ class WorkflowControlsPanel(ttk.Frame):
         self,
         url: str,
         tabs: int,
-        current_step: str,
         status: str,
         stats_text: ScrapingReportModel | None,
     ) -> None:
@@ -250,17 +249,15 @@ class WorkflowControlsPanel(ttk.Frame):
         Args:
             url: Current browser page URL.
             tabs: Number of open browser tabs.
-            current_step: Label of the step currently executing.
             status: Workflow status label.
             stats_text: Pre-formatted statistics string built by the presenter.
         """
-        self.after(100, lambda: self._apply_progress(url, tabs, current_step, status, stats_text))
+        self.after(100, lambda: self._apply_progress(url, tabs, status, stats_text))
 
     def _apply_progress(
         self,
         url: str,
         tabs: int,
-        current_step: str,
         status: str,
         stats: ScrapingReportModel | None,
     ) -> None:
@@ -269,12 +266,10 @@ class WorkflowControlsPanel(ttk.Frame):
         Args:
             url: Current browser URL.
             tabs: Open tab count.
-            current_step: Current step label.
-            last_result: Last step result string.
             status: Workflow status string.
-            stats_text: Pre-formatted statistics string.
+            stats: Pre-formatted statistics string.
         """
-        steps_inprogress = f"{status or '—'}    |     Type : {current_step or '—'}"
+        steps_inprogress = f"{status or '—'}"
         self._var_prog_steps.set(steps_inprogress)
 
         tabs_info = f"Ouverts : x{tabs:<3d}    |     Page[0] : {url or '—'}"
@@ -310,7 +305,7 @@ class WorkflowControlsPanel(ttk.Frame):
         Uses clam-theme elements so background color is respected on Windows.
         """
         s = ttk.Style(self)
-        for suffix, bg in (("A", C_COLOR_ORANGE_BLINKING), ("B", C_COLOR_BLUE_HIGHLIGHT)):
+        for suffix, bg in (("A", C_COLOR_ORANGE_BLINKING), ("B", C_COLOR_BLUE_HIGHLIGHT_DARK)):
             name = f"Resume{suffix}.TButton"  # ResumeA.TButton __OR__ ResumeB.TButton
             for elem in ("border", "padding", "label"):
                 with contextlib.suppress(tk.TclError):

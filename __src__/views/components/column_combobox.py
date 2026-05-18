@@ -9,23 +9,29 @@ from tkinter import font as tkFont
 from tkinter import ttk
 from typing import Any
 
+from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_BLUE_HIGHLIGHT_LIGHT, C_COLOR_GRAY_SEPARATOR
+
 # ── Layout ───────────────────────────────────────────────────────────────────
 _CELL_PAD = 4
 _ROW_H = 22
-_MAX_ROWS = 12       # visible rows before scroll kicks in
-_POOL_EXTRA = 2      # spare pool slots beyond visible rows
+_MAX_ROWS = 12  # visible rows before scroll kicks in
+_POOL_EXTRA = 2  # spare pool slots beyond visible rows
 
 # ── Palette ──────────────────────────────────────────────────────────────────
-_BG      = "#ffffff"
-_ALT_BG  = "#f5f5f5"
-_HOV_BG  = "#e5f1fb"
-_SEL_BG  = "#0078d7"
-_FG      = "#000000"
-_SEL_FG  = "#ffffff"
-_BORDER  = "#cccccc"
+_BG = "#ffffff"
+_ALT_BG = "#f5f5f5"
+_HOV_BG = C_COLOR_BLUE_HIGHLIGHT_LIGHT
+_SEL_BG = C_COLOR_BLUE_HIGHLIGHT_DARK
+_FG = "#000000"
+_SEL_FG = "#ffffff"
+_BORDER = C_COLOR_GRAY_SEPARATOR
 
+# ── Button ───────────────────────────────────────────────────────────────────
+
+_CHAR_BUTTON = "▾"  # Unicode downwards triangle
 
 # ── Data model ───────────────────────────────────────────────────────────────
+
 
 @dataclass
 class _ColumnDef:
@@ -35,7 +41,8 @@ class _ColumnDef:
     visible: bool = True
 
 
-# ── Pixel-perfect truncation ──────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _truncate(text: str, max_px: int, font: tkFont.Font) -> str:
     """Return *text* clipped to *max_px* pixels, appending '…' when trimmed."""
@@ -46,7 +53,25 @@ def _truncate(text: str, max_px: int, font: tkFont.Font) -> str:
     return text + "…"
 
 
+def _eff_widths(columns: list[_ColumnDef], total_px: int) -> dict[str, int]:
+    """Per-column pixel widths, expanding the last visible column to fill *total_px*.
+
+    When the sum of visible column widths is smaller than *total_px*, the
+    last visible column absorbs the remaining space so the row always reaches
+    the right edge of the available area.
+    """
+    visible = [(col.key, col.width) for col in columns if col.visible]
+    if not visible:
+        return {}
+    widths = dict(visible)
+    col_total = sum(w for _, w in visible)
+    if total_px > col_total:
+        widths[visible[-1][0]] += total_px - col_total
+    return widths
+
+
 # ── Virtualised dropdown ──────────────────────────────────────────────────────
+
 
 class _DropdownWindow:
     """Canvas-pool dropdown with O(visible) memory footprint."""
@@ -57,12 +82,14 @@ class _DropdownWindow:
         self._viewport: tk.Frame | None = None
         self._scrollbar: tk.Scrollbar | None = None
         self._pool: list[tk.Canvas] = []
-        self._pool_row: list[int] = []      # data-row index assigned to each slot
+        self._pool_row: list[int] = []  # data-row index assigned to each slot
         self._scroll_top: int = 0
         self._viewport_h: int = 0
+        self._viewport_w: int = 0  # effective column area width
         self._total_h: int = 0
         self._hover: int | None = None
-        self._root_bid: str | None = None   # root ButtonPress binding id
+        self._root_bid: str | None = None
+        self._configure_bid: str | None = None
         self._is_open: bool = False
 
     # ── public ───────────────────────────────────────────────────────────────
@@ -72,29 +99,28 @@ class _DropdownWindow:
         return self._is_open
 
     def open(self) -> None:
-        """Open the dropdown below the owner entry."""
+        """Open the dropdown aligned with the left edge of the owner widget."""
         if self._is_open:
             return
         owner = self._owner
         n = len(owner._objects)
         if n == 0:
             return
-        vis_w = self._vis_w()
-        if vis_w == 0:
+        cols_w = sum(col.width for col in owner._columns if col.visible)
+        if cols_w == 0:
             return
 
         n_vis = min(n, _MAX_ROWS)
-        self._viewport_h = n_vis * _ROW_H
         self._total_h = n * _ROW_H
         self._scroll_top = 0
         self._hover = None
 
-        entry = owner._entry
-        entry.update_idletasks()
-        x = entry.winfo_rootx()
-        y = entry.winfo_rooty() + entry.winfo_height()
+        owner.update_idletasks()
+        x = owner.winfo_rootx()
+        y = owner.winfo_rooty() + owner.winfo_height()
+        owner_w = owner.winfo_width()
 
-        top = tk.Toplevel(owner, bg=_BORDER)
+        top = tk.Toplevel(owner, bg=_BORDER, border=1)
         top.wm_overrideredirect(True)
         top.lift()
 
@@ -103,20 +129,23 @@ class _DropdownWindow:
         sb_w = sb.winfo_reqwidth()
         self._scrollbar = sb
 
-        vp = tk.Frame(top, bg=_BG, width=vis_w, height=self._viewport_h)
+        # Viewport is at least as wide as the owner display area
+        self._viewport_w = max(cols_w, owner_w - sb_w) - 2
+        self._viewport_h = n_vis * _ROW_H
+
+        vp = tk.Frame(top, bg=_BG, width=self._viewport_w, height=self._viewport_h)
         vp.pack(side="left", fill="both", expand=True)
         vp.pack_propagate(False)
         self._viewport = vp
 
-        top.geometry(f"{vis_w + sb_w}x{self._viewport_h}+{x}+{y}")
+        top.geometry(f"{self._viewport_w + sb_w}x{self._viewport_h}+{x}+{y}")
         self._top = top
 
         pool_sz = n_vis + _POOL_EXTRA + 1
         self._pool = []
         self._pool_row = []
         for _ in range(pool_sz):
-            c = tk.Canvas(vp, width=vis_w, height=_ROW_H,
-                          highlightthickness=0, bd=0, bg=_BG)
+            c = tk.Canvas(vp, width=self._viewport_w, height=_ROW_H, highlightthickness=0, bd=0, bg=_BG)
             c.bind("<MouseWheel>", self._on_wheel)
             self._pool.append(c)
             self._pool_row.append(-1)
@@ -126,6 +155,7 @@ class _DropdownWindow:
 
         root = owner.winfo_toplevel()
         self._root_bid = root.bind("<ButtonPress-1>", self._on_root_click, add=True)
+        self._configure_bid = root.bind("<Configure>", self._on_root_configure, add=True)
 
         self._is_open = True
         self._render()
@@ -139,18 +169,22 @@ class _DropdownWindow:
         if not self._is_open:
             return
         self._is_open = False
-
+        root = self._owner.winfo_toplevel()
         if self._root_bid:
             try:
-                self._owner.winfo_toplevel().unbind("<ButtonPress-1>", self._root_bid)
+                root.unbind("<ButtonPress-1>", self._root_bid)
             except Exception:
                 pass
             self._root_bid = None
-
+        if self._configure_bid:
+            try:
+                root.unbind("<Configure>", self._configure_bid)
+            except Exception:
+                pass
+            self._configure_bid = None
         if self._top:
             self._top.destroy()
             self._top = None
-
         self._pool.clear()
         self._pool_row.clear()
         self._viewport = None
@@ -161,25 +195,20 @@ class _DropdownWindow:
         if not self._top or not self._viewport:
             return
         owner = self._owner
-        vis_w = self._vis_w()
-        entry = owner._entry
-        x = entry.winfo_rootx()
-        y = entry.winfo_rooty() + entry.winfo_height()
+        cols_w = sum(col.width for col in owner._columns if col.visible)
         sb_w = self._scrollbar.winfo_reqwidth() if self._scrollbar else 17
+        owner_w = owner.winfo_width()
+        self._viewport_w = max(cols_w, owner_w - sb_w)
 
-        self._top.geometry(f"{vis_w + sb_w}x{self._viewport_h}+{x}+{y}")
-        self._viewport.configure(width=vis_w)
+        x = owner.winfo_rootx()
+        y = owner.winfo_rooty() + owner.winfo_height()
+        self._top.geometry(f"{self._viewport_w + sb_w}x{self._viewport_h}+{x}+{y}")
+        self._viewport.configure(width=self._viewport_w)
         for c in self._pool:
-            c.configure(width=vis_w)
+            c.configure(width=self._viewport_w)
 
-        # Invalidate all assigned rows so _render repaints them
         self._pool_row = [-1] * len(self._pool)
         self._render()
-
-    # ── geometry ─────────────────────────────────────────────────────────────
-
-    def _vis_w(self) -> int:
-        return sum(col.width for col in self._owner._columns if col.visible)
 
     # ── rendering ─────────────────────────────────────────────────────────────
 
@@ -226,26 +255,30 @@ class _DropdownWindow:
         canvas.delete("all")
 
         font = owner._font
+        widths = _eff_widths(owner._columns, self._viewport_w)
         x = 0
         for col in owner._columns:
             if not col.visible:
                 continue
+            w = widths.get(col.key, col.width)
             raw = cache.get(col.key, "")
             text = str(raw) if raw is not None else ""
-            cell_w = col.width - _CELL_PAD * 2
             if x > 0:
                 canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
             canvas.create_text(
-                x + _CELL_PAD, _ROW_H // 2,
-                text=_truncate(text, cell_w, font),
-                anchor="w", font=font, fill=fg,
+                x + _CELL_PAD,
+                _ROW_H // 2,
+                text=_truncate(text, w - _CELL_PAD * 2, font),
+                anchor="w",
+                font=font,
+                fill=fg,
             )
-            x += col.width
+            x += w
 
     def _bind_canvas(self, canvas: tk.Canvas, data_row: int) -> None:
         canvas.bind("<ButtonRelease-1>", lambda _e, r=data_row: self._select(r))
-        canvas.bind("<Enter>",           lambda _e, r=data_row: self._set_hover(r))
-        canvas.bind("<Leave>",           lambda _e, r=data_row: self._clr_hover(r))
+        canvas.bind("<Enter>", lambda _e, r=data_row: self._set_hover(r))
+        canvas.bind("<Leave>", lambda _e, r=data_row: self._clr_hover(r))
 
     def _repaint_data_row(self, data_row: int) -> None:
         for i, r in enumerate(self._pool_row):
@@ -258,10 +291,7 @@ class _DropdownWindow:
     def _select(self, row: int) -> None:
         owner = self._owner
         owner._selected_index = row
-        dc = owner._display_col
-        if dc is not None and row < len(owner._row_cache):
-            val = owner._row_cache[row].get(dc, "")
-            owner._entry_var.set(str(val) if val is not None else "")
+        owner._paint_selected()
         owner._close_dropdown()
         owner.event_generate("<<ComboboxSelected>>")
 
@@ -321,27 +351,32 @@ class _DropdownWindow:
     def _on_root_click(self, event: tk.Event) -> None:
         if not self._is_open or self._top is None:
             return
-        # Ignore clicks on the owner widget (entry + button) — they handle toggle.
+        # Ignore clicks on the owner widget — the toggle button handles open/close.
         ow = self._owner
         ox, oy = ow.winfo_rootx(), ow.winfo_rooty()
-        if ox <= event.x_root < ox + ow.winfo_width() and \
-           oy <= event.y_root < oy + ow.winfo_height():
+        if ox <= event.x_root < ox + ow.winfo_width() and oy <= event.y_root < oy + ow.winfo_height():
             return
-        # Close when click lands outside the dropdown toplevel.
         tx, ty = self._top.winfo_rootx(), self._top.winfo_rooty()
         tw, th = self._top.winfo_width(), self._top.winfo_height()
         if not (tx <= event.x_root < tx + tw and ty <= event.y_root < ty + th):
             self._owner._close_dropdown()
 
+    def _on_root_configure(self, event: tk.Event) -> None:
+        # Only react to the root window itself being moved or resized.
+        if self._is_open and event.widget is self._owner.winfo_toplevel():
+            self._owner._close_dropdown()
+
 
 # ── Main widget ───────────────────────────────────────────────────────────────
 
-class ColumnCombobox(tk.Frame):
-    """Combobox with multi-column Canvas dropdown and per-row Python object binding.
 
-    Behaves like ttk.Combobox (pack/grid/place, state, bind, configure) but
-    renders the dropdown through a virtualised tk.Canvas pool for pixel-perfect
-    column alignment and constant-time scroll performance at any dataset size.
+class ColumnCombobox(tk.Frame):
+    """Combobox with multi-column Canvas display and per-row Python object binding.
+
+    Both the collapsed display field and the dropdown are rendered through
+    tk.Canvas for pixel-perfect column alignment. The display field shows all
+    visible columns of the selected row, with the last column expanding to fill
+    the available width when the sum of column widths is smaller than the widget.
     """
 
     def __init__(
@@ -349,7 +384,7 @@ class ColumnCombobox(tk.Frame):
         master: tk.Misc,
         state: str = "readonly",
         width: int = 30,
-        font: Any = None,
+        font: Any = None,  # noqa: ANN401
         textvariable: tk.StringVar | None = None,
         **kwargs: Any,
     ) -> None:
@@ -357,10 +392,10 @@ class ColumnCombobox(tk.Frame):
 
         Args:
             master: Parent widget.
-            state: ``"readonly"`` (default) or ``"normal"``.
-            width: Character width of the entry field.
-            font: tkinter font spec forwarded to the entry and the dropdown cells.
-            textvariable: External StringVar linked to the entry field.
+            state: ``"readonly"`` (default) or ``"normal"`` (cosmetic only).
+            width: Minimum character width of the display canvas (approximate).
+            font: tkinter font spec applied to both the display and the dropdown.
+            textvariable: Accepted for API compatibility; not used by Canvas display.
             **kwargs: Remaining options forwarded to the outer tk.Frame.
         """
         super().__init__(master, **kwargs)
@@ -370,6 +405,7 @@ class ColumnCombobox(tk.Frame):
         self._row_cache: list[dict[str, Any]] = []
         self._display_col: str | None = None
         self._selected_index: int | None = None
+        self._state = state
 
         if font is None:
             self._font: tkFont.Font = tkFont.nametofont("TkDefaultFont").copy()
@@ -378,15 +414,26 @@ class ColumnCombobox(tk.Frame):
         else:
             self._font = tkFont.Font(font=font)
 
-        self._entry_var = textvariable if textvariable is not None else tk.StringVar()
-        self._entry = ttk.Entry(self, textvariable=self._entry_var, width=width, state=state)
-        self._entry.pack(side="left", fill="x", expand=True)
+        # Display canvas — renders the selected row with all visible columns
+        char_w = self._font.measure("0") * width
+        self._canvas = tk.Canvas(
+            self,
+            height=_ROW_H,
+            width=char_w,
+            bg=_BG,
+            highlightthickness=1,
+            highlightbackground=_BORDER,
+            cursor="arrow",
+        )
+        self._canvas.pack(side="left", fill="x", expand=True)
+        self._canvas.bind("<ButtonPress-1>", lambda _: self._toggle())
+        self._canvas.bind("<Configure>", lambda _: self._paint_selected())
 
-        self._btn = ttk.Button(self, text="▾", width=2, command=self._toggle)
+        ttk.Style().configure("Dropdown.TButton", padding=(0, 2, 0, 1), width=3, relief="flat")
+        self._btn = ttk.Button(self, text=_CHAR_BUTTON, command=self._toggle, style="Dropdown.TButton")
         self._btn.pack(side="right")
 
         self._dropdown = _DropdownWindow(self)
-        self._entry.bind("<ButtonPress-1>", lambda _e: self._toggle())
 
     # ── Column API ────────────────────────────────────────────────────────────
 
@@ -402,32 +449,36 @@ class ColumnCombobox(tk.Frame):
         Args:
             key: Unique column identifier.
             extractor: Callable that extracts the display value from a bound object.
-            width: Fixed display width in pixels; text is clipped to this boundary.
+            width: Minimum display width in pixels; the last visible column expands
+                   to fill remaining space.
             visible: Whether the column participates in rendering.
         """
         if any(c.key == key for c in self._columns):
-            raise ValueError(f"Column '{key}' already exists.")
+            raise ValueError(f"Column '{key}' already exists.")  # noqa: TRY003
         self._columns.append(_ColumnDef(key=key, extractor=extractor, width=width, visible=visible))
         if self._display_col is None and visible:
             self._display_col = key
 
     def set_display_column(self, key: str) -> None:
-        """Set the column whose extracted value appears in the entry field.
+        """Set the column whose value is returned by get().
+
+        Does not affect the visual display (all visible columns are always shown).
 
         Args:
             key: Column identifier.
         """
-        self._find_col(key)          # raises KeyError when missing
+        self._find_col(key)
         self._display_col = key
 
     def set_column_visible(self, key: str, visible: bool) -> None:
-        """Toggle a column's visibility; re-renders an open dropdown atomically.
+        """Toggle a column's visibility; re-renders the display and open dropdown.
 
         Args:
             key: Column identifier.
             visible: New visibility state.
         """
         self._find_col(key).visible = visible
+        self._paint_selected()
         if self._dropdown.is_open:
             self._dropdown.refresh()
 
@@ -441,7 +492,7 @@ class ColumnCombobox(tk.Frame):
 
     # ── Item API ──────────────────────────────────────────────────────────────
 
-    def add_item(self, obj: Any, columns: list[Any] | None = None) -> None:
+    def add_item(self, obj: Any, columns: list[Any] | None = None) -> None:  # noqa: ANN401
         """Append *obj*, extracting and caching all column values immediately.
 
         Args:
@@ -452,15 +503,14 @@ class ColumnCombobox(tk.Frame):
         self._objects.append(obj)
         if columns is not None:
             cache: dict[str, Any] = {
-                col.key: (columns[i] if i < len(columns) else "")
-                for i, col in enumerate(self._columns)
+                col.key: (columns[i] if i < len(columns) else "") for i, col in enumerate(self._columns)
             }
         else:
             cache = {}
             for col in self._columns:
                 try:
                     cache[col.key] = col.extractor(obj)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     cache[col.key] = ""
         self._row_cache.append(cache)
 
@@ -479,11 +529,11 @@ class ColumnCombobox(tk.Frame):
         self._objects.clear()
         self._row_cache.clear()
         self._selected_index = None
-        self._entry_var.set("")
+        self._paint_selected()
 
     # ── Selection accessors ───────────────────────────────────────────────────
 
-    def get_selected_object(self) -> Any | None:
+    def get_selected_object(self) -> Any | None:  # noqa: ANN401
         """Return the Python object bound to the selected row, or None."""
         return self._objects[self._selected_index] if self._selected_index is not None else None
 
@@ -493,7 +543,7 @@ class ColumnCombobox(tk.Frame):
             return None
         return dict(self._row_cache[self._selected_index])
 
-    def get_selected_value(self, key: str) -> Any | None:
+    def get_selected_value(self, key: str) -> Any | None:  # noqa: ANN401
         """Return the value of *key* column for the selected row, or None.
 
         Args:
@@ -504,7 +554,7 @@ class ColumnCombobox(tk.Frame):
         self._find_col(key)
         return self._row_cache[self._selected_index].get(key)
 
-    def get_object_at(self, index: int) -> Any | None:
+    def get_object_at(self, index: int) -> Any | None:  # noqa: ANN401
         """Return the Python object at *index*, or None if out of range.
 
         Args:
@@ -542,23 +592,20 @@ class ColumnCombobox(tk.Frame):
     def configure(self, **kwargs: Any) -> None:  # type: ignore[override]
         """Configure widget options.
 
-        Handles ``state``, ``font``, ``width``, ``textvariable``.
-        Remaining options are forwarded to the outer Frame.
+        Handles ``state``, ``font``. Remaining options are forwarded to the Frame.
 
         Args:
             **kwargs: Option key/value pairs.
         """
         if "state" in kwargs:
-            self._entry.configure(state=kwargs.pop("state"))
+            self._state = kwargs.pop("state")
         if "font" in kwargs:
             f = kwargs.pop("font")
             self._font = f if isinstance(f, tkFont.Font) else tkFont.Font(font=f)
-        if "width" in kwargs:
-            self._entry.configure(width=kwargs.pop("width"))
-        if "textvariable" in kwargs:
-            tv = kwargs.pop("textvariable")
-            self._entry_var = tv
-            self._entry.configure(textvariable=tv)
+            self._paint_selected()
+        # width and textvariable accepted for compatibility; no-op on Canvas layout
+        kwargs.pop("width", None)
+        kwargs.pop("textvariable", None)
         if kwargs:
             super().configure(**kwargs)
 
@@ -571,34 +618,28 @@ class ColumnCombobox(tk.Frame):
     def current(self, index: int | None = None) -> int | None:
         """Get or set the selected item by index.
 
-        When called with no argument (or None) returns the current selection
-        index (-1 when nothing is selected), mirroring ttk.Combobox.current().
-        When called with an integer, selects that row and updates the entry.
+        When called with no argument returns the current index (-1 if none).
+        When called with an integer, selects that row and repaints the display.
 
         Args:
-            index: Row index to select, or None to query the current index.
+            index: Row index to select, or None to query.
         """
         if index is None:
             return self._selected_index if self._selected_index is not None else -1
         if 0 <= index < len(self._objects):
             self._selected_index = index
-            dc = self._display_col
-            if dc is not None:
-                val = self._row_cache[index].get(dc, "")
-                self._entry_var.set(str(val) if val is not None else "")
+            self._paint_selected()
         return None
 
     def get(self) -> str:
-        """Return the current text shown in the entry field."""
-        return self._entry_var.get()
+        """Return the display-column value of the selected row, or empty string."""
+        if self._selected_index is None or self._display_col is None:
+            return ""
+        val = self._row_cache[self._selected_index].get(self._display_col, "")
+        return str(val) if val is not None else ""
 
-    def set(self, value: str) -> None:
-        """Set the text in the entry field directly.
-
-        Args:
-            value: String to display.
-        """
-        self._entry_var.set(value)
+    def set(self, _: str) -> None:
+        """No-op — the display is driven by row selection, not free text."""
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
@@ -619,3 +660,39 @@ class ColumnCombobox(tk.Frame):
             if c.key == key:
                 return c
         raise KeyError(f"No column '{key}'.")
+
+    def _paint_selected(self) -> None:
+        """Render all visible columns of the selected row on the display canvas.
+
+        The last visible column is expanded so the row always fills the canvas width.
+        Clears the canvas when nothing is selected.
+        """
+        canvas = self._canvas
+        canvas.delete("all")
+        if self._selected_index is None:
+            return
+        canvas_w = canvas.winfo_width()
+        if canvas_w <= 1:
+            return
+
+        cache = self._row_cache[self._selected_index]
+        font = self._font
+        widths = _eff_widths(self._columns, canvas_w)
+        x = 0
+        for col in self._columns:
+            if not col.visible:
+                continue
+            w = widths.get(col.key, col.width)
+            raw = cache.get(col.key, "")
+            text = str(raw) if raw is not None else ""
+            if x > 0:
+                canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
+            canvas.create_text(
+                x + _CELL_PAD,
+                _ROW_H // 2,
+                text=_truncate(text, w - _CELL_PAD * 2, font),
+                anchor="w",
+                font=font,
+                fill=_FG,
+            )
+            x += w

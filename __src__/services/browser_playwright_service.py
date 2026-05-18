@@ -59,9 +59,6 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
 
-        # Internal page registry — updated via context/page events.
-        self._pages: list[Page] = []
-
     # ------------------------------------------------------------------
     # IWebBrowserService — public API
     # ------------------------------------------------------------------
@@ -88,7 +85,6 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._pw = sync_playwright().start()
         self._browser = self._pw.chromium.launch(headless=False, args=args)
         self._context = self._browser.new_context(no_viewport=True)
-        self._context.on("page", self._on_context_new_page)  # Track every page opened
 
         # pour le no_viewport=True, à garder
         # en gros, si je l'ai pas à True, il va pertuber les événéments clavier,
@@ -150,7 +146,6 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         # Récupère le contexte existant (avec tout l'historique/session en cours)
         self._context = self._browser.contexts[0]
-        self._context.on("page", self._on_context_new_page)
 
     def append_new_page(self) -> None:
         """Open a new browser page and register it via the context page event.
@@ -185,9 +180,8 @@ class BrowserPlaywrightService(IWebBrowserService):
             raise BrowserNotLaunchedError()
 
         # Close each page; the context event will handle de-registration.
-        for page in self._pages:
+        for page in self._context.pages:
             page.close()
-        self._pages.clear()
 
     def get_current_page(self) -> Page:
         """Return the primary browser page (the first one opened).
@@ -198,11 +192,11 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             PageNotAvailableOrClosedError: If no page is available or the current page is closed.
         """
-        if not self._pages or len(self._pages) == 0 or self._pages[0].is_closed():
+        if not self._context.pages or len(self._context.pages) == 0 or self._context.pages[0].is_closed():
             raise PageNotAvailableOrClosedError()
 
         # First page in the list is always the primary workflow page.
-        return self._pages[0]
+        return self._context.pages[0]
 
     def get_all_pages(self) -> list[Page]:
         """Return all currently open pages tracked by this service.
@@ -210,7 +204,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         Returns:
             A snapshot list of all open Page objects.
         """
-        return list(self._pages)
+        return list(self._context.pages) if self._context is not None else []
 
     def close_browser(self) -> None:
         """Close all pages, the context, the browser, and Playwright runtime.
@@ -280,30 +274,3 @@ class BrowserPlaywrightService(IWebBrowserService):
         # This line should never be reached due to the re-raise in the except block
         # but is required for type checking.
         return None
-
-    # ------------------------------------------------------------------
-    # Private helpers — page tracking
-    # ------------------------------------------------------------------
-
-    def _on_context_new_page(self, page: Page) -> None:
-        """Register a page in the internal list and attach its close handler.
-
-        Called automatically by Playwright for every new page in the context,
-        whether opened programmatically (``append_new_page``) or by JavaScript.
-
-        Args:
-            page: The newly opened Playwright Page.
-        """
-        page.on("close", self._on_page_closed)
-        self._pages.append(page)
-
-    def _on_page_closed(self, page: Page) -> None:
-        """Remove a closed page from the internal tracking list.
-
-        Called automatically by Playwright when any tracked page is closed.
-
-        Args:
-            page: The Page that was just closed.
-        """
-        if page in self._pages:
-            self._pages.remove(page)

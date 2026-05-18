@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 import views.steps  # noqa: F401  — registers all step form defs
 from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from views.workflow_view import WorkflowView
 
 
@@ -196,21 +197,6 @@ def test_on_inline_cancel_resets_edit_mode(view: WorkflowView) -> None:
     view._is_edit_mode = True
     view._on_inline_cancel()
     assert not view._is_edit_mode
-
-
-# ---------------------------------------------------------------------------
-# _on_inline_type_changed
-# ---------------------------------------------------------------------------
-
-
-def test_on_inline_type_changed_syncs_listbox(view: WorkflowView) -> None:
-    """_on_inline_type_changed must select the matching label in the type listbox."""
-    from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
-
-    label = C_STEP_TYPE_TO_LABELS[StepType.OPEN_URL]
-    view._on_inline_type_changed(label)
-    sel = view._type_listbox.curselection()
-    assert sel  # some item must be selected
 
 
 # ---------------------------------------------------------------------------

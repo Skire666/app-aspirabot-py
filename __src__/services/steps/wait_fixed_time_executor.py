@@ -37,7 +37,7 @@ class WaitFixedTimeExecutor(IStepExecutor):
         if time_sec > 0:
             time.sleep(time_sec)
 
-        context.last_message_step = f"Attente de {time_sec:.3f} secondes effectuée."
+        context.last_message_step = f"Pause durant {time_sec:.3f} sec."
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

@@ -186,10 +186,7 @@ class RenderEngine:
             tag: Optional canvas tag applied to all primitives (for bulk delete on resize).
         """
         tags: tuple[str, ...] = (tag,) if tag else ()
-        if hovered:
-            bg = self._theme["btn_hover"]
-        else:
-            bg = self._theme["btn_toggle_on" if is_active else "btn_toggle_off"]
+        bg = self._theme["btn_hover"] if hovered else self._theme["btn_toggle_on" if is_active else "btn_toggle_off"]
         self.draw_rounded_rect(x1, y1, x2, y2, 5, bg, tags=tags)
         icon = icon_on if is_active else icon_off
         self._canvas.create_image(

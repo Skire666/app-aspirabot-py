@@ -46,7 +46,7 @@ C_SCRAPING_EMERGENCY_STOP_INVALID_MSG = (
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
 C_SCRAPING_NO_URL_SOURCE_MSG = (
     "Aucune source d'URLs n'est selectionnee.\n\n"
-    "Les etapes OPEN_URL en mode '<<URL>>' seront en erreur.\n\n"
+    "Les etapes OPEN_URL en mode '<<SOURCE>>' seront en erreur.\n\n"
     "Souhaitez-vous continuer quand meme ?"
 )
 

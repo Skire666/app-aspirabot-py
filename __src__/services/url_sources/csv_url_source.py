@@ -153,5 +153,5 @@ class CsvUrlSourceProvider(IUrlSourceProvider):
             return "CSV: non chargé"
         remaining = len(self._urls) - self._index
         if remaining > 0:
-            return f"CSV: {self._index} sur {len(self._urls)} consommé(s)"
+            return f"CSV: {self._index} / {len(self._urls)} consommé(s)"
         return "CSV: plus aucune URL"

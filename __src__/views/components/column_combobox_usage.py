@@ -11,6 +11,8 @@ from column_combobox import ColumnCombobox
 
 @dataclass
 class Produit:
+    """Example data class for the ColumnCombobox demo."""
+
     id: int
     nom: str
     categorie: str
@@ -18,16 +20,17 @@ class Produit:
 
 
 def main() -> None:
+    """Run the ColumnCombobox demo."""
     root = tk.Tk()
     root.title("ColumnCombobox Demo")
 
     ccb = ColumnCombobox(root, state="readonly", width=60)
     ccb.pack(fill="x", padx=10, pady=10)
 
-    ccb.add_column("id",        lambda p: p.id,              width=60,  visible=False)
-    ccb.add_column("nom",       lambda p: p.nom,             width=200, visible=True)
-    ccb.add_column("categorie", lambda p: p.categorie,       width=120, visible=True)
-    ccb.add_column("prix",      lambda p: f"{p.prix:.2f} €", width=80,  visible=True)
+    ccb.add_column("id", lambda p: p.id, width=60, visible=False)
+    ccb.add_column("nom", lambda p: p.nom, width=200, visible=True)
+    ccb.add_column("categorie", lambda p: p.categorie, width=120, visible=True)
+    ccb.add_column("prix", lambda p: f"{p.prix:.2f} €", width=80, visible=True)
 
     ccb.set_display_column("nom")
 

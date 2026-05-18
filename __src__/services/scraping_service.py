@@ -18,7 +18,6 @@ Example:
 
 import logging
 import threading
-import time
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -36,7 +35,7 @@ from services.workflow_service import WorkflowService
 from shared.constants import (
     C_BROWSER_ENGINE_PLAYWRIGHT,
 )
-from shared.enums import StepTypeEnum
+from shared.enums import EventScrapingEnum, StepTypeEnum
 from shared.exception_util import UnsupportedBrowserEngineError
 
 # ---------------------------------------------------------------------------
@@ -79,7 +78,6 @@ class ScrapingService:
 
         # Single context reference — initialized to safe defaults, updated each run.
         self._context: ScrapingContextModel = ScrapingContextModel(
-            prev_success=True,
             app_config=model_config,
             folder_export=Path(),
             downloaded_urls=set(),
@@ -104,8 +102,9 @@ class ScrapingService:
         self._started_at: datetime | None = None
 
         # Run-scoped callbacks.
-        self._on_step_start: Callable[[StepScrapingModel], None] | None = None
-        self._on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None
+        self._on_event_logging: Callable[[EventScrapingEnum, StepScrapingModel, ScrapingContextModel], None] | None = (
+            None
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -120,8 +119,7 @@ class ScrapingService:
         cancel_event: threading.Event | None = None,
         pause_event: threading.Event | None = None,
         on_user_wait: Callable[[], None] | None = None,
-        on_step_start: Callable[[StepScrapingModel], None] | None = None,
-        on_step_done: Callable[[StepScrapingModel, bool, str, float], None] | None = None,
+        on_logging_event: Callable[[EventScrapingEnum, StepScrapingModel, ScrapingContextModel], None] | None = None,
         on_init_step: Callable[[str], None] | None = None,
         emergency_stop_threshold: int = 0,
         on_emergency_stop: Callable[[], None] | None = None,
@@ -138,9 +136,8 @@ class ScrapingService:
             pause_event: Threading event that blocks step execution when cleared.
             export_folder: Path to the folder where results should be exported.
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
-            on_step_start: Optional callback fired before each step with (step,).
-            on_step_done: Optional callback fired after each step with
-                (step, success, message, elapsed_s).
+            on_logging_event: Optional callback fired for logging events with
+                (event_type, step, context).
             on_init_step: Optional callback fired with a status string during
                 browser initialisation (before any workflow step runs).
             emergency_stop_threshold: Pause the run when failed steps reach this
@@ -155,8 +152,7 @@ class ScrapingService:
         self._context.pause_event = pause_event or threading.Event()
         self._context.cancel_event = cancel_event or threading.Event()
         self._context.on_user_wait = on_user_wait
-        self._on_step_start = on_step_start
-        self._on_step_done = on_step_done
+        self._on_event_logging = on_logging_event
         self._emergency_stop_threshold = emergency_stop_threshold
         self._on_emergency_stop = on_emergency_stop
         self._started_at = datetime.now()
@@ -211,6 +207,7 @@ class ScrapingService:
             page = self._browser_service.get_current_page()
             url = page.url or ""
             tabs = len(self._browser_service.get_all_pages())
+            print(f"get_page_info: url={url}, tabs={tabs}")  # --- IGNORE ---
         except Exception:  # noqa: BLE001
             return "", 0
         else:
@@ -341,7 +338,7 @@ class ScrapingService:
         if self._context.url_source is not None:
             self._context.url_source.reset()
 
-        self._context.prev_success = True
+        self._context.last_result_step = True
         self._context.pending_jump = None
         self._context.end_process = False
         self._context.downloaded_urls = set()
@@ -368,33 +365,29 @@ class ScrapingService:
             The index of the next step to execute.
         """
         # Notify presenter that this step is about to start (for journal pre-insert).
-        if callable(self._on_step_start):
-            self._on_step_start(step)
+        if callable(self._on_event_logging):
+            self._on_event_logging(EventScrapingEnum.E_STEP_START, step, self._context)
 
-        start = time.time()
-        success, message = self._execute_step(step)
-        elapsed = time.time() - start
+        is_success = self._execute_step(step)
 
         # Update run-level statistics based on the outcome.
-        self._update_step_stats(step, success)
+        self._update_step_stats(step, is_success)
 
         # Notify the presenter with the completed step result.
-        if callable(self._on_step_done):
-            self._on_step_done(step, success, message, elapsed)
+        if callable(self._on_event_logging):
+            self._on_event_logging(EventScrapingEnum.E_STEP_DONE, step, self._context)
 
         # Resolve any pending jump or simply advance to the next step.
-        next_index = self._consume_pending_jump(index)
-        self._context.prev_success = success
-        return next_index
+        return self._consume_pending_jump(index)
 
-    def _update_step_stats(self, step: StepScrapingModel, success: bool) -> None:
+    def _update_step_stats(self, step: StepScrapingModel, is_success: bool) -> None:
         """Increment the appropriate run-level counters after a step completes.
 
         Args:
             step: The step that just executed.
-            success: True when the step completed without error.
+            is_success: True when the step completed without error.
         """
-        if success:
+        if is_success:
             self._steps_success_count += 1
         else:
             self._steps_failed_count += 1
@@ -439,6 +432,8 @@ class ScrapingService:
         # Threshold reached — block execution at the next iteration.
         self._context.pause_event.clear()
         if callable(self._on_emergency_stop):
+            if callable(self._on_event_logging):
+                self._on_event_logging(EventScrapingEnum.E_EMERGENCY_STOP, None, self._context)
             self._on_emergency_stop()
 
     def _resolve_jump_index(self, pending_jump: str | int, current_index: int) -> int:
@@ -470,7 +465,7 @@ class ScrapingService:
     # Step execution
     # ------------------------------------------------------------------
 
-    def _execute_step(self, step: StepScrapingModel) -> tuple[bool, str]:
+    def _execute_step(self, step: StepScrapingModel) -> bool:
         """Dispatch a step to its registered executor and convert exceptions.
 
         The context is updated in place before calling the executor; output
@@ -484,19 +479,22 @@ class ScrapingService:
         Returns:
             A ``(success, message)`` tuple.
         """
-        if not step.is_active:
-            return True, "SKIP"
-
         # Prepare per-step state on the shared context.
-        self._context.step_params = dict(step.params)
-        self._context.last_message_step = ""
-        self._context.pending_jump = None
-        self._context.end_process = False
+        self._context.prepare_step_execution(step)
+
+        # if the step is inactive, skip execution
+        if not step.is_active:
+            self._context.set_result_execution(True, "SKIP")
+            return True
 
         try:
             executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
             executor.execute_logical(self._browser_service, self._context)
         except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors
-            return False, f"Unexpected error: {exc}"
-        else:
-            return True, self._context.last_message_step or "OK"
+            # Log the exception and set the step result to failure, but allow the run to continue.
+            self._context.set_result_execution(False, f"Exc: {exc}")
+            return False
+
+        # end success path — the executor should have set the result and message on the context.
+        self._context.set_result_execution(True, "OK")
+        return True

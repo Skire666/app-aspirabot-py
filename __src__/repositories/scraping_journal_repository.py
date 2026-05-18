@@ -43,7 +43,7 @@ class ScrapingJournalRepository:
         """
         self.create_folder_if_missing(Path(path).parent)
 
-        lines = [_JOURNAL_HEADER, *rows]
+        lines = [*rows]
         with Path(path).open("w", encoding="utf-8") as fh:
             fh.write("".join(lines))
         self._logger.info("Journal exported to %s (%d rows)", path, len(rows))

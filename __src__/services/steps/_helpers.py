@@ -5,6 +5,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from interfaces.i_web_browser_service import IWebBrowserService
+from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
+
 _logger = logging.getLogger(__name__)
 
 
@@ -32,3 +35,26 @@ def evaluate_count_condition(count: int, operator: str, value: int) -> bool:
         "less_or_equal": count <= value,
     }
     return conditions.get(operator, False)
+
+
+def get_script_js_image() -> str:
+    """Return the JavaScript function for extracting image info."""
+    return """
+        () => Array.from(document.querySelectorAll('img'))
+            .filter(img => img.naturalWidth > 0)
+            .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight, complete: img.complete}))
+        """
+
+
+def get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) -> list[dict[str, Any]]:
+    script = get_script_js_image()
+    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(
+        script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+    )
+    # return an empty list if the script evaluation failed after all retries
+    if all_imgs is None:
+        return []
+    # filter images that do not match the dimension criteria
+    h_min, h_max = bounds["height_min"], bounds["height_max"]
+    w_min, w_max = bounds["width_min"], bounds["width_max"]
+    return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]

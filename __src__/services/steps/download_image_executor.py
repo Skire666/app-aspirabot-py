@@ -11,11 +11,8 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.download_image_params import DownloadImageParams
+from services.steps._helpers import get_filtered_images
 from services.workflow_service import register_step_executor
-from shared.constants import (
-    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
-    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
-)
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepTypeEnum
 from shared.exception_util import (
@@ -24,24 +21,6 @@ from shared.exception_util import (
 )
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.path_util import make_all_folders_if_not_exists
-
-
-def _get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) -> list[dict[str, Any]]:
-    script = """
-        () => Array.from(document.querySelectorAll('img'))
-            .filter(img => img.naturalWidth > 0)
-            .map(img => ({src: img.src, width: img.naturalWidth, height: img.naturalHeight, complete: img.complete}))
-    """
-    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(
-        script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
-    )
-
-    if all_imgs is None:
-        return []
-    # filter images that do not match the dimension criteria
-    h_min, h_max = bounds["height_min"], bounds["height_max"]
-    w_min, w_max = bounds["width_min"], bounds["width_max"]
-    return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
 
 
 def _select_images_by_mode(images: list[dict[str, Any]], mode: str) -> list[dict[str, Any]]:
@@ -76,7 +55,7 @@ class DownloadImageExecutor(IStepExecutor):
         page = browser.get_current_page()
         downloaded_urls = context.downloaded_urls
 
-        images = _get_filtered_images(browser, p.to_dict())
+        images = get_filtered_images(browser, p.to_dict())
         targets = _select_images_by_mode(images, p.mode)
         make_all_folders_if_not_exists(context.folder_export, is_file_path=False)
         downloaded_count = 0
@@ -175,9 +154,7 @@ class DownloadImageExecutor(IStepExecutor):
         for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):
             if min_k in bounds and max_k in bounds and bounds[min_k] > bounds[max_k]:
                 errors.append(
-                    ERROR_TEMPLATES["image_dim_range_invalid"].format(
-                        step=step_label, min_key=min_k, max_key=max_k
-                    )
+                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k)
                 )
         return errors
 
