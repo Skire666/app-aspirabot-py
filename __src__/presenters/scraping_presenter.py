@@ -226,7 +226,7 @@ class ScrapingPresenter:
         """Reload the providers list and forward it to the view dropdown."""
         print(f"_on_refresh_providers -> {self._providers_loaded}")
         try:
-            providers = self._service_provider.list_all_providers()
+            providers: list[ProviderModel] = self._service_provider.list_all_providers()
         except Exception as exc:  # noqa: BLE001
             self._logging.error("Failed to load providers list: %s", exc)
             providers = []

@@ -1,4 +1,4 @@
-"""Panel for selecting the active provider from a read-only combobox."""
+"""Panel for selecting the active provider from a ColumnCombobox."""
 
 # ---------------------------------------------------------------------------
 # Imports
@@ -9,6 +9,7 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
+from views.components.column_combobox import ColumnCombobox
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # ---------------------------------------------------------------------------
@@ -19,7 +20,8 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 class ProviderSelectionPanel(ttk.Frame):
     """Combobox row for picking the active scraping provider.
 
-    The display string format is: "Name  —  URL  —  vVersion".
+    Each dropdown entry is a provider dict bound directly to its row index via
+    ColumnCombobox.  No parallel display-string mapping is maintained.
 
     Example:
         >>> panel = ProviderSelectionPanel(parent)
@@ -35,22 +37,22 @@ class ProviderSelectionPanel(ttk.Frame):
         super().__init__(parent)
         self._on_provider_selected: Callable[[str], None] | None = None
         self._on_refresh_providers: Callable[[], None] | None = None
-
-        # Maps display string to provider id_file.
-        self._provider_id_by_display: dict[str, str] = {}
         self._build_widgets()
 
     def _build_widgets(self) -> None:
-        """Build and pack the combobox and refresh button."""
+        """Build and pack the ColumnCombobox and refresh button."""
         frame = HorizontalLineFrame(self, text="Sélectionner un fournisseur")
         frame.pack(side=tk.TOP, fill=tk.X)
 
-        # Combobox shows "Name — URL — vVersion".
-        self._cmb_provider = ttk.Combobox(frame, state="readonly", width=80)
+        self._cmb_provider = ColumnCombobox(frame)
+        self._cmb_provider.add_column("id_file", lambda p: p["id_file"], width=20, visible=False)
+        self._cmb_provider.add_column("provider_name", lambda p: p["provider_name"], width=40, visible=True)
+        self._cmb_provider.add_column("url", lambda p: p["url"], width=40, visible=True)
+        self._cmb_provider.add_column("version", lambda p: p["version"], width=10, visible=True)
+        self._cmb_provider.add_column("id_file_used", lambda p: p["id_file"], width=25, visible=True)
         self._cmb_provider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self._cmb_provider.bind("<<ComboboxSelected>>", self._on_combobox_selected)
 
-        # Refresh button triggers a provider list reload from disk.
         btn = ttk.Button(frame, text="Rafraîchir", command=self._notify_refresh)
         btn.pack(side=tk.RIGHT, padx=5)
 
@@ -88,22 +90,19 @@ class ProviderSelectionPanel(ttk.Frame):
         Returns:
             True when the previously selected entry still exists in the new list.
         """
-        current = self._cmb_provider.get()
-        self._provider_id_by_display.clear()
-        values: list[str] = []
+        prev = self._cmb_provider.get_selected_object()
+        prev_id: str | None = prev["id_file"] if prev is not None else None
 
-        # Build display strings and id_file mapping.
-        for p in providers:
-            display = f"{p['provider_name']}  —  {p['url']}  —  v{p['version']}  —  ({p['id_file']})"
-            self._provider_id_by_display[display] = p["id_file"]
-            values.append(display)
-        self._cmb_provider["values"] = values
+        self._cmb_provider.clear()
+        self._cmb_provider.add_items(providers)
 
-        # Restore the prior selection when it still exists.
-        if current and current in self._provider_id_by_display:
-            self._cmb_provider.set(current)
-            return True
-        self._cmb_provider.set("")
+        if prev_id:
+            for i in range(self._cmb_provider.size()):
+                obj = self._cmb_provider.get_object_at(i)
+                if obj is not None and obj["id_file"] == prev_id:
+                    self._cmb_provider.current(i)
+                    return True
+
         return False
 
     def set_selected_provider(self, id_file: str) -> None:
@@ -112,9 +111,10 @@ class ProviderSelectionPanel(ttk.Frame):
         Args:
             id_file: The unique provider file identifier to select.
         """
-        for display, fid in self._provider_id_by_display.items():
-            if fid == id_file:
-                self._cmb_provider.set(display)
+        for i in range(self._cmb_provider.size()):
+            obj = self._cmb_provider.get_object_at(i)
+            if obj is not None and obj["id_file"] == id_file:
+                self._cmb_provider.current(i)
                 return
 
     # ------------------------------------------------------------------
@@ -127,10 +127,9 @@ class ProviderSelectionPanel(ttk.Frame):
         Args:
             _event: Tkinter <<ComboboxSelected>> event (unused).
         """
-        display = self._cmb_provider.get()
-        id_file = self._provider_id_by_display.get(display)
-        if id_file and self._on_provider_selected:
-            self._on_provider_selected(id_file)
+        obj = self._cmb_provider.get_selected_object()
+        if obj is not None and self._on_provider_selected:
+            self._on_provider_selected(obj["id_file"])
 
     def _notify_refresh(self) -> None:
         """Fire the on_refresh_providers callback."""
