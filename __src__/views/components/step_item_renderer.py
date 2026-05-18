@@ -27,10 +27,9 @@ from collections import OrderedDict
 from collections.abc import Callable
 
 from models.step_scraping_model import StepScrapingModel
+from shared.constants import C_COLOR_BLUE_HIGHLIGHT
 from shared.enums import StepTypeEnum
 from shared.step_registry import get_form
-
-from __src__.shared.constants import C_COLOR_BLUE_HIGHLIGHT
 
 # ---------------------------------------------------------------------------
 # Constants

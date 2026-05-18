@@ -10,11 +10,10 @@ from collections.abc import Callable
 from datetime import datetime
 from tkinter import ttk
 
+from models.scraping_report_model import ScrapingReportModel
+from shared.constants import C_COLOR_BLUE_HIGHLIGHT, C_COLOR_ORANGE_BLINKING
 from shared.i18n_fra import C_SCRAPING_STATUS_INACTIVE
 from views.components.horizontal_line_frame import HorizontalLineFrame
-
-from __src__.models.scraping_report_model import ScrapingReportModel
-from __src__.shared.constants import C_COLOR_BLUE_HIGHLIGHT, C_COLOR_ORANGE_BLINKING
 
 # ---------------------------------------------------------------------------
 # Constants

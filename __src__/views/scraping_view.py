@@ -21,14 +21,13 @@ from tkinter import messagebox, ttk
 from typing import Any
 
 from models.app_configuration_model import AppConfigurationModel
+from models.scraping_report_model import ScrapingReportModel
 from shared.i18n_fra import C_SCRAPING_NO_URL_SOURCE_MSG, C_SCRAPING_NO_URL_SOURCE_TITLE
 from views.scraping.launch_profile_panel import LaunchProfilePanel
 from views.scraping.profile_management_panel import ProfileManagementPanel
 from views.scraping.provider_selection_panel import ProviderSelectionPanel
 from views.scraping.scraping_journal_panel import ScrapingJournalPanel
 from views.scraping.workflow_controls_panel import WorkflowControlsPanel
-
-from __src__.models.scraping_report_model import ScrapingReportModel
 
 # ---------------------------------------------------------------------------
 # Classes
