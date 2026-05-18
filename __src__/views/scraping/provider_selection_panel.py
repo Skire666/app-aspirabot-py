@@ -45,11 +45,12 @@ class ProviderSelectionPanel(ttk.Frame):
         frame.pack(side=tk.TOP, fill=tk.X)
 
         self._cmb_provider = ColumnCombobox(frame)
-        self._cmb_provider.add_column("id_file", lambda p: p["id_file"], width=20, visible=False)
-        self._cmb_provider.add_column("provider_name", lambda p: p["provider_name"], width=40, visible=True)
-        self._cmb_provider.add_column("url", lambda p: p["url"], width=40, visible=True)
-        self._cmb_provider.add_column("version", lambda p: p["version"], width=10, visible=True)
-        self._cmb_provider.add_column("id_file_used", lambda p: p["id_file"], width=25, visible=True)
+        self._cmb_provider.add_column("id_file", lambda p: p["id_file"], width=0, visible=False)
+        self._cmb_provider.add_column("provider_name", lambda p: p["provider_name"], width=200, visible=True)
+        self._cmb_provider.add_column("url", lambda p: p["url"], width=300, visible=True)
+        self._cmb_provider.add_column("version", lambda p: p["version"], width=60, visible=True)
+        self._cmb_provider.add_column("id_file_used", lambda p: p["id_file"], width=160, visible=True)
+        self._cmb_provider.set_display_column("provider_name")
         self._cmb_provider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self._cmb_provider.bind("<<ComboboxSelected>>", self._on_combobox_selected)
 
