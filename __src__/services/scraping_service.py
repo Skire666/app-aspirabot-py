@@ -120,7 +120,6 @@ class ScrapingService:
         pause_event: threading.Event | None = None,
         on_user_wait: Callable[[], None] | None = None,
         on_logging_event: Callable[[EventScrapingEnum, StepScrapingModel, ScrapingContextModel], None] | None = None,
-        on_init_step: Callable[[str], None] | None = None,
         emergency_stop_threshold: int = 0,
         on_emergency_stop: Callable[[], None] | None = None,
     ) -> ScrapingReportModel:
@@ -138,8 +137,6 @@ class ScrapingService:
             on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
             on_logging_event: Optional callback fired for logging events with
                 (event_type, step, context).
-            on_init_step: Optional callback fired with a status string during
-                browser initialisation (before any workflow step runs).
             emergency_stop_threshold: Pause the run when failed steps reach this
                 count. Disabled when set to 0.
             on_emergency_stop: Optional callback fired (from the worker thread)
@@ -168,11 +165,11 @@ class ScrapingService:
             raise UnsupportedBrowserEngineError(self._context.app_config.browser_engine)
 
         # Initialise the browser and run all steps.
-        cancelled = self._run_browser_lifecycle(provider, on_init_step)
+        cancelled = self._run_browser_lifecycle(provider)
         return self._build_report(cancelled)
 
+    @staticmethod
     def _build_url_source(
-        self,
         source_type: str,
         source_value: list[str] | str | None,
     ) -> IUrlSourceProvider | None:
@@ -191,27 +188,6 @@ class ScrapingService:
         if source_type and source_value is not None:
             return build_url_source_provider(source_type, source_value)
         return None
-
-    def get_page_info(self) -> tuple[str, int]:
-        """Return the current page URL and number of open tabs.
-
-        Safe to call from a callback while a run is active. Returns empty
-        defaults when no page is active or when querying the page fails.
-
-        Returns:
-            A ``(url, tabs_count)`` tuple.
-        """
-        if not self._browser_service.is_launched:
-            return "", 0
-        try:
-            page = self._browser_service.get_current_page()
-            url = page.url or ""
-            tabs = len(self._browser_service.get_all_pages())
-            print(f"get_page_info: url={url}, tabs={tabs}")  # --- IGNORE ---
-        except Exception:  # noqa: BLE001
-            return "", 0
-        else:
-            return url, tabs
 
     @property
     def current_stats(self) -> ScrapingReportModel:
@@ -238,40 +214,27 @@ class ScrapingService:
     def _run_browser_lifecycle(
         self,
         provider: ProviderModel,
-        on_init_step: Callable[[str], None] | None,
     ) -> bool:
         """Launch browser, open initial page, run steps, close browser.
 
         Args:
             provider: Provider model with browser config and workflow steps.
-            on_init_step: Callback for init-phase status messages.
 
         Returns:
             True if the run was aborted by the cancel signal.
         """
-        self._emit_init("Initialisation du navigateur...", on_init_step)
+        self._on_event_logging(EventScrapingEnum.E_BROWSER_INIT, None, None)
         self._browser_service.launch()
         try:
-            self._emit_init("Création du contexte de navigation…", on_init_step)
+            self._on_event_logging(EventScrapingEnum.E_CONTEXT_INIT, None, None)
             self._browser_service.append_new_page()
-            self._emit_init("Démarrage des étapes du workflow…", on_init_step)
+            self._on_event_logging(EventScrapingEnum.E_WORKFLOW_INIT, None, None)
             self._run_steps(provider.steps)
         finally:
             # Always close the browser even if a step raised an exception.
             self._browser_service.close_browser()
 
         return self._context.cancel_event.is_set()
-
-    def _emit_init(self, message: str, callback: Callable[[str], None] | None) -> None:
-        """Log an init-phase message and forward it to the optional callback.
-
-        Args:
-            message: Human-readable initialisation status.
-            callback: Optional callable receiving the message string.
-        """
-        self._logger.info(message)
-        if callable(callback):
-            callback(message)
 
     def _build_report(self, cancelled: bool) -> ScrapingReportModel:
         """Assemble the final report from run-level counters.

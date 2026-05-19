@@ -55,7 +55,7 @@ class OpenUrlExecutor(IStepExecutor):
         page.goto(target_url, wait_until="commit")
         page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
 
-        context.last_message_step = f"| Ouvert : {target_url}"
+        context.last_message_step = f"Ouvert : {target_url}"
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

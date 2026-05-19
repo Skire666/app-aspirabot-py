@@ -238,7 +238,6 @@ class WorkflowControlsPanel(ttk.Frame):
     def update_progress(
         self,
         url: str,
-        tabs: int,
         status: str,
         stats_text: ScrapingReportModel | None,
     ) -> None:
@@ -248,16 +247,14 @@ class WorkflowControlsPanel(ttk.Frame):
 
         Args:
             url: Current browser page URL.
-            tabs: Number of open browser tabs.
             status: Workflow status label.
             stats_text: Pre-formatted statistics string built by the presenter.
         """
-        self.after(100, lambda: self._apply_progress(url, tabs, status, stats_text))
+        self.after(0, lambda: self._apply_progress(url, status, stats_text))
 
     def _apply_progress(
         self,
         url: str,
-        tabs: int,
         status: str,
         stats: ScrapingReportModel | None,
     ) -> None:
@@ -272,7 +269,7 @@ class WorkflowControlsPanel(ttk.Frame):
         steps_inprogress = f"{status or '—'}"
         self._var_prog_steps.set(steps_inprogress)
 
-        tabs_info = f"Ouverts : x{tabs:<3d}    |     Page[0] : {url or '—'}"
+        tabs_info = f"Dernier OpenUrlExec : {url or '—'}"
         self._var_prog_tabs.set(tabs_info)
 
         if stats:

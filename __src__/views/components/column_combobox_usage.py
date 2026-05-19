@@ -57,7 +57,7 @@ def main() -> None:
         ccb.set_column_visible("categorie", not cur)
         status.configure(text=f"categorie visible: {not cur}")
 
-    tk.Button(root, text="Afficher/Masquer catégorie", command=toggle_categorie).pack(pady=4)
+    tk.Button(root, text="Afficher/Masquer catégorie", command=toggle_categorie).pack(pady=5)
 
     root.mainloop()
 

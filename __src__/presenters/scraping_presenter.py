@@ -229,6 +229,7 @@ class ScrapingPresenter:
     def _on_refresh_providers(self) -> None:
         """Reload the providers list and forward it to the view dropdown."""
         print(f"_on_refresh_providers -> {self._providers_loaded}")
+        # TODO PCO on peut spam le refresh
         try:
             providers: list[ProviderModel] = self._service_provider.list_all_providers()
         except Exception as exc:  # noqa: BLE001
@@ -580,6 +581,12 @@ class ScrapingPresenter:
             self._on_logging_event_done(step, context)
         elif event == EventScrapingEnum.E_EMERGENCY_STOP:
             self._on_logging_event_stop(step, context)
+        elif event == EventScrapingEnum.E_BROWSER_INIT:
+            self._on_logging_event_aspirabot("Initialisation du navigateur...")
+        elif event == EventScrapingEnum.E_CONTEXT_INIT:
+            self._on_logging_event_aspirabot("Création du contexte de navigation...")
+        elif event == EventScrapingEnum.E_WORKFLOW_INIT:
+            self._on_logging_event_aspirabot("Démarrage des étapes du workflow...")
 
     def _on_logging_event_start(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
         """Called by the service just before a step executes.
@@ -589,6 +596,7 @@ class ScrapingPresenter:
 
         Args:
             step: The step model about to execute.
+            context: The current scraping context, containing live stats and info.
         """
         str_progress = ""
         if step.step_type == StepTypeEnum.E_OPEN_URL and step.params[C_KEY_URL_MODE] == C_INPUT_DEFAULT_URL_MODE:
@@ -613,10 +621,8 @@ class ScrapingPresenter:
         self._view.add_journal_entry(str_entry)
 
         # Push live progress values to the progression frame.
-        url, tabs = self._service_scraping.get_page_info()
         self._view.update_progress(
-            url=url,
-            tabs=tabs,
+            url=context.last_url_opened,
             status="Processus mise en pause : seuil d'erreurs dépassé",
             stats_text=self._service_scraping.current_stats,
         )
@@ -640,25 +646,26 @@ class ScrapingPresenter:
         self._view.add_journal_entry(str_entry=line)
 
         # Push live progress values to the progression frame.
-        url, tabs = self._service_scraping.get_page_info()
         self._view.update_progress(
-            url=url,
-            tabs=tabs,
+            url=context.last_url_opened,
             status="Scraping en cours",
             stats_text=self._service_scraping.current_stats,
         )
 
-    def _on_init_step(self, message: str) -> None:
-        """Called by the service during browser initialization phases.
+    def _on_logging_event_aspirabot(self, message: str) -> None:
+        # Complete the journal row started in _on_step_start.
+        date_str = get_datetime_now_hh_mm_ss()
+        line = f"{date_str} | {message}\n"
 
-        Args:
-            message: Human-readable init status string.
-        """
+        # logs
+        self._all_logs_scraping.append(line)
+        self._view.add_journal_entry(str_entry=line)
+
+        # Push live progress values to the progression frame.
         self._view.update_progress(
             url="",
-            tabs=0,
-            status="Scraping en cours",
-            stats_text=None,
+            status=message,
+            stats_text=self._service_scraping.current_stats,
         )
 
     # ------------------------------------------------------------------
@@ -691,7 +698,6 @@ class ScrapingPresenter:
                 self._pause_event,
                 self._on_user_wait_step,
                 self._on_logging_event,
-                self._on_init_step,
                 self._emergency_stop_threshold,
                 self._on_emergency_stop,
             )
@@ -716,14 +722,12 @@ class ScrapingPresenter:
             status = "Scraping annulé" if report.cancelled else "Scraping terminé"
             self._view.update_progress(
                 url="",
-                tabs=0,
                 status=status,
                 stats_text=report,
             )
         else:
             self._view.update_progress(
                 url="",
-                tabs=0,
                 status="erreur",
                 stats_text=None,
             )

@@ -42,21 +42,21 @@ class ProvidersView(ttk.Frame):
         """Constructs UI elements including top bar and provider list tree."""
         # Top panel
         top_frame = ttk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=10)
+        top_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(10, 5))
 
         self._btn_create = ttk.Button(top_frame, text="Créer un fournisseur", command=self._notify_create_provider)
-        self._btn_create.pack(side=tk.LEFT, padx=5)
+        self._btn_create.pack(side=tk.LEFT, padx=(5, 10))
 
         self._btn_open_folder = ttk.Button(
             top_frame, text="Ouvrir dossier des fournisseurs", command=self._notify_open_folder
         )
-        self._btn_open_folder.pack(side=tk.LEFT, padx=5)
+        self._btn_open_folder.pack(side=tk.LEFT, padx=(0, 10))
 
         self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=self._notify_refresh)
-        self._btn_refresh.pack(side=tk.LEFT, padx=5)
+        self._btn_refresh.pack(side=tk.LEFT, padx=(0, 10))
 
         self._btn_validate = ttk.Button(top_frame, text="Valider les fournisseurs", command=self._notify_validate)
-        self._btn_validate.pack(side=tk.LEFT, padx=5)
+        self._btn_validate.pack(side=tk.LEFT, padx=(0, 10))
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun fournisseur")
         self._lbl_counter.pack(side=tk.RIGHT, padx=10)

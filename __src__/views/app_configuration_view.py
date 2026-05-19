@@ -100,44 +100,44 @@ class AppConfigurationView(ttk.Frame):
         return frame
 
     def _add_enum_row_log(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
-        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
+        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         combo = ttk.Combobox(frame, textvariable=var, state="readonly")
-        combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=6, pady=4)
+        combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
         self._log_level_combo = combo
 
     def _add_enum_row_browser_engine(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
-        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
+        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         combo = ttk.Combobox(frame, textvariable=var, state="readonly")
-        combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=6, pady=4)
+        combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
         self._browser_engine_combo = combo
 
     @staticmethod
     def _add_text_row(frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
-        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
+        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         ttk.Entry(frame, textvariable=var).grid(
             row=row,
             column=1,
             columnspan=2,
             sticky="ew",
-            padx=6,
-            pady=4,
+            padx=5,
+            pady=5,
         )
 
     def _add_path_row(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
-        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
-        ttk.Entry(frame, textvariable=var).grid(row=row, column=1, sticky="ew", padx=6, pady=4)
+        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
+        ttk.Entry(frame, textvariable=var).grid(row=row, column=1, sticky="ew", padx=5, pady=5)
         ttk.Button(frame, text="Parcourir", command=lambda: self._browse_directory(var)).grid(
             row=row,
             column=2,
             sticky="e",
-            padx=6,
-            pady=4,
+            padx=5,
+            pady=5,
         )
 
     @staticmethod
     def _add_bool_row(frame: ttk.Frame, row: int, label: str, var: tk.BooleanVar) -> None:
-        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=6, pady=4)
-        CanvasCheckbox(frame, variable=var).grid(row=row, column=1, sticky="w", padx=6, pady=6)
+        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
+        CanvasCheckbox(frame, variable=var).grid(row=row, column=1, sticky="w", padx=5, pady=5)
 
     @staticmethod
     def _browse_directory(target_var: tk.StringVar) -> None:

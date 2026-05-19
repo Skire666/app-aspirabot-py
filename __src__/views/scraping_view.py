@@ -138,7 +138,6 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
     def update_progress(
         self,
         url: str,
-        tabs: int,
         status: str,
         stats_text: ScrapingReportModel | None,
     ) -> None:
@@ -148,11 +147,10 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
 
         Args:
             url: Current browser page URL.
-            tabs: Number of open browser tabs.
             status: Workflow status label.
             stats_text: Pre-formatted statistics string built by the presenter.
         """
-        self._workflow_panel.update_progress(url, tabs, status, stats_text)
+        self._workflow_panel.update_progress(url, status, stats_text)
 
     def start_elapsed_timer(self, started_at: datetime) -> None:
         """Start the elapsed-time ticker in the progression panel.

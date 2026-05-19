@@ -71,7 +71,7 @@ class FaqView(ttk.Frame):
     def _build_right_panel(self) -> None:
         # Right pane: scrollable text
         right_frame = ttk.Frame(self)
-        right_frame.grid(row=0, column=1, sticky=tk.NSEW, padx=(8, 0))
+        right_frame.grid(row=0, column=1, sticky=tk.NSEW, padx=(10, 0))
         right_frame.columnconfigure(0, weight=1)
         right_frame.rowconfigure(0, weight=1)
 
