@@ -135,7 +135,7 @@ class IWebBrowserService(ABC):
         """
 
     @abstractmethod
-    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> object:
+    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
 
         Calls ``get_current_page().evaluate(script)`` and retries up to
@@ -148,7 +148,7 @@ class IWebBrowserService(ABC):
             delay: Seconds to wait between attempts.
 
         Returns:
-            The value returned by the JS expression.
+            A tuple of (is_success, result) where is_success indicates if the evaluation was successful and result is the value returned by the JS expression.
 
         Raises:
             Exception: The last exception raised if all retries are exhausted.

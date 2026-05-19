@@ -6,7 +6,11 @@ import logging
 from typing import Any
 
 from interfaces.i_web_browser_service import IWebBrowserService
-from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
+from shared.constants import (
+    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
+    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
+    C_STR_ERROR_JS_EVALUATION,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -48,11 +52,11 @@ def get_script_js_image() -> str:
 
 def get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) -> list[dict[str, Any]]:
     script = get_script_js_image()
-    all_imgs: list[dict[str, Any]] = browser.evaluate_script_with_safe_retry(
+    is_success, all_imgs = browser.evaluate_script_with_safe_retry(
         script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
     )
     # return an empty list if the script evaluation failed after all retries
-    if all_imgs is None:
+    if not is_success or all_imgs is None or str(all_imgs) == C_STR_ERROR_JS_EVALUATION:
         return []
     # filter images that do not match the dimension criteria
     h_min, h_max = bounds["height_min"], bounds["height_max"]

@@ -28,6 +28,8 @@ from shared.exception_util import (
     PageNotAvailableOrClosedError,
 )
 
+from __src__.shared.constants import C_STR_ERROR_JS_EVALUATION
+
 # ---------------------------------------------------------------------------
 # Class
 # ---------------------------------------------------------------------------
@@ -244,7 +246,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         return self._pw is not None
 
-    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> object:
+    def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
 
         Args:
@@ -253,7 +255,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             delay: Seconds to wait between attempts.
 
         Returns:
-            The value returned by the JS expression.
+            A tuple of (is_success, result) where is_success indicates if the evaluation was successful and result is the value returned by the JS expression.
 
         Raises:
             Exception: The last exception raised if all retries are exhausted.
@@ -263,7 +265,8 @@ class BrowserPlaywrightService(IWebBrowserService):
         # Retry loop — re-raises on the final failed attempt.
         for attempt in range(1, retries + 1):
             try:
-                return page.evaluate(script)
+                result = page.evaluate(script)
+                return True, result
             except Exception as exc:
                 self._logger.warning("Script eval failed attempt %d/%d: %s", attempt, retries, exc)
                 if attempt == retries:
@@ -273,4 +276,4 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         # This line should never be reached due to the re-raise in the except block
         # but is required for type checking.
-        return None
+        return False, C_STR_ERROR_JS_EVALUATION

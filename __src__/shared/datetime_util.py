@@ -26,7 +26,7 @@ def get_time_now_hh_mm_ss() -> str:
         A string representing the current date and time.
 
     Example:
-        >>> get_datetime_now_hh_mm_ss()
+        >>> get_time_now_hh_mm_ss()
         '14:30:45'
     """
     return datetime.now().strftime(C_DATETIME_FORMAT_HH_MM_SS)

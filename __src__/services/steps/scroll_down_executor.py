@@ -31,11 +31,13 @@ class ScrollDownExecutor(IStepExecutor):
         """Execute the step."""
         p = ScrollDownParams.from_dict(context.step_params)
 
-        browser.evaluate_script_with_safe_retry(
+        is_success, _ = browser.evaluate_script_with_safe_retry(
             f"window.scrollBy(0, {p.pixels})",
             C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
             C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
         )
+        if not is_success:
+            raise ValueError("Failed to execute scroll down script after retries")
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

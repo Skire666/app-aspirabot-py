@@ -75,6 +75,9 @@ C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
 # ---------------------------------------------------------------------------
 
+# Special string used to indicate an error occurred during JavaScript evaluation in the browser context.
+C_STR_ERROR_JS_EVALUATION: str = "<[__ERROR__]>"
+
 # Maximum size for images to be scraped (in pixels) - used as default value for image size filters
 C_MAXIMUM_SIZE_IMAGE: int = 99999
 

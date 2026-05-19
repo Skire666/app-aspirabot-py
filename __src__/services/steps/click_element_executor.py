@@ -34,12 +34,15 @@ class ClickElementExecutor(IStepExecutor):
         """Execute the step."""
         p = ClickElementParams.from_dict(context.step_params)
 
-        self._do_click(browser, p.click_mode, p.selector)  # can throw
+        page = browser.get_current_page()  # can throw if page is closed
+        if page.locator(p.selector).count() <= 0:
+            raise ElementNotFoundForClickError(p.selector, p.mode)
 
-        context.last_message_step = (
-            f"Élément cliqué avec succès pour le sélecteur {p.selector!r} avec le mode {p.click_mode!r}."
-        )
+        result = self._do_click(browser, p.click_mode, p.selector)  # can throw
 
+        context.last_message_step = f"Clique OK avec sélecteur {p.selector!r} avec le mode {result!r}."
+
+    @staticmethod
     def _do_click(browser: IWebBrowserService, mode_click: str, selector: str) -> str:
         page = browser.get_current_page()
 
@@ -65,9 +68,12 @@ class ClickElementExecutor(IStepExecutor):
 
         # Tentative 3 : JS direct
         script = f"document.querySelector('{selector}')?.click();"
-        browser.evaluate_script_with_safe_retry(
+        is_success, _ = browser.evaluate_script_with_safe_retry(
             script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
         )  # can throw
+
+        if not is_success:
+            raise ElementNotFoundForClickError(selector, "JS Direct")
 
         return "JS Direct"
 

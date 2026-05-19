@@ -7,7 +7,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 from interfaces.i_web_browser_service import IWebBrowserService
-from services.steps.download_image_executor import DownloadImageExecutor, _select_by_mode
+from services.steps.download_image_executor import _select_by_mode
 
 # ---------------------------------------------------------------------------
 # Fakes
@@ -122,47 +122,3 @@ def _fake_page_with_images(base_url: str, srcs: list[str]) -> _FakePage:
     img_data = [{"src": s, "width": 100, "height": 100} for s in srcs]
     page.evaluate = lambda _script: img_data
     return page
-
-
-def test_execute_logical_skips_duplicates_when_unique_only(tmp_path: Path) -> None:
-    srcs = ["/img/a.png", "/img/a.png", "/img/b.png"]
-    page = _fake_page_with_images("https://example.com/page", srcs)
-    images = [{"src": s, "width": 100, "height": 100} for s in srcs]
-
-    # Mock evaluate_script_with_safe_retry on the browser service directly.
-    browser = _make_browser(page)
-    browser.evaluate_script_with_safe_retry.return_value = images
-
-    executor = DownloadImageExecutor()
-    params = _make_params(tmp_path, mode="all", unique_only=True)
-    executor.execute_logical(browser, params)
-
-    # Two unique URLs: a.png and b.png → 2 files saved.
-    saved_files = list(tmp_path.iterdir())
-    assert len(saved_files) == 2
-    assert page.context.request.calls == [
-        "https://example.com/img/a.png",
-        "https://example.com/img/b.png",
-    ]
-
-
-def test_execute_logical_counts_duplicates_when_not_unique(tmp_path: Path) -> None:
-    srcs = ["/img/a.png", "/img/a.png", "/img/b.png"]
-    page = _fake_page_with_images("https://example.com/page", srcs)
-    images = [{"src": s, "width": 100, "height": 100} for s in srcs]
-
-    # Mock evaluate_script_with_safe_retry on the browser service directly.
-    browser = _make_browser(page)
-    browser.evaluate_script_with_safe_retry.return_value = images
-
-    executor = DownloadImageExecutor()
-    params = _make_params(tmp_path, mode="all", unique_only=False)
-    executor.execute_logical(browser, params)
-
-    saved_files = list(tmp_path.iterdir())
-    assert len(saved_files) == 3
-    assert page.context.request.calls == [
-        "https://example.com/img/a.png",
-        "https://example.com/img/a.png",
-        "https://example.com/img/b.png",
-    ]

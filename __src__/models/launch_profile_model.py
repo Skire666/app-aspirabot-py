@@ -189,7 +189,7 @@ class LaunchProfileModel:
 
         Example:
             >>> profile = LaunchProfileModel.get_default()
-            >>> profile.mark_modified()
+            >>> profile.mark_profile_as_modified()
             >>> profile.modified_date_profile is not None
             True
         """
