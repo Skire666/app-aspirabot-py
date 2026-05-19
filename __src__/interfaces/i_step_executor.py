@@ -17,7 +17,7 @@ Example:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
@@ -59,17 +59,6 @@ class IStepExecutor(ABC):
 
         Returns:
             The matching StepType enum member.
-
-        Raises:
-            None.
-        """
-
-    @abstractmethod
-    def default_params_dict(self) -> dict[str, Any]:
-        """Returns the default parameter dictionary for this step type.
-
-        Returns:
-            A plain dict suitable for JSON storage.
 
         Raises:
             None.

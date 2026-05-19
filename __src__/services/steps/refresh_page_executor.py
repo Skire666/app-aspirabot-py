@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, override
+from typing import override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -23,11 +23,6 @@ class RefreshPageExecutor(IStepExecutor):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_REFRESH_PAGE
-
-    @override
-    def default_params_dict(self) -> dict[str, Any]:
-        """Return default parameters as dict."""
-        return RefreshPageParams.default().to_dict()
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
@@ -53,9 +48,7 @@ class RefreshPageExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["refresh_page_timeout_invalid"].format(step=index_display))
         if p.timeout_duration > 0 and p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             errors.append(
-                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(
-                    step=index_display, value=p.timeout_unit
-                )
+                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(step=index_display, value=p.timeout_unit)
             )
         return errors
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, override
+from typing import override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -23,11 +23,6 @@ class JumpToStepExecutor(IStepExecutor):
         return StepTypeEnum.E_JUMP_TO_STEP
 
     @override
-    def default_params_dict(self) -> dict[str, Any]:
-        """Return default parameters as dict."""
-        return JumpToStepParams.default().to_dict()
-
-    @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = JumpToStepParams.from_dict(context.step_params)
@@ -40,9 +35,10 @@ class JumpToStepExecutor(IStepExecutor):
         if should_jump and target_step_id:
             context.pending_jump = target_step_id
 
-        context.last_message_step = (
-            f"{'Doit sauter' if should_jump else 'Ne saute pas'} vers l'étape [{target_step_id}]."
+        str_jump = (
+            f"Doit sauter vers l'étape [#{target_step_id}]" if should_jump else "Ne saute pas. Lit prochaine étape."
         )
+        context.last_message_step = str_jump
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

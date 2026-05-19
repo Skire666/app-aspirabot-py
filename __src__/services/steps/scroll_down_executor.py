@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, override
+from typing import override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -25,11 +25,6 @@ class ScrollDownExecutor(IStepExecutor):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_SCROLL_DOWN
-
-    @override
-    def default_params_dict(self) -> dict[str, Any]:
-        """Return default parameters as dict."""
-        return ScrollDownParams.default().to_dict()
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:

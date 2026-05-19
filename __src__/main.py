@@ -297,7 +297,7 @@ def _wire_provider_navigation(
         # Open the edit form in creation mode and navigate to it.
         provider_edit_presenter.create_new()
         main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_PROVIDER, tk.DISABLED)
+        main_view.set_tab_state(TitleModuleEnum.E_HOME, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
         main_view.show_view(TitleModuleEnum.E_WORKFLOW)
 
@@ -305,7 +305,7 @@ def _wire_provider_navigation(
         # Load the selected provider into the edit form and navigate to it.
         if provider_edit_presenter.load_provider(id_file):
             main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-            main_view.set_tab_state(TitleModuleEnum.E_PROVIDER, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_HOME, tk.DISABLED)
             main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
             main_view.show_view(TitleModuleEnum.E_WORKFLOW)
 
@@ -313,9 +313,9 @@ def _wire_provider_navigation(
         # Return to the list and disable the edit tab after save/cancel.
         provider_presenter.refresh()
         main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_PROVIDER, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_HOME, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
-        main_view.show_view(TitleModuleEnum.E_PROVIDER)
+        main_view.show_view(TitleModuleEnum.E_HOME)
 
     # Inject all navigation callbacks into the two presenters.
     provider_presenter.on_request_create_provider = on_request_create_provider
@@ -402,14 +402,14 @@ def _register_views(
     """
     # Map each sidebar label to its corresponding view widget.
     main_view.add_view(TitleModuleEnum.E_LOGS, log_view)
-    main_view.add_view(TitleModuleEnum.E_PROVIDER, provider_view)
+    main_view.add_view(TitleModuleEnum.E_HOME, provider_view)
     main_view.add_view(TitleModuleEnum.E_WORKFLOW, provider_edit_view)
     main_view.add_view(TitleModuleEnum.E_SCRAPING, scraping_view)
     main_view.add_view(TitleModuleEnum.E_FAQ, faq_view)
     main_view.add_view(TitleModuleEnum.E_CONFIG, config_view)
 
     # Land on the providers list as the startup default.
-    main_view.show_view(TitleModuleEnum.E_PROVIDER)
+    main_view.show_view(TitleModuleEnum.E_HOME)
 
 
 def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:

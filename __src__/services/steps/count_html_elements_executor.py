@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, override
+from typing import override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -28,11 +28,6 @@ class CountHtmlElementsExecutor(IStepExecutor):
         return StepTypeEnum.E_COUNT_HTML_ELEMENTS
 
     @override
-    def default_params_dict(self) -> dict[str, Any]:
-        """Return default parameters as dict."""
-        return CountHtmlElementsParams.default().to_dict()
-
-    @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = CountHtmlElementsParams.from_dict(context.step_params)
@@ -45,9 +40,7 @@ class CountHtmlElementsExecutor(IStepExecutor):
             val_desc = str(p.value)
             raise CountHtmlElementsConditionNotMetError(count, p.operator, val_desc)
 
-        context.last_message_step = (
-            f"Trouvé {count} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
-        )
+        context.last_message_step = f"Trouvé {count} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -69,15 +62,11 @@ class CountHtmlElementsExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["count_html_elements_value_negative"].format(step=index_display))
         if p.success_if not in {"success", "failure"}:
             errors.append(
-                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(
-                    step=index_display, value=p.success_if
-                )
+                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(step=index_display, value=p.success_if)
             )
         if p.operator not in allowed_operators:
             errors.append(
-                ERROR_TEMPLATES["count_html_elements_operator_invalid"].format(
-                    step=index_display, value=p.operator
-                )
+                ERROR_TEMPLATES["count_html_elements_operator_invalid"].format(step=index_display, value=p.operator)
             )
         return errors
 

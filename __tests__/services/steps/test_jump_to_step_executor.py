@@ -13,23 +13,6 @@ def _make_step(step_id: str, step_type: StepTypeEnum = StepTypeEnum.E_OPEN_URL) 
 
 
 # ---------------------------------------------------------------------------
-# step_type / default_params_dict
-# ---------------------------------------------------------------------------
-
-
-def test_step_type_returns_jump_to_step() -> None:
-    """step_type() class method must return JUMP_TO_STEP."""
-    assert JumpToStepExecutor.step_type() == StepTypeEnum.E_JUMP_TO_STEP
-
-
-def test_default_params_dict_has_expected_keys() -> None:
-    """default_params_dict() must contain condition and target_hexastring."""
-    d = JumpToStepExecutor().default_params_dict()
-    assert d["condition"] == "success"
-    assert d["target_hexastring"] == ""
-
-
-# ---------------------------------------------------------------------------
 # execute_logical — jump conditions
 # ---------------------------------------------------------------------------
 

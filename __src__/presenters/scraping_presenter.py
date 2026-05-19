@@ -29,10 +29,10 @@ from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from shared.datetime_util import (
-    get_datetime_now_hh_mm_ss,
+    get_time_now_hh_mm_ss,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
-from shared.enums import EventScrapingEnum, StepTypeEnum
+from shared.enums import EventScrapingEnum
 from shared.i18n_fra import (
     C_SCRAPING_EMERGENCY_STOP_INVALID_MSG,
     C_SCRAPING_JOURNAL_RESULT_ERROR,
@@ -40,7 +40,6 @@ from shared.i18n_fra import (
 )
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView
-from views.steps.open_url_form_def import C_INPUT_DEFAULT_URL_MODE, C_KEY_URL_MODE
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -110,7 +109,6 @@ class ScrapingPresenter:
         self._providers_loaded: datetime | None = None
 
         # Captured at launch time (main thread) to avoid cross-thread Tkinter access.
-        self._auto_export_journal: bool = False
         self._emergency_stop_threshold: int = 0
 
         # Tracks whether the launch-profile form has unsaved changes.
@@ -165,7 +163,7 @@ class ScrapingPresenter:
         self._load_last_used_profile()
 
         # Seed the date label with the file's current modification date.
-        self._view.set_profile_modified_date(self._provider.modified_date)
+        self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
     # ------------------------------------------------------------------
     # View callback wiring
@@ -244,7 +242,7 @@ class ScrapingPresenter:
                 "provider_name": p.provider_name,
                 "url": p.url,
                 "version": p.version,
-                "modified_date": p.modified_date,
+                "modified_date": p.modified_date_provider,
             }
             for p in providers
         ]
@@ -273,7 +271,7 @@ class ScrapingPresenter:
 
         # Enable rename and display the provider file's last modification date.
         self._view.set_rename_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date)
+        self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
     def _on_profile_new(self, name: str) -> None:
         """Create a new named profile, persist it and select it in the view.
@@ -312,7 +310,7 @@ class ScrapingPresenter:
 
         # No profile is selected after deletion — disable rename, keep file date.
         self._view.set_rename_profile_button_state(False)
-        self._view.set_profile_modified_date(self._provider.modified_date)
+        self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
     def _on_profile_rename(self, profile_id: str, new_name: str) -> None:
         """Rename the given profile, persist the change, and refresh the list.
@@ -330,14 +328,14 @@ class ScrapingPresenter:
 
         # Apply the new name and stamp the modification date.
         profile.name = new_name
-        profile.mark_modified()
+        profile.mark_profile_as_modified()
         self._service_provider.update_provider(self._provider)
 
         # Restore selection and update the date label with the provider file date.
         self._refresh_profiles_list()
         self._view.set_selected_profile(profile_id)
         self._view.set_rename_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date)
+        self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
     def _find_profile(self, profile_id: str | None) -> LaunchProfileModel | None:
         """Search the current provider's profiles for a matching profile_id.
@@ -407,9 +405,9 @@ class ScrapingPresenter:
             self._view.set_launch_profile_enabled(False)
             return
 
-        # Select the profile with the most recent last_used_date if any.
-        used = [p for p in self._provider.launch_profiles if p.last_used_date]
-        target = max(used, key=lambda p: p.last_used_date or "") if used else self._provider.launch_profiles[0]
+        # Select the profile with the most recent used_date_profile if any.
+        used = [p for p in self._provider.launch_profiles if p.used_date_profile]
+        target = max(used, key=lambda p: p.used_date_profile or "") if used else self._provider.launch_profiles[0]
 
         self._view.set_selected_profile(target.profile_id)
         self._on_profile_selected(target.profile_id)
@@ -493,7 +491,7 @@ class ScrapingPresenter:
         self._persist_provider_before_launch()
 
         # Refresh the date label — update_provider stamped a new modified_date.
-        self._view.set_profile_modified_date(self._provider.modified_date)
+        self._view.set_profile_modified_date(self._provider.modified_date_provider)
         self._start_workflow_thread()
 
     def _start_workflow_thread(self) -> None:
@@ -506,7 +504,6 @@ class ScrapingPresenter:
         self._view.start_elapsed_timer(started_at)
 
         export_folder = self._view.get_export_folder()
-        self._auto_export_journal = self._view.get_auto_export_journal()
         self._emergency_stop_threshold = self._view.get_emergency_stop_threshold() or 0
         url_source = self._view.get_url_source()
         source_type: str = url_source["type"]
@@ -598,14 +595,16 @@ class ScrapingPresenter:
             step: The step model about to execute.
             context: The current scraping context, containing live stats and info.
         """
-        str_progress = ""
-        if step.step_type == StepTypeEnum.E_OPEN_URL and step.params[C_KEY_URL_MODE] == C_INPUT_DEFAULT_URL_MODE:
-            str_progress = " | " + context.url_source.display_progress_tuple_text()
-        str_entry = f"{get_datetime_now_hh_mm_ss()} | Début '{step.step_type.value}'{str_progress}\n"
+        # str_entry = ""
+        # if step.step_type == StepTypeEnum.E_OPEN_URL:
+        #     if step.params[C_KEY_URL_MODE] == OpenUrlModeEnum.E_SOURCE.value:
+        #         str_progress = " | " + context.url_source.display_progress_tuple_text()
+        #         str_entry = f"{get_datetime_now_hh_mm_ss()} | Début '{step.step_type.value}'{str_progress}\n"
+        # if
 
-        # logs
-        self._all_logs_scraping.append(str_entry)
-        self._view.add_journal_entry(str_entry)
+        # # logs
+        # self._all_logs_scraping.append(str_entry)
+        # self._view.add_journal_entry(str_entry)
 
     def _on_logging_event_stop(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
         """Called by the service when workflow stopped.
@@ -614,7 +613,7 @@ class ScrapingPresenter:
             step: The step model about to execute.
             context: The current scraping context, containing live stats and info.
         """
-        str_entry = f"{get_datetime_now_hh_mm_ss()} | Emergency stop threshold reached\n"
+        str_entry = f"{get_time_now_hh_mm_ss()} | Emergency stop threshold reached\n"
 
         # logs
         self._all_logs_scraping.append(str_entry)
@@ -637,7 +636,7 @@ class ScrapingPresenter:
             context: The current scraping context, containing live stats and info.
         """
         # Complete the journal row started in _on_step_start.
-        date_str = get_datetime_now_hh_mm_ss()
+        date_str = get_time_now_hh_mm_ss()
         is_success = C_SCRAPING_JOURNAL_RESULT_OK if context.last_result_step else C_SCRAPING_JOURNAL_RESULT_ERROR
         line = f"{date_str} | {step.step_type.value} | {is_success} | {context.last_message_step}\n"
 
@@ -654,7 +653,7 @@ class ScrapingPresenter:
 
     def _on_logging_event_aspirabot(self, message: str) -> None:
         # Complete the journal row started in _on_step_start.
-        date_str = get_datetime_now_hh_mm_ss()
+        date_str = get_time_now_hh_mm_ss()
         line = f"{date_str} | {message}\n"
 
         # logs
@@ -733,8 +732,7 @@ class ScrapingPresenter:
             )
 
         # Schedule auto-export on the main thread (Treeview access is not thread-safe).
-        if self._auto_export_journal:
-            self._view.after(0, lambda: self._do_auto_export(export_folder))
+        self._view.after(0, lambda: self._do_auto_export(export_folder))
 
     def _do_auto_export(self, export_folder: str) -> None:
         """Export the scraping journal automatically with a timestamped filename.

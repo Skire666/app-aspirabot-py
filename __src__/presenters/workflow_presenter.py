@@ -128,8 +128,8 @@ class WorkflowPresenter:
             "provider_name": provider.provider_name,
             "url": provider.url,
             "version": provider.version,
-            "created_date": provider.created_date,
-            "modified_date": provider.modified_date,
+            "created_date_provider": provider.created_date_provider,
+            "modified_date_provider": provider.modified_date_provider,
         }
 
     def _on_save(self, form_data: dict[str, Any]) -> None:

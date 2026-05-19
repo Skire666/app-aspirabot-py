@@ -39,8 +39,8 @@ class ProviderModel:
         id_file: Unique provider identifier as a canonical timestamp in milliseconds.
         provider_name: Human-readable provider name.
         url: Root URL associated with the provider.
-        created_date: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
-        modified_date: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
+        created_date_provider: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
+        modified_date_provider: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
         version: Provider version string (for example 1.0.0).
         steps: Ordered list of scraping actions.
 
@@ -53,8 +53,8 @@ class ProviderModel:
     id_file: str
     provider_name: str
     url: str
-    created_date: str
-    modified_date: str
+    created_date_provider: str
+    modified_date_provider: str
     version: str
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
     launch_profiles: list[LaunchProfileModel] = field(default_factory=list)
@@ -83,8 +83,8 @@ class ProviderModel:
             provider_name="Nouv. Fournisseur",
             url="https://example.com",
             version="1.0.0",
-            created_date=current_timestamp,
-            modified_date=current_timestamp,
+            created_date_provider=current_timestamp,
+            modified_date_provider=current_timestamp,
         )
 
     def update_created_date_and_modified_date(self) -> None:
@@ -104,8 +104,8 @@ class ProviderModel:
         """
         # Use one value so both fields remain perfectly synchronized.
         current_timestamp = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
-        self.created_date = current_timestamp
-        self.modified_date = current_timestamp
+        self.created_date_provider = current_timestamp
+        self.modified_date_provider = current_timestamp
 
     def update_modified_date(self) -> None:
         """Updates the modification timestamp to the current time.
@@ -121,7 +121,7 @@ class ProviderModel:
             >>> provider.update_modified_date()
         """
         # Refresh only the modification date to preserve creation metadata.
-        self.modified_date = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        self.modified_date_provider = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
 
     @staticmethod
     def is_valid_id(value: str) -> bool:
@@ -177,8 +177,8 @@ class ProviderModel:
             id_file=data.get("id_file", ""),
             provider_name=data.get("provider_name", ""),
             url=data.get("url", ""),
-            created_date=data.get("created_date", ""),
-            modified_date=data.get("modified_date", ""),
+            created_date_provider=data.get("created_date_provider", ""),
+            modified_date_provider=data.get("modified_date_provider", ""),
             version=data.get("version", "1.0.0"),
             steps=steps,
             launch_profiles=profiles,
@@ -222,11 +222,7 @@ class ProviderModel:
             return []
 
         # Skip non-dict entries silently for forward-compatibility.
-        return [
-            LaunchProfileModel.import_from_data_json(raw)
-            for raw in profiles_data
-            if isinstance(raw, dict)
-        ]
+        return [LaunchProfileModel.import_from_data_json(raw) for raw in profiles_data if isinstance(raw, dict)]
 
     def export_to_data_json(self) -> dict[str, Any]:
         """Converts the provider model to a JSON-serializable dictionary.
@@ -247,8 +243,8 @@ class ProviderModel:
             "id_file": self.id_file,
             "provider_name": self.provider_name,
             "url": self.url,
-            "created_date": self.created_date,
-            "modified_date": self.modified_date,
+            "created_date_provider": self.created_date_provider,
+            "modified_date_provider": self.modified_date_provider,
             "version": self.version,
             "steps": [step.export_to_data_json() for step in self.steps],
             "launch_profiles": [p.export_to_data_json() for p in self.launch_profiles],

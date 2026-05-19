@@ -406,6 +406,7 @@ class ColumnCombobox(tk.Frame):
         self._display_col: str | None = None
         self._selected_index: int | None = None
         self._state = state
+        self._disabled: bool = False
 
         if font is None:
             self._font: tkFont.Font = tkFont.nametofont("TkDefaultFont").copy()
@@ -641,9 +642,22 @@ class ColumnCombobox(tk.Frame):
     def set(self, _: str) -> None:
         """No-op — the display is driven by row selection, not free text."""
 
+    def set_enabled(self, enabled: bool) -> None:
+        """Enable or disable the combobox (dropdown button and canvas click).
+
+        Args:
+            enabled: True to allow interaction; False to block it.
+        """
+        self._disabled = not enabled
+        self._btn.config(state=tk.NORMAL if enabled else tk.DISABLED)
+        if not enabled and self._dropdown.is_open:
+            self._close_dropdown()
+
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _toggle(self) -> None:
+        if self._disabled:
+            return
         if self._dropdown.is_open:
             self._close_dropdown()
         else:

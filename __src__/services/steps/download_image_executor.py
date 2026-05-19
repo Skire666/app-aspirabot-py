@@ -44,11 +44,6 @@ class DownloadImageExecutor(IStepExecutor):
         return StepTypeEnum.E_DOWNLOAD_IMAGE
 
     @override
-    def default_params_dict(self) -> dict[str, Any]:
-        """Return default parameters as dict."""
-        return DownloadImageParams.default().to_dict()
-
-    @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p: DownloadImageParams = DownloadImageParams.from_dict(context.step_params)

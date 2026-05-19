@@ -11,7 +11,7 @@ class TitleModuleEnum(Enum):
 
     E_LOGS = "LOGS"
     E_PROJECTS = "PROJECTS"
-    E_PROVIDER = "PROVIDER"
+    E_HOME = "PROVIDER"
     E_WORKFLOW = "WORKFLOW"
     E_SCRAPING = "SCRAPING"
     E_FAQ = "FAQ"

@@ -123,7 +123,14 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         if running:
             # true, but we want to reset the journal when starting a new run
             self._journal_panel.clear()
+        self._set_top_panels_enabled(not running)
         self._workflow_panel.set_running_state(running)
+
+    def _set_top_panels_enabled(self, enabled: bool) -> None:
+        """Enable or disable the three configuration panels above the workflow area."""
+        self._provider_panel.set_enabled(enabled)
+        self._profile_panel.set_enabled(enabled)
+        self._launch_panel.set_enabled(enabled)
 
     def set_paused_state(self, paused: bool) -> None:
         """Toggle Pause/Reprendre buttons to match the paused state.
@@ -360,14 +367,6 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
             Dict with keys ``type`` and ``value``.
         """
         return self._launch_panel.get_url_source()
-
-    def get_auto_export_journal(self) -> bool:
-        """Return whether the auto-export journal checkbox is checked.
-
-        Returns:
-            bool: True when the journal should be exported automatically.
-        """
-        return self._launch_panel.get_auto_export_journal()
 
     def get_emergency_stop_threshold(self) -> int | None:
         """Return the emergency stop threshold from the launch profile panel.

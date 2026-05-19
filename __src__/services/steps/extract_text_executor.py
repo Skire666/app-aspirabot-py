@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, override
+from typing import override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -22,11 +22,6 @@ class ExtractTextExecutor(IStepExecutor):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_EXTRACT_TEXT
-
-    @override
-    def default_params_dict(self) -> dict[str, Any]:
-        """Return default parameters as dict."""
-        return ExtractTextParams.default().to_dict()
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
@@ -55,13 +50,9 @@ class ExtractTextExecutor(IStepExecutor):
         if not p.selector.strip():
             errors.append(ERROR_TEMPLATES["extract_text_selector_required"].format(step=index_display))
         if p.extract_mode not in allowed_modes:
-            errors.append(
-                ERROR_TEMPLATES["extract_text_mode_invalid"].format(step=index_display, value=p.extract_mode)
-            )
+            errors.append(ERROR_TEMPLATES["extract_text_mode_invalid"].format(step=index_display, value=p.extract_mode))
         if p.target not in allowed_targets:
-            errors.append(
-                ERROR_TEMPLATES["extract_text_target_invalid"].format(step=index_display, value=p.target)
-            )
+            errors.append(ERROR_TEMPLATES["extract_text_target_invalid"].format(step=index_display, value=p.target))
         return errors
 
 

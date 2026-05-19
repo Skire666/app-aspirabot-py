@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, override
+from typing import override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -30,14 +30,11 @@ class ClickElementExecutor(IStepExecutor):
         return StepTypeEnum.E_CLICK_ELEMENT
 
     @override
-    def default_params_dict(self) -> dict[str, Any]:
-        """Return default parameters as dict."""
-        return ClickElementParams.default().to_dict()
-
-    @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = ClickElementParams.from_dict(context.step_params)
+
+        self._do_click(browser, p.click_mode, p.selector)  # can throw
 
         context.last_message_step = (
             f"Élément cliqué avec succès pour le sélecteur {p.selector!r} avec le mode {p.click_mode!r}."

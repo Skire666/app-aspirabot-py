@@ -19,7 +19,7 @@ C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF = "%Y-%m-%d_%Hh%Mm%Ss%f"
 # ---------------------------------------------------------------------------
 
 
-def get_datetime_now_hh_mm_ss() -> str:
+def get_time_now_hh_mm_ss() -> str:
     """Returns the current date and time as a string in the format '14:30:45'.
 
     Returns:
@@ -56,6 +56,24 @@ def get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff() -> str:
         '2024-06-01 14:30:45.654'
     """
     return datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF)[:-3]
+
+
+def get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
+    """Returns the current date and time as a string in the format '2024-06-01 14:30:45.654321'.
+
+    Returns:
+        A string representing the current date and time.
+
+    Example:
+        >>> get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff()
+        '2024-06-01 14:30:45.654321'
+    """
+    return datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF)
+
+
+# ------------------------------------------------------------------------------
+# Compliant with fielsystem
+# -----------------------------------------------------------------------------
 
 
 def get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:

@@ -91,10 +91,10 @@ class ProviderPresenter:
             self._all_providers.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
         elif column == "url":
             self._all_providers.sort(key=lambda p: self._text_key(p.url), reverse=not ascending)
-        elif column == "created_date":
-            self._all_providers.sort(key=lambda p: self._text_key(p.created_date), reverse=not ascending)
-        elif column == "modified_date":
-            self._all_providers.sort(key=lambda p: self._text_key(p.modified_date), reverse=not ascending)
+        elif column == "created_date_provider":
+            self._all_providers.sort(key=lambda p: self._text_key(p.created_date_provider), reverse=not ascending)
+        elif column == "modified_date_provider":
+            self._all_providers.sort(key=lambda p: self._text_key(p.modified_date_provider), reverse=not ascending)
 
     def _update_view(self) -> None:
         """Transforme les modèles en structures de données simples et rafraîchit la vue."""
@@ -120,8 +120,8 @@ class ProviderPresenter:
                     "provider_name": p.provider_name,
                     "version": p.version,
                     "url": p.url,
-                    "created_date": p.created_date,
-                    "modified_date": p.modified_date,
+                    "created_date_provider": p.created_date_provider,
+                    "modified_date_provider": p.modified_date_provider,
                 }
             )
         return formatted

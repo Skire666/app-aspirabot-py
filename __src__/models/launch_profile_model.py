@@ -22,7 +22,7 @@ from shared.constants import (
     C_DATA_DEFAULT_FOLDER_SCRAPING,
     C_SIZE_HEXASTRING_PROVIDER_ID,
 )
-from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
+from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.random_util import generate_rng_hexastring
 
 # ---------------------------------------------------------------------------
@@ -31,6 +31,7 @@ from shared.random_util import generate_rng_hexastring
 
 # Default export folder: project root / data_scraping.
 _C_DEFAULT_EXPORT_FOLDER: str = str(Path(C_CURRENT_WORKING_DIR) / C_DATA_DEFAULT_FOLDER_SCRAPING)
+C_DEFAULT_THRESHOLD_EMERGENCY_STOP = 5
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -52,8 +53,8 @@ class LaunchProfileModel:
         url_source_value: List of URLs for "manual"; path string for others.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
         launch_count: Number of times the profile was launched.
-        last_used_date: Last launch timestamp in YYYY-MM-DD HH:MM:SS format.
-        modified_date: Last manual-save timestamp in YYYY-MM-DD HH:MM:SS format.
+        used_date_profile: Last launch timestamp in YYYY-MM-DD HH:MM:SS format.
+        modified_date_profile: Last manual-save timestamp in YYYY-MM-DD HH:MM:SS format.
 
     Example:
         >>> profile = LaunchProfileModel.get_default()
@@ -68,8 +69,8 @@ class LaunchProfileModel:
     url_source_value: list[str] | str | None
     emergency_stop_threshold: int
     launch_count: int
-    last_used_date: str | None
-    modified_date: str | None
+    used_date_profile: str | None
+    modified_date_profile: str | None
 
     @classmethod
     def get_default(cls, name: str = "Profil par défaut") -> LaunchProfileModel:
@@ -95,10 +96,10 @@ class LaunchProfileModel:
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
             url_source_value=None,
-            emergency_stop_threshold=100,
+            emergency_stop_threshold=C_DEFAULT_THRESHOLD_EMERGENCY_STOP,
             launch_count=0,
-            last_used_date=None,
-            modified_date=None,
+            used_date_profile=None,
+            modified_date_profile=get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff(),
         )
 
     @classmethod
@@ -125,10 +126,10 @@ class LaunchProfileModel:
             export_folder=data.get("export_folder", _C_DEFAULT_EXPORT_FOLDER),
             url_source_type=data.get("url_source_type", ""),
             url_source_value=data.get("url_source_value"),
-            emergency_stop_threshold=int(data.get("emergency_stop_threshold", 100)),
+            emergency_stop_threshold=int(data.get("emergency_stop_threshold", C_DEFAULT_THRESHOLD_EMERGENCY_STOP)),
             launch_count=int(data.get("launch_count", 0)),
-            last_used_date=data.get("last_used_date"),
-            modified_date=data.get("modified_date"),
+            used_date_profile=data.get("used_date_profile"),
+            modified_date_profile=data.get("modified_date_profile"),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -153,8 +154,8 @@ class LaunchProfileModel:
             "url_source_value": self.url_source_value,
             "emergency_stop_threshold": self.emergency_stop_threshold,
             "launch_count": self.launch_count,
-            "last_used_date": self.last_used_date,
-            "modified_date": self.modified_date,
+            "used_date_profile": self.used_date_profile,
+            "modified_date_profile": self.modified_date_profile,
         }
 
     def increment_launch_count(self) -> None:
@@ -173,9 +174,9 @@ class LaunchProfileModel:
             1
         """
         self.launch_count += 1
-        self.last_used_date = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        self.used_date_profile = get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff()
 
-    def mark_modified(self) -> None:
+    def mark_profile_as_modified(self) -> None:
         """Update the modification timestamp to the current time.
 
         Call this whenever the user explicitly saves the profile.
@@ -189,7 +190,7 @@ class LaunchProfileModel:
         Example:
             >>> profile = LaunchProfileModel.get_default()
             >>> profile.mark_modified()
-            >>> profile.modified_date is not None
+            >>> profile.modified_date_profile is not None
             True
         """
-        self.modified_date = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        self.modified_date_profile = get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff()

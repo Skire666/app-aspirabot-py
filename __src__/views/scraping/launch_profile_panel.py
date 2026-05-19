@@ -12,7 +12,6 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 from models.app_configuration_model import AppConfigurationModel
-from views.components.canvas_checkbox import CanvasCheckbox
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # ---------------------------------------------------------------------------
@@ -96,9 +95,6 @@ class LaunchProfilePanel(ttk.Frame):
         # Source detail display row.
         self._build_source_detail_row(self._frame)
 
-        # Auto-export checkbox row.
-        self._build_auto_export_row(self._frame)
-
         # Emergency stop threshold row.
         self._build_emergency_stop_row(self._frame)
 
@@ -163,22 +159,6 @@ class LaunchProfilePanel(ttk.Frame):
         self._var_source_detail = tk.StringVar()
         self._detail_entry = ttk.Entry(row, textvariable=self._var_source_detail, state="readonly")
         self._detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-
-    def _build_auto_export_row(self, parent: tk.Frame) -> None:
-        """Build the auto-export journal checkbox row.
-
-        Args:
-            parent: Container frame to pack into.
-        """
-        row = ttk.Frame(parent)
-        row.pack(side=tk.TOP, fill=tk.X)
-
-        self._var_auto_export_journal = tk.BooleanVar(value=True)
-        CanvasCheckbox(
-            row,
-            text="Exporter journal scraping nt à la fin du processus",
-            variable=self._var_auto_export_journal,
-        ).pack(side=tk.LEFT, padx=5, pady=(5))
 
     def _build_emergency_stop_row(self, parent: tk.Frame) -> None:
         """Build the emergency stop threshold label and Spinbox row.
@@ -287,14 +267,6 @@ class LaunchProfilePanel(ttk.Frame):
             and ``value`` (list of URL strings or a path string).
         """
         return {"type": self._url_source_type, "value": self._url_source_value}
-
-    def get_auto_export_journal(self) -> bool:
-        """Return whether the auto-export journal checkbox is checked.
-
-        Returns:
-            bool: True when the journal should be exported automatically.
-        """
-        return bool(self._var_auto_export_journal.get())
 
     def get_emergency_stop_threshold(self) -> int | None:
         """Return the emergency stop threshold, or None when the value is invalid.

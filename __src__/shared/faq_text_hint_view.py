@@ -22,8 +22,7 @@ class FaqTextTextHint:
 
     CATEGORY_HINTS: ClassVar[dict[str, str]] = {
         "Usage des données": (
-            "Regroupe les données spécifiques données.\n\n"
-            "Sélectionnez une étape pour voir comment utiliser les paramètres."
+            "Infos sur des données spécifiques.\n\nSélectionnez pour en savoir plus sur une donnée générique."
         ),
         "Brique logique": (
             "Regroupe les étapes de navigation, contrôle et "
@@ -91,6 +90,15 @@ class FaqTextTextHint:
                 "Si le mode n'est pas custom, utilise la dernière URL ouverte par l'event OpenURL\n"
                 "Le refresh ne change pas la dernière URL ouverte.\n"
                 "Donc si redirection il y a eu, le filtre peut planter\n"
+            ),
+            "Lire des sources d'URL": (
+                "Si la source est cablé en mode 'dossier'\n"
+                "Va lire le plus vieux '.url', et update sa date modif à chaque OpenURL\n"
+                "L'update se fait au moment de l'ouverture, et non pas à la fin du processus\n"
+                "(compliqué fin, car extraction peut échouer, peut lire plusieurs lien, etc...\n"
+                "Attention lit en UTF-8, possibilité que le contenu soit mal lu\n"
+                "Donc valider à la fin n'est pas une preuve que tout est OK\n"
+                "(formatage utf-8, échappement spéciaux, fichier '.url' pas en mode chrome)\n"
             ),
         },
         "Brique logique": {

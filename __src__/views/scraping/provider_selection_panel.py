@@ -54,8 +54,8 @@ class ProviderSelectionPanel(ttk.Frame):
         self._cmb_provider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self._cmb_provider.bind("<<ComboboxSelected>>", self._on_combobox_selected)
 
-        btn = ttk.Button(frame, text="Rafraîchir", command=self._notify_refresh)
-        btn.pack(side=tk.RIGHT, padx=5)
+        self._btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._notify_refresh)
+        self._btn_refresh.pack(side=tk.RIGHT, padx=5)
 
     # ------------------------------------------------------------------
     # Callback registration
@@ -105,6 +105,15 @@ class ProviderSelectionPanel(ttk.Frame):
                     return True
 
         return False
+
+    def set_enabled(self, enabled: bool) -> None:
+        """Enable or disable all widgets in the panel.
+
+        Args:
+            enabled: True to make the panel interactive; False to gray it out.
+        """
+        self._cmb_provider.set_enabled(enabled)
+        self._btn_refresh.config(state=tk.NORMAL if enabled else tk.DISABLED)
 
     def set_selected_provider(self, id_file: str) -> None:
         """Highlight the combobox entry matching id_file.

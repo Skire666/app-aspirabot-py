@@ -1,5 +1,4 @@
 # Main view sidebar width in pixels
-import tkinter as tk
 
 from shared.enums import StepTypeEnum, TitleModuleEnum
 from shared.resources_icons_util import (
@@ -50,15 +49,6 @@ C_SCRAPING_NO_URL_SOURCE_MSG = (
     "Souhaitez-vous continuer quand meme ?"
 )
 
-# Scraping journal Treeview column configurations: (title, width, anchor, stretch)
-C_VIEW_SCRAPING_HEADINGS = {
-    "date": ("Date", 155, tk.W, False),
-    "step_started": ("Étape démarrée", 110, tk.W, False),
-    "duration": ("Durée (s)", 65, tk.E, False),
-    "success": ("Résultat", 65, tk.CENTER, False),
-    "msg_step_ended": ("Message de fin", 160, tk.W, True),
-}
-
 # ---------------------------------------------------------------------------
 # Labels
 # ---------------------------------------------------------------------------
@@ -69,7 +59,7 @@ C_VIEW_SCRAPING_HEADINGS = {
 C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
     TitleModuleEnum.E_LOGS: ["Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
     TitleModuleEnum.E_PROJECTS: ["Projets", C_RESS_ICON_BLACK_PROJECTS, C_RESS_ICON_WHITE_PROJECTS],
-    TitleModuleEnum.E_PROVIDER: ["Fournisseurs", C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
+    TitleModuleEnum.E_HOME: ["Accueil", C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
     TitleModuleEnum.E_WORKFLOW: ["Workflow", C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW],
     TitleModuleEnum.E_SCRAPING: ["Scraping", C_RESS_ICON_BLACK_SCRAPING, C_RESS_ICON_WHITE_SCRAPING],
     TitleModuleEnum.E_FAQ: ["FAQ", C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
@@ -93,7 +83,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_CLICK_ELEMENT: "Cliquer sur un élément",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
     StepTypeEnum.E_EXTRACT_TEXT: "Extraire contenu textuel",
-    StepTypeEnum.E_JUMP_TO_STEP: "Si le résultat est un...",
+    StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
     StepTypeEnum.E_END_PROCESS: "Fin du processus",
 }
