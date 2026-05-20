@@ -1,11 +1,32 @@
-"""Tkinter view for managing providers."""
+"""Tkinter view for the launch-profile history panel."""
 
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
+from typing import Any
+
+from views.components.data_grid import DataGrid
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Column definitions for the profiles DataGrid.
+_COLUMNS: list[dict[str, Any]] = [
+    {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
+    {"id": "name_profile", "title": "Nom du profil", "width": 160, "type": "text"},
+    {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
+    {"id": "used_date_profile", "title": "Dern. utilisation", "width": 140, "type": "text"},
+    {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},
+    {"id": "id_profile", "title": "ID Profil", "width": 160, "type": "text"},
+]
+
+# Expected number of parts in a composite row_id ("id_provider:::id_profile").
+_ROW_ID_PARTS_COUNT = 2
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -13,10 +34,75 @@ from tkinter import ttk
 
 
 class HistoricView(ttk.Frame):
-    """View component that renders the list of historic."""
+    """View component that renders the list of launch profiles across all providers.
+
+    Displays a DataGrid with one row per profile. Fires a callback when the
+    user clicks the launch button on a row.
+
+    Attributes:
+        _grid: The DataGrid used to display all profiles.
+        _on_launch_callback: Optional callback invoked with (id_provider_id, id_profile).
+    """
 
     def __init__(self, parent: tk.Widget) -> None:
+        """Initialize the HistoricView widget.
+
+        Args:
+            parent: Parent Tkinter widget that owns this frame.
+        """
         super().__init__(parent)
+
+        # Callback registered by the presenter via set_on_launch().
+        self._on_launch_callback: Callable[[str, str], None] | None = None
+
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Build the DataGrid and pack it to fill the entire frame."""
+        # Single DataGrid fills all available space.
+        self._grid = DataGrid(self, columns=_COLUMNS, on_action=self._on_action)
+        self._grid.pack(fill=tk.BOTH, expand=True)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def set_on_launch(self, callback: Callable[[str, str], None]) -> None:
+        """Register the callback invoked when the user clicks Lancer.
+
+        Args:
+            callback: Callable receiving (id_provider_id, id_profile) strings.
+        """
+        self._on_launch_callback = callback
+
+    def render_profiles(self, profiles: list[dict[str, Any]]) -> None:
+        """Pass a fresh list of profile rows to the DataGrid.
+
+        Args:
+            profiles: List of row dicts whose keys match the column ids.
+                Each dict must include an "id" key formatted as
+                ``"id_provider:::id_profile"``.
+        """
+        self._grid.render_data(profiles)
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _on_action(self, action_id: str, row_id: str) -> None:
+        """Forward DataGrid action events to the registered launch callback.
+
+        Args:
+            action_id: Column id of the button that was clicked.
+            row_id: The ``id`` value of the clicked row (``id_provider:::id_profile``).
+        """
+        if action_id != "action_launch" or not self._on_launch_callback:
+            return
+
+        # Parse the composite row identifier into its two components.
+        parts = row_id.split(":::")
+        if len(parts) == _ROW_ID_PARTS_COUNT:
+            self._on_launch_callback(parts[0], parts[1])
 
 
 # EOF

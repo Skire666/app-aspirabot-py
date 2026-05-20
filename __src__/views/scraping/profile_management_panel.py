@@ -131,7 +131,7 @@ class ProfileManagementPanel(ttk.Frame):
         """Register the callback fired when the user selects a profile.
 
         Args:
-            callback: Callable receiving the selected profile_id.
+            callback: Callable receiving the selected id_profile.
         """
         self._on_profile_selected_cb = callback
 
@@ -147,7 +147,7 @@ class ProfileManagementPanel(ttk.Frame):
         """Register the callback fired when the user deletes a profile.
 
         Args:
-            callback: Callable receiving the profile_id to remove.
+            callback: Callable receiving the id_profile to remove.
         """
         self._on_profile_delete_cb = callback
 
@@ -155,7 +155,7 @@ class ProfileManagementPanel(ttk.Frame):
         """Register the callback fired when the user renames a profile.
 
         Args:
-            callback: Callable receiving (profile_id, new_name).
+            callback: Callable receiving (id_profile, new_name).
         """
         self._on_profile_rename_cb = callback
 
@@ -167,21 +167,21 @@ class ProfileManagementPanel(ttk.Frame):
         """Populate the Listbox with the given profile rows.
 
         Args:
-            profiles: List of dicts with keys ``profile_id`` and ``name``.
+            profiles: List of dicts with keys ``id_profile`` and ``name_profile``.
         """
         self._lst_profiles.delete(0, tk.END)
         self._profile_ids = []
 
         # Insert each profile name and keep a parallel id list.
         for p in profiles:
-            self._lst_profiles.insert(tk.END, p["name"])
-            self._profile_ids.append(p["profile_id"])
+            self._lst_profiles.insert(tk.END, p["name_profile"])
+            self._profile_ids.append(p["id_profile"])
 
-    def get_selected_profile_id(self) -> str | None:
-        """Return the profile_id of the highlighted Listbox entry.
+    def get_selected_id_profile(self) -> str | None:
+        """Return the id_profile of the highlighted Listbox entry.
 
         Returns:
-            str | None: The profile_id of the selected entry, or None.
+            str | None: The id_profile of the selected entry, or None.
         """
         sel = self._lst_profiles.curselection()
         if not sel:
@@ -189,14 +189,14 @@ class ProfileManagementPanel(ttk.Frame):
         idx = sel[0]
         return self._profile_ids[idx] if idx < len(self._profile_ids) else None
 
-    def set_selected_profile(self, profile_id: str) -> None:
-        """Highlight the Listbox entry matching profile_id.
+    def set_selected_profile(self, id_profile: str) -> None:
+        """Highlight the Listbox entry matching id_profile.
 
         Args:
-            profile_id: The profile identifier to select.
+            id_profile: The profile identifier to select.
         """
         for idx, pid in enumerate(self._profile_ids):
-            if pid == profile_id:
+            if pid == id_profile:
                 self._lst_profiles.selection_clear(0, tk.END)
                 self._lst_profiles.selection_set(idx)
                 self._lst_profiles.see(idx)
@@ -232,14 +232,14 @@ class ProfileManagementPanel(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _on_listbox_selected(self, _event: tk.Event) -> None:
-        """Resolve the listbox selection to a profile_id and fire the callback.
+        """Resolve the listbox selection to a id_profile and fire the callback.
 
         Args:
             _event: Tkinter <<ListboxSelect>> event (unused).
         """
-        profile_id = self.get_selected_profile_id()
-        if profile_id and self._on_profile_selected_cb:
-            self._on_profile_selected_cb(profile_id)
+        id_profile = self.get_selected_id_profile()
+        if id_profile and self._on_profile_selected_cb:
+            self._on_profile_selected_cb(id_profile)
 
     def _notify_new(self) -> None:
         """Ask the user for a name then fire on_profile_new with it."""
@@ -248,19 +248,19 @@ class ProfileManagementPanel(ttk.Frame):
             self._on_profile_new_cb(name.strip())
 
     def _notify_delete(self) -> None:
-        """Fire on_profile_delete with the currently selected profile_id."""
-        profile_id = self.get_selected_profile_id()
-        if profile_id and self._on_profile_delete_cb:
-            self._on_profile_delete_cb(profile_id)
+        """Fire on_profile_delete with the currently selected id_profile."""
+        id_profile = self.get_selected_id_profile()
+        if id_profile and self._on_profile_delete_cb:
+            self._on_profile_delete_cb(id_profile)
 
     def _notify_rename(self) -> None:
         """Ask the user for a new name then fire on_profile_rename with it."""
-        profile_id = self.get_selected_profile_id()
-        if not profile_id or not self._on_profile_rename_cb:
+        id_profile = self.get_selected_id_profile()
+        if not id_profile or not self._on_profile_rename_cb:
             return
         new_name = simpledialog.askstring("Renommer profil", "Nouveau nom du profil :", parent=self)
         if new_name and new_name.strip():
-            self._on_profile_rename_cb(profile_id, new_name.strip())
+            self._on_profile_rename_cb(id_profile, new_name.strip())
 
 
 # EOF

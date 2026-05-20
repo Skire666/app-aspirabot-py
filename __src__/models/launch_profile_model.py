@@ -5,7 +5,7 @@ session: export folder, URL source mode, and usage statistics.
 
 Example:
     >>> profile = LaunchProfileModel.get_default()
-    >>> profile.name
+    >>> profile.name_profile
     'Profil par défaut'
 """
 
@@ -46,8 +46,8 @@ class LaunchProfileModel:
     value, as well as usage statistics (launch count and last-used date).
 
     Attributes:
-        profile_id: Unique identifier as a hex string.
-        name: Human-readable profile name.
+        id_profile: Unique identifier as a hex string.
+        name_profile: Human-readable profile name.
         export_folder: Absolute path of the export destination folder.
         url_source_type: One of "manual", "folder", "csv", or "" when unset.
         url_source_value: List of URLs for "manual"; path string for others.
@@ -62,8 +62,8 @@ class LaunchProfileModel:
         0
     """
 
-    profile_id: str
-    name: str
+    id_profile: str
+    name_profile: str
     export_folder: str
     url_source_type: str
     url_source_value: list[str] | str | None
@@ -73,11 +73,11 @@ class LaunchProfileModel:
     modified_date_profile: str | None
 
     @classmethod
-    def get_default(cls, name: str = "Profil par défaut") -> LaunchProfileModel:
+    def get_default(cls, name_profile: str = "Profil par défaut") -> LaunchProfileModel:
         """Build a new profile with application-default values.
 
         Args:
-            name: Human-readable profile name.
+            name_profile: Human-readable profile name.
 
         Returns:
             LaunchProfileModel: A ready-to-use default profile.
@@ -91,8 +91,8 @@ class LaunchProfileModel:
             ...
         """
         return cls(
-            profile_id=generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID),
-            name=name,
+            id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID),
+            name_profile=name_profile,
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
             url_source_value=None,
@@ -116,13 +116,13 @@ class LaunchProfileModel:
             None.
 
         Example:
-            >>> raw = {"name": "P1", "launch_count": 2}
-            >>> LaunchProfileModel.import_from_data_json(raw).name
+            >>> raw = {"name_profile": "P1", "launch_count": 2}
+            >>> LaunchProfileModel.import_from_data_json(raw).name_profile
             'P1'
         """
         return cls(
-            profile_id=data.get("profile_id", generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID)),
-            name=data.get("name", "Profil"),
+            id_profile=data.get("id_profile", generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID)),
+            name_profile=data.get("name_profile", "Profil"),
             export_folder=data.get("export_folder", _C_DEFAULT_EXPORT_FOLDER),
             url_source_type=data.get("url_source_type", ""),
             url_source_value=data.get("url_source_value"),
@@ -147,8 +147,8 @@ class LaunchProfileModel:
             True
         """
         return {
-            "profile_id": self.profile_id,
-            "name": self.name,
+            "id_profile": self.id_profile,
+            "name_profile": self.name_profile,
             "export_folder": self.export_folder,
             "url_source_type": self.url_source_type,
             "url_source_value": self.url_source_value,

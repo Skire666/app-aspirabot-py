@@ -13,7 +13,7 @@ class TitleModuleEnum(Enum):
     E_HISTORY = "HISTORIC"
     E_SCRIPTS = "PROVIDER"
     E_EDITOR = "WORKFLOW"
-    E_EXECUTE = "EXECUTE"
+    E_EXECUTOR = "EXECUTE"
     E_FAQ = "FAQ"
     E_OPTIONS = "OPTIONS"
 

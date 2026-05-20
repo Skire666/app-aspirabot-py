@@ -9,12 +9,12 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
-from __src__.services.historic_service import HistoricService
 import models.steps  # noqa: F401
 import services.steps  # noqa: F401
 import views.steps  # noqa: F401
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
+from presenters.historic_presenter import HistoricPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.provider_presenter import ProviderPresenter
 from presenters.scraping_presenter import ScrapingPresenter
@@ -25,6 +25,7 @@ from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.app_configuration_service import ConfigService
+from services.historic_service import HistoricService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
@@ -46,8 +47,6 @@ from views.providers_view import ProvidersView
 from views.scraping_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
 from views.workflow_view import WorkflowView
-
-from __src__.presenters.historic_presenter import HistoricPresenter
 
 # ---------------------------------------------------------------------------
 # Entry point
@@ -120,29 +119,36 @@ def _launch_main_app(
         startup_service: Completed service exposing config_model and logging_service.
     """
     config_model = startup_service.config_model
-    logging_service = startup_service.logging_service
 
     _override_gui_and_style(root, config_model)
     main_view = _build_main_view(root)
 
     # Instantiate all MVP component groups.
-    log_view, log_presenter = _init_log_component(main_view, logging_service, config_model.folder_logs)
+    log_view, log_presenter = _init_log_component(main_view, startup_service.logging_service, config_model.folder_logs)
     config_view, config_presenter = _init_config_component(main_view, config_repo)
     provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service = (
         _init_provider_components(main_view, config_model)
     )
     scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model, provider_service)
     historic_view, historic_presenter = _init_historic_components(main_view, config_model)
-    faq_view = FaqView(main_view.content_area)
 
     # Wire inter-component navigation and callbacks.
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
     _wire_scraping_launch(main_view, provider_presenter, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
-    main_view.set_on_show(TitleModuleEnum.E_EXECUTE, scraping_presenter.ensure_providers_loaded)
+    _wire_historic_launch(main_view, historic_presenter, scraping_presenter)
+    main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, scraping_presenter.ensure_providers_loaded)
+    main_view.set_on_show(TitleModuleEnum.E_HISTORY, historic_presenter.ensure_profiles_loaded)
 
     _register_views(
-        main_view, log_view, historic_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view
+        main_view,
+        log_view,
+        historic_view,
+        config_view,
+        provider_view,
+        provider_edit_view,
+        scraping_view,
+        FaqView(main_view.content_area),
     )
     _anchor_presenters(
         root,
@@ -223,13 +229,20 @@ def _init_config_component(
 def _init_historic_components(
     main_view: MainView,
     config_model: AppConfigurationModel,
-) -> tuple[
-    HistoricView,
-    HistoricPresenter,
-]:
-    historic_view = HistoricView(main_view.content_area)
-    historic_presenter = HistoricPresenter(view=historic_view, HistoricService(None))
+) -> tuple[HistoricView, HistoricPresenter]:
+    """Create and wire the historic component.
 
+    Args:
+        main_view: Main container providing the content area as parent.
+        config_model: Configuration model supplying the providers folder path.
+
+    Returns:
+        A (HistoricView, HistoricPresenter) tuple.
+    """
+    provider_repo = ProvidersRepository(config_model.folder_providers)
+    historic_service = HistoricService(provider_repo)
+    historic_view = HistoricView(main_view.content_area)
+    historic_presenter = HistoricPresenter(view=historic_view, service=historic_service)
     return historic_view, historic_presenter
 
 
@@ -319,7 +332,7 @@ def _wire_provider_navigation(
         provider_edit_presenter.create_new()
         main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.DISABLED)
+        main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
         main_view.show_view(TitleModuleEnum.E_EDITOR)
 
     def on_request_edit_provider(id_file: str) -> None:
@@ -327,7 +340,7 @@ def _wire_provider_navigation(
         if provider_edit_presenter.load_provider(id_file):
             main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
             main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.DISABLED)
-            main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
             main_view.show_view(TitleModuleEnum.E_EDITOR)
 
     def on_edit_done() -> None:
@@ -335,7 +348,7 @@ def _wire_provider_navigation(
         provider_presenter.refresh()
         main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_SCRIPTS)
 
     # Inject all navigation callbacks into the two presenters.
@@ -364,10 +377,33 @@ def _wire_scraping_launch(
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scraping.
         scraping_presenter.load_provider(id_file)
-        main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.NORMAL)
-        main_view.show_view(TitleModuleEnum.E_EXECUTE)
+        main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
+        main_view.show_view(TitleModuleEnum.E_EXECUTOR)
 
     provider_presenter.on_request_launch_provider = on_request_launch_provider
+
+
+def _wire_historic_launch(
+    main_view: MainView,
+    historic_presenter: HistoricPresenter,
+    scraping_presenter: ScrapingPresenter,
+) -> None:
+    """Connect the launch action from the historic list to the scraping panel.
+
+    Args:
+        main_view: Shell managing tab visibility.
+        historic_presenter: Presenter that fires the launch request.
+        scraping_presenter: Presenter that loads the provider and profile.
+    """
+
+    def on_request_launch_profile(id_provider: str, id_profile: str) -> None:
+        # Load provider then select the specific profile before navigating.
+        scraping_presenter.load_provider(id_provider)
+        scraping_presenter.load_profile(id_profile)
+        main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
+        main_view.show_view(TitleModuleEnum.E_EXECUTOR)
+
+    historic_presenter.on_request_launch_profile = on_request_launch_profile
 
 
 def _wire_workflow_guard(
@@ -427,7 +463,7 @@ def _register_views(
     main_view.add_view(TitleModuleEnum.E_HISTORY, historic_view)
     main_view.add_view(TitleModuleEnum.E_SCRIPTS, provider_view)
     main_view.add_view(TitleModuleEnum.E_EDITOR, provider_edit_view)
-    main_view.add_view(TitleModuleEnum.E_EXECUTE, scraping_view)
+    main_view.add_view(TitleModuleEnum.E_EXECUTOR, scraping_view)
     main_view.add_view(TitleModuleEnum.E_FAQ, faq_view)
     main_view.add_view(TitleModuleEnum.E_OPTIONS, config_view)
 

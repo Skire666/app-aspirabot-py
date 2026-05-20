@@ -220,7 +220,7 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """Register the callback fired when the user selects a profile.
 
         Args:
-            callback: Callable receiving the selected profile_id.
+            callback: Callable receiving the selected id_profile.
         """
         self._profile_panel.set_on_profile_selected(callback)
 
@@ -236,7 +236,7 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """Register the callback fired when the user deletes a profile.
 
         Args:
-            callback: Callable receiving the profile_id to remove.
+            callback: Callable receiving the id_profile to remove.
         """
         self._profile_panel.set_on_profile_delete(callback)
 
@@ -244,7 +244,7 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """Register the callback fired when the user renames a profile.
 
         Args:
-            callback: Callable receiving (profile_id, new_name).
+            callback: Callable receiving (id_profile, new_name).
         """
         self._profile_panel.set_on_profile_rename(callback)
 
@@ -252,28 +252,28 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """Populate the profile Listbox and disable the launch form when empty.
 
         Args:
-            profiles: List of dicts with keys ``profile_id`` and ``name``.
+            profiles: List of dicts with keys ``id_profile`` and ``name_profile``.
         """
         self._profile_panel.render_profiles_list(profiles)
         if not profiles:
             self._launch_panel.set_enabled(False)
             self._profile_panel.set_rename_profile_button_state(False)
 
-    def get_selected_profile_id(self) -> str | None:
-        """Return the profile_id of the highlighted Listbox entry.
+    def get_selected_id_profile(self) -> str | None:
+        """Return the id_profile of the highlighted Listbox entry.
 
         Returns:
-            str | None: The profile_id of the selected entry, or None.
+            str | None: The id_profile of the selected entry, or None.
         """
-        return self._profile_panel.get_selected_profile_id()
+        return self._profile_panel.get_selected_id_profile()
 
-    def set_selected_profile(self, profile_id: str) -> None:
-        """Highlight the Listbox entry matching profile_id.
+    def set_selected_profile(self, id_profile: str) -> None:
+        """Highlight the Listbox entry matching id_profile.
 
         Args:
-            profile_id: The profile identifier to select.
+            id_profile: The profile identifier to select.
         """
-        self._profile_panel.set_selected_profile(profile_id)
+        self._profile_panel.set_selected_profile(id_profile)
 
     def set_profile_management_enabled(self, enabled: bool) -> None:
         """Enable or disable all widgets inside the profile management panel.

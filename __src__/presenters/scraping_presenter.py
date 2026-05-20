@@ -128,6 +128,20 @@ class ScrapingPresenter:
         if not self._providers_loaded or (datetime.now() - self._providers_loaded).total_seconds() > 1:
             self._on_refresh_providers()
 
+    def load_profile(self, id_profile: str) -> None:
+        """Select and apply a specific profile by ID in the view.
+
+        Args:
+            id_profile: The id_profile to select and apply.
+                Expects load_provider() to have been called first.
+        """
+        if not self._provider:
+            return
+
+        # Select the profile in the list then apply its values to the form.
+        self._view.set_selected_profile(id_profile)
+        self._on_profile_selected(id_profile)
+
     def load_provider(self, id_file: str) -> None:
         """Load a provider by id_file and reset the view for a fresh run.
 
@@ -253,13 +267,13 @@ class ScrapingPresenter:
     # Profile management callbacks
     # ------------------------------------------------------------------
 
-    def _on_profile_selected(self, profile_id: str) -> None:
+    def _on_profile_selected(self, id_profile: str) -> None:
         """Apply the selected profile to the launch profile form.
 
         Args:
-            profile_id: Unique identifier of the profile to restore.
+            id_profile: Unique identifier of the profile to restore.
         """
-        profile = self._find_profile(profile_id)
+        profile = self._find_profile(id_profile)
         if profile is None:
             return
 
@@ -292,20 +306,20 @@ class ScrapingPresenter:
         self._service_provider.update_provider(self._provider)
 
         self._refresh_profiles_list()
-        self._view.set_selected_profile(new_profile.profile_id)
-        self._on_profile_selected(new_profile.profile_id)
+        self._view.set_selected_profile(new_profile.id_profile)
+        self._on_profile_selected(new_profile.id_profile)
 
-    def _on_profile_delete(self, profile_id: str) -> None:
+    def _on_profile_delete(self, id_profile: str) -> None:
         """Remove a profile from the provider and persist the change.
 
         Args:
-            profile_id: Unique identifier of the profile to delete.
+            id_profile: Unique identifier of the profile to delete.
         """
         if not self._provider:
             return
 
         # Remove the matching profile from the list.
-        self._provider.launch_profiles = [p for p in self._provider.launch_profiles if p.profile_id != profile_id]
+        self._provider.launch_profiles = [p for p in self._provider.launch_profiles if p.id_profile != id_profile]
         self._service_provider.update_provider(self._provider)
         self._refresh_profiles_list()
 
@@ -313,45 +327,45 @@ class ScrapingPresenter:
         self._view.set_rename_profile_button_state(False)
         self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
-    def _on_profile_rename(self, profile_id: str, new_name: str) -> None:
+    def _on_profile_rename(self, id_profile: str, new_name: str) -> None:
         """Rename the given profile, persist the change, and refresh the list.
 
         Args:
-            profile_id: Unique identifier of the profile to rename.
+            id_profile: Unique identifier of the profile to rename.
             new_name: Name entered by the user.
 
         Returns:
             None.
         """
-        profile = self._find_profile(profile_id)
+        profile = self._find_profile(id_profile)
         if profile is None:
             return
 
         # Apply the new name and stamp the modification date.
-        profile.name = new_name
+        profile.name_profile = new_name
         profile.mark_profile_as_modified()
         self._service_provider.update_provider(self._provider)
 
         # Restore selection and update the date label with the provider file date.
         self._refresh_profiles_list()
-        self._view.set_selected_profile(profile_id)
+        self._view.set_selected_profile(id_profile)
         self._view.set_rename_profile_button_state(True)
         self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
-    def _find_profile(self, profile_id: str | None) -> LaunchProfileModel | None:
-        """Search the current provider's profiles for a matching profile_id.
+    def _find_profile(self, id_profile: str | None) -> LaunchProfileModel | None:
+        """Search the current provider's profiles for a matching id_profile.
 
         Args:
-            profile_id: The profile identifier to look for.
+            id_profile: The profile identifier to look for.
 
         Returns:
             LaunchProfileModel | None: The matching profile, or None if not found.
         """
-        if not self._provider or not profile_id:
+        if not self._provider or not id_profile:
             return None
 
         for profile in self._provider.launch_profiles:
-            if profile.profile_id == profile_id:
+            if profile.id_profile == id_profile:
                 return profile
         return None
 
@@ -365,7 +379,7 @@ class ScrapingPresenter:
             self._view.render_profiles_list([])
             return
 
-        rows = [{"profile_id": p.profile_id, "name": p.name} for p in self._provider.launch_profiles]
+        rows = [{"id_profile": p.id_profile, "name_profile": p.name_profile} for p in self._provider.launch_profiles]
         self._view.render_profiles_list(rows)
 
     def _on_form_changed(self) -> None:
@@ -410,8 +424,8 @@ class ScrapingPresenter:
         used = [p for p in self._provider.launch_profiles if p.used_date_profile]
         target = max(used, key=lambda p: p.used_date_profile or "") if used else self._provider.launch_profiles[0]
 
-        self._view.set_selected_profile(target.profile_id)
-        self._on_profile_selected(target.profile_id)
+        self._view.set_selected_profile(target.id_profile)
+        self._on_profile_selected(target.id_profile)
 
     def _record_active_profile_launch(self) -> None:
         """Snapshot view inputs into the active profile and increment its launch counter.
@@ -421,8 +435,8 @@ class ScrapingPresenter:
         Returns:
             None.
         """
-        profile_id = self._view.get_selected_profile_id()
-        profile = self._find_profile(profile_id)
+        id_profile = self._view.get_selected_id_profile()
+        profile = self._find_profile(id_profile)
         if profile is None:
             return
 
@@ -598,7 +612,11 @@ class ScrapingPresenter:
         """
         str_entry = ""
         str_suffix = ""
-        if step.step_type == StepTypeEnum.E_OPEN_URL and step.params[C_KEY_URL_MODE] == OpenUrlModeEnum.E_SOURCE.value:
+        if (
+            step.step_type == StepTypeEnum.E_OPEN_URL
+            and step.params[C_KEY_URL_MODE] == OpenUrlModeEnum.E_SOURCE.value
+            and context.url_source
+        ):
             str_suffix = " | " + context.url_source.display_progress_tuple_text()
 
         # str
