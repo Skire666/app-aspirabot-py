@@ -106,33 +106,22 @@ def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) ->
     ttk.Style().configure("TButton", padding=(5, 5))
 
 
-def _launch_main_app(
-    root: tk.Tk,
-    config_repo: AppConfigurationRepository,
-    startup_service: StartupService,
+def _wire_all_navigation(
+    main_view: MainView,
+    provider_presenter: ProviderPresenter,
+    provider_edit_presenter: WorkflowPresenter,
+    scraping_presenter: ScrapingPresenter,
+    historic_presenter: HistoricPresenter,
 ) -> None:
-    """Configure and reveal the main window after startup succeeds.
+    """Wire all inter-component navigation callbacks and lazy-loading hooks.
 
     Args:
-        root: Root Tk window that was hidden during the splash screen.
-        config_repo: Repository reused by the configuration component.
-        startup_service: Completed service exposing config_model and logging_service.
+        main_view: Navigation shell that controls tab visibility.
+        provider_presenter: Presenter for the provider list view.
+        provider_edit_presenter: Presenter for the provider edit view.
+        scraping_presenter: Presenter for the scraping panel.
+        historic_presenter: Presenter for the historic panel.
     """
-    config_model = startup_service.config_model
-
-    _override_gui_and_style(root, config_model)
-    main_view = _build_main_view(root)
-
-    # Instantiate all MVP component groups.
-    log_view, log_presenter = _init_log_component(main_view, startup_service.logging_service, config_model.folder_logs)
-    config_view, config_presenter = _init_config_component(main_view, config_repo)
-    provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service = (
-        _init_provider_components(main_view, config_model)
-    )
-    scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model, provider_service)
-    historic_view, historic_presenter = _init_historic_components(main_view, config_model)
-
-    # Wire inter-component navigation and callbacks.
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
     _wire_scraping_launch(main_view, provider_presenter, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
@@ -140,27 +129,40 @@ def _launch_main_app(
     main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, scraping_presenter.ensure_providers_loaded)
     main_view.set_on_show(TitleModuleEnum.E_HISTORY, historic_presenter.ensure_profiles_loaded)
 
+
+def _build_and_wire_components(
+    root: tk.Tk,
+    main_view: MainView,
+    config_repo: AppConfigurationRepository,
+    startup_service: StartupService,
+) -> None:
+    """Instantiate all MVP groups, wire navigation, register views, and anchor presenters."""
+    cfg = startup_service.config_model
+
+    # Initialize each component group.
+    log_view, log_p = _init_log_component(main_view, startup_service.logging_service, cfg.folder_logs)
+    cfg_view, cfg_p = _init_config_component(main_view, config_repo)
+    prov_view, prov_p, edit_view, edit_p, prov_svc = _init_provider_components(main_view, cfg)
+    scr_view, scr_p = _init_scraping_component(main_view, cfg, prov_svc)
+    hist_view, hist_p = _init_historic_components(main_view, cfg)
+
+    # Wire navigation and finalize the window.
+    _wire_all_navigation(main_view, prov_p, edit_p, scr_p, hist_p)
     _register_views(
-        main_view,
-        log_view,
-        historic_view,
-        config_view,
-        provider_view,
-        provider_edit_view,
-        scraping_view,
-        FaqView(main_view.content_area),
+        main_view, log_view, hist_view, cfg_view, prov_view, edit_view, scr_view, FaqView(main_view.content_area)
     )
-    _anchor_presenters(
-        root,
-        [
-            log_presenter,
-            config_presenter,
-            historic_presenter,
-            provider_presenter,
-            provider_edit_presenter,
-            scraping_presenter,
-        ],
-    )
+    _anchor_presenters(root, [log_p, cfg_p, hist_p, prov_p, edit_p, scr_p])
+
+
+def _launch_main_app(
+    root: tk.Tk,
+    config_repo: AppConfigurationRepository,
+    startup_service: StartupService,
+) -> None:
+    """Configure and reveal the main window after startup succeeds."""
+    _override_gui_and_style(root, startup_service.config_model)
+    main_view = _build_main_view(root)
+    _build_and_wire_components(root, main_view, config_repo, startup_service)
     root.deiconify()
 
 
@@ -446,18 +448,7 @@ def _register_views(
     scraping_view: ScrapingView,
     faq_view: FaqView,
 ) -> None:
-    """Register all module views with the sidebar and display the default tab.
-
-    Args:
-        main_view: Navigation shell that controls which view is visible.
-        log_view: Journal module view.
-        historic_view: Historic module view.
-        config_view: Configuration module view.
-        provider_view: Providers list module view.
-        provider_edit_view: Provider edit module view.
-        scraping_view: Scraping panel module view.
-        faq_view: FAQ module view.
-    """
+    """Map each sidebar entry to its view widget and show the default tab."""
     # Map each sidebar label to its corresponding view widget.
     main_view.add_view(TitleModuleEnum.E_LOGS, log_view)
     main_view.add_view(TitleModuleEnum.E_HISTORY, historic_view)

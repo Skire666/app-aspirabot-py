@@ -41,6 +41,33 @@ C_SCRAPING_EMERGENCY_STOP_INVALID_MSG = (
     "La condition d'arrêt d'urgence doit être un nombre entier entre 1 et 9 999 999."
 )
 
+# Scraping panel — workflow guard warnings
+C_SCRAPING_NO_PROVIDER_LOADED = (
+    "Veuillez charger un fournisseur avant de lancer le scraping."
+)
+C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER = (
+    "Un Workflow est déjà en cours de modification.\n"
+    "Veuillez terminer ou annuler la modification avant de changer de fournisseur."
+)
+C_SCRAPING_WORKFLOW_ACTIVE_LAUNCH = (
+    "Un Workflow est déjà en cours de modification.\n"
+    "Veuillez terminer ou annuler la modification avant de lancer le scraping."
+)
+
+# Scraping panel — journal lifecycle event messages
+C_SCRAPING_EVENT_BROWSER_INIT = "Initialisation du navigateur..."
+C_SCRAPING_EVENT_CONTEXT_INIT = "Création du contexte de navigation..."
+C_SCRAPING_EVENT_WORKFLOW_INIT = "Démarrage des étapes du workflow..."
+
+# Scraping panel — final run status labels
+C_SCRAPING_STATUS_CANCELLED = "Scraping annulé"
+C_SCRAPING_STATUS_FINISHED = "Scraping terminé"
+C_SCRAPING_STATUS_ERROR = "erreur"
+C_SCRAPING_STATUS_EMERGENCY_STOP = "Processus mise en pause : seuil d'erreurs dépassé"
+
+# Scraping panel — export error message ({exc} is the caught exception)
+C_SCRAPING_EXPORT_WRITE_ERROR = "Impossible d'écrire le fichier :\n{exc}"
+
 # Scraping panel — no URL source confirmation dialog
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
 C_SCRAPING_NO_URL_SOURCE_MSG = (

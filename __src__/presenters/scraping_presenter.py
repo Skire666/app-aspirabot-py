@@ -35,8 +35,20 @@ from shared.datetime_util import (
 from shared.enums import EventScrapingEnum, OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import (
     C_SCRAPING_EMERGENCY_STOP_INVALID_MSG,
+    C_SCRAPING_EVENT_BROWSER_INIT,
+    C_SCRAPING_EVENT_CONTEXT_INIT,
+    C_SCRAPING_EVENT_WORKFLOW_INIT,
+    C_SCRAPING_EXPORT_WRITE_ERROR,
+    C_SCRAPING_JOURNAL_PENDING_STATUS,
     C_SCRAPING_JOURNAL_RESULT_ERROR,
     C_SCRAPING_JOURNAL_RESULT_OK,
+    C_SCRAPING_NO_PROVIDER_LOADED,
+    C_SCRAPING_STATUS_CANCELLED,
+    C_SCRAPING_STATUS_EMERGENCY_STOP,
+    C_SCRAPING_STATUS_ERROR,
+    C_SCRAPING_STATUS_FINISHED,
+    C_SCRAPING_WORKFLOW_ACTIVE_LAUNCH,
+    C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER,
 )
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView
@@ -124,7 +136,6 @@ class ScrapingPresenter:
 
     def ensure_providers_loaded(self) -> None:
         """Populate the provider dropdown on first show, skipped if already loaded."""
-        print(f"ensure_providers_loaded -> {self._providers_loaded}")
         if not self._providers_loaded or (datetime.now() - self._providers_loaded).total_seconds() > 1:
             self._on_refresh_providers()
 
@@ -150,34 +161,49 @@ class ScrapingPresenter:
         Args:
             id_file: The ID of the provider file to load.
         """
-        # Unblock any active pause, then cancel the running workflow.
-        print(f"load_provider -> {id_file}")
-        self._pause_event.set()
-        self._cancel_event.set()
+        # Abort any in-progress run before swapping the provider.
+        self._cancel_active_run()
 
-        # Load the new provider and clear the stale cancellation signal.
         self._logging.info("Loading provider id_file=%s", id_file)
         self._provider = self._service_provider.read_provider(id_file)
         self._cancel_event.clear()
 
-        # Add a default profile if the provider has none, then persist.
+        # Guarantee at least one profile exists, then populate the view.
+        self._ensure_default_profile()
+        self.ensure_providers_loaded()
+        self._setup_view_after_load(id_file)
+
+    # ------------------------------------------------------------------
+    # Private helpers — provider loading
+    # ------------------------------------------------------------------
+
+    def _cancel_active_run(self) -> None:
+        """Unblock any active pause and signal the running workflow to stop."""
+        self._pause_event.set()
+        self._cancel_event.set()
+
+    def _ensure_default_profile(self) -> None:
+        """Add and persist a default profile when the provider has none."""
         if not self._provider.launch_profiles:
             self._provider.launch_profiles.append(LaunchProfileModel.get_default())
             self._service_provider.update_provider(self._provider)
 
-        # Ensure the provider dropdown is populated before selecting.
-        self.ensure_providers_loaded()
+    def _setup_view_after_load(self, id_file: str) -> None:
+        """Reset the view, populate profiles, and seed the date label.
 
-        # Refresh the view provider selection and reset run-specific state.
+        Args:
+            id_file: ID of the newly loaded provider, forwarded to the dropdown.
+        """
+        # Select the provider in the dropdown and clear stale run state.
         self._view.set_selected_provider(id_file)
         self._view.reset()
 
-        # Unlock the profiles frame and populate it.
+        # Unlock the profiles frame and populate it from the loaded provider.
         self._view.set_profile_management_enabled(True)
         self._refresh_profiles_list()
         self._load_last_used_profile()
 
-        # Seed the date label with the file's current modification date.
+        # Seed the date label with the provider file's current modification date.
         self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
     # ------------------------------------------------------------------
@@ -220,7 +246,7 @@ class ScrapingPresenter:
             self._journal_repository.save(path, rows)
         except OSError as exc:
             self._logging.error("Journal export failed: %s", exc)
-            self._view.show_warning(f"Impossible d'écrire le fichier :\n{exc}")
+            self._view.show_warning(C_SCRAPING_EXPORT_WRITE_ERROR.format(exc=exc))
 
     def _on_provider_selected(self, id_file: str) -> None:
         """Load the provider chosen from the view's dropdown.
@@ -230,10 +256,7 @@ class ScrapingPresenter:
         """
         # Guard: block provider switch while a workflow edit session is open.
         if self.is_workflow_active and self.is_workflow_active():
-            self._view.show_warning(
-                "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification avant de changer de fournisseur."
-            )
+            self._view.show_warning(C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER)
             return
 
         self._logging.info("Provider selected from view: id_file=%s", id_file)
@@ -241,8 +264,6 @@ class ScrapingPresenter:
 
     def _on_refresh_providers(self) -> None:
         """Reload the providers list and forward it to the view dropdown."""
-        print(f"_on_refresh_providers -> {self._providers_loaded}")
-        # TODO PCO on peut spam le refresh
         try:
             providers: list[ProviderModel] = self._service_provider.list_all_providers()
         except Exception as exc:  # noqa: BLE001
@@ -468,32 +489,37 @@ class ScrapingPresenter:
     # Workflow control callbacks
     # ------------------------------------------------------------------
 
+    def _check_launch_preconditions(self) -> bool:
+        """Return True if all launch guards pass; show a warning and return False if any fails."""
+        # Provider must be loaded before launching.
+        if not self._provider:
+            self._view.show_warning(C_SCRAPING_NO_PROVIDER_LOADED)
+            return False
+
+        # Block launch when a Workflow edit session is already open.
+        if self.is_workflow_active and self.is_workflow_active():
+            self._view.show_warning(C_SCRAPING_WORKFLOW_ACTIVE_LAUNCH)
+            return False
+
+        # Confirm intent when no URL source is configured.
+        url_source = self._view.get_url_source()
+        if not url_source.get("type") and not self._view.ask_confirm_launch_without_source():
+            return False
+
+        # Abort when the emergency stop threshold is invalid.
+        if self._view.get_emergency_stop_threshold() is None:
+            self._view.show_warning(C_SCRAPING_EMERGENCY_STOP_INVALID_MSG)
+            return False
+
+        return True
+
     def _on_launch(self) -> None:
         """Start the workflow in a daemon background thread.
 
         Returns:
             None.
         """
-        if not self._provider:
-            self._view.show_warning("Veuillez charger un fournisseur avant de lancer le scraping.")
-            return
-
-        # Block launch when a Workflow edit session is already open.
-        if self.is_workflow_active and self.is_workflow_active():
-            self._view.show_warning(
-                "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification avant de lancer le scraping."
-            )
-            return
-
-        # No URL source selected — let the user confirm they want to proceed anyway.
-        url_source = self._view.get_url_source()
-        if not url_source.get("type") and not self._view.ask_confirm_launch_without_source():
-            return
-
-        # Abort launch when the emergency stop threshold is empty or out of range.
-        if self._view.get_emergency_stop_threshold() is None:
-            self._view.show_warning(C_SCRAPING_EMERGENCY_STOP_INVALID_MSG)
+        if not self._check_launch_preconditions():
             return
 
         # Reset signals and journal counter from any previous run.
@@ -587,6 +613,13 @@ class ScrapingPresenter:
     def _on_logging_event(
         self, event: EventScrapingEnum, step: StepScrapingModel, context: ScrapingContextModel
     ) -> None:
+        """Route a scraping lifecycle event to the matching journal handler.
+
+        Args:
+            event: The lifecycle event emitted by the scraping service.
+            step: The step model associated with the event.
+            context: The current scraping context.
+        """
         if event == EventScrapingEnum.E_STEP_START:
             self._on_logging_event_start(step, context)
         elif event == EventScrapingEnum.E_STEP_DONE:
@@ -594,11 +627,11 @@ class ScrapingPresenter:
         elif event == EventScrapingEnum.E_EMERGENCY_STOP:
             self._on_logging_event_stop(step, context)
         elif event == EventScrapingEnum.E_BROWSER_INIT:
-            self._on_logging_event_msg("Initialisation du navigateur...")
+            self._on_logging_event_msg(C_SCRAPING_EVENT_BROWSER_INIT)
         elif event == EventScrapingEnum.E_CONTEXT_INIT:
-            self._on_logging_event_msg("Création du contexte de navigation...")
+            self._on_logging_event_msg(C_SCRAPING_EVENT_CONTEXT_INIT)
         elif event == EventScrapingEnum.E_WORKFLOW_INIT:
-            self._on_logging_event_msg("Démarrage des étapes du workflow...")
+            self._on_logging_event_msg(C_SCRAPING_EVENT_WORKFLOW_INIT)
 
     def _on_logging_event_start(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
         """Called by the service just before a step executes.
@@ -610,7 +643,6 @@ class ScrapingPresenter:
             step: The step model about to execute.
             context: The current scraping context, containing live stats and info.
         """
-        str_entry = ""
         str_suffix = ""
         if (
             step.step_type == StepTypeEnum.E_OPEN_URL
@@ -619,7 +651,7 @@ class ScrapingPresenter:
         ):
             str_suffix = " | " + context.url_source.display_progress_tuple_text()
 
-        # str
+        # Build the journal entry with the optional source progress suffix.
         str_entry = f"{get_time_now_hh_mm_ss()} | Début '{step.step_type.value}'{str_suffix}\n"
 
         # logs
@@ -642,7 +674,7 @@ class ScrapingPresenter:
         # Push live progress values to the progression frame.
         self._view.update_progress(
             url=context.last_url_opened,
-            status="Processus mise en pause : seuil d'erreurs dépassé",
+            status=C_SCRAPING_STATUS_EMERGENCY_STOP,
             stats_text=self._service_scraping.current_stats,
         )
 
@@ -667,12 +699,17 @@ class ScrapingPresenter:
         # Push live progress values to the progression frame.
         self._view.update_progress(
             url=context.last_url_opened,
-            status="Scraping en cours",
+            status=C_SCRAPING_JOURNAL_PENDING_STATUS,
             stats_text=self._service_scraping.current_stats,
         )
 
     def _on_logging_event_msg(self, message: str) -> None:
-        # Complete the journal row started in _on_step_start.
+        """Append a free-form message to the journal and update the progress frame.
+
+        Args:
+            message: Text to display as the current status and append to the journal.
+        """
+        # Build the timestamped journal line.
         date_str = get_time_now_hh_mm_ss()
         line = f"{date_str} | {message}\n"
 
@@ -688,7 +725,12 @@ class ScrapingPresenter:
         )
 
     def _on_logging_event_final_report(self, r: ScrapingReportModel) -> None:
-        # Complete the journal row started in _on_step_start.
+        """Append the run summary line to the journal.
+
+        Args:
+            r: The completed scraping report containing all counters.
+        """
+        # Build the summary line from all report counters.
         date_str = get_time_now_hh_mm_ss()
         line = f"{date_str} | Début {r.started_at} | Fin {r.finished_at}"
         line += f" | Total steps x{r.steps_total} | Succès x{r.steps_success} | Erreur x{r.steps_failed}"
@@ -702,8 +744,10 @@ class ScrapingPresenter:
     # Workflow thread target
     # ------------------------------------------------------------------
 
-    def _run_workflow(self, url_source_type: str, url_source_value: list[str] | str, export_folder: str) -> None:
-        """Thread target: run the workflow and dispatch the result to the view.
+    def _call_service_workflow(
+        self, url_source_type: str, url_source_value: list[str] | str, export_folder: str
+    ) -> ScrapingReportModel | None:
+        """Invoke the scraping service; return the report or None on exception.
 
         Args:
             url_source_type: URL source type string (``"manual"``, ``"csv"``,
@@ -712,14 +756,10 @@ class ScrapingPresenter:
             export_folder: Path to the folder where results should be exported.
 
         Returns:
-            None.
-
-        Raises:
-            None — catastrophic failures are logged and result in a None report.
+            The completed ScrapingReportModel, or None if an exception was raised.
         """
-        report: ScrapingReportModel | None = None
         try:
-            report = self._service_scraping.run_workflow(
+            return self._service_scraping.run_workflow(
                 self._provider,
                 url_source_type,
                 url_source_value,
@@ -733,8 +773,30 @@ class ScrapingPresenter:
             )
         except (ValueError, RuntimeError, OSError) as exc:
             self._logging.exception("Workflow execution failed: %s", exc)
+            return None
 
+    def _run_workflow(self, url_source_type: str, url_source_value: list[str] | str, export_folder: str) -> None:
+        """Thread target: run the workflow and dispatch the result to the view.
+
+        Args:
+            url_source_type: URL source type string passed to the service.
+            url_source_value: Matching value — list of URLs or path string.
+            export_folder: Path to the folder where results should be exported.
+        """
+        report = self._call_service_workflow(url_source_type, url_source_value, export_folder)
         self._on_workflow_finished(report, export_folder)
+
+    def _push_final_status(self, report: ScrapingReportModel | None) -> None:
+        """Push the completed-run status and statistics to the progress frame.
+
+        Args:
+            report: Completed report, or None when the run raised an exception.
+        """
+        if report is not None:
+            status = C_SCRAPING_STATUS_CANCELLED if report.cancelled else C_SCRAPING_STATUS_FINISHED
+            self._view.update_progress(url="", status=status, stats_text=report)
+        else:
+            self._view.update_progress(url="", status=C_SCRAPING_STATUS_ERROR, stats_text=None)
 
     def _on_workflow_finished(self, report: ScrapingReportModel | None, export_folder: str) -> None:
         """Restore idle state and display the final report in the view.
@@ -746,21 +808,7 @@ class ScrapingPresenter:
         # Ensure pause is released so the event is ready for the next run.
         self._pause_event.set()
         self._view.set_running_state(False)
-
-        # Push final status and statistics to the progression frame.
-        if report is not None:
-            status = "Scraping annulé" if report.cancelled else "Scraping terminé"
-            self._view.update_progress(
-                url="",
-                status=status,
-                stats_text=report,
-            )
-        else:
-            self._view.update_progress(
-                url="",
-                status="erreur",
-                stats_text=None,
-            )
+        self._push_final_status(report)
 
         # Schedule auto-export on the main thread (Treeview access is not thread-safe).
         if report:
