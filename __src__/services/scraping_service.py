@@ -158,6 +158,7 @@ class ScrapingService:
         self._context.url_source = self._build_url_source(url_source_type, url_source_value)
         self._context.folder_export = Path(export_folder)
 
+        # TODO PCO, si déjà instancié, recycler l'ancien ?
         engine_used: str = self._context.app_config.browser_engine
         if engine_used == C_BROWSER_ENGINE_PLAYWRIGHT:
             self._browser_service = BrowserPlaywrightService()
