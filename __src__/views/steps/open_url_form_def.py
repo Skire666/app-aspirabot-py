@@ -41,6 +41,7 @@ C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 C_KEY_URL_MODE = "url_mode"
 C_KEY_URL_CUSTOM = "url_custom"
 C_KEY_WAIT_STATE = "wait_state"
+C_KEY_WAIT_DNS_SOLVER = "wait_dns_solver"
 C_KEY_TIMEOUT_DURATION = "timeout_duration"
 C_KEY_TIMEOUT_UNIT = "timeout_unit"
 C_KEY_COMMENT = "comment"
@@ -181,6 +182,11 @@ class OpenUrlFormDef(IStepFormDef):
         ttk.Combobox(line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
             side=tk.LEFT, padx=(0, 5)
         )
+
+        dns = tk.StringVar(value="6")
+        ttk.Label(line3, text="Délai DNS (sec) :").pack(side=tk.LEFT, padx=(25, 5))
+        ttk.Spinbox(line3, from_=1, to=30, textvariable=dns, width=4).pack(side=tk.LEFT, padx=(0, 5))
+        widgets[C_KEY_WAIT_DNS_SOLVER] = dns
         widgets[C_KEY_TIMEOUT_DURATION] = td_var
         widgets[C_KEY_TIMEOUT_UNIT] = tu_var
 
@@ -211,6 +217,7 @@ class OpenUrlFormDef(IStepFormDef):
         widgets[C_KEY_URL_MODE].set(model.params.get(C_KEY_URL_MODE, C_INPUT_DEFAULT_URL_MODE))
         widgets[C_KEY_URL_CUSTOM].set(model.params.get(C_KEY_URL_CUSTOM, C_INPUT_DEFAULT_URL))
         widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
+        widgets[C_KEY_WAIT_DNS_SOLVER].set(model.params.get(C_KEY_WAIT_DNS_SOLVER, 6))
         widgets[C_KEY_TIMEOUT_DURATION].set(
             str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
         )
@@ -235,6 +242,7 @@ class OpenUrlFormDef(IStepFormDef):
             C_KEY_URL_MODE: widgets[C_KEY_URL_MODE].get(),
             C_KEY_URL_CUSTOM: widgets[C_KEY_URL_CUSTOM].get().strip(),
             C_KEY_WAIT_STATE: widgets[C_KEY_WAIT_STATE].get(),
+            C_KEY_WAIT_DNS_SOLVER: safe_int_widget(widgets, C_KEY_WAIT_DNS_SOLVER, -1),
             C_KEY_TIMEOUT_DURATION: safe_int_widget(widgets, C_KEY_TIMEOUT_DURATION, -1),
             C_KEY_TIMEOUT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_TIMEOUT_UNIT].get()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),

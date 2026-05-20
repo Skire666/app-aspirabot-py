@@ -114,6 +114,7 @@ class HistoricPresenter:
                 {
                     "id": f"{id_provider}:::{profile.id_profile}",
                     "name_profile": profile.name_profile,
+                    "provider_parent": profile.provider_parent or "—",
                     "url_source_type": profile.url_source_type or "—",
                     "used_date_profile": profile.used_date_profile or "—",
                     "launch_count": str(profile.launch_count),
@@ -123,9 +124,7 @@ class HistoricPresenter:
 
         return rows
 
-    def _sort_tuples(
-        self, tuples: list[tuple[str, Any]]
-    ) -> list[tuple[str, Any]]:
+    def _sort_tuples(self, tuples: list[tuple[str, Any]]) -> list[tuple[str, Any]]:
         """Sort profile tuples by the current sort column and direction."""
         col = self._sort_column
 
@@ -135,7 +134,7 @@ class HistoricPresenter:
             if col == "launch_count":
                 try:
                     return f"{int(value or 0):020d}"
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     return "0" * 20
             return str(value or "").casefold()
 

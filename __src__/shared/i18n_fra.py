@@ -163,6 +163,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "jump_to_step_target_not_found": "Étape {step} : la cible [{value}] est introuvable.",
     # --- open_url ---
     "open_url_url_required": "Étape {step} : l'URL est obligatoire.",
+    "open_url_wait_dns_solver_invalid": "Étape {step} : Délai DNS doit être 1 <= x <= 30 sec.",
     "open_url_timeout_invalid": "Étape {step} : le timeout doit être >= 1.",
     "open_url_timeout_unit_invalid": "Étape {step} : l'unité de timeout est invalide.",
     # --- refresh_page ---

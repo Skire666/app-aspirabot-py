@@ -17,6 +17,7 @@ class OpenUrlParams(IStepParams):
     url_mode: str
     url_custom: str
     wait_state: str
+    wait_dns_solver: int  # seconde
     timeout_duration: int
     timeout_unit: str
     comment: str
@@ -27,7 +28,8 @@ class OpenUrlParams(IStepParams):
         return cls(
             url_mode=OpenUrlModeEnum.E_SOURCE.value,
             url_custom="",
-            wait_state="load",
+            wait_state="networkidle",
+            wait_dns_solver=6,
             timeout_duration=1,
             timeout_unit=C_UNITS_TIME_DEFAULT_MODEL,
             comment="",
@@ -39,6 +41,7 @@ class OpenUrlParams(IStepParams):
             "url_mode": self.url_mode,
             "url_custom": self.url_custom,
             "wait_state": self.wait_state,
+            "wait_dns_solver": self.wait_dns_solver,
             "timeout_duration": self.timeout_duration,
             "timeout_unit": self.timeout_unit,
             "comment": self.comment,
@@ -51,6 +54,7 @@ class OpenUrlParams(IStepParams):
             url_mode=data.get("url_mode"),
             url_custom=data.get("url_custom"),
             wait_state=data.get("wait_state"),
+            wait_dns_solver=int(data.get("wait_dns_solver")),
             timeout_duration=int(data.get("timeout_duration")),
             timeout_unit=data.get("timeout_unit"),
             comment=data.get("comment"),

@@ -49,7 +49,7 @@ class ScrapingJournalPanel(ttk.Frame):
         scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self._text.yview)
         self._text.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+        self._text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
 
     # ------------------------------------------------------------------
     # Callback registration

@@ -19,6 +19,7 @@ from views.components.data_grid import DataGrid
 _COLUMNS: list[dict[str, Any]] = [
     {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
     {"id": "name_profile", "title": "Nom du profil", "width": 160, "type": "text"},
+    {"id": "provider_parent", "title": "Fournisseur", "width": 160, "type": "text"},
     {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
     {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text"},
     {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},

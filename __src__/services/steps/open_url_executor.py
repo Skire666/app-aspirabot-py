@@ -28,10 +28,38 @@ class OpenUrlExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = OpenUrlParams.from_dict(context.step_params)
-        page = browser.get_current_page()
 
         # Resolve the target URL from the source provider or the custom field.
-        target_url = ""
+        target_url = self._extract_next_url_used(context, p)
+
+        # obligé de le mettre avant de goto
+        # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
+        context.last_url_opened = target_url
+        timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
+
+        self._safe_goto(browser, p.wait_state, target_url, timeout_ms, p.wait_dns_solver)
+
+        context.last_message_step = f"Ouvert : {target_url}"
+
+    def _safe_goto(
+        self, bw: IWebBrowserService, wait_state: str, url: str, timeout_ms: int, wait_dns_solver_sec: int
+    ) -> None:
+
+        page = bw.get_current_page()
+        try:
+            page.goto(url, wait_until="commit")
+            page.wait_for_load_state(wait_state, timeout=timeout_ms)
+        except Exception as exc:
+            if "ERR_NAME_NOT_RESOLVED" in str(exc):
+                if wait_dns_solver_sec >= 30:
+                    raise Exception("DNS solver supérieur ou égale à 30 sec.")
+                page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
+                page.reload(wait_until=wait_state, timeout=timeout_ms)
+
+        if page.url != url:
+            raise Exception(f"URL finale différente de la cible : {page.url} vs {url}")
+
+    def _extract_next_url_used(self, context: ScrapingContextModel, p: OpenUrlParams) -> str:
         if p.url_mode == OpenUrlModeEnum.E_CUSTOM.value:
             if not p.url_custom:
                 raise ValueError("URL personnalisée vide")
@@ -41,16 +69,7 @@ class OpenUrlExecutor(IStepExecutor):
             if context.url_source is None or not context.url_source.has_next():
                 raise ValueError("Aucune URL dans la source")
             target_url = context.url_source.next_url()
-
-        # obligé de le mettre avant de goto
-        # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
-        context.last_url_opened = target_url
-        timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
-
-        page.goto(target_url, wait_until="commit")
-        page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
-
-        context.last_message_step = f"Ouvert : {target_url}"
+        return target_url
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -61,6 +80,8 @@ class OpenUrlExecutor(IStepExecutor):
         errors: list[str] = []
         if p.url_mode is None or (p.url_mode == OpenUrlModeEnum.E_CUSTOM.value and not p.url_custom):
             errors.append(ERROR_TEMPLATES["open_url_url_required"].format(step=index_display))
+        if p.wait_dns_solver <= 0 or p.wait_dns_solver >= 31:
+            errors.append(ERROR_TEMPLATES["open_url_wait_dns_solver_invalid"].format(step=index_display))
         if p.timeout_duration <= 0:
             errors.append(ERROR_TEMPLATES["open_url_timeout_invalid"].format(step=index_display))
         if p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
