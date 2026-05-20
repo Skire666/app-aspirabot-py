@@ -197,7 +197,7 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
 
         Args:
             providers: List of dicts with keys ``id_file``, ``provider_name``,
-                ``url``, ``version``, ``modified_date``.
+                ``provider_desc``, ``version``, ``modified_date``.
         """
         selection_retained = self._provider_panel.render_providers_list(providers)
         if not selection_retained:

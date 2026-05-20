@@ -245,6 +245,8 @@ class ScrapingService:
         Returns:
             A fully populated ScrapingReportModel.
         """
+        self._on_event_logging(EventScrapingEnum.E_COMPLETED, None, None)
+
         return ScrapingReportModel(
             started_at=self._started_at or datetime.now(),
             finished_at=datetime.now(),

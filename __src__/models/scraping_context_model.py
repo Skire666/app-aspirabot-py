@@ -118,7 +118,6 @@ class ScrapingContextModel:
         """
         self._time_started = time.time()
         self.step_params = step.params
-        self.last_result_step = True
         self.last_message_step = ""
         self.last_time_elapsed = 0.0
         self.pending_jump = None

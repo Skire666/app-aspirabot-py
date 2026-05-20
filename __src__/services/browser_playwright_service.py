@@ -22,13 +22,12 @@ import time
 
 from interfaces.i_web_browser_service import IWebBrowserService
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
+from shared.constants import C_STR_ERROR_JS_EVALUATION
 from shared.exception_util import (
     BrowserAlreadyLaunchedError,
     BrowserNotLaunchedError,
     PageNotAvailableOrClosedError,
 )
-
-from __src__.shared.constants import C_STR_ERROR_JS_EVALUATION
 
 # ---------------------------------------------------------------------------
 # Class

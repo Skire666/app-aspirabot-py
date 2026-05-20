@@ -15,6 +15,7 @@ from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
+from views.components.column_combobox import ColumnCombobox
 from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, CONDITION_VIEW_TO_MODEL
 
 # ---------------------------------------------------------------------------
@@ -23,9 +24,7 @@ from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, C
 
 C_KEY_CONDITION = "condition"
 C_KEY_STEPS_AVAILABLE = "_all_steps_available"
-C_KEY_ALL_CHOICES_LISTBOX = "_all_choices_listbox"
 C_KEY_ALL_STEPS_ID_TO_INDEX = "_all_steps_id_to_index"
-C_KEY_ALL_HEXASTRING_TO_MODEL = "_all_hexastring_to_model"
 C_KEY_CHOICE_FROM_LISTBOX = "_choice_from_listbox"
 C_KEY_COMMENT = "comment"
 
@@ -77,41 +76,36 @@ class JumpToStepFormDef(IStepFormDef):
         )
         widgets[C_KEY_CONDITION] = cond_var
 
-    def _build_subform_target_step(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+    @staticmethod
+    def _build_subform_target_step(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the target step combobox row, populated from C_KEY_STEPS_AVAILABLE.
 
         Args:
             frame: Parent frame to pack the row into.
-            widgets: Mutable mapping; populated with C_KEY_ALL_CHOICES_LISTBOX,
-                C_KEY_ALL_STEPS_ID_TO_INDEX, C_KEY_ALL_HEXASTRING_TO_MODEL, and
-                C_KEY_CHOICE_FROM_LISTBOX tk.Variable.
+            widgets: Mutable mapping; populated with C_KEY_ALL_STEPS_ID_TO_INDEX and
+                C_KEY_CHOICE_FROM_LISTBOX (ColumnCombobox widget).
         """
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
         available_steps: list[StepScrapingModel] = widgets.get(C_KEY_STEPS_AVAILABLE, [])
 
-        # Build display strings and lookup structures for available steps
-        all_choices_listbox = []
-        all_steps_id_to_index = []
-        all_hexastring_to_model = {}
-        for index, s in enumerate(available_steps):
-            choice_str = self.compute_string_displayed_in_combobox(index, s)
-            all_choices_listbox.append(choice_str)
-            all_steps_id_to_index.append(s.step_id)
-            all_hexastring_to_model[s.step_id] = s
-        widgets[C_KEY_ALL_CHOICES_LISTBOX] = all_choices_listbox
+        all_steps_id_to_index = [s.step_id for s in available_steps]
         widgets[C_KEY_ALL_STEPS_ID_TO_INDEX] = all_steps_id_to_index
-        widgets[C_KEY_ALL_HEXASTRING_TO_MODEL] = all_hexastring_to_model
-
-        default_choice = all_choices_listbox[0] if all_choices_listbox else ""
-        target_var = tk.StringVar(value=default_choice)
-        widgets[C_KEY_CHOICE_FROM_LISTBOX] = target_var
 
         ttk.Label(row1, text="Sauter vers :").pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Combobox(row1, textvariable=target_var, values=all_choices_listbox, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
-        )
+
+        ccb = ColumnCombobox(row1, state="readonly")
+        ccb.add_column("step_id_hidden", lambda s: s.step_id, width=0, visible=False)
+        ccb.add_column("index", lambda _: "", width=40, visible=True)
+        ccb.add_column("step_id", lambda s: s.step_id, width=60, visible=True)
+        ccb.add_column("step_type", lambda s: C_STEP_TYPE_TO_LABELS.get(s.step_type), width=120, visible=True)
+        for i, s in enumerate(available_steps):
+            ccb.add_item(s, columns=[s.step_id, str(i + 1).zfill(2), s.step_id, C_STEP_TYPE_TO_LABELS.get(s.step_type)])
+        if available_steps:
+            ccb.current(0)
+        ccb.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_CHOICE_FROM_LISTBOX] = ccb
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -140,42 +134,15 @@ class JumpToStepFormDef(IStepFormDef):
         cond_model = model.params.get(C_KEY_CONDITION, "success")
         widgets[C_KEY_CONDITION].set(CONDITION_MODEL_TO_VIEW.get(cond_model, CONDITION_DISPLAY[0]))
 
-        all_hexastring_to_model = widgets.get(C_KEY_ALL_HEXASTRING_TO_MODEL, [])
-        all_choices_listbox = widgets.get(C_KEY_ALL_CHOICES_LISTBOX, [])
         target_hexastring = model.params.get("target_hexastring", "")
+        ccb: ColumnCombobox = widgets[C_KEY_CHOICE_FROM_LISTBOX]
+        all_steps_id_to_index: list[str] = widgets.get(C_KEY_ALL_STEPS_ID_TO_INDEX, [])
+        if target_hexastring and target_hexastring in all_steps_id_to_index:
+            ccb.current(all_steps_id_to_index.index(target_hexastring))
+        elif ccb.size() > 0:
+            ccb.current(0)
 
-        choice_str = all_choices_listbox[0] if all_choices_listbox else ""
-
-        if target_hexastring is not None and all_choices_listbox:
-            all_steps_id_to_index = widgets.get(C_KEY_ALL_STEPS_ID_TO_INDEX, [])
-            index_target = (
-                all_steps_id_to_index.index(target_hexastring)
-                if target_hexastring in all_steps_id_to_index
-                else -1
-            )
-            model_target = all_hexastring_to_model.get(target_hexastring)
-            choice_str = self.compute_string_displayed_in_combobox(index_target, model_target)
-
-        widgets[C_KEY_CHOICE_FROM_LISTBOX].set(choice_str)
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
-
-    @staticmethod
-    def compute_string_displayed_in_combobox(index: int, model: StepScrapingModel) -> str:
-        """Format the display string for a step entry in the jump-target combobox.
-
-        Args:
-            index: Zero-based position of the step in the workflow.
-            model: The target step model.
-
-        Returns:
-            A formatted string like "01.  -  #hxst  - <label>", or an empty string
-            if the index is negative or the model is None.
-        """
-        if index >= 0 and model is not None:
-            return (
-                f"{str(index + 1).zfill(2)}.  -  #{model.step_id}  - {C_STEP_TYPE_TO_LABELS.get(model.step_type)}"
-            )
-        return ""
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -188,29 +155,14 @@ class JumpToStepFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         cond_display = widgets[C_KEY_CONDITION].get()
-        choice_target_hexastring = widgets.get(C_KEY_CHOICE_FROM_LISTBOX, "").get()
-        hexastring = self._extract_after_hash_hexastring(choice_target_hexastring)
+        ccb: ColumnCombobox = widgets.get(C_KEY_CHOICE_FROM_LISTBOX)
+        selected_step: StepScrapingModel | None = ccb.get_selected_object() if ccb else None
+        hexastring = selected_step.step_id if selected_step is not None else ""
         return {
             C_KEY_CONDITION: CONDITION_VIEW_TO_MODEL.get(cond_display),
             "target_hexastring": hexastring,
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
-
-    @staticmethod
-    def _extract_after_hash_hexastring(choice_target_hexastring: str) -> str:
-        """Extract the 4-character hex step ID from a combobox display string.
-
-        Args:
-            choice_target_hexastring: A string of the form "01.  -  #hxst  - <label>".
-
-        Returns:
-            The 4-character hex string following '#', or an empty string if not found.
-        """
-        if choice_target_hexastring is not None:
-            hash_index = choice_target_hexastring.find("#")
-            if hash_index != -1:
-                return choice_target_hexastring[hash_index + 1 : hash_index + 5]
-        return ""
 
     @override
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
@@ -240,9 +192,7 @@ class JumpToStepFormDef(IStepFormDef):
             return f"Si le résultat est un succès\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
         if cond == "failure":
             return f"Si le résultat est un échec\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
-        return (
-            f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_index}.  #{target_hexastring}"
-        )
+        return f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_index}.  #{target_hexastring}"
 
 
 register_form(JumpToStepFormDef())

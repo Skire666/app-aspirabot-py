@@ -32,7 +32,7 @@ from shared.datetime_util import (
     get_time_now_hh_mm_ss,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
-from shared.enums import EventScrapingEnum
+from shared.enums import EventScrapingEnum, OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import (
     C_SCRAPING_EMERGENCY_STOP_INVALID_MSG,
     C_SCRAPING_JOURNAL_RESULT_ERROR,
@@ -40,6 +40,7 @@ from shared.i18n_fra import (
 )
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView
+from views.steps.open_url_form_def import C_KEY_URL_MODE
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -240,7 +241,7 @@ class ScrapingPresenter:
             {
                 "id_file": p.id_file,
                 "provider_name": p.provider_name,
-                "url": p.url,
+                "provider_desc": p.provider_desc,
                 "version": p.version,
                 "modified_date": p.modified_date_provider,
             }
@@ -579,11 +580,11 @@ class ScrapingPresenter:
         elif event == EventScrapingEnum.E_EMERGENCY_STOP:
             self._on_logging_event_stop(step, context)
         elif event == EventScrapingEnum.E_BROWSER_INIT:
-            self._on_logging_event_aspirabot("Initialisation du navigateur...")
+            self._on_logging_event_msg("Initialisation du navigateur...")
         elif event == EventScrapingEnum.E_CONTEXT_INIT:
-            self._on_logging_event_aspirabot("Création du contexte de navigation...")
+            self._on_logging_event_msg("Création du contexte de navigation...")
         elif event == EventScrapingEnum.E_WORKFLOW_INIT:
-            self._on_logging_event_aspirabot("Démarrage des étapes du workflow...")
+            self._on_logging_event_msg("Démarrage des étapes du workflow...")
 
     def _on_logging_event_start(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
         """Called by the service just before a step executes.
@@ -595,16 +596,17 @@ class ScrapingPresenter:
             step: The step model about to execute.
             context: The current scraping context, containing live stats and info.
         """
-        # str_entry = ""
-        # if step.step_type == StepTypeEnum.E_OPEN_URL:
-        #     if step.params[C_KEY_URL_MODE] == OpenUrlModeEnum.E_SOURCE.value:
-        #         str_progress = " | " + context.url_source.display_progress_tuple_text()
-        #         str_entry = f"{get_datetime_now_hh_mm_ss()} | Début '{step.step_type.value}'{str_progress}\n"
-        # if
+        str_entry = ""
+        str_suffix = ""
+        if step.step_type == StepTypeEnum.E_OPEN_URL and step.params[C_KEY_URL_MODE] == OpenUrlModeEnum.E_SOURCE.value:
+            str_suffix = " | " + context.url_source.display_progress_tuple_text()
 
-        # # logs
-        # self._all_logs_scraping.append(str_entry)
-        # self._view.add_journal_entry(str_entry)
+        # str
+        str_entry = f"{get_time_now_hh_mm_ss()} | Début '{step.step_type.value}'{str_suffix}\n"
+
+        # logs
+        self._all_logs_scraping.append(str_entry)
+        self._view.add_journal_entry(str_entry)
 
     def _on_logging_event_stop(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
         """Called by the service when workflow stopped.
@@ -651,7 +653,7 @@ class ScrapingPresenter:
             stats_text=self._service_scraping.current_stats,
         )
 
-    def _on_logging_event_aspirabot(self, message: str) -> None:
+    def _on_logging_event_msg(self, message: str) -> None:
         # Complete the journal row started in _on_step_start.
         date_str = get_time_now_hh_mm_ss()
         line = f"{date_str} | {message}\n"
@@ -666,6 +668,17 @@ class ScrapingPresenter:
             status=message,
             stats_text=self._service_scraping.current_stats,
         )
+
+    def _on_logging_event_final_report(self, r: ScrapingReportModel) -> None:
+        # Complete the journal row started in _on_step_start.
+        date_str = get_time_now_hh_mm_ss()
+        line = f"{date_str} | Début {r.started_at} | Fin {r.finished_at}"
+        line += f" | Total steps x{r.steps_total} | Succès x{r.steps_success} | Erreur x{r.steps_failed}"
+        line += f" | Clique x{r.clicks_performed} | URL ouverte x{r.urls_opened} | Est annulé = {r.cancelled}\n"
+
+        # logs
+        self._all_logs_scraping.append(line)
+        self._view.add_journal_entry(str_entry=line)
 
     # ------------------------------------------------------------------
     # Workflow thread target
@@ -732,6 +745,8 @@ class ScrapingPresenter:
             )
 
         # Schedule auto-export on the main thread (Treeview access is not thread-safe).
+        if report:
+            self._on_logging_event_final_report(report)
         self._view.after(0, lambda: self._do_auto_export(export_folder))
 
     def _do_auto_export(self, export_folder: str) -> None:

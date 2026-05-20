@@ -47,7 +47,7 @@ class ProviderSelectionPanel(ttk.Frame):
         self._cmb_provider = ColumnCombobox(frame)
         self._cmb_provider.add_column("id_file", lambda p: p["id_file"], width=0, visible=False)
         self._cmb_provider.add_column("provider_name", lambda p: p["provider_name"], width=150, visible=True)
-        self._cmb_provider.add_column("url", lambda p: p["url"], width=240, visible=True)
+        self._cmb_provider.add_column("provider_desc", lambda p: p["provider_desc"], width=240, visible=True)
         self._cmb_provider.add_column("version", lambda p: p["version"], width=40, visible=True)
         self._cmb_provider.add_column("id_file_used", lambda p: p["id_file"], width=90, visible=True)
         self._cmb_provider.set_display_column("provider_name")
@@ -86,7 +86,7 @@ class ProviderSelectionPanel(ttk.Frame):
 
         Args:
             providers: List of dicts with keys ``id_file``, ``provider_name``,
-                ``url``, ``version``.
+                ``provider_desc``, ``version``.
 
         Returns:
             True when the previously selected entry still exists in the new list.

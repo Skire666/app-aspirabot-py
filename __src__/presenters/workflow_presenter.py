@@ -126,7 +126,7 @@ class WorkflowPresenter:
         return {
             "id_file": provider.id_file,
             "provider_name": provider.provider_name,
-            "url": provider.url,
+            "provider_desc": provider.provider_desc,
             "version": provider.version,
             "created_date_provider": provider.created_date_provider,
             "modified_date_provider": provider.modified_date_provider,
@@ -150,7 +150,7 @@ class WorkflowPresenter:
 
             # Merge form data into the provider model.
             self._current_provider.provider_name = form_data["provider_name"]
-            self._current_provider.url = form_data["url"]
+            self._current_provider.provider_desc = form_data["provider_desc"]
             self._current_provider.version = form_data["version"]
 
             # Collect steps from the sub-presenter.

@@ -3,19 +3,19 @@
 from shared.enums import StepTypeEnum, TitleModuleEnum
 from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_CONFIG,
+    C_RESS_ICON_BLACK_EDITOR,
+    C_RESS_ICON_BLACK_EXECUTE,
     C_RESS_ICON_BLACK_FAQ,
+    C_RESS_ICON_BLACK_HISTORIC,
     C_RESS_ICON_BLACK_LOGS,
-    C_RESS_ICON_BLACK_PROJECTS,
     C_RESS_ICON_BLACK_PROVIDER,
-    C_RESS_ICON_BLACK_SCRAPING,
-    C_RESS_ICON_BLACK_WORKFLOW,
     C_RESS_ICON_WHITE_CONFIG,
+    C_RESS_ICON_WHITE_EDITOR,
+    C_RESS_ICON_WHITE_EXECUTE,
     C_RESS_ICON_WHITE_FAQ,
+    C_RESS_ICON_WHITE_HISTORIC,
     C_RESS_ICON_WHITE_LOGS,
-    C_RESS_ICON_WHITE_PROJECTS,
     C_RESS_ICON_WHITE_PROVIDER,
-    C_RESS_ICON_WHITE_SCRAPING,
-    C_RESS_ICON_WHITE_WORKFLOW,
 )
 
 # ---------------------------------------------------------------------------
@@ -58,12 +58,12 @@ C_SCRAPING_NO_URL_SOURCE_MSG = (
 # Order of modules is determined by the order of entries in this dictionary.
 C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
     TitleModuleEnum.E_LOGS: ["Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
-    TitleModuleEnum.E_PROJECTS: ["Projets", C_RESS_ICON_BLACK_PROJECTS, C_RESS_ICON_WHITE_PROJECTS],
-    TitleModuleEnum.E_HOME: ["Accueil", C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
-    TitleModuleEnum.E_WORKFLOW: ["Workflow", C_RESS_ICON_BLACK_WORKFLOW, C_RESS_ICON_WHITE_WORKFLOW],
-    TitleModuleEnum.E_SCRAPING: ["Scraping", C_RESS_ICON_BLACK_SCRAPING, C_RESS_ICON_WHITE_SCRAPING],
-    TitleModuleEnum.E_FAQ: ["FAQ", C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
-    TitleModuleEnum.E_CONFIG: ["Paramètres", C_RESS_ICON_BLACK_CONFIG, C_RESS_ICON_WHITE_CONFIG],
+    TitleModuleEnum.E_HISTORY: ["Historique", C_RESS_ICON_BLACK_HISTORIC, C_RESS_ICON_WHITE_HISTORIC],
+    TitleModuleEnum.E_SCRIPTS: ["Scénarios", C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
+    TitleModuleEnum.E_EDITOR: ["Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR],
+    TitleModuleEnum.E_EXECUTE: ["Exécuter", C_RESS_ICON_BLACK_EXECUTE, C_RESS_ICON_WHITE_EXECUTE],
+    TitleModuleEnum.E_FAQ: ["F.A.Q.", C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
+    TitleModuleEnum.E_OPTIONS: ["Options", C_RESS_ICON_BLACK_CONFIG, C_RESS_ICON_WHITE_CONFIG],
 }
 
 

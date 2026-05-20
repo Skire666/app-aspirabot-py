@@ -361,7 +361,7 @@ class StepsListPresenter:
         """
         candidate_errors: list[str] = []
 
-        print(f"Validating candidate step at index {candidate_index}...")
+        print(f"Validating candidate step at index (base 0) {candidate_index}...")
         print(f"Candidate step type: {steps[candidate_index].step_id}")
 
         # Validate every step; track the first error and the candidate's errors.

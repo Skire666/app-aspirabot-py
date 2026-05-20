@@ -9,6 +9,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
+from __src__.services.historic_service import HistoricService
 import models.steps  # noqa: F401
 import services.steps  # noqa: F401
 import views.steps  # noqa: F401
@@ -38,12 +39,15 @@ from shared.i18n_fra import TitleModuleEnum
 from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
 from views.faq_view import FaqView
+from views.historic_view import HistoricView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.providers_view import ProvidersView
 from views.scraping_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
 from views.workflow_view import WorkflowView
+
+from __src__.presenters.historic_presenter import HistoricPresenter
 
 # ---------------------------------------------------------------------------
 # Entry point
@@ -128,20 +132,24 @@ def _launch_main_app(
         _init_provider_components(main_view, config_model)
     )
     scraping_view, scraping_presenter = _init_scraping_component(main_view, config_model, provider_service)
+    historic_view, historic_presenter = _init_historic_components(main_view, config_model)
     faq_view = FaqView(main_view.content_area)
 
     # Wire inter-component navigation and callbacks.
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
-    _wire_scraping_launch(main_view, provider_presenter, provider_service, scraping_presenter)
+    _wire_scraping_launch(main_view, provider_presenter, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
-    main_view.set_on_show(TitleModuleEnum.E_SCRAPING, scraping_presenter.ensure_providers_loaded)
+    main_view.set_on_show(TitleModuleEnum.E_EXECUTE, scraping_presenter.ensure_providers_loaded)
 
-    _register_views(main_view, log_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view)
+    _register_views(
+        main_view, log_view, historic_view, config_view, provider_view, provider_edit_view, scraping_view, faq_view
+    )
     _anchor_presenters(
         root,
         [
             log_presenter,
             config_presenter,
+            historic_presenter,
             provider_presenter,
             provider_edit_presenter,
             scraping_presenter,
@@ -210,6 +218,19 @@ def _init_config_component(
     config_view = AppConfigurationView(main_view.content_area)
     config_presenter = AppConfigurationPresenter(view=config_view, service=config_service)
     return config_view, config_presenter
+
+
+def _init_historic_components(
+    main_view: MainView,
+    config_model: AppConfigurationModel,
+) -> tuple[
+    HistoricView,
+    HistoricPresenter,
+]:
+    historic_view = HistoricView(main_view.content_area)
+    historic_presenter = HistoricPresenter(view=historic_view, HistoricService(None))
+
+    return historic_view, historic_presenter
 
 
 def _init_provider_components(
@@ -296,26 +317,26 @@ def _wire_provider_navigation(
     def on_request_create_provider() -> None:
         # Open the edit form in creation mode and navigate to it.
         provider_edit_presenter.create_new()
-        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_HOME, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
-        main_view.show_view(TitleModuleEnum.E_WORKFLOW)
+        main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.DISABLED)
+        main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.DISABLED)
+        main_view.show_view(TitleModuleEnum.E_EDITOR)
 
     def on_request_edit_provider(id_file: str) -> None:
         # Load the selected provider into the edit form and navigate to it.
         if provider_edit_presenter.load_provider(id_file):
-            main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-            main_view.set_tab_state(TitleModuleEnum.E_HOME, tk.DISABLED)
-            main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
-            main_view.show_view(TitleModuleEnum.E_WORKFLOW)
+            main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
+            main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.DISABLED)
+            main_view.show_view(TitleModuleEnum.E_EDITOR)
 
     def on_edit_done() -> None:
         # Return to the list and disable the edit tab after save/cancel.
         provider_presenter.refresh()
-        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_HOME, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
-        main_view.show_view(TitleModuleEnum.E_HOME)
+        main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.DISABLED)
+        main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.NORMAL)
+        main_view.show_view(TitleModuleEnum.E_SCRIPTS)
 
     # Inject all navigation callbacks into the two presenters.
     provider_presenter.on_request_create_provider = on_request_create_provider
@@ -323,13 +344,12 @@ def _wire_provider_navigation(
     provider_edit_presenter.set_on_done_callback(on_edit_done)
 
     # Initial state: workflow tab is disabled until a provider session is opened.
-    main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
+    main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.DISABLED)
 
 
 def _wire_scraping_launch(
     main_view: MainView,
     provider_presenter: ProviderPresenter,
-    provider_service: ProviderService,
     scraping_presenter: ScrapingPresenter,
 ) -> None:
     """Connect the launch action from the provider list to the scraping panel.
@@ -344,8 +364,8 @@ def _wire_scraping_launch(
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scraping.
         scraping_presenter.load_provider(id_file)
-        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
-        main_view.show_view(TitleModuleEnum.E_SCRAPING)
+        main_view.set_tab_state(TitleModuleEnum.E_EXECUTE, tk.NORMAL)
+        main_view.show_view(TitleModuleEnum.E_EXECUTE)
 
     provider_presenter.on_request_launch_provider = on_request_launch_provider
 
@@ -368,7 +388,7 @@ def _wire_workflow_guard(
     """
 
     def is_workflow_active() -> bool:
-        return main_view.get_tab_state(TitleModuleEnum.E_WORKFLOW) == tk.NORMAL
+        return main_view.get_tab_state(TitleModuleEnum.E_EDITOR) == tk.NORMAL
 
     # Inject into both presenters so either can check the guard independently.
     provider_presenter.is_workflow_active = is_workflow_active
@@ -383,6 +403,7 @@ def _wire_workflow_guard(
 def _register_views(
     main_view: MainView,
     log_view: LogView,
+    historic_view: HistoricView,
     config_view: AppConfigurationView,
     provider_view: ProvidersView,
     provider_edit_view: WorkflowView,
@@ -394,6 +415,7 @@ def _register_views(
     Args:
         main_view: Navigation shell that controls which view is visible.
         log_view: Journal module view.
+        historic_view: Historic module view.
         config_view: Configuration module view.
         provider_view: Providers list module view.
         provider_edit_view: Provider edit module view.
@@ -402,14 +424,15 @@ def _register_views(
     """
     # Map each sidebar label to its corresponding view widget.
     main_view.add_view(TitleModuleEnum.E_LOGS, log_view)
-    main_view.add_view(TitleModuleEnum.E_HOME, provider_view)
-    main_view.add_view(TitleModuleEnum.E_WORKFLOW, provider_edit_view)
-    main_view.add_view(TitleModuleEnum.E_SCRAPING, scraping_view)
+    main_view.add_view(TitleModuleEnum.E_HISTORY, historic_view)
+    main_view.add_view(TitleModuleEnum.E_SCRIPTS, provider_view)
+    main_view.add_view(TitleModuleEnum.E_EDITOR, provider_edit_view)
+    main_view.add_view(TitleModuleEnum.E_EXECUTE, scraping_view)
     main_view.add_view(TitleModuleEnum.E_FAQ, faq_view)
-    main_view.add_view(TitleModuleEnum.E_CONFIG, config_view)
+    main_view.add_view(TitleModuleEnum.E_OPTIONS, config_view)
 
     # Land on the providers list as the startup default.
-    main_view.show_view(TitleModuleEnum.E_HOME)
+    main_view.show_view(TitleModuleEnum.E_SCRIPTS)
 
 
 def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:

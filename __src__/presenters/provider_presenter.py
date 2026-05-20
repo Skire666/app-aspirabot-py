@@ -89,8 +89,8 @@ class ProviderPresenter:
             self._all_providers.sort(key=lambda p: self._text_key(p.id_file), reverse=not ascending)
         elif column == "provider_name":
             self._all_providers.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
-        elif column == "url":
-            self._all_providers.sort(key=lambda p: self._text_key(p.url), reverse=not ascending)
+        elif column == "provider_desc":
+            self._all_providers.sort(key=lambda p: self._text_key(p.provider_desc), reverse=not ascending)
         elif column == "created_date_provider":
             self._all_providers.sort(key=lambda p: self._text_key(p.created_date_provider), reverse=not ascending)
         elif column == "modified_date_provider":
@@ -118,8 +118,8 @@ class ProviderPresenter:
                     "id": p.id_file,
                     "id_file": p.id_file,
                     "provider_name": p.provider_name,
+                    "provider_desc": p.provider_desc,
                     "version": p.version,
-                    "url": p.url,
                     "created_date_provider": p.created_date_provider,
                     "modified_date_provider": p.modified_date_provider,
                 }

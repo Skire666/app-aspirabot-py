@@ -38,7 +38,7 @@ class ProviderModel:
     Attributes:
         id_file: Unique provider identifier as a canonical timestamp in milliseconds.
         provider_name: Human-readable provider name.
-        url: Root URL associated with the provider.
+        provider_desc: Description of the provider.
         created_date_provider: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
         modified_date_provider: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
         version: Provider version string (for example 1.0.0).
@@ -52,7 +52,7 @@ class ProviderModel:
 
     id_file: str
     provider_name: str
-    url: str
+    provider_desc: str
     created_date_provider: str
     modified_date_provider: str
     version: str
@@ -71,8 +71,8 @@ class ProviderModel:
 
         Example:
             >>> provider = ProviderModel.get_default_data()
-            >>> provider.url
-            'https://example.com'
+            >>> provider.provider_desc
+            'Description du fournisseur'
         """
         # Capture a single timestamp to keep creation and modification aligned.
         current_timestamp = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
@@ -81,7 +81,7 @@ class ProviderModel:
         return cls(
             id_file=generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID),
             provider_name="Nouv. Fournisseur",
-            url="https://example.com",
+            provider_desc="Description du fournisseur (ou URL)",
             version="1.0.0",
             created_date_provider=current_timestamp,
             modified_date_provider=current_timestamp,
@@ -176,7 +176,7 @@ class ProviderModel:
         return cls(
             id_file=data.get("id_file", ""),
             provider_name=data.get("provider_name", ""),
-            url=data.get("url", ""),
+            provider_desc=data.get("provider_desc", ""),
             created_date_provider=data.get("created_date_provider", ""),
             modified_date_provider=data.get("modified_date_provider", ""),
             version=data.get("version", "1.0.0"),
@@ -242,7 +242,7 @@ class ProviderModel:
         return {
             "id_file": self.id_file,
             "provider_name": self.provider_name,
-            "url": self.url,
+            "provider_desc": self.provider_desc,
             "created_date_provider": self.created_date_provider,
             "modified_date_provider": self.modified_date_provider,
             "version": self.version,

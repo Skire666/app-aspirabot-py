@@ -39,35 +39,35 @@ def test_load_data_populates_all_fields(view: WorkflowView) -> None:
     data: dict[str, Any] = {
         "id_file": "file123",
         "provider_name": "My Provider",
-        "url": "https://example.com",
+        "provider_desc": "https://example.com",
         "version": "1.0.0",
     }
     view.load_data(data)
     result = view.get_data()
     assert result["id_file"] == "file123"
     assert result["provider_name"] == "My Provider"
-    assert result["url"] == "https://example.com"
+    assert result["provider_desc"] == "https://example.com"
     assert result["version"] == "1.0.0"
 
 
 def test_get_data_returns_current_field_values(view: WorkflowView) -> None:
     """get_data() must reflect all current entry values."""
     view._var_name.set("Test Name")
-    view._var_url.set("https://test.com")
+    view._var_desc.set("https://test.com")
     view._var_version.set("2.0")
     result = view.get_data()
     assert result["provider_name"] == "Test Name"
-    assert result["url"] == "https://test.com"
+    assert result["provider_desc"] == "https://test.com"
     assert result["version"] == "2.0"
 
 
 def test_clear_data_empties_all_fields(view: WorkflowView) -> None:
     """clear_data() must reset every field to an empty string."""
-    view.load_data({"id_file": "x", "provider_name": "n", "url": "u", "version": "v"})
+    view.load_data({"id_file": "x", "provider_name": "n", "provider_desc": "u", "version": "v"})
     view.clear_data()
     result = view.get_data()
     assert result["provider_name"] == ""
-    assert result["url"] == ""
+    assert result["provider_desc"] == ""
     assert result["version"] == ""
 
 
@@ -77,6 +77,7 @@ def test_load_data_missing_keys_use_empty_string(view: WorkflowView) -> None:
     result = view.get_data()
     assert result["id_file"] == ""
     assert result["provider_name"] == ""
+    assert result["provider_desc"] == ""
 
 
 # ---------------------------------------------------------------------------

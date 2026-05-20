@@ -73,7 +73,7 @@ class ProvidersView(ttk.Frame):
                 "button_text": "Supp.",
             },
             {"id": "provider_name", "title": "Nom", "width": 160, "type": "text"},
-            {"id": "url", "title": "Url", "width": 160, "type": "text"},
+            {"id": "provider_desc", "title": "Description", "width": 160, "type": "text"},
             {"id": "version", "title": "Version", "width": 82, "type": "text"},
             {"id": "created_date_provider", "title": "Création", "width": 125, "type": "text"},
             {"id": "modified_date_provider", "title": "Modification", "width": 125, "type": "text"},

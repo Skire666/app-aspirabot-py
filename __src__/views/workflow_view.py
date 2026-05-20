@@ -132,11 +132,11 @@ class WorkflowView(ttk.Frame):
         Args:
             parent: The row frame to pack widgets into.
         """
-        ttk.Label(parent, text="URL :", width=7).pack(side="left")
+        ttk.Label(parent, text="Desc. :", width=7).pack(side="left")
 
         # Editable URL entry expands to fill the remaining horizontal space.
-        self._var_url = tk.StringVar()
-        self._entry_url = ttk.Entry(parent, textvariable=self._var_url)
+        self._var_desc = tk.StringVar()
+        self._entry_url = ttk.Entry(parent, textvariable=self._var_desc)
         self._entry_url.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         ttk.Label(parent, text="Version :", width=10).pack(side="left", padx=(20, 0))
@@ -157,9 +157,7 @@ class WorkflowView(ttk.Frame):
             parent: Container widget to pack the panel into.
         """
         # Fixed height prevents the section from expanding with the window.
-        self._gestion_container = HorizontalLineFrame(
-            parent, text="Gestion des étapes", height=_HEIGHT_FRAME_GESTION
-        )
+        self._gestion_container = HorizontalLineFrame(parent, text="Gestion des étapes", height=_HEIGHT_FRAME_GESTION)
         self._gestion_container.pack(side=tk.TOP, fill=tk.X, padx=5)
         self._gestion_container.pack_propagate(False)
         self._create_gestion_widgets()
@@ -262,7 +260,7 @@ class WorkflowView(ttk.Frame):
             self._type_listbox.selection_clear(0, tk.END)
             self._type_listbox.selection_set(idx)
             self._type_listbox.see(idx)
-        except (ValueError, tk.TclError):
+        except ValueError, tk.TclError:
             pass
 
     def _on_type_list_select(self, _: tk.Event) -> None:  # type: ignore[type-arg]
@@ -287,7 +285,7 @@ class WorkflowView(ttk.Frame):
         self._inline_form._type_var.set(label)
         try:
             self._inline_form._on_type_changed(None)  # type: ignore[arg-type]
-        except (AttributeError, KeyError, tk.TclError, ValueError):
+        except AttributeError, KeyError, tk.TclError, ValueError:
             step_type = _LABEL_TO_TYPE.get(label)
             if step_type is not None:
                 self._inline_form._rebuild_form(step_type)
@@ -405,11 +403,11 @@ class WorkflowView(ttk.Frame):
         """Populates form fields and resets the workflow validation status label.
 
         Args:
-            data: Dict with keys 'id_file', 'provider_name', 'url', 'version'.
+            data: Dict with keys 'id_file', 'provider_name', 'provider_desc', 'version'.
         """
         self._var_id_file.set(data.get("id_file", ""))
         self._var_name.set(data.get("provider_name", ""))
-        self._var_url.set(data.get("url", ""))
+        self._var_desc.set(data.get("provider_desc", ""))
         self._var_version.set(data.get("version", ""))
         self.set_workflow_validation_message("Vérification : --", False)
 
@@ -417,12 +415,12 @@ class WorkflowView(ttk.Frame):
         """Reads all form fields and returns them as a dictionary.
 
         Returns:
-            Dict with keys 'id_file', 'provider_name', 'url', 'version'.
+            Dict with keys 'id_file', 'provider_name', 'provider_desc', 'version'.
         """
         return {
             "id_file": self._var_id_file.get(),
             "provider_name": self._var_name.get(),
-            "url": self._var_url.get(),
+            "provider_desc": self._var_desc.get(),
             "version": self._var_version.get(),
         }
 
@@ -430,7 +428,7 @@ class WorkflowView(ttk.Frame):
         """Clears all form fields and the workflow validation status label."""
         self._var_id_file.set("")
         self._var_name.set("")
-        self._var_url.set("")
+        self._var_desc.set("")
         self._var_version.set("")
         self.set_workflow_validation_message("", False)
 

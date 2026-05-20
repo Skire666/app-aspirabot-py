@@ -10,12 +10,12 @@ class TitleModuleEnum(Enum):
     """
 
     E_LOGS = "LOGS"
-    E_PROJECTS = "PROJECTS"
-    E_HOME = "PROVIDER"
-    E_WORKFLOW = "WORKFLOW"
-    E_SCRAPING = "SCRAPING"
+    E_HISTORY = "HISTORIC"
+    E_SCRIPTS = "PROVIDER"
+    E_EDITOR = "WORKFLOW"
+    E_EXECUTE = "EXECUTE"
     E_FAQ = "FAQ"
-    E_CONFIG = "PARAMS"
+    E_OPTIONS = "OPTIONS"
 
 
 class StepTypeEnum(Enum):
@@ -64,6 +64,7 @@ class EventScrapingEnum(Enum):
     E_STEP_START = "STEP_START"
     E_STEP_DONE = "STEP_DONE"
     E_EMERGENCY_STOP = "EMERGENCY_STOP"
+    E_COMPLETED = "COMPLETED"
     E_UNKNOWN = "UNKNOWN"
 
 

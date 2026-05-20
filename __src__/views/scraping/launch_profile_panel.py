@@ -12,6 +12,7 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 from models.app_configuration_model import AppConfigurationModel
+from shared.constants import C_DEFAULT_THRESHOLD_ERROR_SCRAPING
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # ---------------------------------------------------------------------------
@@ -172,7 +173,7 @@ class LaunchProfilePanel(ttk.Frame):
         ttk.Label(row, text="Mettre en pause automatiquement après X erreurs :").pack(side=tk.LEFT, padx=5)
 
         # StringVar allows trace-based change detection and text validation.
-        self._var_emergency_stop = tk.StringVar(value="10")
+        self._var_emergency_stop = tk.StringVar(value=str(C_DEFAULT_THRESHOLD_ERROR_SCRAPING))
         self._var_emergency_stop.trace_add("write", self._on_emergency_stop_threshold_changed)
         ttk.Spinbox(
             row,

@@ -100,6 +100,8 @@ C_UNITS_TIME_DEFAULT_VIEW: str = "sec"
 C_UNITS_TIME_ALLOWED_FOR_MODEL: list[str] = ["m", "s", "ms"]
 C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
 
+# Default threshold for considering a scraping step as having an error
+C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 5  # seconds
 
 # ---------------------------------------------------------------------------
 

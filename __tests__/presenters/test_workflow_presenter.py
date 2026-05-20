@@ -111,7 +111,7 @@ def _default_provider(steps: list[StepScrapingModel] | None = None) -> ProviderM
     return ProviderModel(
         id_file="prov-id",
         provider_name="Test Provider",
-        url="https://example.com",
+        provider_desc="https://example.com",
         created_date="2024-01-01 00:00:00",
         modified_date="2024-01-01 00:00:00",
         version="1.0.0",
@@ -198,7 +198,7 @@ def test_on_save_creates_provider_in_creation_mode() -> None:
     presenter, view, service = _make_presenter()
     presenter.create_new()
     assert view.on_save is not None
-    view.on_save({"provider_name": "New", "url": "https://x.com", "version": "1.0"})
+    view.on_save({"provider_name": "New", "provider_desc": "https://x.com", "version": "1.0"})
     assert len(service.created) == 1
 
 
@@ -207,7 +207,7 @@ def test_on_save_clears_view_after_success() -> None:
     presenter, view, _ = _make_presenter()
     presenter.create_new()
     assert view.on_save is not None
-    view.on_save({"provider_name": "N", "url": "https://x.com", "version": "1"})
+    view.on_save({"provider_name": "N", "provider_desc": "https://x.com", "version": "1"})
     assert view.data_cleared is True
 
 
@@ -218,7 +218,7 @@ def test_on_save_calls_done_callback() -> None:
     presenter.set_on_done_callback(lambda: done_calls.append(True))
     presenter.create_new()
     assert view.on_save is not None
-    view.on_save({"provider_name": "N", "url": "https://x.com", "version": "1"})
+    view.on_save({"provider_name": "N", "provider_desc": "https://x.com", "version": "1"})
     assert done_calls == [True]
 
 

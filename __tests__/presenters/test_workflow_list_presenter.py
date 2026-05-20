@@ -87,7 +87,7 @@ def _make_provider(steps: list[StepScrapingModel] | None = None) -> ProviderMode
     return ProviderModel(
         id_file="test-file",
         provider_name="Test",
-        url="https://example.com",
+        provider_desc="https://example.com",
         created_date="2024-01-01 00:00:00",
         modified_date="2024-01-01 00:00:00",
         version="1.0.0",
