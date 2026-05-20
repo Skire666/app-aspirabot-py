@@ -14,6 +14,7 @@ import services.steps  # noqa: F401
 import views.steps  # noqa: F401
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
+from presenters.debug_presenter import DebugPresenter
 from presenters.historic_presenter import HistoricPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.provider_presenter import ProviderPresenter
@@ -39,6 +40,7 @@ from shared.constants import (
 from shared.i18n_fra import TitleModuleEnum
 from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
+from views.debug_view import DebugView
 from views.faq_view import FaqView
 from views.historic_view import HistoricView
 from views.log_view import LogView
@@ -145,13 +147,22 @@ def _build_and_wire_components(
     prov_view, prov_p, edit_view, edit_p, prov_svc = _init_provider_components(main_view, cfg)
     scr_view, scr_p = _init_scraping_component(main_view, cfg, prov_svc)
     hist_view, hist_p = _init_historic_components(main_view, cfg)
+    dbg_view, dbg_p = _init_debug_component(main_view)
 
     # Wire navigation and finalize the window.
     _wire_all_navigation(main_view, prov_p, edit_p, scr_p, hist_p)
     _register_views(
-        main_view, log_view, hist_view, cfg_view, prov_view, edit_view, scr_view, FaqView(main_view.content_area)
+        main_view,
+        log_view,
+        hist_view,
+        cfg_view,
+        prov_view,
+        edit_view,
+        scr_view,
+        FaqView(main_view.content_area),
+        dbg_view,
     )
-    _anchor_presenters(root, [log_p, cfg_p, hist_p, prov_p, edit_p, scr_p])
+    _anchor_presenters(root, [log_p, cfg_p, hist_p, prov_p, edit_p, scr_p, dbg_p])
 
 
 def _launch_main_app(
@@ -281,6 +292,22 @@ def _init_provider_components(
     provider_edit_presenter = WorkflowPresenter(view=provider_edit_view, provider_service=provider_service)
 
     return provider_view, provider_presenter, provider_edit_view, provider_edit_presenter, provider_service
+
+
+def _init_debug_component(
+    main_view: MainView,
+) -> tuple[DebugView, DebugPresenter]:
+    """Create and wire the debug browser component.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+
+    Returns:
+        A (DebugView, DebugPresenter) tuple.
+    """
+    debug_view = DebugView(main_view.content_area)
+    debug_presenter = DebugPresenter(view=debug_view)
+    return debug_view, debug_presenter
 
 
 def _init_scraping_component(
@@ -450,6 +477,7 @@ def _register_views(
     provider_edit_view: WorkflowView,
     scraping_view: ScrapingView,
     faq_view: FaqView,
+    debug_view: DebugView,
 ) -> None:
     """Map each sidebar entry to its view widget and show the default tab."""
     # Map each sidebar label to its corresponding view widget.
@@ -460,6 +488,7 @@ def _register_views(
     main_view.add_view(TitleModuleEnum.E_EXECUTOR, scraping_view)
     main_view.add_view(TitleModuleEnum.E_FAQ, faq_view)
     main_view.add_view(TitleModuleEnum.E_OPTIONS, config_view)
+    main_view.add_view(TitleModuleEnum.E_DEBUG, debug_view)
 
     # Land on the providers list as the startup default.
     main_view.show_view(TitleModuleEnum.E_SCRIPTS)

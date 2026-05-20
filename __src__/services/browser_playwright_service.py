@@ -245,6 +245,29 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         return self._pw is not None
 
+    def safe_goto_url(self, url: str, wait_state: str, timeout_ms: int, wait_dns_solver_sec: int) -> None:
+        """Navigate the current page to a URL with error handling and optional DNS solver wait.
+
+        Args:
+            wait_state: Playwright load state to wait for (e.g. "load", "networkidle").
+            url: Target URL to navigate to.
+            timeout_ms: Maximum time to wait for the load state in milliseconds.
+            wait_dns_solver_sec: Seconds to wait before retrying if a DNS resolution error occurs.
+
+        Raises:
+            Exception: If navigation fails after retrying on DNS errors.
+        """
+        page = self.get_current_page()
+        try:
+            page.goto(url, wait_until="commit")
+            page.wait_for_load_state(wait_state, timeout=timeout_ms)
+        except Exception as exc:
+            if "ERR_NAME_NOT_RESOLVED" in str(exc):
+                if wait_dns_solver_sec >= 30:
+                    raise Exception("DNS solver supérieur ou égale à 30 sec.")
+                page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
+                page.reload(wait_until=wait_state, timeout=timeout_ms)
+
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
 

@@ -3,6 +3,7 @@
 from shared.enums import StepTypeEnum, TitleModuleEnum
 from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_CONFIG,
+    C_RESS_ICON_BLACK_DEBUG,
     C_RESS_ICON_BLACK_EDITOR,
     C_RESS_ICON_BLACK_EXECUTE,
     C_RESS_ICON_BLACK_FAQ,
@@ -10,6 +11,7 @@ from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_LOGS,
     C_RESS_ICON_BLACK_PROVIDER,
     C_RESS_ICON_WHITE_CONFIG,
+    C_RESS_ICON_WHITE_DEBUG,
     C_RESS_ICON_WHITE_EDITOR,
     C_RESS_ICON_WHITE_EXECUTE,
     C_RESS_ICON_WHITE_FAQ,
@@ -88,6 +90,7 @@ C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
     TitleModuleEnum.E_EDITOR: ["Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR],
     TitleModuleEnum.E_EXECUTOR: ["Exécuter", C_RESS_ICON_BLACK_EXECUTE, C_RESS_ICON_WHITE_EXECUTE],
     TitleModuleEnum.E_FAQ: ["F.A.Q.", C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
+    TitleModuleEnum.E_DEBUG: ["Debug", C_RESS_ICON_BLACK_DEBUG, C_RESS_ICON_WHITE_DEBUG],
     TitleModuleEnum.E_OPTIONS: ["Options", C_RESS_ICON_BLACK_CONFIG, C_RESS_ICON_WHITE_CONFIG],
 }
 

@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from collections.abc import Callable
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 
 from models.step_scraping_model import StepScrapingModel
 from views.components.drag_drop_list import DragDropList
@@ -55,7 +55,6 @@ class StepsListCrudView(ttk.Frame):
         on_confirm_inline_step: Called with the confirmed StepScrapingModel; returns True if accepted.
         on_cancel_inline_step: Called when the inline form is cancelled.
         on_clear_all_steps: Called when the user clears the full step list.
-        on_debug_page: Called with the URL when the user confirms the Debug dialog.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -90,7 +89,6 @@ class StepsListCrudView(ttk.Frame):
         self.on_cancel_inline_step: Callable[[], None] | None = None
         self.on_clear_all_steps: Callable[[], None] | None = None
         self.on_duplicate_step: Callable[[StepScrapingModel, int], StepScrapingModel] | None = None
-        self.on_debug_page: Callable[[str], None] | None = None
 
     def _create_widgets(self) -> None:
         """Builds toolbar, step list."""
@@ -115,10 +113,6 @@ class StepsListCrudView(ttk.Frame):
 
         self._btn_clear = ttk.Button(toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps)
         self._btn_clear.pack(side=tk.RIGHT, padx=(0, 20), pady=(0, 5))
-
-        # Debug button — placed to the left of the clear button (packed after in RIGHT order).
-        self._btn_debug = ttk.Button(toolbar, text="Debug une page", command=self._fire_debug_page)
-        self._btn_debug.pack(side=tk.RIGHT, padx=(0, 5), pady=(0, 5))
 
         return toolbar
 
@@ -426,20 +420,6 @@ class StepsListCrudView(ttk.Frame):
             self._selected_index = None
             self._selected_step = None
             self.on_clear_all_steps()
-
-    def _fire_debug_page(self) -> None:
-        """Asks for a URL via a dialog then forwards it to on_debug_page.
-
-        The URL prompt is a UI interaction owned by the view.
-        The presenter handles all browser lifecycle and threading.
-        """
-        url = simpledialog.askstring(
-            "Debug une page",
-            "Entrez l'URL à ouvrir dans le navigateur :",
-            parent=self,
-        )
-        if url and url.strip() and self.on_debug_page:
-            self.on_debug_page(url.strip())
 
 
 # EOF

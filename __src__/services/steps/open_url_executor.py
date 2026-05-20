@@ -37,29 +37,28 @@ class OpenUrlExecutor(IStepExecutor):
         context.last_url_opened = target_url
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
 
-        self._safe_goto(browser, p.wait_state, target_url, timeout_ms, p.wait_dns_solver)
+        browser.safe_goto_url(target_url, p.wait_state, timeout_ms, p.wait_dns_solver)
+
+        page = browser.get_current_page()
+        if page.url != target_url:
+            raise Exception(f"URL finale différente de la cible : {page.url} vs {target_url}")
 
         context.last_message_step = f"Ouvert : {target_url}"
 
-    def _safe_goto(
-        self, bw: IWebBrowserService, wait_state: str, url: str, timeout_ms: int, wait_dns_solver_sec: int
-    ) -> None:
-
-        page = bw.get_current_page()
-        try:
-            page.goto(url, wait_until="commit")
-            page.wait_for_load_state(wait_state, timeout=timeout_ms)
-        except Exception as exc:
-            if "ERR_NAME_NOT_RESOLVED" in str(exc):
-                if wait_dns_solver_sec >= 30:
-                    raise Exception("DNS solver supérieur ou égale à 30 sec.")
-                page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
-                page.reload(wait_until=wait_state, timeout=timeout_ms)
-
-        if page.url != url:
-            raise Exception(f"URL finale différente de la cible : {page.url} vs {url}")
-
     def _extract_next_url_used(self, context: ScrapingContextModel, p: OpenUrlParams) -> str:
+        """Extract the next URL to open based on the step parameters and context.
+
+        Args:
+            context: The current scraping context, which may contain a URL source provider.
+            p: The parameters for the open URL step, including mode and custom URL.
+
+        Returns:
+            The URL to open.
+
+        Raises:
+            ValueError: If the URL mode is custom but the custom URL is empty,
+            or if the URL mode is source but there are no more URLs in the source provider.
+        """
         if p.url_mode == OpenUrlModeEnum.E_CUSTOM.value:
             if not p.url_custom:
                 raise ValueError("URL personnalisée vide")

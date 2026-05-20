@@ -17,6 +17,7 @@ Example:
 
 from __future__ import annotations
 
+import re
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
@@ -130,16 +131,14 @@ class DebugPageView(tk.Toplevel):
         ttk.Label(input_row, text="Sélecteur CSS :").grid(row=0, column=0, padx=(0, 4))
         self._entry_text_selector = ttk.Entry(input_row)
         self._entry_text_selector.grid(row=0, column=1, sticky="ew")
-        ttk.Button(
-            input_row, text="Analyser textes", command=self._fire_analyze_texts
-        ).grid(row=0, column=2, padx=(4, 0))
+        ttk.Button(input_row, text="Analyser textes", command=self._fire_analyze_texts).grid(
+            row=0, column=2, padx=(4, 0)
+        )
 
         # Effacer button for the result zone.
         btn_row = ttk.Frame(frame)
         btn_row.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 2))
-        ttk.Button(
-            btn_row, text="Effacer", command=lambda: self._clear_text_area(self._txt_texts)
-        ).pack(side=tk.LEFT)
+        ttk.Button(btn_row, text="Effacer", command=lambda: self._clear_text_area(self._txt_texts)).pack(side=tk.LEFT)
 
         # Scrollable result text area.
         self._txt_texts, _ = self._make_text_area(frame, row=2)
@@ -166,16 +165,14 @@ class DebugPageView(tk.Toplevel):
         self._entry_image_selector = ttk.Entry(input_row)
         self._entry_image_selector.insert(0, "img")
         self._entry_image_selector.grid(row=0, column=1, sticky="ew")
-        ttk.Button(
-            input_row, text="Analyser images", command=self._fire_analyze_images
-        ).grid(row=0, column=2, padx=(4, 0))
+        ttk.Button(input_row, text="Analyser images", command=self._fire_analyze_images).grid(
+            row=0, column=2, padx=(4, 0)
+        )
 
         # Effacer button for the result zone.
         btn_row = ttk.Frame(frame)
         btn_row.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 2))
-        ttk.Button(
-            btn_row, text="Effacer", command=lambda: self._clear_text_area(self._txt_images)
-        ).pack(side=tk.LEFT)
+        ttk.Button(btn_row, text="Effacer", command=lambda: self._clear_text_area(self._txt_images)).pack(side=tk.LEFT)
 
         # Scrollable result text area.
         self._txt_images, _ = self._make_text_area(frame, row=2)
@@ -224,9 +221,38 @@ class DebugPageView(tk.Toplevel):
         Args:
             html: Raw HTML string to display.
         """
-        self._write_text_area(self._txt_html, html)
+        self._write_text_area(self._txt_html, self.format_html_simple(html))
         # Update the character count label next to the Rafraîchir button.
         self._lbl_html_status.configure(text=f"{len(html):,} caractères")
+
+    @staticmethod
+    def format_html_simple(html: str) -> str:
+        """Applies simple formatting to raw HTML for better readability.
+
+        This is a very basic formatter that adds newlines between tags and indents nested elements.
+        NO BeautifulSoup or external libraries are used to keep it simple and dependency-free.
+
+        Args:
+            html: The raw HTML string to format.
+
+        Returns:
+            A formatted HTML string with newlines and indentation.
+        """
+        html = re.sub(r">\s*<", ">\r\n<", html)
+
+        lines = []
+        indent = 0
+        for line in html.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if re.match(r"</\w", line):  # balise fermante
+                indent = max(0, indent - 1)
+            lines.append("  " * indent + line)
+            if re.match(r"<\w[^/]*[^/]>$", line):  # balise ouvrante (pas auto-fermante)
+                indent += 1
+
+        return "\n".join(lines)
 
     def set_text_results(self, text: str) -> None:
         """Replaces the text analysis result area content.

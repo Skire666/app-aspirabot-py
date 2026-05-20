@@ -135,6 +135,29 @@ class IWebBrowserService(ABC):
         """
 
     @abstractmethod
+    def safe_goto_url(self, url: str, wait_state: str, timeout_ms: int, wait_dns_solver_sec: int) -> None:
+        """Navigate the current page to the target URL with error handling and retries.
+
+        This method wraps the Playwright ``page.goto()`` function with additional
+        error handling and retry logic. It should attempt to navigate to the
+        specified URL, waiting for the given load state, and retrying on
+        transient errors (e.g. timeouts, network issues) up to a reasonable
+        number of attempts.
+
+        Args:
+            url: The target URL to navigate to.
+            wait_state: The load state to wait for (e.g. "networkidle").
+            timeout_ms: Maximum navigation time in milliseconds before timing out.
+            wait_dns_solver_sec: Seconds to wait for DNS resolution before aborting.
+
+        Returns:
+            None.
+
+        Raises:
+            Exception: If navigation ultimately fails after retries.
+        """
+
+    @abstractmethod
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
 

@@ -18,6 +18,7 @@ C_RESS_ICON_BLACK_EDITOR = "./__ress__/icons/b_128_editor.png"
 C_RESS_ICON_BLACK_EXECUTE = "./__ress__/icons/b_128_execute.png"
 C_RESS_ICON_BLACK_FAQ = "./__ress__/icons/b_128_faq.png"
 C_RESS_ICON_BLACK_CONFIG = "./__ress__/icons/b_128_options.png"
+C_RESS_ICON_BLACK_DEBUG = "./__ress__/icons/b_128_debug.png"
 
 # white big buttons
 C_RESS_ICON_WHITE_LOGS = "./__ress__/icons/w_128_logs.png"
@@ -27,6 +28,7 @@ C_RESS_ICON_WHITE_EDITOR = "./__ress__/icons/w_128_editor.png"
 C_RESS_ICON_WHITE_EXECUTE = "./__ress__/icons/w_128_execute.png"
 C_RESS_ICON_WHITE_FAQ = "./__ress__/icons/w_128_faq.png"
 C_RESS_ICON_WHITE_CONFIG = "./__ress__/icons/w_128_options.png"
+C_RESS_ICON_WHITE_DEBUG = "./__ress__/icons/w_128_debug.png"
 
 # white small icons
 C_RESS_ICON_WHITE_COPY = "./__ress__/icons/w_128_copy.png"

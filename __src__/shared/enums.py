@@ -15,6 +15,7 @@ class TitleModuleEnum(Enum):
     E_EDITOR = "WORKFLOW"
     E_EXECUTOR = "EXECUTE"
     E_FAQ = "FAQ"
+    E_DEBUG = "DEBUG"
     E_OPTIONS = "OPTIONS"
 
 
