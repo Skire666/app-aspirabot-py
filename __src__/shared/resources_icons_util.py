@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageTk
 
 # black big buttons
 C_RESS_ICON_BLACK_LOGS = "./__ress__/icons/b_128_logs.png"
-C_RESS_ICON_BLACK_HISTORIC = "./__ress__/icons/b_128_historic.png"
+C_RESS_ICON_BLACK_HISTORY = "./__ress__/icons/b_128_history.png"
 C_RESS_ICON_BLACK_PROVIDER = "./__ress__/icons/b_128_provider.png"
 C_RESS_ICON_BLACK_EDITOR = "./__ress__/icons/b_128_editor.png"
 C_RESS_ICON_BLACK_EXECUTE = "./__ress__/icons/b_128_execute.png"
@@ -21,7 +21,7 @@ C_RESS_ICON_BLACK_CONFIG = "./__ress__/icons/b_128_options.png"
 
 # white big buttons
 C_RESS_ICON_WHITE_LOGS = "./__ress__/icons/w_128_logs.png"
-C_RESS_ICON_WHITE_HISTORIC = "./__ress__/icons/w_128_historic.png"
+C_RESS_ICON_WHITE_HISTORY = "./__ress__/icons/w_128_history.png"
 C_RESS_ICON_WHITE_PROVIDER = "./__ress__/icons/w_128_provider.png"
 C_RESS_ICON_WHITE_EDITOR = "./__ress__/icons/w_128_editor.png"
 C_RESS_ICON_WHITE_EXECUTE = "./__ress__/icons/w_128_execute.png"

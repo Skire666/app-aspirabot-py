@@ -20,7 +20,7 @@ _COLUMNS: list[dict[str, Any]] = [
     {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
     {"id": "name_profile", "title": "Nom du profil", "width": 160, "type": "text"},
     {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
-    {"id": "used_date_profile", "title": "Dern. utilisation", "width": 140, "type": "text"},
+    {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text"},
     {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},
     {"id": "id_profile", "title": "ID Profil", "width": 160, "type": "text"},
 ]
@@ -42,6 +42,7 @@ class HistoricView(ttk.Frame):
     Attributes:
         _grid: The DataGrid used to display all profiles.
         _on_launch_callback: Optional callback invoked with (id_provider_id, id_profile).
+        _on_open_folder_callback: Optional callback invoked when the user clicks the folder button.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -54,14 +55,24 @@ class HistoricView(ttk.Frame):
 
         # Callback registered by the presenter via set_on_launch().
         self._on_launch_callback: Callable[[str, str], None] | None = None
+        self._on_open_folder_callback: Callable[[], None] | None = None
+        self._on_sort_callback: Callable[[str, bool], None] | None = None
 
         self._create_widgets()
 
     def _create_widgets(self) -> None:
-        """Build the DataGrid and pack it to fill the entire frame."""
-        # Single DataGrid fills all available space.
-        self._grid = DataGrid(self, columns=_COLUMNS, on_action=self._on_action)
-        self._grid.pack(fill=tk.BOTH, expand=True)
+        """Build the top bar and DataGrid."""
+        top_frame = ttk.Frame(self)
+        top_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(10, 5))
+
+        self._btn_open_folder = ttk.Button(
+            top_frame, text="Ouvrir dossier des fournisseurs", command=self._notify_open_folder
+        )
+        self._btn_open_folder.pack(side=tk.LEFT, padx=(5, 10))
+
+        self._grid = DataGrid(self, columns=_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
+        self._grid.set_sort_state("used_date_profile", True)
+        self._grid.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # ------------------------------------------------------------------
     # Public API
@@ -74,6 +85,22 @@ class HistoricView(ttk.Frame):
             callback: Callable receiving (id_provider_id, id_profile) strings.
         """
         self._on_launch_callback = callback
+
+    def set_on_sort(self, callback: Callable[[str, bool], None]) -> None:
+        """Register the callback invoked when the user clicks a sortable column header.
+
+        Args:
+            callback: Callable receiving (column_id, ascending) values.
+        """
+        self._on_sort_callback = callback
+
+    def set_on_open_folder(self, callback: Callable[[], None]) -> None:
+        """Register the callback invoked when the user clicks Ouvrir dossier des fournisseurs.
+
+        Args:
+            callback: Callable with no arguments.
+        """
+        self._on_open_folder_callback = callback
 
     def render_profiles(self, profiles: list[dict[str, Any]]) -> None:
         """Pass a fresh list of profile rows to the DataGrid.
@@ -88,6 +115,14 @@ class HistoricView(ttk.Frame):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _notify_open_folder(self) -> None:
+        if self._on_open_folder_callback:
+            self._on_open_folder_callback()
+
+    def _notify_sort(self, column: str, ascending: bool) -> None:
+        if self._on_sort_callback:
+            self._on_sort_callback(column, ascending)
 
     def _on_action(self, action_id: str, row_id: str) -> None:
         """Forward DataGrid action events to the registered launch callback.

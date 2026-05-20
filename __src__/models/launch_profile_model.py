@@ -20,7 +20,7 @@ from typing import Any
 from shared.constants import (
     C_CURRENT_WORKING_DIR,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
-    C_SIZE_HEXASTRING_PROVIDER_ID,
+    C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID,
 )
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.random_util import generate_rng_hexastring
@@ -91,7 +91,7 @@ class LaunchProfileModel:
             ...
         """
         return cls(
-            id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID),
+            id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID),
             name_profile=name_profile,
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
@@ -121,7 +121,7 @@ class LaunchProfileModel:
             'P1'
         """
         return cls(
-            id_profile=data.get("id_profile", generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID)),
+            id_profile=data.get("id_profile", generate_rng_hexastring(C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID)),
             name_profile=data.get("name_profile", "Profil"),
             export_folder=data.get("export_folder", _C_DEFAULT_EXPORT_FOLDER),
             url_source_type=data.get("url_source_type", ""),

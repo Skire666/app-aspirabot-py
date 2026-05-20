@@ -58,6 +58,7 @@ class ProviderPresenter:
             on_refresh=self._on_refresh,
             on_sort=self._on_sort,
             on_edit=self._on_edit_provider,
+            on_duplicate=self._on_duplicate_provider,
             on_launch=self._on_launch_provider,
             on_delete=self._on_delete_provider,
             on_validate=self._on_validate_providers,
@@ -76,7 +77,7 @@ class ProviderPresenter:
     @staticmethod
     def _text_key(value: str) -> str:
         """Normalizes text values for stable, case-insensitive sorting."""
-        return (value or "").lower()
+        return (value or "").casefold()
 
     def _sort_providers(self, column: str, ascending: bool) -> None:
         """Sorts providers in place according to the selected column.
@@ -170,6 +171,21 @@ class ProviderPresenter:
         # Fire the hook injected from main.py, identical pattern to on_request_edit_provider.
         if self.on_request_launch_provider:
             self.on_request_launch_provider(id_file)
+
+    def _on_duplicate_provider(self, id_file: str) -> None:
+        """Gère l'événement de duplication d'un fournisseur.
+
+        Args:
+            id_file: L'ID fichier du fournisseur à dupliquer.
+        """
+        if not self._view.ask_duplicate_confirmation():
+            return
+        try:
+            self._service.duplicate_provider(id_file)
+            self._load_providers()
+        except Exception as exc:
+            self._logger.error("Erreur lors de la duplication du fournisseur", exc_info=True)
+            self._view.show_error(f"La duplication a échoué : {exc}")
 
     def _on_delete_provider(self, id_file: str) -> None:
         """Gère l'événement de suppression d'un fournisseur.

@@ -32,6 +32,7 @@ class ProvidersView(ttk.Frame):
         self._on_refresh: Callable[[], None] | None = None
         self._on_sort: Callable[[str, bool], None] | None = None
         self._on_edit: Callable[[str], None] | None = None
+        self._on_duplicate: Callable[[str], None] | None = None
         self._on_launch: Callable[[str], None] | None = None
         self._on_delete: Callable[[str], None] | None = None
         self._on_validate: Callable[[], None] | None = None
@@ -65,6 +66,7 @@ class ProvidersView(ttk.Frame):
         columns_def = [
             {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
             {"id": "action_edit", "title": "Modif.", "width": 62, "type": "button", "button_text": "Modif."},
+            {"id": "action_duplicate", "title": "Dupp.", "width": 62, "type": "button", "button_text": "Dupp."},
             {
                 "id": "action_delete",
                 "title": "Supp.",
@@ -91,6 +93,7 @@ class ProvidersView(ttk.Frame):
         on_refresh: Callable[[], None],
         on_sort: Callable[[str, bool], None],
         on_edit: Callable[[str], None],
+        on_duplicate: Callable[[str], None],
         on_launch: Callable[[str], None],
         on_delete: Callable[[str], None],
         on_validate: Callable[[], None],
@@ -103,6 +106,7 @@ class ProvidersView(ttk.Frame):
             on_refresh: Callback for refreshing the providers list.
             on_sort: Callback for sorting columns.
             on_edit: Callback for executing the edit action.
+            on_duplicate: Callback for executing the duplicate action.
             on_launch: Callback for executing the launch action.
             on_delete: Callback for executing the delete action.
             on_validate: Callback for validating provider files.
@@ -112,6 +116,7 @@ class ProvidersView(ttk.Frame):
         self._on_refresh = on_refresh
         self._on_sort = on_sort
         self._on_edit = on_edit
+        self._on_duplicate = on_duplicate
         self._on_launch = on_launch
         self._on_delete = on_delete
         self._on_validate = on_validate
@@ -123,6 +128,8 @@ class ProvidersView(ttk.Frame):
             self._on_launch(guid)
         elif action_id == "action_edit" and self._on_edit:
             self._on_edit(guid)
+        elif action_id == "action_duplicate" and self._on_duplicate:
+            self._on_duplicate(guid)
         elif action_id == "action_delete" and self._on_delete:
             self._on_delete(guid)
 
@@ -232,6 +239,15 @@ class ProvidersView(ttk.Frame):
         lines.append("")
         lines.append("Aucun fichier fournisseur invalide n'a été détecté.")
         messagebox.showinfo("Validation des fournisseurs", "\n".join(lines))
+
+    @staticmethod
+    def ask_duplicate_confirmation() -> bool:
+        """Prompts the user for duplication confirmation.
+
+        Returns:
+            True if user confirmed the duplication, False otherwise.
+        """
+        return messagebox.askyesno("Confirmer", "Voulez-vous dupliquer ce fournisseur ?")
 
     @staticmethod
     def ask_delete_confirmation() -> bool:

@@ -43,12 +43,16 @@ class HistoricPresenter:
         self._view = view
         self._service = service
         self._last_loaded: datetime | None = None
+        self._sort_column = "used_date_profile"
+        self._sort_ascending = True
 
         # Hook injected by main.py after construction.
         self.on_request_launch_profile: Callable[[str, str], None] | None = None
 
         # Register the launch callback immediately so the view is wired.
         self._view.set_on_launch(self._on_launch)
+        self._view.set_on_open_folder(self._on_open_folder)
+        self._view.set_on_sort(self._on_sort)
 
     # ------------------------------------------------------------------
     # Public API
@@ -86,8 +90,7 @@ class HistoricPresenter:
             self._logger.exception("Failed to load profiles")
             tuples = []
 
-        # Sort by used_date_profile descending; profiles with None go last.
-        sorted_tuples = sorted(tuples, key=lambda t: t[1].used_date_profile or "", reverse=True)
+        sorted_tuples = self._sort_tuples(tuples)
 
         # Push formatted rows to the view and stamp the load time.
         self._view.render_profiles(self._format_rows(sorted_tuples))
@@ -119,6 +122,35 @@ class HistoricPresenter:
             )
 
         return rows
+
+    def _sort_tuples(
+        self, tuples: list[tuple[str, Any]]
+    ) -> list[tuple[str, Any]]:
+        """Sort profile tuples by the current sort column and direction."""
+        col = self._sort_column
+
+        def key_fn(t: tuple[str, Any]) -> str:
+            profile = t[1]
+            value = getattr(profile, col, None)
+            if col == "launch_count":
+                try:
+                    return f"{int(value or 0):020d}"
+                except (TypeError, ValueError):
+                    return "0" * 20
+            return str(value or "").casefold()
+
+        return sorted(tuples, key=key_fn, reverse=not self._sort_ascending)
+
+    def _on_sort(self, column: str, ascending: bool) -> None:
+        """Handle a sort request from the view."""
+        self._sort_column = column
+        self._sort_ascending = ascending
+        self._last_loaded = None
+        self._load_profiles()
+
+    def _on_open_folder(self) -> None:
+        """Forward the open-folder request to the service."""
+        self._service.open_providers_folder()
 
     def _on_launch(self, id_provider: str, id_profile: str) -> None:
         """Forward a launch request from the view to the injected hook.

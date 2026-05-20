@@ -60,3 +60,7 @@ class HistoricService:
                 )
 
         return result
+
+    def open_providers_folder(self) -> None:
+        """Ouvre le répertoire des fournisseurs dans l'explorateur du système."""
+        self._repository.open_providers_folder()

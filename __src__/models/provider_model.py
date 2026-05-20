@@ -19,7 +19,7 @@ from typing import Any, cast
 
 from models.launch_profile_model import LaunchProfileModel
 from models.step_scraping_model import StepScrapingModel
-from shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
+from shared.constants import C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID, C_SIZE_HEXASTRING_PROVIDER_ID
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 from shared.random_util import generate_rng_hexastring
 
@@ -152,6 +152,30 @@ class ProviderModel:
             return False
 
         return normalized_value.isalnum()
+
+    @classmethod
+    def copy_business(cls, source: ProviderModel) -> ProviderModel:
+        """Creates a duplicate of *source* with a new ID, a 'Copie de' name prefix, and fresh timestamps.
+
+        Steps and launch profiles are deep-copied so the duplicate is fully independent.
+
+        Args:
+            source: The provider to duplicate.
+
+        Returns:
+            A new unsaved ProviderModel ready to be persisted.
+        """
+        import copy
+
+        duplicate = copy.deepcopy(source)
+        duplicate.id_file = generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID)
+        duplicate.provider_name = f"Copie de {source.provider_name}"
+        for profile in duplicate.launch_profiles:
+            profile.id_profile = generate_rng_hexastring(C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID)
+            profile.name_profile = f"Copie de {profile.name_profile}"
+            profile.used_date_profile = None
+            profile.launch_count = 0
+        return duplicate
 
     @classmethod
     def import_from_data_json(cls, data: dict[str, Any]) -> ProviderModel:

@@ -111,7 +111,7 @@ def _wire_all_navigation(
     provider_presenter: ProviderPresenter,
     provider_edit_presenter: WorkflowPresenter,
     scraping_presenter: ScrapingPresenter,
-    historic_presenter: HistoricPresenter,
+    history_presenter: HistoricPresenter,
 ) -> None:
     """Wire all inter-component navigation callbacks and lazy-loading hooks.
 
@@ -120,14 +120,14 @@ def _wire_all_navigation(
         provider_presenter: Presenter for the provider list view.
         provider_edit_presenter: Presenter for the provider edit view.
         scraping_presenter: Presenter for the scraping panel.
-        historic_presenter: Presenter for the historic panel.
+        history_presenter: Presenter for the history panel.
     """
     _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
     _wire_scraping_launch(main_view, provider_presenter, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
-    _wire_historic_launch(main_view, historic_presenter, scraping_presenter)
+    _wire_history_launch(main_view, history_presenter, scraping_presenter)
     main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, scraping_presenter.ensure_providers_loaded)
-    main_view.set_on_show(TitleModuleEnum.E_HISTORY, historic_presenter.ensure_profiles_loaded)
+    main_view.set_on_show(TitleModuleEnum.E_HISTORY, history_presenter.ensure_profiles_loaded)
 
 
 def _build_and_wire_components(
@@ -334,6 +334,7 @@ def _wire_provider_navigation(
         provider_edit_presenter.create_new()
         main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.DISABLED)
+        main_view.set_tab_state(TitleModuleEnum.E_HISTORY, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
         main_view.show_view(TitleModuleEnum.E_EDITOR)
 
@@ -342,6 +343,7 @@ def _wire_provider_navigation(
         if provider_edit_presenter.load_provider(id_file):
             main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
             main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_HISTORY, tk.DISABLED)
             main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
             main_view.show_view(TitleModuleEnum.E_EDITOR)
 
@@ -350,6 +352,7 @@ def _wire_provider_navigation(
         provider_presenter.refresh()
         main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_HISTORY, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_SCRIPTS)
 
@@ -385,7 +388,7 @@ def _wire_scraping_launch(
     provider_presenter.on_request_launch_provider = on_request_launch_provider
 
 
-def _wire_historic_launch(
+def _wire_history_launch(
     main_view: MainView,
     historic_presenter: HistoricPresenter,
     scraping_presenter: ScrapingPresenter,

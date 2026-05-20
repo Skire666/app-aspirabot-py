@@ -80,6 +80,20 @@ class ProviderService:
         provider.update_modified_date()
         self._repository.update_provider(provider)
 
+    def duplicate_provider(self, id_file: str) -> str:
+        """Duplique un fournisseur existant et persiste la copie.
+
+        Args:
+            id_file: L'identifiant du fournisseur source.
+
+        Returns:
+            L'identifiant du nouveau fournisseur créé.
+        """
+        original = self._repository.read_provider(id_file)
+        copy = ProviderModel.copy_business(original)
+        self.create_provider(copy)
+        return copy.id_file
+
     def delete_provider(self, id_file: str) -> None:
         """Supprime un fournisseur existant.
 

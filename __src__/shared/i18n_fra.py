@@ -6,14 +6,14 @@ from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_EDITOR,
     C_RESS_ICON_BLACK_EXECUTE,
     C_RESS_ICON_BLACK_FAQ,
-    C_RESS_ICON_BLACK_HISTORIC,
+    C_RESS_ICON_BLACK_HISTORY,
     C_RESS_ICON_BLACK_LOGS,
     C_RESS_ICON_BLACK_PROVIDER,
     C_RESS_ICON_WHITE_CONFIG,
     C_RESS_ICON_WHITE_EDITOR,
     C_RESS_ICON_WHITE_EXECUTE,
     C_RESS_ICON_WHITE_FAQ,
-    C_RESS_ICON_WHITE_HISTORIC,
+    C_RESS_ICON_WHITE_HISTORY,
     C_RESS_ICON_WHITE_LOGS,
     C_RESS_ICON_WHITE_PROVIDER,
 )
@@ -42,9 +42,7 @@ C_SCRAPING_EMERGENCY_STOP_INVALID_MSG = (
 )
 
 # Scraping panel — workflow guard warnings
-C_SCRAPING_NO_PROVIDER_LOADED = (
-    "Veuillez charger un fournisseur avant de lancer le scraping."
-)
+C_SCRAPING_NO_PROVIDER_LOADED = "Veuillez charger un fournisseur avant de lancer le scraping."
 C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER = (
     "Un Workflow est déjà en cours de modification.\n"
     "Veuillez terminer ou annuler la modification avant de changer de fournisseur."
@@ -85,7 +83,7 @@ C_SCRAPING_NO_URL_SOURCE_MSG = (
 # Order of modules is determined by the order of entries in this dictionary.
 C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
     TitleModuleEnum.E_LOGS: ["Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
-    TitleModuleEnum.E_HISTORY: ["Historique", C_RESS_ICON_BLACK_HISTORIC, C_RESS_ICON_WHITE_HISTORIC],
+    TitleModuleEnum.E_HISTORY: ["Historique", C_RESS_ICON_BLACK_HISTORY, C_RESS_ICON_WHITE_HISTORY],
     TitleModuleEnum.E_SCRIPTS: ["Scénarios", C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
     TitleModuleEnum.E_EDITOR: ["Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR],
     TitleModuleEnum.E_EXECUTOR: ["Exécuter", C_RESS_ICON_BLACK_EXECUTE, C_RESS_ICON_WHITE_EXECUTE],
