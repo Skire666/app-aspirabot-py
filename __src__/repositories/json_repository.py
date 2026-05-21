@@ -66,7 +66,7 @@ class JsonFileRepository:
             with Path(self.file_path).open(encoding="utf-8") as f:
                 self.all_data = json.load(f)
             self._logger.info("Données chargées depuis '%s'.", self.file_path)
-        except (OSError, json.JSONDecodeError):
+        except OSError, json.JSONDecodeError:
             self._logger.error(
                 "Fichier '%s' illisible ou corrompu — restauration des valeurs par défaut.",
                 self.file_path,

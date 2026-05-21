@@ -248,6 +248,14 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """
         self._profile_panel.set_on_profile_rename(callback)
 
+    def set_on_profile_save(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user saves a profile.
+
+        Args:
+            callback: Callable receiving the id_profile to save.
+        """
+        self._profile_panel.set_on_profile_save(callback)
+
     def render_profiles_list(self, profiles: list[dict[str, Any]]) -> None:
         """Populate the profile Listbox and disable the launch form when empty.
 
@@ -258,6 +266,7 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         if not profiles:
             self._launch_panel.set_enabled(False)
             self._profile_panel.set_rename_profile_button_state(False)
+            self._profile_panel.set_save_profile_button_state(False)
 
     def get_selected_id_profile(self) -> str | None:
         """Return the id_profile of the highlighted Listbox entry.
@@ -290,6 +299,14 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
             enabled: True when a profile is selected.
         """
         self._profile_panel.set_rename_profile_button_state(enabled)
+
+    def set_save_profile_button_state(self, enabled: bool) -> None:
+        """Enable or disable the 'Sauvegarder' button.
+
+        Args:
+            enabled: True when a profile is selected.
+        """
+        self._profile_panel.set_save_profile_button_state(enabled)
 
     def set_profile_modified_date(self, date_str: str | None) -> None:
         """Update the last-modification date label in the profile panel.

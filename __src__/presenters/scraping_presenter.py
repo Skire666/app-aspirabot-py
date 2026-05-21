@@ -223,6 +223,7 @@ class ScrapingPresenter:
         self._view.set_on_profile_new(self._on_profile_new)
         self._view.set_on_profile_delete(self._on_profile_delete)
         self._view.set_on_profile_rename(self._on_profile_rename)
+        self._view.set_on_profile_save(self._on_profile_save)
         self._view.set_on_form_changed(self._on_form_changed)
         self._view.set_on_manual_urls_confirmed(self._on_manual_urls_confirmed)
         self._view.set_on_open_export_folder(self._on_open_export_folder)
@@ -301,8 +302,9 @@ class ScrapingPresenter:
         self._view.set_launch_profile_enabled(True)
         self._is_profile_dirty = False
 
-        # Enable rename and display the provider file's last modification date.
+        # Enable rename/save and display the provider file's last modification date.
         self._view.set_rename_profile_button_state(True)
+        self._view.set_save_profile_button_state(True)
         self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
     def _on_profile_new(self, name: str) -> None:
@@ -340,8 +342,9 @@ class ScrapingPresenter:
         self._service_provider.update_provider(self._provider)
         self._refresh_profiles_list()
 
-        # No profile is selected after deletion — disable rename, keep file date.
+        # No profile is selected after deletion — disable rename/save, keep file date.
         self._view.set_rename_profile_button_state(False)
+        self._view.set_save_profile_button_state(False)
         self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
     def _on_profile_rename(self, id_profile: str, new_name: str) -> None:
@@ -366,6 +369,42 @@ class ScrapingPresenter:
         # Restore selection and update the date label with the provider file date.
         self._refresh_profiles_list()
         self._view.set_selected_profile(id_profile)
+        self._view.set_rename_profile_button_state(True)
+        self._view.set_save_profile_button_state(True)
+        self._view.set_profile_modified_date(self._provider.modified_date_provider)
+
+    def _on_profile_save(self, id_profile: str) -> None:
+        """Persist current form settings into the profile without changing its name.
+
+        Args:
+            id_profile: Unique identifier of the profile to save.
+
+        Returns:
+            None.
+        """
+        profile = self._find_profile(id_profile)
+        if profile is None:
+            return
+
+        profile.export_folder = self._view.get_export_folder() or profile.export_folder
+
+        url_source = self._view.get_url_source()
+        profile.url_source_type = url_source.get("type", profile.url_source_type)
+        raw_value = url_source.get("value")
+        if raw_value is not None:
+            profile.url_source_value = raw_value
+
+        threshold = self._view.get_emergency_stop_threshold()
+        if threshold is not None:
+            profile.emergency_stop_threshold = threshold
+
+        profile.mark_profile_as_modified()
+        self._service_provider.update_provider(self._provider)
+        self._is_profile_dirty = False
+
+        self._refresh_profiles_list()
+        self._view.set_selected_profile(id_profile)
+        self._view.set_save_profile_button_state(True)
         self._view.set_rename_profile_button_state(True)
         self._view.set_profile_modified_date(self._provider.modified_date_provider)
 

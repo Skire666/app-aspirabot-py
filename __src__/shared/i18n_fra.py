@@ -68,6 +68,11 @@ C_SCRAPING_STATUS_EMERGENCY_STOP = "Processus mise en pause : seuil d'erreurs d�
 # Scraping panel — export error message ({exc} is the caught exception)
 C_SCRAPING_EXPORT_WRITE_ERROR = "Impossible d'écrire le fichier :\n{exc}"
 
+# Debug panel — session launch validation errors
+C_DEBUG_URL_EMPTY = "L'URL ne peut pas être vide."
+C_DEBUG_TIMEOUT_INVALID = "Le timeout doit être un entier entre 1 et 30 secondes."
+C_DEBUG_DNS_DELAY_INVALID = "Le délai d'attente DNS doit être un entier entre 1 et 30 secondes."
+
 # Scraping panel — no URL source confirmation dialog
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
 C_SCRAPING_NO_URL_SOURCE_MSG = (

@@ -67,14 +67,17 @@ class DebugPresenter:
     # Debug session — public entry point
     # -----------------------------------------------------------------------
 
-    def _on_debug_start(self, url: str) -> None:
+    def _on_debug_start(self, url: str, timeout: int, dns_delay: int) -> None:
         """Opens a debug browser session for the given URL.
 
         Closes any prior session, creates a fresh queue, and starts the
-        single persistent browser worker thread.
+        single persistent browser worker thread with the supplied timing
+        parameters.
 
         Args:
             url: The URL to open in the debug browser.
+            timeout: Navigation timeout in seconds (1-30).
+            dns_delay: DNS resolution wait in seconds (1-30).
         """
         self._close_debug_session()
         # Fresh queue — old worker reads None from its own (now unreferenced) queue.
@@ -87,7 +90,9 @@ class DebugPresenter:
         self._debug_window.on_close = self._on_debug_close
         self._debug_window.set_html_content("Chargement en cours…")
         self._view.set_status_active(url)
-        self._debug_thread = threading.Thread(target=self._browser_worker, args=(url,), daemon=True)
+        self._debug_thread = threading.Thread(
+            target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True
+        )
         self._debug_thread.start()
 
     def _close_debug_session(self) -> None:
@@ -104,20 +109,28 @@ class DebugPresenter:
     # Browser worker (long-lived thread)
     # -----------------------------------------------------------------------
 
-    def _browser_worker(self, url: str) -> None:
+    def _browser_worker(self, url: str, timeout: int, dns_delay: int) -> None:
         """Long-lived browser thread — the only thread that calls Playwright.
 
-        Launches the browser, navigates to url, pushes the initial HTML, then
-        processes Callable tasks from _debug_queue until a None sentinel arrives.
-        The browser is always closed in the finally block.
+        Launches the browser, navigates to url using the supplied timing
+        parameters, pushes the initial HTML, then processes Callable tasks
+        from _debug_queue until a None sentinel arrives. The browser is
+        always closed in the finally block.
 
         Args:
             url: The URL to navigate to on startup.
+            timeout: Navigation timeout in seconds (converted to ms internally).
+            dns_delay: DNS resolution wait passed to safe_goto_url.
         """
         try:
             self._debug_browser.launch()
             self._debug_browser.append_new_page()
-            self._debug_browser.safe_goto_url(url, wait_state="networkidle", timeout_ms=10000, wait_dns_solver_sec=6)
+            self._debug_browser.safe_goto_url(
+                url,
+                wait_state="networkidle",
+                timeout_ms=timeout * 1000,
+                wait_dns_solver_sec=dns_delay,
+            )
 
             page = self._debug_browser.get_current_page()
 

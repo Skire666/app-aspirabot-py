@@ -58,6 +58,7 @@ class ProfileManagementPanel(ttk.Frame):
         self._on_profile_new_cb: Callable[[str], None] | None = None
         self._on_profile_delete_cb: Callable[[str], None] | None = None
         self._on_profile_rename_cb: Callable[[str, str], None] | None = None
+        self._on_profile_save_cb: Callable[[str], None] | None = None
 
         # Parallel list of profile ids matching the Listbox entries.
         self._profile_ids: list[str] = []
@@ -105,19 +106,18 @@ class ProfileManagementPanel(ttk.Frame):
         Args:
             parent: Container frame for the button row.
         """
-        ttk.Button(parent, text="Nouveau profil", command=self._notify_new, width=18).pack(
-            side=tk.LEFT, padx=5, pady=(5, 0)
-        )
+        ttk.Button(parent, text="Nouveau", command=self._notify_new, width=15).pack(side=tk.LEFT, padx=5, pady=(5, 0))
 
         # Rename button — disabled until the user selects a profile.
-        self._btn_rename = ttk.Button(
-            parent, text="Renommer profil", command=self._notify_rename, width=18, state=tk.DISABLED
-        )
+        self._btn_rename = ttk.Button(parent, text="Renommer", command=self._notify_rename, width=15, state=tk.DISABLED)
         self._btn_rename.pack(side=tk.LEFT, padx=5, pady=(5, 0))
 
-        ttk.Button(parent, text="Supprimer profil", command=self._notify_delete, width=18).pack(
+        ttk.Button(parent, text="Supprimer", command=self._notify_delete, width=15).pack(
             side=tk.LEFT, padx=5, pady=(5, 0)
         )
+
+        self._btn_save = ttk.Button(parent, text="Sauvegarder", command=self._notify_save, width=15, state=tk.DISABLED)
+        self._btn_save.pack(side=tk.LEFT, padx=5, pady=(5, 0))
 
         # Date label shows the last modification date of the selected profile.
         self._lbl_modified_date = ttk.Label(parent, text=C_SCRAPING_SAVED_DATE_EMPTY)
@@ -158,6 +158,14 @@ class ProfileManagementPanel(ttk.Frame):
             callback: Callable receiving (id_profile, new_name).
         """
         self._on_profile_rename_cb = callback
+
+    def set_on_profile_save(self, callback: Callable[[str], None]) -> None:
+        """Register the callback fired when the user saves a profile.
+
+        Args:
+            callback: Callable receiving the id_profile to save.
+        """
+        self._on_profile_save_cb = callback
 
     # ------------------------------------------------------------------
     # Public data feed
@@ -218,6 +226,14 @@ class ProfileManagementPanel(ttk.Frame):
         """
         self._btn_rename.config(state=tk.NORMAL if enabled else tk.DISABLED)
 
+    def set_save_profile_button_state(self, enabled: bool) -> None:
+        """Enable or disable the 'Sauvegarder' button.
+
+        Args:
+            enabled: True when a profile is selected.
+        """
+        self._btn_save.config(state=tk.NORMAL if enabled else tk.DISABLED)
+
     def set_profile_modified_date(self, date_str: str | None) -> None:
         """Update the last-modification date label.
 
@@ -261,6 +277,12 @@ class ProfileManagementPanel(ttk.Frame):
         new_name = simpledialog.askstring("Renommer profil", "Nouveau nom du profil :", parent=self)
         if new_name and new_name.strip():
             self._on_profile_rename_cb(id_profile, new_name.strip())
+
+    def _notify_save(self) -> None:
+        """Fire on_profile_save with the currently selected id_profile."""
+        id_profile = self.get_selected_id_profile()
+        if id_profile and self._on_profile_save_cb:
+            self._on_profile_save_cb(id_profile)
 
 
 # EOF
