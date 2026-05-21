@@ -16,6 +16,7 @@ The project strictly follows the **Model-View-Presenter** pattern:
 
 ```
 __src__/
+├── bootstrap/      # Assembly-only wiring functions, one per domain module
 ├── models/         # Business entities and data structures (domain)
 ├── views/          # Tkinter GUI components (no business logic)
 ├── presenters/     # Orchestration: connects views to services
@@ -36,7 +37,7 @@ These folders are **not part of the MVP pattern** but participate in the overall
 
 ```
 __src__/
-├── interfaces/     # Abstract base classes — contract-based programming
+├── interfaces/     # Protocol-based contracts for MVP layers
 └── shared/         # Common utilities and base code shared across layers
 ```
 
@@ -60,13 +61,62 @@ Cross-layer imports in the opposite direction are a hard violation.
 
 | Importing layer | May import from | Must NEVER import from |
 |-----------------|---|---|
-| `View`          | `interfaces/`, `shared/`            | `Service`, `Repository`, `Model` directly |
-| `Presenter`     | `Service`, `interfaces/`, `shared/` | `Repository` directly |
+| `View`          | `interfaces/`, `shared/`                         | `Service`, `Repository`, `Model` directly |
+| `Presenter`     | `Service`, `interfaces/`, `shared/`              | `Repository` directly |
 | `Service`       | `Repository` (via interface), `Model`, `shared/` | `View`, `Presenter` |
-| `Repository`    | `Model`, `shared/`                  | `View`, `Presenter`, `Service` |
-| `Model`         | `shared/`                           | Everything else |
+| `Repository`    | `Model`, `shared/`                               | `View`, `Presenter`, `Service` |
+| `Model`         | `shared/`                                        | Everything else |
+| `bootstrap/`    | All layers                                       | Nothing may import from `bootstrap/` |
 
 > **Rule:** if adding an import would create a cycle or go against the arrow above, the design is wrong — refactor instead.
+
+---
+
+## Service vs Presenter — Decision Rule
+
+A condition or transformation belongs in the **Service** if it is a **domain rule**:
+it would still be true if the application had no GUI at all (CLI, API, test runner).
+
+A condition belongs in the **Presenter** if it is a **coordination decision**:
+it only exists because the UI needs to decide what to show or what to call next.
+
+| Question to ask | Answer → layer |
+|---|---|
+| "Would this rule exist in a headless version of the app?" | Yes → **Service** |
+| "Does this condition only make sense because of what the View expects?" | Yes → **Presenter** |
+| "Am I transforming or validating domain data?" | → **Service** |
+| "Am I deciding which view method to call, or in what order?" | → **Presenter** |
+
+```python
+# BAD — business rule hidden inside a Presenter
+def on_start_clicked(self) -> None:
+    url = self._view.get_url()
+    if not url.startswith("https://"):   # ← domain rule, belongs in Service
+        self._view.show_errors(["URL invalide."])
+        return
+    self._service.start_scraping(url)
+
+# GOOD — Presenter coordinates only; Service owns the rule
+def on_start_clicked(self) -> None:
+    url = self._view.get_url()
+    try:
+        self._service.start_scraping(url)   # raises ScrapingError if URL invalid
+    except ScrapingError as e:
+        self._view.show_errors([str(e)])
+
+# BAD — Presenter duplicates a rule that already lives (or should live) in the Service
+def on_save_clicked(self) -> None:
+    if self._view.get_name().strip() == "":   # ← validation = domain rule
+        self._view.show_errors(["Le nom est requis."])
+
+# GOOD — Service validates, Presenter only formats and dispatches
+def on_save_clicked(self) -> None:
+    data = self._view.get_form_data()
+    try:
+        self._service.save_provider(data)
+    except ProviderValidationError as e:
+        self._view.show_errors([format_error(e)])
+```
 
 ---
 
@@ -140,8 +190,22 @@ They must be present in `.gitignore` — the AI must never create or commit them
 ## Language
 
 This file and all agent instructions are in **English**.
-All code conventions (docstrings, inline comments) are written in **English**.
-The i18n module (`shared/i18n_fra.py`) is the single source of truth for all French strings.
+
+Language rules by content type:
+
+| Content | Language | Example |
+|---|---|---|
+| Docstrings | **English** | `"""Load the provider from disk."""` |
+| Inline comments | **English** | `# Extract the main result blocks` |
+| Log messages (all levels) | **French** | `"Démarrage du scraping pour id=%s"` |
+| Exception messages | **French** | `"Provider introuvable : {id}"` |
+| User-facing strings | **French** — via `shared/i18n_fra.py` only | `ERROR_TEMPLATES["empty_field"]` |
+
+> **Reminder for AI agents:** log messages are in **French** by default in this project.
+> Never write `logger.info("Starting scraping for id=%s", ...)` — always use French.
+> The only English text in `.py` files is docstrings and inline comments.
+
+`shared/i18n_fra.py` is the single source of truth for all user-facing French strings.
 
 ---
 
@@ -166,16 +230,47 @@ from models.provider import Provider
 from shared.i18n_fra import ERROR_TEMPLATES
 ```
 
+Never mix levels. Run `ruff check --select I --fix` before committing.
+
 ### General Style
 - Strict **PEP 8** compliance
-- **Docstrings** required on all public classes and functions, **Google style**
-- **Method length**: 25 lines maximum — if a method exceeds this, break it down
-- **Comments**: one comment per logical block, approximately every 5 lines of code
+- **Docstrings** required on all public classes and functions, **Google style**, in **English**
+- **Inline comments** in **English**
+- **Method length**: 25 lines of code maximum per method.
+  - Docstrings are excluded from the count.
+  - Blank lines are excluded from the count.
+  - Lines used solely to wrap arguments or chain calls (no logic) are excluded from the count.
+  - If a method exceeds 25 lines of *actual code*, break it into focused private helpers with a name that expresses intent.
 - **File length**: 1000 lines maximum — if a file exceeds this, split it into focused modules
-- **Language**: English only
+- **Comments**: one comment per logical block, approximately every 5 lines of code
 
-### Expected Docstring Format (Google Style)
 ```python
+# GOOD — argument wrapping lines do not count toward the 25-line limit
+result = some_function(
+    argument_one,
+    argument_two,
+    argument_three,
+)
+
+# GOOD — decompose by semantic step, not by arbitrary line count
+def process_provider(self, provider_id: str) -> None:
+    provider = self._fetch_provider(provider_id)
+    self._validate_provider(provider)
+    self._apply_defaults(provider)
+```
+
+### Expected Docstring Format (Google Style, English)
+
+A docstring must add information beyond what the signature already expresses.
+A docstring that only restates the method name is a violation of intent.
+
+```python
+# BAD — tautological docstring, adds no value
+def load_config(self) -> dict:
+    """Load the config."""
+    ...
+
+# GOOD — explains contract, non-obvious behaviour, and raised exceptions
 def fetch_page(url: str, timeout: int = 30) -> str:
     """Load the HTML content of a page via Playwright.
 
@@ -195,7 +290,7 @@ def fetch_page(url: str, timeout: int = 30) -> str:
     """
 ```
 
-### Expected Inline Comment Style
+### Expected Inline Comment Style (English)
 ```python
 def parse_results(raw_html: str) -> list[dict]:
     # Initialize the parser and clean the input
@@ -221,6 +316,28 @@ def parse_results(raw_html: str) -> list[dict]:
 
 All inter-layer contracts are defined as `typing.Protocol` in `interfaces/`.
 **Never use `ABC` for interfaces** — `Protocol` enables structural subtyping and allows testing without Tkinter.
+
+### When to create an interface
+
+Create an `I*` Protocol **only** when at least one of these conditions is true:
+
+- The concrete class depends on Tkinter, and the collaborator (Presenter or Service) must remain testable without a display.
+- Multiple concrete implementations of the same contract exist or are planned.
+- The dependency direction would otherwise create a cycle.
+
+Do **not** create an interface for a Repository or Service that has a single implementation
+and is only ever used by one Presenter. The Protocol adds indirection without benefit.
+
+```python
+# GOOD — IScrapingView hides Tkinter from the Presenter; a test can inject a stub
+class ScrapingPresenter:
+    def __init__(self, view: IScrapingView, service: ScrapingService) -> None: ...
+
+# BAD — wrapping a concrete Service in a Protocol when there is only one implementation
+# and no test requires a stub
+class IScrapingService(Protocol):
+    def start_scraping(self, url: str) -> None: ...  # ← unnecessary abstraction
+```
 
 ### Naming convention
 
@@ -273,35 +390,150 @@ class IScrapingService(Protocol):
         return []  # ← must be left as "..."
 ```
 
+❌ Never import a concrete View inside a Presenter
+```python
+# BAD
+from views.scraping_view import ScrapingView  # ← use IScrapingView instead
+```
+
 ---
 
 ## Dependency Injection & Wiring
 
 **Never instantiate a Service or Repository inside another Service, Presenter, or View.**
-All concrete objects are assembled once, in `main.py`, and injected via `__init__`.
+All concrete objects are assembled once and injected via `__init__`.
+
+For projects with more than ~3 modules, wiring is split into one factory function per domain,
+each in its own `bootstrap_<domain>.py` file inside the `bootstrap/` folder at the `__src__/` level.
+`main.py` calls each factory and passes results to the next.
 
 ```python
-# main.py — the ONLY place where concrete classes are instantiated
+# bootstrap/bootstrap_scripts.py
+from repositories.provider_repository import ProviderRepository
+from services.provider_service import ProviderService
+from presenters.scripts_presenter import ScriptsPresenter
+from interfaces.i_scripts_view import IScriptsView
+
+def bootstrap_scripts(view: IScriptsView, config_path: str) -> ScriptsPresenter:
+    """Wire the Scripts module and return its Presenter.
+
+    Args:
+        view: The Scripts view, injected from main.py.
+        config_path: Path to the application configuration file.
+
+    Returns:
+        A fully wired ScriptsPresenter ready for use.
+    """
+    repo    = ProviderRepository(path=config_path)
+    service = ProviderService(repository=repo)
+    return ScriptsPresenter(view=view, service=service)
+```
+
+```python
+# main.py — stays thin; delegates wiring to bootstrap functions
 import tkinter as tk
-from repositories.config_repository import ConfigRepository
-from services.scraping_service import ScrapingService
+from bootstrap.bootstrap_scripts import bootstrap_scripts
+from bootstrap.bootstrap_editor  import bootstrap_editor
+from shared.enums import TitleModuleEnum
 from views.main_view import MainView
-from presenters.main_presenter import MainPresenter
 
-root = tk.Tk()
+CONFIG_PATH = "config-aspirabot.json"
 
-config_repo     = ConfigRepository(path=CONFIG_PATH)
-scraping_service = ScrapingService(config_repository=config_repo)
-main_view       = MainView(root)
-main_presenter  = MainPresenter(view=main_view, scraping_service=scraping_service)
+root      = tk.Tk()
+main_view = MainView(root)
+
+scripts_presenter = bootstrap_scripts(main_view.scripts_view, CONFIG_PATH)
+editor_presenter  = bootstrap_editor(main_view.editor_view,  CONFIG_PATH)
+
+main_view.set_on_show(TitleModuleEnum.E_SCRIPTS, scripts_presenter.ensure_providers_loaded)
+main_view.set_on_show(TitleModuleEnum.E_EDITOR,  editor_presenter.ensure_workflows_loaded)
 
 root.mainloop()
 ```
 
 **Rules:**
 - Every dependency is passed via `__init__` — no `import` of a concrete class inside a collaborator.
-- When the AI adds a new class, it must also update `main.py` with the new wiring.
-- No global singletons, no module-level instantiation outside `main.py`.
+- When the AI adds a new class, it must also update the relevant `bootstrap_<domain>.py` and `main.py`.
+- No global singletons, no module-level instantiation outside `main.py` and `bootstrap/`.
+- `bootstrap/` files are assembly-only: no business logic, no domain rules, no persistence.
+- No layer may import from `bootstrap/`.
+
+---
+
+## Shared Application State
+
+Some data must be accessible across multiple modules (e.g. currently selected provider, global
+execution flags). This state must never be stored in a Presenter, a View, or a module-level global.
+
+**Rule:** define an `AppState` dataclass in `models/`, instantiate it once in `main.py`,
+and inject it into every Service that needs it.
+
+```python
+# models/app_state.py
+from dataclasses import dataclass
+
+@dataclass
+class AppState:
+    """Holds runtime state shared across services.
+
+    Attributes:
+        active_provider_id: ID of the currently selected provider, or None.
+        is_scraping: True while a scraping session is running.
+    """
+    active_provider_id: str | None = None
+    is_scraping: bool = False
+```
+
+```python
+# main.py — AppState instantiated once, injected into services that need it
+from models.app_state import AppState
+state             = AppState()
+scraping_service  = ScrapingService(repository=scraping_repo, state=state)
+executor_service  = ExecutorService(repository=executor_repo, state=state)
+```
+
+**Rules:**
+- `AppState` is a plain dataclass — no methods, no business logic.
+- Only Services may read or write `AppState` — never Presenters or Views directly.
+- Never use a module-level global variable as a substitute for `AppState`.
+
+---
+
+## `TitleModuleEnum` — `shared/enums.py`
+
+`TitleModuleEnum` identifies each sidebar module by a stable internal name.
+The enum value is the French display label shown in the sidebar button.
+
+```python
+# shared/enums.py
+from enum import Enum
+
+class TitleModuleEnum(Enum):
+    """Enum for the main view sidebar button labels.
+
+    The values are the actual display labels shown in the sidebar (French).
+    The enum name (e.g. E_SCRIPTS) is the stable internal identifier used
+    to register lazy-load callbacks via MainView.set_on_show().
+    """
+
+    E_LOGS     = "LOGS"
+    E_HISTORY  = "HISTORIC"
+    E_SCRIPTS  = "PROVIDER"
+    E_EDITOR   = "WORKFLOW"
+    E_EXECUTOR = "EXECUTE"
+    E_FAQ      = "FAQ"
+    E_DEBUG    = "DEBUG"
+    E_OPTIONS  = "OPTIONS"
+```
+
+For lazy tab initialization, register a callback via `MainView.set_on_show()`:
+the callback is invoked once, the first time the user navigates to that tab.
+
+```python
+# main.py — register lazy loaders after wiring
+main_view.set_on_show(TitleModuleEnum.E_SCRIPTS, scripts_presenter.ensure_providers_loaded)
+main_view.set_on_show(TitleModuleEnum.E_EDITOR,  editor_presenter.ensure_workflows_loaded)
+```
 
 ---
 
@@ -309,7 +541,7 @@ root.mainloop()
 
 Use the standard `logging` module. **Never use `print()` for runtime output.**
 
-### Setup — one logger per module
+### Setup — one logger per class
 
 ```python
 import logging
@@ -329,17 +561,17 @@ class ScrapingService:
 | `View` | — | Never logs — delegates all errors to the Presenter |
 
 ```python
-# Repository — trace I/O at DEBUG
+# Repository — trace I/O at DEBUG (message in French)
 def find_by_id(self, provider_id: str) -> Provider | None:
     self._logger.debug("Lecture du provider id=%s", provider_id)
     ...
 
-# Service — trace flow at INFO
+# Service — trace flow at INFO (message in French)
 def start_scraping(self, provider_id: str) -> None:
     self._logger.info("Démarrage du scraping pour provider id=%s", provider_id)
     ...
 
-# Presenter — log unexpected errors at ERROR
+# Presenter — log unexpected errors at ERROR (message in French)
 def on_start_clicked(self, provider_id: str) -> None:
     try:
         self._service.start_scraping(provider_id)
@@ -351,6 +583,7 @@ def on_start_clicked(self, provider_id: str) -> None:
 **Rules:**
 - Always use `%s` formatting in log calls — never f-strings (`logger.error("msg %s", var)` not `logger.error(f"msg {var}")`).
 - Use `exc_info=True` in `logger.error()` calls that catch exceptions, to capture the full stack trace.
+- Log messages are written in **French**.
 - Never log sensitive data (passwords, tokens, personal data).
 
 ---
@@ -364,7 +597,7 @@ All runtime exceptions inherit from a common base defined in `shared/exception_u
 ```python
 # shared/exception_util.py
 class AppError(Exception):
-    """Erreur de base de l'application."""
+    """Base error for the application."""
 
 class ScrapingError(AppError): ...
 class PageLoadError(ScrapingError): ...
@@ -373,6 +606,8 @@ class ProviderNotFoundError(ProviderError): ...
 class RepositoryError(AppError): ...
 class DatabaseUnavailableError(RepositoryError): ...
 ```
+
+Exception messages (the string passed to `raise`) are written in **French**.
 
 **Rules:**
 - Never raise `Exception`, `ValueError`, or `RuntimeError` directly in business code.
@@ -389,7 +624,7 @@ class DatabaseUnavailableError(RepositoryError): ...
 | `View` | — | Nothing — the Presenter delivers ready-to-display messages |
 
 ```python
-# Repository — wrap technical errors
+# Repository — wrap technical errors (message in French)
 def load_config(self) -> dict:
     try:
         with open(self._path) as f:
@@ -397,7 +632,7 @@ def load_config(self) -> dict:
     except (OSError, json.JSONDecodeError) as e:
         raise DatabaseUnavailableError("Impossible de lire la config.") from e
 
-# Service — raise domain errors
+# Service — raise domain errors (message in French)
 def get_provider(self, provider_id: str) -> Provider:
     provider = self._repository.find_by_id(provider_id)
     if provider is None:
@@ -460,6 +695,151 @@ except OSError as e:
 ```
 
 ❌ Never use `try/except` blocks wrapping more than 4–5 lines without justification
+
+---
+
+## Error Messages
+
+### Ownership by layer
+
+| What | Where |
+|------|-------|
+| Raw errors (code + context) | `models/` — `FieldValidationError` dataclass |
+| Message templates | `shared/i18n_fra.py` |
+| Formatting logic | `shared/error_formatter.py` — via `format_error()` helper |
+| Display | `views/` — receives `list[str]`, renders only |
+
+---
+
+### `FieldValidationError` — `models/`
+
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class FieldValidationError:
+    """Represents a business field validation error.
+
+    Attributes:
+        code: Key of the template in ERROR_TEMPLATES.
+        context: Data used to format the message.
+    """
+    code: str
+    context: dict[str, str | int]
+```
+
+---
+
+### Message templates — `shared/i18n_fra.py`
+
+All user-facing strings live here. **No string is ever written inline** in business logic or view code.
+
+```python
+# shared/i18n_fra.py
+ERROR_TEMPLATES: dict[str, str] = {
+    "invalid_operator": (
+        "Étape {step} : l'opérateur doit être l'un de : "
+        "equal, not_equal, greater_than, less_than, "
+        "greater_or_equal, less_or_equal."
+    ),
+    "empty_field": "Étape {step} : le champ '{field}' ne peut pas être vide.",
+}
+```
+
+---
+
+### `format_error()` helper — `shared/error_formatter.py`
+
+This helper is placed in `shared/` because it is a pure formatting utility with no business logic
+and no dependency on any MVP layer. Any layer that produces user-facing messages (typically the
+Presenter) may import it.
+
+All formatting goes through this single helper. **Never call `.format(**e.context)` directly.**
+
+```python
+# shared/error_formatter.py
+from models.field_validation_error import FieldValidationError
+from shared.i18n_fra import ERROR_TEMPLATES
+
+def format_error(error: FieldValidationError) -> str:
+    """Format a FieldValidationError into a human-readable string.
+
+    Args:
+        error: The validation error to format.
+
+    Returns:
+        A ready-to-display user message in French.
+    """
+    template = ERROR_TEMPLATES.get(
+        error.code,
+        "Erreur inconnue (code : {code})"
+    )
+    try:
+        return template.format(code=error.code, **error.context)
+    except KeyError as e:
+        return f"Erreur de formatage pour le code '{error.code}' : clé manquante {e}"
+```
+
+---
+
+### Presenter — formats and delegates
+
+```python
+from shared.error_formatter import format_error
+
+messages = [format_error(e) for e in raw_errors]
+self._view.show_errors(messages)
+```
+
+---
+
+### View — passive display only
+
+```python
+def show_errors(self, messages: list[str]) -> None: ...
+def clear_errors(self) -> None: ...
+```
+
+The View receives ready-to-display strings. It never formats, conditions, or owns any message text.
+
+---
+
+### Interface — `interfaces/i_error_display_view.py`
+
+```python
+from typing import Protocol
+
+class IErrorDisplayView(Protocol):
+    def show_errors(self, messages: list[str]) -> None: ...
+    def clear_errors(self) -> None: ...
+```
+
+---
+
+### Anti-patterns — Error Messages
+
+❌ Never write a user-facing string inline in a service or presenter
+```python
+# BAD
+errors.append(f"Étape {index} : l'opérateur doit être...")
+# GOOD — use shared/i18n_fra.py + format_error()
+```
+
+❌ Never call `.format(**e.context)` directly — always use `format_error()`
+
+❌ Never pass `FieldValidationError` objects to the View
+```python
+# BAD
+self._view.show_errors(raw_errors)  # ← format first in the Presenter
+```
+
+❌ Never format or build error messages inside the View
+```python
+# BAD
+def show_errors(self, raw_errors: list[FieldValidationError]) -> None:
+    for e in raw_errors:
+        msg = ERROR_TEMPLATES[e.code].format(**e.context)  # ← Presenter's job
+```
 
 ---
 
@@ -533,16 +913,15 @@ with open("config-aspirabot.json", "w") as f:
 
 ### Design Violations
 
+❌ Never use `ABC` to define an interface — always use `typing.Protocol`
+
 ❌ Never place concrete logic inside `interfaces/`
 ```python
 # BAD — interfaces define contracts only, no implementation
 class IScrapingService(Protocol):
     def run(self, url: str) -> list[dict]:
-        return []  # ← must be abstract
+        return []  # ← must be left as "..."
 ```
-
-❌ Never use `ABC` to define an interface — always use `typing.Protocol`
-
 
 ❌ Never place business logic inside `shared/`
 ```python
@@ -560,15 +939,33 @@ service = ScrapingService()
 view.on_start = service.run  # ← the presenter must be the bridge
 ```
 
+❌ Never store shared runtime state in a Presenter, a View, or a module-level global
+```python
+# BAD — global state, not injectable, not testable
+_current_provider_id: str | None = None
+
+# GOOD — use AppState defined in models/ and injected into services
+```
+
 ---
 
 ### Code Quality Violations
 
-❌ Never write a method longer than 25 lines — break it down instead
+❌ Never write a method longer than 25 lines of code — break it down instead
+(Blank lines, docstrings, and argument-wrapping lines are excluded from the count.)
 
 ❌ Never write a file longer than 1000 lines — split into focused modules
 
 ❌ Never use `print()` — always use `self._logger = logging.getLogger(__name__)`
+
+❌ Never commit runtime-generated files or folders
+```
+# These must stay in .gitignore — never create or commit them manually
+tmp_app_logs/
+data_scraping/
+data_providers/
+config-aspirabot.json
+```
 
 ❌ Never omit type hints on a function or method signature
 ```python
@@ -583,6 +980,24 @@ def fetch(url: str, timeout: int = 30) -> str:
 
 ❌ Never omit a docstring on a public class or function
 
+❌ Never write a tautological docstring
+```python
+# BAD — restates the method name, adds no value
+def load_config(self) -> dict:
+    """Load the config."""
+
+# GOOD — explains contract and failure modes
+def load_config(self) -> dict:
+    """Read and parse the application configuration from disk.
+
+    Returns:
+        A dictionary of configuration values ready for use by services.
+
+    Raises:
+        DatabaseUnavailableError: If the file is missing or contains invalid JSON.
+    """
+```
+
 ❌ Never use bare `except` clauses
 ```python
 # BAD — swallows all errors silently
@@ -595,7 +1010,7 @@ except:
 try:
     ...
 except PlaywrightTimeoutError as e:
-    logger.error("Page load timed out: %s", e)
+    logger.error("Délai de chargement dépassé : %s", e)
     raise
 ```
 
@@ -626,148 +1041,5 @@ class ProviderEditPresenter:
 
 For lazy tab initialization (content loaded only on first visit), use `MainView.set_on_show()`:
 ```python
-main_view.set_on_show(TitleModuleEnum.C_TITLE_MODULE_SCRAPING, scraping_presenter.ensure_providers_loaded)
-```
-
----
-
-❌ Never commit runtime-generated files or folders
-```
-# BAD — these must stay in .gitignore
-tmp_app_logs/
-data_scraping/
-data_providers/
-config-aspirabot.json
-```
-
----
-
-## Error Messages
-
-### Ownership by layer
-
-| What | Where |
-|------|-------|
-| Raw errors (code + context) | `models/` — `FieldValidationError` dataclass |
-| Message templates | `shared/i18n_fra.py` |
-| Formatting logic | `presenters/` — via `format_error()` helper |
-| Display | `views/` — receives `list[str]`, renders only |
-
-### `FieldValidationError` — `models/`
-
-```python
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class FieldValidationError:
-    """Erreur de validation d'un champ métier.
-
-    Attributes:
-        code: Clé du template dans ERROR_TEMPLATES.
-        context: Données utilisées pour formater le message.
-    """
-    code: str
-    context: dict[str, str | int]
-```
-
-### Message templates — `shared/i18n_fra.py`
-
-All user-facing strings live here. **No string is ever written inline** in business logic or view code.
-
-```python
-# shared/i18n_fra.py
-ERROR_TEMPLATES: dict[str, str] = {
-    "invalid_operator": (
-        "Étape {step} : l'opérateur doit être l'un de : "
-        "equal, not_equal, greater_than, less_than, "
-        "greater_or_equal, less_or_equal."
-    ),
-    "empty_field": "Étape {step} : le champ '{field}' ne peut pas être vide.",
-}
-```
-
-### `format_error()` helper — `presenters/`
-
-All formatting goes through this single helper. Never call `.format(**e.context)` directly.
-
-```python
-# presenters/error_formatter.py
-from models.field_validation_error import FieldValidationError
-from shared.i18n_fra import ERROR_TEMPLATES
-
-def format_error(error: FieldValidationError) -> str:
-    """Formate une FieldValidationError en message lisible.
-
-    Args:
-        error: L'erreur de validation à formater.
-
-    Returns:
-        Le message utilisateur prêt à afficher.
-    """
-    template = ERROR_TEMPLATES.get(
-        error.code,
-        "Erreur inconnue (code : {code})"
-    )
-    try:
-        return template.format(code=error.code, **error.context)
-    except KeyError as e:
-        return f"Erreur de formatage pour le code '{error.code}' : clé manquante {e}"
-```
-
-### View — passive display only
-
-```python
-def show_errors(self, messages: list[str]) -> None: ...
-def clear_errors(self) -> None: ...
-```
-
-The View receives ready-to-display strings. It never formats, conditions, or owns any message text.
-
-
-### Presenter — formats and delegates
-
-```python
-from presenters.error_formatter import format_error
-
-messages = [format_error(e) for e in raw_errors]
-self._view.show_errors(messages)
-```
-### Interface — `interfaces/`
-
-```python
-# interfaces/i_error_display_view.py
-from typing import Protocol
-
-class IErrorDisplayView(Protocol):
-    def show_errors(self, messages: list[str]) -> None: ...
-    def clear_errors(self) -> None: ...
-```
-
-Presenters depend on this protocol, never on the concrete View —
-enabling tests without Tkinter.
-### Anti-patterns — Error Messages
-
-❌ Never write a user-facing string inline in a service or presenter
-
-```python
-# BAD — string belongs in presenters/messages.py
-# BAD
-errors.append(f"Étape {index} : l'opérateur doit être...")
-```
-
-❌ Never format or build error messages inside the View
-❌ Never call `.format(**e.context)` directly — always use `format_error()`
-
-❌ Never pass `FieldValidationError` objects to the View
-```python
-# BAD
-self._view.show_errors(raw_errors)  # ← format first in the Presenter
-```
-
-❌ Never format or build error messages inside the View
-```python
-# BAD
-def show_errors(self, raw_errors: list[FieldValidationError]) -> None:
-    for e in raw_errors:
-        msg = ERROR_TEMPLATES[e.code].format(**e.context)  # ← Presenter's job
+main_view.set_on_show(TitleModuleEnum.E_SCRIPTS, scripts_presenter.ensure_providers_loaded)
 ```
