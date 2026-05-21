@@ -21,8 +21,10 @@ import logging
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
+from typing import Any
 
 from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 from views.components.drag_drop_list import DragDropList
 from views.components.step_item_renderer import StepItemRenderer
 
@@ -52,7 +54,8 @@ class StepsListCrudView(ttk.Frame):
         on_move_step: Called with (index, direction) where direction is -1 or +1.
         on_toggle_active_step: Called with the step index when Toggle is clicked.
         on_reorder_steps: Called with the full reordered list after any list mutation.
-        on_confirm_inline_step: Called with the confirmed StepScrapingModel; returns True if accepted.
+        on_confirm_create_step: Called with (StepTypeEnum, params) on creation; returns True if accepted.
+        on_confirm_update_step: Called with (StepTypeEnum, params) on update; returns True if accepted.
         on_cancel_inline_step: Called when the inline form is cancelled.
         on_clear_all_steps: Called when the user clears the full step list.
     """
@@ -85,7 +88,8 @@ class StepsListCrudView(ttk.Frame):
         self.on_move_step: Callable[[int, int], None] | None = None
         self.on_toggle_active_step: Callable[[int], None] | None = None
         self.on_reorder_steps: Callable[[list[StepScrapingModel]], None] | None = None
-        self.on_confirm_inline_step: Callable[[StepScrapingModel], bool] | None = None
+        self.on_confirm_create_step: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
+        self.on_confirm_update_step: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
         self.on_cancel_inline_step: Callable[[], None] | None = None
         self.on_clear_all_steps: Callable[[], None] | None = None
         self.on_duplicate_step: Callable[[StepScrapingModel, int], StepScrapingModel] | None = None

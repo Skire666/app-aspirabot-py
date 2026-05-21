@@ -198,7 +198,8 @@ class WorkflowView(ttk.Frame):
 
     def _wire_inline_form_callbacks(self) -> None:
         """Connects handlers to the inline form's callback slots."""
-        self._inline_form.on_confirm = self._on_inline_confirm
+        self._inline_form.on_confirm_create = self._on_inline_confirm_create
+        self._inline_form.on_confirm_update = self._on_inline_confirm_update
         self._inline_form.on_cancel = self._on_inline_cancel
         self._inline_form.on_type_changed = self._on_inline_type_changed
 
@@ -216,26 +217,54 @@ class WorkflowView(ttk.Frame):
                 return step_type
         return StepTypeEnum.E_OPEN_URL
 
-    def _on_inline_confirm(self, step: StepScrapingModel) -> None:
-        """Delegates confirm to the step list; resets the form when accepted.
+    def _on_inline_confirm_create(
+        self, step_type: StepTypeEnum, params: dict[str, Any]
+    ) -> bool:
+        """Delegates a creation confirm to the step list; resets the form when accepted.
 
         Args:
-            step: The step submitted by the inline form.
+            step_type: Type of the new step.
+            params: Raw parameter dict from the form.
+
+        Returns:
+            True when the step was accepted by the presenter.
         """
-        was_creation = not self._is_edit_mode
-        validator = self._workflow_builder_view.on_confirm_inline_step
-        accepted = validator(step) if validator else False
+        cb = self._workflow_builder_view.on_confirm_create_step
+        accepted = cb(step_type, params) if cb else False
 
-        # Keep the form open so the presenter can display errors on it.
         if not accepted:
-            return
+            return False
 
-        # Reset to creation mode and scroll to the newly appended step.
+        # Reset to creation mode and scroll to the newly appended item.
         self._is_edit_mode = False
         self._inline_form.set_creation_mode()
         self._inline_form.reset(self._get_current_listbox_type())
-        if was_creation:
-            self._workflow_builder_view.scroll_to_bottom()
+        self._workflow_builder_view.scroll_to_bottom()
+        return True
+
+    def _on_inline_confirm_update(
+        self, step_type: StepTypeEnum, params: dict[str, Any]
+    ) -> bool:
+        """Delegates an update confirm to the step list; resets the form when accepted.
+
+        Args:
+            step_type: Possibly changed step type from the form.
+            params: Raw parameter dict from the form.
+
+        Returns:
+            True when the step was accepted by the presenter.
+        """
+        cb = self._workflow_builder_view.on_confirm_update_step
+        accepted = cb(step_type, params) if cb else False
+
+        if not accepted:
+            return False
+
+        # Return to creation mode after a successful edit.
+        self._is_edit_mode = False
+        self._inline_form.set_creation_mode()
+        self._inline_form.reset(self._get_current_listbox_type())
+        return True
 
     def _on_inline_cancel(self) -> None:
         """Delegates cancel to the step list and resets the form."""
@@ -456,6 +485,15 @@ class WorkflowView(ttk.Frame):
             message: Text to show inside the error dialog.
         """
         messagebox.showerror("Erreur", message)
+
+    @staticmethod
+    def show_warning(message: str) -> None:
+        """Displays a warning popup with the given message.
+
+        Args:
+            message: Text to show inside the warning dialog.
+        """
+        messagebox.showwarning("Attention", message)
 
     # ---------------------------------------------------------------
     # Internal button handlers

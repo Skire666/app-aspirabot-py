@@ -70,15 +70,19 @@ class JsonFileRepository:
             self._logger.warning("Fichier '%s' introuvable. Création par défaut.", self.file_path)
             self.all_data = self.default_data.copy()
             self.save_to_file()
-        else:
-            try:
-                with Path(self.file_path).open(encoding="utf-8") as f:
-                    self.all_data = json.load(f)
-                self._logger.info("Données chargées depuis '%s'.", self.file_path)
-            except Exception:
-                self._logger.error("Une erreur s'est produite", exc_info=True)
-                self.all_data = self.default_data.copy()
-                self.save_to_file()
+            return
+        try:
+            with Path(self.file_path).open(encoding="utf-8") as f:
+                self.all_data = json.load(f)
+            self._logger.info("Données chargées depuis '%s'.", self.file_path)
+        except (OSError, json.JSONDecodeError) as e:
+            self._logger.error(
+                "Fichier '%s' illisible ou corrompu — restauration des valeurs par défaut.",
+                self.file_path,
+                exc_info=True,
+            )
+            self.all_data = self.default_data.copy()
+            self.save_to_file()
 
     def save_to_file(self) -> None:
         """Sauvegarde l'état actuel de self.all_data dans le fichier JSON.
@@ -99,5 +103,6 @@ class JsonFileRepository:
 
             with Path(self.file_path).open("w", encoding="utf-8") as f:
                 json.dump(self.all_data, f, indent=4)
-        except Exception:
-            self._logger.error("Une erreur s'est produite", exc_info=True)
+        except OSError as e:
+            self._logger.error("Impossible d'écrire dans '%s'.", self.file_path, exc_info=True)
+            raise

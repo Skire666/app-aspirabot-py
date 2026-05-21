@@ -88,67 +88,6 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._browser = self._pw.chromium.launch(headless=False, args=args)
         self._context = self._browser.new_context(no_viewport=True)
 
-        # pour le no_viewport=True, à garder
-        # en gros, si je l'ai pas à True, il va pertuber les événéments clavier,
-        # ou bien pertuber le focus des champsd e formulaire
-        # ou alors bloque le refresh d'une page si 2 onglets d'ouvert
-        # ou alors ignorer la touche "entrée" sur google.com, du coup la recherche ne se lance pas
-        # les symptomes sont assez étrange, car les pages tournes en boucle, comme en attente de réponse
-
-        # NOTE PCO : Ne plus faire un dossier au démarrage, dans l'optique de préserver la session.
-        # Les détections de bot n'aiment pas du tout ça. Surtout CloudFlare.
-        # Les trucs de 'stealth', avec headless false, ils ne servent à rien (utile que si mode 'caché').
-        # Donc autant ne pas le mettre, surtout qu'avec cloudflare, le stealth ne suffit pas.
-
-    def _launch_todo_pco_with_extension(self) -> None:
-        # code pour lancer un chrome, avec ublock origine lite déjà chargé
-        # attention, lance dans un dossier temporaire en live (cf. tempfile)
-
-        import tempfile
-        from pathlib import Path
-
-        args = ["--disable-blink-features=AutomationControlled"]
-        self._pw = sync_playwright().start()
-
-        path_folder = r"E:/app-aspirabot-py/extensions/uBlock0_chromium"
-        # le manifeste doit être dedans.
-        # ne pas faire "./" car il part du dossier temporaire de chrome, pas du projet python.
-
-        if Path(path_folder).is_dir():
-            args.append(f"--load-extension={path_folder}")
-            args.append(f"--disable-extensions-except={path_folder}")
-        else:
-            self._logger.warning("Le dossier d'extension uBlock Origin Lite n'existe pas : %s", path_folder)
-
-        self._context = self._pw.chromium.launch_persistent_context(
-            user_data_dir=tempfile.mkdtemp(), headless=False, args=args, no_viewport=True
-        )
-        self._context.on("page", self._on_context_new_page)  # Track every page opened
-
-    def _launch_todo_pco_with_remote_port(self) -> None:
-        # TODO PCO lance mon chrome, mais dans un dossier à part, il persiste le contenu de la session.
-        # au début vide, mais on peut installer un ublock lite par exemple
-
-        # command powershel (à lancer en 1 commande, j'ai juste mis un retour à la ligne)
-        # & "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
-        # --user-data-dir="C:\temp\chrome-debug" --no-first-run --no-default-browser-check
-
-        # Pour debug et voir si ça marche bien :
-        # & "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
-        # --user-data-dir="C:\temp\chrome-debug" --no-first-run --no-default-browser-check
-        # --remote-debugging-address=0.0.0.0
-
-        # netstat -ano | findstr 9222
-        # REPONSE :  TCP    127.0.0.1:9222         0.0.0.0:0              LISTENING       5464
-
-        self._pw = sync_playwright().start()
-
-        # Connexion au Chrome existant via CDP
-        self._browser = self._pw.chromium.connect_over_cdp("http://localhost:9222")
-
-        # Récupère le contexte existant (avec tout l'historique/session en cours)
-        self._context = self._browser.contexts[0]
-
     def append_new_page(self) -> None:
         """Open a new browser page and register it via the context page event.
 

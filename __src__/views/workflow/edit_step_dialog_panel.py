@@ -25,7 +25,6 @@ from typing import Any
 from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
-from shared.random_util import generate_rng_id_step
 from shared.step_registry import get_form
 
 # ---------------------------------------------------------------------------
@@ -49,7 +48,8 @@ class EditStepDialogPanel(ttk.Frame):
     panel owns only the container frame and the shared widget dict.
 
     Attributes:
-        on_confirm: Callback(StepScrapingModel) fired when step is validated.
+        on_confirm_create: Callback(StepTypeEnum, params) fired on creation confirm.
+        on_confirm_update: Callback(StepTypeEnum, params) fired on update confirm.
         on_cancel: Callback fired when the user cancels without changes.
         on_type_changed: Callback(label: str) fired when step type changes.
     """
@@ -62,7 +62,8 @@ class EditStepDialogPanel(ttk.Frame):
         """
         super().__init__(parent)
         self._logger = logging.getLogger(__name__)
-        self.on_confirm: Callable[[StepScrapingModel], None] | None = None
+        self.on_confirm_create: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
+        self.on_confirm_update: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
         self.on_cancel: Callable[[], None] | None = None
         self.on_type_changed: Callable[[str], None] | None = None
         self._type_var = tk.StringVar()
@@ -226,7 +227,7 @@ class EditStepDialogPanel(ttk.Frame):
     # ---------------------------------------------------------------
 
     def _btn_confirm_create(self) -> None:
-        """Builds the step and fires on_confirm."""
+        """Reads form data and fires on_confirm_create."""
         label = self._type_var.get()
         step_type = _LABEL_TO_TYPE.get(label)
         if step_type is None:
@@ -235,18 +236,11 @@ class EditStepDialogPanel(ttk.Frame):
         self._error_label.configure(text="")
         params = self._get_params(step_type)
 
-        step = StepScrapingModel(
-            step_type=step_type,
-            is_active=True,
-            step_id=generate_rng_id_step(),
-            params=params,
-            parent_context=self._available_steps,
-        )
-        if self.on_confirm:
-            self.on_confirm(step)
+        if self.on_confirm_create:
+            self.on_confirm_create(step_type, params)
 
     def _btn_confirm_update(self) -> None:
-        """Builds the step and fires on_confirm."""
+        """Reads form data and fires on_confirm_update."""
         label = self._type_var.get()
         step_type = _LABEL_TO_TYPE.get(label)
         if step_type is None:
@@ -255,15 +249,8 @@ class EditStepDialogPanel(ttk.Frame):
         self._error_label.configure(text="")
         params = self._get_params(step_type)
 
-        step = StepScrapingModel(
-            step_type=step_type,
-            is_active=self._step_selected.is_active,
-            step_id=self._step_selected.step_id,
-            params=params,
-            parent_context=self._available_steps,
-        )
-        if self.on_confirm:
-            self.on_confirm(step)
+        if self.on_confirm_update:
+            self.on_confirm_update(step_type, params)
 
     def _btn_cancel_edition(self) -> None:
         """Fires the on_cancel callback without modifying the step list."""

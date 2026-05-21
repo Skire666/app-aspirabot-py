@@ -13,16 +13,17 @@ Example:
 # ---------------------------------------------------------------------------
 
 import logging
-import threading
 from collections.abc import Callable
-from tkinter import messagebox
+from typing import Any
 
+from interfaces.i_steps_list_crud_view import IStepsListCrudView
+from interfaces.i_steps_list_gestion_view import IStepsListGestionView
 from models.provider_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
 from services.provider_service import ProviderService
 from services.workflow_service import WorkflowService
-from views.workflow.steps_list_crud_panel import StepsListCrudView
-from views.workflow_view import WorkflowView
+from shared.enums import StepTypeEnum
+from shared.random_util import generate_rng_id_step
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -45,30 +46,28 @@ class StepsListPresenter:
 
     def __init__(
         self,
-        view: StepsListCrudView,
+        view: IStepsListCrudView,
         service_provider: ProviderService,
         workflow_service: WorkflowService,
-        gestion_view: WorkflowView | None = None,
+        gestion_view: IStepsListGestionView | None = None,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
         Args:
-            view: The WorkflowListView instance (step list and DnD callbacks).
+            view: The step-list view implementing IStepsListCrudView.
             service_provider: ProviderService for provider-related operations.
             workflow_service: WorkflowService used to validate each step on confirm.
             gestion_view: View that owns show_inline_form / set_available_steps.
-                          Defaults to view when not provided.
+                          Defaults to None when not provided.
         """
         self._logger = logging.getLogger(__name__)
         self._view = view
-        self._gestion_view: WorkflowView = gestion_view
+        self._gestion_view: IStepsListGestionView | None = gestion_view
         self._service_provider: ProviderService = service_provider
         self._workflow_service: WorkflowService = workflow_service
 
         self._provider_id_file: str | None = None
         self._steps: list[StepScrapingModel] = []
-        self._run_thread: threading.Thread | None = None
-        self._cancel_event = threading.Event()
         self._edit_index: int | None = None
         self._is_new_provider: bool = False
         self._on_validation_feedback: Callable[[str, bool], None] | None = None
@@ -82,7 +81,8 @@ class StepsListPresenter:
         self._view.on_move_step = self._on_move_step
         self._view.on_toggle_active_step = self._on_toggle_active_step
         self._view.on_reorder_steps = self._on_reorder_steps
-        self._view.on_confirm_inline_step = self._on_confirm_inline_step
+        self._view.on_confirm_create_step = self._on_confirm_create_step
+        self._view.on_confirm_update_step = self._on_confirm_update_step
         self._view.on_cancel_inline_step = self._on_cancel_inline_step
         self._view.on_clear_all_steps = self._on_clear_all_steps
         self._view.on_duplicate_step = self._on_duplicate_step
@@ -170,46 +170,73 @@ class StepsListPresenter:
         self._gestion_view.set_available_steps(self._steps)
         self._gestion_view.show_inline_form(self._steps[index])
 
-    def _on_confirm_inline_step(self, step: StepScrapingModel) -> bool:
-        """Validates then applies the confirmed step (add or update).
-
-        Sends errors to the inline form and keeps it open when the candidate
-        step fails validation.
+    def _on_confirm_create_step(self, step_type: StepTypeEnum, params: dict[str, Any]) -> bool:
+        """Validates and appends a new step from the inline creation form.
 
         Args:
-            step: The newly created or updated step from the inline form.
+            step_type: Type of the new step.
+            params: Raw parameter dict read from the form widgets.
 
         Returns:
             True when the step is accepted; False when it fails validation.
         """
-        # Build candidate list so full validation includes the new/updated step.
-        target_index = len(self._steps) if self._edit_index is None else self._edit_index
+        step = StepScrapingModel(
+            step_type=step_type,
+            step_id=generate_rng_id_step(),
+            is_active=True,
+            params=params,
+        )
+        # Validate in context of the full list with the new step appended.
         candidate_steps = list(self._steps)
-        if self._edit_index is None:
-            candidate_steps.append(step)
-        else:
-            candidate_steps[self._edit_index] = step
-
+        candidate_steps.append(step)
+        target_index = len(self._steps)
         candidate_errors = self._validate_solo_step(candidate_steps, target_index)
 
-        # Reject: show errors on the inline form and keep it open.
         if candidate_errors:
             if self._gestion_view:
                 self._gestion_view.show_inline_form_errors(candidate_errors)
             return False
 
-        if self._edit_index is None:
-            # Add mode: append the new step at the end.
-            self._steps.append(step)
-        else:
-            # Edit mode: replace the step at the tracked index.
-            if self._steps[self._edit_index].step_id != step.step_id:
-                new_index_step = self.find_step_index_by_id(step.step_id)
-                if new_index_step is None:
-                    messagebox.showwarning("Attention", "L'étape n'existe plus. Impossible de mettre à jour.")
-                    return True
-                self._edit_index = new_index_step
-            self._steps[self._edit_index] = step
+        self._steps.append(step)
+        step.update_modified_date()
+        self._edit_index = None
+        self._view.clear_selection()
+        self._refresh_view()
+        return True
+
+    def _on_confirm_update_step(self, step_type: StepTypeEnum, params: dict[str, Any]) -> bool:
+        """Validates and replaces the step currently being edited.
+
+        Args:
+            step_type: Possibly changed step type from the form.
+            params: Raw parameter dict read from the form widgets.
+
+        Returns:
+            True when the step is accepted; False when it fails validation.
+        """
+        if self._edit_index is None or self._edit_index >= len(self._steps):
+            if self._gestion_view:
+                self._gestion_view.show_warning("L'étape n'existe plus. Impossible de mettre à jour.")
+            return True
+
+        existing = self._steps[self._edit_index]
+        step = StepScrapingModel(
+            step_type=step_type,
+            step_id=existing.step_id,
+            is_active=existing.is_active,
+            params=params,
+        )
+        # Validate in context of the full list with the updated step in place.
+        candidate_steps = list(self._steps)
+        candidate_steps[self._edit_index] = step
+        candidate_errors = self._validate_solo_step(candidate_steps, self._edit_index)
+
+        if candidate_errors:
+            if self._gestion_view:
+                self._gestion_view.show_inline_form_errors(candidate_errors)
+            return False
+
+        self._steps[self._edit_index] = step
         step.update_modified_date()
         self._edit_index = None
         self._view.clear_selection()

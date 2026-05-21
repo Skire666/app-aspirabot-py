@@ -18,7 +18,7 @@ class ValueMustBePositiveError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Value must be greater than 0.")
+        super().__init__("La valeur doit être strictement supérieure à 0.")
 
 
 class ValueMustBePositiveAndEvenError(AspirabotError):
@@ -26,7 +26,7 @@ class ValueMustBePositiveAndEvenError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Value must be a positive even integer.")
+        super().__init__("La valeur doit être un entier pair strictement positif.")
 
 
 class ValueMustBeNonNegativeError(AspirabotError):
@@ -34,7 +34,7 @@ class ValueMustBeNonNegativeError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Value must be greater than or equal to 0.")
+        super().__init__("La valeur doit être supérieure ou égale à 0.")
 
 
 class ValueTooLargeError(AspirabotError):
@@ -46,7 +46,7 @@ class ValueTooLargeError(AspirabotError):
         Args:
             max_value: Maximum allowed value.
         """
-        super().__init__(f"Value exceeds maximum allowed: {max_value}.")
+        super().__init__(f"La valeur dépasse le maximum autorisé : {max_value}.")
 
 
 class ValueTooSmallError(AspirabotError):
@@ -58,7 +58,7 @@ class ValueTooSmallError(AspirabotError):
         Args:
             min_value: Minimum allowed value.
         """
-        super().__init__(f"Value is below minimum allowed: {min_value}.")
+        super().__init__(f"La valeur est inférieure au minimum autorisé : {min_value}.")
 
 
 class EmptyStringError(AspirabotError):
@@ -66,7 +66,7 @@ class EmptyStringError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("String cannot be empty.")
+        super().__init__("La chaîne ne peut pas être vide.")
 
 
 class BlankStringError(AspirabotError):
@@ -74,7 +74,7 @@ class BlankStringError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("String cannot contain only whitespace.")
+        super().__init__("La chaîne ne peut pas contenir uniquement des espaces.")
 
 
 class StringTooLongError(AspirabotError):
@@ -86,7 +86,7 @@ class StringTooLongError(AspirabotError):
         Args:
             max_length: Maximum allowed length.
         """
-        super().__init__(f"String exceeds maximum length: {max_length}.")
+        super().__init__(f"La chaîne dépasse la longueur maximale autorisée : {max_length}.")
 
 
 class StringTooShortError(AspirabotError):
@@ -98,7 +98,7 @@ class StringTooShortError(AspirabotError):
         Args:
             min_length: Minimum required length.
         """
-        super().__init__(f"String below minimum length: {min_length}.")
+        super().__init__(f"La chaîne est en dessous de la longueur minimale requise : {min_length}.")
 
 
 class InvalidBooleanError(AspirabotError):
@@ -106,7 +106,7 @@ class InvalidBooleanError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Invalid boolean value.")
+        super().__init__("Valeur booléenne invalide.")
 
 
 class ListEmptyError(AspirabotError):
@@ -114,7 +114,7 @@ class ListEmptyError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("List cannot be empty.")
+        super().__init__("La liste ne peut pas être vide.")
 
 
 class ListTooLongError(AspirabotError):
@@ -126,7 +126,7 @@ class ListTooLongError(AspirabotError):
         Args:
             max_length: Maximum allowed list size.
         """
-        super().__init__(f"List exceeds maximum size: {max_length}.")
+        super().__init__(f"La liste dépasse la taille maximale autorisée : {max_length}.")
 
 
 class DuplicateItemError(AspirabotError):
@@ -134,7 +134,7 @@ class DuplicateItemError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Duplicate item found.")
+        super().__init__("Élément en double détecté.")
 
 
 class InvalidRangeNumbersError(AspirabotError):
@@ -142,7 +142,7 @@ class InvalidRangeNumbersError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Invalid range: min value must be less than max value.")
+        super().__init__("Plage invalide : la valeur minimale doit être inférieure à la valeur maximale.")
 
 
 class InvalidLogLevelError(AspirabotError):
@@ -154,7 +154,7 @@ class InvalidLogLevelError(AspirabotError):
         Args:
             valid_levels: Allowed log level names.
         """
-        super().__init__(f"Invalid log level. Valid options are: {', '.join(valid_levels)}.")
+        super().__init__(f"Niveau de journalisation invalide. Options valides : {', '.join(valid_levels)}.")
 
 
 class InvalidFolderLogsError(AspirabotError):
@@ -162,7 +162,7 @@ class InvalidFolderLogsError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Folder path for logs cannot be empty.")
+        super().__init__("Le chemin du dossier de journalisation ne peut pas être vide.")
 
 
 class InvalidFolderProvidersError(AspirabotError):
@@ -170,7 +170,7 @@ class InvalidFolderProvidersError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Folder path for providers cannot be empty.")
+        super().__init__("Le chemin du dossier des fournisseurs ne peut pas être vide.")
 
 
 class InvalidFolderScrapingError(AspirabotError):
@@ -178,7 +178,7 @@ class InvalidFolderScrapingError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Folder path for scraping data cannot be empty.")
+        super().__init__("Le chemin du dossier de données de scraping ne peut pas être vide.")
 
 
 class InvalidGuiBootingSizeError(AspirabotError):
@@ -186,7 +186,7 @@ class InvalidGuiBootingSizeError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Invalid GUI booting size. Must be 'WIDTHxHEIGHT' with numeric values.")
+        super().__init__("Taille de démarrage GUI invalide. Format attendu : 'LARGEURxHAUTEUR' avec des valeurs numériques.")
 
 
 class InvalidBrowserEngineError(AspirabotError):
@@ -198,7 +198,7 @@ class InvalidBrowserEngineError(AspirabotError):
         Args:
             valid_engines: Allowed browser engine names.
         """
-        super().__init__(f"Invalid browser engine. Valid options are: {', '.join(valid_engines)}.")
+        super().__init__(f"Moteur de navigateur invalide. Options valides : {', '.join(valid_engines)}.")
 
 
 class FailedToLoadConfigurationDuringRuntimeError(AspirabotError):
@@ -206,7 +206,7 @@ class FailedToLoadConfigurationDuringRuntimeError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Failed to load configuration during runtime.")
+        super().__init__("Impossible de charger la configuration au démarrage.")
 
 
 class FailedToCreateRequiredDirectoriesDuringRuntimeError(AspirabotError):
@@ -214,7 +214,7 @@ class FailedToCreateRequiredDirectoriesDuringRuntimeError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Failed to create required directories during runtime.")
+        super().__init__("Impossible de créer les répertoires requis au démarrage.")
 
 
 class FailedToInitializeLoggingDuringRuntimeError(AspirabotError):
@@ -222,7 +222,7 @@ class FailedToInitializeLoggingDuringRuntimeError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Failed to initialize logging during runtime.")
+        super().__init__("Impossible d'initialiser le système de journalisation au démarrage.")
 
 
 class UnsupportedBrowserEngineError(AspirabotError):
@@ -234,7 +234,7 @@ class UnsupportedBrowserEngineError(AspirabotError):
         Args:
             engine: Unsupported browser engine name.
         """
-        super().__init__(f"Unsupported browser engine: {engine}")
+        super().__init__(f"Moteur de navigateur non pris en charge : {engine}")
 
 
 class InvalidProviderJsonContentError(ValueError, AspirabotError):
@@ -312,9 +312,9 @@ class ConfigurationNotLoadedError(ValueError, AspirabotError):
             action: Optional action that requires configuration.
         """
         if action:
-            message = f"Call load_configuration() before {action}."
+            message = f"Appelez load_configuration() avant {action}."
         else:
-            message = "Configuration not loaded. Call load_configuration() first."
+            message = "Configuration non chargée. Appelez load_configuration() en premier."
         super().__init__(message)
 
 
@@ -323,7 +323,7 @@ class LoggingNotInitializedError(ValueError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Logging not initialized. Call initialize_logging() first.")
+        super().__init__("Journalisation non initialisée. Appelez initialize_logging() en premier.")
 
 
 class ElementNotFoundForClickError(ValueError, AspirabotError):
@@ -336,7 +336,7 @@ class ElementNotFoundForClickError(ValueError, AspirabotError):
             selector: CSS selector used for the click.
             mode: Click mode label (normal, forced).
         """
-        super().__init__(f"Element {selector!r} not found for {mode} click.")
+        super().__init__(f"Élément {selector!r} introuvable pour le clic en mode {mode}.")
 
 
 class UnsupportedClickModeError(ValueError, AspirabotError):
@@ -348,7 +348,7 @@ class UnsupportedClickModeError(ValueError, AspirabotError):
         Args:
             click_mode: Click mode received from parameters.
         """
-        super().__init__(f"Unsupported click mode: {click_mode}")
+        super().__init__(f"Mode de clic non pris en charge : {click_mode}")
 
 
 class CurrentPageClosedUnexpectedlyError(ValueError, AspirabotError):
@@ -356,7 +356,7 @@ class CurrentPageClosedUnexpectedlyError(ValueError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Current page was closed unexpectedly.")
+        super().__init__("La page courante a été fermée de manière inattendue.")
 
 
 class CountHtmlElementsConditionNotMetError(ValueError, AspirabotError):
@@ -392,7 +392,7 @@ class NoMatchingImageFoundError(ValueError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("No image matching the size constraints found on the page.")
+        super().__init__("Aucune image correspondant aux contraintes de taille n'a été trouvée sur la page.")
 
 
 class ImageDownloadFailedError(ValueError, AspirabotError):
@@ -404,7 +404,7 @@ class ImageDownloadFailedError(ValueError, AspirabotError):
         Args:
             status: HTTP response status code.
         """
-        super().__init__(f"Failed to download image: HTTP {status}")
+        super().__init__(f"Échec du téléchargement de l'image : HTTP {status}")
 
 
 class ImageNotDownloadedError(ValueError, AspirabotError):
@@ -416,7 +416,7 @@ class ImageNotDownloadedError(ValueError, AspirabotError):
         Args:
             found: Number of matching targets found.
         """
-        super().__init__(f"No image was downloaded (but found={found}).")
+        super().__init__(f"Aucune image n'a été téléchargée (cibles trouvées : {found}).")
 
 
 class ImageWaitTimeoutError(TimeoutError, AspirabotError):
@@ -428,7 +428,7 @@ class ImageWaitTimeoutError(TimeoutError, AspirabotError):
         Args:
             wait_seconds: Timeout duration in seconds.
         """
-        super().__init__(f"No image matching size constraints appeared within {wait_seconds}s.")
+        super().__init__(f"Aucune image correspondant aux contraintes de taille n'est apparue dans le délai imparti ({wait_seconds}s).")
 
 
 class BrowserAlreadyLaunchedError(RuntimeError, AspirabotError):
@@ -436,7 +436,7 @@ class BrowserAlreadyLaunchedError(RuntimeError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Browser is already launched. Call close_browser() first.")
+        super().__init__("Le navigateur est déjà lancé. Appelez close_browser() en premier.")
 
 
 class BrowserLaunchFailedError(RuntimeError, AspirabotError):
@@ -444,7 +444,7 @@ class BrowserLaunchFailedError(RuntimeError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Browser launch failed. Check logs for details.")
+        super().__init__("Échec du lancement du navigateur. Consultez les journaux pour plus de détails.")
 
 
 class BrowserNotLaunchedError(RuntimeError, AspirabotError):
@@ -452,7 +452,7 @@ class BrowserNotLaunchedError(RuntimeError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Browser is not launched. Call launch() first.")
+        super().__init__("Le navigateur n'est pas lancé. Appelez launch() en premier.")
 
 
 class PageNotAvailableOrClosedError(RuntimeError, AspirabotError):
@@ -460,7 +460,7 @@ class PageNotAvailableOrClosedError(RuntimeError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Page is not available or closed.")
+        super().__init__("La page n'est pas disponible ou a été fermée.")
 
 
 class NoExecutorsRegisteredError(ValueError, AspirabotError):
@@ -468,7 +468,7 @@ class NoExecutorsRegisteredError(ValueError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Executors are empty. No executors have been registered.")
+        super().__init__("Aucun exécuteur enregistré dans le registre.")
 
 
 class ExecutorNotRegisteredError(ValueError, AspirabotError):
@@ -480,7 +480,7 @@ class ExecutorNotRegisteredError(ValueError, AspirabotError):
         Args:
             step_type: The step type that was requested.
         """
-        super().__init__(f"No executor registered for step type {step_type}.")
+        super().__init__(f"Aucun exécuteur enregistré pour le type d'étape {step_type}.")
 
 
 class WorkflowStepsContextRequiredError(ValueError, AspirabotError):
@@ -488,7 +488,7 @@ class WorkflowStepsContextRequiredError(ValueError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Workflow steps context is required for validation.")
+        super().__init__("Le contexte des étapes du workflow est requis pour la validation.")
 
 
 class FormNotRegisteredError(ValueError, AspirabotError):
@@ -500,7 +500,7 @@ class FormNotRegisteredError(ValueError, AspirabotError):
         Args:
             step_type: The step type that was requested.
         """
-        super().__init__(f"No form registered for step type: {step_type}")
+        super().__init__(f"Aucun formulaire enregistré pour le type d'étape : {step_type}")
 
 
 class LazyAttributeNotFoundError(AttributeError, AspirabotError):
@@ -513,7 +513,7 @@ class LazyAttributeNotFoundError(AttributeError, AspirabotError):
             module_name: Module where the lookup occurred.
             attribute_name: Requested attribute name.
         """
-        super().__init__(f"module {module_name!r} has no attribute {attribute_name!r}")
+        super().__init__(f"Le module {module_name!r} n'a pas d'attribut {attribute_name!r}")
 
 
 class InvalidLruCacheCapacityError(ValueError, AspirabotError):
@@ -525,7 +525,7 @@ class InvalidLruCacheCapacityError(ValueError, AspirabotError):
         Args:
             capacity: Invalid cache capacity.
         """
-        super().__init__(f"LRUCache capacity must be >= 1, got {capacity}")
+        super().__init__(f"La capacité du cache LRU doit être >= 1, reçu : {capacity}")
 
 
 # ---------------------------------------------------------------------------

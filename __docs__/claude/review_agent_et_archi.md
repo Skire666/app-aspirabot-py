@@ -4,6 +4,10 @@ Avant toute modification, audite le code et liste :
 - Ce qui n'est pas conforme aux directives du fichier AGENTS.md
 - les violations MVP
 - les anti-patterns Tkinter (thread-safety, callbacks complexes, couplage vue/données)
-- les mauvaises pratiques Python. Classe-les par sévérité : CRITIQUE / MAJEUR / MINEUR.
+- Docstring périmé.
+- Code mort.
+- Code duppliqué.
+- les mauvaises pratiques Python.
+Classe-les par sévérité : HIGH / MEDIUM / LOW.
 
 Propose ensuite un plan de correction ordonné par priorité. Ne modifie le code qu'après validation par l'utilisateur.
