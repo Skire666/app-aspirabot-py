@@ -1,12 +1,11 @@
-"""Module de gestion pour un dépôt de données JSON générique.
+"""Generic JSON file repository for key-value configuration data.
 
-Ce module fournit la classe `JsonFileRepository` permettant de lire, écrire
-et gérer des données structurées dans un fichier JSON de manière sécurisée,
-avec prise en charge de valeurs par défaut et journalisation des erreurs.
+Provides JsonFileRepository for reading and writing structured data to a
+JSON file, with default-value fallback and error logging.
 
-Exemples d'utilisation:
+Example:
     >>> from repositories.json_repository import JsonFileRepository
-    >>> repo = JsonFileRepository("data.json", {"theme": "light"})
+    >>> repo = JsonFileRepository("config.json", {"theme": "light"})
     >>> theme = repo.get_value("theme")
     >>> repo.set_value("theme", "dark")
 """
@@ -27,44 +26,36 @@ from typing import Any
 
 
 class JsonFileRepository:
-    """Dépôt générique pour la gestion (lecture/écriture) de données dans un fichier JSON.
+    """Generic repository for JSON-backed key-value data.
 
-    Cette classe gère le chargement et la sauvegarde de données sous forme de
-    dictionnaire dans un fichier JSON. Si le fichier est manquant ou corrompu,
-    elle utilise les données par défaut fournies.
+    Loads data from disk on construction; falls back to default_data when the
+    file is missing or corrupted, and re-creates the file immediately.
 
     Attributes:
-        file_path (str): Le chemin absolu ou relatif vers le fichier JSON cible.
-        default_data (Dict[str, Any]): Le dictionnaire de valeurs par défaut appliqué.
-        all_data (Dict[str, Any]): Les données JSON actuellement chargées en mémoire.
+        file_path: Path to the target JSON file.
+        default_data: Default values applied when the file is absent or unreadable.
+        all_data: JSON data currently loaded in memory.
     """
 
     def __init__(self, file_path: Path, default_data: dict[str, Any]) -> None:
-        """Initialise le dépôt de fichier JSON.
+        """Initializes the repository and immediately loads data from disk.
 
         Args:
-            file_path (Path): Le chemin vers le fichier JSON à lire/écrire.
-            default_data (Dict[str, Any]): Un dictionnaire de données par défaut.
-                Utilisé si le fichier est corrompu ou inexistant.
-
-        Exemples d'utilisation:
-            >>> repo = JsonFileRepository("config.json", {"setting1": True})
+            file_path: Path to the JSON file to read and write.
+            default_data: Default dictionary applied when the file is absent or corrupted.
         """
         self._logger = logging.getLogger(__name__)
         self.file_path: Path = file_path
-        self.default_data: dict[str, Any] = default_data  # jamais none, doit être un dict
+        self.default_data: dict[str, Any] = default_data
         self.all_data: dict[str, Any] = {}
         self.load_from_file()
 
     def load_from_file(self) -> None:
-        """Charge les données depuis le fichier JSON sur le disque vers self.all_data.
+        """Loads data from the JSON file into self.all_data.
 
-        Si le fichier n'existe pas, un avertissement est émis et le fichier est
-        créé avec la configuration par défaut en appelant `save_to_file`. Si le fichier
-        est corrompu, une erreur est loggée et les données par défaut sont restaurées.
-
-        Returns:
-            None
+        When the file does not exist, writes default_data to disk and returns.
+        When the file is corrupt or unreadable, logs an error, restores
+        default_data, and rewrites the file.
         """
         if not Path(self.file_path).exists():
             self._logger.warning("Fichier '%s' introuvable. Création par défaut.", self.file_path)
@@ -75,7 +66,7 @@ class JsonFileRepository:
             with Path(self.file_path).open(encoding="utf-8") as f:
                 self.all_data = json.load(f)
             self._logger.info("Données chargées depuis '%s'.", self.file_path)
-        except (OSError, json.JSONDecodeError) as e:
+        except (OSError, json.JSONDecodeError):
             self._logger.error(
                 "Fichier '%s' illisible ou corrompu — restauration des valeurs par défaut.",
                 self.file_path,
@@ -85,14 +76,12 @@ class JsonFileRepository:
             self.save_to_file()
 
     def save_to_file(self) -> None:
-        """Sauvegarde l'état actuel de self.all_data dans le fichier JSON.
+        """Writes self.all_data to the JSON file with 4-space indentation.
 
-        Gère les exceptions liées à l'écriture de fichier (ex: permissions)
-        pour éviter les plantages ou fermetures inattendues de l'application.
-        Les données sont écrites avec une indentation de 4.
+        Creates parent directories if they do not exist.
 
-        Returns:
-            None
+        Raises:
+            OSError: When the file cannot be written.
         """
         try:
             self._logger.debug("Sauvegarde des données dans '%s'...", self.file_path)
@@ -103,6 +92,6 @@ class JsonFileRepository:
 
             with Path(self.file_path).open("w", encoding="utf-8") as f:
                 json.dump(self.all_data, f, indent=4)
-        except OSError as e:
+        except OSError:
             self._logger.error("Impossible d'écrire dans '%s'.", self.file_path, exc_info=True)
             raise

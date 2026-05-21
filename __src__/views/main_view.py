@@ -8,7 +8,7 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
-from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_GRAY_BACKGROUND
+from shared.constants import C_COLOR_BLACK_FONT, C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_GRAY_BACKGROUND
 from shared.i18n_fra import (
     C_LISTING_MODULES,
     C_VIEW_SIDEBAR_LEFT_WIDTH,
@@ -26,9 +26,9 @@ from shared.resources_icons_util import (
 C_COLOR_SIDEBAR_ACTIVE_BG = C_COLOR_BLUE_HIGHLIGHT_DARK
 C_COLOR_SIDEBAR_ACTIVE_FG = "#ffffff"
 C_COLOR_SIDEBAR_NORMAL_BG = C_COLOR_GRAY_BACKGROUND
-C_COLOR_SIDEBAR_NORMAL_FG = "#191919"
+C_COLOR_SIDEBAR_NORMAL_FG = C_COLOR_BLACK_FONT
 C_COLOR_SIDEBAR_HOVER_BG = "#d0d0d0"
-C_COLOR_SIDEBAR_HOVER_FG = "#000000"
+C_COLOR_SIDEBAR_HOVER_FG = C_COLOR_BLACK_FONT
 
 # ---------------------------------------------------------------------------
 # Classes

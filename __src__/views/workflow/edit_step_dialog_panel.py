@@ -189,7 +189,7 @@ class EditStepDialogPanel(ttk.Frame):
             if step_type is not None and step_type != StepTypeEnum.E_UNSET:
                 get_form(step_type).build_form(self._form_frame, self._form_widgets)
         except ValueError:
-            pass
+            self._logger.warning("No form definition registered for step type %s.", step_type)
 
     # ---------------------------------------------------------------
     # Pre-fill and read-back — fully delegated to form defs
@@ -200,13 +200,14 @@ class EditStepDialogPanel(ttk.Frame):
         try:
             get_form(step.step_type).load_params_step_to_widget(step, self._form_widgets)
         except ValueError:
-            pass
+            self._logger.warning("No form definition registered for step type %s.", step.step_type)
 
     def _get_params(self, step_type: StepTypeEnum) -> dict[str, Any]:
         """Reads current widget values and returns the params dict."""
         try:
             return get_form(step_type).read_params_from_view(self._form_widgets)
         except ValueError:
+            self._logger.warning("No form definition registered for step type %s.", step_type)
             return {}
 
     def show_errors_of_edited_step(self, errors: list[str]) -> None:

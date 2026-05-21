@@ -116,7 +116,7 @@ class CsvUrlSourceProvider(IUrlSourceProvider):
             Filtered list of URL strings from the first column.
 
         Raises:
-            FileNotFoundError: If the file at ``self._path`` does not exist.
+            UrlSourceFileNotFoundError: If the file at ``self._path`` does not exist.
         """
         try:
             with pathlib.Path(self._path).open(newline="", encoding="utf-8") as fh:

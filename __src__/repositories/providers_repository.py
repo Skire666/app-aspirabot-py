@@ -1,13 +1,12 @@
-"""Module de gestion du dépôt des fournisseurs de scraping.
+"""Repository for scraping provider configuration files.
 
-Ce module fournit la classe `ProvidersRepository` qui permet de découvrir, lire,
-charger et supprimer les fichiers de configuration de fournisseurs (sous format JSON)
-présents dans un répertoire local cible.
+Provides ProvidersRepository, which discovers, reads, writes, and deletes
+JSON provider configuration files stored in a local directory.
 
-Exemples d'utilisation:
+Example:
     >>> from repositories.providers_repository import ProvidersRepository
     >>> repo = ProvidersRepository("./providers")
-    >>> liste_providers = repo.list_providers()
+    >>> providers = repo.list_all_providers()
 """
 
 # ---------------------------------------------------------------------------
@@ -41,48 +40,41 @@ from shared.operating_system_util import OperatingSystem, detect_os
 
 
 class ProvidersRepository(IProviderRepository):
-    """Gère l'accès aux données des fournisseurs stockées sur le système de fichiers.
+    """Manages provider configuration data stored on the filesystem.
 
-    Cette classe agit comme un dépôt de données pour la collection locale de configurations.
-    Elle encapsule les opérations de listage de répertoire, chargement/sauvegarde des fichiers JSON,
-    conversion vers/depuis ProviderModel, navigation Windows/Linux, et suppression du disque.
+    Encapsulates directory listing, JSON file loading/saving, ProviderModel
+    serialization, OS-native folder navigation, and file deletion.
 
     Attributes:
-        _folder_path (Path): Le chemin formaté pointant vers le dossier contenant les JSON.
-        logger (logging.Logger): Le journaliseur interne défini pour tracer les exécutions.
+        _folder_path: Path pointing to the folder containing JSON files.
+        _logger: Internal logger for tracing execution.
     """
 
     def __init__(self, folder_providers: str | Path) -> None:
-        """Initialise le dépôt en pointant vers un dossier local contenant les fournisseurs.
+        """Initializes the repository pointing to a local providers folder.
 
         Args:
-            folder_providers (Union[str, Path]): Le chemin vers le dossier où chercher les fichiers JSON.
-
-        Exemples d'utilisation:
-            >>> repo = ProvidersRepository("/chemin/vers/providers")
+            folder_providers: Path to the folder containing provider JSON files.
         """
         self._logger = logging.getLogger(__name__)
         self._folder_path: Path = Path(folder_providers)
 
     @property
     def folder_path(self) -> Path:
-        """Path: Obtient le chemin utilisé pour cibler le dossier des JSON."""
+        """Path to the JSON providers folder."""
         return self._folder_path
 
     @folder_path.setter
     def folder_path(self, value: str | Path) -> None:
-        """Définit le chemin du dossier des JSON."""
+        """Sets the JSON providers folder path."""
         self._folder_path = Path(value)
 
     def _list_provider_files(self) -> list[Path]:
-        """Examine le dossier sélectionné et retourne tous les fichiers .json présents.
-
-        Vérifie l'existence du chemin spécifié et parcourt son contenu pour retenir
-        exclusivement ceux avec l'extension `.json`.
+        """Scans the configured folder and returns all .json file paths.
 
         Returns:
-            List[Path]: Une liste de chemins (`pathlib.Path`) correspondant aux fichiers trouvés.
-                Retourne une liste vide `[]` si le dossier est invalide ou vide.
+            List of Path objects for every .json file found; empty list when the
+            folder is missing or invalid.
         """
         if self._folder_path.exists() and self._folder_path.is_dir():
             return list(self._folder_path.glob("*.json"))
@@ -149,56 +141,46 @@ class ProvidersRepository(IProviderRepository):
 
     @staticmethod
     def _dict_to_provider_model(data: dict[str, Any]) -> ProviderModel:
-        """Deserialize a raw JSON dictionary into a ProviderModel instance.
+        """Deserializes a raw JSON dictionary into a ProviderModel instance.
 
         Args:
             data: The decoded JSON content of a provider file.
 
         Returns:
-            ProviderModel: The fully reconstructed provider model.
+            The fully reconstructed provider model.
         """
-        # Delegate full deserialization (steps + launch_profiles) to the model.
         return ProviderModel.import_from_data_json(data)
 
     def exists_provider(self, id_file: str) -> bool:
-        """Vérifie l'existence d'un fournisseur dans le dossier.
+        """Returns True if a provider file exists for the given identifier.
 
         Args:
-            id_file (str): L'identifiant unique du fournisseur à vérifier.
+            id_file: Unique identifier of the provider to check.
 
         Returns:
-            bool: `True` si un fichier correspondant existe, sinon `False`.
+            True when a matching JSON file is found on disk, False otherwise.
         """
         full_filepath = self._folder_path / str(id_file + ".json")
         return full_filepath.exists() and full_filepath.is_file()
 
     def read_provider(self, id_file: str) -> ProviderModel:
-        """Charge un fichier fournisseur par son ID et l'instancie sous forme de modèle.
-
-        Recherche parmi l'ensemble des fichiers disponibles celui qui correspond au
-        nom complet (avec extension) ou de base (sans extension) fourni en paramètre.
+        """Loads a provider file by ID and returns it as a ProviderModel.
 
         Args:
-            id_file (str): L'identifiant unique du fournisseur à charger.
+            id_file: Unique identifier of the provider to load.
 
         Returns:
-            ProviderModel: L'instance instanciée du fichier de configuration choisi.
+            The deserialized ProviderModel.
 
         Raises:
-            FileNotFoundError: Si le fournisseur recherché est introuvable après balayage.
-
-        Exemples d'utilisation:
-            >>> modele = repo.get_provider("mon_provider.json")
-            >>> print(modele.url)
-            'https://example.com'
+            ProviderNotFoundError: When no file matches id_file.
+            ProviderDataMissingError: When the matching file is empty.
         """
-        # Construit le chemin complet du fichier
         full_filepath = self._folder_path / str(id_file + ".json")
 
         if not full_filepath.exists():
             raise ProviderNotFoundError(id_file)
 
-        # Charge le fichier JSON via JsonFileRepository
         json_repo = JsonFileRepository(full_filepath, {})
         provider_data = json_repo.all_data
 
@@ -211,19 +193,12 @@ class ProvidersRepository(IProviderRepository):
         return provider_model
 
     def list_all_providers(self) -> list[ProviderModel]:
-        """Liste tous les fournisseurs disponibles.
+        """Lists all valid providers found in the configured folder.
 
-        Parcourt le dossier des fournisseurs et retourne une liste de tous les
-        ProviderModel chargés avec succès.
+        Skips files that cannot be read or deserialized; logs an error for each.
 
         Returns:
-            List[ProviderModel]: Une liste des fournisseurs trouvés.
-                Retourne une liste vide si aucun fichier JSON n'existe.
-
-        Exemples d'utilisation:
-            >>> providers = repo.list_providers()
-            >>> for provider in providers:
-            ...     print(provider.provider_name)
+            List of ProviderModel instances; empty when no valid files exist.
         """
         providers: list[ProviderModel] = []
 
@@ -236,118 +211,75 @@ class ProvidersRepository(IProviderRepository):
                     provider_model = self._dict_to_provider_model(provider_data)
                     providers.append(provider_model)
                     self._logger.debug("Fournisseur ajouté à la liste : %s", file_path.name)
-            except Exception as e:
+            except Exception:
                 self._logger.error("Impossible de charger le provider %s.", file_path.name, exc_info=True)
-                continue
 
         self._logger.info("Total de %s provider(s) chargé(s).", len(providers))
         return providers
 
     def create_provider(self, provider: ProviderModel) -> None:
-        """Enregistre un nouveau fournisseur.
-
-        Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un
-        fichier JSON via JsonFileRepository.
+        """Persists a new provider to disk as a JSON file.
 
         Args:
-            provider (ProviderModel): L'instance du fournisseur à sauvegarder.
+            provider: The provider model to save.
 
         Raises:
-            ValueError: Si le nom du fichier du provider est invalide.
-            OSError: En cas d'erreur lors de l'écriture sur le disque.
-
-        Exemples d'utilisation:
-            >>> provider = ProviderModel()
-            >>> repo.create_provider(provider)
+            OSError: When the file cannot be written.
         """
-        # Construit le chemin complet du fichier
         full_filepath = self._folder_path / str(provider.id_file + ".json")
-
-        # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
 
         try:
-            # Convertit le modèle en dictionnaire
             provider_dict = provider.export_to_data_json()
-
-            # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
             json_repo = JsonFileRepository(full_filepath, {})
-
-            # Met à jour toutes les données avec celles du provider
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
-
             self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
-        except Exception as e:
+        except Exception:
             self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
             raise
 
     def update_provider(self, provider: ProviderModel) -> None:
-        """Met à jour un fournisseur existant.
-
-        Convertit l'instance ProviderModel en dictionnaire et le sauvegarde dans un
-        fichier JSON via JsonFileRepository.
+        """Overwrites an existing provider file with updated data.
 
         Args:
-            provider (ProviderModel): L'instance du fournisseur à sauvegarder.
+            provider: The provider model to save.
 
         Raises:
-            ValueError: Si le nom du fichier du provider est invalide.
-            OSError: En cas d'erreur lors de l'écriture sur le disque.
-
-        Exemples d'utilisation:
-            >>> provider = ProviderModel()
-            >>> repo.update_provider(provider)
+            OSError: When the file cannot be written.
         """
-        # Construit le chemin complet du fichier
         full_filepath = self._folder_path / str(provider.id_file + ".json")
-
-        # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
 
         try:
-            # Convertit le modèle en dictionnaire
             provider_dict = provider.export_to_data_json()
-
-            # Crée un JsonFileRepository avec le dictionnaire vide comme défaut
             json_repo = JsonFileRepository(full_filepath, {})
-
-            # Met à jour toutes les données avec celles du provider
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
-
             self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
-        except Exception as e:
+        except Exception:
             self._logger.error("Erreur lors de la MAJ du fournisseur.", exc_info=True)
             raise
 
     def create_folder_if_missing(self) -> None:
-        """Create the providers folder if it does not already exist."""
+        """Creates the providers folder if it does not already exist."""
         if not self._folder_path.exists():
             Path(self._folder_path).mkdir(exist_ok=True, parents=True)
             self._logger.info("Dossier créé : %s", self._folder_path)
 
     def delete_provider(self, id_file: str) -> None:
-        """Supprime un fournisseur.
-
-        Supprime définitivement le fichier JSON correspondant au fournisseur du système de fichiers.
+        """Deletes the JSON file for the given provider identifier.
 
         Args:
-            id_file (str): L'identifiant unique du fournisseur à supprimer.
+            id_file: Unique identifier of the provider to delete.
 
         Raises:
-            FileNotFoundError: Si le fichier cible n'existe pas.
-            OSError: En cas de droits insuffisants ou si le fichier est verrouillé.
-
-        Exemples d'utilisation:
-            >>> repo.delete_provider("mon_provider")
+            ProviderNotFoundError: When no matching file exists.
+            OSError: When the file cannot be deleted.
         """
         self._logger.info("Ouverture du dossier des fournisseurs...")
-
-        # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
 
-        # Cherche le fichier correspondant
         full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_file)
 
         if not full_pathfile_to_delete.exists():
@@ -356,39 +288,31 @@ class ProvidersRepository(IProviderRepository):
         try:
             Path(full_pathfile_to_delete).unlink()
             self._logger.info("Fournisseur supprimé : %s", full_pathfile_to_delete)
-        except Exception as e:
+        except Exception:
             self._logger.error("Erreur lors de la suppression du fournisseur.", exc_info=True)
             raise
 
     def open_providers_folder(self) -> None:
-        """Ouvre le répertoire des fournisseurs dans l'explorateur.
-
-        Déclenche l'affichage du dossier des fournisseurs dans l'explorateur système
-        pour permettre à l'utilisateur de consulter ou d'éditer manuellement les fichiers JSON locaux.
+        """Opens the providers folder in the OS file explorer.
 
         Raises:
-            NotADirectoryError: Si le chemin spécifié n'est pas un dossier valide.
-
-        Exemples d'utilisation:
-            >>> repo.open_providers_folder()
+            InvalidProvidersFolderPathError: When the configured path is not a directory.
+            UnsupportedOperatingSystemError: When the OS is not Windows, macOS, or Linux.
         """
         self._logger.info("Ouverture du dossier des fournisseurs...")
-
-        # Crée le dossier s'il n'existe pas
         self.create_folder_if_missing()
 
         if not self._folder_path.is_dir():
             raise InvalidProvidersFolderPathError(self._folder_path)
 
-        # Utilise le système d'exploitation pour ouvrir le dossier
         try:
             enum_os: OperatingSystem = detect_os()
 
             if enum_os == OperatingSystem.WINDOWS:
                 os.startfile(self._folder_path)
-            elif enum_os == OperatingSystem.MACOS:  # macOS et Linux
+            elif enum_os == OperatingSystem.MACOS:
                 subprocess.Popen(["open", self._folder_path])
-            elif enum_os == OperatingSystem.LINUX:  # Linux
+            elif enum_os == OperatingSystem.LINUX:
                 subprocess.Popen(["xdg-open", self._folder_path])
             else:
                 self._logger.warning(
@@ -396,17 +320,17 @@ class ProvidersRepository(IProviderRepository):
                 )
                 raise UnsupportedOperatingSystemError(enum_os)
             self._logger.info("Dossier ouvert : %s", self._folder_path)
-        except Exception as e:
+        except Exception:
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
 
     def _compute_fullpath_from_id_file(self, id_file: str) -> Path:
-        """Calcule le chemin complet du fichier JSON d'un fournisseur à partir de son identifiant.
+        """Computes the full JSON file path for a given provider identifier.
 
         Args:
-            id_file (str): L'identifiant unique du fournisseur.
+            id_file: Unique identifier of the provider.
 
         Returns:
-            Path: Le chemin complet du fichier JSON du fournisseur.
+            The full Path to the provider's JSON file.
         """
         return self._folder_path / (id_file + ".json")

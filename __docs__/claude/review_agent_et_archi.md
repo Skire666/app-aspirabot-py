@@ -11,3 +11,9 @@ Avant toute modification, audite le code et liste :
 Classe-les par sévérité : HIGH / MEDIUM / LOW.
 
 Propose ensuite un plan de correction ordonné par priorité. Ne modifie le code qu'après validation par l'utilisateur.
+
+---------------------------
+
+
+Fait le bilan des correctifs de la catégorie 4.
+Regarde si tout est conforme.

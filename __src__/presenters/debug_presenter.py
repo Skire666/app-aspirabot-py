@@ -117,7 +117,6 @@ class DebugPresenter:
         try:
             self._debug_browser.launch()
             self._debug_browser.append_new_page()
-
             self._debug_browser.safe_goto_url(url, wait_state="networkidle", timeout_ms=10000, wait_dns_solver_sec=6)
 
             page = self._debug_browser.get_current_page()

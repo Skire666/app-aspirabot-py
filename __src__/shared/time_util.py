@@ -1,3 +1,5 @@
+"""Utility functions for converting durations between time units."""
+
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
@@ -37,8 +39,20 @@ C_UNITS_TIME_CONVERSION_TO_SEC: dict[str, float] = {
 # ---------------------------------------------------------------------------
 
 
-def convert_to_ms(duration: int, time_unit: str) -> int | None:
-    """Returns timeout in ms or None when duration is 0."""
+def convert_to_ms(duration: int, time_unit: str) -> int:
+    """Converts a duration in the given unit to milliseconds.
+
+    Args:
+        duration: Numeric duration value (must be >= 0).
+        time_unit: Time unit string (e.g. "s", "ms", "min").
+
+    Returns:
+        The duration expressed in milliseconds.
+
+    Raises:
+        InvalidTimeUnitError: When time_unit is empty or unrecognized.
+        InvalidDurationError: When duration is negative.
+    """
     if not time_unit:
         raise InvalidTimeUnitError(time_unit)
     if time_unit not in C_UNITS_TIME_CONVERSION_TO_MS:
@@ -50,8 +64,20 @@ def convert_to_ms(duration: int, time_unit: str) -> int | None:
     return int(duration * C_UNITS_TIME_CONVERSION_TO_MS.get(time_unit))
 
 
-def convert_to_sec(duration: int, time_unit: str) -> float | None:
-    """Returns timeout in seconds or None when duration is 0."""
+def convert_to_sec(duration: int, time_unit: str) -> float:
+    """Converts a duration in the given unit to seconds.
+
+    Args:
+        duration: Numeric duration value (must be >= 0).
+        time_unit: Time unit string (e.g. "s", "ms", "min").
+
+    Returns:
+        The duration expressed in seconds.
+
+    Raises:
+        InvalidTimeUnitError: When time_unit is empty or unrecognized.
+        InvalidDurationError: When duration is negative.
+    """
     if not time_unit:
         raise InvalidTimeUnitError(time_unit)
     if time_unit not in C_UNITS_TIME_CONVERSION_TO_SEC:

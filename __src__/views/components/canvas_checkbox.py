@@ -3,6 +3,8 @@ from collections.abc import Callable
 from tkinter import font as tkfont
 from typing import Any
 
+from __src__.shared.constants import C_COLOR_BLACK_FONT
+
 
 class CanvasCheckbox(tk.Frame):
     """Checkbox custom basée sur Canvas, compatible variable Tkinter."""
@@ -111,10 +113,15 @@ class CanvasCheckbox(tk.Frame):
                 x1 - 3,
                 y0 - 4 + self.BOX_SIZE // 2,
                 width=2,
-                fill="#000000",
+                fill=C_COLOR_BLACK_FONT,
             )
 
         # texte
         self._text_id = self.canvas.create_text(
-            x1 + self.TEXT_MARGIN, (height // 2) - 1, text=self._text, anchor="w", font=self._font, fill="#222"
+            x1 + self.TEXT_MARGIN,
+            (height // 2) - 1,
+            text=self._text,
+            anchor="w",
+            font=self._font,
+            fill=C_COLOR_BLACK_FONT,
         )

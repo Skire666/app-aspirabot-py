@@ -143,7 +143,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             Sorted list of Path objects for every .txt file found.
 
         Raises:
-            FileNotFoundError: If ``self._folder_path`` does not exist.
+            UrlSourceFileNotFoundError: If ``self._folder_path`` does not exist.
         """
         if not Path(self._folder_path).is_dir():
             raise UrlSourceFileNotFoundError(self._folder_path)
@@ -182,7 +182,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             None.
 
         Raises:
-            FileNotFoundError: If the folder or current file does not exist.
+            UrlSourceFileNotFoundError: If the current file does not exist on disk.
             UrlSourceNotReadyError: If called before discovery or before any URL has been buffered.
         """
         if self._file_paths is None:

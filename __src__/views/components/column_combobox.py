@@ -9,7 +9,12 @@ from tkinter import font as tkFont
 from tkinter import ttk
 from typing import Any
 
-from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_BLUE_HIGHLIGHT_LIGHT, C_COLOR_GRAY_SEPARATOR
+from shared.constants import (
+    C_COLOR_BLACK_FONT,
+    C_COLOR_BLUE_HIGHLIGHT_DARK,
+    C_COLOR_BLUE_HIGHLIGHT_LIGHT,
+    C_COLOR_GRAY_SEPARATOR,
+)
 from shared.exception_util import ColumnNotFoundError, DuplicateColumnKeyError
 
 # ── Layout ───────────────────────────────────────────────────────────────────
@@ -23,7 +28,7 @@ _BG = "#ffffff"
 _ALT_BG = "#f5f5f5"
 _HOV_BG = C_COLOR_BLUE_HIGHLIGHT_LIGHT
 _SEL_BG = C_COLOR_BLUE_HIGHLIGHT_DARK
-_FG = "#000000"
+_FG = C_COLOR_BLACK_FONT
 _SEL_FG = "#ffffff"
 _BORDER = C_COLOR_GRAY_SEPARATOR
 

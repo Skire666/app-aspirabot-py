@@ -112,6 +112,7 @@ C_COLOR_GRAY_SEPARATOR: str = "#B4B4B4"
 C_COLOR_ORANGE_BLINKING: str = "#C46F00"
 C_COLOR_BLUE_HIGHLIGHT_DARK: str = "#0C5B9C"
 C_COLOR_BLUE_HIGHLIGHT_LIGHT: str = "#deeefa"
+C_COLOR_BLACK_FONT: str = "#000000"
 
 # Minimum time each step is displayed (milliseconds).
 C_SPLASHSCREEN_DISPLAY_MS_BY_STEP = 100  # x4 < 800 ms total

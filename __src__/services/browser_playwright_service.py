@@ -7,7 +7,7 @@ the internal list.
 
 Example:
     >>> svc = BrowserService(folder)
-    >>> svc.launch(provider)
+    >>> svc.launch()
     >>> svc.append_new_page()
     >>> page = svc.get_current_page()
     >>> svc.close_browser()
@@ -46,7 +46,7 @@ class BrowserPlaywrightService(IWebBrowserService):
 
     Example:
         >>> svc = BrowserPlaywrightService(Path("."))
-        >>> svc.launch(provider)
+        >>> svc.launch()
         >>> svc.append_new_page()
         >>> page = svc.get_current_page()
         >>> svc.close_browser()
@@ -66,16 +66,10 @@ class BrowserPlaywrightService(IWebBrowserService):
     # ------------------------------------------------------------------
 
     def launch(self) -> None:
-        """Initialize and launch Chromium with provider configuration.
-
-        Args:
-            provider: Provider model carrying browser configuration.
-
-        Returns:
-            None.
+        """Initialize and launch Chromium.
 
         Raises:
-            RuntimeError: If the browser is already launched.
+            BrowserAlreadyLaunchedError: If the browser is already launched.
         """
         if self._pw is not None:
             raise BrowserAlreadyLaunchedError()
@@ -98,7 +92,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             None.
 
         Raises:
-            RuntimeError: If ``launch()`` has not been called yet.
+            BrowserNotLaunchedError: If ``launch()`` has not been called yet.
         """
         if self._context is None:
             raise BrowserNotLaunchedError()
@@ -115,7 +109,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             None.
 
         Raises:
-            RuntimeError: If ``launch()`` has not been called yet.
+            BrowserNotLaunchedError: If ``launch()`` has not been called yet.
         """
         if self._context is None:
             raise BrowserNotLaunchedError()
