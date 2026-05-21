@@ -6,7 +6,6 @@
 
 import sys
 import tkinter as tk
-from pathlib import Path
 from tkinter import ttk
 
 import models.steps  # noqa: F401
@@ -22,7 +21,6 @@ from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
 from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
-from repositories.log_repository import LogRepository
 from repositories.providers_repository import ProvidersRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.app_configuration_service import ConfigService
@@ -142,7 +140,7 @@ def _build_and_wire_components(
     cfg = startup_service.config_model
 
     # Initialize each component group.
-    log_view, log_p = _init_log_component(main_view, startup_service.logging_service, cfg.folder_logs)
+    log_view, log_p = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_p = _init_config_component(main_view, config_repo)
     prov_view, prov_p, edit_view, edit_p, prov_svc = _init_provider_components(main_view, cfg)
     scr_view, scr_p = _init_scraping_component(main_view, cfg, prov_svc)
@@ -201,22 +199,19 @@ def _build_main_view(root: tk.Tk) -> MainView:
 def _init_log_component(
     main_view: MainView,
     logging_service: LoggingService,
-    folder_logs: Path,
 ) -> tuple[LogView, LogPresenter]:
     """Create and wire the journal (log display) component.
 
     Args:
         main_view: Main container providing the content area as parent.
-        logging_service: Service that broadcasts log events to the presenter.
-        folder_logs: Path to the directory where log files are stored on disk.
+        logging_service: Service that stores entries and broadcasts log events.
 
     Returns:
         A (LogView, LogPresenter) tuple.
     """
-    log_repository = LogRepository(folder_logs)
     log_view = LogView(main_view.content_area)
     # Presenter self-registers on logging_service via attach_ui_callback.
-    log_presenter = LogPresenter(view=log_view, service=logging_service, repository=log_repository)
+    log_presenter = LogPresenter(view=log_view, service=logging_service)
     return log_view, log_presenter
 
 
@@ -326,14 +321,13 @@ def _init_scraping_component(
         A (ScrapingPanelView, ScrapingPresenter) tuple.
     """
     workflow_service = WorkflowService()
-    scraping_service = ScrapingService(config_model, workflow_service)
-    scraping_view = ScrapingView(config_model, main_view.content_area)
     journal_repository = ScrapingJournalRepository()
+    scraping_service = ScrapingService(config_model, workflow_service, journal_repository)
+    scraping_view = ScrapingView(config_model, main_view.content_area)
     scraping_presenter = ScrapingPresenter(
         view=scraping_view,
         service_scraping=scraping_service,
         service_provider=provider_service,
-        journal_repository=journal_repository,
     )
     return scraping_view, scraping_presenter
 

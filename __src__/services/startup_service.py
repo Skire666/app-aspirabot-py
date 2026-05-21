@@ -8,6 +8,7 @@ import time
 
 from models.app_configuration_model import AppConfigurationModel
 from repositories.app_configuration_repository import AppConfigurationRepository
+from repositories.log_repository import LogRepository
 from services.logging_service import LoggingService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
 from shared.exception_util import (
@@ -111,9 +112,11 @@ class StartupService:
         try:
             # Derive the log file path from the configured folder.
             log_file_path = self._config_model.folder_logs / C_LOGS_FILE_NAME_WITH_EXT
+            log_repository = LogRepository(self._config_model.folder_logs)
             self._logging_service = LoggingService(
                 str(log_file_path),
                 self._config_model.log_level_enum,
+                log_repository,
             )
         except Exception as exc:
             raise FailedToInitializeLoggingDuringRuntimeError() from exc

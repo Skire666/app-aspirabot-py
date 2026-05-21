@@ -25,7 +25,6 @@ from models.provider_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
-from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
 from shared.datetime_util import (
@@ -88,22 +87,19 @@ class ScrapingPresenter:
         view: ScrapingView,
         service_scraping: ScrapingService,
         service_provider: ProviderService,
-        journal_repository: ScrapingJournalRepository,
         provider: ProviderModel | None = None,
     ) -> None:
         """Initialize the presenter and register all view callbacks.
 
         Args:
             view: The scraping panel view.
-            service_scraping: Service that executes Playwright workflow steps.
+            service_scraping: Service that executes Playwright workflow steps and journal exports.
             service_provider: Service for reading and listing providers.
-            journal_repository: Repository used to persist journal exports to disk.
             provider: Optional initial provider model.
         """
         self._view = view
         self._service_scraping = service_scraping
         self._service_provider = service_provider
-        self._journal_repository = journal_repository
         self._provider: ProviderModel | None = provider
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -236,14 +232,14 @@ class ScrapingPresenter:
     # ------------------------------------------------------------------
 
     def _on_export_journal(self, path: str) -> None:
-        """Retrieve journal rows from the view and persist them via the repository.
+        """Retrieve journal rows and persist them via the scraping service.
 
         Args:
             path: Absolute path of the destination file chosen by the user.
         """
         try:
             rows = self._all_logs_scraping
-            self._journal_repository.save(path, rows)
+            self._service_scraping.export_journal(path, rows)
         except OSError as exc:
             self._logging.error("Journal export failed: %s", exc)
             self._view.show_warning(C_SCRAPING_EXPORT_WRITE_ERROR.format(exc=exc))

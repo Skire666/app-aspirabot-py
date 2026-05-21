@@ -10,10 +10,9 @@ from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.close_tabs_params import CloseTabsParams
 from services.workflow_service import register_step_executor
-from shared.enums import StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.exception_util import CurrentPageClosedUnexpectedlyError
 from shared.i18n_fra import ERROR_TEMPLATES
-from views.steps.close_tabs_form_def import C_INPUT_IS_FILTER_CUSTOM
 
 
 class CloseTabsExecutor(IStepExecutor):
@@ -28,7 +27,7 @@ class CloseTabsExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = CloseTabsParams.from_dict(context.step_params)
-        filter_used = p.filter_custom if p.filter_mode == C_INPUT_IS_FILTER_CUSTOM else context.last_url_opened
+        filter_used = p.filter_custom if p.filter_mode == OpenUrlModeEnum.E_CUSTOM.value else context.last_url_opened
         filter_used = filter_used.strip().lower()
 
         if not filter_used:
@@ -66,7 +65,7 @@ class CloseTabsExecutor(IStepExecutor):
         p = CloseTabsParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
 
-        if p.filter_mode == C_INPUT_IS_FILTER_CUSTOM and not p.filter_custom.strip():
+        if p.filter_mode == OpenUrlModeEnum.E_CUSTOM.value and not p.filter_custom.strip():
             return [ERROR_TEMPLATES["close_tabs_filter_required"].format(step=index_display)]
         if p.max_tabs <= 0:
             return [ERROR_TEMPLATES["close_tabs_max_tabs_invalid"].format(step=index_display)]

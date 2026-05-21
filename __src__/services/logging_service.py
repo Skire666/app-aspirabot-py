@@ -36,6 +36,7 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 from models.log_entry_model import LogEntryModel
+from repositories.log_repository import LogRepository
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -139,9 +140,11 @@ class LoggingService:
     Example:
         Setting up file logging with UI callback:
 
+        >>> repo = LogRepository(Path("./logs"))
         >>> service = LoggingService(
         ...     log_file="logs/app.log",
-        ...     log_level="INFO"
+        ...     log_level="INFO",
+        ...     log_repository=repo,
         ... )
         >>>
         >>> def update_ui(entry: LogEntryModel):
@@ -159,30 +162,33 @@ class LoggingService:
         - The root logger level is synchronized with the configured level.
     """
 
-    def __init__(self, log_file: str, log_level: str) -> None:
-        """Initialize the logging service with file and level configuration.
+    def __init__(self, log_file: str, log_level: str, log_repository: LogRepository) -> None:
+        """Initialize the logging service with file, level and in-memory storage.
 
         Configures the root logger with a rotating file handler and removes any
         pre-existing handlers to ensure a clean, predictable logging state.
 
         Args:
-            log_file (str): Absolute or relative path to the log file. The file
+            log_file: Absolute or relative path to the log file. The file
                 will be created if it does not exist. Parent directories are
                 created automatically.
-            log_level (str): The logging level as a string (e.g., 'DEBUG', 'INFO',
-                'WARNING', 'ERROR', 'CRITICAL'). Case-insensitive; will be
-                converted to uppercase.
+            log_level: The logging level as a string (e.g., 'DEBUG', 'INFO',
+                'WARNING', 'ERROR', 'CRITICAL'). Case-insensitive; converted to uppercase.
+            log_repository: Repository used to store in-memory log entries
+                and manage the log folder on disk.
 
         Raises:
-            ValueError: If log_level is not a recognized logging level.
             IOError: If the log file cannot be created (e.g., permission denied).
 
         Example:
-            >>> service = LoggingService("app.log", "debug")
-            >>> # log_level is internally converted to uppercase
+            >>> repo = LogRepository(Path("./logs"))
+            >>> service = LoggingService("app.log", "debug", repo)
         """
         # Normalize and validate the log level.
         self.log_level = log_level.upper()
+
+        # Store the repository for in-memory entry storage and folder management.
+        self._log_repository = log_repository
 
         # Obtain the root logger for centralized configuration.
         self.logger = logging.getLogger()
@@ -230,7 +236,8 @@ class LoggingService:
             >>> def display_in_widget(entry: LogEntryModel):
             ...     widget.insert("end", f"{entry.level}: {entry.message}")
             >>>
-            >>> service = LoggingService("app.log", "INFO")
+            >>> repo = LogRepository(Path("./logs"))
+            >>> service = LoggingService("app.log", "INFO", repo)
             >>> service.attach_ui_callback(display_in_widget)
             >>>
             >>> # Subsequent logs will appear in the widget
@@ -250,3 +257,31 @@ class LoggingService:
         self._handler.setLevel(self.log_level)
         # Register the handler with the root logger.
         self.logger.addHandler(self._handler)
+
+    def add_log_entry(self, entry: LogEntryModel) -> None:
+        """Persist a new log entry in the in-memory repository.
+
+        Args:
+            entry: The structured log entry to store.
+        """
+        self._log_repository.add(entry)
+
+    def get_all_log_entries(self) -> list[LogEntryModel]:
+        """Return all log entries stored since the service started.
+
+        Returns:
+            Ordered list of all in-memory log entries.
+        """
+        return self._log_repository.get_all()
+
+    def open_logs_folder(self) -> None:
+        """Open the log folder in the system file explorer.
+
+        Delegates folder creation and system open to the repository.
+
+        Raises:
+            NotADirectoryError: If the resolved path is not a directory.
+            UnsupportedOperatingSystemError: If the current OS is not supported.
+            OSError: If the OS command fails to open the folder.
+        """
+        self._log_repository.open_logs_folder()

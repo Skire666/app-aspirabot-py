@@ -29,6 +29,7 @@ from models.provider_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
+from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.url_sources.url_source_factory import build_url_source_provider
 from services.workflow_service import WorkflowService
@@ -63,18 +64,19 @@ class ScrapingService:
         self,
         model_config: AppConfigurationModel,
         workflow_service: WorkflowService,
+        journal_repository: ScrapingJournalRepository,
     ) -> None:
         """Initialise the service and its per-run execution state.
 
         Args:
             model_config: Application configuration model.
-            browser_service: Concrete browser service implementation to use
-                for all browser lifecycle and page operations.
             workflow_service: Service for resolving step executors by type.
+            journal_repository: Repository used to persist journal exports to disk.
         """
         self._logger = logging.getLogger(__name__)
         self._browser_service = None
         self._workflow_service = workflow_service
+        self._journal_repository = journal_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
         self._context: ScrapingContextModel = ScrapingContextModel(
@@ -109,6 +111,18 @@ class ScrapingService:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def export_journal(self, path: str, rows: list[str]) -> None:
+        """Persist journal rows to a file on disk via the journal repository.
+
+        Args:
+            path: Absolute path of the destination .txt file.
+            rows: Ordered list of journal row strings to write.
+
+        Raises:
+            OSError: If the file cannot be written.
+        """
+        self._journal_repository.save(path, rows)
 
     def run_workflow(
         self,
