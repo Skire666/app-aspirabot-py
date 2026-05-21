@@ -7,7 +7,7 @@
 import logging
 from pathlib import Path
 
-from interfaces.provider_repository_interface import ProviderRepositoryInterface
+from interfaces.i_provider_repository import IProviderRepository
 from models.provider_model import ProviderModel
 from models.provider_validation_issue_model import ProviderValidationIssue
 from models.provider_validation_report_model import ProviderValidationReport
@@ -20,7 +20,7 @@ from models.provider_validation_report_model import ProviderValidationReport
 class ProviderService:
     """Service contenant la logique métier pour les fournisseurs."""
 
-    def __init__(self, repository: ProviderRepositoryInterface) -> None:
+    def __init__(self, repository: IProviderRepository) -> None:
         """Initialise le service avec son dépôt.
 
         Args:

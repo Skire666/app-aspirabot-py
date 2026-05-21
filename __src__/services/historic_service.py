@@ -6,7 +6,7 @@
 
 import logging
 
-from interfaces.provider_repository_interface import ProviderRepositoryInterface
+from interfaces.i_provider_repository import IProviderRepository
 from models.launch_profile_model import LaunchProfileModel
 from models.provider_model import ProviderModel
 
@@ -25,7 +25,7 @@ class HistoricService:
         _repository: Repository used to read provider data from disk.
     """
 
-    def __init__(self, repository: ProviderRepositoryInterface) -> None:
+    def __init__(self, repository: IProviderRepository) -> None:
         """Initialize the service with its provider repository.
 
         Args:

@@ -18,7 +18,7 @@ Example:
 # Imports
 # ---------------------------------------------------------------------------
 
-from abc import ABC, abstractmethod
+from typing import Protocol
 
 from playwright.sync_api import Page
 
@@ -27,7 +27,7 @@ from playwright.sync_api import Page
 # ---------------------------------------------------------------------------
 
 
-class IWebBrowserService(ABC):
+class IWebBrowserService(Protocol):
     """Contract for browser lifecycle management in the scraping service layer.
 
     A single instance covers one scraping run. The expected call order is:
@@ -48,22 +48,14 @@ class IWebBrowserService(ABC):
         False
     """
 
-    @abstractmethod
     def launch(self) -> None:
         """Initialize and launch the browser according to provider config.
-
-        Args:
-            provider: Provider model carrying browser configuration
-                (headless, obfuscation flags, target URL, extensions, etc.).
-
-        Returns:
-            None.
 
         Raises:
             RuntimeError: If the browser is already launched.
         """
+        ...
 
-    @abstractmethod
     def append_new_page(self) -> None:
         """Open a new browser page and register it in the internal page list.
 
@@ -71,14 +63,11 @@ class IWebBrowserService(ABC):
         by JavaScript (e.g. target="_blank" clicks) are also tracked.
         Use ``get_current_page()`` or ``get_all_pages()`` to access pages.
 
-        Returns:
-            None.
-
         Raises:
             RuntimeError: If ``launch()`` has not been called yet.
         """
+        ...
 
-    @abstractmethod
     def get_current_page(self) -> Page:
         """Return the primary browser page (the first one opened).
 
@@ -89,8 +78,8 @@ class IWebBrowserService(ABC):
             RuntimeError: If no page is available (browser not launched or
                 no page has been opened yet via ``append_new_page()``).
         """
+        ...
 
-    @abstractmethod
     def get_all_pages(self) -> list[Page]:
         """Return all currently open pages tracked by this service.
 
@@ -100,28 +89,21 @@ class IWebBrowserService(ABC):
         Returns:
             A snapshot list of all open Page objects.
         """
+        ...
 
-    @abstractmethod
     def close_browser(self) -> None:
         """Close all pages, the browser context, and the underlying browser.
 
         Implementations must swallow close errors gracefully so the scraping
         orchestrator's ``finally`` block always completes without raising.
-
-        Returns:
-            None.
         """
+        ...
 
     @property
-    @abstractmethod
     def is_launched(self) -> bool:
-        """True if the browser has been launched and not yet closed.
+        """True if the browser has been launched and not yet closed."""
+        ...
 
-        Returns:
-            bool: current browser launch state.
-        """
-
-    @abstractmethod
     def close_all_tabs(self) -> None:
         """Close all open tabs but keep the browser running.
 
@@ -129,20 +111,16 @@ class IWebBrowserService(ABC):
         clean state (e.g. after a failed step). The implementation should
         close all tracked pages and clear the internal page list, but not
         close the browser itself.
-
-        Returns:
-            None.
         """
+        ...
 
-    @abstractmethod
     def safe_goto_url(self, url: str, wait_state: str, timeout_ms: int, wait_dns_solver_sec: int) -> None:
         """Navigate the current page to the target URL with error handling and retries.
 
         This method wraps the Playwright ``page.goto()`` function with additional
-        error handling and retry logic. It should attempt to navigate to the
-        specified URL, waiting for the given load state, and retrying on
-        transient errors (e.g. timeouts, network issues) up to a reasonable
-        number of attempts.
+        error handling and retry logic. It attempts to navigate to the specified URL,
+        waiting for the given load state, and retrying on transient errors up to a
+        reasonable number of attempts.
 
         Args:
             url: The target URL to navigate to.
@@ -150,14 +128,11 @@ class IWebBrowserService(ABC):
             timeout_ms: Maximum navigation time in milliseconds before timing out.
             wait_dns_solver_sec: Seconds to wait for DNS resolution before aborting.
 
-        Returns:
-            None.
-
         Raises:
             Exception: If navigation ultimately fails after retries.
         """
+        ...
 
-    @abstractmethod
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
 
@@ -171,8 +146,10 @@ class IWebBrowserService(ABC):
             delay: Seconds to wait between attempts.
 
         Returns:
-            A tuple of (is_success, result) where is_success indicates if the evaluation was successful and result is the value returned by the JS expression.
+            A tuple of (is_success, result) where is_success indicates whether the
+            evaluation succeeded and result is the value returned by the JS expression.
 
         Raises:
             Exception: The last exception raised if all retries are exhausted.
         """
+        ...

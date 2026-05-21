@@ -22,7 +22,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, cast
 
-from interfaces.provider_repository_interface import ProviderRepositoryInterface
+from interfaces.i_provider_repository import IProviderRepository
 from models.provider_model import ProviderModel
 from repositories.json_repository import JsonFileRepository
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
@@ -40,7 +40,7 @@ from shared.operating_system_util import OperatingSystem, detect_os
 # ---------------------------------------------------------------------------
 
 
-class ProvidersRepository(ProviderRepositoryInterface):
+class ProvidersRepository(IProviderRepository):
     """Gère l'accès aux données des fournisseurs stockées sur le système de fichiers.
 
     Cette classe agit comme un dépôt de données pour la collection locale de configurations.

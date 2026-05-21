@@ -10,7 +10,7 @@ et l'infrastructure d'accès aux données, respectant le principe de la Clean Ar
 
 from datetime import datetime
 
-from interfaces.config_repository_interface import ConfigRepositoryInterface
+from interfaces.i_config_repository import IConfigRepository
 from models.app_configuration_model import AppConfigurationModel
 
 # ---------------------------------------------------------------------------
@@ -29,13 +29,13 @@ class ConfigService:
     # Variables
     # ---------------------------------------------------------------------------
 
-    _repository: ConfigRepositoryInterface
+    _repository: IConfigRepository
 
     # ---------------------------------------------------------------------------
     # Methods
     # ---------------------------------------------------------------------------
 
-    def __init__(self, config_repository: ConfigRepositoryInterface) -> None:
+    def __init__(self, config_repository: IConfigRepository) -> None:
         """Initialisation avec injection du repository."""
         self._repository = config_repository
 

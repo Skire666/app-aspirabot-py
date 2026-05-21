@@ -46,7 +46,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from interfaces.config_repository_interface import ConfigRepositoryInterface
+from interfaces.i_config_repository import IConfigRepository
 from models.app_configuration_model import AppConfigurationModel
 from shared.path_util import make_all_folders_if_not_exists
 
@@ -55,7 +55,7 @@ from shared.path_util import make_all_folders_if_not_exists
 # ---------------------------------------------------------------------------
 
 
-class AppConfigurationRepository(ConfigRepositoryInterface):
+class AppConfigurationRepository(IConfigRepository):
     """Repository for storing and retrieving configuration from a JSON file.
 
     This implementation uses JSON as the persistence format, providing human-readable

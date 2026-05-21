@@ -16,8 +16,7 @@ Example:
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
@@ -31,7 +30,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-class IStepExecutor(ABC):
+class IStepExecutor(Protocol):
     """Service-layer contract for one step type.
 
     Implementations handle both Playwright execution and parameter validation.
@@ -53,20 +52,16 @@ class IStepExecutor(ABC):
     """
 
     @classmethod
-    @abstractmethod
     def step_type(cls) -> StepTypeEnum:
-        """Returns the StepType this executor handles.
+        """Return the StepType this executor handles.
 
         Returns:
             The matching StepType enum member.
-
-        Raises:
-            None.
         """
+        ...
 
-    @abstractmethod
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
-        """Executes the step using the browser service and the runtime context.
+        """Execute the step using the browser service and the runtime context.
 
         Step-specific parameters are read from ``context.step_params`` (via a
         typed param model).  Cross-step runtime state is read from the typed
@@ -79,19 +74,15 @@ class IStepExecutor(ABC):
             context: Runtime context carrying step params, orchestrator state,
                 and mutable output-signal slots.
 
-        Returns:
-            None.
-
         Raises:
             PlaywrightError: On browser-level failure.
-            ValueError: When a step-level condition is not met.
             TimeoutError: When a wait step exceeds its deadline.
             FileNotFoundError: When a required file is missing.
         """
+        ...
 
-    @abstractmethod
     def validate_model(self, params: StepScrapingModel, step_index: int) -> list[str]:
-        """Validates step parameters and returns human-readable error messages.
+        """Validate step parameters and return human-readable error messages.
 
         Args:
             params: Raw parameter dict from the step model.
@@ -99,7 +90,5 @@ class IStepExecutor(ABC):
 
         Returns:
             A list of French error strings; empty when the params are valid.
-
-        Raises:
-            None.
         """
+        ...

@@ -15,9 +15,8 @@ Example:
 # Imports
 # ---------------------------------------------------------------------------
 
-from abc import ABC, abstractmethod
 from tkinter import ttk
-from typing import Any
+from typing import Any, Protocol
 
 from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
@@ -27,7 +26,7 @@ from shared.enums import StepTypeEnum
 # ---------------------------------------------------------------------------
 
 
-class IStepFormDef(ABC):
+class IStepFormDef(Protocol):
     """View-layer contract for one step type.
 
     Covers everything the view orchestrators need: the display label, the form
@@ -48,32 +47,25 @@ class IStepFormDef(ABC):
     """
 
     @classmethod
-    @abstractmethod
     def step_type(cls) -> StepTypeEnum:
-        """Returns the StepType this definition handles.
+        """Return the StepType this definition handles.
 
         Returns:
             The matching StepType enum member.
-
-        Raises:
-            None.
         """
+        ...
 
     @classmethod
-    @abstractmethod
     def label(cls) -> str:
-        """Returns the French display label shown in the step type selector.
+        """Return the French display label shown in the step type selector.
 
         Returns:
             A short French label string.
-
-        Raises:
-            None.
         """
+        ...
 
-    @abstractmethod
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Populates ``frame`` with the step-specific form widgets.
+        """Populate ``frame`` with the step-specific form widgets.
 
         Widget variables are stored in ``widgets`` under their parameter key
         so that ``load_params`` and ``read_params_from_view`` can access them by name.
@@ -81,48 +73,33 @@ class IStepFormDef(ABC):
         Args:
             frame: Empty ttk.Frame to populate.
             widgets: Mutable dict; implementations store tk.Variable instances here.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
         """
+        ...
 
-    @abstractmethod
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Pre-fills form widgets from an existing params dict.
+        """Pre-fill form widgets from an existing params dict.
 
         Called when the user opens an existing step for editing.
 
         Args:
             model: Step model containing the stored parameters.
             widgets: Dict populated by ``build_form``.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
         """
+        ...
 
-    @abstractmethod
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
-        """Reads current widget values and returns a raw params dict.
+        """Read current widget values and return a raw params dict.
 
         Args:
             widgets: Dict populated by ``build_form``.
 
         Returns:
             A plain dict suitable for JSON storage.
-
-        Raises:
-            None.
         """
+        ...
 
-    @abstractmethod
     def format_label(self, model: StepScrapingModel, idx: int) -> str:
-        """Returns the renderer label for a step list item.
+        """Return the renderer label for a step list item.
 
         Args:
             model: The step model instance.
@@ -130,7 +107,5 @@ class IStepFormDef(ABC):
 
         Returns:
             A short multi-line string for display in the DragDropList.
-
-        Raises:
-            None.
         """
+        ...
