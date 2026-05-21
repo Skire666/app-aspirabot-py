@@ -10,6 +10,7 @@ from tkinter import ttk
 from typing import Any
 
 from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_BLUE_HIGHLIGHT_LIGHT, C_COLOR_GRAY_SEPARATOR
+from shared.exception_util import ColumnNotFoundError, DuplicateColumnKeyError
 
 # ── Layout ───────────────────────────────────────────────────────────────────
 _CELL_PAD = 4
@@ -455,7 +456,7 @@ class ColumnCombobox(tk.Frame):
             visible: Whether the column participates in rendering.
         """
         if any(c.key == key for c in self._columns):
-            raise ValueError(f"Column '{key}' already exists.")  # noqa: TRY003
+            raise DuplicateColumnKeyError(key)
         self._columns.append(_ColumnDef(key=key, extractor=extractor, width=width, visible=visible))
         if self._display_col is None and visible:
             self._display_col = key
@@ -673,7 +674,7 @@ class ColumnCombobox(tk.Frame):
         for c in self._columns:
             if c.key == key:
                 return c
-        raise KeyError(f"No column '{key}'.")
+        raise ColumnNotFoundError(key)
 
     def _paint_selected(self) -> None:
         """Render all visible columns of the selected row on the display canvas.

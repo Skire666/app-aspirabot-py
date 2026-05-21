@@ -203,11 +203,11 @@ class ProvidersRepository(IProviderRepository):
         provider_data = json_repo.all_data
 
         if not provider_data:
-            self._logger.warning(f"Le fichier {full_filepath} est vide.")
+            self._logger.warning("Le fichier %s est vide.", full_filepath)
             raise ProviderDataMissingError(id_file)
 
         provider_model = self._dict_to_provider_model(provider_data)
-        self._logger.info(f"Fournisseur chargé: {full_filepath}")
+        self._logger.info("Fournisseur chargé : %s", full_filepath)
         return provider_model
 
     def list_all_providers(self) -> list[ProviderModel]:
@@ -235,12 +235,12 @@ class ProvidersRepository(IProviderRepository):
                 if provider_data:
                     provider_model = self._dict_to_provider_model(provider_data)
                     providers.append(provider_model)
-                    self._logger.debug(f"Fournisseur ajouté à la liste: {file_path.name}")
+                    self._logger.debug("Fournisseur ajouté à la liste : %s", file_path.name)
             except Exception as e:
-                self._logger.error(f"Impossible de charger le provider {file_path.name}: {e}")
+                self._logger.error("Impossible de charger le provider %s.", file_path.name, exc_info=True)
                 continue
 
-        self._logger.info(f"Total de {len(providers)} provider(s) chargé(s).")
+        self._logger.info("Total de %s provider(s) chargé(s).", len(providers))
         return providers
 
     def create_provider(self, provider: ProviderModel) -> None:
@@ -277,9 +277,9 @@ class ProvidersRepository(IProviderRepository):
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
 
-            self._logger.info(f"Fournisseur sauvegardé: {full_filepath}")
+            self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
         except Exception as e:
-            self._logger.error(f"Erreur lors de la création du fournisseur: {e}")
+            self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
             raise
 
     def update_provider(self, provider: ProviderModel) -> None:
@@ -316,16 +316,16 @@ class ProvidersRepository(IProviderRepository):
             json_repo.all_data = provider_dict
             json_repo.save_to_file()
 
-            self._logger.info(f"Fournisseur sauvegardé: {full_filepath}")
+            self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
         except Exception as e:
-            self._logger.error(f"Erreur lors de la MAJ du fournisseur: {e}")
+            self._logger.error("Erreur lors de la MAJ du fournisseur.", exc_info=True)
             raise
 
     def create_folder_if_missing(self) -> None:
         """Create the providers folder if it does not already exist."""
         if not self._folder_path.exists():
             Path(self._folder_path).mkdir(exist_ok=True, parents=True)
-            self._logger.info(f"Dossier créé: {self._folder_path}")
+            self._logger.info("Dossier créé : %s", self._folder_path)
 
     def delete_provider(self, id_file: str) -> None:
         """Supprime un fournisseur.
@@ -355,9 +355,9 @@ class ProvidersRepository(IProviderRepository):
 
         try:
             Path(full_pathfile_to_delete).unlink()
-            self._logger.info(f"Fournisseur supprimé: {full_pathfile_to_delete}")
+            self._logger.info("Fournisseur supprimé : %s", full_pathfile_to_delete)
         except Exception as e:
-            self._logger.error(f"Erreur lors de la suppression du fournisseur: {e}")
+            self._logger.error("Erreur lors de la suppression du fournisseur.", exc_info=True)
             raise
 
     def open_providers_folder(self) -> None:
@@ -392,12 +392,12 @@ class ProvidersRepository(IProviderRepository):
                 subprocess.Popen(["xdg-open", self._folder_path])
             else:
                 self._logger.warning(
-                    f"Système d'exploitation non pris en charge pour l'ouverture du dossier: {enum_os}"
+                    "Système d'exploitation non pris en charge pour l'ouverture du dossier : %s", enum_os
                 )
                 raise UnsupportedOperatingSystemError(enum_os)
-            self._logger.info(f"Dossier ouvert: {self._folder_path}")
+            self._logger.info("Dossier ouvert : %s", self._folder_path)
         except Exception as e:
-            self._logger.error(f"Erreur lors de l'ouverture du dossier: {e}")
+            self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
 
     def _compute_fullpath_from_id_file(self, id_file: str) -> Path:

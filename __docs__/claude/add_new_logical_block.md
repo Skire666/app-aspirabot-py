@@ -1,15 +1,6 @@
-Tu peux me faire un prompt agentique pour une nouvelle brique. Voici ce que j'ai écrit pour l'instant :
+Tu peux me m'aider à faire un prompt agentique pour XXX
 
-Lit le fichier 'AGENTS.m'd et suit les instructions qu'il contient.
-On va rajouter une nouvelle brique logique : "COUNT_ELEMENT".
-
-Pour cela, tu vas analyser une brique logique déjà existante : "WAIT_ELEMENT".
-Voici les endroits qui la référence :
-- models\step_scraping_[model.py](http://model.py)
-- services\scraping_[service.py](http://service.py)
-- services\workflow_[service.py](http://service.py)
-- views\step_edit_dialog_[view.py](http://view.py)
-- views\workflow_builder_[view.py](http://view.py)
+Lit le fichier 'AGENTS.md et respecte ses directives sans exception.
 
 Regarde l'existant et le fonctionnement.
 Une fois listé et compris les différents éléments à coder, tu vas établir une liste des modifications à entreprendre pour pouvoir ajouter la nouvelle brique logique "COUNT_ELEMENT".

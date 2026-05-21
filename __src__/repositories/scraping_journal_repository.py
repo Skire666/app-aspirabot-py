@@ -29,7 +29,7 @@ class ScrapingJournalRepository:
         """Create the providers folder if it does not already exist."""
         if not path_folder.exists():
             Path(path_folder).mkdir(exist_ok=True, parents=True)
-            self._logger.info(f"Dossier créé: {path_folder}")
+            self._logger.info("Dossier créé : %s", path_folder)
 
     def save(self, path: str, rows: list[str]) -> None:
         """Writes journal rows to the given file path.
@@ -46,4 +46,4 @@ class ScrapingJournalRepository:
         lines = [*rows]
         with Path(path).open("w", encoding="utf-8") as fh:
             fh.write("".join(lines))
-        self._logger.info("Journal exported to %s (%d rows)", path, len(rows))
+        self._logger.info("Journal exporté vers %s (%d lignes).", path, len(rows))

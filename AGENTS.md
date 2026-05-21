@@ -610,7 +610,7 @@ class DatabaseUnavailableError(RepositoryError): ...
 Exception messages (the string passed to `raise`) are written in **French**.
 
 **Rules:**
-- Never raise `Exception`, `ValueError`, or `RuntimeError` directly in business code.
+- Never raise `Exception`, `ValueError`, `RuntimeError`, or `FileNotFoundError` directly in business code.
 - Always raise the most **specific** exception available.
 - Always chain with `raise NewError("...") from original` to preserve the traceback.
 
@@ -672,9 +672,11 @@ except Exception:
 ```python
 # BAD
 raise ValueError("Provider not found")
+raise FileNotFoundError("File not found")
 
 # GOOD
 raise ProviderNotFoundError("Provider introuvable : {id}") from None
+raise UrlSourceFileNotFoundError(path) from exc
 ```
 
 ❌ Never forget to chain exceptions

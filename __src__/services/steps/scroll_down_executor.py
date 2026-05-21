@@ -15,6 +15,7 @@ from shared.constants import (
     C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
 )
 from shared.enums import StepTypeEnum
+from shared.exception_util import ScriptExecutionFailedError
 from shared.i18n_fra import ERROR_TEMPLATES
 
 
@@ -37,7 +38,7 @@ class ScrollDownExecutor(IStepExecutor):
             C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
         )
         if not is_success:
-            raise ValueError("Failed to execute scroll down script after retries")
+            raise ScriptExecutionFailedError("scroll_down")
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

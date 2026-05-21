@@ -21,6 +21,7 @@ import configparser
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from shared.exception_util import UrlSourceFileNotFoundError, UrlSourceNotReadyError
 
 # ---------------------------------------------------------------------------
 # Class
@@ -145,7 +146,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             FileNotFoundError: If ``self._folder_path`` does not exist.
         """
         if not Path(self._folder_path).is_dir():
-            raise FileNotFoundError(f"URL source folder not found: {self._folder_path}")
+            raise UrlSourceFileNotFoundError(self._folder_path)
 
         folder = Path(self._folder_path)
 
@@ -182,16 +183,16 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
 
         Raises:
             FileNotFoundError: If the folder or current file does not exist.
-            RuntimeError: If called before any file has been buffered.
+            UrlSourceNotReadyError: If called before discovery or before any URL has been buffered.
         """
         if self._file_paths is None:
-            raise RuntimeError("Cannot update modified time before discovery.")
+            raise UrlSourceNotReadyError("fichiers non découverts")
         if self._index == 0:
-            raise RuntimeError("Cannot update modified time before buffering a URL.")
+            raise UrlSourceNotReadyError("aucune URL bufferisée")
 
         current_file = self._file_paths[self._index - 1]  # type: ignore[index]
         if not current_file.exists():
-            raise FileNotFoundError(f"Current URL file not found: {current_file}")
+            raise UrlSourceFileNotFoundError(current_file)
 
         current_file.touch()  # Update modified time to now
 

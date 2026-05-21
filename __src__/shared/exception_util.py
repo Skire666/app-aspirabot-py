@@ -528,4 +528,188 @@ class InvalidLruCacheCapacityError(ValueError, AspirabotError):
         super().__init__(f"LRUCache capacity must be >= 1, got {capacity}")
 
 
+# ---------------------------------------------------------------------------
+# Time utility errors
+# ---------------------------------------------------------------------------
+
+
+class InvalidTimeUnitError(ValueError, AspirabotError):
+    """Raised when a time unit is missing or not in the recognised set."""
+
+    def __init__(self, time_unit: str | None) -> None:
+        """Initialize the error message.
+
+        Args:
+            time_unit: The invalid or missing time unit value.
+        """
+        super().__init__(f"Unité de temps invalide ou manquante : '{time_unit}'")
+
+
+class InvalidDurationError(ValueError, AspirabotError):
+    """Raised when a duration value is negative."""
+
+    def __init__(self, duration: int | float) -> None:
+        """Initialize the error message.
+
+        Args:
+            duration: The invalid duration value.
+        """
+        super().__init__(f"Durée invalide (doit être >= 0) : {duration}")
+
+
+# ---------------------------------------------------------------------------
+# URL source errors
+# ---------------------------------------------------------------------------
+
+
+class UnknownUrlSourceTypeError(ValueError, AspirabotError):
+    """Raised when an unrecognised URL source type is requested."""
+
+    def __init__(self, source_type: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            source_type: The unrecognised source type string.
+        """
+        super().__init__(
+            f"Type de source URL inconnu : '{source_type}'. Types attendus : 'manual', 'csv', 'folder'."
+        )
+
+
+class InvalidUrlSourceValueTypeError(TypeError, AspirabotError):
+    """Raised when the source value type does not match the requested source type."""
+
+    def __init__(self, source_type: str, expected: str, got: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            source_type: The requested source type label.
+            expected: The expected Python type name.
+            got: The actual Python type name received.
+        """
+        super().__init__(f"Source '{source_type}' attend {expected}, reçu {got}.")
+
+
+class UrlSourceNotReadyError(RuntimeError, AspirabotError):
+    """Raised when a URL source operation is called before the source is ready."""
+
+    def __init__(self, reason: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            reason: Short description of why the source is not ready.
+        """
+        super().__init__(f"Source URL non prête : {reason}")
+
+
+class UrlSourceExhaustedError(ValueError, AspirabotError):
+    """Raised when a URL source has no more URLs to provide."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Aucune URL disponible dans la source.")
+
+
+class UrlSourceFileNotFoundError(FileNotFoundError, AspirabotError):
+    """Raised when a required URL source file or folder cannot be found."""
+
+    def __init__(self, path: object) -> None:
+        """Initialize the error message.
+
+        Args:
+            path: The file or folder path that was not found.
+        """
+        super().__init__(f"Fichier ou dossier source URL introuvable : {path}")
+
+
+# ---------------------------------------------------------------------------
+# Browser / navigation errors
+# ---------------------------------------------------------------------------
+
+
+class DnsSolverTimeoutExceededError(RuntimeError, AspirabotError):
+    """Raised when the DNS solver wait duration exceeds the maximum allowed."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Délai DNS solver atteint (>= 30 sec).")
+
+
+class UrlNavigationMismatchError(RuntimeError, AspirabotError):
+    """Raised when the browser lands on a different URL than the intended target."""
+
+    def __init__(self, final_url: str, target_url: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            final_url: The URL the browser actually landed on.
+            target_url: The URL that was requested.
+        """
+        super().__init__(f"URL finale différente de la cible : {final_url} vs {target_url}")
+
+
+# ---------------------------------------------------------------------------
+# Step execution errors
+# ---------------------------------------------------------------------------
+
+
+class MissingUrlFilterError(ValueError, AspirabotError):
+    """Raised when no URL filter is available to execute a close-tabs step."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__(
+            "Aucun filtre URL disponible. Configurez un mode ou ouvrez une page avant d'exécuter ce step."
+        )
+
+
+class EmptyCustomUrlError(ValueError, AspirabotError):
+    """Raised when a custom URL step parameter is empty."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("URL personnalisée vide.")
+
+
+class ScriptExecutionFailedError(RuntimeError, AspirabotError):
+    """Raised when a browser script fails after all retries are exhausted."""
+
+    def __init__(self, script_name: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            script_name: Identifier of the script that failed.
+        """
+        super().__init__(f"Échec de l'exécution du script '{script_name}' après plusieurs tentatives.")
+
+
+# ---------------------------------------------------------------------------
+# UI widget errors
+# ---------------------------------------------------------------------------
+
+
+class DuplicateColumnKeyError(ValueError, AspirabotError):
+    """Raised when a column key is registered twice in the same widget."""
+
+    def __init__(self, key: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            key: The duplicate column key.
+        """
+        super().__init__(f"Colonne '{key}' déjà existante.")
+
+
+class ColumnNotFoundError(ValueError, AspirabotError):
+    """Raised when a column key is not found in the widget."""
+
+    def __init__(self, key: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            key: The column key that was not found.
+        """
+        super().__init__(f"Colonne introuvable : '{key}'")
+
+
 # EOF

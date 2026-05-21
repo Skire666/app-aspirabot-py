@@ -11,7 +11,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps.close_tabs_params import CloseTabsParams
 from services.workflow_service import register_step_executor
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
-from shared.exception_util import CurrentPageClosedUnexpectedlyError
+from shared.exception_util import CurrentPageClosedUnexpectedlyError, MissingUrlFilterError
 from shared.i18n_fra import ERROR_TEMPLATES
 
 
@@ -31,7 +31,7 @@ class CloseTabsExecutor(IStepExecutor):
         filter_used = filter_used.strip().lower()
 
         if not filter_used:
-            raise ValueError("Aucun filtre URL disponible (configurez un mode ou ouvrez une page avant.")
+            raise MissingUrlFilterError()
 
         current_page = browser.get_current_page()
         counter_closed = 0

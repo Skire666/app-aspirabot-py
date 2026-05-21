@@ -12,6 +12,7 @@ from models.steps.open_url_params import OpenUrlParams
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
+from shared.exception_util import EmptyCustomUrlError, UrlNavigationMismatchError, UrlSourceExhaustedError
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_ms
 
@@ -41,7 +42,7 @@ class OpenUrlExecutor(IStepExecutor):
 
         page = browser.get_current_page()
         if page.url != target_url:
-            raise Exception(f"URL finale différente de la cible : {page.url} vs {target_url}")
+            raise UrlNavigationMismatchError(page.url, target_url)
 
         context.last_message_step = f"Ouvert : {target_url}"
 
@@ -56,17 +57,17 @@ class OpenUrlExecutor(IStepExecutor):
             The URL to open.
 
         Raises:
-            ValueError: If the URL mode is custom but the custom URL is empty,
-            or if the URL mode is source but there are no more URLs in the source provider.
+            EmptyCustomUrlError: If the URL mode is custom but the custom URL is empty.
+            UrlSourceExhaustedError: If the URL mode is source but there are no more URLs.
         """
         if p.url_mode == OpenUrlModeEnum.E_CUSTOM.value:
             if not p.url_custom:
-                raise ValueError("URL personnalisée vide")
+                raise EmptyCustomUrlError()
             target_url = p.url_custom
         else:
             # Consume the next URL from the injected source provider.
             if context.url_source is None or not context.url_source.has_next():
-                raise ValueError("Aucune URL dans la source")
+                raise UrlSourceExhaustedError()
             target_url = context.url_source.next_url()
         return target_url
 

@@ -183,7 +183,6 @@ class EditStepDialogPanel(ttk.Frame):
         # Inject JUMP_TO_STEP context before building so the form def can
         # populate the target combobox from the available steps list.
         self._form_widgets["_all_steps_available"] = self._available_steps
-        self._logger.debug(f"Rebuilding form for step type {step_type} with steps={len(self._available_steps)}")
 
         try:
             if step_type is not None and step_type != StepTypeEnum.E_UNSET:

@@ -26,6 +26,7 @@ from shared.constants import C_STR_ERROR_JS_EVALUATION
 from shared.exception_util import (
     BrowserAlreadyLaunchedError,
     BrowserNotLaunchedError,
+    DnsSolverTimeoutExceededError,
     PageNotAvailableOrClosedError,
 )
 
@@ -264,7 +265,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         except Exception as exc:
             if "ERR_NAME_NOT_RESOLVED" in str(exc):
                 if wait_dns_solver_sec >= 30:
-                    raise Exception("DNS solver supérieur ou égale à 30 sec.")
+                    raise DnsSolverTimeoutExceededError() from exc
                 page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
                 page.reload(wait_until=wait_state, timeout=timeout_ms)
 

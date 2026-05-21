@@ -19,6 +19,7 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from services.url_sources.csv_url_source import CsvUrlSourceProvider
 from services.url_sources.folder_url_source import FolderUrlSourceProvider
 from services.url_sources.manual_url_source import ManualUrlSourceProvider
+from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSourceTypeError
 
 # ---------------------------------------------------------------------------
 # Factory
@@ -40,8 +41,9 @@ def build_url_source_provider(
         A concrete ``IUrlSourceProvider`` ready for iteration.
 
     Raises:
-        ValueError: When ``source_type`` is unrecognised or ``source_value``
-            has an incompatible type for the requested source.
+        UnknownUrlSourceTypeError: When ``source_type`` is not recognised.
+        InvalidUrlSourceValueTypeError: When ``source_value`` has an incompatible
+            type for the requested source.
 
     Examples:
         >>> build_url_source_provider("manual", ["https://a.com"])
@@ -58,10 +60,7 @@ def build_url_source_provider(
     if source_type == "folder":
         return _build_folder(source_value)
 
-    raise ValueError(
-        f"Unknown URL source type: '{source_type}'. "
-        "Expected one of: 'manual', 'csv', 'folder'."
-    )
+    raise UnknownUrlSourceTypeError(source_type)
 
 
 def _build_manual(source_value: list[str] | str) -> ManualUrlSourceProvider:
@@ -74,12 +73,10 @@ def _build_manual(source_value: list[str] | str) -> ManualUrlSourceProvider:
         A ``ManualUrlSourceProvider`` instance.
 
     Raises:
-        ValueError: When ``source_value`` is not a list.
+        InvalidUrlSourceValueTypeError: When ``source_value`` is not a list.
     """
     if not isinstance(source_value, list):
-        raise ValueError(
-            f"source_type 'manual' requires a list[str], got {type(source_value).__name__}."
-        )
+        raise InvalidUrlSourceValueTypeError("manual", "list[str]", type(source_value).__name__)
     return ManualUrlSourceProvider(source_value)
 
 
@@ -93,12 +90,10 @@ def _build_csv(source_value: list[str] | str) -> CsvUrlSourceProvider:
         A ``CsvUrlSourceProvider`` instance.
 
     Raises:
-        ValueError: When ``source_value`` is not a string.
+        InvalidUrlSourceValueTypeError: When ``source_value`` is not a string.
     """
     if not isinstance(source_value, str):
-        raise ValueError(
-            f"source_type 'csv' requires a str path, got {type(source_value).__name__}."
-        )
+        raise InvalidUrlSourceValueTypeError("csv", "str", type(source_value).__name__)
     return CsvUrlSourceProvider(source_value)
 
 
@@ -112,10 +107,8 @@ def _build_folder(source_value: list[str] | str) -> FolderUrlSourceProvider:
         A ``FolderUrlSourceProvider`` instance.
 
     Raises:
-        ValueError: When ``source_value`` is not a string.
+        InvalidUrlSourceValueTypeError: When ``source_value`` is not a string.
     """
     if not isinstance(source_value, str):
-        raise ValueError(
-            f"source_type 'folder' requires a str path, got {type(source_value).__name__}."
-        )
+        raise InvalidUrlSourceValueTypeError("folder", "str", type(source_value).__name__)
     return FolderUrlSourceProvider(source_value)

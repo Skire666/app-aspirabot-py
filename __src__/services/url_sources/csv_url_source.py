@@ -19,6 +19,7 @@ import csv
 import pathlib
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from shared.exception_util import UrlSourceFileNotFoundError
 
 # ---------------------------------------------------------------------------
 # Class
@@ -121,8 +122,8 @@ class CsvUrlSourceProvider(IUrlSourceProvider):
             with pathlib.Path(self._path).open(newline="", encoding="utf-8") as fh:
                 reader = csv.reader(fh)
                 rows = [row for row in reader if row]
-        except FileNotFoundError:
-            raise FileNotFoundError(f"CSV source file not found: {self._path}")
+        except FileNotFoundError as exc:
+            raise UrlSourceFileNotFoundError(self._path) from exc
 
         return self._extract_urls(rows)
 

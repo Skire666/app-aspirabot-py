@@ -1,4 +1,10 @@
 # ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
+
+from shared.exception_util import InvalidDurationError, InvalidTimeUnitError
+
+# ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
@@ -34,11 +40,11 @@ C_UNITS_TIME_CONVERSION_TO_SEC: dict[str, float] = {
 def convert_to_ms(duration: int, time_unit: str) -> int | None:
     """Returns timeout in ms or None when duration is 0."""
     if not time_unit:
-        raise ValueError("Time unit is required for conversion to ms.")
+        raise InvalidTimeUnitError(time_unit)
     if time_unit not in C_UNITS_TIME_CONVERSION_TO_MS:
-        raise ValueError(f"Invalid time unit for conversion to ms: {time_unit}")
+        raise InvalidTimeUnitError(time_unit)
     if duration <= -1:
-        raise ValueError(f"Invalid duration for conversion to ms: {duration}")
+        raise InvalidDurationError(duration)
 
     # convert
     return int(duration * C_UNITS_TIME_CONVERSION_TO_MS.get(time_unit))
@@ -47,11 +53,11 @@ def convert_to_ms(duration: int, time_unit: str) -> int | None:
 def convert_to_sec(duration: int, time_unit: str) -> float | None:
     """Returns timeout in seconds or None when duration is 0."""
     if not time_unit:
-        raise ValueError("Time unit is required for conversion to sec.")
+        raise InvalidTimeUnitError(time_unit)
     if time_unit not in C_UNITS_TIME_CONVERSION_TO_SEC:
-        raise ValueError(f"Invalid time unit for conversion to sec: {time_unit}")
+        raise InvalidTimeUnitError(time_unit)
     if duration <= -1:
-        raise ValueError(f"Invalid duration for conversion to sec: {duration}")
+        raise InvalidDurationError(duration)
 
     # convert
     return float(duration * C_UNITS_TIME_CONVERSION_TO_SEC.get(time_unit))

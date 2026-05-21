@@ -67,14 +67,14 @@ class JsonFileRepository:
             None
         """
         if not Path(self.file_path).exists():
-            self._logger.warning(f"Fichier '{self.file_path}' introuvable. Création par défaut.")
+            self._logger.warning("Fichier '%s' introuvable. Création par défaut.", self.file_path)
             self.all_data = self.default_data.copy()
             self.save_to_file()
         else:
             try:
                 with Path(self.file_path).open(encoding="utf-8") as f:
                     self.all_data = json.load(f)
-                self._logger.info(f"Données chargées depuis '{self.file_path}'.")
+                self._logger.info("Données chargées depuis '%s'.", self.file_path)
             except Exception:
                 self._logger.error("Une erreur s'est produite", exc_info=True)
                 self.all_data = self.default_data.copy()
@@ -91,7 +91,7 @@ class JsonFileRepository:
             None
         """
         try:
-            self._logger.debug(f"Sauvegarde des données dans '{self.file_path}'...")
+            self._logger.debug("Sauvegarde des données dans '%s'...", self.file_path)
 
             dir_name = os.path.dirname(self.file_path)
             if dir_name:
