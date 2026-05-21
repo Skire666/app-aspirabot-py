@@ -3,7 +3,7 @@ from collections.abc import Callable
 from tkinter import font as tkfont
 from typing import Any
 
-from __src__.shared.constants import C_COLOR_BLACK_FONT
+from shared.constants import C_COLOR_BLACK_FONT
 
 
 class CanvasCheckbox(tk.Frame):

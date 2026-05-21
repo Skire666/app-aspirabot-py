@@ -100,7 +100,7 @@ class ProviderPresenter:
     def _update_view(self) -> None:
         """Transforme les modèles en structures de données simples et rafraîchit la vue."""
         providers_data = self._format_providers(self._all_providers)
-        self._view.render_providers(providers_data)
+        self._view.render_providers(self._service.get_folder_path_providers(), providers_data)
 
     @staticmethod
     def _format_providers(providers: list[ProviderModel]) -> list[dict[str, str]]:
@@ -121,8 +121,8 @@ class ProviderPresenter:
                     "provider_name": p.provider_name,
                     "provider_desc": p.provider_desc,
                     "version": p.version,
-                    "created_date_provider": str(p.created_date_provider),
-                    "modified_date_provider": str(p.modified_date_provider),
+                    "created_date_provider": p.created_date_provider,
+                    "modified_date_provider": p.modified_date_provider,
                 }
             )
         return formatted
@@ -202,7 +202,7 @@ class ProviderPresenter:
             self._logger.error("Erreur lors de la suppression du fournisseur", exc_info=True)
             self._view.show_error(f"La suppression a échoué : {exc}")
 
-    def _on_open_folder(self) -> None:
+    def _on_open_folder(self, _path: str) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
         self._service.open_providers_folder()
 

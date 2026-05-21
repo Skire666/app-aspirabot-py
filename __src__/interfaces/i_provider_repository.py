@@ -128,3 +128,11 @@ class IProviderRepository(Protocol):
     def open_providers_folder(self) -> None:
         """Open the providers folder in the system file explorer."""
         ...
+
+    def get_folder_path_providers(self) -> str:
+        """Get the path of the providers folder.
+
+        Returns:
+            The path of the providers folder.
+        """
+        ...

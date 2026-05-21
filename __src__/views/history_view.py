@@ -10,18 +10,19 @@ from tkinter import ttk
 from typing import Any
 
 from views.components.data_grid import DataGrid
+from views.components.folder_link_widget import FolderLinkWidget
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 # Column definitions for the profiles DataGrid.
-_COLUMNS: list[dict[str, Any]] = [
+DATA_GRID_COLUMNS: list[dict[str, Any]] = [
     {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
     {"id": "name_profile", "title": "Nom du profil", "width": 160, "type": "text"},
     {"id": "provider_parent", "title": "Fournisseur", "width": 160, "type": "text"},
     {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
-    {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text"},
+    {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text", "format": "%d/%m/%Y %H:%M"},
     {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},
     {"id": "id_profile", "title": "ID Profil", "width": 160, "type": "text"},
 ]
@@ -34,7 +35,7 @@ _ROW_ID_PARTS_COUNT = 2
 # ---------------------------------------------------------------------------
 
 
-class HistoricView(ttk.Frame):
+class HistoryView(ttk.Frame):
     """View component that renders the list of launch profiles across all providers.
 
     Displays a DataGrid with one row per profile. Fires a callback when the
@@ -47,7 +48,7 @@ class HistoricView(ttk.Frame):
     """
 
     def __init__(self, parent: tk.Widget) -> None:
-        """Initialize the HistoricView widget.
+        """Initialize the HistoryView widget.
 
         Args:
             parent: Parent Tkinter widget that owns this frame.
@@ -66,12 +67,12 @@ class HistoricView(ttk.Frame):
         top_frame = ttk.Frame(self)
         top_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(10, 5))
 
-        self._btn_open_folder = ttk.Button(
-            top_frame, text="Ouvrir dossier des fournisseurs", command=self._notify_open_folder
+        self._btn_open_folder = FolderLinkWidget(
+            top_frame, title="Dossier des fournisseurs :", path="", callback=self._notify_open_folder
         )
-        self._btn_open_folder.pack(side=tk.LEFT, padx=(5, 10))
+        self._btn_open_folder.pack(side=tk.LEFT, padx=(0, 10))
 
-        self._grid = DataGrid(self, columns=_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
+        self._grid = DataGrid(self, columns=DATA_GRID_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
         self._grid.set_sort_state("used_date_profile", True)
         self._grid.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
@@ -103,14 +104,16 @@ class HistoricView(ttk.Frame):
         """
         self._on_open_folder_callback = callback
 
-    def render_profiles(self, profiles: list[dict[str, Any]]) -> None:
+    def render_profiles(self, folder_path: str, profiles: list[dict[str, Any]]) -> None:
         """Pass a fresh list of profile rows to the DataGrid.
 
         Args:
+            folder_path: The path of the folder containing provider files.
             profiles: List of row dicts whose keys match the column ids.
                 Each dict must include an "id" key formatted as
                 ``"id_provider:::id_profile"``.
         """
+        self._btn_open_folder.set_path(folder_path)
         self._grid.render_data(profiles)
 
     # ------------------------------------------------------------------

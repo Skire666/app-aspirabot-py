@@ -308,13 +308,13 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """
         self._profile_panel.set_save_profile_button_state(enabled)
 
-    def set_profile_modified_date(self, date_str: str | None) -> None:
+    def set_profile_modified_date(self, dt: datetime | None) -> None:
         """Update the last-modification date label in the profile panel.
 
         Args:
-            date_str: ISO datetime string, or None to show a placeholder.
+            dt: Datetime object representing the modification date, or None to show a placeholder.
         """
-        self._profile_panel.set_profile_modified_date(date_str)
+        self._profile_panel.set_profile_modified_date(dt)
 
     # ---------------------------------------------------------------
     # Launch-form callbacks, setters, getters — delegates to LaunchProfilePanel

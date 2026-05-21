@@ -10,6 +10,31 @@ from tkinter import messagebox, ttk
 from typing import Any
 
 from views.components.data_grid import DataGrid
+from views.components.folder_link_widget import FolderLinkWidget
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Column definitions for the profiles DataGrid.
+DATA_GRID_COLUMNS: list[dict[str, Any]] = [
+    {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
+    {"id": "action_edit", "title": "Modif.", "width": 62, "type": "button", "button_text": "Modif."},
+    {"id": "action_duplicate", "title": "Dupp.", "width": 62, "type": "button", "button_text": "Dupp."},
+    {
+        "id": "action_delete",
+        "title": "Supp.",
+        "width": 62,
+        "type": "button",
+        "button_text": "Supp.",
+    },
+    {"id": "provider_name", "title": "Nom", "width": 160, "type": "text"},
+    {"id": "provider_desc", "title": "Description", "width": 160, "type": "text"},
+    {"id": "version", "title": "Version", "width": 82, "type": "text"},
+    {"id": "created_date_provider", "title": "Création", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
+    {"id": "modified_date_provider", "title": "Modification", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
+    {"id": "id_file", "title": "ID Fichier", "width": 100, "type": "text"},
+]
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -28,7 +53,7 @@ class ProvidersView(ttk.Frame):
         super().__init__(parent)
 
         self._on_create_provider: Callable[[], None] | None = None
-        self._on_open_folder: Callable[[], None] | None = None
+        self._on_open_folder: Callable[[str], None] | None = None
         self._on_refresh: Callable[[], None] | None = None
         self._on_sort: Callable[[str, bool], None] | None = None
         self._on_edit: Callable[[str], None] | None = None
@@ -48,8 +73,8 @@ class ProvidersView(ttk.Frame):
         self._btn_create = ttk.Button(top_frame, text="Créer un fournisseur", command=self._notify_create_provider)
         self._btn_create.pack(side=tk.LEFT, padx=(5, 10))
 
-        self._btn_open_folder = ttk.Button(
-            top_frame, text="Ouvrir dossier des fournisseurs", command=self._notify_open_folder
+        self._btn_open_folder = FolderLinkWidget(
+            top_frame, title="Dossier des fournisseurs :", path="", callback=self._notify_open_folder
         )
         self._btn_open_folder.pack(side=tk.LEFT, padx=(0, 10))
 
@@ -63,33 +88,14 @@ class ProvidersView(ttk.Frame):
         self._lbl_counter.pack(side=tk.RIGHT, padx=10)
 
         # Main DataGrid for providers
-        columns_def = [
-            {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
-            {"id": "action_edit", "title": "Modif.", "width": 62, "type": "button", "button_text": "Modif."},
-            {"id": "action_duplicate", "title": "Dupp.", "width": 62, "type": "button", "button_text": "Dupp."},
-            {
-                "id": "action_delete",
-                "title": "Supp.",
-                "width": 62,
-                "type": "button",
-                "button_text": "Supp.",
-            },
-            {"id": "provider_name", "title": "Nom", "width": 160, "type": "text"},
-            {"id": "provider_desc", "title": "Description", "width": 160, "type": "text"},
-            {"id": "version", "title": "Version", "width": 82, "type": "text"},
-            {"id": "created_date_provider", "title": "Création", "width": 125, "type": "text"},
-            {"id": "modified_date_provider", "title": "Modification", "width": 125, "type": "text"},
-            {"id": "id_file", "title": "ID Fichier", "width": 100, "type": "text"},
-        ]
-
-        self.grid = DataGrid(self, columns=columns_def, on_sort=self._notify_sort, on_action=self._on_action)
+        self.grid = DataGrid(self, columns=DATA_GRID_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
         self.grid.set_sort_state("provider_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def set_callbacks(
         self,
         on_create: Callable[[], None],
-        on_open_folder: Callable[[], None],
+        on_open_folder: Callable[[str], None],
         on_refresh: Callable[[], None],
         on_sort: Callable[[str, bool], None],
         on_edit: Callable[[str], None],
@@ -137,9 +143,9 @@ class ProvidersView(ttk.Frame):
         if self._on_create_provider:
             self._on_create_provider()
 
-    def _notify_open_folder(self) -> None:
+    def _notify_open_folder(self, path: str) -> None:
         if self._on_open_folder:
-            self._on_open_folder()
+            self._on_open_folder(path)
 
     def _notify_refresh(self) -> None:
         if self._on_refresh:
@@ -163,10 +169,11 @@ class ProvidersView(ttk.Frame):
 
         self._btn_validate.config(state=tk.NORMAL)
 
-    def render_providers(self, providers_data: list[dict[str, Any]]) -> None:
+    def render_providers(self, folder_path: str, providers_data: list[dict[str, Any]]) -> None:
         """Clears existing UI providers and renders the new list.
 
         Args:
+            folder_path: The path of the providers folder.
             providers_data: A list of dictionaries mapping to the DataGrid columns.
         """
         count = len(providers_data)
@@ -177,6 +184,7 @@ class ProvidersView(ttk.Frame):
         else:
             self._lbl_counter.config(text=f"{count} fournisseurs")
 
+        self._btn_open_folder.set_path(folder_path)
         self.grid.render_data(providers_data)
 
     @staticmethod

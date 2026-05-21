@@ -26,8 +26,7 @@ from shared.i18n_fra import (
     C_DEBUG_TIMEOUT_INVALID,
     C_DEBUG_URL_EMPTY,
 )
-
-from __src__.views.components.horizontal_line_frame import HorizontalLineFrame
+from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # ---------------------------------------------------------------------------
 # Constants

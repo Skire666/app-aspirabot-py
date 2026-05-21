@@ -27,7 +27,7 @@ class ProviderService:
             repository: Le dépôt pour la persistance des fournisseurs.
         """
         self._logger = logging.getLogger(__name__)
-        self._repository = repository
+        self._repository: IProviderRepository = repository
 
     def list_all_providers(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs.
@@ -105,6 +105,14 @@ class ProviderService:
     def open_providers_folder(self) -> None:
         """Ouvre le répertoire des fournisseurs dans l'explorateur du système."""
         self._repository.open_providers_folder()
+
+    def get_folder_path_providers(self) -> str:
+        """Récupère le chemin du dossier des fournisseurs.
+
+        Returns:
+            Le chemin du dossier des fournisseurs.
+        """
+        return self._repository.get_folder_path_providers()
 
     def validate_providers(self) -> ProviderValidationReport:
         """Validates every provider file and moves broken files away.

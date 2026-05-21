@@ -10,8 +10,8 @@ from datetime import datetime
 from typing import Any
 
 from models.launch_profile_model import LaunchProfileModel
-from services.historic_service import HistoricService
-from views.historic_view import HistoricView
+from services.history_service import HistoryService
+from views.history_view import HistoryView
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -32,7 +32,7 @@ class HistoricPresenter:
             called with (id_provider, id_profile) when the user clicks Lancer.
     """
 
-    def __init__(self, view: HistoricView, service: HistoricService) -> None:
+    def __init__(self, view: HistoryView, service: HistoryService) -> None:
         """Initialize the presenter and wire the launch callback on the view.
 
         Args:
@@ -93,7 +93,7 @@ class HistoricPresenter:
         sorted_tuples = self._sort_tuples(tuples)
 
         # Push formatted rows to the view and stamp the load time.
-        self._view.render_profiles(self._format_rows(sorted_tuples))
+        self._view.render_profiles(self._service.get_folder_path_providers(), self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
     @staticmethod

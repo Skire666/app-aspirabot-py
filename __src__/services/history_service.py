@@ -15,7 +15,7 @@ from models.provider_model import ProviderModel
 # ---------------------------------------------------------------------------
 
 
-class HistoricService:
+class HistoryService:
     """Business logic for aggregating launch profiles from all providers.
 
     This service reads the provider repository and exposes the complete list
@@ -64,5 +64,13 @@ class HistoricService:
         return result
 
     def open_providers_folder(self) -> None:
-        """Ouvre le répertoire des fournisseurs dans l'explorateur du système."""
+        """Open the folder containing provider files in the OS file explorer."""
         self._repository.open_providers_folder()
+
+    def get_folder_path_providers(self) -> str:
+        """Get the path of the folder containing provider files.
+
+        Returns:
+            The path of the folder containing provider files.
+        """
+        return self._repository.get_folder_path_providers()

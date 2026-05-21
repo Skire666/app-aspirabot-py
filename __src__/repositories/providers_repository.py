@@ -320,6 +320,14 @@ class ProvidersRepository(IProviderRepository):
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
 
+    def get_folder_path_providers(self) -> str:
+        """Gets the path of the providers folder.
+
+        Returns:
+            The path of the providers folder as a string.
+        """
+        return str(self._folder_path)
+
     def _compute_fullpath_from_id_file(self, id_file: str) -> Path:
         """Computes the full JSON file path for a given provider identifier.
 

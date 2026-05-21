@@ -23,9 +23,8 @@ from shared.constants import (
     C_DATA_DEFAULT_FOLDER_SCRAPING,
     C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID,
 )
+from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.random_util import generate_rng_hexastring
-
-from __src__.shared.datetime_util import dict_with_key_to_optional_datetime
 
 # ---------------------------------------------------------------------------
 # Constants

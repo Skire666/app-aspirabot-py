@@ -51,6 +51,8 @@ def dict_with_key_to_optional_datetime(dict_with_datetime: dict[str, any], key: 
         None
     """
     value = dict_with_datetime.get(key)
+    if isinstance(value, datetime):
+        return value
     if isinstance(value, str):
         try:
             return datetime.fromisoformat(value)

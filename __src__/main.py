@@ -25,7 +25,7 @@ from repositories.json_repository import JsonFileRepository
 from repositories.providers_repository import ProvidersRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.app_configuration_service import ConfigService
-from services.historic_service import HistoricService
+from services.history_service import HistoryService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
@@ -41,7 +41,7 @@ from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
 from views.debug_view import DebugView
 from views.faq_view import FaqView
-from views.historic_view import HistoricView
+from views.history_view import HistoryView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.providers_view import ProvidersView
@@ -148,9 +148,7 @@ def _build_and_wire_components(
         main_view, startup_service.config_model, JsonFileRepository()
     )
     scr_view, scr_p = _init_scraping_component(main_view, startup_service.config_model, prov_svc)
-    hist_view, hist_p = _init_historic_components(
-        main_view, startup_service.config_model, JsonFileRepository()
-    )
+    hist_view, hist_p = _init_historic_components(main_view, startup_service.config_model, JsonFileRepository())
     dbg_view, dbg_p = _init_debug_component(main_view)
 
     # Wire navigation and finalize the window.
@@ -244,7 +242,7 @@ def _init_historic_components(
     main_view: MainView,
     config_model: AppConfigurationModel,
     json_repo: JsonFileRepository,
-) -> tuple[HistoricView, HistoricPresenter]:
+) -> tuple[HistoryView, HistoricPresenter]:
     """Create and wire the historic component.
 
     Args:
@@ -256,8 +254,8 @@ def _init_historic_components(
         A (HistoricView, HistoricPresenter) tuple.
     """
     provider_repo = ProvidersRepository(config_model.folder_providers, json_repo)
-    historic_service = HistoricService(provider_repo)
-    historic_view = HistoricView(main_view.content_area)
+    historic_service = HistoryService(provider_repo)
+    historic_view = HistoryView(main_view.content_area)
     historic_presenter = HistoricPresenter(view=historic_view, service=historic_service)
     return historic_view, historic_presenter
 
@@ -475,7 +473,7 @@ def _wire_workflow_guard(
 def _register_views(
     main_view: MainView,
     log_view: LogView,
-    historic_view: HistoricView,
+    historic_view: HistoryView,
     config_view: AppConfigurationView,
     provider_view: ProvidersView,
     provider_edit_view: WorkflowView,

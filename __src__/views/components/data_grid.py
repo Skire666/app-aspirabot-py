@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import bisect
 import tkinter as tk
+from datetime import datetime
 from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
@@ -479,7 +480,7 @@ class DataGrid(ttk.Frame):
                 if col_type == "button":
                     self._draw_button_in_cell(row_index, y0, y1, row_id, x0, x1, col, col_id)
                 else:
-                    self._draw_text_in_cell(y0, row_data, x0, x1, col_id)
+                    self._draw_text_in_cell(y0, row_data, x0, x1, col)
 
     def _draw_text_in_cell(
         self,
@@ -487,12 +488,31 @@ class DataGrid(ttk.Frame):
         row_data: dict[str, Any],
         x0: int,
         x1: int,
-        col_id: str,
+        col: dict[str, Any],
     ) -> None:
+        col_id = str(col["id"])
+        value = row_data.get(col_id)
+        fmt = col.get("format")
+        if fmt:
+            if hasattr(value, "strftime"):
+                text = value.strftime(fmt)
+            elif isinstance(value, str):
+                try:
+                    text = datetime.fromisoformat(value).strftime(fmt)
+                except ValueError:
+                    text = value
+            elif value is None:
+                text = ""
+            else:
+                text = str(value)
+        elif value is None:
+            text = ""
+        else:
+            text = str(value)
         self.body_canvas.create_text(
             x0 + 8,
             y0 + (self._row_height / 2),
-            text=str(row_data.get(col_id, "")),
+            text=text,
             anchor="w",
             width=max(1, (x1 - x0) - 14),
             fill=self._text_color,

@@ -17,10 +17,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, TypeVar
 
+from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
-
-from __src__.shared.datetime_util import dict_with_key_to_optional_datetime
 
 ParentContextType = TypeVar("ParentContextType")
 
