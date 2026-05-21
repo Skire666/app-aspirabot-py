@@ -41,9 +41,32 @@ __src__/
 ```
 
 **Rules for supporting folders:**
-- `interfaces/` defines abstract contracts (ABCs) implemented by MVP layers — never place concrete logic here.
+- `interfaces/` defines `Protocol` contracts implemented by MVP layers — never place concrete logic here.
 - `shared/` contains helpers, constants, and base classes usable by any layer — never place business logic here.
 - Neither `interfaces/` nor `shared/` belong to any MVP layer — they are cross-cutting concerns.
+
+---
+
+## Dependency Map
+
+**Allowed import direction — strictly one way:**
+
+```
+View → Presenter → Service → Repository → Model
+```
+
+Each layer may only import from layers **below** it in this chain.
+Cross-layer imports in the opposite direction are a hard violation.
+
+| Importing layer | May import from | Must NEVER import from |
+|-----------------|---|---|
+| `View`          | `interfaces/`, `shared/`            | `Service`, `Repository`, `Model` directly |
+| `Presenter`     | `Service`, `interfaces/`, `shared/` | `Repository` directly |
+| `Service`       | `Repository` (via interface), `Model`, `shared/` | `View`, `Presenter` |
+| `Repository`    | `Model`, `shared/`                  | `View`, `Presenter`, `Service` |
+| `Model`         | `shared/`                           | Everything else |
+
+> **Rule:** if adding an import would create a cycle or go against the arrow above, the design is wrong — refactor instead.
 
 ---
 
@@ -102,7 +125,8 @@ python -m pyclean ./ -v
 
 ## Runtime-Generated Files and Folders
 
-These resources are created automatically at launch — **do not version them**:
+These resources are created automatically at launch — **do not version them** and **do not add them manually**.
+They must be present in `.gitignore` — the AI must never create or commit them.
 
 | Path | Description |
 |------|-------------|
@@ -117,6 +141,7 @@ These resources are created automatically at launch — **do not version them**:
 
 This file and all agent instructions are in **English**.
 All code conventions (docstrings, inline comments) are written in **English**.
+The i18n module (`shared/i18n_fra.py`) is the single source of truth for all French strings.
 
 ---
 
@@ -124,11 +149,29 @@ All code conventions (docstrings, inline comments) are written in **English**.
 
 This project enforces a high standard of code quality. All contributions must follow these rules.
 
+### Import Order
+
+Imports must follow **isort** order, enforced via `ruff --select I`:
+
+```python
+# 1. Standard library
+import logging
+from dataclasses import dataclass
+
+# 2. Third-party
+from playwright.async_api import Page
+
+# 3. Local application
+from models.provider import Provider
+from shared.i18n_fra import ERROR_TEMPLATES
+```
+
 ### General Style
 - Strict **PEP 8** compliance
 - **Docstrings** required on all public classes and functions, **Google style**
 - **Method length**: 25 lines maximum — if a method exceeds this, break it down
 - **Comments**: one comment per logical block, approximately every 5 lines of code
+- **File length**: 1000 lines maximum — if a file exceeds this, split it into focused modules
 - **Language**: English only
 
 ### Expected Docstring Format (Google Style)
@@ -171,6 +214,252 @@ def parse_results(raw_html: str) -> list[dict]:
 
 ### Type Hints
 - **Required** on all function and method signatures
+
+---
+
+## Interfaces — Protocol Pattern
+
+All inter-layer contracts are defined as `typing.Protocol` in `interfaces/`.
+**Never use `ABC` for interfaces** — `Protocol` enables structural subtyping and allows testing without Tkinter.
+
+### Naming convention
+
+- Interface files: `i_<name>.py` (e.g. `i_scraping_view.py`)
+- Interface classes: prefix `I` in PascalCase (e.g. `IScrapingView`)
+
+### Definition
+
+```python
+# interfaces/i_error_display_view.py
+from typing import Protocol
+
+class IErrorDisplayView(Protocol):
+    def show_errors(self, messages: list[str]) -> None: ...
+    def clear_errors(self) -> None: ...
+```
+
+### Usage in Presenter
+
+```python
+# presenters/scraping_presenter.py
+from interfaces.i_scraping_view import IScrapingView
+from services.scraping_service import ScrapingService
+
+class ScrapingPresenter:
+    def __init__(self, view: IScrapingView, service: ScrapingService) -> None:
+        self._view = view
+        self._service = service
+```
+
+Presenters always depend on the `I*` Protocol, **never on the concrete View class**.
+This decouples the Presenter from Tkinter entirely and makes it fully testable.
+
+### Anti-patterns — Interfaces
+
+❌ Never use `ABC` for view or service contracts
+```python
+# BAD
+from abc import ABC, abstractmethod
+class IScrapingView(ABC):
+    @abstractmethod
+    def show_errors(self, messages: list[str]) -> None: ...
+```
+
+❌ Never place concrete logic inside `interfaces/`
+```python
+# BAD — interfaces define contracts only, no implementation
+class IScrapingService(Protocol):
+    def run(self, url: str) -> list[dict]:
+        return []  # ← must be left as "..."
+```
+
+---
+
+## Dependency Injection & Wiring
+
+**Never instantiate a Service or Repository inside another Service, Presenter, or View.**
+All concrete objects are assembled once, in `main.py`, and injected via `__init__`.
+
+```python
+# main.py — the ONLY place where concrete classes are instantiated
+import tkinter as tk
+from repositories.config_repository import ConfigRepository
+from services.scraping_service import ScrapingService
+from views.main_view import MainView
+from presenters.main_presenter import MainPresenter
+
+root = tk.Tk()
+
+config_repo     = ConfigRepository(path=CONFIG_PATH)
+scraping_service = ScrapingService(config_repository=config_repo)
+main_view       = MainView(root)
+main_presenter  = MainPresenter(view=main_view, scraping_service=scraping_service)
+
+root.mainloop()
+```
+
+**Rules:**
+- Every dependency is passed via `__init__` — no `import` of a concrete class inside a collaborator.
+- When the AI adds a new class, it must also update `main.py` with the new wiring.
+- No global singletons, no module-level instantiation outside `main.py`.
+
+---
+
+## Logging
+
+Use the standard `logging` module. **Never use `print()` for runtime output.**
+
+### Setup — one logger per module
+
+```python
+import logging
+
+class ScrapingService:
+    def __init__(self, ...) -> None:
+        self._logger = logging.getLogger(__name__)
+```
+
+### Log levels by layer
+
+| Layer | Levels to use | Rationale |
+|---|---|---|
+| `Repository` | `DEBUG` | Low-level I/O details, useful for tracing |
+| `Service` | `DEBUG`, `INFO` | Business flow steps |
+| `Presenter` | `ERROR` | Unexpected failures caught before the View |
+| `View` | — | Never logs — delegates all errors to the Presenter |
+
+```python
+# Repository — trace I/O at DEBUG
+def find_by_id(self, provider_id: str) -> Provider | None:
+    self._logger.debug("Lecture du provider id=%s", provider_id)
+    ...
+
+# Service — trace flow at INFO
+def start_scraping(self, provider_id: str) -> None:
+    self._logger.info("Démarrage du scraping pour provider id=%s", provider_id)
+    ...
+
+# Presenter — log unexpected errors at ERROR
+def on_start_clicked(self, provider_id: str) -> None:
+    try:
+        self._service.start_scraping(provider_id)
+    except AppError as e:
+        self._logger.error("Erreur lors du scraping : %s", e, exc_info=True)
+        self._view.show_errors([format_error(e)])
+```
+
+**Rules:**
+- Always use `%s` formatting in log calls — never f-strings (`logger.error("msg %s", var)` not `logger.error(f"msg {var}")`).
+- Use `exc_info=True` in `logger.error()` calls that catch exceptions, to capture the full stack trace.
+- Never log sensitive data (passwords, tokens, personal data).
+
+---
+
+## Error Handling
+
+### Exception hierarchy
+
+All runtime exceptions inherit from a common base defined in `shared/exception_util.py`:
+
+```python
+# shared/exception_util.py
+class AppError(Exception):
+    """Erreur de base de l'application."""
+
+class ScrapingError(AppError): ...
+class PageLoadError(ScrapingError): ...
+class ProviderError(AppError): ...
+class ProviderNotFoundError(ProviderError): ...
+class RepositoryError(AppError): ...
+class DatabaseUnavailableError(RepositoryError): ...
+```
+
+**Rules:**
+- Never raise `Exception`, `ValueError`, or `RuntimeError` directly in business code.
+- Always raise the most **specific** exception available.
+- Always chain with `raise NewError("...") from original` to preserve the traceback.
+
+### Who raises, who catches
+
+| Layer | Raises | Catches |
+|---|---|---|
+| `Repository` | `RepositoryError` subclasses | Low-level errors (`IOError`, `json.JSONDecodeError`…) — wraps and re-raises |
+| `Service` | Domain exceptions (`ProviderNotFoundError`…) | `RepositoryError` if a transformation is needed |
+| `Presenter` | — | Domain exceptions → formats into `list[str]` for the View |
+| `View` | — | Nothing — the Presenter delivers ready-to-display messages |
+
+```python
+# Repository — wrap technical errors
+def load_config(self) -> dict:
+    try:
+        with open(self._path) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        raise DatabaseUnavailableError("Impossible de lire la config.") from e
+
+# Service — raise domain errors
+def get_provider(self, provider_id: str) -> Provider:
+    provider = self._repository.find_by_id(provider_id)
+    if provider is None:
+        raise ProviderNotFoundError(f"Provider introuvable : {provider_id}")
+    return provider
+
+# Presenter — only layer that catches for the View
+def on_provider_requested(self, provider_id: str) -> None:
+    try:
+        provider = self._service.get_provider(provider_id)
+        self._view.display_provider(provider)
+    except ProviderNotFoundError as e:
+        self._view.show_errors([str(e)])
+    except AppError as e:
+        self._logger.error("Erreur inattendue : %s", e, exc_info=True)
+        self._view.show_errors(["Une erreur inattendue est survenue."])
+```
+
+### Anti-patterns — Exceptions
+
+❌ Never use a bare `except` or swallow errors silently
+```python
+# BAD
+try:
+    ...
+except:
+    pass
+
+# BAD
+try:
+    ...
+except Exception:
+    return None
+```
+
+❌ Never raise generic exceptions in business code
+```python
+# BAD
+raise ValueError("Provider not found")
+
+# GOOD
+raise ProviderNotFoundError("Provider introuvable : {id}") from None
+```
+
+❌ Never forget to chain exceptions
+```python
+# BAD — original traceback is lost
+except OSError:
+    raise DatabaseUnavailableError("Erreur I/O")
+
+# GOOD
+except OSError as e:
+    raise DatabaseUnavailableError("Erreur I/O") from e
+```
+
+❌ Never catch exceptions in a layer that is not responsible for them
+```python
+# BAD — a Repository must not catch domain errors from a Service
+# BAD — a Service must not catch and swallow RepositoryError without re-raising
+```
+
+❌ Never use `try/except` blocks wrapping more than 4–5 lines without justification
 
 ---
 
@@ -247,10 +536,13 @@ with open("config-aspirabot.json", "w") as f:
 ❌ Never place concrete logic inside `interfaces/`
 ```python
 # BAD — interfaces define contracts only, no implementation
-class IScrapingService(ABC):
+class IScrapingService(Protocol):
     def run(self, url: str) -> list[dict]:
         return []  # ← must be abstract
 ```
+
+❌ Never use `ABC` to define an interface — always use `typing.Protocol`
+
 
 ❌ Never place business logic inside `shared/`
 ```python
@@ -273,6 +565,10 @@ view.on_start = service.run  # ← the presenter must be the bridge
 ### Code Quality Violations
 
 ❌ Never write a method longer than 25 lines — break it down instead
+
+❌ Never write a file longer than 1000 lines — split into focused modules
+
+❌ Never use `print()` — always use `self._logger = logging.getLogger(__name__)`
 
 ❌ Never omit type hints on a function or method signature
 ```python
@@ -344,54 +640,78 @@ data_providers/
 config-aspirabot.json
 ```
 
+---
+
 ## Error Messages
 
 ### Ownership by layer
 
 | What | Where |
 |------|-------|
-| Raw errors (code + context) | `models/` — `ValidationError` dataclass |
-| Message templates | `presenters/messages.py` |
-| Formatting logic | `presenters/` — converts raw errors into `list[str]` |
-| Display | `views/` — receives `list[str]`, renders, nothing else |
+| Raw errors (code + context) | `models/` — `FieldValidationError` dataclass |
+| Message templates | `shared/i18n_fra.py` |
+| Formatting logic | `presenters/` — via `format_error()` helper |
+| Display | `views/` — receives `list[str]`, renders only |
 
-### `ValidationError` — `models/`
+### `FieldValidationError` — `models/`
 
 ```python
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class ValidationError:
+class FieldValidationError:
+    """Erreur de validation d'un champ métier.
+
+    Attributes:
+        code: Clé du template dans ERROR_TEMPLATES.
+        context: Données utilisées pour formater le message.
+    """
     code: str
-    context: dict  # Raw data used for formatting
+    context: dict[str, str | int]
 ```
 
-### Message templates — `presenters/messages.py`
+### Message templates — `shared/i18n_fra.py`
 
-All user-facing strings live here. No string is ever written inline in
-business logic or view code.
+All user-facing strings live here. **No string is ever written inline** in business logic or view code.
 
 ```python
+# shared/i18n_fra.py
 ERROR_TEMPLATES: dict[str, str] = {
     "invalid_operator": (
-        "Step {step}: operator must be one of: "
+        "Étape {step} : l'opérateur doit être l'un de : "
         "equal, not_equal, greater_than, less_than, "
         "greater_or_equal, less_or_equal."
     ),
-    "empty_field": "Step {step}: field '{field}' cannot be empty.",
+    "empty_field": "Étape {step} : le champ '{field}' ne peut pas être vide.",
 }
 ```
 
-### Presenter — formats and delegates
+### `format_error()` helper — `presenters/`
+
+All formatting goes through this single helper. Never call `.format(**e.context)` directly.
 
 ```python
+# presenters/error_formatter.py
+from models.field_validation_error import FieldValidationError
 from shared.i18n_fra import ERROR_TEMPLATES
 
-messages = [
-    ERROR_TEMPLATES[e.code].format(**e.context)
-    for e in raw_errors
-]
-self._view.show_errors(messages)   # or clear_errors()
+def format_error(error: FieldValidationError) -> str:
+    """Formate une FieldValidationError en message lisible.
+
+    Args:
+        error: L'erreur de validation à formater.
+
+    Returns:
+        Le message utilisateur prêt à afficher.
+    """
+    template = ERROR_TEMPLATES.get(
+        error.code,
+        "Erreur inconnue (code : {code})"
+    )
+    try:
+        return template.format(code=error.code, **error.context)
+    except KeyError as e:
+        return f"Erreur de formatage pour le code '{error.code}' : clé manquante {e}"
 ```
 
 ### View — passive display only
@@ -401,12 +721,23 @@ def show_errors(self, messages: list[str]) -> None: ...
 def clear_errors(self) -> None: ...
 ```
 
-The View receives ready-to-display strings. It never formats,
-conditions, or owns any message text.
+The View receives ready-to-display strings. It never formats, conditions, or owns any message text.
 
+
+### Presenter — formats and delegates
+
+```python
+from presenters.error_formatter import format_error
+
+messages = [format_error(e) for e in raw_errors]
+self._view.show_errors(messages)
+```
 ### Interface — `interfaces/`
 
 ```python
+# interfaces/i_error_display_view.py
+from typing import Protocol
+
 class IErrorDisplayView(Protocol):
     def show_errors(self, messages: list[str]) -> None: ...
     def clear_errors(self) -> None: ...
@@ -414,30 +745,29 @@ class IErrorDisplayView(Protocol):
 
 Presenters depend on this protocol, never on the concrete View —
 enabling tests without Tkinter.
-
----
-
 ### Anti-patterns — Error Messages
 
 ❌ Never write a user-facing string inline in a service or presenter
 
 ```python
 # BAD — string belongs in presenters/messages.py
-errors.append(f"Step {index}: operator must be one of: equal, ...")
+# BAD
+errors.append(f"Étape {index} : l'opérateur doit être...")
 ```
 
 ❌ Never format or build error messages inside the View
+❌ Never call `.format(**e.context)` directly — always use `format_error()`
 
+❌ Never pass `FieldValidationError` objects to the View
 ```python
-# BAD — the View must receive ready-to-display strings
-def show_errors(self, raw_errors: list[ValidationError]) -> None:
-    for e in raw_errors:
-        msg = ERROR_TEMPLATES[e.code].format(**e.context)  # ← Presenter's job
+# BAD
+self._view.show_errors(raw_errors)  # ← format first in the Presenter
 ```
 
-❌ Never pass `ValidationError` objects to the View
-
+❌ Never format or build error messages inside the View
 ```python
-# BAD — the View must only receive list[str]
-self._view.show_errors(raw_errors)  # ← format first in the Presenter
+# BAD
+def show_errors(self, raw_errors: list[FieldValidationError]) -> None:
+    for e in raw_errors:
+        msg = ERROR_TEMPLATES[e.code].format(**e.context)  # ← Presenter's job
 ```
