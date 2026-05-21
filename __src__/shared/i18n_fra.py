@@ -24,9 +24,6 @@ from shared.resources_icons_util import (
 # Views
 # ---------------------------------------------------------------------------
 
-# Main view sidebar width in pixels
-C_VIEW_SIDEBAR_LEFT_WIDTH = 80
-
 # Scraping panel — status labels
 C_SCRAPING_STATUS_INACTIVE = "Est inactif"
 C_SCRAPING_JOURNAL_PENDING_STATUS = "Scraping en cours"

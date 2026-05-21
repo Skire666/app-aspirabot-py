@@ -73,6 +73,21 @@ def get_resource_icon_32px(path: str) -> ImageTk.PhotoImage:
     return ResourcesIcons().get_icon(path, (32, 32))
 
 
+def get_resource_icon_32px_disabled(path: str) -> ImageTk.PhotoImage:
+    """Load and cache a faded 32×32 icon for use in a disabled state.
+
+    Applies a 40 % opacity mask so the icon reads as visually inactive
+    against the sidebar's normal background without altering its colour.
+
+    Args:
+        path: Path to the source icon file.
+
+    Returns:
+        ImageTk.PhotoImage: Tkinter-compatible faded icon.
+    """
+    return ResourcesIcons().get_icon_disabled(path, (32, 32))
+
+
 class ResourcesIcons:
     """Centralized resource manager with singleton instances per resource type.
 
@@ -127,6 +142,49 @@ class ResourcesIcons:
             self._cache[key] = ImageTk.PhotoImage(img)
 
         return self._cache[key]
+
+    def get_icon_disabled(self, path: str, size: tuple[int, int]) -> ImageTk.PhotoImage:
+        """Load, resize, and cache an icon with a faded disabled appearance.
+
+        Uses a dedicated cache key so the normal and disabled variants coexist
+        without evicting each other.
+
+        Args:
+            path: Path to the image file.
+            size: Desired icon dimensions (width, height).
+
+        Returns:
+            ImageTk.PhotoImage: Tkinter-compatible faded image.
+        """
+        resolved_path = Path(path).resolve()
+        key = (resolved_path, size, "disabled")
+
+        if key not in self._cache:
+            try:
+                img = Image.open(resolved_path).resize(size, Image.BILINEAR)
+            except Exception:  # noqa: BLE001
+                img = self._create_fallback(size)
+            self._cache[key] = ImageTk.PhotoImage(self._apply_disabled_effect(img))
+
+        return self._cache[key]
+
+    @staticmethod
+    def _apply_disabled_effect(img: Image.Image) -> Image.Image:
+        """Return a copy of img with 40 % opacity to signal a disabled state.
+
+        The image is converted to RGBA so the alpha channel can be scaled
+        without altering colour information, regardless of the source mode.
+
+        Args:
+            img: Source PIL image (any mode).
+
+        Returns:
+            Image.Image: RGBA image with reduced opacity.
+        """
+        img = img.convert("RGBA")
+        r, g, b, a = img.split()
+        a = a.point(lambda v: int(v * 0.4))
+        return Image.merge("RGBA", [r, g, b, a])
 
     @staticmethod
     def _create_fallback(size: tuple[int, int]) -> Image.Image:
