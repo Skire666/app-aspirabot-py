@@ -50,14 +50,16 @@ class ProvidersRepository(IProviderRepository):
         _logger: Internal logger for tracing execution.
     """
 
-    def __init__(self, folder_providers: str | Path) -> None:
+    def __init__(self, folder_providers: str | Path, json_repo: JsonFileRepository) -> None:
         """Initializes the repository pointing to a local providers folder.
 
         Args:
             folder_providers: Path to the folder containing provider JSON files.
+            json_repo: Shared JSON file repository providing cached I/O.
         """
         self._logger = logging.getLogger(__name__)
         self._folder_path: Path = Path(folder_providers)
+        self._json_repo: JsonFileRepository = json_repo
 
     @property
     def folder_path(self) -> Path:
@@ -181,8 +183,7 @@ class ProvidersRepository(IProviderRepository):
         if not full_filepath.exists():
             raise ProviderNotFoundError(id_file)
 
-        json_repo = JsonFileRepository(full_filepath, {})
-        provider_data = json_repo.all_data
+        provider_data = self._json_repo.read(full_filepath)
 
         if not provider_data:
             self._logger.warning("Le fichier %s est vide.", full_filepath)
@@ -204,8 +205,7 @@ class ProvidersRepository(IProviderRepository):
 
         for file_path in self._list_provider_files():
             try:
-                json_repo = JsonFileRepository(file_path, {})
-                provider_data = json_repo.all_data
+                provider_data = self._json_repo.read(file_path)
 
                 if provider_data:
                     provider_model = self._dict_to_provider_model(provider_data)
@@ -231,9 +231,7 @@ class ProvidersRepository(IProviderRepository):
 
         try:
             provider_dict = provider.export_to_data_json()
-            json_repo = JsonFileRepository(full_filepath, {})
-            json_repo.all_data = provider_dict
-            json_repo.save_to_file()
+            self._json_repo.write(full_filepath, provider_dict)
             self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
         except Exception:
             self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
@@ -253,9 +251,7 @@ class ProvidersRepository(IProviderRepository):
 
         try:
             provider_dict = provider.export_to_data_json()
-            json_repo = JsonFileRepository(full_filepath, {})
-            json_repo.all_data = provider_dict
-            json_repo.save_to_file()
+            self._json_repo.write(full_filepath, provider_dict)
             self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
         except Exception:
             self._logger.error("Erreur lors de la MAJ du fournisseur.", exc_info=True)

@@ -15,13 +15,15 @@ Example:
 # ---------------------------------------------------------------------------
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, cast
 
 from models.launch_profile_model import LaunchProfileModel
 from models.step_scraping_model import StepScrapingModel
 from shared.constants import C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID, C_SIZE_HEXASTRING_PROVIDER_ID
-from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 from shared.random_util import generate_rng_hexastring
+
+from __src__.shared.datetime_util import dict_with_key_to_optional_datetime
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -53,8 +55,8 @@ class ProviderModel:
     id_file: str
     provider_name: str
     provider_desc: str
-    created_date_provider: str
-    modified_date_provider: str
+    created_date_provider: datetime | None
+    modified_date_provider: datetime | None
     version: str
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
     launch_profiles: list[LaunchProfileModel] = field(default_factory=list)
@@ -75,7 +77,7 @@ class ProviderModel:
             'Description du fournisseur'
         """
         # Capture a single timestamp to keep creation and modification aligned.
-        current_timestamp = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        current_timestamp = datetime.now()
 
         # Return a ready-to-use default provider.
         return cls(
@@ -87,7 +89,7 @@ class ProviderModel:
             modified_date_provider=current_timestamp,
         )
 
-    def update_created_date_and_modified_date(self) -> None:
+    def mark_as_created(self) -> None:
         """Updates both creation and modification timestamps to now.
 
         Use this method when reinitializing metadata for an existing instance.
@@ -100,14 +102,14 @@ class ProviderModel:
 
         Example:
             >>> provider = ProviderModel.get_default_data()
-            >>> provider.update_created_date_and_modified_date()
+            >>> provider.mark_as_created()
         """
         # Use one value so both fields remain perfectly synchronized.
-        current_timestamp = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        current_timestamp = datetime.now()
         self.created_date_provider = current_timestamp
         self.modified_date_provider = current_timestamp
 
-    def update_modified_date(self) -> None:
+    def mark_as_modified(self) -> None:
         """Updates the modification timestamp to the current time.
 
         Returns:
@@ -118,10 +120,10 @@ class ProviderModel:
 
         Example:
             >>> provider = ProviderModel.get_default_data()
-            >>> provider.update_modified_date()
+            >>> provider.mark_as_modified()
         """
         # Refresh only the modification date to preserve creation metadata.
-        self.modified_date_provider = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        self.modified_date_provider = datetime.now()
 
     @staticmethod
     def is_valid_id(value: str) -> bool:
@@ -198,12 +200,12 @@ class ProviderModel:
         steps = cls._deserialize_steps(data.get("steps", []))
         profiles = cls._deserialize_profiles(data.get("launch_profiles", []))
         return cls(
-            id_file=data.get("id_file", ""),
-            provider_name=data.get("provider_name", ""),
-            provider_desc=data.get("provider_desc", ""),
-            created_date_provider=data.get("created_date_provider", ""),
-            modified_date_provider=data.get("modified_date_provider", ""),
-            version=data.get("version", "1.0.0"),
+            id_file=data.get("id_file"),
+            provider_name=data.get("provider_name"),
+            provider_desc=data.get("provider_desc"),
+            created_date_provider=dict_with_key_to_optional_datetime(data, "created_date_provider"),
+            modified_date_provider=dict_with_key_to_optional_datetime(data, "modified_date_provider"),
+            version=data.get("version"),
             steps=steps,
             launch_profiles=profiles,
         )

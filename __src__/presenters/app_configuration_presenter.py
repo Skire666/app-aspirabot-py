@@ -145,5 +145,5 @@ class AppConfigurationPresenter:
     @staticmethod
     def _format_last_write_time(last_write: datetime | None) -> str:
         if not last_write:
-            return "N/A"
+            return "#N/A"
         return last_write.strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS)

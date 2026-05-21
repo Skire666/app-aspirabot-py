@@ -14,6 +14,7 @@ Example:
 # ---------------------------------------------------------------------------
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,8 +23,9 @@ from shared.constants import (
     C_DATA_DEFAULT_FOLDER_SCRAPING,
     C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID,
 )
-from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.random_util import generate_rng_hexastring
+
+from __src__.shared.datetime_util import dict_with_key_to_optional_datetime
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -69,8 +71,8 @@ class LaunchProfileModel:
     url_source_value: list[str] | str | None
     emergency_stop_threshold: int
     launch_count: int
-    used_date_profile: str | None
-    modified_date_profile: str | None
+    used_date_profile: datetime | None
+    modified_date_profile: datetime | None
 
     @classmethod
     def get_default(cls, name_profile: str = "Profil par défaut") -> LaunchProfileModel:
@@ -99,7 +101,7 @@ class LaunchProfileModel:
             emergency_stop_threshold=C_DEFAULT_THRESHOLD_EMERGENCY_STOP,
             launch_count=0,
             used_date_profile=None,
-            modified_date_profile=get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff(),
+            modified_date_profile=datetime.now(),
         )
 
     @classmethod
@@ -121,15 +123,15 @@ class LaunchProfileModel:
             'P1'
         """
         return cls(
-            id_profile=data.get("id_profile", generate_rng_hexastring(C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID)),
-            name_profile=data.get("name_profile", "Profil"),
-            export_folder=data.get("export_folder", _C_DEFAULT_EXPORT_FOLDER),
-            url_source_type=data.get("url_source_type", ""),
+            id_profile=data.get("id_profile"),
+            name_profile=data.get("name_profile"),
+            export_folder=data.get("export_folder"),
+            url_source_type=data.get("url_source_type"),
             url_source_value=data.get("url_source_value"),
-            emergency_stop_threshold=int(data.get("emergency_stop_threshold", C_DEFAULT_THRESHOLD_EMERGENCY_STOP)),
-            launch_count=int(data.get("launch_count", 0)),
-            used_date_profile=data.get("used_date_profile"),
-            modified_date_profile=data.get("modified_date_profile"),
+            emergency_stop_threshold=int(data.get("emergency_stop_threshold")),
+            launch_count=int(data.get("launch_count")),
+            used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
+            modified_date_profile=dict_with_key_to_optional_datetime(data, "modified_date_profile"),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -174,7 +176,7 @@ class LaunchProfileModel:
             1
         """
         self.launch_count += 1
-        self.used_date_profile = get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff()
+        self.used_date_profile = datetime.now()
 
     def mark_profile_as_modified(self) -> None:
         """Update the modification timestamp to the current time.
@@ -193,4 +195,4 @@ class LaunchProfileModel:
             >>> profile.modified_date_profile is not None
             True
         """
-        self.modified_date_profile = get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff()
+        self.modified_date_profile = datetime.now()

@@ -21,6 +21,7 @@ from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
 from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
+from repositories.json_repository import JsonFileRepository
 from repositories.providers_repository import ProvidersRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.app_configuration_service import ConfigService
@@ -137,14 +138,19 @@ def _build_and_wire_components(
     startup_service: StartupService,
 ) -> None:
     """Instantiate all MVP groups, wire navigation, register views, and anchor presenters."""
-    cfg = startup_service.config_model
-
     # Initialize each component group.
+    # JsonFileRepository instances share a class-level cache, so passing two
+    # separate instances to provider and historic components is functionally
+    # equivalent to sharing one — both benefit from the same cached data.
     log_view, log_p = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_p = _init_config_component(main_view, config_repo)
-    prov_view, prov_p, edit_view, edit_p, prov_svc = _init_provider_components(main_view, cfg)
-    scr_view, scr_p = _init_scraping_component(main_view, cfg, prov_svc)
-    hist_view, hist_p = _init_historic_components(main_view, cfg)
+    prov_view, prov_p, edit_view, edit_p, prov_svc = _init_provider_components(
+        main_view, startup_service.config_model, JsonFileRepository()
+    )
+    scr_view, scr_p = _init_scraping_component(main_view, startup_service.config_model, prov_svc)
+    hist_view, hist_p = _init_historic_components(
+        main_view, startup_service.config_model, JsonFileRepository()
+    )
     dbg_view, dbg_p = _init_debug_component(main_view)
 
     # Wire navigation and finalize the window.
@@ -237,17 +243,19 @@ def _init_config_component(
 def _init_historic_components(
     main_view: MainView,
     config_model: AppConfigurationModel,
+    json_repo: JsonFileRepository,
 ) -> tuple[HistoricView, HistoricPresenter]:
     """Create and wire the historic component.
 
     Args:
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the providers folder path.
+        json_repo: Shared JSON repository injected into the providers repository.
 
     Returns:
         A (HistoricView, HistoricPresenter) tuple.
     """
-    provider_repo = ProvidersRepository(config_model.folder_providers)
+    provider_repo = ProvidersRepository(config_model.folder_providers, json_repo)
     historic_service = HistoricService(provider_repo)
     historic_view = HistoricView(main_view.content_area)
     historic_presenter = HistoricPresenter(view=historic_view, service=historic_service)
@@ -257,6 +265,7 @@ def _init_historic_components(
 def _init_provider_components(
     main_view: MainView,
     config_model: AppConfigurationModel,
+    json_repo: JsonFileRepository,
 ) -> tuple[
     ProvidersView,
     ProviderPresenter,
@@ -269,13 +278,14 @@ def _init_provider_components(
     Args:
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the providers folder path.
+        json_repo: Shared JSON repository injected into the providers repository.
 
     Returns:
         A (ProvidersListView, ProviderPresenter, ProviderEditView,
         ProviderEditPresenter, ProviderService) tuple.
     """
     # Shared service and repository for both list and edit sub-components.
-    provider_repo = ProvidersRepository(config_model.folder_providers)
+    provider_repo = ProvidersRepository(config_model.folder_providers, json_repo)
     provider_service = ProviderService(provider_repo)
 
     # Provider list view and presenter.

@@ -68,7 +68,7 @@ class ProviderService:
         Args:
             provider: Le modèle du fournisseur à créer.
         """
-        provider.update_created_date_and_modified_date()
+        provider.mark_as_created()
         self._repository.create_provider(provider)
 
     def update_provider(self, provider: ProviderModel) -> None:
@@ -77,7 +77,7 @@ class ProviderService:
         Args:
             provider: Le modèle du fournisseur à mettre à jour.
         """
-        provider.update_modified_date()
+        provider.mark_as_modified()
         self._repository.update_provider(provider)
 
     def duplicate_provider(self, id_file: str) -> str:

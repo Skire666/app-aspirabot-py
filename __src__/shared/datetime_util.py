@@ -32,47 +32,35 @@ def get_time_now_hh_mm_ss() -> str:
     return datetime.now().strftime(C_DATETIME_FORMAT_HH_MM_SS)
 
 
-def get_datetime_now_yyyy_mm_dd_hh_mm_ss() -> str:
-    """Returns the current date and time as a string in the format '2024-06-01 14:30:45'.
+def dict_with_key_to_optional_datetime(dict_with_datetime: dict[str, any], key: str) -> datetime | None:
+    """Converts a value in a dict to a datetime object if possible, otherwise returns None.
+
+    Args:
+        dict_with_datetime: A dictionary that may contain a datetime string under the specified key.
+        key: The key in the dictionary to look up for the datetime string.
 
     Returns:
-        A string representing the current date and time.
+        A datetime object if the key exists and can be parsed, otherwise None.
 
     Example:
-        >>> get_datetime_now_yyyy_mm_dd_hh_mm_ss()
-        '2024-06-01 14:30:45'
+        >>> convert_any_to_optional_datetime({"created": "2024-06-01T14:30:45"}, "created")
+        datetime.datetime(2024, 6, 1, 14, 30, 45)
+        >>> convert_any_to_optional_datetime({}, "created")
+        None
+        >>> convert_any_to_optional_datetime({"created": "invalid"}, "created")
+        None
     """
-    return datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS)
-
-
-def get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff() -> str:
-    """Returns the current date and time as a string in the format '2024-06-01 14:30:45.654'.
-
-    Returns:
-        A string representing the current date and time.
-
-    Example:
-        >>> get_datetime_now_yyyy_mm_dd_hh_mm_ss_fff()
-        '2024-06-01 14:30:45.654'
-    """
-    return datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF)[:-3]
-
-
-def get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
-    """Returns the current date and time as a string in the format '2024-06-01 14:30:45.654321'.
-
-    Returns:
-        A string representing the current date and time.
-
-    Example:
-        >>> get_datetime_now_yyyy_mm_dd_hh_mm_ss_ffffff()
-        '2024-06-01 14:30:45.654321'
-    """
-    return datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF)
+    value = dict_with_datetime.get(key)
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return None
+    return None
 
 
 # ------------------------------------------------------------------------------
-# Compliant with fielsystem
+# Compliant with filesystem
 # -----------------------------------------------------------------------------
 
 

@@ -684,6 +684,24 @@ class ScriptExecutionFailedError(RuntimeError, AspirabotError):
 
 
 # ---------------------------------------------------------------------------
+# Repository errors
+# ---------------------------------------------------------------------------
+
+
+class JsonFileRepositoryError(AspirabotError):
+    """Raised when a JSON file cannot be read from or written to disk."""
+
+    def __init__(self, path: "Path", reason: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            path: The file path that caused the error.
+            reason: Short description of the underlying failure.
+        """
+        super().__init__(f"Erreur JSON sur '{path}' : {reason}")
+
+
+# ---------------------------------------------------------------------------
 # UI widget errors
 # ---------------------------------------------------------------------------
 

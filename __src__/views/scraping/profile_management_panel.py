@@ -7,6 +7,7 @@
 import contextlib
 import tkinter as tk
 from collections.abc import Callable
+from datetime import datetime
 from tkinter import simpledialog, ttk
 from typing import Any
 
@@ -234,13 +235,17 @@ class ProfileManagementPanel(ttk.Frame):
         """
         self._btn_save.config(state=tk.NORMAL if enabled else tk.DISABLED)
 
-    def set_profile_modified_date(self, date_str: str | None) -> None:
+    def set_profile_modified_date(self, dt: datetime | None) -> None:
         """Update the last-modification date label.
 
         Args:
-            date_str: ISO datetime string, or None to show a placeholder.
+            dt: Datetime object representing the modification date, or None to show a placeholder.
         """
-        text = C_SCRAPING_SAVED_DATE_FMT.format(date=date_str) if date_str else C_SCRAPING_SAVED_DATE_EMPTY
+        text = (
+            C_SCRAPING_SAVED_DATE_FMT.format(date=dt.strftime("%Y-%m-%d %H:%M:%S"))
+            if dt
+            else C_SCRAPING_SAVED_DATE_EMPTY
+        )
         self._lbl_modified_date.config(text=text)
 
     # ------------------------------------------------------------------

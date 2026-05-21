@@ -269,13 +269,13 @@ class ScrapingPresenter:
         self._providers_loaded = datetime.now()
 
         # Build display-ready dicts and push to the view.
-        rows = [
+        rows: list[dict[str, str]] = [
             {
                 "id_file": p.id_file,
                 "provider_name": p.provider_name,
                 "provider_desc": p.provider_desc,
                 "version": p.version,
-                "modified_date": p.modified_date_provider,
+                "modified_date": str(p.modified_date_provider),
             }
             for p in providers
         ]

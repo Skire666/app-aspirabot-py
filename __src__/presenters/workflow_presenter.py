@@ -178,7 +178,7 @@ class WorkflowPresenter:
                 return
             self._service.create_provider(self._current_provider)
         else:
-            self._current_provider.update_modified_date()
+            self._current_provider.mark_as_modified()
             self._service.update_provider(self._current_provider)
 
         self._workflow_presenter.clear_steps()

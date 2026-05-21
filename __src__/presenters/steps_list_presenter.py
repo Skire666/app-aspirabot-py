@@ -198,7 +198,7 @@ class StepsListPresenter:
             return False
 
         self._steps.append(step)
-        step.update_modified_date()
+        step.mark_as_modified()
         self._edit_index = None
         self._view.clear_selection()
         self._refresh_view()
@@ -237,7 +237,7 @@ class StepsListPresenter:
             return False
 
         self._steps[self._edit_index] = step
-        step.update_modified_date()
+        step.mark_as_modified()
         self._edit_index = None
         self._view.clear_selection()
         self._refresh_view()

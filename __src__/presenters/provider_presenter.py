@@ -121,8 +121,8 @@ class ProviderPresenter:
                     "provider_name": p.provider_name,
                     "provider_desc": p.provider_desc,
                     "version": p.version,
-                    "created_date_provider": p.created_date_provider,
-                    "modified_date_provider": p.modified_date_provider,
+                    "created_date_provider": str(p.created_date_provider),
+                    "modified_date_provider": str(p.modified_date_provider),
                 }
             )
         return formatted
@@ -193,9 +193,14 @@ class ProviderPresenter:
         Args:
             id_file: L'ID fichier du fournisseur à supprimer.
         """
-        if self._view.ask_delete_confirmation():
+        if not self._view.ask_delete_confirmation():
+            return
+        try:
             self._service.delete_provider(id_file)
             self._load_providers()
+        except Exception as exc:
+            self._logger.error("Erreur lors de la suppression du fournisseur", exc_info=True)
+            self._view.show_error(f"La suppression a échoué : {exc}")
 
     def _on_open_folder(self) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
