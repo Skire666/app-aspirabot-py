@@ -85,7 +85,7 @@ def test_presenter_save_updates_configuration() -> None:
     view.form_data = {
         "log_level_enum": "ERROR",
         "folder_logs": "tmp_logs",
-        "folder_providers": "data_providers",
+        "folder_scenarios": "data_providers",
         "gui_booting_size": "1250x900",
         "gui_booting_fullscreen": True,
     }

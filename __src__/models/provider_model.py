@@ -81,8 +81,8 @@ class ProviderModel:
         # Return a ready-to-use default provider.
         return cls(
             id_file=generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID),
-            provider_name="Nouv. Fournisseur",
-            provider_desc="Description du fournisseur (ou URL)",
+            provider_name="Nouv. scénario",
+            provider_desc="Description du scénario (ou URL)",
             version="1.0.0",
             created_date_provider=current_timestamp,
             modified_date_provider=current_timestamp,

@@ -47,7 +47,7 @@ class HistoryService:
         result: list[tuple[str, LaunchProfileModel]] = []
 
         # Load every known provider from the repository.
-        providers: list[ProviderModel] = self._repository.list_all_providers()
+        providers: list[ProviderModel] = self._repository.list_all_scenarios()
 
         for provider in providers:
             # Collect profiles from this provider, skipping on error.
@@ -65,12 +65,12 @@ class HistoryService:
 
     def open_providers_folder(self) -> None:
         """Open the folder containing provider files in the OS file explorer."""
-        self._repository.open_providers_folder()
+        self._repository.open_scenarios_folder()
 
-    def get_folder_path_providers(self) -> str:
+    def get_folder_path_scenarios(self) -> str:
         """Get the path of the folder containing provider files.
 
         Returns:
             The path of the folder containing provider files.
         """
-        return self._repository.get_folder_path_providers()
+        return self._repository.get_folder_path_scenarios()

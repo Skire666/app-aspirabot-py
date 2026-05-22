@@ -18,8 +18,8 @@ from views.history_view import HistoryView
 # ---------------------------------------------------------------------------
 
 
-class HistoricPresenter:
-    """Orchestrates the historic panel between HistoricView and HistoricService.
+class HistoryPresenter:
+    """Orchestrates the historic panel between HistoryView and HistoryService.
 
     Loads launch profiles on demand, formats them for the view, and
     delegates the launch action to an injectable hook supplied by main.py.
@@ -50,6 +50,7 @@ class HistoricPresenter:
         self.on_request_launch_profile: Callable[[str, str], None] | None = None
 
         # Register the launch callback immediately so the view is wired.
+        self._view.set_on_refresh(self._on_refresh)
         self._view.set_on_launch(self._on_launch)
         self._view.set_on_open_folder(self._on_open_folder)
         self._view.set_on_sort(self._on_sort)
@@ -93,7 +94,7 @@ class HistoricPresenter:
         sorted_tuples = self._sort_tuples(tuples)
 
         # Push formatted rows to the view and stamp the load time.
-        self._view.render_profiles(self._service.get_folder_path_providers(), self._format_rows(sorted_tuples))
+        self._view.render_profiles(self._service.get_folder_path_scenarios(), self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
     @staticmethod
@@ -147,9 +148,13 @@ class HistoricPresenter:
         self._last_loaded = None
         self._load_profiles()
 
-    def _on_open_folder(self) -> None:
-        """Forward the open-folder request to the service."""
+    def _on_open_folder(self, _: str) -> None:
+        """Gère l'événement d'ouverture du dossier des fournisseurs."""
         self._service.open_providers_folder()
+
+    def _on_refresh(self) -> None:
+        """Handle a refresh request from the view."""
+        self._load_profiles()
 
     def _on_launch(self, id_provider: str, id_profile: str) -> None:
         """Forward a launch request from the view to the injected hook.

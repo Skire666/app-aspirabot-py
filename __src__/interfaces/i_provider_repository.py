@@ -49,27 +49,27 @@ class IProviderRepository(Protocol):
         """
         ...
 
-    def list_all_providers(self) -> list[ProviderModel]:
-        """Return all valid providers found in the providers folder.
+    def list_all_scenarios(self) -> list[ProviderModel]:
+        """Return all valid scenarios found in the scenarios folder.
 
         Returns:
             Ordered list of ProviderModel instances; invalid files are skipped.
         """
         ...
 
-    def list_provider_files(self) -> list[Path]:
-        """Return all file paths present in the providers folder.
+    def list_scenario_files(self) -> list[Path]:
+        """Return all file paths present in the scenarios folder.
 
         Returns:
             List of Path objects for every file in the folder.
         """
         ...
 
-    def read_provider_content(self, file_path: Path) -> dict[str, Any]:
-        """Read and return the raw JSON content of a provider file.
+    def read_scenario_content(self, file_path: Path) -> dict[str, Any]:
+        """Read and return the raw JSON content of a scenario file.
 
         Args:
-            file_path: Absolute path to the provider file.
+            file_path: Absolute path to the scenario file.
 
         Returns:
             The raw JSON content as a dictionary.
@@ -125,14 +125,14 @@ class IProviderRepository(Protocol):
         """
         ...
 
-    def open_providers_folder(self) -> None:
-        """Open the providers folder in the system file explorer."""
+    def open_scenarios_folder(self) -> None:
+        """Open the scenarios folder in the system file explorer."""
         ...
 
-    def get_folder_path_providers(self) -> str:
-        """Get the path of the providers folder.
+    def get_folder_path_scenarios(self) -> str:
+        """Get the path of the scenarios folder.
 
         Returns:
-            The path of the providers folder.
+            The path of the scenarios folder.
         """
         ...

@@ -181,13 +181,13 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         """
         self._provider_panel.set_on_provider_selected(callback)
 
-    def set_on_refresh_providers(self, callback: Callable[[], None]) -> None:
+    def set_on_refresh_scenarios(self, callback: Callable[[], None]) -> None:
         """Register the callback fired when the user clicks Rafraîchir.
 
         Args:
-            callback: Zero-argument callable that reloads the provider list.
+            callback: Zero-argument callable that reloads the scenario list.
         """
-        self._provider_panel.set_on_refresh_providers(callback)
+        self._provider_panel.set_on_refresh_scenarios(callback)
 
     def render_providers_list(self, providers: list[dict[str, Any]]) -> None:
         """Populate the provider combobox and lock dependent panels if needed.

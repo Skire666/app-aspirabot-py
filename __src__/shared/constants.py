@@ -58,7 +58,7 @@ C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 
 
 # Default folders for data storage (relative to current working directory)
-C_DATA_DEFAULT_FOLDER_PROVIDER: str = "data_providers"
+C_DATA_DEFAULT_FOLDER_SCENARIO: str = "data_scenarios"
 
 # Default folder for scraping data exports (relative to current working directory)
 C_DATA_DEFAULT_FOLDER_SCRAPING: str = "data_scraping"

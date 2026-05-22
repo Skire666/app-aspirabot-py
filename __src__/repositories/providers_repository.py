@@ -6,7 +6,7 @@ JSON provider configuration files stored in a local directory.
 Example:
     >>> from repositories.providers_repository import ProvidersRepository
     >>> repo = ProvidersRepository("./providers")
-    >>> providers = repo.list_all_providers()
+    >>> providers = repo.list_all_scenarios()
 """
 
 # ---------------------------------------------------------------------------
@@ -50,15 +50,15 @@ class ProvidersRepository(IProviderRepository):
         _logger: Internal logger for tracing execution.
     """
 
-    def __init__(self, folder_providers: str | Path, json_repo: JsonFileRepository) -> None:
+    def __init__(self, folder_scenarios: str | Path, json_repo: JsonFileRepository) -> None:
         """Initializes the repository pointing to a local providers folder.
 
         Args:
-            folder_providers: Path to the folder containing provider JSON files.
+            folder_scenarios: Path to the folder containing provider JSON files.
             json_repo: Shared JSON file repository providing cached I/O.
         """
         self._logger = logging.getLogger(__name__)
-        self._folder_path: Path = Path(folder_providers)
+        self._folder_path: Path = Path(folder_scenarios)
         self._json_repo: JsonFileRepository = json_repo
 
     @property
@@ -82,7 +82,7 @@ class ProvidersRepository(IProviderRepository):
             return list(self._folder_path.glob("*.json"))
         return []
 
-    def list_provider_files(self) -> list[Path]:
+    def list_scenario_files(self) -> list[Path]:
         """Lists all files in the providers directory.
 
         Returns:
@@ -97,7 +97,7 @@ class ProvidersRepository(IProviderRepository):
         )
 
     @staticmethod
-    def read_provider_content(file_path: Path) -> dict[str, Any]:
+    def read_scenario_content(file_path: Path) -> dict[str, Any]:
         """Reads a provider file and returns the decoded JSON content.
 
         Args:
@@ -193,7 +193,7 @@ class ProvidersRepository(IProviderRepository):
         self._logger.info("Fournisseur chargé : %s", full_filepath)
         return provider_model
 
-    def list_all_providers(self) -> list[ProviderModel]:
+    def list_all_scenarios(self) -> list[ProviderModel]:
         """Lists all valid providers found in the configured folder.
 
         Skips files that cannot be read or deserialized; logs an error for each.
@@ -288,7 +288,7 @@ class ProvidersRepository(IProviderRepository):
             self._logger.error("Erreur lors de la suppression du fournisseur.", exc_info=True)
             raise
 
-    def open_providers_folder(self) -> None:
+    def open_scenarios_folder(self) -> None:
         """Opens the providers folder in the OS file explorer.
 
         Raises:
@@ -320,7 +320,7 @@ class ProvidersRepository(IProviderRepository):
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
 
-    def get_folder_path_providers(self) -> str:
+    def get_folder_path_scenarios(self) -> str:
         """Gets the path of the providers folder.
 
         Returns:

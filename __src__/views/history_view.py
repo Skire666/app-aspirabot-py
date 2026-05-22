@@ -11,6 +11,7 @@ from typing import Any
 
 from views.components.data_grid import DataGrid
 from views.components.folder_link_widget import FolderLinkWidget
+from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -20,7 +21,7 @@ from views.components.folder_link_widget import FolderLinkWidget
 DATA_GRID_COLUMNS: list[dict[str, Any]] = [
     {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
     {"id": "name_profile", "title": "Nom du profil", "width": 160, "type": "text"},
-    {"id": "provider_parent", "title": "Fournisseur", "width": 160, "type": "text"},
+    {"id": "provider_parent", "title": "Scénario", "width": 160, "type": "text"},
     {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
     {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text", "format": "%d/%m/%Y %H:%M"},
     {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},
@@ -56,21 +57,29 @@ class HistoryView(ttk.Frame):
         super().__init__(parent)
 
         # Callback registered by the presenter via set_on_launch().
+        self._on_refresh: Callable[[], None] | None = None
         self._on_launch_callback: Callable[[str, str], None] | None = None
-        self._on_open_folder_callback: Callable[[], None] | None = None
+        self._on_open_folder_callback: Callable[[str], None] | None = None
         self._on_sort_callback: Callable[[str, bool], None] | None = None
 
         self._create_widgets()
 
     def _create_widgets(self) -> None:
         """Build the top bar and DataGrid."""
-        top_frame = ttk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(10, 5))
+        # Top panel
+        top_frame = HorizontalLineFrame(self, text="Liste des profils de lancement")
+        top_frame.pack(side=tk.TOP, fill=tk.X)
+
+        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=self._notify_refresh)
+        self._btn_refresh.pack(side=tk.LEFT, padx=(5, 40), pady=(0, 5))
+
+        self._lbl_counter = ttk.Label(top_frame, text="Aucun profil")
+        self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
 
         self._btn_open_folder = FolderLinkWidget(
             top_frame, title="Dossier des fournisseurs :", path="", callback=self._notify_open_folder
         )
-        self._btn_open_folder.pack(side=tk.LEFT, padx=(0, 10))
+        self._btn_open_folder.pack(side=tk.RIGHT, padx=(0, 10), pady=(0, 5))
 
         self._grid = DataGrid(self, columns=DATA_GRID_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
         self._grid.set_sort_state("used_date_profile", True)
@@ -79,6 +88,14 @@ class HistoryView(ttk.Frame):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def set_on_refresh(self, callback: Callable[[], None]) -> None:
+        """Register the callback invoked when the user clicks Actualiser.
+
+        Args:
+            callback: Callable with no arguments.
+        """
+        self._on_refresh = callback
 
     def set_on_launch(self, callback: Callable[[str, str], None]) -> None:
         """Register the callback invoked when the user clicks Lancer.
@@ -96,11 +113,11 @@ class HistoryView(ttk.Frame):
         """
         self._on_sort_callback = callback
 
-    def set_on_open_folder(self, callback: Callable[[], None]) -> None:
+    def set_on_open_folder(self, callback: Callable[[str], None]) -> None:
         """Register the callback invoked when the user clicks Ouvrir dossier des fournisseurs.
 
         Args:
-            callback: Callable with no arguments.
+            callback: Callable receiving the folder path as an argument.
         """
         self._on_open_folder_callback = callback
 
@@ -113,6 +130,14 @@ class HistoryView(ttk.Frame):
                 Each dict must include an "id" key formatted as
                 ``"id_provider:::id_profile"``.
         """
+        count = len(profiles)
+        if count == 0:
+            self._lbl_counter.config(text="Trouvé : Aucun profil")
+        elif count == 1:
+            self._lbl_counter.config(text="Trouvé : 1 profil")
+        else:
+            self._lbl_counter.config(text=f"Trouvé : {count} profils")
+
         self._btn_open_folder.set_path(folder_path)
         self._grid.render_data(profiles)
 
@@ -120,9 +145,13 @@ class HistoryView(ttk.Frame):
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _notify_open_folder(self) -> None:
+    def _notify_refresh(self) -> None:
+        if self._on_refresh:
+            self._on_refresh()
+
+    def _notify_open_folder(self, path: str) -> None:
         if self._on_open_folder_callback:
-            self._on_open_folder_callback()
+            self._on_open_folder_callback(path)
 
     def _notify_sort(self, column: str, ascending: bool) -> None:
         if self._on_sort_callback:

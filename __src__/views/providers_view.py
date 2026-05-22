@@ -11,6 +11,7 @@ from typing import Any
 
 from views.components.data_grid import DataGrid
 from views.components.folder_link_widget import FolderLinkWidget
+from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -62,30 +63,37 @@ class ProvidersView(ttk.Frame):
         self._on_delete: Callable[[str], None] | None = None
         self._on_validate: Callable[[], None] | None = None
 
-        self._create_widgets()
+        self._create_actions_widgets()
+        self._create_grid_widgets()
 
-    def _create_widgets(self) -> None:
+    def _create_actions_widgets(self) -> None:
         """Constructs UI elements including top bar and provider list tree."""
         # Top panel
-        top_frame = ttk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(10, 5))
+        top_frame = HorizontalLineFrame(self, text="Actions")
+        top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_create = ttk.Button(top_frame, text="Créer un fournisseur", command=self._notify_create_provider)
+        self._btn_create = ttk.Button(top_frame, text="Créer un scénario", command=self._notify_create_provider)
         self._btn_create.pack(side=tk.LEFT, padx=(5, 10))
 
-        self._btn_open_folder = FolderLinkWidget(
-            top_frame, title="Dossier des fournisseurs :", path="", callback=self._notify_open_folder
-        )
-        self._btn_open_folder.pack(side=tk.LEFT, padx=(0, 10))
-
-        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=self._notify_refresh)
-        self._btn_refresh.pack(side=tk.LEFT, padx=(0, 10))
-
-        self._btn_validate = ttk.Button(top_frame, text="Valider les fournisseurs", command=self._notify_validate)
+        self._btn_validate = ttk.Button(top_frame, text="Valider les scénarios", command=self._notify_validate)
         self._btn_validate.pack(side=tk.LEFT, padx=(0, 10))
 
-        self._lbl_counter = ttk.Label(top_frame, text="Aucun fournisseur")
-        self._lbl_counter.pack(side=tk.RIGHT, padx=10)
+    def _create_grid_widgets(self) -> None:
+        """Constructs UI elements including top bar and provider list tree."""
+        # Top panel
+        top_frame = HorizontalLineFrame(self, text="Liste des scénarios")
+        top_frame.pack(side=tk.TOP, fill=tk.X)
+
+        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=self._notify_refresh)
+        self._btn_refresh.pack(side=tk.LEFT, padx=(5, 40), pady=(0, 5))
+
+        self._lbl_counter = ttk.Label(top_frame, text="Aucun scénario")
+        self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
+
+        self._btn_open_folder = FolderLinkWidget(
+            top_frame, title="Dossier des scénarios :", path="", callback=self._notify_open_folder
+        )
+        self._btn_open_folder.pack(side=tk.RIGHT, padx=(10), pady=(0, 5))
 
         # Main DataGrid for providers
         self.grid = DataGrid(self, columns=DATA_GRID_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
@@ -169,7 +177,7 @@ class ProvidersView(ttk.Frame):
 
         self._btn_validate.config(state=tk.NORMAL)
 
-    def render_providers(self, folder_path: str, providers_data: list[dict[str, Any]]) -> None:
+    def render_scenarios(self, folder_path: str, providers_data: list[dict[str, Any]]) -> None:
         """Clears existing UI providers and renders the new list.
 
         Args:
@@ -178,11 +186,11 @@ class ProvidersView(ttk.Frame):
         """
         count = len(providers_data)
         if count == 0:
-            self._lbl_counter.config(text="Aucun fournisseur")
+            self._lbl_counter.config(text="Trouvé : Aucun scénario")
         elif count == 1:
-            self._lbl_counter.config(text="1 fournisseur")
+            self._lbl_counter.config(text="Trouvé : 1 scénario")
         else:
-            self._lbl_counter.config(text=f"{count} fournisseurs")
+            self._lbl_counter.config(text=f"Trouvé : {count} scénarios")
 
         self._btn_open_folder.set_path(folder_path)
         self.grid.render_data(providers_data)

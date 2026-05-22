@@ -48,7 +48,7 @@ class FolderLinkWidget(tk.Frame):
         self._link.config(
             fg="blue" if has_path else "gray",
             cursor="hand2" if has_path else "arrow",
-            font=("Arial", 10, "underline") if has_path else ("Arial", 10),
+            font=("Segoe UI", 9, "underline") if has_path else ("Segoe UI", 9),
         )
 
     def _bind_events(self) -> None:

@@ -217,9 +217,7 @@ class WorkflowView(ttk.Frame):
                 return step_type
         return StepTypeEnum.E_OPEN_URL
 
-    def _on_inline_confirm_create(
-        self, step_type: StepTypeEnum, params: dict[str, Any]
-    ) -> bool:
+    def _on_inline_confirm_create(self, step_type: StepTypeEnum, params: dict[str, Any]) -> bool:
         """Delegates a creation confirm to the step list; resets the form when accepted.
 
         Args:
@@ -242,9 +240,7 @@ class WorkflowView(ttk.Frame):
         self._workflow_builder_view.scroll_to_bottom()
         return True
 
-    def _on_inline_confirm_update(
-        self, step_type: StepTypeEnum, params: dict[str, Any]
-    ) -> bool:
+    def _on_inline_confirm_update(self, step_type: StepTypeEnum, params: dict[str, Any]) -> bool:
         """Delegates an update confirm to the step list; resets the form when accepted.
 
         Args:
@@ -361,7 +357,7 @@ class WorkflowView(ttk.Frame):
         self._lbl_workflow_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         # Action buttons anchored to the right in reverse visual order.
-        self._btn_save = ttk.Button(parent, text="Sauvegarder le fournisseur", command=self._notify_save)
+        self._btn_save = ttk.Button(parent, text="Sauvegarder le scénario", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
 
         self._btn_cancel = ttk.Button(parent, text="Annuler", command=self._notify_cancel)

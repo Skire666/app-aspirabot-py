@@ -34,7 +34,7 @@ class AppConfigurationView(ttk.Frame):
 
         self._log_level_var = tk.StringVar()
         self._folder_logs_var = tk.StringVar()
-        self._folder_providers_var = tk.StringVar()
+        self._folder_scenarios_var = tk.StringVar()
         self._folder_scraping_var = tk.StringVar()
         self._gui_booting_size_var = tk.StringVar()
         self._gui_booting_fullscreen_var = tk.BooleanVar()
@@ -70,7 +70,7 @@ class AppConfigurationView(ttk.Frame):
 
         self._add_enum_row_log(frame, 0, "Niveau log", self._log_level_var)
         self._add_path_row(frame, 1, "Dossier logs", self._folder_logs_var)
-        self._add_path_row(frame, 2, "Dossier providers", self._folder_providers_var)
+        self._add_path_row(frame, 2, "Dossier providers", self._folder_scenarios_var)
         self._add_path_row(frame, 3, "Dossier scraping", self._folder_scraping_var)
         self._add_text_row(frame, 4, "Taille fenêtre libre (WxH)", self._gui_booting_size_var)
         self._add_bool_row(frame, 5, "Démarrer en plein écran", self._gui_booting_fullscreen_var)
@@ -150,7 +150,7 @@ class AppConfigurationView(ttk.Frame):
         for var in (
             self._log_level_var,
             self._folder_logs_var,
-            self._folder_providers_var,
+            self._folder_scenarios_var,
             self._folder_scraping_var,
             self._gui_booting_size_var,
             self._gui_booting_fullscreen_var,
@@ -246,7 +246,7 @@ class AppConfigurationView(ttk.Frame):
         """
         self._log_level_var.set(self._safe_text(data.get("log_level_enum")))
         self._folder_logs_var.set(self._safe_text(data.get("folder_logs")))
-        self._folder_providers_var.set(self._safe_text(data.get("folder_providers")))
+        self._folder_scenarios_var.set(self._safe_text(data.get("folder_scenarios")))
         self._folder_scraping_var.set(self._safe_text(data.get("folder_scraping")))
         self._gui_booting_size_var.set(self._safe_text(data.get("gui_booting_size")))
         self._gui_booting_fullscreen_var.set(bool(data.get("gui_booting_fullscreen")))
@@ -265,7 +265,7 @@ class AppConfigurationView(ttk.Frame):
         return {
             "log_level_enum": self._log_level_var.get(),
             "folder_logs": self._folder_logs_var.get(),
-            "folder_providers": self._folder_providers_var.get(),
+            "folder_scenarios": self._folder_scenarios_var.get(),
             "folder_scraping": self._folder_scraping_var.get(),
             "gui_booting_size": self._gui_booting_size_var.get(),
             "gui_booting_fullscreen": self._gui_booting_fullscreen_var.get(),

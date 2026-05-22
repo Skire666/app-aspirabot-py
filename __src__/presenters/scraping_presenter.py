@@ -130,10 +130,10 @@ class ScrapingPresenter:
     # Public API — providers
     # ------------------------------------------------------------------
 
-    def ensure_providers_loaded(self) -> None:
+    def ensure_scenarios_loaded(self) -> None:
         """Populate the provider dropdown on first show, skipped if already loaded."""
         if not self._providers_loaded or (datetime.now() - self._providers_loaded).total_seconds() > 1:
-            self._on_refresh_providers()
+            self._on_refresh_scenarios()
 
     def load_profile(self, id_profile: str) -> None:
         """Select and apply a specific profile by ID in the view.
@@ -166,7 +166,7 @@ class ScrapingPresenter:
 
         # Guarantee at least one profile exists, then populate the view.
         self._ensure_default_profile()
-        self.ensure_providers_loaded()
+        self.ensure_scenarios_loaded()
         self._setup_view_after_load(id_file)
 
     # ------------------------------------------------------------------
@@ -217,7 +217,7 @@ class ScrapingPresenter:
         self._view.set_on_pause(self._on_pause)
         self._view.set_on_resume(self._on_resume)
         self._view.set_on_provider_selected(self._on_provider_selected)
-        self._view.set_on_refresh_providers(self._on_refresh_providers)
+        self._view.set_on_refresh_scenarios(self._on_refresh_scenarios)
         self._view.set_on_export_journal(self._on_export_journal)
         self._view.set_on_profile_selected(self._on_profile_selected)
         self._view.set_on_profile_new(self._on_profile_new)
@@ -259,10 +259,10 @@ class ScrapingPresenter:
         self._logging.info("Provider selected from view: id_file=%s", id_file)
         self.load_provider(id_file)
 
-    def _on_refresh_providers(self) -> None:
+    def _on_refresh_scenarios(self) -> None:
         """Reload the providers list and forward it to the view dropdown."""
         try:
-            providers: list[ProviderModel] = self._service_provider.list_all_providers()
+            providers: list[ProviderModel] = self._service_provider.list_all_scenarios()
         except Exception as exc:  # noqa: BLE001
             self._logging.error("Failed to load providers list: %s", exc)
             providers = []

@@ -32,7 +32,7 @@ class ProviderPresenter:
         self._logger = logging.getLogger(__name__)
         self._view = view
         self._service = service
-        self._all_providers: list[ProviderModel] = []
+        self._all_scenarios: list[ProviderModel] = []
         self._current_sort_column = "provider_name"
         self._current_sort_ascending = True
 
@@ -44,11 +44,11 @@ class ProviderPresenter:
         self.is_workflow_active: Callable[[], bool] | None = None
 
         self._bind_view_events()
-        self._load_providers()
+        self._load_scenarios()
 
     def refresh(self) -> None:
-        """Refresh the list of providers."""
-        self._load_providers()
+        """Refresh the list of scenarios."""
+        self._load_scenarios()
 
     def _bind_view_events(self) -> None:
         """Associe les callbacks de la vue aux méthodes du présentateur."""
@@ -61,17 +61,17 @@ class ProviderPresenter:
             on_duplicate=self._on_duplicate_provider,
             on_launch=self._on_launch_provider,
             on_delete=self._on_delete_provider,
-            on_validate=self._on_validate_providers,
+            on_validate=self._on_validate_scenarios,
         )
 
-    def _load_providers(self) -> None:
+    def _load_scenarios(self) -> None:
         """Charge la liste complète des fournisseurs et met à jour la vue."""
         try:
-            self._all_providers = self._service.list_all_providers()
+            self._all_scenarios = self._service.list_all_scenarios()
         except FileNotFoundError:
-            self._all_providers = []
+            self._all_scenarios = []
 
-        self._sort_providers(self._current_sort_column, self._current_sort_ascending)
+        self._sort_scenarios(self._current_sort_column, self._current_sort_ascending)
         self._update_view()
 
     @staticmethod
@@ -79,31 +79,31 @@ class ProviderPresenter:
         """Normalizes text values for stable, case-insensitive sorting."""
         return (value or "").casefold()
 
-    def _sort_providers(self, column: str, ascending: bool) -> None:
-        """Sorts providers in place according to the selected column.
+    def _sort_scenarios(self, column: str, ascending: bool) -> None:
+        """Sorts scenarios in place according to the selected column.
 
         Args:
             column: Column id used as sort key.
             ascending: True for ascending order.
         """
         if column == "id_file":
-            self._all_providers.sort(key=lambda p: self._text_key(p.id_file), reverse=not ascending)
+            self._all_scenarios.sort(key=lambda p: self._text_key(p.id_file), reverse=not ascending)
         elif column == "provider_name":
-            self._all_providers.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
+            self._all_scenarios.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
         elif column == "provider_desc":
-            self._all_providers.sort(key=lambda p: self._text_key(p.provider_desc), reverse=not ascending)
+            self._all_scenarios.sort(key=lambda p: self._text_key(p.provider_desc), reverse=not ascending)
         elif column == "created_date_provider":
-            self._all_providers.sort(key=lambda p: self._text_key(p.created_date_provider), reverse=not ascending)
+            self._all_scenarios.sort(key=lambda p: self._text_key(p.created_date_provider), reverse=not ascending)
         elif column == "modified_date_provider":
-            self._all_providers.sort(key=lambda p: self._text_key(p.modified_date_provider), reverse=not ascending)
+            self._all_scenarios.sort(key=lambda p: self._text_key(p.modified_date_provider), reverse=not ascending)
 
     def _update_view(self) -> None:
-        """Transforme les modèles en structures de données simples et rafraîchit la vue."""
-        providers_data = self._format_providers(self._all_providers)
-        self._view.render_providers(self._service.get_folder_path_providers(), providers_data)
+        """Update the view with the current list of scenarios, sorted and formatted for display."""
+        providers_data = self._format_scenarios(self._all_scenarios)
+        self._view.render_scenarios(self._service.get_folder_path_scenarios(), providers_data)
 
     @staticmethod
-    def _format_providers(providers: list[ProviderModel]) -> list[dict[str, str]]:
+    def _format_scenarios(providers: list[ProviderModel]) -> list[dict[str, str]]:
         """Formate une liste de modèles en données tabulaires pour la vue.
 
         Args:
@@ -144,7 +144,7 @@ class ProviderPresenter:
             if not new_provider.launch_profiles:
                 new_provider.launch_profiles.append(LaunchProfileModel.get_default())
             self._service.create_provider(new_provider)
-            self._load_providers()
+            self._load_scenarios()
 
     def _on_edit_provider(self, id_file: str) -> None:
         """Gère l'événement de modification d'un fournisseur.
@@ -182,9 +182,9 @@ class ProviderPresenter:
             return
         try:
             self._service.duplicate_provider(id_file)
-            self._load_providers()
+            self._load_scenarios()
         except Exception as exc:
-            self._logger.error("Erreur lors de la duplication du fournisseur", exc_info=True)
+            self._logger.error("Erreur lors de la duplication du scénario", exc_info=True)
             self._view.show_error(f"La duplication a échoué : {exc}")
 
     def _on_delete_provider(self, id_file: str) -> None:
@@ -197,26 +197,26 @@ class ProviderPresenter:
             return
         try:
             self._service.delete_provider(id_file)
-            self._load_providers()
+            self._load_scenarios()
         except Exception as exc:
-            self._logger.error("Erreur lors de la suppression du fournisseur", exc_info=True)
+            self._logger.error("Erreur lors de la suppression du scénario", exc_info=True)
             self._view.show_error(f"La suppression a échoué : {exc}")
 
-    def _on_open_folder(self, _path: str) -> None:
+    def _on_open_folder(self, _: str) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
-        self._service.open_providers_folder()
+        self._service.open_scenarios_folder()
 
     def _on_refresh(self) -> None:
         """Gère l'événement de rafraîchissement de la liste des fournisseurs."""
-        self._load_providers()
+        self._load_scenarios()
 
-    def _on_validate_providers(self) -> None:
+    def _on_validate_scenarios(self) -> None:
         """Validates provider files and displays the validation summary."""
         self._view.set_validation_state(True, "Validation en cours...")
 
         try:
-            report: ProviderValidationReport = self._service.validate_providers()
-            self._load_providers()
+            report: ProviderValidationReport = self._service.validate_scenarios()
+            self._load_scenarios()
             self._view.show_validation_report(self._format_validation_report(report))
         except Exception as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
@@ -257,5 +257,5 @@ class ProviderPresenter:
         """
         self._current_sort_column = column
         self._current_sort_ascending = ascending
-        self._sort_providers(column, ascending)
+        self._sort_scenarios(column, ascending)
         self._update_view()

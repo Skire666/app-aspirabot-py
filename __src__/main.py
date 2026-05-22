@@ -14,7 +14,7 @@ import views.steps  # noqa: F401
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.debug_presenter import DebugPresenter
-from presenters.historic_presenter import HistoricPresenter
+from presenters.history_presenter import HistoryPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.provider_presenter import ProviderPresenter
 from presenters.scraping_presenter import ScrapingPresenter
@@ -112,7 +112,7 @@ def _wire_all_navigation(
     provider_presenter: ProviderPresenter,
     provider_edit_presenter: WorkflowPresenter,
     scraping_presenter: ScrapingPresenter,
-    history_presenter: HistoricPresenter,
+    history_presenter: HistoryPresenter,
 ) -> None:
     """Wire all inter-component navigation callbacks and lazy-loading hooks.
 
@@ -127,7 +127,7 @@ def _wire_all_navigation(
     _wire_scraping_launch(main_view, provider_presenter, scraping_presenter)
     _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
     _wire_history_launch(main_view, history_presenter, scraping_presenter)
-    main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, scraping_presenter.ensure_providers_loaded)
+    main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, scraping_presenter.ensure_scenarios_loaded)
     main_view.set_on_show(TitleModuleEnum.E_HISTORY, history_presenter.ensure_profiles_loaded)
 
 
@@ -242,7 +242,7 @@ def _init_historic_components(
     main_view: MainView,
     config_model: AppConfigurationModel,
     json_repo: JsonFileRepository,
-) -> tuple[HistoryView, HistoricPresenter]:
+) -> tuple[HistoryView, HistoryPresenter]:
     """Create and wire the historic component.
 
     Args:
@@ -253,10 +253,10 @@ def _init_historic_components(
     Returns:
         A (HistoricView, HistoricPresenter) tuple.
     """
-    provider_repo = ProvidersRepository(config_model.folder_providers, json_repo)
+    provider_repo = ProvidersRepository(config_model.folder_scenarios, json_repo)
     historic_service = HistoryService(provider_repo)
     historic_view = HistoryView(main_view.content_area)
-    historic_presenter = HistoricPresenter(view=historic_view, service=historic_service)
+    historic_presenter = HistoryPresenter(view=historic_view, service=historic_service)
     return historic_view, historic_presenter
 
 
@@ -283,7 +283,7 @@ def _init_provider_components(
         ProviderEditPresenter, ProviderService) tuple.
     """
     # Shared service and repository for both list and edit sub-components.
-    provider_repo = ProvidersRepository(config_model.folder_providers, json_repo)
+    provider_repo = ProvidersRepository(config_model.folder_scenarios, json_repo)
     provider_service = ProviderService(provider_repo)
 
     # Provider list view and presenter.
@@ -419,7 +419,7 @@ def _wire_scraping_launch(
 
 def _wire_history_launch(
     main_view: MainView,
-    historic_presenter: HistoricPresenter,
+    historic_presenter: HistoryPresenter,
     scraping_presenter: ScrapingPresenter,
 ) -> None:
     """Connect the launch action from the historic list to the scraping panel.

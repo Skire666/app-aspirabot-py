@@ -36,12 +36,12 @@ class ProviderSelectionPanel(ttk.Frame):
         """
         super().__init__(parent)
         self._on_provider_selected: Callable[[str], None] | None = None
-        self._on_refresh_providers: Callable[[], None] | None = None
+        self._on_refresh_scenarios: Callable[[], None] | None = None
         self._build_widgets()
 
     def _build_widgets(self) -> None:
         """Build and pack the ColumnCombobox and refresh button."""
-        frame = HorizontalLineFrame(self, text="Sélectionner un fournisseur")
+        frame = HorizontalLineFrame(self, text="Sélectionner un scénario")
         frame.pack(side=tk.TOP, fill=tk.X)
 
         self._cmb_provider = ColumnCombobox(frame)
@@ -69,13 +69,13 @@ class ProviderSelectionPanel(ttk.Frame):
         """
         self._on_provider_selected = callback
 
-    def set_on_refresh_providers(self, callback: Callable[[], None]) -> None:
+    def set_on_refresh_scenarios(self, callback: Callable[[], None]) -> None:
         """Register the callback fired when the user clicks Rafraîchir.
 
         Args:
-            callback: Zero-argument callable that reloads the provider list.
+            callback: Zero-argument callable that reloads the scenario list.
         """
-        self._on_refresh_providers = callback
+        self._on_refresh_scenarios = callback
 
     # ------------------------------------------------------------------
     # Public data feed
@@ -142,9 +142,9 @@ class ProviderSelectionPanel(ttk.Frame):
             self._on_provider_selected(obj["id_file"])
 
     def _notify_refresh(self) -> None:
-        """Fire the on_refresh_providers callback."""
-        if self._on_refresh_providers:
-            self._on_refresh_providers()
+        """Fire the on_refresh_scenarios callback."""
+        if self._on_refresh_scenarios:
+            self._on_refresh_scenarios()
 
 
 # EOF

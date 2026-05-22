@@ -109,7 +109,7 @@ class AppConfigurationPresenter:
         return {
             "log_level_enum": str(data.get("log_level_enum", "")),
             "folder_logs": str(data.get("folder_logs", "")),
-            "folder_providers": str(data.get("folder_providers", "")),
+            "folder_scenarios": str(data.get("folder_scenarios", "")),
             "gui_booting_size": str(data.get("gui_booting_size", "")),
             "gui_booting_fullscreen": bool(data.get("gui_booting_fullscreen")),
             "browser_engine": str(data.get("browser_engine", "")),

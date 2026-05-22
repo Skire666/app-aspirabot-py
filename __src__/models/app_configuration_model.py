@@ -21,7 +21,7 @@ from shared.constants import (
     C_APP_DEFAULT_SIZE_GUI,
     C_BROWSER_ENGINE_DEFAULT,
     C_BROWSER_ENGINE_PLAYWRIGHT,
-    C_DATA_DEFAULT_FOLDER_PROVIDER,
+    C_DATA_DEFAULT_FOLDER_SCENARIO,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
     C_LOGS_DEFAULT_FOLDER,
     C_LOGS_DEFAULT_LEVEL_TRACE,
@@ -54,7 +54,7 @@ class AppConfigurationModel:
     Attributes:
         log_level: Logging level used by the application.
         folder_logs: Directory where log files are stored.
-        folder_providers: Directory containing provider definitions.
+        folder_scenarios: Directory containing provider definitions.
         folder_scraping: Directory for scraping data exports.
 
     Example:
@@ -69,7 +69,7 @@ class AppConfigurationModel:
 
     _log_level_enum: str
     _folder_logs: Path
-    _folder_providers: Path
+    _folder_scenarios: Path
     _folder_scraping: Path
     _gui_booting_size: str
     _gui_booting_fullscreen: bool
@@ -83,7 +83,7 @@ class AppConfigurationModel:
         self,
         log_level_enum: str = C_LOGS_DEFAULT_LEVEL_TRACE,
         folder_logs: Path | str = C_LOGS_DEFAULT_FOLDER,
-        folder_providers: Path | str = C_DATA_DEFAULT_FOLDER_PROVIDER,
+        folder_scenarios: Path | str = C_DATA_DEFAULT_FOLDER_SCENARIO,
         folder_scraping: Path | str = C_DATA_DEFAULT_FOLDER_SCRAPING,
         gui_booting_size: str = C_APP_DEFAULT_SIZE_GUI,
         gui_booting_fullscreen: bool = False,
@@ -92,7 +92,7 @@ class AppConfigurationModel:
         """Initializes the configuration model with optional parameters."""
         self.log_level_enum = log_level_enum
         self.folder_logs = folder_logs
-        self.folder_providers = folder_providers
+        self.folder_scenarios = folder_scenarios
         self.folder_scraping = folder_scraping
         self.gui_booting_size = gui_booting_size
         self.gui_booting_fullscreen = gui_booting_fullscreen
@@ -103,7 +103,7 @@ class AppConfigurationModel:
         return {
             "log_level_enum": self.log_level_enum,
             "folder_logs": str(self.folder_logs),
-            "folder_providers": str(self.folder_providers),
+            "folder_scenarios": str(self.folder_scenarios),
             "folder_scraping": str(self.folder_scraping),
             "gui_booting_size": self.gui_booting_size,
             "gui_booting_fullscreen": self.gui_booting_fullscreen,
@@ -140,16 +140,16 @@ class AppConfigurationModel:
         self._folder_logs = Path(value) if isinstance(value, str) else value
 
     @property
-    def folder_providers(self) -> Path:
+    def folder_scenarios(self) -> Path:
         """Returns the folder path for providers."""
-        return self._folder_providers
+        return self._folder_scenarios
 
-    @folder_providers.setter
-    def folder_providers(self, value: Path | str) -> None:
+    @folder_scenarios.setter
+    def folder_scenarios(self, value: Path | str) -> None:
         """Sets the folder path for providers."""
         if not value or str(value).strip() == "":
             raise InvalidFolderProvidersError()
-        self._folder_providers = Path(value) if isinstance(value, str) else value
+        self._folder_scenarios = Path(value) if isinstance(value, str) else value
 
     @property
     def folder_scraping(self) -> Path:

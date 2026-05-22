@@ -29,13 +29,13 @@ class ProviderService:
         self._logger = logging.getLogger(__name__)
         self._repository: IProviderRepository = repository
 
-    def list_all_providers(self) -> list[ProviderModel]:
+    def list_all_scenarios(self) -> list[ProviderModel]:
         """Liste tous les fournisseurs.
 
         Returns:
             Liste des modèles de fournisseurs.
         """
-        return self._repository.list_all_providers()
+        return self._repository.list_all_scenarios()
 
     def read_provider(self, id_file: str) -> ProviderModel:
         """Récupère un fournisseur par son GUID.
@@ -102,25 +102,25 @@ class ProviderService:
         """
         self._repository.delete_provider(id_file)
 
-    def open_providers_folder(self) -> None:
+    def open_scenarios_folder(self) -> None:
         """Ouvre le répertoire des fournisseurs dans l'explorateur du système."""
-        self._repository.open_providers_folder()
+        self._repository.open_scenarios_folder()
 
-    def get_folder_path_providers(self) -> str:
+    def get_folder_path_scenarios(self) -> str:
         """Récupère le chemin du dossier des fournisseurs.
 
         Returns:
             Le chemin du dossier des fournisseurs.
         """
-        return self._repository.get_folder_path_providers()
+        return self._repository.get_folder_path_scenarios()
 
-    def validate_providers(self) -> ProviderValidationReport:
-        """Validates every provider file and moves broken files away.
+    def validate_scenarios(self) -> ProviderValidationReport:
+        """Validates every scenario file and moves broken files away.
 
         Returns:
             The summary of the validation run.
         """
-        provider_files = self._repository.list_provider_files()
+        provider_files = self._repository.list_scenario_files()
 
         valid_files = 0
         issues: list[ProviderValidationIssue] = []
@@ -187,7 +187,7 @@ class ProviderService:
             return reasons
 
         try:
-            provider_data = self._repository.read_provider_content(file_path)
+            provider_data = self._repository.read_scenario_content(file_path)
         except Exception as exc:
             reasons.append(f"Contenu corrompu ou illisible: {exc}")
             return reasons
