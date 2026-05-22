@@ -37,6 +37,10 @@ _DND_ITEM_H = 45
 _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
 
+# Validation status colours
+_STATUS_COLOR_OK = "#1b5e20"
+_STATUS_COLOR_ERROR = "#b00020"
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -108,12 +112,16 @@ class StepsListCrudView(ttk.Frame):
         steps_section.grid(row=2, column=0, sticky="nsew", padx=0)
 
     def _create_toolbar(self) -> ttk.Frame:
-        """Creates the toolbar frame with the Add step button.
+        """Creates the toolbar frame with the validation status label and the clear button.
 
         Returns:
             The fully built toolbar frame.
         """
         toolbar = ttk.Frame(self)
+
+        # Status label expands on the left; clear button is anchored to the right.
+        self._lbl_validation_status = ttk.Label(toolbar, text="", anchor="w", foreground=_STATUS_COLOR_OK)
+        self._lbl_validation_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
 
         self._btn_clear = ttk.Button(toolbar, text="Effacer toute la liste", command=self._fire_clear_all_steps)
         self._btn_clear.pack(side=tk.RIGHT, padx=(0, 20), pady=(0, 5))
@@ -176,6 +184,16 @@ class StepsListCrudView(ttk.Frame):
     # ---------------------------------------------------------------
     # Public render interface (called by the presenter)
     # ---------------------------------------------------------------
+
+    def set_validation_status(self, message: str, is_error: bool) -> None:
+        """Updates the workflow validation status label in the toolbar.
+
+        Args:
+            message: Status text to display.
+            is_error: True for error styling (red); False for success (green).
+        """
+        color = _STATUS_COLOR_ERROR if is_error else _STATUS_COLOR_OK
+        self._lbl_validation_status.configure(text=message, foreground=color)
 
     def reset(self) -> None:
         """Resets transient view state: selection and cached step list."""

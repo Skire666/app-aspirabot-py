@@ -13,7 +13,6 @@ Example:
 # ---------------------------------------------------------------------------
 
 import logging
-from collections.abc import Callable
 from typing import Any
 
 from interfaces.i_steps_list_crud_view import IStepsListCrudView
@@ -70,7 +69,6 @@ class StepsListPresenter:
         self._steps: list[StepScrapingModel] = []
         self._edit_index: int | None = None
         self._is_new_provider: bool = False
-        self._on_validation_feedback: Callable[[str, bool], None] | None = None
 
         self._bind_view_events()
 
@@ -102,6 +100,7 @@ class StepsListPresenter:
         self._provider_content: ProviderModel = self._service_provider.read_provider(provider_id_file)
         self._steps = list(self._provider_content.steps)
         self._refresh_view()
+        self._view.set_validation_status("Vérification : --", False)
 
     def init_new(self, provider_id_file: str) -> None:
         """Initializes an empty workflow for a brand-new provider.
@@ -113,6 +112,7 @@ class StepsListPresenter:
         self._is_new_provider = True
         self._steps = []
         self._refresh_view()
+        self._view.set_validation_status("Vérification : --", False)
 
     def get_steps(self) -> list[StepScrapingModel]:
         """Returns a copy of the current step list.
@@ -121,17 +121,6 @@ class StepsListPresenter:
             Snapshot of the in-memory steps.
         """
         return list(self._steps)
-
-    def set_validation_feedback_handler(
-        self,
-        handler: Callable[[str, bool], None] | None,
-    ) -> None:
-        """Sets a callback to display workflow validation feedback.
-
-        Args:
-            handler: Callback receiving (message, is_error) or None to clear.
-        """
-        self._on_validation_feedback = handler
 
     def validate_steps(self) -> list[str]:
         """Validates the current workflow step list.
@@ -338,12 +327,10 @@ class StepsListPresenter:
         self._gestion_view.set_available_steps(self._steps)
 
     def _notify_validation_feedback(self, first_error: str | None) -> None:
-        if not self._on_validation_feedback:
-            return
         if first_error:
-            self._on_validation_feedback(first_error, True)
+            self._view.set_validation_status(first_error, True)
         else:
-            self._on_validation_feedback("Workflow valide.", False)
+            self._view.set_validation_status("Workflow valide.", False)
 
     def _validate_all_steps(
         self,

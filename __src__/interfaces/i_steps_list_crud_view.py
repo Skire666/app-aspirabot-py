@@ -52,3 +52,12 @@ class IStepsListCrudView(Protocol):
     def clear_selection(self) -> None:
         """Clear the current step selection and repaint the deselected item."""
         ...
+
+    def set_validation_status(self, message: str, is_error: bool) -> None:
+        """Update the workflow validation status label.
+
+        Args:
+            message: Status text to display.
+            is_error: True for error styling (red); False for success (green).
+        """
+        ...

@@ -20,8 +20,6 @@ from views.workflow.steps_list_crud_panel import StepsListCrudView
 # Constants
 # ---------------------------------------------------------------------------
 
-_STATUS_COLOR_OK = "#1b5e20"
-_STATUS_COLOR_ERROR = "#b00020"
 _HEIGHT_FRAME_GESTION = 194
 
 # ---------------------------------------------------------------------------
@@ -37,9 +35,9 @@ class WorkflowView(ttk.Frame):
     2. Gestion des étapes  — step type selector and inline edit form.
     3. Liste des étapes    — drag-and-drop step list.
 
-    A footer row with a validation status label and Save / Cancel buttons is
-    placed between the Gestion and Liste panels, as required by Tkinter's
-    side=BOTTOM packing order (footer must be packed before the expanding panel).
+    A footer row with Save / Cancel buttons is placed between the Gestion and
+    Liste panels, as required by Tkinter's side=BOTTOM packing order (footer
+    must be packed before the expanding panel).
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -347,15 +345,11 @@ class WorkflowView(ttk.Frame):
     # ---------------------------------------------------------------
 
     def _build_footer(self, parent: tk.Widget) -> None:
-        """Creates the validation status label and Save / Cancel buttons.
+        """Creates the Save and Cancel buttons in the footer row.
 
         Args:
             parent: The footer frame to pack widgets into.
         """
-        # Status label on the left expands to fill available width.
-        self._lbl_workflow_status = ttk.Label(parent, text="", anchor="w", foreground=_STATUS_COLOR_OK)
-        self._lbl_workflow_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-
         # Action buttons anchored to the right in reverse visual order.
         self._btn_save = ttk.Button(parent, text="Sauvegarder le scénario", command=self._notify_save)
         self._btn_save.pack(side=tk.RIGHT, padx=5)
@@ -364,7 +358,7 @@ class WorkflowView(ttk.Frame):
         self._btn_cancel.pack(side=tk.RIGHT, padx=5)
 
     # ---------------------------------------------------------------
-    # Public interface — callbacks and footer status
+    # Public interface — callbacks
     # ---------------------------------------------------------------
 
     def set_callbacks(
@@ -380,16 +374,6 @@ class WorkflowView(ttk.Frame):
         """
         self._on_save = on_save
         self._on_cancel = on_cancel
-
-    def set_workflow_validation_message(self, message: str, is_error: bool) -> None:
-        """Updates the validation status label near the Save button.
-
-        Args:
-            message: Status text to display.
-            is_error: True for error styling (red); False for success (green).
-        """
-        color = _STATUS_COLOR_ERROR if is_error else _STATUS_COLOR_OK
-        self._lbl_workflow_status.configure(text=message, foreground=color)
 
     def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
         """Loads a step into the inline form and switches its mode.
@@ -434,7 +418,7 @@ class WorkflowView(ttk.Frame):
         self._var_name.set(data.get("provider_name", ""))
         self._var_desc.set(data.get("provider_desc", ""))
         self._var_version.set(data.get("version", ""))
-        self.set_workflow_validation_message("Vérification : --", False)
+        self._workflow_builder_view.set_validation_status("Vérification : --", False)
 
     def get_data(self) -> dict[str, Any]:
         """Reads all form fields and returns them as a dictionary.
@@ -455,7 +439,7 @@ class WorkflowView(ttk.Frame):
         self._var_name.set("")
         self._var_desc.set("")
         self._var_version.set("")
-        self.set_workflow_validation_message("", False)
+        self._workflow_builder_view.set_validation_status("", False)
 
     # ---------------------------------------------------------------
     # Static dialogs

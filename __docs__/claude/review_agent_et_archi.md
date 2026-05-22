@@ -17,3 +17,7 @@ Propose ensuite un plan de correction ordonné par priorité. Ne modifie le code
 
 Fait le bilan des correctifs de la catégorie 4.
 Regarde si tout est conforme.
+
+
+Fait le bilan des correctifs.
+Regarde si tout est conforme.

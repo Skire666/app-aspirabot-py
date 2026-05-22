@@ -54,8 +54,6 @@ class WorkflowPresenter:
             workflow_service=WorkflowService(),
             gestion_view=view,
         )
-        self._workflow_presenter.set_validation_feedback_handler(self._view.set_workflow_validation_message)
-
         self._bind_view_events()
 
     def set_on_done_callback(self, callback: Callable[[], None]) -> None:
