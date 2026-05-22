@@ -329,7 +329,7 @@ class AppConfigurationView(ttk.Frame):
             self._on_change()
 
     @staticmethod
-    def _safe_text(value: Any) -> str:
+    def _safe_text(value: object) -> str:
         return "" if value is None else str(value)
 
 

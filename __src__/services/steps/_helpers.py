@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from interfaces.i_web_browser_service import IWebBrowserService
+from playwright.sync_api import ElementHandle
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
     C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
@@ -15,17 +16,17 @@ from shared.constants import (
 _logger = logging.getLogger(__name__)
 
 
-def extract_from_element(element: Any, mode: str) -> str:
+def extract_from_element(element: ElementHandle, mode: str) -> str:
     """Reads a property from a Playwright ElementHandle."""
     if mode == "textContent":
-        return element.text_content() or ""
+        return element.text_content().strip() or ""
     if mode == "outerHTML":
-        return element.evaluate("el => el.outerHTML") or ""
+        return element.evaluate("el => el.outerHTML").strip() or ""
     if mode == "innerHTML":
-        return element.inner_html()
+        return element.inner_html().strip()
     if mode == "value":
-        return element.input_value()
-    return element.inner_text()
+        return element.input_value().strip()
+    return element.inner_text().strip()
 
 
 def evaluate_count_condition(count: int, operator: str, value: int) -> bool:

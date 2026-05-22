@@ -21,6 +21,8 @@ from urllib.parse import urlparse
 
 from playwright.sync_api import Page
 
+from __src__.shared.enums import ExtractTextHtmlEnum
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -62,7 +64,7 @@ class DebugBrowserService:
             selector: CSS selector to query.
 
         Returns:
-            Dict with keys: count, innerHTML, textContent, innerText, outerText.
+            Dict with keys: count, innerHTML, textContent, innerText, outerHTML.
             Only ``count`` is present (value 0) when no elements are found.
         """
         elements = page.query_selector_all(selector)
@@ -74,10 +76,11 @@ class DebugBrowserService:
         first = elements[0]
         return {
             "count": count,
-            "innerHTML": first.evaluate("el => el.innerHTML") or "",
-            "textContent": first.evaluate("el => el.textContent") or "",
-            "innerText": first.evaluate("el => el.innerText") or "",
-            "outerText": first.evaluate("el => el.outerText") or "",
+            ExtractTextHtmlEnum.E_INNER_TEXT.value: first.evaluate("el => el.innerText") or "",
+            ExtractTextHtmlEnum.E_TEXT_CONTENT.value: first.evaluate("el => el.textContent") or "",
+            ExtractTextHtmlEnum.E_INNER_HTML.value: first.evaluate("el => el.innerHTML") or "",
+            ExtractTextHtmlEnum.E_OUTER_HTML.value: first.evaluate("el => el.outerHTML") or "",
+            ExtractTextHtmlEnum.E_INPUT_VALUE.value: first.evaluate("el => el.value") or "",
         }
 
     def analyze_images(self, page: Page, selector: str) -> list[dict[str, object]]:

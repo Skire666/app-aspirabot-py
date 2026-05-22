@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import bisect
 import tkinter as tk
-from datetime import datetime
 from collections.abc import Callable
+from datetime import datetime
 from tkinter import ttk
 from typing import Any
 

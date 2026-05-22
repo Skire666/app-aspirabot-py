@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from interfaces.i_step_params import IStepParams
-from shared.enums import StepTypeEnum
+from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum
 
 
 @dataclass(frozen=True)
@@ -21,7 +21,12 @@ class ExtractTextParams(IStepParams):
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(selector="", extract_mode="innerText", target="first", comment="")
+        return cls(
+            selector="",
+            extract_mode=ExtractTextHtmlEnum.E_INNER_TEXT.value,
+            target=ExtractTargetEnum.E_FIRST.value,
+            comment="",
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""

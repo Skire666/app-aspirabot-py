@@ -249,7 +249,7 @@ class ScrapingPresenter:
             rows = self._all_logs_scraping
             self._service_scraping.export_journal(path, rows)
         except OSError as exc:
-            self._logging.exception("Échec de l'export du journal : %s", exc)
+            self._logging.exception("Échec de l'export du journal")
             self._view.show_warning(C_SCRAPING_EXPORT_WRITE_ERROR.format(exc=exc))
 
     def _on_provider_selected(self, id_file: str) -> None:
@@ -270,8 +270,8 @@ class ScrapingPresenter:
         """Reload the providers list and forward it to the view dropdown."""
         try:
             providers: list[ProviderModel] = self._service_provider.list_all_scenarios()
-        except (AspirabotError, OSError) as exc:
-            self._logging.exception("Échec du chargement de la liste des providers : %s", exc)
+        except (AspirabotError, OSError):
+            self._logging.exception("Échec du chargement de la liste des providers")
             providers = []
 
         # Build display-ready dicts and push to the view.
@@ -816,8 +816,8 @@ class ScrapingPresenter:
                 self._emergency_stop_threshold,
                 self._on_emergency_stop,
             )
-        except (ValueError, RuntimeError, OSError) as exc:
-            self._logging.exception("Workflow execution failed: %s", exc)
+        except (ValueError, RuntimeError, OSError):
+            self._logging.exception("Échec de l'exécution du workflow")
             return None
 
     def _run_workflow(self, url_source_type: str, url_source_value: list[str] | str, export_folder: str) -> None:

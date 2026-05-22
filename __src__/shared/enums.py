@@ -69,4 +69,26 @@ class EventScrapingEnum(Enum):
     E_UNKNOWN = "UNKNOWN"
 
 
+class ExtractTextHtmlEnum(Enum):
+    """Enumerates the modes for extracting text from an element in an EXTRACT_TEXT step."""
+
+    E_UNSET = "UNSET"
+    E_INNER_TEXT = "innerText"
+    E_TEXT_CONTENT = "textContent"
+    E_OUTER_HTML = "outerHTML"
+    E_INNER_HTML = "innerHTML"
+    E_INPUT_VALUE = "value"
+    E_UNKNOWN = "UNKNOWN"
+
+
+class ExtractTargetEnum(Enum):
+    """Enumerates the target options for selecting elements in an EXTRACT_TEXT step."""
+
+    E_UNSET = "UNSET"
+    E_FIRST = "first"
+    E_LAST = "last"
+    E_ALL = "all"
+    E_UNKNOWN = "UNKNOWN"
+
+
 # EOF

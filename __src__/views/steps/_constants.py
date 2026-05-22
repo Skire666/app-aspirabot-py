@@ -16,6 +16,8 @@ from shared.constants import (
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
 )
 
+from __src__.shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum
+
 # ---------------------------------------------------------------------------
 # Unit display / model mappings
 # ---------------------------------------------------------------------------
@@ -67,7 +69,13 @@ EXTRACT_MODE_DISPLAY: list[str] = [
     "innerHTML — HTML interne",
     "value — Valeur du champ (input/textarea)",
 ]
-EXTRACT_MODE_VALUES: list[str] = ["innerText", "textContent", "outerHTML", "innerHTML", "value"]
+EXTRACT_MODE_VALUES: list[str] = [
+    ExtractTextHtmlEnum.E_INNER_TEXT.value,
+    ExtractTextHtmlEnum.E_TEXT_CONTENT.value,
+    ExtractTextHtmlEnum.E_OUTER_HTML.value,
+    ExtractTextHtmlEnum.E_INNER_HTML.value,
+    ExtractTextHtmlEnum.E_INPUT_VALUE.value,
+]
 EXTRACT_MODE_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_MODE_DISPLAY, EXTRACT_MODE_VALUES, strict=True))
 EXTRACT_MODE_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_MODE_VALUES, EXTRACT_MODE_DISPLAY, strict=True))
 
@@ -76,13 +84,13 @@ EXTRACT_TARGET_DISPLAY: list[str] = [
     "Dernier élément uniquement",
     "Tous les éléments",
 ]
-EXTRACT_TARGET_VALUES: list[str] = ["first", "last", "all"]
-EXTRACT_TARGET_VIEW_TO_MODEL: dict[str, str] = dict(
-    zip(EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_VALUES, strict=True)
-)
-EXTRACT_TARGET_MODEL_TO_VIEW: dict[str, str] = dict(
-    zip(EXTRACT_TARGET_VALUES, EXTRACT_TARGET_DISPLAY, strict=True)
-)
+EXTRACT_TARGET_VALUES: list[str] = [
+    ExtractTargetEnum.E_FIRST.value,
+    ExtractTargetEnum.E_LAST.value,
+    ExtractTargetEnum.E_ALL.value,
+]
+EXTRACT_TARGET_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_VALUES, strict=True))
+EXTRACT_TARGET_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_TARGET_VALUES, EXTRACT_TARGET_DISPLAY, strict=True))
 
 # ---------------------------------------------------------------------------
 # COUNT_ELEMENT operator display / model mappings

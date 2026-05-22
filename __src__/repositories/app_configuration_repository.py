@@ -216,11 +216,10 @@ class AppConfigurationRepository(IConfigRepository):
             if not self._full_pathfile.exists():
                 return None
             return datetime.fromtimestamp(self._full_pathfile.stat().st_mtime)
-        except OSError as error:
+        except OSError:
             self._logger.exception(
-                "Erreur lors de la lecture de l'horodatage du fichier de configuration '%s' : %s",
+                "Erreur lors de la lecture de l'horodatage du fichier de configuration '%s'",
                 self._full_pathfile,
-                error,
             )
             return None
 
@@ -289,12 +288,11 @@ class AppConfigurationRepository(IConfigRepository):
 
             # Log successful completion at debug level.
             self._logger.debug("Configuration file saved successfully.")
-        except OSError as error:
+        except OSError:
             # Log write errors for troubleshooting.
             self._logger.exception(
-                "Erreur lors de l'écriture du fichier de configuration '%s' : %s",
+                "Erreur lors de l'écriture du fichier de configuration '%s'",
                 self._full_pathfile,
-                error,
             )
 
 

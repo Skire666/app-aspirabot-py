@@ -1,0 +1,47 @@
+{
+    "id_file": "c7e91a37",
+    "provider_name": "Nouv. scénario",
+    "provider_desc": "Description du scénario (ou URL)",
+    "created_date_provider": {
+        "__type__": "datetime",
+        "value": "2026-05-22T19:08:21.730326"
+    },
+    "modified_date_provider": {
+        "__type__": "datetime",
+        "value": "2026-05-22T19:08:21.730326"
+    },
+    "version": "1.0.0",
+    "steps": [
+        {
+            "step_type": "EXTRACT_TEXT",
+            "step_id": "E8ke",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-22T19:08:19.850408"
+            },
+            "params": {
+                "selector": "Cf. FAQ ou 'copy selector' dans chrome/debug",
+                "extract_mode": "innerText",
+                "target": "first",
+                "comment": ""
+            }
+        }
+    ],
+    "launch_profiles": [
+        {
+            "id_profile": "ef4dece9",
+            "name_profile": "Profil par défaut",
+            "export_folder": "E:\\app-aspirabot-py\\data_scraping",
+            "url_source_type": "",
+            "url_source_value": null,
+            "emergency_stop_threshold": 1,
+            "launch_count": 0,
+            "used_date_profile": null,
+            "modified_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-05-22T19:08:17.656536"
+            }
+        }
+    ]
+}

@@ -140,9 +140,7 @@ class ExtractTextFormDef(IStepFormDef):
         """
         widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, ""))
         widgets[C_KEY_EXTRACT_MODE].set(
-            EXTRACT_MODE_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_EXTRACT_MODE, "innerText"), EXTRACT_MODE_DISPLAY[0]
-            )
+            EXTRACT_MODE_MODEL_TO_VIEW.get(model.params.get(C_KEY_EXTRACT_MODE, "innerText"), EXTRACT_MODE_DISPLAY[0])
         )
         widgets[C_KEY_TARGET_EXTRACTED].set(
             EXTRACT_TARGET_MODEL_TO_VIEW.get(

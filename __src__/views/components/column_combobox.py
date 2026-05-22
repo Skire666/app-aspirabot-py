@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
-from tkinter import font as tkFont
+from tkinter import font as tkfont
 from tkinter import ttk
 from typing import Any
 
@@ -50,7 +51,7 @@ class _ColumnDef:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _truncate(text: str, max_px: int, font: tkFont.Font) -> str:
+def _truncate(text: str, max_px: int, font: tkfont.Font) -> str:
     """Return *text* clipped to *max_px* pixels, appending '…' when trimmed."""
     if font.measure(text) <= max_px:
         return text
@@ -177,16 +178,12 @@ class _DropdownWindow:
         self._is_open = False
         root = self._owner.winfo_toplevel()
         if self._root_bid:
-            try:
+            with contextlib.suppress(tk.TclError):
                 root.unbind("<ButtonPress-1>", self._root_bid)
-            except tk.TclError:
-                pass
             self._root_bid = None
         if self._configure_bid:
-            try:
+            with contextlib.suppress(tk.TclError):
                 root.unbind("<Configure>", self._configure_bid)
-            except tk.TclError:
-                pass
             self._configure_bid = None
         if self._top:
             self._top.destroy()
@@ -415,11 +412,11 @@ class ColumnCombobox(tk.Frame):
         self._disabled: bool = False
 
         if font is None:
-            self._font: tkFont.Font = tkFont.nametofont("TkDefaultFont").copy()
-        elif isinstance(font, tkFont.Font):
+            self._font: tkfont.Font = tkfont.nametofont("TkDefaultFont").copy()
+        elif isinstance(font, tkfont.Font):
             self._font = font
         else:
-            self._font = tkFont.Font(font=font)
+            self._font = tkfont.Font(font=font)
 
         # Display canvas — renders the selected row with all visible columns
         char_w = self._font.measure("0") * width
@@ -608,7 +605,7 @@ class ColumnCombobox(tk.Frame):
             self._state = kwargs.pop("state")
         if "font" in kwargs:
             f = kwargs.pop("font")
-            self._font = f if isinstance(f, tkFont.Font) else tkFont.Font(font=f)
+            self._font = f if isinstance(f, tkfont.Font) else tkfont.Font(font=f)
             self._paint_selected()
         # width and textvariable accepted for compatibility; no-op on Canvas layout
         kwargs.pop("width", None)

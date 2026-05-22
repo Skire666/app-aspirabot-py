@@ -10,7 +10,7 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Generic, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 
 from shared.constants import C_COLOR_GRAY_BACKGROUND
 from shared.resources_icons_util import (
@@ -99,7 +99,7 @@ class ItemRenderer(Protocol[T]):
 # ── Widget ────────────────────────────────────────────────────────────────────
 
 
-class DragDropList(tk.Frame, Generic[T]):
+class DragDropList[T](tk.Frame):
     """Reorderable list with drag-and-drop support.
 
     Architecture:

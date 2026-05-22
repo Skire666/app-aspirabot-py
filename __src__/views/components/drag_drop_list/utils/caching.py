@@ -3,15 +3,11 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Generic, TypeVar
 
 from shared.exception_util import InvalidLruCacheCapacityError
 
-K = TypeVar("K")
-V = TypeVar("V")
 
-
-class LRUCache(Generic[K, V]):
+class LRUCache[K, V]:
     """Fixed-capacity least-recently-used cache.
 
     Items are evicted in LRU order when capacity is exceeded.

@@ -27,6 +27,8 @@ from services.debug_browser_service import DebugBrowserService
 from views.debug_view import DebugView
 from views.workflow.debug_page_view import DebugPageView
 
+from __src__.shared.enums import ExtractTextHtmlEnum
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
@@ -90,9 +92,7 @@ class DebugPresenter:
         self._debug_window.on_close = self._on_debug_close
         self._debug_window.set_html_content("Chargement en cours…")
         self._view.set_status_active(url)
-        self._debug_thread = threading.Thread(
-            target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True
-        )
+        self._debug_thread = threading.Thread(target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True)
         self._debug_thread.start()
 
     def _close_debug_session(self) -> None:
@@ -267,24 +267,27 @@ class DebugPresenter:
         if count == 0:
             return f"Sélecteur : {selector!r}\nAucun élément trouvé."
 
-        str_inner_html = result.get("innerHTML", "").strip()
-        str_txt_content = result.get("textContent", "").strip()
-        str_inner_txt = result.get("innerText", "").strip()
-        str_outer_txt = result.get("outerText", "").strip()
+        str_inner_txt = result.get(ExtractTextHtmlEnum.E_INNER_TEXT.value, "").strip()
+        str_txt_content = result.get(ExtractTextHtmlEnum.E_TEXT_CONTENT.value, "").strip()
+        str_inner_html = result.get(ExtractTextHtmlEnum.E_INNER_HTML.value, "").strip()
+        str_outer_html = result.get(ExtractTextHtmlEnum.E_OUTER_HTML.value, "").strip()
+        str_input_val = result.get(ExtractTextHtmlEnum.E_INPUT_VALUE.value, "").strip()
 
         lines = [
             f"Sélecteur : {selector!r}",
             f"count       : {count}",
             "",
             "--------- Premier élément ---------",
-            f"--- innerHTML x{len(str_inner_html)}  :\n{str_inner_html}",
-            "",
-            f"--- textContent x{len(str_txt_content)}  :\n{str_txt_content}",
-            "",
-            f"--- innerText x{len(str_inner_txt)}  :\n{str_inner_txt}",
-            "",
-            f"--- outerText x{len(str_outer_txt)}  :\n{str_outer_txt}",
-            "",
+            f"--- innerText x{len(str_inner_txt)} : <<\n{str_inner_txt}",
+            ">>",
+            f"--- textContent x{len(str_txt_content)} : <<\n{str_txt_content}",
+            ">>",
+            f"--- innerHTML x{len(str_inner_html)} : <<\n{str_inner_html}",
+            ">>",
+            f"--- outerHTML x{len(str_outer_html)} : <<\n{str_outer_html}",
+            ">>",
+            f"--- value x{len(str_input_val)} : <<\n{str_input_val}",
+            ">>",
         ]
         if count > 1:
             lines.insert(3, f"(Affichage du 1er élément sur {count} trouvés)")

@@ -43,7 +43,11 @@ def detect_os() -> OperatingSystem:
 
 
 def open_folder(path: str | Path) -> None:
-    # Dispatch to the OS-specific open command.
+    """Open *path* in the native file-explorer application.
+
+    Args:
+        path: Directory path to reveal in the OS file explorer.
+    """
     enum_os: OperatingSystem = detect_os()
 
     if enum_os == OperatingSystem.WINDOWS:
