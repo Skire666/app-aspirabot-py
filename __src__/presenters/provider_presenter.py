@@ -6,6 +6,7 @@
 
 import logging
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 from models.launch_profile_model import LaunchProfileModel
@@ -32,6 +33,7 @@ class ProviderPresenter:
         self._logger = logging.getLogger(__name__)
         self._view = view
         self._service = service
+        self._last_loaded: datetime | None = None
         self._all_scenarios: list[ProviderModel] = []
         self._current_sort_column = "provider_name"
         self._current_sort_ascending = True
@@ -46,8 +48,23 @@ class ProviderPresenter:
         self._bind_view_events()
         self._load_scenarios()
 
-    def refresh(self) -> None:
-        """Refresh the list of scenarios."""
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def ensure_profiles_loaded(self) -> None:
+        """Trigger a profile reload when the tab is shown.
+
+        Reloads if profiles have never been fetched, or if more than one
+        second has elapsed since the last successful load.
+
+        Returns:
+            None.
+        """
+        # Skip reload when data is still fresh (within the 1-second window).
+        if self._last_loaded and (datetime.now() - self._last_loaded).total_seconds() <= 1:
+            return
+
         self._load_scenarios()
 
     def _bind_view_events(self) -> None:
@@ -73,6 +90,7 @@ class ProviderPresenter:
 
         self._sort_scenarios(self._current_sort_column, self._current_sort_ascending)
         self._update_view()
+        self._last_loaded = datetime.now()
 
     @staticmethod
     def _text_key(value: str) -> str:

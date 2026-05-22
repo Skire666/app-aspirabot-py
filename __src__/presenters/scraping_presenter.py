@@ -115,7 +115,7 @@ class ScrapingPresenter:
         # Journal entry counter — provides a unique iid for each Treeview row.
         self._all_logs_scraping: list[str] = []
 
-        self._providers_loaded: datetime | None = None
+        self._last_loaded: datetime | None = None
 
         # Captured at launch time (main thread) to avoid cross-thread Tkinter access.
         self._emergency_stop_threshold: int = 0
@@ -132,8 +132,10 @@ class ScrapingPresenter:
 
     def ensure_scenarios_loaded(self) -> None:
         """Populate the provider dropdown on first show, skipped if already loaded."""
-        if not self._providers_loaded or (datetime.now() - self._providers_loaded).total_seconds() > 1:
-            self._on_refresh_scenarios()
+        # Skip reload when data is still fresh (within the 1-second window).
+        if self._last_loaded and (datetime.now() - self._last_loaded).total_seconds() <= 1:
+            return
+        self._on_refresh_scenarios()
 
     def load_profile(self, id_profile: str) -> None:
         """Select and apply a specific profile by ID in the view.
@@ -266,7 +268,6 @@ class ScrapingPresenter:
         except Exception as exc:  # noqa: BLE001
             self._logging.error("Failed to load providers list: %s", exc)
             providers = []
-        self._providers_loaded = datetime.now()
 
         # Build display-ready dicts and push to the view.
         rows: list[dict[str, str]] = [
@@ -280,6 +281,7 @@ class ScrapingPresenter:
             for p in providers
         ]
         self._view.render_providers_list(rows)
+        self._last_loaded = datetime.now()
 
     # ------------------------------------------------------------------
     # Profile management callbacks
@@ -725,7 +727,7 @@ class ScrapingPresenter:
         # Complete the journal row started in _on_step_start.
         date_str = get_time_now_hh_mm_ss()
         is_success = C_SCRAPING_JOURNAL_RESULT_OK if context.last_result_step else C_SCRAPING_JOURNAL_RESULT_ERROR
-        line = f"{date_str} | {step.step_type.value} | {is_success} | {context.last_message_step}\n"
+        line = f"{date_str} | {step.step_type.value} | {is_success} | {context.last_time_elapsed:.3f} | {context.last_message_step}\n"
 
         # logs
         self._all_logs_scraping.append(line)
@@ -769,7 +771,7 @@ class ScrapingPresenter:
         date_str = get_time_now_hh_mm_ss()
         line = f"{date_str} | Début {r.started_at} | Fin {r.finished_at}"
         line += f" | Total steps x{r.steps_total} | Succès x{r.steps_success} | Erreur x{r.steps_failed}"
-        line += f" | Clique x{r.clicks_performed} | URL ouverte x{r.urls_opened} | Est annulé = {r.cancelled}\n"
+        line += f" | Clique x{r.clicks_performed} | URL ouverte x{r.open_urls_executed} | Est annulé = {r.cancelled}\n"
 
         # logs
         self._all_logs_scraping.append(line)

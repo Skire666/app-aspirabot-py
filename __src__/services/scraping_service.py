@@ -95,7 +95,7 @@ class ScrapingService:
         self._steps_success_count: int = 0
         self._steps_failed_count: int = 0
         self._clicks_count: int = 0
-        self._urls_opened_count: int = 0
+        self._open_urls_executed_count: int = 0
 
         # Emergency stop configuration — set before each run.
         self._emergency_stop_threshold: int = 0
@@ -218,7 +218,7 @@ class ScrapingService:
             steps_success=self._steps_success_count,
             steps_failed=self._steps_failed_count,
             clicks_performed=self._clicks_count,
-            urls_opened=self._urls_opened_count,
+            open_urls_executed=self._open_urls_executed_count,
             cancelled=False,
         )
 
@@ -269,7 +269,7 @@ class ScrapingService:
             steps_success=self._steps_success_count,
             steps_failed=self._steps_failed_count,
             clicks_performed=self._clicks_count,
-            urls_opened=self._urls_opened_count,
+            open_urls_executed=self._open_urls_executed_count,
             cancelled=cancelled,
         )
 
@@ -304,7 +304,7 @@ class ScrapingService:
             if self._context.end_process:
                 break
             # Pause when the failure quota reaches the configured threshold.
-            self._check_emergency_stop()
+            self._check_emergency_stop(steps[i])
 
         return self._steps_failed_count
 
@@ -332,7 +332,7 @@ class ScrapingService:
         self._steps_success_count = 0
         self._steps_failed_count = 0
         self._clicks_count = 0
-        self._urls_opened_count = 0
+        self._open_urls_executed_count = 0
 
     def _run_one_step(self, step: StepScrapingModel, index: int) -> int:
         """Execute one step, update stats, fire callback, return next index.
@@ -376,7 +376,7 @@ class ScrapingService:
         if step.step_type == StepTypeEnum.E_CLICK_ELEMENT:
             self._clicks_count += 1
         elif step.step_type == StepTypeEnum.E_OPEN_URL:
-            self._urls_opened_count += 1
+            self._open_urls_executed_count += 1
 
     def _consume_pending_jump(self, current_index: int) -> int:
         """Resolve and clear any pending JUMP_TO_STEP signal.
@@ -395,7 +395,7 @@ class ScrapingService:
         self._context.pending_jump = None
         return next_index
 
-    def _check_emergency_stop(self) -> None:
+    def _check_emergency_stop(self, next_step: StepScrapingModel) -> None:
         """Pause the workflow when the failure count reaches the emergency threshold.
 
         Clears the pause_event to block the next step and fires the optional
@@ -407,6 +407,8 @@ class ScrapingService:
         if self._emergency_stop_threshold <= 0:
             return
         if self._steps_failed_count < self._emergency_stop_threshold:
+            return
+        if next_step.step_type in {StepTypeEnum.E_JUMP_TO_STEP, StepTypeEnum.E_END_PROCESS}:
             return
 
         # Threshold reached — block execution at the next iteration.

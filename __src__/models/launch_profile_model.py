@@ -21,6 +21,7 @@ from typing import Any
 from shared.constants import (
     C_CURRENT_WORKING_DIR,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
+    C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
     C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID,
 )
 from shared.datetime_util import dict_with_key_to_optional_datetime
@@ -32,7 +33,6 @@ from shared.random_util import generate_rng_hexastring
 
 # Default export folder: project root / data_scraping.
 _C_DEFAULT_EXPORT_FOLDER: str = str(Path(C_CURRENT_WORKING_DIR) / C_DATA_DEFAULT_FOLDER_SCRAPING)
-C_DEFAULT_THRESHOLD_EMERGENCY_STOP = 5
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -97,7 +97,7 @@ class LaunchProfileModel:
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
             url_source_value=None,
-            emergency_stop_threshold=C_DEFAULT_THRESHOLD_EMERGENCY_STOP,
+            emergency_stop_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             launch_count=0,
             used_date_profile=None,
             modified_date_profile=datetime.now(),

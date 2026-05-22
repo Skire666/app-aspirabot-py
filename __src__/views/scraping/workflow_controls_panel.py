@@ -275,7 +275,7 @@ class WorkflowControlsPanel(ttk.Frame):
         if stats:
             txt1 = f"Démarré à {self._run_started_at.strftime('%H:%M:%S')}"
             txt2 = f"    |     Succès : {stats.steps_success:<3d}    |     Erreurs : {stats.steps_failed:<3d}"
-            txt3 = f"    |     Clics : {stats.clicks_performed:<3d}    |     URL lues : {stats.urls_opened:<3d}"
+            txt3 = f"    |     Clics : {stats.clicks_performed:<3d}    |     OpenURL exécutés : {stats.open_urls_executed:<3d}"
             self._var_prog_stats.set(txt1 + txt2 + txt3)
 
     # ------------------------------------------------------------------

@@ -151,7 +151,7 @@ class CsvUrlSourceProvider(IUrlSourceProvider):
             A string like "CSV: 3 URLs remaining" or "CSV: no more URLs".
         """
         if self._urls is None:
-            return "CSV: non chargé"
+            return "CSV : non chargé"
         remaining = len(self._urls) - self._index
         if remaining > 0:
             return f"CSV: {self._index} / {len(self._urls)} consommé(s)"

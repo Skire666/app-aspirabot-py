@@ -145,7 +145,6 @@ class HistoryPresenter:
         """Handle a sort request from the view."""
         self._sort_column = column
         self._sort_ascending = ascending
-        self._last_loaded = None
         self._load_profiles()
 
     def _on_open_folder(self, _: str) -> None:

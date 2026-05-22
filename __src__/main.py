@@ -378,7 +378,7 @@ def _wire_provider_navigation(
 
     def on_edit_done() -> None:
         # Return to the list and disable the edit tab after save/cancel.
-        provider_presenter.refresh()
+        provider_presenter.ensure_profiles_loaded()
         main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_SCRIPTS, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_HISTORY, tk.NORMAL)

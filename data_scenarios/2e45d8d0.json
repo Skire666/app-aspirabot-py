@@ -1,0 +1,110 @@
+{
+    "id_file": "2e45d8d0",
+    "provider_name": "Nouv. scénario",
+    "provider_desc": "Description du scénario (ou URL)",
+    "created_date_provider": {
+        "__type__": "datetime",
+        "value": "2026-05-22T14:36:01.942182"
+    },
+    "modified_date_provider": {
+        "__type__": "datetime",
+        "value": "2026-05-22T15:24:48.421881"
+    },
+    "version": "1.0.0",
+    "steps": [
+        {
+            "step_type": "OPEN_URL",
+            "step_id": "P3Aa",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-22T14:35:14.011953"
+            },
+            "params": {
+                "url_mode": "<<SOURCE>>",
+                "url_custom": "https://example.com/",
+                "wait_state": "networkidle",
+                "wait_dns_solver": 6,
+                "timeout_duration": 8,
+                "timeout_unit": "s",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "JUMP_TO_STEP",
+            "step_id": "49G8",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-22T14:57:57.474127"
+            },
+            "params": {
+                "condition": "failure",
+                "target_hexastring": "cpCp",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "WAIT_USER_ACTION",
+            "step_id": "9Dd5",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-22T14:57:43.094120"
+            },
+            "params": {
+                "condition": "always",
+                "wait_duration": 1,
+                "wait_unit": "s",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "JUMP_TO_STEP",
+            "step_id": "ePNE",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-22T14:35:47.743167"
+            },
+            "params": {
+                "condition": "success",
+                "target_hexastring": "P3Aa",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "END_PROCESS",
+            "step_id": "cpCp",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-22T14:58:27.732186"
+            },
+            "params": {
+                "wait_duration": 3,
+                "wait_unit": "s",
+                "comment": ""
+            }
+        }
+    ],
+    "launch_profiles": [
+        {
+            "id_profile": "3d66530a",
+            "name_profile": "dossier getcomics - check",
+            "export_folder": "E:\\app-aspirabot-py\\data_scraping",
+            "url_source_type": "folder",
+            "url_source_value": "E:/app-py-life-selector/checker truc piraté (et non extracteur) - juste MAJ dernier clique/001 - Search 'getcomics'",
+            "emergency_stop_threshold": 1,
+            "launch_count": 8,
+            "used_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-05-22T15:24:48.421874"
+            },
+            "modified_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-05-22T14:36:26.968105"
+            }
+        }
+    ]
+}

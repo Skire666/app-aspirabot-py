@@ -54,7 +54,7 @@ class ScrapingReportModel:
     steps_success: int
     steps_failed: int
     clicks_performed: int
-    urls_opened: int
+    open_urls_executed: int
     cancelled: bool
 
     @property

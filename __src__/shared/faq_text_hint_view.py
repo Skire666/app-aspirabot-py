@@ -21,17 +21,46 @@ class FaqTextTextHint:
     """
 
     CATEGORY_HINTS: ClassVar[dict[str, str]] = {
+        "Comportement à connaitre": ("Infos sur les comportements à connaitre\n."),
         "Usage des données": (
-            "Infos sur des données spécifiques.\n\nSélectionnez pour en savoir plus sur une donnée générique."
+            "Infos sur des données spécifiques.\nSélectionnez pour en savoir plus sur une donnée générique.\n"
         ),
         "Brique logique": (
-            "Regroupe les étapes de navigation, contrôle et "
-            "synchronisation.\n\n"
+            "Regroupe les étapes de navigation, contrôle et synchronisation.\n\n"
             "Sélectionnez une étape pour voir comment utiliser les paramètres."
         ),
     }
 
     BY_CATEGORY: ClassVar[dict[str, dict[str, str]]] = {
+        "Comportement à connaitre": {
+            "Délai d'attente DNS": (
+                "Lors d'une ouverture d'une URL avec OpenURL, plusieurs cas de figure peuvent faire échouer l'action\n"
+                "- La résolution du DNS interne à chromium peut échouer (timeout, éhec de résolution, etc...).\n"
+                "- une redirection http 300 peut subvenir et être cancel par les sécurités sandbox de l'automatisation\n"
+                "\nDu coup, si une page génère un 'ERR_NAME_NOT_RESOLVED', OpenURL fait un retry (refresh explicite)\n"
+                "Par contre, si le refresh échoue à nouveau, où que la page demandée n'est pas la même que la page résultat, alors OpenURL retourne une erreur"
+                "le délai d'attente avant le retry est de 5 secondes (avant, marche pas), et il n'y a qu'un seul refresh."
+            ),
+            "Fermer les onglets": (
+                "3 choses à savoir sur le fonctionnement de la fermeture des onglets :\n"
+                "- Est un find donc cherche partout dans l'URL.\n"
+                "- Est insensible à la casse (plus pratique, évite les erreurs de majuscules).\n"
+                "- N'est pas un regexp, juste une string plate, donc le '.' n'est pas interprété\n"
+                "\nAucune idée si le https est dedans au moment du check (éviter de le mettre)\n"
+                "Si le mode n'est pas custom, utilise la dernière URL ouverte par l'event OpenURL\n"
+                "Le refresh ne change pas la dernière URL ouverte.\n"
+                "Donc si redirection il y a eu, le filtre peut planter\n"
+            ),
+            "Consommer une URL de la source": (
+                "Si la source est cablé en mode 'dossier'\n"
+                "Va lire le plus vieux '.url', et update sa date modif à chaque OpenURL\n"
+                "L'update se fait au moment de l'ouverture, et non pas à la fin du processus\n"
+                "(compliqué fin, car extraction peut échouer, peut lire plusieurs lien, etc...\n"
+                "Attention lit en UTF-8, possibilité que le contenu soit mal lu\n"
+                "Donc valider à la fin n'est pas une preuve que tout est OK\n"
+                "(formatage utf-8, échappement spéciaux, fichier '.url' pas en mode chrome)\n"
+            ),
+        },
         "Usage des données": {
             "HTML → Sélecteur CSS": (
                 "Transforme un extrait HTML en sélecteur CSS.\n"
@@ -82,24 +111,6 @@ class FaqTextTextHint:
                 '      - Ex: <a href="/api/user/123"> → a[href*="user"]\n'
                 '            (Le href contient "user")'
             ),
-            "Filtre pour fermer les onglets": (
-                "Pseudo code : Est un find, donc cherche partout dans l'URL.\n"
-                "Aucune idée si le https est dedans au moment du check (mais bon, je le ferais jamais)\n"
-                "N'est pas un regexp, juste une string plate, donc le '.' n'est pas interprété\n"
-                "mets tous en lowercase (donc pas sensible).\n"
-                "Si le mode n'est pas custom, utilise la dernière URL ouverte par l'event OpenURL\n"
-                "Le refresh ne change pas la dernière URL ouverte.\n"
-                "Donc si redirection il y a eu, le filtre peut planter\n"
-            ),
-            "Lire des sources d'URL": (
-                "Si la source est cablé en mode 'dossier'\n"
-                "Va lire le plus vieux '.url', et update sa date modif à chaque OpenURL\n"
-                "L'update se fait au moment de l'ouverture, et non pas à la fin du processus\n"
-                "(compliqué fin, car extraction peut échouer, peut lire plusieurs lien, etc...\n"
-                "Attention lit en UTF-8, possibilité que le contenu soit mal lu\n"
-                "Donc valider à la fin n'est pas une preuve que tout est OK\n"
-                "(formatage utf-8, échappement spéciaux, fichier '.url' pas en mode chrome)\n"
-            ),
         },
         "Brique logique": {
             "Ouvrir une URL": (
@@ -109,7 +120,7 @@ class FaqTextTextHint:
                 "• État d'attente :\n"
                 "  -domcontentloaded : attend le DOM (plus rapide)\n"
                 "  -load : attend page chargée (l'événement window.load)\n"
-                "  -networkidle : attend la fin des requêtes réseau"
+                "  -networkidle : attend la fin des requêtes réseau (500 ms idle)"
             ),
             "Pause fixe": (
                 "Attend un délai fixe avant de passer à l'étape suivante.\n\n"
@@ -137,15 +148,14 @@ class FaqTextTextHint:
                 "  -JS Direct : exécute element.click() via JavaScript"
             ),
             "Attendre un élément": (
-                "Attend qu'un élément CSS soit présent dans le DOM avant de "
+                "Attend explicitement qu'un élément CSS soit présent dans le DOM avant de "
                 "continuer.\n\n"
                 "• Sélecteur CSS : ex. .results-loaded, #content\n"
-                "  L'exécution est bloquée jusqu'à ce que l'élément soit visible."
+                "Retry plusieurs jusqu'a que ce que l'élément soit visible."
             ),
             "Compter les éléments": (
-                "Compte les éléments du DOM correspondant à un sélecteur CSS,\n"
-                "puis évalue une condition sur ce nombre. L'exécution est\n"
-                "bloquée jusqu'à la fin de l'évaluation.\n\n"
+                "Compte les éléments du DOM correspondant à un sélecteur CSS, puis évalue une condition sur ce nombre.\n"
+                "L'attente n'est pas bloqué (retourne instantanément)\n"
                 "• Sélecteur CSS : ex. .card, #results li, div.item\n"
                 "• Pré-attente : délai appliqué avant le comptage (0 = immédiat)\n\n"
                 "• Condition : lecture naturelle\n"
@@ -158,16 +168,9 @@ class FaqTextTextHint:
                 "Utile pour déclencher le chargement en infinite scroll.\n\n"
                 "• Pixels : distance de défilement en pixels (ex. 1000)"
             ),
-            "Fermer des onglets": (
-                "Ferme les onglets du navigateur selon les critères définis.\n\n"
-                "• Filtre URL : chaîne recherchée dans l'adresse des onglets\n"
-                "  Si renseigné, seuls les onglets dont l'URL contient cette\n"
-                "  chaîne sont conservés — les autres sont fermés.\n"
-                "• Max onglets : nombre maximum d'onglets à conserver"
-            ),
+            "Fermer des onglets": ("Cf. comportement, Il est spécial celui-la.\n\n"),
             "Sauter à une étape": (
-                "Redirige l'exécution vers une autre étape selon le résultat\n"
-                "de l'étape précédente.\n\n"
+                "Redirige l'exécution vers une autre étape selon le résultat de l'étape précédente.\n\n"
                 "• Condition :\n"
                 "  - Si succès : saut si l'étape précédente a réussi\n"
                 "  - Si échec : saut si l'étape précédente a échoué\n"
