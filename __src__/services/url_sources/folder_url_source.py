@@ -21,7 +21,12 @@ import configparser
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
-from shared.exception_util import UrlSourceFileNotFoundError, UrlSourceNotReadyError
+from shared.exception_util import (
+    UrlSourceExhaustedError,
+    UrlSourceFileNotFoundError,
+    UrlSourceFilesNotDiscoveredError,
+    UrlSourceNoUrlBufferedError,
+)
 
 # ---------------------------------------------------------------------------
 # Class
@@ -87,7 +92,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             FileNotFoundError: If the folder does not exist on first access.
         """
         if not self.has_next():
-            raise StopIteration("No more URL files in FolderUrlSourceProvider.")
+            raise UrlSourceExhaustedError()
 
         url = str(self._buffered)
         self._buffered = _SENTINEL
@@ -183,12 +188,13 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
 
         Raises:
             UrlSourceFileNotFoundError: If the current file does not exist on disk.
-            UrlSourceNotReadyError: If called before discovery or before any URL has been buffered.
+            UrlSourceFilesNotDiscoveredError: If called before file discovery has run.
+            UrlSourceNoUrlBufferedError: If called before any URL has been buffered.
         """
         if self._file_paths is None:
-            raise UrlSourceNotReadyError("fichiers non découverts")
+            raise UrlSourceFilesNotDiscoveredError()
         if self._index == 0:
-            raise UrlSourceNotReadyError("aucune URL bufferisée")
+            raise UrlSourceNoUrlBufferedError()
 
         current_file = self._file_paths[self._index - 1]  # type: ignore[index]
         if not current_file.exists():

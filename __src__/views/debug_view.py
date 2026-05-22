@@ -36,6 +36,7 @@ _SPIN_MIN: int = 1
 _SPIN_MAX: int = 30
 _DEFAULT_TIMEOUT: int = 8
 _DEFAULT_DNS_DELAY: int = 5
+_URL_DISPLAY_MAX_LEN: int = 70  # Truncate session URL in the status label at this length.
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -118,7 +119,7 @@ class DebugView(ttk.Frame):
         Args:
             url: The URL of the active session (truncated if too long).
         """
-        short = url[:70] if len(url) > 70 else url
+        short = url[:_URL_DISPLAY_MAX_LEN] if len(url) > _URL_DISPLAY_MAX_LEN else url
         self._lbl_status.configure(text=f"Session active : {short}", foreground="green")
 
     def set_status_idle(self) -> None:

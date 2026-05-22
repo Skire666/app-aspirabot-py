@@ -36,10 +36,14 @@ class FaqTextTextHint:
             "Délai d'attente DNS": (
                 "Lors d'une ouverture d'une URL avec OpenURL, plusieurs cas de figure peuvent faire échouer l'action\n"
                 "- La résolution du DNS interne à chromium peut échouer (timeout, éhec de résolution, etc...).\n"
-                "- une redirection http 300 peut subvenir et être cancel par les sécurités sandbox de l'automatisation\n"
-                "\nDu coup, si une page génère un 'ERR_NAME_NOT_RESOLVED', OpenURL fait un retry (refresh explicite)\n"
-                "Par contre, si le refresh échoue à nouveau, où que la page demandée n'est pas la même que la page résultat, alors OpenURL retourne une erreur"
-                "le délai d'attente avant le retry est de 5 secondes (avant, marche pas), et il n'y a qu'un seul refresh."
+                "- une redirection http 300 peut subvenir et être cancel"
+                " par les sécurités sandbox de l'automatisation\n"
+                "\nDu coup, si une page génère un 'ERR_NAME_NOT_RESOLVED',"
+                " OpenURL fait un retry (refresh explicite)\n"
+                "Par contre, si le refresh échoue à nouveau, où que la page demandée"
+                " n'est pas la même que la page résultat, alors OpenURL retourne une erreur"
+                "le délai d'attente avant le retry est de 5 secondes"
+                " (avant, marche pas), et il n'y a qu'un seul refresh."
             ),
             "Fermer les onglets": (
                 "3 choses à savoir sur le fonctionnement de la fermeture des onglets :\n"
@@ -154,7 +158,8 @@ class FaqTextTextHint:
                 "Retry plusieurs jusqu'a que ce que l'élément soit visible."
             ),
             "Compter les éléments": (
-                "Compte les éléments du DOM correspondant à un sélecteur CSS, puis évalue une condition sur ce nombre.\n"
+                "Compte les éléments du DOM correspondant à un sélecteur CSS,"
+                " puis évalue une condition sur ce nombre.\n"
                 "L'attente n'est pas bloqué (retourne instantanément)\n"
                 "• Sélecteur CSS : ex. .card, #results li, div.item\n"
                 "• Pré-attente : délai appliqué avant le comptage (0 = immédiat)\n\n"

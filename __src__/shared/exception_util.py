@@ -186,7 +186,9 @@ class InvalidGuiBootingSizeError(AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Taille de démarrage GUI invalide. Format attendu : 'LARGEURxHAUTEUR' avec des valeurs numériques.")
+        super().__init__(
+            "Taille de démarrage GUI invalide. Format attendu : 'LARGEURxHAUTEUR' avec des valeurs numériques."
+        )
 
 
 class InvalidBrowserEngineError(AspirabotError):
@@ -288,6 +290,18 @@ class InvalidProvidersFolderPathError(NotADirectoryError, AspirabotError):
             folder_path: Path evaluated for folder access.
         """
         super().__init__(f"Le chemin spécifié n'est pas un dossier: {folder_path}")
+
+
+class LogFolderNotADirectoryError(NotADirectoryError, AspirabotError):
+    """Raised when the logs folder path exists but is not a directory."""
+
+    def __init__(self, folder_path: str | Path) -> None:
+        """Initialize the error message.
+
+        Args:
+            folder_path: Path that was expected to be a directory.
+        """
+        super().__init__(f"Le chemin des logs n'est pas un dossier : {folder_path}")
 
 
 class UnsupportedOperatingSystemError(OSError, AspirabotError):
@@ -428,7 +442,10 @@ class ImageWaitTimeoutError(TimeoutError, AspirabotError):
         Args:
             wait_seconds: Timeout duration in seconds.
         """
-        super().__init__(f"Aucune image correspondant aux contraintes de taille n'est apparue dans le délai imparti ({wait_seconds}s).")
+        super().__init__(
+            f"Aucune image correspondant aux contraintes de taille n'est apparue"
+            f" dans le délai imparti ({wait_seconds}s)."
+        )
 
 
 class BrowserAlreadyLaunchedError(RuntimeError, AspirabotError):
@@ -571,9 +588,7 @@ class UnknownUrlSourceTypeError(ValueError, AspirabotError):
         Args:
             source_type: The unrecognised source type string.
         """
-        super().__init__(
-            f"Type de source URL inconnu : '{source_type}'. Types attendus : 'manual', 'csv', 'folder'."
-        )
+        super().__init__(f"Type de source URL inconnu : '{source_type}'. Types attendus : 'manual', 'csv', 'folder'.")
 
 
 class InvalidUrlSourceValueTypeError(TypeError, AspirabotError):
@@ -600,6 +615,22 @@ class UrlSourceNotReadyError(RuntimeError, AspirabotError):
             reason: Short description of why the source is not ready.
         """
         super().__init__(f"Source URL non prête : {reason}")
+
+
+class UrlSourceFilesNotDiscoveredError(UrlSourceNotReadyError):
+    """Raised when next_url is called before file discovery has run."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("fichiers non découverts")
+
+
+class UrlSourceNoUrlBufferedError(UrlSourceNotReadyError):
+    """Raised when update_modified_time is called before any URL has been buffered."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("aucune URL bufferisée")
 
 
 class UrlSourceExhaustedError(ValueError, AspirabotError):
@@ -658,9 +689,7 @@ class MissingUrlFilterError(ValueError, AspirabotError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__(
-            "Aucun filtre URL disponible. Configurez un mode ou ouvrez une page avant d'exécuter ce step."
-        )
+        super().__init__("Aucun filtre URL disponible. Configurez un mode ou ouvrez une page avant d'exécuter ce step.")
 
 
 class EmptyCustomUrlError(ValueError, AspirabotError):
@@ -691,7 +720,7 @@ class ScriptExecutionFailedError(RuntimeError, AspirabotError):
 class JsonFileRepositoryError(AspirabotError):
     """Raised when a JSON file cannot be read from or written to disk."""
 
-    def __init__(self, path: "Path", reason: str) -> None:
+    def __init__(self, path: Path, reason: str) -> None:
         """Initialize the error message.
 
         Args:

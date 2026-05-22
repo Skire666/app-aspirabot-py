@@ -9,6 +9,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.click_element_params import ClickElementParams
+from playwright.sync_api import Error as PlaywrightError
 from services.workflow_service import register_step_executor
 from shared.constants import (
     C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
@@ -51,7 +52,7 @@ class ClickElementExecutor(IStepExecutor):
             if mode_click == "Normal":
                 page.click(selector, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
                 return "Normal"
-        except Exception:
+        except PlaywrightError:
             pass
         if mode_click == "Normal":
             raise ElementNotFoundForClickError(selector, "Normal")
@@ -61,7 +62,7 @@ class ClickElementExecutor(IStepExecutor):
             if mode_click == "Forced":
                 page.click(selector, force=True, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
                 return "Forced"
-        except Exception:
+        except PlaywrightError:
             pass
         if mode_click == "Forced":
             raise ElementNotFoundForClickError(selector, "Forced")

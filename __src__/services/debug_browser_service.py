@@ -41,7 +41,8 @@ class DebugBrowserService:
         """Initializes the service."""
         self._logger = logging.getLogger(__name__)
 
-    def get_html_content(self, page: Page) -> str:
+    @staticmethod
+    def get_html_content(page: Page) -> str:
         """Returns the current full HTML content of the page.
 
         Args:
@@ -52,7 +53,8 @@ class DebugBrowserService:
         """
         return page.content()
 
-    def analyze_texts(self, page: Page, selector: str) -> dict[str, object]:
+    @staticmethod
+    def analyze_texts(page: Page, selector: str) -> dict[str, object]:
         """Extracts text metrics for the first element matching the selector.
 
         Args:
@@ -110,7 +112,8 @@ class DebugBrowserService:
 
         return results
 
-    def _extract_extension(self, url: str) -> str:
+    @staticmethod
+    def _extract_extension(url: str) -> str:
         """Extracts the file extension from an image URL.
 
         Args:

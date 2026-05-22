@@ -23,6 +23,12 @@ from collections.abc import Callable
 from tkinter import ttk
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_URL_TITLE_MAX_LEN: int = 80  # Truncate URL in the window title at this length.
+
+# ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
 
@@ -49,7 +55,7 @@ class DebugPageView(tk.Toplevel):
         """
         super().__init__(parent)
         # Keep the window always on top of the application.
-        short_url = url[:80] if len(url) > 80 else url
+        short_url = url[:_URL_TITLE_MAX_LEN] if len(url) > _URL_TITLE_MAX_LEN else url
         self.title(f"Debug — {short_url}")
         self.geometry("960x720")
         self.resizable(True, True)
@@ -178,7 +184,8 @@ class DebugPageView(tk.Toplevel):
         self._txt_images, _ = self._make_text_area(frame, row=2)
         return frame
 
-    def _make_text_area(self, parent: ttk.Frame, row: int) -> tuple[tk.Text, ttk.Scrollbar]:
+    @staticmethod
+    def _make_text_area(parent: ttk.Frame, row: int) -> tuple[tk.Text, ttk.Scrollbar]:
         """Creates a read-only scrollable Text widget and places it in the grid.
 
         Args:
@@ -274,7 +281,8 @@ class DebugPageView(tk.Toplevel):
     # Private helpers
     # -----------------------------------------------------------------------
 
-    def _write_text_area(self, txt: tk.Text, content: str) -> None:
+    @staticmethod
+    def _write_text_area(txt: tk.Text, content: str) -> None:
         """Replaces the full content of a read-only Text widget.
 
         Args:

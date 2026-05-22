@@ -32,6 +32,7 @@ from shared.datetime_util import (
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
 from shared.enums import EventScrapingEnum, OpenUrlModeEnum, StepTypeEnum
+from shared.exception_util import AspirabotError
 from shared.i18n_fra import (
     C_SCRAPING_EMERGENCY_STOP_INVALID_MSG,
     C_SCRAPING_EVENT_BROWSER_INIT,
@@ -214,23 +215,25 @@ class ScrapingPresenter:
         Returns:
             None.
         """
-        self._view.bind_callbacks(ScrapingViewCallbacks(
-            on_launch=self._on_launch,
-            on_cancel=self._on_cancel,
-            on_pause=self._on_pause,
-            on_resume=self._on_resume,
-            on_provider_selected=self._on_provider_selected,
-            on_refresh_scenarios=self._on_refresh_scenarios,
-            on_profile_selected=self._on_profile_selected,
-            on_profile_new=self._on_profile_new,
-            on_profile_delete=self._on_profile_delete,
-            on_profile_rename=self._on_profile_rename,
-            on_profile_save=self._on_profile_save,
-            on_form_changed=self._on_form_changed,
-            on_manual_urls_confirmed=self._on_manual_urls_confirmed,
-            on_open_export_folder=self._on_open_export_folder,
-            on_export_journal=self._on_export_journal,
-        ))
+        self._view.bind_callbacks(
+            ScrapingViewCallbacks(
+                on_launch=self._on_launch,
+                on_cancel=self._on_cancel,
+                on_pause=self._on_pause,
+                on_resume=self._on_resume,
+                on_provider_selected=self._on_provider_selected,
+                on_refresh_scenarios=self._on_refresh_scenarios,
+                on_profile_selected=self._on_profile_selected,
+                on_profile_new=self._on_profile_new,
+                on_profile_delete=self._on_profile_delete,
+                on_profile_rename=self._on_profile_rename,
+                on_profile_save=self._on_profile_save,
+                on_form_changed=self._on_form_changed,
+                on_manual_urls_confirmed=self._on_manual_urls_confirmed,
+                on_open_export_folder=self._on_open_export_folder,
+                on_export_journal=self._on_export_journal,
+            )
+        )
 
     # ------------------------------------------------------------------
     # Provider management callbacks
@@ -246,7 +249,7 @@ class ScrapingPresenter:
             rows = self._all_logs_scraping
             self._service_scraping.export_journal(path, rows)
         except OSError as exc:
-            self._logging.error("Journal export failed: %s", exc)
+            self._logging.exception("Échec de l'export du journal : %s", exc)
             self._view.show_warning(C_SCRAPING_EXPORT_WRITE_ERROR.format(exc=exc))
 
     def _on_provider_selected(self, id_file: str) -> None:
@@ -267,8 +270,8 @@ class ScrapingPresenter:
         """Reload the providers list and forward it to the view dropdown."""
         try:
             providers: list[ProviderModel] = self._service_provider.list_all_scenarios()
-        except Exception as exc:  # noqa: BLE001
-            self._logging.error("Failed to load providers list: %s", exc)
+        except (AspirabotError, OSError) as exc:
+            self._logging.exception("Échec du chargement de la liste des providers : %s", exc)
             providers = []
 
         # Build display-ready dicts and push to the view.
@@ -729,7 +732,10 @@ class ScrapingPresenter:
         # Complete the journal row started in _on_step_start.
         date_str = get_time_now_hh_mm_ss()
         is_success = C_SCRAPING_JOURNAL_RESULT_OK if context.last_result_step else C_SCRAPING_JOURNAL_RESULT_ERROR
-        line = f"{date_str} | {step.step_type.value} | {is_success} | {context.last_time_elapsed:.3f} | {context.last_message_step}\n"
+        line = (
+            f"{date_str} | {step.step_type.value} | {is_success}"
+            f" | {context.last_time_elapsed:.3f} | {context.last_message_step}\n"
+        )
 
         # logs
         self._all_logs_scraping.append(line)

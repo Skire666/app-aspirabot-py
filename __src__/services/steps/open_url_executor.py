@@ -16,6 +16,16 @@ from shared.exception_util import EmptyCustomUrlError, UrlNavigationMismatchErro
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_ms
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_DNS_SOLVER_WAIT_MAX = 30  # Maximum accepted value; values > this are rejected by validation.
+
+# ---------------------------------------------------------------------------
+# Class
+# ---------------------------------------------------------------------------
+
 
 class OpenUrlExecutor(IStepExecutor):
     """Executor for the open URL scraping step."""
@@ -46,7 +56,8 @@ class OpenUrlExecutor(IStepExecutor):
 
         context.last_message_step = f"Ouvert : {target_url}"
 
-    def _extract_next_url_used(self, context: ScrapingContextModel, p: OpenUrlParams) -> str:
+    @staticmethod
+    def _extract_next_url_used(context: ScrapingContextModel, p: OpenUrlParams) -> str:
         """Extract the next URL to open based on the step parameters and context.
 
         Args:
@@ -80,7 +91,7 @@ class OpenUrlExecutor(IStepExecutor):
         errors: list[str] = []
         if p.url_mode is None or (p.url_mode == OpenUrlModeEnum.E_CUSTOM.value and not p.url_custom):
             errors.append(ERROR_TEMPLATES["open_url_url_required"].format(step=index_display))
-        if p.wait_dns_solver <= 0 or p.wait_dns_solver >= 31:
+        if p.wait_dns_solver <= 0 or p.wait_dns_solver > _DNS_SOLVER_WAIT_MAX:
             errors.append(ERROR_TEMPLATES["open_url_wait_dns_solver_invalid"].format(step=index_display))
         if p.timeout_duration <= 0:
             errors.append(ERROR_TEMPLATES["open_url_timeout_invalid"].format(step=index_display))

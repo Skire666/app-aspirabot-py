@@ -31,6 +31,12 @@ from shared.exception_util import (
 )
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_DNS_SOLVER_MAX_WAIT_SEC = 30  # Maximum seconds before DNS solver timeout is triggered.
+
+# ---------------------------------------------------------------------------
 # Class
 # ---------------------------------------------------------------------------
 
@@ -197,7 +203,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             page.wait_for_load_state(wait_state, timeout=timeout_ms)
         except Exception as exc:
             if "ERR_NAME_NOT_RESOLVED" in str(exc):
-                if wait_dns_solver_sec >= 30:
+                if wait_dns_solver_sec >= _DNS_SOLVER_MAX_WAIT_SEC:
                     raise DnsSolverTimeoutExceededError() from exc
                 page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
                 page.reload(wait_until=wait_state, timeout=timeout_ms)
@@ -211,7 +217,8 @@ class BrowserPlaywrightService(IWebBrowserService):
             delay: Seconds to wait between attempts.
 
         Returns:
-            A tuple of (is_success, result) where is_success indicates if the evaluation was successful and result is the value returned by the JS expression.
+            A tuple of (is_success, result) where is_success indicates if the evaluation
+            was successful and result is the value returned by the JS expression.
 
         Raises:
             Exception: The last exception raised if all retries are exhausted.

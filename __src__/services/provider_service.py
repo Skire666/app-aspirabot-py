@@ -11,6 +11,7 @@ from interfaces.i_provider_repository import IProviderRepository
 from models.provider_model import ProviderModel
 from models.provider_validation_issue_model import ProviderValidationIssue
 from models.provider_validation_report_model import ProviderValidationReport
+from shared.exception_util import AspirabotError
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -188,7 +189,7 @@ class ProviderService:
 
         try:
             provider_data = self._repository.read_scenario_content(file_path)
-        except Exception as exc:
+        except (AspirabotError, OSError, ValueError) as exc:
             reasons.append(f"Contenu corrompu ou illisible: {exc}")
             return reasons
 

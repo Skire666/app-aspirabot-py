@@ -12,6 +12,7 @@ from repositories.log_repository import LogRepository
 from services.logging_service import LoggingService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
 from shared.exception_util import (
+    AspirabotError,
     ConfigurationNotLoadedError,
     FailedToCreateRequiredDirectoriesDuringRuntimeError,
     FailedToInitializeLoggingDuringRuntimeError,
@@ -19,12 +20,6 @@ from shared.exception_util import (
     LoggingNotInitializedError,
 )
 from shared.path_util import make_all_folders_if_not_exists
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-_MINIMUM_DISPLAY_TIME_MS = 800  # Minimum time the splash screen should be visible (milliseconds).
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -77,8 +72,8 @@ class StartupService:
             # Ensure the config file exists before reading it.
             self._config_repo.ensure_file_exists()
             self._config_model = self._config_repo.read_configuration()
-        except Exception:
-            raise FailedToLoadConfigurationDuringRuntimeError()
+        except (AspirabotError, OSError) as exc:
+            raise FailedToLoadConfigurationDuringRuntimeError() from exc
 
     def create_required_directories(self) -> None:
         """Step 2: Create all directories required by the application.

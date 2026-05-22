@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 
 from models.log_entry_model import LogEntryModel
+from shared.exception_util import LogFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 
 # ---------------------------------------------------------------------------
@@ -69,7 +70,7 @@ class LogRepository:
         self.create_folder_if_missing()
 
         if not self._folder_path.is_dir():
-            raise NotADirectoryError(f"Path is not a directory: {self._folder_path}")
+            raise LogFolderNotADirectoryError(self._folder_path)
 
         self._logger.info("Attempting to open logs folder: %s", self._folder_path)
         open_folder(self._folder_path)

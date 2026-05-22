@@ -217,8 +217,8 @@ class AppConfigurationRepository(IConfigRepository):
                 return None
             return datetime.fromtimestamp(self._full_pathfile.stat().st_mtime)
         except OSError as error:
-            self._logger.error(
-                "Failed to read configuration file timestamp '%s': %s",
+            self._logger.exception(
+                "Erreur lors de la lecture de l'horodatage du fichier de configuration '%s' : %s",
                 self._full_pathfile,
                 error,
             )
@@ -291,8 +291,8 @@ class AppConfigurationRepository(IConfigRepository):
             self._logger.debug("Configuration file saved successfully.")
         except OSError as error:
             # Log write errors for troubleshooting.
-            self._logger.error(
-                "Failed to write configuration file '%s': %s",
+            self._logger.exception(
+                "Erreur lors de l'écriture du fichier de configuration '%s' : %s",
                 self._full_pathfile,
                 error,
             )

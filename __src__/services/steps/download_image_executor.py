@@ -22,6 +22,8 @@ from shared.exception_util import (
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.path_util import make_all_folders_if_not_exists
 
+_MAX_FILENAME_STEM_LENGTH = 100  # Truncate URL stem at this length to avoid filesystem limits.
+
 
 def _select_images_by_mode(images: list[dict[str, Any]], mode: str) -> list[dict[str, Any]]:
     if not images or len(images) == 0:
@@ -73,7 +75,8 @@ class DownloadImageExecutor(IStepExecutor):
 
             url_path = full_url.split("?")[0]  # Remove query parameters for filename generation
             suffix = Path(url_path).suffix or ".jpg"
-            filename = Path(url_path).stem if len(Path(url_path).stem) < 100 else Path(url_path).stem[:100]
+            stem = Path(url_path).stem
+            filename = stem if len(stem) < _MAX_FILENAME_STEM_LENGTH else stem[:_MAX_FILENAME_STEM_LENGTH]
             timestamp_ms = "_" + get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
             dest = context.folder_export / (filename + timestamp_ms + suffix)
             with dest.open("wb") as fh:

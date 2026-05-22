@@ -19,7 +19,7 @@ import csv
 import pathlib
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
-from shared.exception_util import UrlSourceFileNotFoundError
+from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFoundError
 
 # ---------------------------------------------------------------------------
 # Class
@@ -78,7 +78,7 @@ class CsvUrlSourceProvider(IUrlSourceProvider):
             FileNotFoundError: If the CSV file does not exist on first access.
         """
         if not self.has_next():
-            raise StopIteration("No more URLs in CsvUrlSourceProvider.")
+            raise UrlSourceExhaustedError()
 
         url = self._urls[self._index]  # type: ignore[index]
         self._index += 1

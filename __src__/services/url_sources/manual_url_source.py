@@ -15,6 +15,7 @@ Example:
 from __future__ import annotations
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from shared.exception_util import UrlSourceExhaustedError
 
 # ---------------------------------------------------------------------------
 # Class
@@ -69,7 +70,7 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
             StopIteration: When all URLs have been consumed.
         """
         if not self.has_next():
-            raise StopIteration("No more URLs in ManualUrlSourceProvider.")
+            raise UrlSourceExhaustedError()
 
         # Advance index after fetching.
         url = self._urls[self._index]

@@ -179,13 +179,13 @@ class _DropdownWindow:
         if self._root_bid:
             try:
                 root.unbind("<ButtonPress-1>", self._root_bid)
-            except Exception:
+            except tk.TclError:
                 pass
             self._root_bid = None
         if self._configure_bid:
             try:
                 root.unbind("<Configure>", self._configure_bid)
-            except Exception:
+            except tk.TclError:
                 pass
             self._configure_bid = None
         if self._top:
