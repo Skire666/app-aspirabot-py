@@ -50,7 +50,7 @@ from shared.i18n_fra import (
     C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER,
 )
 from shared.operating_system_util import open_folder
-from views.scraping_view import ScrapingView
+from views.scraping_view import ScrapingView, ScrapingViewCallbacks
 from views.steps.open_url_form_def import C_KEY_URL_MODE
 
 # ---------------------------------------------------------------------------
@@ -214,21 +214,23 @@ class ScrapingPresenter:
         Returns:
             None.
         """
-        self._view.set_on_launch(self._on_launch)
-        self._view.set_on_cancel(self._on_cancel)
-        self._view.set_on_pause(self._on_pause)
-        self._view.set_on_resume(self._on_resume)
-        self._view.set_on_provider_selected(self._on_provider_selected)
-        self._view.set_on_refresh_scenarios(self._on_refresh_scenarios)
-        self._view.set_on_export_journal(self._on_export_journal)
-        self._view.set_on_profile_selected(self._on_profile_selected)
-        self._view.set_on_profile_new(self._on_profile_new)
-        self._view.set_on_profile_delete(self._on_profile_delete)
-        self._view.set_on_profile_rename(self._on_profile_rename)
-        self._view.set_on_profile_save(self._on_profile_save)
-        self._view.set_on_form_changed(self._on_form_changed)
-        self._view.set_on_manual_urls_confirmed(self._on_manual_urls_confirmed)
-        self._view.set_on_open_export_folder(self._on_open_export_folder)
+        self._view.bind_callbacks(ScrapingViewCallbacks(
+            on_launch=self._on_launch,
+            on_cancel=self._on_cancel,
+            on_pause=self._on_pause,
+            on_resume=self._on_resume,
+            on_provider_selected=self._on_provider_selected,
+            on_refresh_scenarios=self._on_refresh_scenarios,
+            on_profile_selected=self._on_profile_selected,
+            on_profile_new=self._on_profile_new,
+            on_profile_delete=self._on_profile_delete,
+            on_profile_rename=self._on_profile_rename,
+            on_profile_save=self._on_profile_save,
+            on_form_changed=self._on_form_changed,
+            on_manual_urls_confirmed=self._on_manual_urls_confirmed,
+            on_open_export_folder=self._on_open_export_folder,
+            on_export_journal=self._on_export_journal,
+        ))
 
     # ------------------------------------------------------------------
     # Provider management callbacks

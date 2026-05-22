@@ -6,7 +6,7 @@ behaviour is delegated to the appropriate panel.
 
 Example:
     >>> panel = ScrapingView(config_model, content_area)
-    >>> panel.set_on_launch(lambda: print("launch"))
+    >>> panel.bind_callbacks(ScrapingViewCallbacks(on_launch=..., ...))
     >>> panel.reset()
 """
 
@@ -16,6 +16,7 @@ Example:
 
 import tkinter as tk
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import Any
@@ -34,7 +35,28 @@ from views.scraping.workflow_controls_panel import WorkflowControlsPanel
 # ---------------------------------------------------------------------------
 
 
-class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
+@dataclass(frozen=True)
+class ScrapingViewCallbacks:
+    """All callbacks the presenter wires onto ScrapingView in one call."""
+
+    on_launch: Callable[[], None]
+    on_cancel: Callable[[], None]
+    on_pause: Callable[[], None]
+    on_resume: Callable[[], None]
+    on_provider_selected: Callable[[str], None]
+    on_refresh_scenarios: Callable[[], None]
+    on_profile_selected: Callable[[str], None]
+    on_profile_new: Callable[[str], None]
+    on_profile_delete: Callable[[str], None]
+    on_profile_rename: Callable[[str, str], None]
+    on_profile_save: Callable[[str], None]
+    on_form_changed: Callable[[], None]
+    on_manual_urls_confirmed: Callable[[str], None]
+    on_open_export_folder: Callable[[], None]
+    on_export_journal: Callable[[str], None]
+
+
+class ScrapingView(ttk.Frame):
     """Scraping panel composed of five vertically stacked sub-panels.
 
     Panel order (top to bottom):
@@ -77,40 +99,30 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         self._journal_panel.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     # ---------------------------------------------------------------
-    # Workflow callbacks and state — delegates to WorkflowControlsPanel
+    # Callback wiring
     # ---------------------------------------------------------------
 
-    def set_on_launch(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user clicks Lancer.
+    def bind_callbacks(self, callbacks: ScrapingViewCallbacks) -> None:
+        """Register all presenter handlers on this view in a single call."""
+        self._workflow_panel.set_on_launch(callbacks.on_launch)
+        self._workflow_panel.set_on_cancel(callbacks.on_cancel)
+        self._workflow_panel.set_on_pause(callbacks.on_pause)
+        self._workflow_panel.set_on_resume(callbacks.on_resume)
+        self._provider_panel.set_on_provider_selected(callbacks.on_provider_selected)
+        self._provider_panel.set_on_refresh_scenarios(callbacks.on_refresh_scenarios)
+        self._profile_panel.set_on_profile_selected(callbacks.on_profile_selected)
+        self._profile_panel.set_on_profile_new(callbacks.on_profile_new)
+        self._profile_panel.set_on_profile_delete(callbacks.on_profile_delete)
+        self._profile_panel.set_on_profile_rename(callbacks.on_profile_rename)
+        self._profile_panel.set_on_profile_save(callbacks.on_profile_save)
+        self._launch_panel.set_on_form_changed(callbacks.on_form_changed)
+        self._launch_panel.set_on_manual_urls_confirmed(callbacks.on_manual_urls_confirmed)
+        self._launch_panel.set_on_open_export_folder(callbacks.on_open_export_folder)
+        self._journal_panel.set_on_export_journal(callbacks.on_export_journal)
 
-        Args:
-            callback: Zero-argument callable that starts the workflow.
-        """
-        self._workflow_panel.set_on_launch(callback)
-
-    def set_on_cancel(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user clicks Annuler.
-
-        Args:
-            callback: Zero-argument callable that signals cancellation.
-        """
-        self._workflow_panel.set_on_cancel(callback)
-
-    def set_on_pause(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user clicks Pause.
-
-        Args:
-            callback: Zero-argument callable that pauses the workflow.
-        """
-        self._workflow_panel.set_on_pause(callback)
-
-    def set_on_resume(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user clicks Reprendre.
-
-        Args:
-            callback: Zero-argument callable that resumes the workflow.
-        """
-        self._workflow_panel.set_on_resume(callback)
+    # ---------------------------------------------------------------
+    # Workflow state — delegates to WorkflowControlsPanel
+    # ---------------------------------------------------------------
 
     def set_running_state(self, running: bool) -> None:
         """Toggle button states to match whether a workflow is in progress.
@@ -170,24 +182,8 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         self._workflow_panel.start_elapsed_timer(started_at)
 
     # ---------------------------------------------------------------
-    # Provider callbacks and data — delegates to ProviderSelectionPanel
+    # Provider data — delegates to ProviderSelectionPanel
     # ---------------------------------------------------------------
-
-    def set_on_provider_selected(self, callback: Callable[[str], None]) -> None:
-        """Register the callback fired when the user selects a provider.
-
-        Args:
-            callback: Callable receiving the selected provider's id_file.
-        """
-        self._provider_panel.set_on_provider_selected(callback)
-
-    def set_on_refresh_scenarios(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user clicks Rafraîchir.
-
-        Args:
-            callback: Zero-argument callable that reloads the scenario list.
-        """
-        self._provider_panel.set_on_refresh_scenarios(callback)
 
     def render_providers_list(self, providers: list[dict[str, Any]]) -> None:
         """Populate the provider combobox and lock dependent panels if needed.
@@ -213,48 +209,8 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         self._provider_panel.set_selected_provider(id_file)
 
     # ---------------------------------------------------------------
-    # Profile callbacks and data — delegates to ProfileManagementPanel
+    # Profile data — delegates to ProfileManagementPanel
     # ---------------------------------------------------------------
-
-    def set_on_profile_selected(self, callback: Callable[[str], None]) -> None:
-        """Register the callback fired when the user selects a profile.
-
-        Args:
-            callback: Callable receiving the selected id_profile.
-        """
-        self._profile_panel.set_on_profile_selected(callback)
-
-    def set_on_profile_new(self, callback: Callable[[str], None]) -> None:
-        """Register the callback fired when the user confirms a new profile name.
-
-        Args:
-            callback: Callable receiving the profile name entered by the user.
-        """
-        self._profile_panel.set_on_profile_new(callback)
-
-    def set_on_profile_delete(self, callback: Callable[[str], None]) -> None:
-        """Register the callback fired when the user deletes a profile.
-
-        Args:
-            callback: Callable receiving the id_profile to remove.
-        """
-        self._profile_panel.set_on_profile_delete(callback)
-
-    def set_on_profile_rename(self, callback: Callable[[str, str], None]) -> None:
-        """Register the callback fired when the user renames a profile.
-
-        Args:
-            callback: Callable receiving (id_profile, new_name).
-        """
-        self._profile_panel.set_on_profile_rename(callback)
-
-    def set_on_profile_save(self, callback: Callable[[str], None]) -> None:
-        """Register the callback fired when the user saves a profile.
-
-        Args:
-            callback: Callable receiving the id_profile to save.
-        """
-        self._profile_panel.set_on_profile_save(callback)
 
     def render_profiles_list(self, profiles: list[dict[str, Any]]) -> None:
         """Populate the profile Listbox and disable the launch form when empty.
@@ -317,32 +273,8 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         self._profile_panel.set_profile_modified_date(dt)
 
     # ---------------------------------------------------------------
-    # Launch-form callbacks, setters, getters — delegates to LaunchProfilePanel
+    # Launch-form setters and getters — delegates to LaunchProfilePanel
     # ---------------------------------------------------------------
-
-    def set_on_form_changed(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user modifies the launch profile form.
-
-        Args:
-            callback: Zero-argument callable notified on every user-driven change.
-        """
-        self._launch_panel.set_on_form_changed(callback)
-
-    def set_on_manual_urls_confirmed(self, callback: Callable[[str], None]) -> None:
-        """Register the callback fired when the user confirms manual URLs.
-
-        Args:
-            callback: Callable receiving the raw multiline text entered by the user.
-        """
-        self._launch_panel.set_on_manual_urls_confirmed(callback)
-
-    def set_on_open_export_folder(self, callback: Callable[[], None]) -> None:
-        """Register the callback fired when the user clicks 'Ouvrir dossier'.
-
-        Args:
-            callback: Zero-argument callable that creates the folder and opens it.
-        """
-        self._launch_panel.set_on_open_export_folder(callback)
 
     def set_export_folder(self, folder: str) -> None:
         """Set the export folder entry and internal state.
@@ -402,16 +334,8 @@ class ScrapingView(ttk.Frame):  # pylint: disable=too-many-public-methods
         self._launch_panel.set_emergency_stop_threshold(value)
 
     # ---------------------------------------------------------------
-    # Journal callbacks and entries — delegates to ScrapingJournalPanel
+    # Journal entries — delegates to ScrapingJournalPanel
     # ---------------------------------------------------------------
-
-    def set_on_export_journal(self, callback: Callable[[str], None]) -> None:
-        """Register the callback fired when a journal export is requested.
-
-        Args:
-            callback: Callable receiving the chosen destination file path.
-        """
-        self._journal_panel.set_on_export_journal(callback)
 
     def add_journal_entry(self, str_entry: str) -> None:
         """Insert a pending journal row before the step executes.

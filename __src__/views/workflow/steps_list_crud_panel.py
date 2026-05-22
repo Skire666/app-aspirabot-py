@@ -97,6 +97,13 @@ class StepsListCrudView(ttk.Frame):
         self.on_cancel_inline_step: Callable[[], None] | None = None
         self.on_clear_all_steps: Callable[[], None] | None = None
         self.on_duplicate_step: Callable[[StepScrapingModel, int], StepScrapingModel] | None = None
+        # Fired by any list mutation so the parent view can enable the Save button.
+        self.on_dirty: Callable[[], None] | None = None
+
+    def _fire_dirty(self) -> None:
+        """Notifies the parent view that the step list was mutated."""
+        if self.on_dirty:
+            self.on_dirty()
 
     def _create_widgets(self) -> None:
         """Builds toolbar, step list."""
@@ -247,6 +254,7 @@ class StepsListCrudView(ttk.Frame):
                 self.on_move_step(idx, -1)
         finally:
             self._dnd_busy = False
+        self._fire_dirty()
 
     def _on_dnd_move_down(self, _: StepScrapingModel, idx: int) -> None:
         # Selection re-sync is handled by _sync_selection_after_mutation
@@ -257,6 +265,7 @@ class StepsListCrudView(ttk.Frame):
                 self.on_move_step(idx, 1)
         finally:
             self._dnd_busy = False
+        self._fire_dirty()
 
     def _on_dnd_edit(self, item: StepScrapingModel, idx: int) -> None:
         prev = self._selected_index
@@ -268,6 +277,7 @@ class StepsListCrudView(ttk.Frame):
         self._dnd_list.redraw_item(idx)
         if self.on_edit_step:
             self.on_edit_step(idx)
+        self._fire_dirty()
 
     def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
         # Include the step label in the prompt for clarity.
@@ -289,11 +299,14 @@ class StepsListCrudView(ttk.Frame):
         finally:
             self._dnd_busy = False
 
+        self._fire_dirty()
         return True
 
     def _on_dnd_duplicate(self, step: StepScrapingModel, idx: int) -> StepScrapingModel:
         assert self.on_duplicate_step is not None
-        return self.on_duplicate_step(step, idx)
+        result = self.on_duplicate_step(step, idx)
+        self._fire_dirty()
+        return result
 
     def _on_dnd_toggle_active(self, _: StepScrapingModel, idx: int) -> None:
         """Forwards the toggle action to the presenter.
@@ -308,6 +321,7 @@ class StepsListCrudView(ttk.Frame):
                 self.on_toggle_active_step(idx)
         finally:
             self._dnd_busy = False
+        self._fire_dirty()
 
     def _on_dnd_reorder(self, steps: list[StepScrapingModel]) -> None:
         """Fires after every DragDropList mutation (move, delete, duplicate, drag).
@@ -320,6 +334,7 @@ class StepsListCrudView(ttk.Frame):
         """
         if self.on_reorder_steps:
             self.on_reorder_steps(list(steps))
+        self._fire_dirty()
 
         # Relocate the selection highlight to the edited step's new position.
         old_idx = self._selected_index
@@ -439,6 +454,7 @@ class StepsListCrudView(ttk.Frame):
             "Voulez-vous vraiment supprimer toutes les étapes ?",
         )
         if confirmed and self.on_clear_all_steps:
+            self._fire_dirty()
             self._selected_index = None
             self._selected_step = None
             self.on_clear_all_steps()

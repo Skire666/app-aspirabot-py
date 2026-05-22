@@ -50,6 +50,9 @@ class WorkflowView(ttk.Frame):
         self._on_save: Callable[[dict[str, Any]], None] | None = None
         self._on_cancel: Callable[[], None] | None = None
         self._is_edit_mode: bool = False
+        self._is_dirty: bool = False
+        # Guard: prevents StringVar traces from marking dirty during data loading.
+        self._loading: bool = False
         self._create_widgets()
 
     def _create_widgets(self) -> None:
@@ -114,6 +117,7 @@ class WorkflowView(ttk.Frame):
 
         # Editable name entry expands to fill the remaining horizontal space.
         self._var_name = tk.StringVar()
+        self._var_name.trace_add("write", lambda *_: self._mark_dirty())
         self._entry_name = ttk.Entry(parent, textvariable=self._var_name)
         self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
@@ -134,6 +138,7 @@ class WorkflowView(ttk.Frame):
 
         # Editable URL entry expands to fill the remaining horizontal space.
         self._var_desc = tk.StringVar()
+        self._var_desc.trace_add("write", lambda *_: self._mark_dirty())
         self._entry_url = ttk.Entry(parent, textvariable=self._var_desc)
         self._entry_url.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
@@ -141,6 +146,7 @@ class WorkflowView(ttk.Frame):
 
         # Fixed-width version field (short semantic version string).
         self._var_version = tk.StringVar()
+        self._var_version.trace_add("write", lambda *_: self._mark_dirty())
         self._entry_version = ttk.Entry(parent, textvariable=self._var_version, width=15)
         self._entry_version.pack(side="left")
 
@@ -231,6 +237,7 @@ class WorkflowView(ttk.Frame):
         if not accepted:
             return False
 
+        self._mark_dirty()
         # Reset to creation mode and scroll to the newly appended item.
         self._is_edit_mode = False
         self._inline_form.set_creation_mode()
@@ -254,6 +261,7 @@ class WorkflowView(ttk.Frame):
         if not accepted:
             return False
 
+        self._mark_dirty()
         # Return to creation mode after a successful edit.
         self._is_edit_mode = False
         self._inline_form.set_creation_mode()
@@ -330,6 +338,7 @@ class WorkflowView(ttk.Frame):
         # Drag-and-drop step list fills the entire frame.
         self._workflow_builder_view = StepsListCrudView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True)
+        self._workflow_builder_view.on_dirty = self._mark_dirty
 
     @property
     def workflow_builder_view(self) -> StepsListCrudView:
@@ -351,7 +360,8 @@ class WorkflowView(ttk.Frame):
             parent: The footer frame to pack widgets into.
         """
         # Action buttons anchored to the right in reverse visual order.
-        self._btn_save = ttk.Button(parent, text="Sauvegarder le scénario", command=self._notify_save)
+        # Disabled until the user makes at least one modification (_mark_dirty).
+        self._btn_save = ttk.Button(parent, text="Sauvegarder le scénario", command=self._notify_save, state="disabled")
         self._btn_save.pack(side=tk.RIGHT, padx=5)
 
         self._btn_cancel = ttk.Button(parent, text="Annuler", command=self._notify_cancel)
@@ -411,14 +421,22 @@ class WorkflowView(ttk.Frame):
     def load_data(self, data: dict[str, Any]) -> None:
         """Populates form fields and resets the workflow validation status label.
 
+        Suppresses dirty tracking during population so the Save button stays
+        disabled after a load.
+
         Args:
             data: Dict with keys 'id_file', 'provider_name', 'provider_desc', 'version'.
         """
-        self._var_id_file.set(data.get("id_file", ""))
-        self._var_name.set(data.get("provider_name", ""))
-        self._var_desc.set(data.get("provider_desc", ""))
-        self._var_version.set(data.get("version", ""))
-        self._workflow_builder_view.set_validation_status("Vérification : --", False)
+        self._loading = True
+        try:
+            self._var_id_file.set(data.get("id_file", ""))
+            self._var_name.set(data.get("provider_name", ""))
+            self._var_desc.set(data.get("provider_desc", ""))
+            self._var_version.set(data.get("version", ""))
+            self._workflow_builder_view.set_validation_status("Vérification : --", False)
+        finally:
+            self._loading = False
+        self._reset_dirty()
 
     def get_data(self) -> dict[str, Any]:
         """Reads all form fields and returns them as a dictionary.
@@ -435,11 +453,16 @@ class WorkflowView(ttk.Frame):
 
     def clear_data(self) -> None:
         """Clears all form fields and the workflow validation status label."""
-        self._var_id_file.set("")
-        self._var_name.set("")
-        self._var_desc.set("")
-        self._var_version.set("")
-        self._workflow_builder_view.set_validation_status("", False)
+        self._loading = True
+        try:
+            self._var_id_file.set("")
+            self._var_name.set("")
+            self._var_desc.set("")
+            self._var_version.set("")
+            self._workflow_builder_view.set_validation_status("", False)
+        finally:
+            self._loading = False
+        self._reset_dirty()
 
     # ---------------------------------------------------------------
     # Static dialogs
@@ -474,6 +497,25 @@ class WorkflowView(ttk.Frame):
             message: Text to show inside the warning dialog.
         """
         messagebox.showwarning("Attention", message)
+
+    # ---------------------------------------------------------------
+    # Dirty state management
+    # ---------------------------------------------------------------
+
+    def _mark_dirty(self) -> None:
+        """Sets the dirty flag and enables the Save button.
+
+        No-op while _loading is True (prevents traces from firing during load_data).
+        """
+        if self._loading:
+            return
+        self._is_dirty = True
+        self._btn_save.configure(state="normal")
+
+    def _reset_dirty(self) -> None:
+        """Clears the dirty flag and disables the Save button."""
+        self._is_dirty = False
+        self._btn_save.configure(state="disabled")
 
     # ---------------------------------------------------------------
     # Internal button handlers
