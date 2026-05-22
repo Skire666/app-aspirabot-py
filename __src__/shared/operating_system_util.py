@@ -16,7 +16,7 @@ from shared.exception_util import UnsupportedOperatingSystemError
 
 
 class OperatingSystem(Enum):
-    """Enumération pour les systèmes d'exploitation."""
+    """Enumeration of operating systems detected at runtime."""
 
     NOTSET = auto()
     WINDOWS = auto()
@@ -26,8 +26,12 @@ class OperatingSystem(Enum):
 
 
 def detect_os() -> OperatingSystem:
-    """Détecte le système d'exploitation actuel."""
-    # Détecter le système d'exploitation au runtime (ni compilé ni à l'importation)
+    """Identify the current host operating system from platform.system().
+
+    Returns:
+        The matching OperatingSystem variant, or UNKNOWN when unrecognised.
+    """
+    # Detect at runtime, not at import time, to avoid caching a stale platform string.
     os_name = platform.system()
 
     if not os_name:

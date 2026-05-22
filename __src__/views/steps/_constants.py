@@ -80,8 +80,8 @@ EXTRACT_MODE_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_MODE_DISPLAY, EXTR
 EXTRACT_MODE_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_MODE_VALUES, EXTRACT_MODE_DISPLAY, strict=True))
 
 EXTRACT_TARGET_DISPLAY: list[str] = [
-    "Premier élément uniquement",
-    "Dernier élément uniquement",
+    "Premier élément",
+    "Dernier élément",
     "Tous les éléments",
 ]
 EXTRACT_TARGET_VALUES: list[str] = [

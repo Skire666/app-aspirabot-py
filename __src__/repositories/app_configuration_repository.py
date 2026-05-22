@@ -139,7 +139,7 @@ class AppConfigurationRepository(IConfigRepository):
         # Check if the configuration file already exists.
         if not Path(self._full_pathfile).exists():
             self._logger.info(
-                "Configuration file not found, creating default file: %s",
+                "Fichier de configuration introuvable, création du fichier par défaut : %s",
                 self._full_pathfile,
             )
             default_data = AppConfigurationModel()
@@ -248,7 +248,7 @@ class AppConfigurationRepository(IConfigRepository):
             with Path(self._full_pathfile).open(encoding="utf-8") as file:
                 # Parse JSON with UTF-8 encoding to handle special characters.
                 return AppConfigurationModel(**json.load(file))
-        except Exception:
+        except (OSError, json.JSONDecodeError):
             self._logger.error("Une erreur s'est produite", exc_info=True)
             # Return defaults as a safe fallback.
             return AppConfigurationModel()
@@ -287,7 +287,7 @@ class AppConfigurationRepository(IConfigRepository):
                 json.dump(data.to_dict(), file, indent=4, ensure_ascii=False)
 
             # Log successful completion at debug level.
-            self._logger.debug("Configuration file saved successfully.")
+            self._logger.debug("Fichier de configuration sauvegardé avec succès.")
         except OSError:
             # Log write errors for troubleshooting.
             self._logger.exception(

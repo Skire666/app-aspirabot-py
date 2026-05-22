@@ -83,6 +83,7 @@ class ScrapingService:
             app_config=model_config,
             folder_export=Path(),
             downloaded_urls=set(),
+            extracted_data={},
             step_id_by_index=[],
             step_index_by_id={},
             pause_event=threading.Event(),
@@ -244,7 +245,7 @@ class ScrapingService:
             self._on_event_logging(EventScrapingEnum.E_CONTEXT_INIT, None, None)
             self._browser_service.append_new_page()
             self._on_event_logging(EventScrapingEnum.E_WORKFLOW_INIT, None, None)
-            self._run_steps(provider.steps)
+            self._run_all_steps(provider.steps)
         finally:
             # Always close the browser even if a step raised an exception.
             self._browser_service.close_browser()
@@ -277,7 +278,7 @@ class ScrapingService:
     # Step iteration
     # ------------------------------------------------------------------
 
-    def _run_steps(self, steps: list[StepScrapingModel]) -> int:
+    def _run_all_steps(self, steps: list[StepScrapingModel]) -> int:
         """Iterate over steps, execute each, and return the failure count.
 
         Supports non-sequential execution via JUMP_TO_STEP and early
@@ -306,6 +307,8 @@ class ScrapingService:
             # Pause when the failure quota reaches the configured threshold.
             self._check_emergency_stop(steps[i])
 
+        # TODO PCO
+
         return self._steps_failed_count
 
     def _reset_run_state(self, steps: list[StepScrapingModel]) -> None:
@@ -315,18 +318,7 @@ class ScrapingService:
             steps: The full ordered list of steps for the upcoming run.
         """
         # Rewind the URL source so it can be replayed in a new run.
-        if self._context.url_source is not None:
-            self._context.url_source.reset()
-
-        self._context.last_result_step = True
-        self._context.pending_jump = None
-        self._context.end_process = False
-        self._context.downloaded_urls = set()
-        self._context.last_message_step = ""
-
-        # Build fast-lookup maps used by JUMP_TO_STEP resolution.
-        self._context.step_id_by_index = [step.step_id for step in steps]
-        self._context.step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
+        self._context.reset_before_new_process(steps)
 
         # Reset per-run statistics counters.
         self._steps_success_count = 0

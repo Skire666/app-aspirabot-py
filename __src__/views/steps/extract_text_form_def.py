@@ -29,6 +29,7 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_KEY_SELECTOR = "selector"
 C_KEY_EXTRACT_MODE = "extract_mode"
 C_KEY_TARGET_EXTRACTED = "target"
+C_KEY_MAPPING = "mapping"
 C_KEY_COMMENT = "comment"
 
 # ---------------------------------------------------------------------------
@@ -108,11 +109,16 @@ class ExtractTextFormDef(IStepFormDef):
         row2.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row2, text="Cible :").pack(side=tk.LEFT, padx=(0, 5))
-        target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[0])
+        target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 30)
         )
         widgets[C_KEY_TARGET_EXTRACTED] = target_var
+
+        ttk.Label(row2, text="Clé/Mapping :").pack(side=tk.LEFT, padx=(0, 5))
+        mapping_var = tk.StringVar(value="key_name")
+        ttk.Entry(row2, textvariable=mapping_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_MAPPING] = mapping_var
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -144,9 +150,10 @@ class ExtractTextFormDef(IStepFormDef):
         )
         widgets[C_KEY_TARGET_EXTRACTED].set(
             EXTRACT_TARGET_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_TARGET_EXTRACTED, "first"), EXTRACT_TARGET_DISPLAY[0]
+                model.params.get(C_KEY_TARGET_EXTRACTED, "first"), EXTRACT_TARGET_DISPLAY[-1]
             )
         )
+        widgets[C_KEY_MAPPING].set(model.params.get(C_KEY_MAPPING, "key_name"))
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
@@ -163,6 +170,7 @@ class ExtractTextFormDef(IStepFormDef):
             C_KEY_SELECTOR: widgets[C_KEY_SELECTOR].get().strip(),
             C_KEY_EXTRACT_MODE: EXTRACT_MODE_VIEW_TO_MODEL.get(widgets[C_KEY_EXTRACT_MODE].get()),
             C_KEY_TARGET_EXTRACTED: EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets[C_KEY_TARGET_EXTRACTED].get()),
+            C_KEY_MAPPING: widgets[C_KEY_MAPPING].get().strip(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
@@ -180,7 +188,8 @@ class ExtractTextFormDef(IStepFormDef):
         selector = model.params.get(C_KEY_SELECTOR, "<vide>")
         extract_mode = model.params.get(C_KEY_EXTRACT_MODE, "")
         target = model.params.get(C_KEY_TARGET_EXTRACTED, "")
-        return f"Extraire contenu textuel\nSél. : {selector}  -  {extract_mode}  /  {target}"
+        mapping = model.params.get(C_KEY_MAPPING, "")
+        return f"Extraire textes  -  {mapping}\n{extract_mode}  /  {target}  |  Sél. : {selector}"
 
 
 register_form(ExtractTextFormDef())

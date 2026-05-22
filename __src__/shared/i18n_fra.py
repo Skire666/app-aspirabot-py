@@ -112,7 +112,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_WAIT_HTML_IMAGES: "Attendre X images",
     StepTypeEnum.E_CLICK_ELEMENT: "Cliquer sur un élément",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
-    StepTypeEnum.E_EXTRACT_TEXT: "Extraire contenu textuel",
+    StepTypeEnum.E_EXTRACT_TEXT: "Extraire textes",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
     StepTypeEnum.E_END_PROCESS: "Fin du processus",
@@ -161,6 +161,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "extract_text_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
     "extract_text_mode_invalid": "Étape {step} : mode d'extraction '{value}' invalide.",
     "extract_text_target_invalid": "Étape {step} : cible '{value}' invalide.",
+    "extract_text_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
     # --- jump_to_step ---
     "jump_to_step_condition_invalid": "Étape {step} : condition invalide — {value}.",
     "jump_to_step_target_missing": "Étape {step} : aucune étape référencée.",

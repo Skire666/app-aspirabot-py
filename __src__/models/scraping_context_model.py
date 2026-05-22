@@ -7,17 +7,7 @@ instead of by string key.
 Example:
     >>> import threading
     >>> from pathlib import Path
-    >>> ctx = ScrapingContextModel(
-    ...     app_config=AppConfigurationModel(),
-    ...     folder_export=Path("."),
-    ...     downloaded_urls=set(),
-    ...     step_id_by_index=[],
-    ...     step_index_by_id={},
-    ...     pause_event=threading.Event(),
-    ...     cancel_event=threading.Event(),
-    ...     on_user_wait=None,
-    ...     step_params={},
-    ... )
+    >>> ctx = ScrapingContextModel(...)
 """
 
 # ---------------------------------------------------------------------------
@@ -65,17 +55,7 @@ class ScrapingContextModel:
     Example:
         >>> import threading
         >>> from pathlib import Path
-        >>> ctx = ScrapingContextModel(
-        ...     app_config=AppConfigurationModel(),
-        ...     folder_export=Path("."),
-        ...     downloaded_urls=set(),
-        ...     step_id_by_index=["a", "b"],
-        ...     step_index_by_id={"a": 0, "b": 1},
-        ...     pause_event=threading.Event(),
-        ...     cancel_event=threading.Event(),
-        ...     on_user_wait=None,
-        ...     step_params={"selector": ".btn"},
-        ... )
+        >>> ctx = ScrapingContextModel(...)
         >>> ctx.url_source is None
         True
         >>> ctx.end_process
@@ -95,6 +75,9 @@ class ScrapingContextModel:
     # Step-specific raw params (used to construct typed param models).
     step_params: dict[str, Any]
 
+    # date extracted
+    extracted_data: dict[str, dict[str, list[str]]]  # str1 = url | str2 = mapping key | str3 = values
+
     # Optional URL source provider injected by the service before each run.
     url_source: IUrlSourceProvider | None = field(default=None)
 
@@ -109,6 +92,21 @@ class ScrapingContextModel:
     # ------------------------------------------------------------------
     # Public methods
     # ------------------------------------------------------------------
+
+    def reset_before_new_process(self, steps: list[StepScrapingModel]) -> None:
+        if self.url_source is not None:
+            self.url_source.reset()
+
+        self.last_result_step = True
+        self.pending_jump = None
+        self.end_process = False
+        self.downloaded_urls = set()
+        self.extracted_data = {}
+        self.last_message_step = ""
+
+        # Build fast-lookup maps used by JUMP_TO_STEP resolution.
+        self.step_id_by_index = [step.step_id for step in steps]
+        self.step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
 
     def prepare_step_execution(self, step: StepScrapingModel) -> None:
         """Prepare the context for a new step execution.
@@ -134,3 +132,18 @@ class ScrapingContextModel:
         if not self.last_message_step:
             self.last_message_step = message
         self.last_time_elapsed = time.time() - self._time_started
+
+    def push_extracted_values(self, mapping_key: str, values: list[str]) -> None:
+        """Push extracted values into the context's extracted_data dict.
+
+        Args:
+            mapping_key: The key under which to store the extracted values.
+            values: The list of extracted string values to store.
+        """
+        url = self.last_url_opened or "no_url"
+        if url not in self.extracted_data:
+            self.extracted_data[url] = {}
+        self.extracted_data[url][mapping_key] = values
+
+
+# EOF

@@ -202,10 +202,7 @@ class DownloadImageFormDef(IStepFormDef):
         height_max = model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)
         dup_str = "(doublons refusés)" if unique_only else "(doublons autorisés)"
 
-        return (
-            f"Télécharger images {dup_str}\n"
-            f"{mode}  -  Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
-        )
+        return f"Télécharger images {dup_str}\n{mode}  -  Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
 
 
 register_form(DownloadImageFormDef())

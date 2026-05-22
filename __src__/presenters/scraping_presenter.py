@@ -270,7 +270,7 @@ class ScrapingPresenter:
         """Reload the providers list and forward it to the view dropdown."""
         try:
             providers: list[ProviderModel] = self._service_provider.list_all_scenarios()
-        except (AspirabotError, OSError):
+        except AspirabotError, OSError:
             self._logging.exception("Échec du chargement de la liste des providers")
             providers = []
 
@@ -693,6 +693,16 @@ class ScrapingPresenter:
         ):
             str_suffix = " | " + context.url_source.display_progress_tuple_text()
 
+        if step.step_type == StepTypeEnum.E_EXTRACT_TEXT:
+            str_suffix = (
+                " | Mode"
+                + step.params.get("extract_mode", "")
+                + " | Cible: "
+                + step.params.get("target", "")
+                + " | Sélecteur: "
+                + step.params.get("selector", "")
+            )
+
         # Build the journal entry with the optional source progress suffix.
         str_entry = f"{get_time_now_hh_mm_ss()} | Début '{step.step_type.value}'{str_suffix}\n"
 
@@ -816,7 +826,7 @@ class ScrapingPresenter:
                 self._emergency_stop_threshold,
                 self._on_emergency_stop,
             )
-        except (ValueError, RuntimeError, OSError):
+        except ValueError, RuntimeError, OSError:
             self._logging.exception("Échec de l'exécution du workflow")
             return None
 

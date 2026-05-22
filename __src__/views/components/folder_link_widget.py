@@ -1,8 +1,7 @@
-import os
-import platform
-import subprocess
 import tkinter as tk
 from collections.abc import Callable
+
+from shared.operating_system_util import open_folder as _os_open_folder
 
 
 class FolderLinkWidget(tk.Frame):
@@ -78,11 +77,5 @@ class FolderLinkWidget(tk.Frame):
 
     @staticmethod
     def _default_open(path: str) -> None:
-        """Default method to open the folder in the system file explorer."""
-        system = platform.system()
-        if system == "Windows":
-            os.startfile(path)
-        elif system == "Darwin":
-            subprocess.Popen(["open", path])
-        else:
-            subprocess.Popen(["xdg-open", path])
+        """Open the folder in the native file explorer via the shared OS utility."""
+        _os_open_folder(path)

@@ -102,16 +102,12 @@ class WaitHtmlImagesFormDef(IStepFormDef):
         widgets[C_KEY_WIDTH_MIN] = width_min_var
         widgets[C_KEY_WIDTH_MAX] = width_max_var
 
-        ttk.Label(line1, text="Hauteur entre").pack(side="left", padx=(24, 5))
+        ttk.Label(line1, text="Hauteur entre").pack(side="left", padx=(30, 5))
         height_min_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MINIMUM_SIZE))
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=5).pack(
-            side="left"
-        )
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_min_var, width=5).pack(side="left")
         ttk.Label(line1, text=" et ").pack(side="left")
         height_max_var = tk.StringVar(value=str(C_MAXIMUM_SIZE_IMAGE))
-        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=6).pack(
-            side="left"
-        )
+        ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=height_max_var, width=6).pack(side="left")
         widgets[C_KEY_HEIGHT_MIN] = height_min_var
         widgets[C_KEY_HEIGHT_MAX] = height_max_var
 

@@ -21,12 +21,25 @@ class ExtractTextExecutor(IStepExecutor):
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
-        """Return the step type."""
+        """Return the step type handled by this executor.
+
+        Returns:
+            StepTypeEnum.E_EXTRACT_TEXT — used by the registry to dispatch to this executor.
+        """
         return StepTypeEnum.E_EXTRACT_TEXT
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
-        """Execute the step."""
+        """Query the selector, apply the target filter, and extract text into the context.
+
+        Reads ExtractTextParams from context.step_params, queries all matching DOM
+        elements, filters to first, last, or all per the target param, then extracts
+        text using the configured mode. Writes a summary to context.last_message_step.
+
+        Args:
+            browser: Live browser service providing the current Playwright page.
+            context: Scraping context; step_params is read and last_message_step is written.
+        """
         p = ExtractTextParams.from_dict(context.step_params)
         page = browser.get_current_page()
 
@@ -40,15 +53,23 @@ class ExtractTextExecutor(IStepExecutor):
             if p.target == ExtractTargetEnum.E_LAST
             else elements  # all
         )
-        texts = [extract_from_element(el, p.extract_mode) for el in selected]
+        texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
 
-        context.last_message_step = (
-            f"Texte extrait : {len(texts)} élément(s). Sél. : {p.selector!r}. Mode : {p.extract_mode!r}."
-        )
+        debug_one_item = texts[0] if texts and texts[0] else "<no text>"
+        context.last_message_step = f" | Extrait x{len(texts)} élément(s) | Debug='{debug_one_item}'."
+        context.push_extracted_values(p.mapping, texts)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
-        """Validate the step model."""
+        """Check that selector, extract_mode, and target are all valid.
+
+        Args:
+            model: The step model whose params dict is inspected.
+            step_index: Zero-based index used to format error messages.
+
+        Returns:
+            List of user-facing error strings; empty when the model is valid.
+        """
         p = ExtractTextParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_modes = {
@@ -71,6 +92,8 @@ class ExtractTextExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["extract_text_mode_invalid"].format(step=index_display, value=p.extract_mode))
         if p.target not in allowed_targets:
             errors.append(ERROR_TEMPLATES["extract_text_target_invalid"].format(step=index_display, value=p.target))
+        if not p.mapping.strip():
+            errors.append(ERROR_TEMPLATES["extract_text_mapping_required"].format(step=index_display))
         return errors
 
 

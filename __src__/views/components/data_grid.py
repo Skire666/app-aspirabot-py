@@ -424,7 +424,6 @@ class DataGrid(ttk.Frame):
                 arrow = "▲" if self._sort_ascending else "▼"
                 title = f"{title} {arrow}"
 
-            # TODO PCO header
             self.header_canvas.create_text(
                 x0 + 8,
                 self._header_height / 2,
@@ -463,7 +462,7 @@ class DataGrid(ttk.Frame):
             self.body_canvas.create_rectangle(
                 0,
                 y0,
-                self._total_width * 2,  # TODO PCO ne remplit pas le reste
+                self._total_width * 2,  # TODO PCO ne remplit pas le reste, j'ai mis x2 pour compenser
                 y1,
                 fill=row_bg,
                 outline=self._grid_line,
