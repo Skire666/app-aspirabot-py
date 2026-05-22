@@ -56,32 +56,32 @@ class DebugBrowserService:
         return page.content()
 
     @staticmethod
-    def analyze_texts(page: Page, selector: str) -> dict[str, object]:
-        """Extracts text metrics for the first element matching the selector.
+    def analyze_texts(page: Page, selector: str) -> list[dict[str, object]]:
+        """Extracts text metrics for every element matching the selector.
 
         Args:
             page: Live Playwright Page object.
             selector: CSS selector to query.
 
         Returns:
-            Dict with keys: count, innerHTML, textContent, innerText, outerHTML.
-            Only ``count`` is present (value 0) when no elements are found.
+            List of dicts (one per matched element) with keys: innerText,
+            textContent, innerHTML, outerHTML, value.
+            Empty list when no elements are found.
         """
         elements = page.query_selector_all(selector)
-        count = len(elements)
-        if count == 0:
-            return {"count": 0}
+        results: list[dict[str, object]] = []
 
-        # Evaluate DOM properties via JS on the first matched element.
-        first = elements[0]
-        return {
-            "count": count,
-            ExtractTextHtmlEnum.E_INNER_TEXT.value: first.evaluate("el => el.innerText") or "",
-            ExtractTextHtmlEnum.E_TEXT_CONTENT.value: first.evaluate("el => el.textContent") or "",
-            ExtractTextHtmlEnum.E_INNER_HTML.value: first.evaluate("el => el.innerHTML") or "",
-            ExtractTextHtmlEnum.E_OUTER_HTML.value: first.evaluate("el => el.outerHTML") or "",
-            ExtractTextHtmlEnum.E_INPUT_VALUE.value: first.evaluate("el => el.value") or "",
-        }
+        # Evaluate DOM properties via JS on each matched element.
+        for el in elements:
+            results.append({
+                ExtractTextHtmlEnum.E_INNER_TEXT.value: el.evaluate("el => el.innerText") or "",
+                ExtractTextHtmlEnum.E_TEXT_CONTENT.value: el.evaluate("el => el.textContent") or "",
+                ExtractTextHtmlEnum.E_INNER_HTML.value: el.evaluate("el => el.innerHTML") or "",
+                ExtractTextHtmlEnum.E_OUTER_HTML.value: el.evaluate("el => el.outerHTML") or "",
+                ExtractTextHtmlEnum.E_INPUT_VALUE.value: el.evaluate("el => el.value") or "",
+            })
+
+        return results
 
     def analyze_images(self, page: Page, selector: str) -> list[dict[str, object]]:
         """Extracts metadata for each image element matching the selector.

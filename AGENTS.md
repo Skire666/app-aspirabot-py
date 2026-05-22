@@ -123,6 +123,7 @@ def on_save_clicked(self) -> None:
 ## Python Version
 
 This project targets **Python 3.14**. Do not use syntax or features incompatible with this version.
+It is expressly prohibited to use Python 2
 
 ---
 
@@ -959,6 +960,8 @@ _current_provider_id: str | None = None
 ❌ Never write a file longer than 1000 lines — split into focused modules
 
 ❌ Never use `print()` — always use `self._logger = logging.getLogger(__name__)`
+
+❌ Never use Python 2. Always use Python 3.13 and more.
 
 ❌ Never commit runtime-generated files or folders
 ```

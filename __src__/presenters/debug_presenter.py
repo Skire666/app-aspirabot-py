@@ -253,44 +253,39 @@ class DebugPresenter:
     # -----------------------------------------------------------------------
 
     @staticmethod
-    def _format_text_results(selector: str, result: dict[str, object]) -> str:
-        """Formats a text analysis result dict into a human-readable string.
+    def _format_text_results(selector: str, results: list[dict[str, object]]) -> str:
+        """Formats text analysis results into a human-readable string.
 
         Args:
             selector: The CSS selector that was queried.
-            result: Dict from DebugBrowserService.analyze_texts().
+            results: List of dicts from DebugBrowserService.analyze_texts().
 
         Returns:
             Multi-line formatted string ready for display.
         """
-        count = int(result.get("count", 0))
-        if count == 0:
+        if not results:
             return f"Sélecteur : {selector!r}\nAucun élément trouvé."
 
-        str_inner_txt = result.get(ExtractTextHtmlEnum.E_INNER_TEXT.value, "").strip()
-        str_txt_content = result.get(ExtractTextHtmlEnum.E_TEXT_CONTENT.value, "").strip()
-        str_inner_html = result.get(ExtractTextHtmlEnum.E_INNER_HTML.value, "").strip()
-        str_outer_html = result.get(ExtractTextHtmlEnum.E_OUTER_HTML.value, "").strip()
-        str_input_val = result.get(ExtractTextHtmlEnum.E_INPUT_VALUE.value, "").strip()
+        lines: list[str] = [f"Sélecteur : {selector!r}", f"Nombre total : {len(results)}", ""]
 
-        lines = [
-            f"Sélecteur : {selector!r}",
-            f"count       : {count}",
-            "",
-            "--------- Premier élément ---------",
-            f"--- innerText x{len(str_inner_txt)} : <<\n{str_inner_txt}",
-            ">>",
-            f"--- textContent x{len(str_txt_content)} : <<\n{str_txt_content}",
-            ">>",
-            f"--- innerHTML x{len(str_inner_html)} : <<\n{str_inner_html}",
-            ">>",
-            f"--- outerHTML x{len(str_outer_html)} : <<\n{str_outer_html}",
-            ">>",
-            f"--- value x{len(str_input_val)} : <<\n{str_input_val}",
-            ">>",
-        ]
-        if count > 1:
-            lines.insert(3, f"(Affichage du 1er élément sur {count} trouvés)")
+        # Format each matched element with its index.
+        for i, el in enumerate(results, 1):
+            str_inner_txt = str(el.get(ExtractTextHtmlEnum.E_INNER_TEXT.value, "")).strip()
+            str_txt_content = str(el.get(ExtractTextHtmlEnum.E_TEXT_CONTENT.value, "")).strip()
+            str_inner_html = str(el.get(ExtractTextHtmlEnum.E_INNER_HTML.value, "")).strip()
+            str_outer_html = str(el.get(ExtractTextHtmlEnum.E_OUTER_HTML.value, "")).strip()
+            str_input_val = str(el.get(ExtractTextHtmlEnum.E_INPUT_VALUE.value, "")).strip()
+
+            lines += [
+                f"[{i}]",
+                f"   innerText x{len(str_inner_txt)} : {str_inner_txt}",
+                f"   textContent x{len(str_txt_content)} : {str_txt_content}",
+                f"   innerHTML x{len(str_inner_html)} : {str_inner_html}",
+                f"   outerHTML x{len(str_outer_html)} : {str_outer_html}",
+                f"   value x{len(str_input_val)} : {str_input_val}",
+                "",
+            ]
+
         return "\n".join(lines)
 
     @staticmethod
