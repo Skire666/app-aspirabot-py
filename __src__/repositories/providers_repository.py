@@ -231,7 +231,7 @@ class ProvidersRepository(IProviderRepository):
 
         try:
             provider_dict = provider.export_to_data_json()
-            self._json_repo.write(full_filepath, provider_dict)
+            self._json_repo.write_from_dict(full_filepath, provider_dict)
             self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
         except Exception:
             self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
@@ -251,7 +251,7 @@ class ProvidersRepository(IProviderRepository):
 
         try:
             provider_dict = provider.export_to_data_json()
-            self._json_repo.write(full_filepath, provider_dict)
+            self._json_repo.write_from_dict(full_filepath, provider_dict)
             self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
         except Exception:
             self._logger.error("Erreur lors de la MAJ du fournisseur.", exc_info=True)

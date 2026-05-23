@@ -29,23 +29,25 @@ C_KEY_WAIT_UNIT = "wait_unit"
 C_KEY_EXPORT_DATA = "export_data"
 C_KEY_COMMENT = "comment"
 
+C_DEFAULT_WAIT_DURATION = 3
+
 # ---------------------------------------------------------------------------
 # Classes
 # ---------------------------------------------------------------------------
 
 
-class EndProcessFormDef(IStepFormDef):
+class KillBrowserFormDef(IStepFormDef):
     """Form definition for the end process scraping step."""
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_END_PROCESS
+        return StepTypeEnum.E_KILL_BROWSER
 
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_END_PROCESS)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_KILL_BROWSER)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -71,7 +73,7 @@ class EndProcessFormDef(IStepFormDef):
         row0.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row0, text="Attendre avant de fermer:").pack(side=tk.LEFT, padx=(0, 5))
-        dur_var = tk.StringVar(value="5")
+        dur_var = tk.StringVar(value=str(C_DEFAULT_WAIT_DURATION))
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
             side=tk.LEFT, padx=(0, 5)
         )
@@ -124,7 +126,7 @@ class EndProcessFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_WAIT_DURATION].set(str(model.params.get(C_KEY_WAIT_DURATION, 5)))
+        widgets[C_KEY_WAIT_DURATION].set(str(model.params.get(C_KEY_WAIT_DURATION, C_DEFAULT_WAIT_DURATION)))
         widgets[C_KEY_WAIT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
@@ -162,7 +164,7 @@ class EndProcessFormDef(IStepFormDef):
         unit_time = model.params.get(C_KEY_WAIT_UNIT, "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
         qty_time = model.params.get(C_KEY_WAIT_DURATION, 0)
-        return f"Fin du processus\nAttendre {qty_time} {unit_display} avant de quitter"
+        return f"Quitter navigateur\nAttendre {qty_time} {unit_display} avant de quitter"
 
 
-register_form(EndProcessFormDef())
+register_form(KillBrowserFormDef())

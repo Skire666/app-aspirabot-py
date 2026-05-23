@@ -9,7 +9,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
-from models.steps.end_process_params import EndProcessParams
+from models.steps.kill_browser_params import KillBrowserParams
 from services.workflow_service import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
@@ -17,18 +17,18 @@ from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_sec
 
 
-class EndProcessExecutor(IStepExecutor):
+class KillBrowserExecutor(IStepExecutor):
     """Executor for the end process scraping step."""
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_END_PROCESS
+        return StepTypeEnum.E_KILL_BROWSER
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = EndProcessParams.from_dict(context.step_params)
+        p = KillBrowserParams.from_dict(context.step_params)
         delay = convert_to_sec(p.wait_duration, p.wait_unit)
         if delay > 0:
             time.sleep(delay)
@@ -39,7 +39,7 @@ class EndProcessExecutor(IStepExecutor):
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
-        p = EndProcessParams.from_dict(model.params)
+        p = KillBrowserParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []
         if p.wait_duration < 0:
@@ -51,4 +51,4 @@ class EndProcessExecutor(IStepExecutor):
         return errors
 
 
-register_step_executor(EndProcessExecutor())
+register_step_executor(KillBrowserExecutor())

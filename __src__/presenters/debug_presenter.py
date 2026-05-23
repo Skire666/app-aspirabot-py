@@ -24,10 +24,9 @@ from collections.abc import Callable
 from playwright.sync_api import Page
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
+from shared.enums import ExtractTextHtmlEnum
 from views.debug_view import DebugView
 from views.workflow.debug_page_view import DebugPageView
-
-from __src__.shared.enums import ExtractTextHtmlEnum
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -278,11 +277,11 @@ class DebugPresenter:
 
             lines += [
                 f"[{i}]",
-                f"   innerText x{len(str_inner_txt)} : {str_inner_txt}",
-                f"   textContent x{len(str_txt_content)} : {str_txt_content}",
-                f"   innerHTML x{len(str_inner_html)} : {str_inner_html}",
-                f"   outerHTML x{len(str_outer_html)} : {str_outer_html}",
-                f"   value x{len(str_input_val)} : {str_input_val}",
+                f"   innerText x{len(str_inner_txt)} \t : {str_inner_txt}",
+                f"   textContent x{len(str_txt_content)} \t : {str_txt_content}",
+                f"   innerHTML x{len(str_inner_html)} \t : {str_inner_html}",
+                f"   outerHTML x{len(str_outer_html)} \t : {str_outer_html}",
+                f"   value x{len(str_input_val)} \t : {str_input_val}",
                 "",
             ]
 

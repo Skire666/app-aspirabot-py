@@ -1,13 +1,16 @@
 """View-layer step form definitions. Import this package to register all forms."""
 
-from views.steps.click_element_form_def import ClickElementFormDef
+from views.steps.click_for_download_form_def import ClickForDownloadFormDef
+from views.steps.click_on_element_form_def import ClickOnElementFormDef
 from views.steps.close_tabs_form_def import CloseTabsFormDef
 from views.steps.count_html_elements_form_def import CountHtmlElementsFormDef
 from views.steps.count_html_images_form_def import CountHtmlImagesFormDef
 from views.steps.download_image_form_def import DownloadImageFormDef
-from views.steps.end_process_form_def import EndProcessFormDef
-from views.steps.extract_text_form_def import ExtractTextFormDef
+from views.steps.export_data_to_js_form_def import ExportDataToJsFormDef
+from views.steps.extract_links_form_def import ExtractLinksFormDef
+from views.steps.extract_texts_form_def import ExtractTextsFormDef
 from views.steps.jump_to_step_form_def import JumpToStepFormDef
+from views.steps.kill_browser_form_def import KillBrowserFormDef
 from views.steps.open_url_form_def import OpenUrlFormDef
 from views.steps.refresh_page_form_def import RefreshPageFormDef
 from views.steps.scroll_down_form_def import ScrollDownFormDef
@@ -19,14 +22,17 @@ from views.steps.wait_rng_pause_form_def import WaitRngPauseFormDef
 from views.steps.wait_user_action_form_def import WaitUserActionFormDef
 
 __all__ = [
-    "ClickElementFormDef",
+    "ClickForDownloadFormDef",
+    "ClickOnElementFormDef",
     "CloseTabsFormDef",
     "CountHtmlElementsFormDef",
     "CountHtmlImagesFormDef",
     "DownloadImageFormDef",
-    "EndProcessFormDef",
-    "ExtractTextFormDef",
+    "ExportDataToJsFormDef",
+    "ExtractLinksFormDef",
+    "ExtractTextsFormDef",
     "JumpToStepFormDef",
+    "KillBrowserFormDef",
     "OpenUrlFormDef",
     "RefreshPageFormDef",
     "ScrollDownFormDef",

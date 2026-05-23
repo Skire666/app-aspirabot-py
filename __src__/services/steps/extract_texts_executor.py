@@ -1,4 +1,4 @@
-"""IStepExecutor for EXTRACT_TEXT."""
+"""IStepExecutor for EXTRACT_TEXTS."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
-from models.steps.extract_text_params import ExtractTextParams
+from models.steps.extract_texts_params import ExtractTextsParams
 from playwright.sync_api import ElementHandle
 from services.steps._helpers import extract_from_element
 from services.workflow_service import register_step_executor
@@ -16,7 +16,7 @@ from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 
-class ExtractTextExecutor(IStepExecutor):
+class ExtractTextsExecutor(IStepExecutor):
     """Executor for the extract text scraping step."""
 
     @classmethod
@@ -24,9 +24,9 @@ class ExtractTextExecutor(IStepExecutor):
         """Return the step type handled by this executor.
 
         Returns:
-            StepTypeEnum.E_EXTRACT_TEXT — used by the registry to dispatch to this executor.
+            StepTypeEnum.E_EXTRACT_TEXTS — used by the registry to dispatch to this executor.
         """
-        return StepTypeEnum.E_EXTRACT_TEXT
+        return StepTypeEnum.E_EXTRACT_TEXTS
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
@@ -40,7 +40,7 @@ class ExtractTextExecutor(IStepExecutor):
             browser: Live browser service providing the current Playwright page.
             context: Scraping context; step_params is read and last_message_step is written.
         """
-        p = ExtractTextParams.from_dict(context.step_params)
+        p = ExtractTextsParams.from_dict(context.step_params)
         page = browser.get_current_page()
 
         elements: list[ElementHandle] = page.query_selector_all(p.selector)
@@ -56,7 +56,7 @@ class ExtractTextExecutor(IStepExecutor):
         texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
 
         debug_one_item = texts[0] if texts and texts[0] else "<no text>"
-        context.last_message_step = f" | Extrait x{len(texts)} élément(s) | Debug='{debug_one_item}'."
+        context.last_message_step = f"Extrait x{len(texts)} texte(s) | Debug='{debug_one_item}'."
         context.push_extracted_values(p.mapping, texts)
 
     @override
@@ -70,7 +70,7 @@ class ExtractTextExecutor(IStepExecutor):
         Returns:
             List of user-facing error strings; empty when the model is valid.
         """
-        p = ExtractTextParams.from_dict(model.params)
+        p = ExtractTextsParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_modes = {
             ExtractTextHtmlEnum.E_INNER_TEXT.value,
@@ -87,14 +87,16 @@ class ExtractTextExecutor(IStepExecutor):
         errors: list[str] = []
 
         if not p.selector.strip():
-            errors.append(ERROR_TEMPLATES["extract_text_selector_required"].format(step=index_display))
+            errors.append(ERROR_TEMPLATES["extract_texts_selector_required"].format(step=index_display))
         if p.extract_mode not in allowed_modes:
-            errors.append(ERROR_TEMPLATES["extract_text_mode_invalid"].format(step=index_display, value=p.extract_mode))
+            errors.append(
+                ERROR_TEMPLATES["extract_texts_mode_invalid"].format(step=index_display, value=p.extract_mode)
+            )
         if p.target not in allowed_targets:
-            errors.append(ERROR_TEMPLATES["extract_text_target_invalid"].format(step=index_display, value=p.target))
+            errors.append(ERROR_TEMPLATES["extract_texts_target_invalid"].format(step=index_display, value=p.target))
         if not p.mapping.strip():
-            errors.append(ERROR_TEMPLATES["extract_text_mapping_required"].format(step=index_display))
+            errors.append(ERROR_TEMPLATES["extract_texts_mapping_required"].format(step=index_display))
         return errors
 
 
-register_step_executor(ExtractTextExecutor())
+register_step_executor(ExtractTextsExecutor())

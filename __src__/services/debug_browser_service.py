@@ -20,8 +20,7 @@ import logging
 from urllib.parse import urlparse
 
 from playwright.sync_api import Page
-
-from __src__.shared.enums import ExtractTextHtmlEnum
+from shared.enums import ExtractTextHtmlEnum
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -73,13 +72,15 @@ class DebugBrowserService:
 
         # Evaluate DOM properties via JS on each matched element.
         for el in elements:
-            results.append({
-                ExtractTextHtmlEnum.E_INNER_TEXT.value: el.evaluate("el => el.innerText") or "",
-                ExtractTextHtmlEnum.E_TEXT_CONTENT.value: el.evaluate("el => el.textContent") or "",
-                ExtractTextHtmlEnum.E_INNER_HTML.value: el.evaluate("el => el.innerHTML") or "",
-                ExtractTextHtmlEnum.E_OUTER_HTML.value: el.evaluate("el => el.outerHTML") or "",
-                ExtractTextHtmlEnum.E_INPUT_VALUE.value: el.evaluate("el => el.value") or "",
-            })
+            results.append(
+                {
+                    ExtractTextHtmlEnum.E_INNER_TEXT.value: el.evaluate("el => el.innerText") or "",
+                    ExtractTextHtmlEnum.E_TEXT_CONTENT.value: el.evaluate("el => el.textContent") or "",
+                    ExtractTextHtmlEnum.E_INNER_HTML.value: el.evaluate("el => el.innerHTML") or "",
+                    ExtractTextHtmlEnum.E_OUTER_HTML.value: el.evaluate("el => el.outerHTML") or "",
+                    ExtractTextHtmlEnum.E_INPUT_VALUE.value: el.evaluate("el => el.value") or "",
+                }
+            )
 
         return results
 

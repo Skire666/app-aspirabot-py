@@ -1,4 +1,4 @@
-"""Typed parameter model for the EXTRACT_TEXT step."""
+"""Typed parameter model for the EXTRACT_TEXTS step."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum
 
 
 @dataclass(frozen=True)
-class ExtractTextParams(IStepParams):
-    """Parameters for the extract text scraping step."""
+class ExtractTextsParams(IStepParams):
+    """Parameters for the extract texts scraping step."""
 
     selector: str
     extract_mode: str
@@ -24,7 +24,7 @@ class ExtractTextParams(IStepParams):
         """Build a ready-to-use instance with innerText mode and first-element target.
 
         Returns:
-            ExtractTextParams with an empty selector, innerText extract mode,
+            ExtractTextsParams with an empty selector, innerText extract mode,
             and first-element target.
         """
         return cls(
@@ -74,4 +74,4 @@ class ExtractTextParams(IStepParams):
         Returns:
             StepTypeEnum.E_EXTRACT_TEXT, used by the workflow engine for dispatch.
         """
-        return StepTypeEnum.E_EXTRACT_TEXT
+        return StepTypeEnum.E_EXTRACT_TEXTS

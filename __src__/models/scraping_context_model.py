@@ -35,6 +35,38 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class KeyData:
+    step_id: str
+    comment: str
+    css_selector: str
+    values: list[str] = field(default_factory=list)
+
+
+@dataclass
+class UrlData:
+    keys: dict[str, KeyData] = field(default_factory=dict)
+
+
+@dataclass
+class ExtractedData:
+    urls: dict[str, UrlData] = field(default_factory=dict)
+
+    def to_dict(self):
+        return {
+            url: {
+                key: {
+                    "step_id": val_kd.step_id,
+                    "comment": val_kd.comment,
+                    "css_selector": val_kd.css_selector,
+                    "values": val_kd.values,
+                }
+                for key, val_kd in val_ud.keys.items()
+            }
+            for url, val_ud in self.urls.items()
+        }
+
+
+@dataclass
 class ScrapingContextModel:
     """Typed runtime context injected into each step executor.
 
@@ -76,7 +108,7 @@ class ScrapingContextModel:
     step_params: dict[str, Any]
 
     # date extracted
-    extracted_data: dict[str, dict[str, list[str]]]  # str1 = url | str2 = mapping key | str3 = values
+    extracted_data: ExtractedData
 
     # Optional URL source provider injected by the service before each run.
     url_source: IUrlSourceProvider | None = field(default=None)
@@ -94,6 +126,11 @@ class ScrapingContextModel:
     # ------------------------------------------------------------------
 
     def reset_before_new_process(self, steps: list[StepScrapingModel]) -> None:
+        """Reset all runtime state before starting a new workflow process.
+
+        Args:
+            steps: The list of steps in the workflow, used to build step ID/index maps.
+        """
         if self.url_source is not None:
             self.url_source.reset()
 
@@ -101,7 +138,7 @@ class ScrapingContextModel:
         self.pending_jump = None
         self.end_process = False
         self.downloaded_urls = set()
-        self.extracted_data = {}
+        self.extracted_data = ExtractedData()
         self.last_message_step = ""
 
         # Build fast-lookup maps used by JUMP_TO_STEP resolution.
@@ -133,17 +170,22 @@ class ScrapingContextModel:
             self.last_message_step = message
         self.last_time_elapsed = time.time() - self._time_started
 
-    def push_extracted_values(self, mapping_key: str, values: list[str]) -> None:
+    def push_extracted_values(self, mapping_key: str, key_id: int, values: list[str]) -> None:
         """Push extracted values into the context's extracted_data dict.
 
         Args:
             mapping_key: The key under which to store the extracted values.
+            key_id: The unique ID associated with this key.
             values: The list of extracted string values to store.
         """
         url = self.last_url_opened or "no_url"
-        if url not in self.extracted_data:
-            self.extracted_data[url] = {}
-        self.extracted_data[url][mapping_key] = values
+
+        if url not in self.extracted_data.urls:
+            self.extracted_data.urls[url] = UrlData()
+
+        self.extracted_data.urls[url].keys[mapping_key] = KeyData(id=key_id, values=values)
+        # TODO PCO : je réacrase tout, et en vrai, c'est pas plus mal
+        # a voir si je dois merge les values en cas d'existant
 
 
 # EOF

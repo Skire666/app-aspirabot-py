@@ -86,7 +86,10 @@ class BrowserPlaywrightService(IWebBrowserService):
         # Start Playwright and create the browser + context.
         self._pw = sync_playwright().start()
         self._browser = self._pw.chromium.launch(headless=False, args=args)
-        self._context = self._browser.new_context(no_viewport=True)
+        self._context = self._browser.new_context(
+            no_viewport=True,
+            accept_downloads=True,
+        )
 
     def append_new_page(self) -> None:
         """Open a new browser page and register it via the context page event.

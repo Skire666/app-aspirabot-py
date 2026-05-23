@@ -15,8 +15,7 @@ from shared.constants import (
     C_UNITS_TIME_ALLOWED_FOR_MODEL,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
 )
-
-from __src__.shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum
+from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum
 
 # ---------------------------------------------------------------------------
 # Unit display / model mappings

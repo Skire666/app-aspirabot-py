@@ -10,7 +10,7 @@ from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
-class ClickElementParams(IStepParams):
+class ClickForDownloadParams(IStepParams):
     """Parameters for the click element scraping step."""
 
     selector: str
@@ -34,4 +34,4 @@ class ClickElementParams(IStepParams):
     @classmethod
     def get_step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_CLICK_ELEMENT
+        return StepTypeEnum.E_CLICK_FOR_DOWNLOAD

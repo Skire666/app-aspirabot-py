@@ -26,9 +26,10 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.app_configuration_model import AppConfigurationModel
 from models.provider_model import ProviderModel
-from models.scraping_context_model import ScrapingContextModel
+from models.scraping_context_model import ExtractedData, ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
+from repositories.json_repository import JsonFileRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.url_sources.url_source_factory import build_url_source_provider
@@ -65,6 +66,7 @@ class ScrapingService:
         model_config: AppConfigurationModel,
         workflow_service: WorkflowService,
         journal_repository: ScrapingJournalRepository,
+        extracted_data_repository: JsonFileRepository,
     ) -> None:
         """Initialise the service and its per-run execution state.
 
@@ -72,18 +74,20 @@ class ScrapingService:
             model_config: Application configuration model.
             workflow_service: Service for resolving step executors by type.
             journal_repository: Repository used to persist journal exports to disk.
+            extracted_data_repository: Repository used to persist extracted data as JSON.
         """
         self._logger = logging.getLogger(__name__)
         self._browser_service = None
         self._workflow_service = workflow_service
         self._journal_repository = journal_repository
+        self._extracted_data_repository = extracted_data_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
         self._context: ScrapingContextModel = ScrapingContextModel(
             app_config=model_config,
             folder_export=Path(),
             downloaded_urls=set(),
-            extracted_data={},
+            extracted_data=ExtractedData(),
             step_id_by_index=[],
             step_index_by_id={},
             pause_event=threading.Event(),
@@ -301,13 +305,14 @@ class ScrapingService:
             self._context.pause_event.wait()
             if self._context.cancel_event.is_set():
                 break
-            i = self._run_one_step(steps[i], i)
+            i = self._run_one_step(steps[i], i)  # i+1 dedans
+            if i >= len(steps):
+                self._context.end_process = True
+            # manual ending, or automatic enging
             if self._context.end_process:
                 break
             # Pause when the failure quota reaches the configured threshold.
             self._check_emergency_stop(steps[i])
-
-        # TODO PCO
 
         return self._steps_failed_count
 
@@ -365,7 +370,7 @@ class ScrapingService:
             self._steps_failed_count += 1
 
         # Track step-type-specific action counters.
-        if step.step_type == StepTypeEnum.E_CLICK_ELEMENT:
+        if step.step_type == StepTypeEnum.E_CLICK_ON_ELEMENT:
             self._clicks_count += 1
         elif step.step_type == StepTypeEnum.E_OPEN_URL:
             self._open_urls_executed_count += 1
@@ -400,7 +405,7 @@ class ScrapingService:
             return
         if self._steps_failed_count < self._emergency_stop_threshold:
             return
-        if next_step.step_type in {StepTypeEnum.E_JUMP_TO_STEP, StepTypeEnum.E_END_PROCESS}:
+        if next_step.step_type in {StepTypeEnum.E_JUMP_TO_STEP, StepTypeEnum.E_KILL_BROWSER}:
             return
 
         # Threshold reached — block execution at the next iteration.

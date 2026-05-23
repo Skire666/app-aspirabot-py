@@ -330,7 +330,12 @@ def _init_scraping_component(
     """
     workflow_service = WorkflowService()
     journal_repository = ScrapingJournalRepository()
-    scraping_service = ScrapingService(config_model, workflow_service, journal_repository)
+    scraping_service = ScrapingService(
+        config_model,
+        workflow_service,
+        journal_repository,
+        JsonFileRepository(),
+    )
     scraping_view = ScrapingView(config_model, main_view.content_area)
     scraping_presenter = ScrapingPresenter(
         view=scraping_view,

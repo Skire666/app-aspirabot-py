@@ -693,13 +693,13 @@ class ScrapingPresenter:
         ):
             str_suffix = " | " + context.url_source.display_progress_tuple_text()
 
-        if step.step_type == StepTypeEnum.E_EXTRACT_TEXT:
+        if step.step_type == StepTypeEnum.E_EXTRACT_TEXTS:
             str_suffix = (
-                " | Mode"
+                " | Mode : "
                 + step.params.get("extract_mode", "")
-                + " | Cible: "
+                + " | Cible : "
                 + step.params.get("target", "")
-                + " | Sélecteur: "
+                + " | Sél. : "
                 + step.params.get("selector", "")
             )
 
@@ -788,8 +788,8 @@ class ScrapingPresenter:
         # Build the summary line from all report counters.
         date_str = get_time_now_hh_mm_ss()
         line = f"{date_str} | Début {r.started_at} | Fin {r.finished_at}"
-        line += f" | Total steps x{r.steps_total} | Succès x{r.steps_success} | Erreur x{r.steps_failed}"
-        line += f" | Clique x{r.clicks_performed} | URL ouverte x{r.open_urls_executed} | Est annulé = {r.cancelled}\n"
+        line += f" | Total steps x{r.steps_total} | Succès x{r.steps_success} | Erreurs x{r.steps_failed}"
+        line += f" | Clics x{r.clicks_performed} | OpenURL x{r.open_urls_executed} | Est annulé = {r.cancelled}\n"
 
         # logs
         self._all_logs_scraping.append(line)

@@ -1,4 +1,4 @@
-"""IStepExecutor for CLICK_ELEMENT."""
+"""IStepExecutor for CLICK_ON_ELEMENT."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
-from models.steps.click_element_params import ClickElementParams
+from models.steps.click_on_element_params import ClickOnElementParams
 from playwright.sync_api import Error as PlaywrightError
 from services.workflow_service import register_step_executor
 from shared.constants import (
@@ -19,21 +19,29 @@ from shared.enums import StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
 from shared.i18n_fra import ERROR_TEMPLATES
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
 C_LIMIT_TIMEOUT_CLICK_MS = 8000
 
+# ---------------------------------------------------------------------------
+# Class
+# ---------------------------------------------------------------------------
 
-class ClickElementExecutor(IStepExecutor):
+
+class ClickOnElementExecutor(IStepExecutor):
     """Executor for the click element scraping step."""
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_CLICK_ELEMENT
+        return StepTypeEnum.E_CLICK_ON_ELEMENT
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = ClickElementParams.from_dict(context.step_params)
+        p = ClickOnElementParams.from_dict(context.step_params)
 
         page = browser.get_current_page()  # can throw if page is closed
         if page.locator(p.selector).count() <= 0:
@@ -81,7 +89,7 @@ class ClickElementExecutor(IStepExecutor):
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
         """Validate the step model."""
-        p = ClickElementParams.from_dict(model.params)
+        p = ClickOnElementParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
 
         # if selecteur est vide ou ne contient que des espaces
@@ -90,4 +98,4 @@ class ClickElementExecutor(IStepExecutor):
         return []
 
 
-register_step_executor(ClickElementExecutor())
+register_step_executor(ClickOnElementExecutor())

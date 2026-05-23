@@ -1,0 +1,10 @@
+23:04:58 | Initialisation du navigateur...
+23:04:59 | Création du contexte de navigation...
+23:04:59 | Démarrage des étapes du workflow...
+23:04:59 | Début 'OPEN_URL' | Liste : 0 / 1 consommé(s)
+23:05:02 | OPEN_URL | OK | 2.807 | Ouvert : https://www.metacritic.com/browse/game/all/all/current-year/
+23:05:02 | Début 'EXTRACT_TEXT' | ModeinnerText | Cible: all | Sélecteur: h3 > span
+23:05:02 | EXTRACT_TEXT | OK | 0.168 |  | Extrait x48 élément(s) | Debug='1.'.
+23:05:02 | Début 'END_PROCESS'
+23:05:07 | END_PROCESS | OK | 5.030 | OK
+23:05:07 | Début 2026-05-22 23:04:58.847196 | Fin 2026-05-22 23:05:07.660836 | Total steps x3 | Succès x3 | Erreur x0 | Clique x0 | URL ouverte x1 | Est annulé = False

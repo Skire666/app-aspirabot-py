@@ -110,12 +110,15 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_COUNT_HTML_IMAGES: "Compter les images",
     StepTypeEnum.E_WAIT_HTML_ELEMENTS: "Attendre X éléments",
     StepTypeEnum.E_WAIT_HTML_IMAGES: "Attendre X images",
-    StepTypeEnum.E_CLICK_ELEMENT: "Cliquer sur un élément",
+    StepTypeEnum.E_CLICK_ON_ELEMENT: "Cliquer sur un élément",
+    StepTypeEnum.E_CLICK_FOR_DOWNLOAD: "Cliquer pour télécharger",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
-    StepTypeEnum.E_EXTRACT_TEXT: "Extraire textes",
+    StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes",
+    StepTypeEnum.E_EXTRACT_LINKS: "Extraire liens",
+    StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données vers JSON",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
-    StepTypeEnum.E_END_PROCESS: "Fin du processus",
+    StepTypeEnum.E_KILL_BROWSER: "Fin du processus",
 }
 
 # ---------------------------------------------------------------------------
@@ -157,11 +160,17 @@ ERROR_TEMPLATES: dict[str, str] = {
     # --- end_process ---
     "end_process_wait_duration_invalid": "Étape {step} : la durée d'attente doit être >= 0.",
     "end_process_wait_unit_invalid": "Étape {step} : unité de temps invalide — {value!r}.",
-    # --- extract_text ---
-    "extract_text_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
-    "extract_text_mode_invalid": "Étape {step} : mode d'extraction '{value}' invalide.",
-    "extract_text_target_invalid": "Étape {step} : cible '{value}' invalide.",
-    "extract_text_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
+    # --- export data to js ---
+    "export_data_to_js_prefix_file_required": "Étape {step} : le préfixe de nom de fichier est obligatoire.",
+    # --- extract_links ---
+    "extract_links_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
+    "extract_links_target_invalid": "Étape {step} : cible '{value}' invalide.",
+    "extract_links_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
+    # --- extract_texts ---
+    "extract_texts_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
+    "extract_texts_mode_invalid": "Étape {step} : mode d'extraction '{value}' invalide.",
+    "extract_texts_target_invalid": "Étape {step} : cible '{value}' invalide.",
+    "extract_texts_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
     # --- jump_to_step ---
     "jump_to_step_condition_invalid": "Étape {step} : condition invalide — {value}.",
     "jump_to_step_target_missing": "Étape {step} : aucune étape référencée.",
