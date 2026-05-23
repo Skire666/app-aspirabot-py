@@ -38,7 +38,7 @@ class ExportDataToJsExecutor(IStepExecutor):
         p = ExportDataToJsParams.from_dict(context.step_params)
 
         # Nothing to write — skip without logging noise.
-        if not context.extracted_data or all(not v for v in context.extracted_data.values()):
+        if not context.extracted_data or not context.extracted_data.urls:
             raise ValueError("Aucune donnée extraite à exporter, export JSON ignoré.")
 
         # Guard against unset export folder (default Path() resolves to ".").

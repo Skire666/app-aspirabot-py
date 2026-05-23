@@ -184,7 +184,7 @@ class FaqTextTextHint:
                 "Une étape ne peut pas pointer vers elle-même\n"
                 "(boucle infinie interdite)."
             ),
-            "Fin du processus": (
+            "Quitter navigateur": (
                 "Marque la fin du flux de scraping et attend un délai fixe\n"
                 "avant de libérer les ressources du navigateur.\n\n"
                 "• Durée d'attente : délai à respecter avant la fin\n"

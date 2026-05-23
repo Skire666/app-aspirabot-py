@@ -58,9 +58,9 @@ class ExtractLinksExecutor(IStepExecutor):
         base_url = f"{parsed.scheme}://{parsed.netloc}"
         links: list[str] = self._get_all_links_from_elements(selected, base_url)
 
+        context.push_extracted_values(p.mapping, p.selector, p.comment, links)
         debug_one_item = links[0] if links and links[0] else "<no link>"
         context.last_message_step = f"Extrait x{len(links)} lien(s) | Debug='{debug_one_item}'."
-        context.push_extracted_values(p.mapping, links)
 
     @staticmethod
     def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str) -> list[str]:

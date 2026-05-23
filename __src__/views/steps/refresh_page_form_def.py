@@ -34,7 +34,7 @@ from views.steps._constants import (
 # ---------------------------------------------------------------------------
 
 C_INPUT_DEFAULT_WAIT_STATE = C_CHOICES_WAIT_PAGE_STATE[-1]
-C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
+C_INPUT_DEFAULT_TIMEOUT_DURATION = 10
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
 C_KEY_CLEAR_CACHE = "clear_cache"

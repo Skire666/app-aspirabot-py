@@ -8,7 +8,7 @@
     },
     "modified_date_provider": {
         "__type__": "datetime",
-        "value": "2026-05-23T11:38:07.097607"
+        "value": "2026-05-23T23:30:21.828642"
     },
     "version": "1.0.0",
     "steps": [
@@ -79,20 +79,6 @@
             }
         },
         {
-            "step_type": "CLICK_ELEMENT",
-            "step_id": "2HG2",
-            "is_active": true,
-            "modified_date": {
-                "__type__": "datetime",
-                "value": "2026-05-23T09:03:59.356439"
-            },
-            "params": {
-                "selector": "button:nth-child(2) > span > button > span",
-                "click_mode": "JS Direct",
-                "comment": ""
-            }
-        },
-        {
             "step_type": "WAIT_USER_ACTION",
             "step_id": "A66k",
             "is_active": true,
@@ -106,26 +92,12 @@
                 "wait_unit": "s",
                 "comment": ""
             }
-        },
-        {
-            "step_type": "END_PROCESS",
-            "step_id": "c9x9",
-            "is_active": true,
-            "modified_date": {
-                "__type__": "datetime",
-                "value": "2026-05-23T11:36:22.948040"
-            },
-            "params": {
-                "wait_duration": 10,
-                "wait_unit": "s",
-                "comment": ""
-            }
         }
     ],
     "launch_profiles": [
         {
             "id_profile": "f6618b8b",
-            "name_profile": "Profil par défaut",
+            "name_profile": "youtube transcript",
             "export_folder": "E:\\app-aspirabot-py\\data_scraping",
             "url_source_type": "manual",
             "url_source_value": [
@@ -139,7 +111,7 @@
             },
             "modified_date_profile": {
                 "__type__": "datetime",
-                "value": "2026-05-23T09:05:07.471977"
+                "value": "2026-05-23T23:30:21.828637"
             }
         }
     ]

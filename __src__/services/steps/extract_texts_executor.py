@@ -55,9 +55,9 @@ class ExtractTextsExecutor(IStepExecutor):
         )
         texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
 
+        context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
         debug_one_item = texts[0] if texts and texts[0] else "<no text>"
         context.last_message_step = f"Extrait x{len(texts)} texte(s) | Debug='{debug_one_item}'."
-        context.push_extracted_values(p.mapping, texts)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:

@@ -17,7 +17,6 @@ Example:
 
 from __future__ import annotations
 
-import configparser
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -215,12 +214,13 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         Raises:
             None.
         """
-        with Path(file_path).open(encoding="utf-8") as fh:
-            config = configparser.ConfigParser()
-            config.read_file(fh)
-            url = config.get("InternetShortcut", "URL", fallback=None)
-            if url and url.strip():
-                return url.strip()
+        # TODO PCO : marche pas.
+        with Path(file_path).open(encoding="utf-8") as f:
+            for ligne in f:
+                if ligne.startswith("URL="):
+                    url = ligne.strip().removeprefix("URL=")
+                    if url and url.strip():
+                        return url.strip()
         return ""
 
 

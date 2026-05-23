@@ -36,9 +36,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class KeyData:
-    step_id: str
-    comment: str
     css_selector: str
+    comment: str
     values: list[str] = field(default_factory=list)
 
 
@@ -55,9 +54,8 @@ class ExtractedData:
         return {
             url: {
                 key: {
-                    "step_id": val_kd.step_id,
-                    "comment": val_kd.comment,
                     "css_selector": val_kd.css_selector,
+                    "comment": val_kd.comment,
                     "values": val_kd.values,
                 }
                 for key, val_kd in val_ud.keys.items()
@@ -170,12 +168,13 @@ class ScrapingContextModel:
             self.last_message_step = message
         self.last_time_elapsed = time.time() - self._time_started
 
-    def push_extracted_values(self, mapping_key: str, key_id: int, values: list[str]) -> None:
+    def push_extracted_values(self, mapping_key: str, sel: str, com: str, vals: list[str]) -> None:
         """Push extracted values into the context's extracted_data dict.
 
         Args:
             mapping_key: The key under which to store the extracted values.
-            key_id: The unique ID associated with this key.
+            selector: The CSS selector used to find the elements.
+            comment: A user-provided comment for the extracted values.
             values: The list of extracted string values to store.
         """
         url = self.last_url_opened or "no_url"
@@ -183,7 +182,7 @@ class ScrapingContextModel:
         if url not in self.extracted_data.urls:
             self.extracted_data.urls[url] = UrlData()
 
-        self.extracted_data.urls[url].keys[mapping_key] = KeyData(id=key_id, values=values)
+        self.extracted_data.urls[url].keys[mapping_key] = KeyData(css_selector=sel, comment=com, values=vals)
         # TODO PCO : je réacrase tout, et en vrai, c'est pas plus mal
         # a voir si je dois merge les values en cas d'existant
 

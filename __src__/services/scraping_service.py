@@ -469,9 +469,10 @@ class ScrapingService:
         try:
             executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
             executor.execute_logical(self._browser_service, self._context)
-        except Exception as exc:  # noqa: BLE001 — catch-all for unpredictable step executor errors
+        except Exception as exc:
             # Log the exception and set the step result to failure, but allow the run to continue.
             self._context.set_result_execution(False, f"Exc: {exc}")
+            self._logger.exception("Error executing step %s: %s", step.step_id, exc)
             return False
 
         # end success path — the executor should have set the result and message on the context.

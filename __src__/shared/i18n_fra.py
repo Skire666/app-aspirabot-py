@@ -115,10 +115,10 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
     StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes",
     StepTypeEnum.E_EXTRACT_LINKS: "Extraire liens",
-    StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données vers JSON",
+    StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (json)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
-    StepTypeEnum.E_KILL_BROWSER: "Fin du processus",
+    StepTypeEnum.E_KILL_BROWSER: "Quitter navigateur",
 }
 
 # ---------------------------------------------------------------------------
