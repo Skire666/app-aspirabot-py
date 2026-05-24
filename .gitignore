@@ -1,9 +1,8 @@
 # project
 tmp_app_logs/
 data_scraping/
-data_providers/
-browser_profiles/
-browser_profile/
+data_scenarios/
+chromium_tmp/
 extensions/
 config-aspirabot.json
 

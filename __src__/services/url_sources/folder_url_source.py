@@ -77,7 +77,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             FileNotFoundError: If the folder does not exist on first access.
         """
         self._ensure_discovered()
-        self._fill_one_url_if_empty()
+        self._fill_one_url_if_empty()  # update uniquement si == _SENTINEL
         return self._buffered is not _SENTINEL
 
     def next_url(self) -> str:

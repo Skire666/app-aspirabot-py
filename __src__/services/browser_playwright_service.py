@@ -19,6 +19,7 @@ Example:
 
 import logging
 import time
+from pathlib import Path
 
 from interfaces.i_web_browser_service import IWebBrowserService
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
@@ -71,6 +72,8 @@ class BrowserPlaywrightService(IWebBrowserService):
     # IWebBrowserService — public API
     # ------------------------------------------------------------------
 
+    special_debug = True  # Set to True to enable verbose logging for debugging purposes.
+
     def launch(self) -> None:
         """Initialize and launch Chromium.
 
@@ -79,6 +82,10 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         if self._pw is not None:
             raise BrowserAlreadyLaunchedError()
+
+        if self.special_debug:
+            self.launch_persistent()
+            return
 
         # Obfuscated mode uses custom args; standard mode uses a plain context.
         args = ["--disable-blink-features=AutomationControlled"]
@@ -90,6 +97,39 @@ class BrowserPlaywrightService(IWebBrowserService):
             no_viewport=True,
             accept_downloads=True,
         )
+
+    def launch_persistent(self) -> None:
+        """Initialize and launch Chromium.
+
+        Raises:
+            BrowserAlreadyLaunchedError: If the browser is already launched.
+        """
+        if self._pw is not None:
+            raise BrowserAlreadyLaunchedError()
+
+        # attentiion, le cwd de chromium, est le temps (c'est l'exe, apas python, donc éviter chemin relatif)
+        ext_path = str(Path("E:/app-aspirabot-py/extensions/uBlock0_chromium").resolve())
+
+        args = [
+            "--disable-blink-features=AutomationControlled",
+            f"--disable-extensions-except={ext_path}",
+            f"--load-extension={ext_path}",
+        ]
+
+        self._pw = sync_playwright().start()
+
+        # launch_persistent_context remplace launch() + new_context()
+        self._context = self._pw.chromium.launch_persistent_context(
+            user_data_dir="E:/app-aspirabot-py/chromium_tmp",
+            headless=False,
+            args=args,
+            no_viewport=True,
+            accept_downloads=True,
+        )
+
+        # Le browser n'est pas exposé séparément avec un contexte persistant.
+        # self._context.pages[0] donne la page ouverte par défaut.
+        self._browser = None
 
     def append_new_page(self) -> None:
         """Open a new browser page and register it via the context page event.

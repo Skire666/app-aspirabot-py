@@ -8,7 +8,7 @@
     },
     "modified_date_provider": {
         "__type__": "datetime",
-        "value": "2026-05-23T23:30:21.828642"
+        "value": "2026-05-25T01:09:52.695576"
     },
     "version": "1.0.0",
     "steps": [
@@ -18,29 +18,76 @@
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-05-23T09:02:13.594128"
+                "value": "2026-05-25T00:56:20.322366"
             },
             "params": {
                 "url_mode": "<<SOURCE>>",
                 "url_custom": "https://example.com/",
                 "wait_state": "networkidle",
                 "wait_dns_solver": 6,
-                "timeout_duration": 8,
+                "timeout_duration": 12,
                 "timeout_unit": "s",
                 "comment": ""
             }
         },
         {
-            "step_type": "WAIT_FIXED_TIME",
-            "step_id": "qcE4",
+            "step_type": "JUMP_TO_STEP",
+            "step_id": "yZAD",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-05-23T11:36:39.836243"
+                "value": "2026-05-24T23:22:32.252504"
             },
             "params": {
-                "duration": 1,
+                "condition": "failure",
+                "target_hexastring": "k4Ee",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "WAIT_HTML_ELEMENTS",
+            "step_id": "CPNF",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-25T01:02:21.695322"
+            },
+            "params": {
+                "selector": "button.download-button[data-title*=\"[SRT]\"]",
+                "operator": "greater_or_equal",
+                "quantity": 1,
+                "retry_delay": 400,
+                "retry_unit": "ms",
+                "retry_max": 4,
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "WAIT_FIXED_TIME",
+            "step_id": "4Yd5",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-25T01:09:24.254638"
+            },
+            "params": {
+                "duration": 3,
                 "unit": "s",
+                "comment": "1 ou 2 sec = 1015 being rate limited"
+            }
+        },
+        {
+            "step_type": "CLICK_FOR_DOWNLOAD",
+            "step_id": "GGdy",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-24T23:18:03.718037"
+            },
+            "params": {
+                "selector": "button.download-button[data-title*=\"[SRT]\"]",
+                "click_mode": "JS Direct",
+                "index_clicked": 0,
                 "comment": ""
             }
         },
@@ -50,45 +97,150 @@
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-05-23T09:02:19.971752"
+                "value": "2026-05-24T01:09:53.175895"
             },
             "params": {
-                "clear_cache": true,
+                "clear_cache": false,
                 "wait_state": "networkidle",
-                "timeout_duration": 8,
+                "timeout_duration": 10,
                 "timeout_unit": "s",
                 "comment": ""
             }
         },
         {
             "step_type": "WAIT_HTML_ELEMENTS",
-            "step_id": "c2AT",
+            "step_id": "9YZ7",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-05-23T09:03:23.754337"
+                "value": "2026-05-25T01:02:29.083407"
             },
             "params": {
-                "selector": "button:nth-child(2) > span > button > span",
+                "selector": "button.download-button[data-title*=\"[SRT]\"]",
                 "operator": "greater_or_equal",
                 "quantity": 1,
                 "retry_delay": 400,
                 "retry_unit": "ms",
-                "retry_max": 10,
+                "retry_max": 4,
                 "comment": ""
             }
         },
         {
-            "step_type": "WAIT_USER_ACTION",
-            "step_id": "A66k",
+            "step_type": "WAIT_FIXED_TIME",
+            "step_id": "4TgG",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-05-23T11:36:44.335214"
+                "value": "2026-05-25T01:09:30.015769"
+            },
+            "params": {
+                "duration": 3,
+                "unit": "s",
+                "comment": "1 ou 2 sec = 1015 being rate limited"
+            }
+        },
+        {
+            "step_type": "CLICK_FOR_DOWNLOAD",
+            "step_id": "atyG",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-24T23:23:50.054903"
+            },
+            "params": {
+                "selector": "button.download-button[data-title*=\"[SRT]\"]",
+                "click_mode": "JS Direct",
+                "index_clicked": 1,
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "REFRESH_PAGE",
+            "step_id": "BgYg",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-24T23:23:06.191609"
+            },
+            "params": {
+                "clear_cache": false,
+                "wait_state": "networkidle",
+                "timeout_duration": 10,
+                "timeout_unit": "s",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "WAIT_HTML_ELEMENTS",
+            "step_id": "Gq6C",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-25T01:02:49.782771"
+            },
+            "params": {
+                "selector": "button.download-button[data-title*=\"[SRT]\"]",
+                "operator": "greater_or_equal",
+                "quantity": 1,
+                "retry_delay": 400,
+                "retry_unit": "ms",
+                "retry_max": 4,
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "WAIT_FIXED_TIME",
+            "step_id": "6DH7",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-25T01:09:37.446759"
+            },
+            "params": {
+                "duration": 3,
+                "unit": "s",
+                "comment": "1 ou 2 sec = 1015 being rate limited"
+            }
+        },
+        {
+            "step_type": "CLICK_FOR_DOWNLOAD",
+            "step_id": "xYaT",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-24T23:23:43.436151"
+            },
+            "params": {
+                "selector": "button.download-button[data-title*=\"[SRT]\"]",
+                "click_mode": "JS Direct",
+                "index_clicked": 2,
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "JUMP_TO_STEP",
+            "step_id": "eCEB",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-24T23:22:47.313712"
             },
             "params": {
                 "condition": "always",
-                "wait_duration": 1,
+                "target_hexastring": "3xxC",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "KILL_BROWSER",
+            "step_id": "k4Ee",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-25T00:54:16.531913"
+            },
+            "params": {
+                "wait_duration": 2,
                 "wait_unit": "s",
                 "comment": ""
             }
@@ -101,17 +253,19 @@
             "export_folder": "E:\\app-aspirabot-py\\data_scraping",
             "url_source_type": "manual",
             "url_source_value": [
-                "https://downsub.com/?url=http%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DYi3pXndX1Dc"
+                "https://downsub.com/?url=http%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DgLwqb5R2HHM",
+                "https://downsub.com/?url=http%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DDoYc2mZ0Csk",
+                "https://downsub.com/?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DLpXhy2iiaQE"
             ],
             "emergency_stop_threshold": 1,
-            "launch_count": 7,
+            "launch_count": 32,
             "used_date_profile": {
                 "__type__": "datetime",
-                "value": "2026-05-23T11:38:07.097601"
+                "value": "2026-05-25T01:09:52.695570"
             },
             "modified_date_profile": {
                 "__type__": "datetime",
-                "value": "2026-05-23T23:30:21.828637"
+                "value": "2026-05-25T00:36:04.479409"
             }
         }
     ]

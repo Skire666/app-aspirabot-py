@@ -145,6 +145,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "image_dim_range_invalid": "Étape {step} : {min_key} doit être <= {max_key}.",
     # --- click_element ---
     "click_element_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
+    "click_element_index_invalid": "Étape {step} : l'index du bouton à cliquer est invalide.",
     # --- close_tabs ---
     "close_tabs_filter_required": "Étape {step} : le filtre URL est obligatoire.",
     "close_tabs_max_tabs_invalid": "Étape {step} : le nombre max. d'onglets doit être >= 1.",

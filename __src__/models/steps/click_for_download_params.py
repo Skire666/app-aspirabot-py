@@ -1,4 +1,4 @@
-"""Typed parameter model for the CLICK_ELEMENT step."""
+"""Typed parameter model for the CLICK_FOR_DOWNLOAD step."""
 
 from __future__ import annotations
 
@@ -11,25 +11,36 @@ from shared.enums import StepTypeEnum
 
 @dataclass(frozen=True)
 class ClickForDownloadParams(IStepParams):
-    """Parameters for the click element scraping step."""
+    """Parameters for the click for download step."""
 
     selector: str
     click_mode: str
+    index_clicked: int = 0
     comment: str = ""
 
     @classmethod
     def default(cls) -> Self:
         """Return default instance."""
-        return cls(selector="", click_mode="Normal", comment="")
+        return cls(selector="", click_mode="Normal", index_clicked=0, comment="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
-        return {"selector": self.selector, "click_mode": self.click_mode, "comment": self.comment}
+        return {
+            "selector": self.selector,
+            "click_mode": self.click_mode,
+            "index_clicked": self.index_clicked,
+            "comment": self.comment,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Deserialize from dict."""
-        return cls(selector=data.get("selector"), click_mode=data.get("click_mode"), comment=data.get("comment"))
+        return cls(
+            selector=data.get("selector"),
+            click_mode=data.get("click_mode"),
+            index_clicked=data.get("index_clicked"),
+            comment=data.get("comment"),
+        )
 
     @classmethod
     def get_step_type(cls) -> StepTypeEnum:

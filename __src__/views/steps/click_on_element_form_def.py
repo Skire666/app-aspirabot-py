@@ -21,6 +21,7 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 
 C_KEY_SELECTOR = "selector"
 C_KEY_CLICK_MODE = "click_mode"
+C_KEY_INDEX_CLICKED = "index_clicked"
 C_KEY_COMMENT = "comment"
 
 # ---------------------------------------------------------------------------
@@ -51,6 +52,7 @@ class ClickOnElementFormDef(IStepFormDef):
         """
         self._build_subform_selector(frame, widgets)
         self._build_subform_click_mode(frame, widgets)
+        self._build_subform_index_clicked(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
@@ -88,6 +90,22 @@ class ClickOnElementFormDef(IStepFormDef):
         widgets[C_KEY_CLICK_MODE] = mode_var
 
     @staticmethod
+    def _build_subform_index_clicked(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the index clicked input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_INDEX_CLICKED tk.Variable.
+        """
+        row3 = ttk.Frame(frame)
+        row3.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row3, text="Index à cliquer (1 seul clique) :").pack(side=tk.LEFT, padx=(0, 5))
+        index_var = tk.IntVar(value=0)
+        ttk.Entry(row3, textvariable=index_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_INDEX_CLICKED] = index_var
+
+    @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the comment input row.
 
@@ -113,6 +131,7 @@ class ClickOnElementFormDef(IStepFormDef):
         """
         widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, C_INPUT_DEFAULT_CSS_SELECTOR))
         widgets[C_KEY_CLICK_MODE].set(model.params.get(C_KEY_CLICK_MODE, "Normal"))
+        widgets[C_KEY_INDEX_CLICKED].set(model.params.get(C_KEY_INDEX_CLICKED, 0))
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
     @override
@@ -128,6 +147,7 @@ class ClickOnElementFormDef(IStepFormDef):
         return {
             C_KEY_SELECTOR: widgets[C_KEY_SELECTOR].get().strip(),
             C_KEY_CLICK_MODE: widgets[C_KEY_CLICK_MODE].get(),
+            C_KEY_INDEX_CLICKED: widgets[C_KEY_INDEX_CLICKED].get(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
@@ -143,7 +163,8 @@ class ClickOnElementFormDef(IStepFormDef):
             A two-line string suitable for display in the steps list.
         """
         selector = model.params.get(C_KEY_SELECTOR, "<vide>")
-        return f"Cliquer sur un élément\nSél. {selector}"
+        index_clicked = model.params.get(C_KEY_INDEX_CLICKED, 0)
+        return f"Cliquer sur un élément  -  Index {index_clicked}\nSél. {selector})"
 
 
 register_form(ClickOnElementFormDef())
