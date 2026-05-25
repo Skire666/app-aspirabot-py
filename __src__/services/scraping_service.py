@@ -29,6 +29,8 @@ from models.provider_model import ProviderModel
 from models.scraping_context_model import ExtractedData, ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
+from models.workflow_run_config_model import WorkflowRunConfig
+from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.json_repository import JsonFileRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.browser_playwright_service import BrowserPlaywrightService
@@ -132,50 +134,33 @@ class ScrapingService:
     def run_workflow(
         self,
         provider: ProviderModel,
-        url_source_type: str = "",
-        url_source_value: list[str] | str | None = None,
-        export_folder: str = "",
-        cancel_event: threading.Event | None = None,
-        pause_event: threading.Event | None = None,
-        on_user_wait: Callable[[], None] | None = None,
-        on_logging_event: Callable[[EventScrapingEnum, StepScrapingModel, ScrapingContextModel], None] | None = None,
-        emergency_stop_threshold: int = 0,
-        on_emergency_stop: Callable[[], None] | None = None,
+        config: WorkflowRunConfig,
+        handlers: WorkflowRunHandlers,
     ) -> ScrapingReportModel:
         """Execute all steps of a provider workflow sequentially.
 
         Args:
             provider: The provider model containing the steps to execute.
-            url_source_type: Source type string — ``"manual"``, ``"csv"``,
-                ``"folder"``, or ``""`` to disable the URL source.
-            url_source_value: URLs list (manual) or path string (csv/folder).
-                Ignored when ``url_source_type`` is empty.
-            cancel_event: Threading event that aborts the run when set.
-            pause_event: Threading event that blocks step execution when cleared.
-            export_folder: Path to the folder where results should be exported.
-            on_user_wait: Optional callback fired when WAIT_USER_ACTION activates.
-            on_logging_event: Optional callback fired for logging events with
-                (event_type, step, context).
-            emergency_stop_threshold: Pause the run when failed steps reach this
-                count. Disabled when set to 0.
-            on_emergency_stop: Optional callback fired (from the worker thread)
-                when the emergency stop is triggered.
+            config: Source and export configuration for this run — URL source
+                type/value and the export folder path.
+            handlers: Threading signals and observer callbacks — cancel/pause
+                events, step logging, user-wait hook, and emergency stop.
 
         Returns:
             A ScrapingReportModel summarising the completed run.
         """
-        # Store run-scoped references on the context and as service callbacks.
-        self._context.pause_event = pause_event or threading.Event()
-        self._context.cancel_event = cancel_event or threading.Event()
-        self._context.on_user_wait = on_user_wait
-        self._on_event_logging = on_logging_event
-        self._emergency_stop_threshold = emergency_stop_threshold
-        self._on_emergency_stop = on_emergency_stop
+        # Bind run-scoped signals and callbacks onto the shared context.
+        self._context.pause_event = handlers.pause_event
+        self._context.cancel_event = handlers.cancel_event
+        self._context.on_user_wait = handlers.on_user_wait
+        self._on_event_logging = handlers.on_logging_event
+        self._emergency_stop_threshold = handlers.emergency_stop_threshold
+        self._on_emergency_stop = handlers.on_emergency_stop
         self._started_at = datetime.now()
 
         # Build and attach the URL source provider when requested.
-        self._context.url_source = self._build_url_source(url_source_type, url_source_value)
-        self._context.folder_export = Path(export_folder)
+        self._context.url_source = self._build_url_source(config.url_source_type, config.url_source_value)
+        self._context.folder_export = Path(config.export_folder)
 
         # TODO PCO, si déjà instancié, recycler l'ancien ?
         engine_used: str = self._context.app_config.browser_engine
@@ -471,8 +456,8 @@ class ScrapingService:
             executor.execute_logical(self._browser_service, self._context)
         except Exception as exc:
             # Log the exception and set the step result to failure, but allow the run to continue.
-            self._context.set_result_execution(False, f"Exc: {exc}")
-            self._logger.exception("Error executing step %s: %s", step.step_id, exc)
+            self._context.set_result_execution(False, f"Excep : <<{exc}>>")
+            self._logger.exception("Error executing step %s", step.step_id)
             return False
 
         # end success path — the executor should have set the result and message on the context.

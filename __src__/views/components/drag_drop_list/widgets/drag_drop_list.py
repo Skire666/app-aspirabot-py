@@ -607,7 +607,7 @@ class DragDropList[T](tk.Frame):
         insert_pos = self._calc.insert_pos_for_y(fy)
 
         # Suppress insert indicator when dragging to current position.
-        effective_pos = None if insert_pos in (ds.drag_idx, ds.drag_idx + 1) else insert_pos
+        effective_pos = None if insert_pos in {ds.drag_idx, ds.drag_idx + 1} else insert_pos
         self._calc.set_expand_gap(effective_pos)
         ds = self._ctrl.update(ds, fy, effective_pos)
 

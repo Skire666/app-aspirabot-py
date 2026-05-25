@@ -19,8 +19,7 @@ from shared.i18n_fra import ERROR_TEMPLATES
 # Constants
 # ---------------------------------------------------------------------------
 
-# TODO PCO est en dur, pas bien.
-# Faudrait le rendre flexible
+# TODO: hardcoded timeout, should be configurable per step
 C_LIMIT_TIMEOUT_CLICK_MS = 10000
 
 # ---------------------------------------------------------------------------
@@ -33,29 +32,60 @@ class ClickForDownloadExecutor(IStepExecutor):
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
-        """Return the step type."""
+        """Declare which workflow step type this executor handles.
+
+        Returns:
+            StepTypeEnum.E_CLICK_FOR_DOWNLOAD
+        """
         return StepTypeEnum.E_CLICK_FOR_DOWNLOAD
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
-        """Execute the step."""
-        p = ClickOnElementParams.from_dict(context.step_params)
+        """Click an element to trigger a file download, then save it to the export folder.
 
-        page = browser.get_current_page()  # can throw if page is closed
+        Tries up to three click strategies (normal, forced, JS) depending on the configured
+        click mode. Blocks until the download completes before saving.
+
+        Args:
+            browser: Browser service owning the current page.
+            context: Execution context; step_params must be parseable as ClickOnElementParams.
+                Sets context.last_message_step on success.
+
+        Raises:
+            ElementNotFoundForClickError: If the selector matches no element on the page.
+            DownloadNotDetectedError: If no download was triggered after all click attempts.
+        """
+        p = ClickOnElementParams.from_dict(context.step_params)
+        page = browser.get_current_page()
         if page.locator(p.selector).count() <= 0:
             raise ElementNotFoundForClickError(p.selector, p.mode)
-
-        download = self._do_click_for_download(browser, p.click_mode, p.selector, p.index_clicked)  # can throw
-
-        if download and download.value:
-            filename = download.value.suggested_filename
-            path = download.value.path()  # Bloquant : attend que le téléchargement soit terminé
-            new_path = str(context.folder_export) + "/" + filename
-            download.value.save_as(new_path)
-        else:
+        download = self._do_click_for_download(browser, p.click_mode, p.selector, p.index_clicked)
+        if not (download and download.value):
             raise DownloadNotDetectedError()
-
+        self._save_download(download.value, context)
         context.last_message_step = f"Clique OK avec sélecteur {p.selector!r} pour téléchargement"
+
+    @staticmethod
+    def _save_download(download_value: object, context: ScrapingContextModel) -> None:
+        filename = download_value.suggested_filename
+        download_value.path()  # Blocks until the download file is fully written to disk
+        new_path = str(context.folder_export) + "/" + filename
+        download_value.save_as(new_path)
+
+    @staticmethod
+    def _try_playwright_click(page: object, elements: list, index: int, **click_kwargs: object) -> object | None:
+        try:
+            with page.expect_download() as download_info:
+                elements[index].click(timeout=C_LIMIT_TIMEOUT_CLICK_MS, **click_kwargs)
+                return download_info
+        except PlaywrightError:
+            return None
+
+    @staticmethod
+    def _try_js_click(page: object, elements: list, index: int) -> object:
+        with page.expect_download(timeout=C_LIMIT_TIMEOUT_CLICK_MS) as download_info:
+            elements[index].evaluate("element => element.click()")
+        return download_info
 
     @staticmethod
     def _do_click_for_download(
@@ -65,48 +95,24 @@ class ClickForDownloadExecutor(IStepExecutor):
         elements = page.query_selector_all(selector)
         if not elements:
             raise ElementNotFoundForClickError(selector, mode_click)
-
-        # Tentative 1 : click normal
-        try:
-            # Intercepter le téléchargement AVANT le clic
-            with page.expect_download() as download_info:
-                elements[index_clicked].click(timeout=C_LIMIT_TIMEOUT_CLICK_MS)
-                return download_info
-        except PlaywrightError:
-            # normal de passer l'erreur sous silence, on va retenter avec un autre mode de click
-            pass
-
-        if mode_click == "Normal":
-            raise ElementNotFoundForClickError(selector, "Normal")
-
-        # Tentative 2 : click forcé
-        try:
-            # Intercepter le téléchargement AVANT le clic
-            with page.expect_download() as download_info:
-                elements[index_clicked].click(force=True, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
-                return download_info
-        except PlaywrightError:
-            # normal de passer l'erreur sous silence, on va retenter avec un autre mode de click
-            pass
-        if mode_click == "Forced":
-            raise ElementNotFoundForClickError(selector, "Forced")
-
-        # Tentative 3 : JS direct
-        with page.expect_download() as download_info:
-            elements[index_clicked].evaluate("element => element.click()")
-            # NOTE PCO : Aucune idée de si ça plante.... (pas moyen de vérifier, pas de timeout)
-
-        return download_info
+        return ClickForDownloadExecutor._try_js_click(page, elements, index_clicked)
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
-        """Validate the step model."""
+        """Check that the step parameters are valid before execution.
+
+        Args:
+            model: The step model whose params will be parsed as ClickOnElementParams.
+            step_index: Zero-based index of the step in the workflow, used to format error messages.
+
+        Returns:
+            An empty list if all parameters are valid, or a list of French error messages
+            describing each violation.
+        """
         p = ClickOnElementParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
-
         if p.index_clicked <= -1:
             return [ERROR_TEMPLATES["click_element_index_invalid"].format(step=index_display)]
-        # if selecteur est vide ou ne contient que des espaces
         if not p.selector.strip():
             return [ERROR_TEMPLATES["click_element_selector_required"].format(step=index_display)]
         return []

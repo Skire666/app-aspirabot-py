@@ -15,7 +15,14 @@ class FolderLinkWidget(tk.Frame):
         widget.set_path("/new/path")
     """
 
-    def __init__(self, parent: tk.Widget, title: str = "", path: str = "", callback: Callable[[str], None] | None = None, **kwargs: object) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        title: str = "",
+        path: str = "",
+        callback: Callable[[str], None] | None = None,
+        **kwargs: object,
+    ) -> None:
         """Initialize the folder link widget.
 
         Args:

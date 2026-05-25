@@ -36,6 +36,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class KeyData:
+    """CSS selector, comment, and extracted string values for one mapping key."""
+
     css_selector: str
     comment: str
     values: list[str] = field(default_factory=list)
@@ -43,14 +45,19 @@ class KeyData:
 
 @dataclass
 class UrlData:
+    """Extracted key data indexed by mapping key name for one URL."""
+
     keys: dict[str, KeyData] = field(default_factory=dict)
 
 
 @dataclass
 class ExtractedData:
+    """All extracted data, indexed by URL then by mapping key."""
+
     urls: dict[str, UrlData] = field(default_factory=dict)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, dict[str, dict[str, Any]]]:
+        """Serialize to a plain dict for JSON export."""
         return {
             url: {
                 key: {
@@ -173,9 +180,9 @@ class ScrapingContextModel:
 
         Args:
             mapping_key: The key under which to store the extracted values.
-            selector: The CSS selector used to find the elements.
-            comment: A user-provided comment for the extracted values.
-            values: The list of extracted string values to store.
+            sel: The CSS selector used to find the elements.
+            com: A user-provided comment for the extracted values.
+            vals: The list of extracted string values to store.
         """
         url = self.last_url_opened or "no_url"
 

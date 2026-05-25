@@ -114,6 +114,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             "--disable-blink-features=AutomationControlled",
             f"--disable-extensions-except={ext_path}",
             f"--load-extension={ext_path}",
+            "--remote-debugging-port=9222",
         ]
 
         self._pw = sync_playwright().start()
@@ -124,12 +125,11 @@ class BrowserPlaywrightService(IWebBrowserService):
             headless=False,
             args=args,
             no_viewport=True,
-            accept_downloads=True,
+            accept_downloads=True,  # for redirects path when downloading
         )
 
         # Le browser n'est pas exposé séparément avec un contexte persistant.
-        # self._context.pages[0] donne la page ouverte par défaut.
-        self._browser = None
+        self._browser = self._pw.chromium.connect_over_cdp("http://localhost:9222")
 
     def append_new_page(self) -> None:
         """Open a new browser page and register it via the context page event.
@@ -143,12 +143,15 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             BrowserNotLaunchedError: If ``launch()`` has not been called yet.
         """
-        if self._context is None:
+        if self._browser is None:
+            raise BrowserNotLaunchedError()
+        if self._browser.contexts is None or len(self._browser.contexts) == 0:
             raise BrowserNotLaunchedError()
 
-        # The context "page" event fires for all new pages, including this one.
-        # _on_context_new_page handles registration — do not append here.
-        self._context.new_page()
+        context = self._browser.contexts[0]
+
+        if len(context.pages) == 0:
+            context.new_page()
         # DO NOT append to self._pages here; the context event will handle it.
 
     def close_all_tabs(self) -> None:
@@ -160,12 +163,15 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             BrowserNotLaunchedError: If ``launch()`` has not been called yet.
         """
-        if self._context is None:
+        if self._browser is None:
+            raise BrowserNotLaunchedError()
+        if self._browser.contexts is None or len(self._browser.contexts) == 0:
             raise BrowserNotLaunchedError()
 
         # Close each page; the context event will handle de-registration.
-        for page in self._context.pages:
-            page.close()
+        for context in self._browser.contexts:
+            for page in context.pages:
+                page.close()
 
     def get_current_page(self) -> Page:
         """Return the primary browser page (the first one opened).
@@ -176,20 +182,13 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             PageNotAvailableOrClosedError: If no page is available or the current page is closed.
         """
-        if not self._context.pages or len(self._context.pages) == 0 or self._context.pages[0].is_closed():
+        if not self._browser.contexts or len(self._browser.contexts) == 0:
+            raise PageNotAvailableOrClosedError()
+        if not self._browser.contexts[0].pages or len(self._browser.contexts[0].pages) == 0:
             raise PageNotAvailableOrClosedError()
 
-        print("get_current_page")
-        all_contexts = self._browser.contexts if self._browser else []
-        for ctx in all_contexts:
-            for page in ctx.pages:
-                if page.is_closed():
-                    print("Page fermée détectée et ignorée : %s", page.url)
-                else:
-                    print("Page ouverte détectée : %s", page.url)
-
         # First page in the list is always the primary workflow page.
-        return self._context.pages[0]
+        return self._browser.contexts[0].pages[0]
 
     def get_all_pages(self) -> list[Page]:
         """Return all currently open pages tracked by this service.
@@ -197,7 +196,9 @@ class BrowserPlaywrightService(IWebBrowserService):
         Returns:
             A snapshot list of all open Page objects.
         """
-        return list(self._context.pages) if self._context is not None else []
+        if self._browser.contexts:
+            return [page for context in self._browser.contexts for page in context.pages]
+        return []
 
     def close_browser(self) -> None:
         """Close all pages, the context, the browser, and Playwright runtime.
@@ -282,13 +283,14 @@ class BrowserPlaywrightService(IWebBrowserService):
         for attempt in range(1, retries + 1):
             try:
                 result = page.evaluate(script)
-                return True, result
             except Exception as exc:
                 self._logger.warning("Échec évaluation script, tentative %d/%d : %s", attempt, retries, exc)
                 if attempt == retries:
                     # if this was the last attempt, re-raise the exception to signal failure
                     raise
                 time.sleep(delay)
+            else:
+                return True, result
 
         # This line should never be reached due to the re-raise in the except block
         # but is required for type checking.

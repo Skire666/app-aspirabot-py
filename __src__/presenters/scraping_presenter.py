@@ -25,8 +25,11 @@ from models.provider_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
+from models.workflow_run_config_model import WorkflowRunConfig
+from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.provider_service import ProviderService
 from services.scraping_service import ScrapingService
+from shared.constants import C_KEY_URL_MODE
 from shared.datetime_util import (
     get_time_now_hh_mm_ss,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
@@ -51,7 +54,6 @@ from shared.i18n_fra import (
     C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER,
 )
 from shared.operating_system_util import open_folder
-from shared.constants import C_KEY_URL_MODE
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
 
 # ---------------------------------------------------------------------------
@@ -586,16 +588,28 @@ class ScrapingPresenter:
         started_at = datetime.now()
         self._view.start_elapsed_timer(started_at)
 
-        export_folder = self._view.get_export_folder()
-        self._emergency_stop_threshold = self._view.get_emergency_stop_threshold() or 0
         url_source = self._view.get_url_source()
-        source_type: str = url_source["type"]
         raw_value = url_source["value"]
-        source_value: list[str] | str = raw_value if raw_value is not None else []
+        self._emergency_stop_threshold = self._view.get_emergency_stop_threshold() or 0
+
+        # Snapshot run configuration — captured on the main thread before the worker starts.
+        config = WorkflowRunConfig(
+            url_source_type=url_source["type"],
+            url_source_value=raw_value if raw_value is not None else [],
+            export_folder=self._view.get_export_folder(),
+        )
+        handlers = WorkflowRunHandlers(
+            cancel_event=self._cancel_event,
+            pause_event=self._pause_event,
+            on_user_wait=self._on_user_wait_step,
+            on_logging_event=self._on_logging_event,
+            emergency_stop_threshold=self._emergency_stop_threshold,
+            on_emergency_stop=self._on_emergency_stop,
+        )
 
         self._thread = threading.Thread(
             target=self._run_workflow,
-            args=(source_type, source_value, export_folder),
+            args=(config, handlers),
             daemon=True,
         )
         self._thread.start()
@@ -800,46 +814,34 @@ class ScrapingPresenter:
     # ------------------------------------------------------------------
 
     def _call_service_workflow(
-        self, url_source_type: str, url_source_value: list[str] | str, export_folder: str
+        self,
+        config: WorkflowRunConfig,
+        handlers: WorkflowRunHandlers,
     ) -> ScrapingReportModel | None:
         """Invoke the scraping service; return the report or None on exception.
 
         Args:
-            url_source_type: URL source type string (``"manual"``, ``"csv"``,
-                ``"folder"``, or ``""`` when no source is configured).
-            url_source_value: Matching value — list of URLs or path string.
-            export_folder: Path to the folder where results should be exported.
+            config: Source and export configuration for this run.
+            handlers: Threading signals and observer callbacks for this run.
 
         Returns:
             The completed ScrapingReportModel, or None if an exception was raised.
         """
         try:
-            return self._service_scraping.run_workflow(
-                self._provider,
-                url_source_type,
-                url_source_value,
-                export_folder,
-                self._cancel_event,
-                self._pause_event,
-                self._on_user_wait_step,
-                self._on_logging_event,
-                self._emergency_stop_threshold,
-                self._on_emergency_stop,
-            )
-        except ValueError, RuntimeError, OSError:
+            return self._service_scraping.run_workflow(self._provider, config, handlers)
+        except (ValueError, RuntimeError, OSError):
             self._logging.exception("Échec de l'exécution du workflow")
             return None
 
-    def _run_workflow(self, url_source_type: str, url_source_value: list[str] | str, export_folder: str) -> None:
+    def _run_workflow(self, config: WorkflowRunConfig, handlers: WorkflowRunHandlers) -> None:
         """Thread target: run the workflow and dispatch the result to the view.
 
         Args:
-            url_source_type: URL source type string passed to the service.
-            url_source_value: Matching value — list of URLs or path string.
-            export_folder: Path to the folder where results should be exported.
+            config: Source and export configuration forwarded to the service.
+            handlers: Threading signals and observer callbacks forwarded to the service.
         """
-        report = self._call_service_workflow(url_source_type, url_source_value, export_folder)
-        self._on_workflow_finished(report, export_folder)
+        report = self._call_service_workflow(config, handlers)
+        self._on_workflow_finished(report, config.export_folder)
 
     def _push_final_status(self, report: ScrapingReportModel | None) -> None:
         """Push the completed-run status and statistics to the progress frame.

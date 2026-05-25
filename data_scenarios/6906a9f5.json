@@ -8,7 +8,7 @@
     },
     "modified_date_provider": {
         "__type__": "datetime",
-        "value": "2026-05-25T11:06:33.210176"
+        "value": "2026-05-25T14:58:49.968315"
     },
     "version": "1.0.0",
     "steps": [
@@ -257,11 +257,11 @@
                 "https://downsub.com/?url=http%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DDoYc2mZ0Csk",
                 "https://downsub.com/?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DLpXhy2iiaQE"
             ],
-            "emergency_stop_threshold": 1,
-            "launch_count": 36,
+            "emergency_stop_threshold": 10,
+            "launch_count": 50,
             "used_date_profile": {
                 "__type__": "datetime",
-                "value": "2026-05-25T11:06:33.210169"
+                "value": "2026-05-25T14:58:49.968307"
             },
             "modified_date_profile": {
                 "__type__": "datetime",

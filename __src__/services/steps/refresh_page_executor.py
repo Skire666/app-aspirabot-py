@@ -31,16 +31,12 @@ class RefreshPageExecutor(IStepExecutor):
         page = browser.get_current_page()
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
 
-        if page.url != context.last_url_opened:
-            browser.safe_goto_url(context.last_url_opened, p.wait_state, timeout_ms, 1)
-            context.last_message_step = "URL de la page a changé depuis le dernier rafraîchissement."
-        else:
-            # Clear session cookies before reload when requested.
-            if p.clear_cache:
-                page.context.clear_cookies()
-            page.reload()
-            page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
-            context.last_message_step = "Page rafraîchie avec succès, attente de chargement"
+        # Clear session cookies before reload when requested.
+        if p.clear_cache:
+            page.context.clear_cookies()
+        page.reload()
+        page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
+        context.last_message_step = "Page rafraîchie avec succès, attente de chargement"
 
     @override
     def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
@@ -53,7 +49,9 @@ class RefreshPageExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["refresh_page_timeout_invalid"].format(step=index_display))
         if p.timeout_duration > 0 and p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             errors.append(
-                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(step=index_display, value=p.timeout_unit)
+                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(
+                    step=index_display, value=p.timeout_unit
+                )
             )
         return errors
 

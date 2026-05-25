@@ -74,7 +74,7 @@ def get_resource_icon_32px(path: str) -> ImageTk.PhotoImage:
 
 
 def get_resource_icon_32px_disabled(path: str) -> ImageTk.PhotoImage:
-    """Load and cache a faded 32×32 icon for use in a disabled state.
+    """Load and cache a faded 32x32 icon for use in a disabled state.
 
     Applies a 40 % opacity mask so the icon reads as visually inactive
     against the sidebar's normal background without altering its colour.

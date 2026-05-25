@@ -85,7 +85,7 @@ target-version = "py314"
 
 # Maximum number of characters per line.
 # 88 is the default value used by Black, now a de facto standard.
-line-length = 115
+line-length = 120
 
 indent-width = 4
 
@@ -159,8 +159,11 @@ convention = "google"
 # Maximum number of arguments for a function/method
 max-args = 9  # default: 5
 
+# Maximum number of positional arguments for a function/method
+max-positional-args = 9  # default: same as max-args
+
 # Maximum number of boolean expressions in a function/method
-max-bool-expr = 9  # default: 5
+max-bool-expr = 8  # default: 5
 
 # Maximum number of branches in a function/method (if, elif, else, for, while, try, except...)
 max-branches = 12  # default: 12
@@ -172,7 +175,7 @@ max-statements = 50  # default: 50
 max-returns = 6  # default: 6
 
 # Maximum number of public methods for a class
-max-public-methods = 28  # default: 20
+max-public-methods = 25  # default: 20
 
 # Maximum number of local variables in a function/method
 max-locals = 15  # default: 15

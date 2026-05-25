@@ -9,6 +9,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.click_on_element_params import ClickOnElementParams
+from playwright.sync_api import ElementHandle
 from playwright.sync_api import Error as PlaywrightError
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
@@ -50,34 +51,33 @@ class ClickOnElementExecutor(IStepExecutor):
         context.last_message_step = f"Clique OK avec sélecteur {p.selector!r} avec le mode {result!r}."
 
     @staticmethod
+    def _try_normal_click(element: ElementHandle) -> bool:
+        try:
+            element.click(timeout=C_LIMIT_TIMEOUT_CLICK_MS)
+        except PlaywrightError:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def _try_forced_click(element: ElementHandle) -> bool:
+        try:
+            element.click(force=True, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
+        except PlaywrightError:
+            return False
+        else:
+            return True
+
+    @staticmethod
     def _do_click(browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int) -> str:
         page = browser.get_current_page()
         elements = page.query_selector_all(selector)
         if not elements:
             raise ElementNotFoundForClickError(selector, mode_click)
+        element = elements[index_clicked]
 
-        # Tentative 1 : click normal
-        try:
-            elements[index_clicked].click(timeout=C_LIMIT_TIMEOUT_CLICK_MS)
-            return "Normal"
-        except PlaywrightError:
-            pass
-        if mode_click == "Normal":
-            raise ElementNotFoundForClickError(selector, "Normal")
-
-        # Tentative 2 : click forcé
-        try:
-            elements[index_clicked].click(force=True, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
-            return "Forced"
-        except PlaywrightError:
-            pass
-        if mode_click == "Forced":
-            raise ElementNotFoundForClickError(selector, "Forced")
-
-        # Tentative 3 : JS direct
-        elements[index_clicked].evaluate("element => element.click()")  # can throw
         # NOTE PCO : Aucune idée de si ça plante.... (pas moyen de vérifier, pas de timeout)
-
+        element.evaluate("element => element.click()", timeout=C_LIMIT_TIMEOUT_CLICK_MS)
         return "JS Direct"
 
     @override

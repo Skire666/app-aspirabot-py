@@ -25,10 +25,10 @@ from repositories.json_repository import JsonFileRepository
 from repositories.providers_repository import ProvidersRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.app_configuration_service import ConfigService
+from services.debug_browser_service import DebugBrowserService
 from services.history_service import HistoryService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
-from services.debug_browser_service import DebugBrowserService
 from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
 

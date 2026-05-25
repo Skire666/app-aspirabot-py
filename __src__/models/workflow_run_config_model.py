@@ -1,0 +1,61 @@
+"""Immutable configuration snapshot for a single scraping workflow run.
+
+Groups the three caller-supplied values that define *what* to scrape and
+*where* to write results.  Separates source/export concerns from the
+threading signals and callbacks defined in ``WorkflowRunHandlers``.
+
+Example:
+    >>> cfg = WorkflowRunConfig(
+    ...     url_source_type="manual",
+    ...     url_source_value=["https://example.com"],
+    ...     export_folder="/tmp/results",
+    ... )
+    >>> cfg.url_source_type
+    'manual'
+"""
+
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+# ---------------------------------------------------------------------------
+# Model
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class WorkflowRunConfig:
+    """Immutable configuration for a single scraping workflow run.
+
+    All fields are optional so callers that do not use URL injection or file
+    export can omit them without breaking the interface.
+
+    Attributes:
+        url_source_type: One of ``"manual"``, ``"csv"``, ``"folder"``, or
+            ``""`` to disable URL injection entirely.
+        url_source_value: Matching value for the given type — a list of
+            explicit URLs (manual) or a path string (csv/folder).
+            Ignored when ``url_source_type`` is empty.
+        export_folder: Absolute path of the output directory where downloaded
+            files and extracted data are written.  An empty string means no
+            export folder is configured.
+
+    Example:
+        >>> cfg = WorkflowRunConfig(
+        ...     url_source_type="csv",
+        ...     url_source_value="/data/urls.csv",
+        ...     export_folder="/tmp/out",
+        ... )
+        >>> cfg.export_folder
+        '/tmp/out'
+        >>> WorkflowRunConfig().url_source_type
+        ''
+    """
+
+    url_source_type: str = ""
+    url_source_value: list[str] | str | None = None
+    export_folder: str = ""
