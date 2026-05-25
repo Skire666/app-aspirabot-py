@@ -13,6 +13,7 @@ from repositories.json_repository import JsonFileRepository
 from services.workflow_service import register_step_executor
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepTypeEnum
+from shared.exception_util import ExportFolderNotConfiguredError, NoDataToExportError
 from shared.i18n_fra import ERROR_TEMPLATES
 
 # ---------------------------------------------------------------------------
@@ -27,6 +28,10 @@ from shared.i18n_fra import ERROR_TEMPLATES
 class ExportDataToJsExecutor(IStepExecutor):
     """Executor for the export data to JavaScript step."""
 
+    def __init__(self) -> None:
+        """Initialise the executor with its JSON file repository."""
+        self._json_repo = JsonFileRepository()
+
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
@@ -39,19 +44,17 @@ class ExportDataToJsExecutor(IStepExecutor):
 
         # Nothing to write — skip without logging noise.
         if not context.extracted_data or not context.extracted_data.urls:
-            raise ValueError("Aucune donnée extraite à exporter, export JSON ignoré.")
+            raise NoDataToExportError()
 
         # Guard against unset export folder (default Path() resolves to ".").
         if str(context.folder_export) in {".", ""}:
-            raise ValueError("Dossier d'export non configuré, export JSON des données ignoré.")
+            raise ExportFolderNotConfiguredError()
 
         # Build timestamped destination path and delegate write to the repository.
         timestamp = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
         dest = context.folder_export / f"{p.prefix_file}_{timestamp}.json"
 
-        # can throw
-        exporter = JsonFileRepository()
-        exporter.write_from_dict(dest, context.extracted_data.to_dict())
+        self._json_repo.write_from_dict(dest, context.extracted_data.to_dict())
 
         context.last_message_step = f"Export vers fichier JSON. Préfixe : {p.prefix_file}."
 

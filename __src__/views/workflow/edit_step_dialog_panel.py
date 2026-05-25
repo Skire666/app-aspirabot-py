@@ -16,7 +16,6 @@ Example:
 # Imports
 # ---------------------------------------------------------------------------
 
-import logging
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
@@ -61,7 +60,6 @@ class EditStepDialogPanel(ttk.Frame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent)
-        self._logger = logging.getLogger(__name__)
         self.on_confirm_create: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
         self.on_confirm_update: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
         self.on_cancel: Callable[[], None] | None = None
@@ -185,11 +183,8 @@ class EditStepDialogPanel(ttk.Frame):
         # populate the target combobox from the available steps list.
         self._form_widgets["_all_steps_available"] = self._available_steps
 
-        try:
-            if step_type is not None and step_type != StepTypeEnum.E_UNSET:
-                get_form(step_type).build_form(self._form_frame, self._form_widgets)
-        except ValueError:
-            self._logger.warning("No form definition registered for step type %s.", step_type)
+        if step_type is not None and step_type != StepTypeEnum.E_UNSET:
+            get_form(step_type).build_form(self._form_frame, self._form_widgets)
 
     # ---------------------------------------------------------------
     # Pre-fill and read-back — fully delegated to form defs
@@ -197,18 +192,11 @@ class EditStepDialogPanel(ttk.Frame):
 
     def _load_step(self, step: StepScrapingModel) -> None:
         """Pre-fills form widgets from an existing step's params."""
-        try:
-            get_form(step.step_type).load_params_step_to_widget(step, self._form_widgets)
-        except ValueError:
-            self._logger.warning("No form definition registered for step type %s.", step.step_type)
+        get_form(step.step_type).load_params_step_to_widget(step, self._form_widgets)
 
     def _get_params(self, step_type: StepTypeEnum) -> dict[str, Any]:
         """Reads current widget values and returns the params dict."""
-        try:
-            return get_form(step_type).read_params_from_view(self._form_widgets)
-        except ValueError:
-            self._logger.warning("No form definition registered for step type %s.", step_type)
-            return {}
+        return get_form(step_type).read_params_from_view(self._form_widgets)
 
     def show_errors_of_edited_step(self, errors: list[str]) -> None:
         """Display the first error message in the error label.

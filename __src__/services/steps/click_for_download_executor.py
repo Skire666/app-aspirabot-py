@@ -12,7 +12,7 @@ from models.steps.click_on_element_params import ClickOnElementParams
 from playwright.sync_api import Error as PlaywrightError
 from services.workflow_service import register_step_executor
 from shared.enums import StepTypeEnum
-from shared.exception_util import ElementNotFoundForClickError
+from shared.exception_util import DownloadNotDetectedError, ElementNotFoundForClickError
 from shared.i18n_fra import ERROR_TEMPLATES
 
 # ---------------------------------------------------------------------------
@@ -53,7 +53,7 @@ class ClickForDownloadExecutor(IStepExecutor):
             new_path = str(context.folder_export) + "/" + filename
             download.value.save_as(new_path)
         else:
-            raise ValueError("Le clic a été effectué mais aucun téléchargement n'a été détecté.")
+            raise DownloadNotDetectedError()
 
         context.last_message_step = f"Clique OK avec sélecteur {p.selector!r} pour téléchargement"
 

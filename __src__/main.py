@@ -28,6 +28,7 @@ from services.app_configuration_service import ConfigService
 from services.history_service import HistoryService
 from services.logging_service import LoggingService
 from services.provider_service import ProviderService
+from services.debug_browser_service import DebugBrowserService
 from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
 
@@ -309,7 +310,7 @@ def _init_debug_component(
         A (DebugView, DebugPresenter) tuple.
     """
     debug_view = DebugView(main_view.content_area)
-    debug_presenter = DebugPresenter(view=debug_view)
+    debug_presenter = DebugPresenter(view=debug_view, debug_service=DebugBrowserService())
     return debug_view, debug_presenter
 
 

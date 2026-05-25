@@ -88,7 +88,7 @@ class HistoryPresenter:
         try:
             tuples = self._service.list_all_profiles()
         except Exception:
-            self._logger.exception("Failed to load profiles")
+            self._logger.exception("Échec du chargement des profils")
             tuples = []
 
         sorted_tuples = self._sort_tuples(tuples)

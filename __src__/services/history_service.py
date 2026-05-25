@@ -57,7 +57,7 @@ class HistoryService:
                     result.append((provider.id_file, profile))
             except Exception:
                 self._logger.exception(
-                    "Failed to list profiles for provider %s",
+                    "Échec du listage des profils pour le fournisseur %s",
                     provider.id_file,
                 )
 

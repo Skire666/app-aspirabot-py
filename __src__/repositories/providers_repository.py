@@ -15,9 +15,7 @@ Example:
 
 import json
 import logging
-import os
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Any, cast
 
@@ -26,13 +24,13 @@ from models.provider_model import ProviderModel
 from repositories.json_repository import JsonFileRepository
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.exception_util import (
+    AspirabotError,
     InvalidProviderJsonContentError,
     InvalidProvidersFolderPathError,
     ProviderDataMissingError,
     ProviderNotFoundError,
-    UnsupportedOperatingSystemError,
 )
-from shared.operating_system_util import OperatingSystem, detect_os
+from shared.operating_system_util import open_folder
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -190,7 +188,7 @@ class ProvidersRepository(IProviderRepository):
             raise ProviderDataMissingError(id_file)
 
         provider_model = self._dict_to_provider_model(provider_data)
-        self._logger.info("Fournisseur chargé : %s", full_filepath)
+        self._logger.debug("Fournisseur chargé : %s", full_filepath)
         return provider_model
 
     def list_all_scenarios(self) -> list[ProviderModel]:
@@ -211,10 +209,10 @@ class ProvidersRepository(IProviderRepository):
                     provider_model = self._dict_to_provider_model(provider_data)
                     providers.append(provider_model)
                     self._logger.debug("Fournisseur ajouté à la liste : %s", file_path.name)
-            except Exception:
+            except (OSError, AspirabotError):
                 self._logger.error("Impossible de charger le provider %s.", file_path.name, exc_info=True)
 
-        self._logger.info("Total de %s provider(s) chargé(s).", len(providers))
+        self._logger.debug("Total de %s provider(s) chargé(s).", len(providers))
         return providers
 
     def create_provider(self, provider: ProviderModel) -> None:
@@ -232,7 +230,7 @@ class ProvidersRepository(IProviderRepository):
         try:
             provider_dict = provider.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, provider_dict)
-            self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
+            self._logger.debug("Fournisseur sauvegardé : %s", full_filepath)
         except Exception:
             self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
             raise
@@ -252,7 +250,7 @@ class ProvidersRepository(IProviderRepository):
         try:
             provider_dict = provider.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, provider_dict)
-            self._logger.info("Fournisseur sauvegardé : %s", full_filepath)
+            self._logger.debug("Fournisseur sauvegardé : %s", full_filepath)
         except Exception:
             self._logger.error("Erreur lors de la MAJ du fournisseur.", exc_info=True)
             raise
@@ -261,7 +259,7 @@ class ProvidersRepository(IProviderRepository):
         """Creates the providers folder if it does not already exist."""
         if not self._folder_path.exists():
             Path(self._folder_path).mkdir(exist_ok=True, parents=True)
-            self._logger.info("Dossier créé : %s", self._folder_path)
+            self._logger.debug("Dossier créé : %s", self._folder_path)
 
     def delete_provider(self, id_file: str) -> None:
         """Deletes the JSON file for the given provider identifier.
@@ -273,7 +271,7 @@ class ProvidersRepository(IProviderRepository):
             ProviderNotFoundError: When no matching file exists.
             OSError: When the file cannot be deleted.
         """
-        self._logger.info("Ouverture du dossier des fournisseurs...")
+        self._logger.debug("Suppression du fournisseur id=%s", id_file)
         self.create_folder_if_missing()
 
         full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_file)
@@ -283,7 +281,7 @@ class ProvidersRepository(IProviderRepository):
 
         try:
             Path(full_pathfile_to_delete).unlink()
-            self._logger.info("Fournisseur supprimé : %s", full_pathfile_to_delete)
+            self._logger.debug("Fournisseur supprimé : %s", full_pathfile_to_delete)
         except Exception:
             self._logger.error("Erreur lors de la suppression du fournisseur.", exc_info=True)
             raise
@@ -295,27 +293,15 @@ class ProvidersRepository(IProviderRepository):
             InvalidProvidersFolderPathError: When the configured path is not a directory.
             UnsupportedOperatingSystemError: When the OS is not Windows, macOS, or Linux.
         """
-        self._logger.info("Ouverture du dossier des fournisseurs...")
+        self._logger.debug("Ouverture du dossier des fournisseurs : %s", self._folder_path)
         self.create_folder_if_missing()
 
         if not self._folder_path.is_dir():
             raise InvalidProvidersFolderPathError(self._folder_path)
 
         try:
-            enum_os: OperatingSystem = detect_os()
-
-            if enum_os == OperatingSystem.WINDOWS:
-                os.startfile(self._folder_path)
-            elif enum_os == OperatingSystem.MACOS:
-                subprocess.Popen(["open", self._folder_path])
-            elif enum_os == OperatingSystem.LINUX:
-                subprocess.Popen(["xdg-open", self._folder_path])
-            else:
-                self._logger.warning(
-                    "Système d'exploitation non pris en charge pour l'ouverture du dossier : %s", enum_os
-                )
-                raise UnsupportedOperatingSystemError(enum_os)
-            self._logger.info("Dossier ouvert : %s", self._folder_path)
+            open_folder(self._folder_path)
+            self._logger.debug("Dossier ouvert : %s", self._folder_path)
         except Exception:
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise

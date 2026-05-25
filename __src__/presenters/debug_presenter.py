@@ -46,11 +46,12 @@ class DebugPresenter:
         _view: The Debug sidebar module view.
     """
 
-    def __init__(self, view: DebugView) -> None:
+    def __init__(self, view: DebugView, debug_service: DebugBrowserService) -> None:
         """Initialises the presenter and binds the view callback.
 
         Args:
             view: The DebugView module widget.
+            debug_service: Service providing DOM inspection utilities for the debug browser.
         """
         self._logger = logging.getLogger(__name__)
         self._view = view
@@ -58,7 +59,7 @@ class DebugPresenter:
         # Debug session state — one active session at a time.
         self._debug_browser: BrowserPlaywrightService | None = None
         self._debug_window: DebugPageView | None = None
-        self._debug_service: DebugBrowserService = DebugBrowserService()
+        self._debug_service: DebugBrowserService = debug_service
         self._debug_queue: queue.Queue[Callable[[Page], None] | None] = queue.Queue()
         self._debug_thread: threading.Thread | None = None
 
@@ -146,7 +147,7 @@ class DebugPresenter:
                     break
                 task(page)
         except Exception as exc:
-            self._logger.exception("Browser worker startup failed")
+            self._logger.exception("Échec du démarrage du worker navigateur")
             win = self._debug_window
             msg = f"Erreur lors du chargement :\n{exc}"
             if win and win.winfo_exists():
@@ -201,7 +202,7 @@ class DebugPresenter:
             if win and win.winfo_exists():
                 win.after(0, lambda: win.set_html_content(html))
         except Exception as exc:
-            self._logger.exception("Debug refresh failed")
+            self._logger.exception("Échec du rafraîchissement debug")
             win = self._debug_window
             msg = f"Erreur lors du rafraîchissement : {exc}"
             if win and win.winfo_exists():
@@ -221,7 +222,7 @@ class DebugPresenter:
             if win and win.winfo_exists():
                 win.after(0, lambda: win.set_text_results(text))
         except Exception as exc:
-            self._logger.exception("Debug analyze texts failed")
+            self._logger.exception("Échec de l'analyse des textes")
             win = self._debug_window
             msg = f"Erreur : {exc}"
             if win and win.winfo_exists():
@@ -241,7 +242,7 @@ class DebugPresenter:
             if win and win.winfo_exists():
                 win.after(0, lambda: win.set_image_results(text))
         except Exception as exc:
-            self._logger.exception("Debug analyze images failed")
+            self._logger.exception("Échec de l'analyse des images")
             win = self._debug_window
             msg = f"Erreur : {exc}"
             if win and win.winfo_exists():

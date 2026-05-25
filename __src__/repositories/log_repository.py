@@ -54,7 +54,7 @@ class LogRepository:
         """Creates the logs folder if it does not already exist."""
         if not self._folder_path.exists():
             self._folder_path.mkdir(exist_ok=True, parents=True)
-            self._logger.info("Logs folder created: %s", self._folder_path)
+            self._logger.debug("Dossier de logs créé : %s", self._folder_path)
 
     def open_logs_folder(self) -> None:
         """Opens the logs folder in the system file explorer.
@@ -72,5 +72,5 @@ class LogRepository:
         if not self._folder_path.is_dir():
             raise LogFolderNotADirectoryError(self._folder_path)
 
-        self._logger.info("Attempting to open logs folder: %s", self._folder_path)
+        self._logger.debug("Ouverture du dossier de logs : %s", self._folder_path)
         open_folder(self._folder_path)

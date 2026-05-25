@@ -51,8 +51,8 @@ from shared.i18n_fra import (
     C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER,
 )
 from shared.operating_system_util import open_folder
+from shared.constants import C_KEY_URL_MODE
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
-from views.steps.open_url_form_def import C_KEY_URL_MODE
 
 # ---------------------------------------------------------------------------
 # Classes

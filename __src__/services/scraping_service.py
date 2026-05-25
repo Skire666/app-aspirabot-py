@@ -428,7 +428,7 @@ class ScrapingService:
         if isinstance(pending_jump, int):
             if 0 <= pending_jump < len(self._context.step_id_by_index):
                 return pending_jump
-            self._logger.warning("JUMP_TO_STEP: invalid index %s.", pending_jump)
+            self._logger.warning("JUMP_TO_STEP : index invalide %s.", pending_jump)
             return current_index + 1
 
         if isinstance(pending_jump, str):
@@ -436,7 +436,7 @@ class ScrapingService:
             next_index = self._context.step_index_by_id.get(pending_jump)
             if next_index is not None:
                 return next_index
-            self._logger.warning("JUMP_TO_STEP: step_id not found %s.", pending_jump)
+            self._logger.warning("JUMP_TO_STEP : step_id introuvable %s.", pending_jump)
 
         return current_index + 1
 

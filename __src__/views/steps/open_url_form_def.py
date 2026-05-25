@@ -13,6 +13,7 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
 from shared.constants import (
+    C_KEY_URL_MODE,
     C_MAXIMUM_SIZE_IMAGE,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
     C_UNITS_TIME_DEFAULT_MODEL,
@@ -38,7 +39,6 @@ C_INPUT_DEFAULT_WAIT_STATE = C_CHOICES_WAIT_PAGE_STATE[-1]
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 10
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
-C_KEY_URL_MODE = "url_mode"
 C_KEY_URL_CUSTOM = "url_custom"
 C_KEY_WAIT_STATE = "wait_state"
 C_KEY_WAIT_DNS_SOLVER = "wait_dns_solver"

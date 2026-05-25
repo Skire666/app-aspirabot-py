@@ -149,7 +149,7 @@ class ProviderService:
                         reasons=reasons,
                     )
                 )
-                self._logger.warning("Invalid provider file %s: %s", file_path.name, "; ".join(reasons))
+                self._logger.warning("Fichier fournisseur invalide %s : %s", file_path.name, "; ".join(reasons))
                 continue
 
             valid_files += 1

@@ -179,6 +179,15 @@ class BrowserPlaywrightService(IWebBrowserService):
         if not self._context.pages or len(self._context.pages) == 0 or self._context.pages[0].is_closed():
             raise PageNotAvailableOrClosedError()
 
+        print("get_current_page")
+        all_contexts = self._browser.contexts if self._browser else []
+        for ctx in all_contexts:
+            for page in ctx.pages:
+                if page.is_closed():
+                    print("Page fermée détectée et ignorée : %s", page.url)
+                else:
+                    print("Page ouverte détectée : %s", page.url)
+
         # First page in the list is always the primary workflow page.
         return self._context.pages[0]
 
@@ -213,7 +222,7 @@ class BrowserPlaywrightService(IWebBrowserService):
                 self._pw.stop()
                 self._pw = None
 
-            self._logger.info("Browser closed successfully. is_launched=%s", self.is_launched)
+            self._logger.info("Navigateur fermé avec succès. is_launched=%s", self.is_launched)
 
         except Exception:
             self._logger.error("Une erreur s'est produite lors de la fermeture du navigateur", exc_info=True)
@@ -245,11 +254,12 @@ class BrowserPlaywrightService(IWebBrowserService):
             page.goto(url, wait_until="commit")
             page.wait_for_load_state(wait_state, timeout=timeout_ms)
         except Exception as exc:
-            if "ERR_NAME_NOT_RESOLVED" in str(exc):
-                if wait_dns_solver_sec >= _DNS_SOLVER_MAX_WAIT_SEC:
-                    raise DnsSolverTimeoutExceededError() from exc
-                page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
-                page.reload(wait_until=wait_state, timeout=timeout_ms)
+            if "ERR_NAME_NOT_RESOLVED" not in str(exc):
+                raise
+            if wait_dns_solver_sec >= _DNS_SOLVER_MAX_WAIT_SEC:
+                raise DnsSolverTimeoutExceededError() from exc
+            page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
+            page.reload(wait_until=wait_state, timeout=timeout_ms)
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
@@ -274,7 +284,7 @@ class BrowserPlaywrightService(IWebBrowserService):
                 result = page.evaluate(script)
                 return True, result
             except Exception as exc:
-                self._logger.warning("Script eval failed attempt %d/%d: %s", attempt, retries, exc)
+                self._logger.warning("Échec évaluation script, tentative %d/%d : %s", attempt, retries, exc)
                 if attempt == retries:
                     # if this was the last attempt, re-raise the exception to signal failure
                     raise

@@ -95,6 +95,9 @@ C_MAXIMUM_WAIT_TIME: int = 9_999
 C_MAXIMUM_RETRY_EVALUATE_SCRIPT: int = 10
 C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT: float = 0.500
 
+# Dict key for the url_mode field of the OPEN_URL step params (shared by View form def and Presenter).
+C_KEY_URL_MODE: str = "url_mode"
+
 # Allowed time units for step parameters (mirrors view layer allowed units)
 C_UNITS_TIME_DEFAULT_MODEL: str = "s"
 C_UNITS_TIME_DEFAULT_VIEW: str = "sec"

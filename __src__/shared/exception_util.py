@@ -684,6 +684,30 @@ class UrlNavigationMismatchError(RuntimeError, AspirabotError):
 # ---------------------------------------------------------------------------
 
 
+class NoDataToExportError(AspirabotError):
+    """Raised when there is no extracted data available to export."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Aucune donnée extraite à exporter.")
+
+
+class ExportFolderNotConfiguredError(AspirabotError):
+    """Raised when the export folder has not been configured."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Dossier d'export non configuré.")
+
+
+class DownloadNotDetectedError(AspirabotError):
+    """Raised when a click was executed but no file download was detected."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Le clic a été effectué mais aucun téléchargement n'a été détecté.")
+
+
 class MissingUrlFilterError(ValueError, AspirabotError):
     """Raised when no URL filter is available to execute a close-tabs step."""
 
