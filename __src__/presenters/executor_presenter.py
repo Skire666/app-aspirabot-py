@@ -93,21 +93,23 @@ class ExecutorPresenter:
         service_scraping: ScrapingService,
         service_scenarios: ScenariosService,
         service_profile: ProfilesService,
-        provider: ProviderModel | None = None,
+        scenario: ProviderModel | None = None,
     ) -> None:
         """Initialize the presenter and register all view callbacks.
 
         Args:
             view: The scraping panel view.
             service_scraping: Service that executes Playwright workflow steps and journal exports.
-            service_provider: Service for reading and listing providers.
+            service_scenarios: Service for reading and listing scenarios.
+            service_profile: Service for reading and listing profiles.
             provider: Optional initial provider model.
         """
         self._view = view
         self._service_scraping = service_scraping
-        self._service_scenarios = service_scenarios
-        self._service_profile = service_profile
-        self._provider: ProviderModel | None = provider
+        self._service_scenarios: ScenariosService = service_scenarios
+        self._service_profile: ProfilesService = service_profile
+        self._scenario: ProviderModel | None = scenario
+        self._profile: ProfileLaunchModel | None = None
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._logging = logging.getLogger(__name__)
@@ -151,7 +153,7 @@ class ExecutorPresenter:
             id_profile: The id_profile to select and apply.
                 Expects load_provider() to have been called first.
         """
-        if not self._provider:
+        if not self._scenario:
             return
 
         # Select the profile in the list then apply its values to the form.
@@ -171,7 +173,7 @@ class ExecutorPresenter:
 
         self._logging.info("lecture du scénario - id_file=%s", id_scenario)
         print(f"PCOPCO - Loading scenario id_file={id_scenario}")
-        self._provider = self._service_scenarios.read_scenario(id_scenario)
+        self._scenario = self._service_scenarios.read_scenario(id_scenario)
         self._cancel_event.clear()
 
         # Guarantee at least one profile exists, then populate the view.
@@ -190,8 +192,8 @@ class ExecutorPresenter:
 
     def _ensure_default_profile(self) -> None:
         """Add and persist a default profile when the provider has none."""
-        if not self._service_profile.exists_profiles(self._provider.id_file):
-            profiles = ProfilesListModel.get_default(self._provider.id_file)
+        if not self._service_profile.exists_profiles(self._scenario.id_file):
+            profiles = ProfilesListModel.get_default(self._scenario.id_file)
             self._service_profile.create_profiles(profiles)
 
     def _setup_view_after_load(self, id_scenario: str) -> None:
@@ -211,7 +213,8 @@ class ExecutorPresenter:
         self._load_last_used_profile()
 
         # Seed the date label with the scenario file's current modification date.
-        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
+        date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
+        self._view.set_profile_modified_date(date_modified)
 
     # ------------------------------------------------------------------
     # View callback wiring
@@ -322,7 +325,8 @@ class ExecutorPresenter:
         # Enable rename/save and display the provider file's last modification date.
         self._view.set_rename_profile_button_state(True)
         self._view.set_save_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
+        date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
+        self._view.set_profile_modified_date(date_modified)
 
     def _on_profile_new(self, name: str) -> None:
         """Create a new named profile, persist it and select it in the view.
@@ -333,14 +337,14 @@ class ExecutorPresenter:
         Returns:
             None.
         """
-        if not self._provider:
+        if not self._scenario:
             return
 
-        id_scenario = self._provider.id_file
+        id_scenario = self._scenario.id_file
         new_profile_launch = ProfileLaunchModel.get_default(id_scenario)
         new_profile_launch.profile_name = name
 
-        self._service_profile.update_profile_launch(self._provider.id_file, new_profile_launch)
+        self._service_profile.update_profile_launch(self._scenario.id_file, new_profile_launch)
 
         self._refresh_profiles_list()
         self._view.set_selected_profile(new_profile_launch.id_profile)
@@ -352,18 +356,19 @@ class ExecutorPresenter:
         Args:
             id_profile: Unique identifier of the profile to delete.
         """
-        if not self._provider:
+        if not self._scenario:
             return
 
         # Remove the matching profile from the list.
-        id_scenario = self._provider.id_file
+        id_scenario = self._scenario.id_file
         self._service_profile.delete_profile_launch(id_scenario, id_profile)
         self._refresh_profiles_list()
 
         # No profile is selected after deletion — disable rename/save, keep file date.
         self._view.set_rename_profile_button_state(False)
         self._view.set_save_profile_button_state(False)
-        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
+        date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
+        self._view.set_profile_modified_date(date_modified)
 
     def _on_profile_rename(self, id_profile: str, new_name: str) -> None:
         """Rename the given profile, persist the change, and refresh the list.
@@ -381,14 +386,15 @@ class ExecutorPresenter:
 
         # Apply the new name and stamp the modification date.
         profile.profile_name = new_name
-        self._service_profile.update_profile_launch(self._provider.id_file, profile)
+        self._service_profile.update_profile_launch(self._scenario.id_file, profile)
 
         # Restore selection and update the date label with the provider file date.
         self._refresh_profiles_list()
         self._view.set_selected_profile(id_profile)
         self._view.set_rename_profile_button_state(True)
         self._view.set_save_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
+        date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
+        self._view.set_profile_modified_date(date_modified)
 
     def _on_profile_save(self, id_profile: str) -> None:
         """Persist current form settings into the profile without changing its name.
@@ -415,14 +421,15 @@ class ExecutorPresenter:
         if threshold is not None:
             profile.emergency_stop_threshold = threshold
 
-        self._service_profile.update_profile_launch(self._provider.id_file, profile)
+        self._service_profile.update_profile_launch(self._scenario.id_file, profile)
         self._is_profile_dirty = False
 
         self._refresh_profiles_list()
         self._view.set_selected_profile(id_profile)
         self._view.set_save_profile_button_state(True)
         self._view.set_rename_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
+        date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
+        self._view.set_profile_modified_date(date_modified)
 
     def _find_profile(self, id_profile: str | None) -> ProfileLaunchModel | None:
         """Search the current provider's profiles for a matching id_profile.
@@ -433,12 +440,15 @@ class ExecutorPresenter:
         Returns:
             ProfileLaunchModel | None: The matching profile, or None if not found.
         """
-        if not self._provider or not id_profile:
+        if not self._scenario or not id_profile:
+            self._profile = None
             return None
 
-        profiles: ProfilesListModel = self._service_profile.read_profiles(self._provider.id_file)
+        profiles: ProfilesListModel = self._service_profile.read_profiles(self._scenario.id_file)
 
-        return profiles.get_profile_by_id(id_profile)
+        self._profile = profiles
+
+        return self._profile.get_profile_by_id(id_profile)
 
     def _refresh_profiles_list(self) -> None:
         """Rebuild the profile Listbox in the view from the current provider.
@@ -446,11 +456,11 @@ class ExecutorPresenter:
         Returns:
             None.
         """
-        if not self._provider:
+        if not self._scenario:
             self._view.render_profiles_list([])
             return
 
-        profiles: ProfilesListModel = self._service_profile.read_profiles(self._provider.id_file)
+        profiles: ProfilesListModel = self._service_profile.read_profiles(self._scenario.id_file)
 
         rows = [{"id_profile": p.id_profile, "profile_name": p.profile_name} for p in profiles.launch_profiles]
         self._view.render_profiles_list(rows)
@@ -489,12 +499,12 @@ class ExecutorPresenter:
         Returns:
             None.
         """
-        if not self._provider:
+        if not self._scenario:
             self._view.set_launch_profile_enabled(False)
             return
 
         # Select the profile with the most recent if any.
-        profiles: ProfilesListModel = self._service_profile.read_profiles(self._provider.id_file)
+        profiles: ProfilesListModel = self._service_profile.read_profiles(self._scenario.id_file)
 
         target = profiles.get_most_recently_used_profile()
 
@@ -510,7 +520,7 @@ class ExecutorPresenter:
             None.
         """
         id_profile = self._view.get_selected_id_profile()
-        profile = self._find_profile(id_profile)
+        profile: ProfileLaunchModel = self._find_profile(id_profile)
         if profile is None:
             return
 
@@ -528,15 +538,9 @@ class ExecutorPresenter:
             profile.emergency_stop_threshold = threshold
 
         profile.increment_launch_count()
-
-    def _persist_provider_before_launch(self) -> None:
-        """Save the in-memory provider to disk before starting the workflow.
-
-        Returns:
-            None.
-        """
-        if self._provider:
-            self._service_scenarios.update_scenario(self._provider)
+        self._service_profile.update_profile_launch(self._scenario.id_file, profile)
+        date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
+        self._view.set_profile_modified_date(date_modified)
 
     # ------------------------------------------------------------------
     # Workflow control callbacks
@@ -545,7 +549,7 @@ class ExecutorPresenter:
     def _check_launch_preconditions(self) -> bool:
         """Return True if all launch guards pass; show a warning and return False if any fails."""
         # Provider must be loaded before launching.
-        if not self._provider:
+        if not self._scenario:
             self._view.show_warning(C_SCRAPING_NO_PROVIDER_LOADED)
             return False
 
@@ -582,10 +586,10 @@ class ExecutorPresenter:
         self._view.set_running_state(True)
 
         self._record_active_profile_launch()
-        self._persist_provider_before_launch()
 
         # Refresh the date label — update_provider stamped a new modified_date.
-        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
+        date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
+        self._view.set_profile_modified_date(date_modified)
         self._start_workflow_thread()
 
     def _start_workflow_thread(self) -> None:
@@ -837,7 +841,7 @@ class ExecutorPresenter:
             The completed ScrapingReportModel, or None if an exception was raised.
         """
         try:
-            return self._service_scraping.run_workflow(self._provider, config, handlers)
+            return self._service_scraping.run_workflow(self._scenario, config, handlers)
         except ValueError, RuntimeError, OSError:
             self._logging.exception("Échec de l'exécution du workflow")
             return None

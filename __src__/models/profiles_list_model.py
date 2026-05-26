@@ -119,6 +119,9 @@ class ProfilesListModel:
             dict: A dictionary representation of the launch profiles list suitable for JSON serialization.
         """
         return {
+            "id_scenario": self.id_scenario,
+            "created_date_profile": self.created_date_profile,
+            "modified_date_profile": self.modified_date_profile,
             "launch_profiles": [profile.export_to_data_json() for profile in self.launch_profiles],
         }
 
@@ -129,6 +132,7 @@ class ProfilesListModel:
             id_profile: Unique identifier of the profile to delete.
         """
         self.launch_profiles = [p for p in self.launch_profiles if p.id_profile != id_profile]
+        self.mark_as_modified()
 
     def get_profile_by_id(self, id_profile: str) -> ProfileLaunchModel | None:
         """Retrieve a profile from the list by its ID.
@@ -155,19 +159,6 @@ class ProfilesListModel:
         used = [p for p in self.launch_profiles if p.used_date_profile]
         return max(used, key=lambda p: p.used_date_profile or "") if used else self.launch_profiles[0]
 
-    def append_profile_launch(self, new_profile: ProfileLaunchModel) -> None:
-        """Add a new profile to the list.
-
-        If a profile with the same id_profile already exists, it will be replaced.
-
-        The profile to update is identified by matching the id_profile of the updated_profile.
-        If a matching profile is found, it is replaced with the updated_profile. If no match is found, the method does nothing.
-
-        Args:
-            updated_profile: A ProfileLaunchModel instance containing the updated data. Its id_profile must match an existing profile in the list.
-        """
-        self.launch_profiles.append(new_profile)
-
     def replace_profile_launch(self, updated_profile: ProfileLaunchModel) -> None:
         """Update an existing profile in the list with new data.
 
@@ -186,6 +177,7 @@ class ProfilesListModel:
         # no profile was updated, which means no matching id_profile was found
         if not is_updated:
             self.launch_profiles.append(updated_profile)
+        self.mark_as_modified()
 
     def mark_as_created(self) -> None:
         """Update the creation timestamp to the current time.

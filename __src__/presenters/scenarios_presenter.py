@@ -132,7 +132,7 @@ class ScenariosPresenter:
         for p in providers:
             formatted.append(
                 {
-                    "id": p.id_file,
+                    "__bound__": p,
                     "id_file": p.id_file,
                     "provider_name": p.provider_name,
                     "provider_desc": p.provider_desc,

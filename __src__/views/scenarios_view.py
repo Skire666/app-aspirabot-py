@@ -9,7 +9,7 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
-from views.components.data_grid import DataGrid
+from views.components.data_grid import DataGrid, GridColumn
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
@@ -17,24 +17,18 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 # Constants
 # -----------------------------------------------------------------------------
 
-# Column definitions for the profiles DataGrid.
-DATA_GRID_COLUMNS: list[dict[str, Any]] = [
-    {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
-    {"id": "action_edit", "title": "Modif.", "width": 62, "type": "button", "button_text": "Modif."},
-    {"id": "action_duplicate", "title": "Dupp.", "width": 62, "type": "button", "button_text": "Dupp."},
-    {
-        "id": "action_delete",
-        "title": "Supp.",
-        "width": 62,
-        "type": "button",
-        "button_text": "Supp.",
-    },
-    {"id": "provider_name", "title": "Nom", "width": 160, "type": "text"},
-    {"id": "provider_desc", "title": "Description", "width": 160, "type": "text"},
-    {"id": "version", "title": "Version", "width": 82, "type": "text"},
-    {"id": "created_date_scenario", "title": "Création", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
-    {"id": "modified_date_scenario", "title": "Modification", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
-    {"id": "id_file", "title": "ID Fichier", "width": 100, "type": "text"},
+# Column definitions for the scenarios DataGrid.
+DATA_GRID_COLUMNS: list[GridColumn] = [
+    GridColumn(id="action_launch", title="Lancer", width=62, col_type="button", button_text="Lancer"),
+    GridColumn(id="action_edit", title="Modif.", width=62, col_type="button", button_text="Modif."),
+    GridColumn(id="action_duplicate", title="Dupp.", width=62, col_type="button", button_text="Dupp."),
+    GridColumn(id="action_delete", title="Supp.", width=62, col_type="button", button_text="Supp."),
+    GridColumn(id="provider_name", title="Nom", width=160),
+    GridColumn(id="provider_desc", title="Description", width=160),
+    GridColumn(id="version", title="Version", width=82),
+    GridColumn(id="created_date_scenario", title="Création", width=125, format="%d/%m/%Y %H:%M"),
+    GridColumn(id="modified_date_scenario", title="Modification", width=125, format="%d/%m/%Y %H:%M"),
+    GridColumn(id="id_file", title="ID Fichier", width=100),
 ]
 
 # -----------------------------------------------------------------------------
@@ -135,17 +129,17 @@ class ScenariosView(ttk.Frame):
         self._on_delete = on_delete
         self._on_validate = on_validate
 
-    def _on_action(self, action_id: str, row_id: str) -> None:
+    def _on_action(self, action_id: str, bound: object) -> None:
         """Handles actions from the DataGrid."""
-        guid = row_id
+        id_file = str(getattr(bound, "id_file", ""))
         if action_id == "action_launch" and self._on_launch:
-            self._on_launch(guid)
+            self._on_launch(id_file)
         elif action_id == "action_edit" and self._on_edit:
-            self._on_edit(guid)
+            self._on_edit(id_file)
         elif action_id == "action_duplicate" and self._on_duplicate:
-            self._on_duplicate(guid)
+            self._on_duplicate(id_file)
         elif action_id == "action_delete" and self._on_delete:
-            self._on_delete(guid)
+            self._on_delete(id_file)
 
     def _notify_create_provider(self) -> None:
         if self._on_create_provider:

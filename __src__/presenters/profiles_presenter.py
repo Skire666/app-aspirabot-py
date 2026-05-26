@@ -113,7 +113,7 @@ class ProfilesPresenter:
         for p in list_profiles:
             rows.append(
                 {
-                    "action_launch": {"id_scenario": p.id_scenario, "id_profile": p.id_profile},
+                    "__bound__": p,
                     "profile_name": p.profile_name,
                     "scenario_name": self._service_profile.get_scenario_name(p.id_scenario),
                     "url_source_type": p.url_source_type,
@@ -136,7 +136,7 @@ class ProfilesPresenter:
             if col == "launch_count":
                 try:
                     return f"{int(value or 0):020d}"
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     return "0" * 20
             return str(value or "").casefold()
 

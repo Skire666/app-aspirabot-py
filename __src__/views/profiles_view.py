@@ -10,7 +10,7 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Any
 
-from views.components.data_grid import DataGrid
+from views.components.data_grid import DataGrid, GridColumn
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
@@ -19,15 +19,15 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 # -----------------------------------------------------------------------------
 
 # Column definitions for the profiles DataGrid.
-DATA_GRID_COLUMNS: list[dict[str, Any]] = [
-    {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
-    {"id": "profile_name", "title": "Nom du profil", "width": 160, "type": "text"},
-    {"id": "scenario_name", "title": "Scénario", "width": 150, "type": "text"},
-    {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
-    {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text", "format": "%d/%m/%Y %H:%M"},
-    {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},
-    {"id": "id_profile", "title": "ID Profil", "width": 80, "type": "text"},
-    {"id": "id_scenario", "title": "ID Scénario", "width": 80, "type": "text"},
+DATA_GRID_COLUMNS: list[GridColumn] = [
+    GridColumn(id="action_launch", title="Lancer", width=62, col_type="button", button_text="Lancer"),
+    GridColumn(id="profile_name", title="Nom du profil", width=160),
+    GridColumn(id="scenario_name", title="Scénario", width=150),
+    GridColumn(id="url_source_type", title="Source", width=100),
+    GridColumn(id="used_date_profile", title="Dernier usage", width=140, format="%d/%m/%Y %H:%M"),
+    GridColumn(id="launch_count", title="Utilisés", width=100),
+    GridColumn(id="id_profile", title="ID Profil", width=85),
+    GridColumn(id="id_scenario", title="ID Scénario", width=85),
 ]
 
 # -----------------------------------------------------------------------------
@@ -154,24 +154,19 @@ class ProfilesView(ttk.Frame):
         if self._on_sort_callback:
             self._on_sort_callback(column, ascending)
 
-    def _on_action(self, action_id: str, row_id: str) -> None:
+    def _on_action(self, action_id: str, bound: object) -> None:
         """Forward DataGrid action events to the registered launch callback.
 
         Args:
             action_id: Column id of the button that was clicked.
-            row_id: The ``id`` value of the clicked row (``id_provider:::id_profile``).
+            bound: The ``__bound__`` object set by the presenter (ProfileLaunchModel).
         """
-        print(f"PCOPCO - Action {action_id} on row {row_id}")
         if action_id != "action_launch" or not self._on_launch_callback:
             return
-
-        # Parse the composite row identifier into its two components.
-        # TODO PCO : refaire datagridn, bind object.
-        print(f"PCOPCO - Action {action_id} on row {row_id}")
-        raise NotImplementedError("Row action handling not implemented yet")
-        # parts = row_id.split(":::")
-        # if len(parts) == _ROW_ID_PARTS_COUNT:
-        #     self._on_launch_callback(parts[0], parts[1])
+        self._on_launch_callback(
+            str(getattr(bound, "id_scenario", "")),
+            str(getattr(bound, "id_profile", "")),
+        )
 
 
 # EOF
