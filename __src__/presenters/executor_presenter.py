@@ -21,6 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 from models.profile_launch_model import ProfileLaunchModel
+from models.profiles_list_model import ProfilesListModel
 from models.scenario_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
@@ -56,8 +57,6 @@ from shared.i18n_fra import (
 )
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
-
-from __src__.models.profiles_list_model import ProfilesListModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -159,7 +158,7 @@ class ExecutorPresenter:
         self._view.set_selected_profile(id_profile)
         self._on_profile_selected(id_profile)
 
-    def load_scenario(self, id_file: str) -> None:
+    def load_scenario(self, id_scenario: str) -> None:
         """Load a scenario by id_file and reset the view for a fresh run.
 
         If a workflow is currently running it is cancelled before switching.
@@ -170,14 +169,15 @@ class ExecutorPresenter:
         # Abort any in-progress run before swapping the provider.
         self._cancel_active_run()
 
-        self._logging.info("Loading scenario id_file=%s", id_file)
-        self._provider = self._service_scenarios.read_scenario(id_file)
+        self._logging.info("lecture du scénario - id_file=%s", id_scenario)
+        print(f"PCOPCO - Loading scenario id_file={id_scenario}")
+        self._provider = self._service_scenarios.read_scenario(id_scenario)
         self._cancel_event.clear()
 
         # Guarantee at least one profile exists, then populate the view.
         self._ensure_default_profile()
         self.ensure_scenarios_loaded()
-        self._setup_view_after_load(id_file)
+        self._setup_view_after_load(id_scenario)
 
     # ------------------------------------------------------------------
     # Private helpers — provider loading
@@ -194,14 +194,15 @@ class ExecutorPresenter:
             profiles = ProfilesListModel.get_default(self._provider.id_file)
             self._service_profile.create_profiles(profiles)
 
-    def _setup_view_after_load(self, id_file: str) -> None:
+    def _setup_view_after_load(self, id_scenario: str) -> None:
         """Reset the view, populate profiles, and seed the date label.
 
         Args:
-            id_file: ID of the newly loaded scenario, forwarded to the dropdown.
+            id_scenario: ID of the newly loaded scenario, forwarded to the dropdown.
         """
         # Select the scenario in the dropdown and clear stale run state.
-        self._view.set_selected_profile(id_file)
+        self._view.set_selected_profile(id_scenario)
+        self._view.set_selected_scenario(id_scenario)
         self._view.reset()
 
         # Unlock the profiles frame and populate it from the loaded scenario.
@@ -280,6 +281,8 @@ class ExecutorPresenter:
         except AspirabotError, OSError:
             self._logging.exception("Échec du chargement de la liste des providers")
             providers = []
+
+        print(f"PCOPCO - Loaded {len(providers)} providers")
 
         # Build display-ready dicts and push to the view.
         rows: list[dict[str, str]] = [
@@ -412,8 +415,7 @@ class ExecutorPresenter:
         if threshold is not None:
             profile.emergency_stop_threshold = threshold
 
-        profile.mark_as_modified()
-        self._service_scenarios.update_scenario(self._provider)
+        self._service_profile.update_profile_launch(self._provider.id_file, profile)
         self._is_profile_dirty = False
 
         self._refresh_profiles_list()

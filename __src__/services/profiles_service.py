@@ -6,9 +6,9 @@
 
 import logging
 
-from __src__.models.profile_launch_model import ProfileLaunchModel
-from __src__.models.profiles_list_model import ProfilesListModel
-from __src__.repositories.profiles_repository import ProfilesRepository
+from models.profile_launch_model import ProfileLaunchModel
+from models.profiles_list_model import ProfilesListModel
+from repositories.profiles_repository import ProfilesRepository
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -34,7 +34,7 @@ class ProfilesService:
         self._logger = logging.getLogger(__name__)
         self._repository = repository
 
-    def list_all_profiles(self) -> list[ProfilesListModel]:
+    def list_all_profiles_launch(self) -> list[ProfileLaunchModel]:
         """Return all launch profiles paired with their owning provider id.
 
         Iterates every provider returned by the repository and yields one
@@ -44,7 +44,8 @@ class ProfilesService:
         Returns:
             A list of (provider_id, profile) tuples, one per profile found.
         """
-        return self._repository.read_all_profiles()
+        profils = self._repository.read_all_profiles()
+        return [profile_item for scenario in profils for profile_item in scenario.launch_profiles]
 
     def exists_profiles(self, id_scenario: str) -> bool:
         """Check whether a scenario with the given identifier exists on disk.
@@ -67,10 +68,6 @@ class ProfilesService:
 
     def create_profiles(self, profiles: ProfilesListModel) -> None:
         """Stamp timestamps on *provider* and persist it as a new profile.
-
-        Calls :meth:`~models.profiles_model.ProfilesModel.mark_as_created` to
-        set both ``created_date_provider`` and ``modified_date_provider`` to the
-        current time before delegating to the repository.
 
         Args:
             provider: A :class:`~models.profiles_model.ProfilesModel` instance

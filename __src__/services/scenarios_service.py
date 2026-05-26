@@ -21,9 +21,8 @@ Example:
 import logging
 
 from models.scenario_model import ProviderModel
-
-from __src__.repositories.scenarios_repository import ScenariosRepository
-from __src__.services.profiles_service import ProfilesService
+from repositories.scenarios_repository import ScenariosRepository
+from services.profiles_service import ProfilesService
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -135,7 +134,7 @@ class ScenariosService:
         """Stamp timestamps on *provider* and persist it as a new scenario.
 
         Calls :meth:`~models.scenario_model.ProviderModel.mark_as_created` to
-        set both ``created_date_provider`` and ``modified_date_provider`` to the
+        set both ``created_date_scenario`` and ``modified_date_scenario`` to the
         current time before delegating to the repository.
 
         Args:
@@ -195,14 +194,11 @@ class ScenariosService:
 
         return model
 
-    def update_scenario(self, provider: ProviderModel) -> None:
-        """Refresh the modification timestamp on *provider* and overwrite it on disk.
-
-        Calls :meth:`~models.scenario_model.ProviderModel.mark_as_modified` so
-        that ``modified_date_provider`` always reflects the last save time.
+    def update_scenario(self, scenario: ProviderModel) -> None:
+        """Refresh the modification timestamp on *scenario* and overwrite it on disk.
 
         Args:
-            provider: A previously persisted
+            scenario: A previously persisted
                 :class:`~models.scenario_model.ProviderModel`. Its ``id_file``
                 must match an existing file.
 
@@ -215,8 +211,8 @@ class ScenariosService:
             >>> service.update_scenario(scenario)
         """
         # Refresh modification date to reflect the current save time.
-        provider.mark_as_modified()
-        self._repository.update_scenario(provider)
+        scenario.mark_as_modified()
+        self._repository.update_scenario(scenario)
 
     def duplicate_scenario(self, id_file: str) -> str:
         """Create an independent copy of an existing scenario and return its new ID.

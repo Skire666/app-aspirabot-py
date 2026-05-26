@@ -16,7 +16,6 @@ The project strictly follows the **Model-View-Presenter** pattern:
 
 ```
 __src__/
-├── bootstrap/      # Assembly-only wiring functions, one per domain module
 ├── models/         # Business entities and data structures (domain)
 ├── views/          # Tkinter GUI components (no business logic)
 ├── presenters/     # Orchestration: connects views to services
@@ -60,13 +59,12 @@ Each layer may only import from layers **below** it in this chain.
 Cross-layer imports in the opposite direction are a hard violation.
 
 | Importing layer | May import from | Must NEVER import from |
-|-----------------|---|---|
-| `View`          | `interfaces/`, `shared/`                         | `Service`, `Repository`, `Model` directly |
-| `Presenter`     | `Service`, `interfaces/`, `shared/`              | `Repository` directly |
-| `Service`       | `Repository` (via interface), `Model`, `shared/` | `View`, `Presenter` |
-| `Repository`    | `Model`, `shared/`                               | `View`, `Presenter`, `Service` |
-| `Model`         | `shared/`                                        | Everything else |
-| `bootstrap/`    | All layers                                       | Nothing may import from `bootstrap/` |
+|-----------------|-----------------|------------------------|
+| `View`          | `interfaces/`, `shared/`               | `Service`, `Repository`, `Model` directly |
+| `Presenter`     | `Service`, `interfaces/`, `shared/`    | `Repository` directly |
+| `Service`       | `Repository`, `interfaces/`, `Model`, `shared/` | `View`, `Presenter` |
+| `Repository`    | `Model`, `shared/`                     | `View`, `Presenter`, `Service` |
+| `Model`         | `shared/`                              | Everything else |
 
 > **Rule:** if adding an import would create a cycle or go against the arrow above, the design is wrong — refactor instead.
 
@@ -318,28 +316,6 @@ def parse_results(raw_html: str) -> list[dict]:
 All inter-layer contracts are defined as `typing.Protocol` in `interfaces/`.
 **Never use `ABC` for interfaces** — `Protocol` enables structural subtyping and allows testing without Tkinter.
 
-### When to create an interface
-
-Create an `I*` Protocol **only** when at least one of these conditions is true:
-
-- The concrete class depends on Tkinter, and the collaborator (Presenter or Service) must remain testable without a display.
-- Multiple concrete implementations of the same contract exist or are planned.
-- The dependency direction would otherwise create a cycle.
-
-Do **not** create an interface for a Repository or Service that has a single implementation
-and is only ever used by one Presenter. The Protocol adds indirection without benefit.
-
-```python
-# GOOD — IScrapingView hides Tkinter from the Presenter; a test can inject a stub
-class ScrapingPresenter:
-    def __init__(self, view: IScrapingView, service: ScrapingService) -> None: ...
-
-# BAD — wrapping a concrete Service in a Protocol when there is only one implementation
-# and no test requires a stub
-class IScrapingService(Protocol):
-    def start_scraping(self, url: str) -> None: ...  # ← unnecessary abstraction
-```
-
 ### Naming convention
 
 - Interface files: `i_<name>.py` (e.g. `i_scraping_view.py`)
@@ -360,17 +336,14 @@ class IErrorDisplayView(Protocol):
 
 ```python
 # presenters/scraping_presenter.py
-from interfaces.i_scraping_view import IScrapingView
+from views.scraping_view import ScrapingView
 from services.scraping_service import ScrapingService
 
 class ScrapingPresenter:
-    def __init__(self, view: IScrapingView, service: ScrapingService) -> None:
+    def __init__(self, view: ScrapingView, service: ScrapingService) -> None:
         self._view = view
         self._service = service
 ```
-
-Presenters always depend on the `I*` Protocol, **never on the concrete View class**.
-This decouples the Presenter from Tkinter entirely and makes it fully testable.
 
 ### Anti-patterns — Interfaces
 
@@ -391,73 +364,12 @@ class IScrapingService(Protocol):
         return []  # ← must be left as "..."
 ```
 
-❌ Never import a concrete View inside a Presenter
-```python
-# BAD
-from views.scraping_view import ScrapingView  # ← use IScrapingView instead
-```
-
 ---
 
 ## Dependency Injection & Wiring
 
 **Never instantiate a Service or Repository inside another Service, Presenter, or View.**
 All concrete objects are assembled once and injected via `__init__`.
-
-For projects with more than ~3 modules, wiring is split into one factory function per domain,
-each in its own `bootstrap_<domain>.py` file inside the `bootstrap/` folder at the `__src__/` level.
-`main.py` calls each factory and passes results to the next.
-
-```python
-# bootstrap/bootstrap_scripts.py
-from repositories.provider_repository import ProviderRepository
-from services.provider_service import ProviderService
-from presenters.scripts_presenter import ScriptsPresenter
-from interfaces.i_scripts_view import IScriptsView
-
-def bootstrap_scripts(view: IScriptsView, config_path: str) -> ScriptsPresenter:
-    """Wire the Scripts module and return its Presenter.
-
-    Args:
-        view: The Scripts view, injected from main.py.
-        config_path: Path to the application configuration file.
-
-    Returns:
-        A fully wired ScriptsPresenter ready for use.
-    """
-    repo    = ProviderRepository(path=config_path)
-    service = ProviderService(repository=repo)
-    return ScriptsPresenter(view=view, service=service)
-```
-
-```python
-# main.py — stays thin; delegates wiring to bootstrap functions
-import tkinter as tk
-from bootstrap.bootstrap_scripts import bootstrap_scripts
-from bootstrap.bootstrap_editor  import bootstrap_editor
-from shared.enums import TitleModuleEnum
-from views.main_view import MainView
-
-CONFIG_PATH = "config-aspirabot.json"
-
-root      = tk.Tk()
-main_view = MainView(root)
-
-scripts_presenter = bootstrap_scripts(main_view.scripts_view, CONFIG_PATH)
-editor_presenter  = bootstrap_editor(main_view.editor_view,  CONFIG_PATH)
-
-main_view.set_on_show(TitleModuleEnum.E_SCRIPTS, scripts_presenter.ensure_providers_loaded)
-main_view.set_on_show(TitleModuleEnum.E_EDITOR,  editor_presenter.ensure_workflows_loaded)
-
-root.mainloop()
-```
-
-**Rules:**
-- Every dependency is passed via `__init__` — no `import` of a concrete class inside a collaborator.
-- When the AI adds a new class, it must also update the relevant `bootstrap_<domain>.py` and `main.py`.
-- No global singletons, no module-level instantiation outside `main.py` and `bootstrap/`.
-- `bootstrap/` files are assembly-only: no business logic, no domain rules, no persistence.
-- No layer may import from `bootstrap/`.
 
 ---
 

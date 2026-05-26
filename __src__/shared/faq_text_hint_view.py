@@ -55,7 +55,7 @@ class FaqTextTextHint:
                 "Le refresh ne change pas la dernière URL ouverte.\n"
                 "Donc si redirection il y a eu, le filtre peut planter\n"
             ),
-            "Consommer une URL de la source": (
+            "Consommer une URL": (
                 "Si la source est cablé en mode 'dossier'\n"
                 "Va lire le plus vieux '.url', et update sa date modif à chaque OpenURL\n"
                 "L'update se fait au moment de l'ouverture, et non pas à la fin du processus\n"

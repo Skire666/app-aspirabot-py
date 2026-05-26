@@ -65,7 +65,7 @@ class ProviderSelectionPanel(ttk.Frame):
         """Register the callback fired when the user selects a provider.
 
         Args:
-            callback: Callable receiving the selected provider's id_file.
+            callback: Callable receiving the selected scenario's id_file.
         """
         self._on_provider_selected = callback
 
@@ -115,11 +115,11 @@ class ProviderSelectionPanel(ttk.Frame):
         self._cmb_provider.set_enabled(enabled)
         self._btn_refresh.config(state=tk.NORMAL if enabled else tk.DISABLED)
 
-    def set_selected_provider(self, id_file: str) -> None:
+    def set_selected_scenario(self, id_file: str) -> None:
         """Highlight the combobox entry matching id_file.
 
         Args:
-            id_file: The unique provider file identifier to select.
+            id_file: The unique scenario file identifier to select.
         """
         for i in range(self._cmb_provider.size()):
             obj = self._cmb_provider.get_object_at(i)

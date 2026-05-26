@@ -108,9 +108,9 @@ class ScenariosPresenter:
             self._all_scenarios.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
         elif column == "provider_desc":
             self._all_scenarios.sort(key=lambda p: self._text_key(p.provider_desc), reverse=not ascending)
-        elif column == "created_date_provider":
+        elif column == "created_date_scenario":
             self._all_scenarios.sort(key=lambda p: self._text_key(p.created_date_scenario), reverse=not ascending)
-        elif column == "modified_date_provider":
+        elif column == "modified_date_scenario":
             self._all_scenarios.sort(key=lambda p: self._text_key(p.modified_date_scenario), reverse=not ascending)
 
     def _update_view(self) -> None:
@@ -137,8 +137,8 @@ class ScenariosPresenter:
                     "provider_name": p.provider_name,
                     "provider_desc": p.provider_desc,
                     "version": p.version,
-                    "created_date_provider": p.created_date_scenario,
-                    "modified_date_provider": p.modified_date_scenario,
+                    "created_date_scenario": p.created_date_scenario,
+                    "modified_date_scenario": p.modified_date_scenario,
                 }
             )
         return formatted

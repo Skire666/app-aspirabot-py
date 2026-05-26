@@ -32,8 +32,8 @@ DATA_GRID_COLUMNS: list[dict[str, Any]] = [
     {"id": "provider_name", "title": "Nom", "width": 160, "type": "text"},
     {"id": "provider_desc", "title": "Description", "width": 160, "type": "text"},
     {"id": "version", "title": "Version", "width": 82, "type": "text"},
-    {"id": "created_date_provider", "title": "Création", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
-    {"id": "modified_date_provider", "title": "Modification", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
+    {"id": "created_date_scenario", "title": "Création", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
+    {"id": "modified_date_scenario", "title": "Modification", "width": 125, "type": "text", "format": "%d/%m/%Y %H:%M"},
     {"id": "id_file", "title": "ID Fichier", "width": 100, "type": "text"},
 ]
 

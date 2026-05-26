@@ -26,11 +26,9 @@ DATA_GRID_COLUMNS: list[dict[str, Any]] = [
     {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
     {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text", "format": "%d/%m/%Y %H:%M"},
     {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},
-    {"id": "id_profile", "title": "ID Profil", "width": 160, "type": "text"},
+    {"id": "id_profile", "title": "ID Profil", "width": 50, "type": "text"},
+    {"id": "id_scenario", "title": "ID Scénario", "width": 50, "type": "text"},
 ]
-
-# Expected number of parts in a composite row_id ("id_provider:::id_profile").
-_ROW_ID_PARTS_COUNT = 2
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -128,8 +126,6 @@ class ProfilesView(ttk.Frame):
         Args:
             folder_path: The path of the folder containing provider files.
             profiles: List of row dicts whose keys match the column ids.
-                Each dict must include an "id" key formatted as
-                ``"id_provider:::id_profile"``.
         """
         count = len(profiles)
         if count == 0:
@@ -169,9 +165,12 @@ class ProfilesView(ttk.Frame):
             return
 
         # Parse the composite row identifier into its two components.
-        parts = row_id.split(":::")
-        if len(parts) == _ROW_ID_PARTS_COUNT:
-            self._on_launch_callback(parts[0], parts[1])
+        # TODO PCO : refaire datagridn, bind object.
+        print(f"PCOPCO - Action {action_id} on row {row_id}")
+        raise NotImplementedError("Row action handling not implemented yet")
+        # parts = row_id.split(":::")
+        # if len(parts) == _ROW_ID_PARTS_COUNT:
+        #     self._on_launch_callback(parts[0], parts[1])
 
 
 # EOF

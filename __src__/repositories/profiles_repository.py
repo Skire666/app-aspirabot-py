@@ -6,7 +6,7 @@ JSON provider configuration files stored in a local directory.
 Example:
     >>> from repositories.profiles_repository import ProfilesRepository
     >>> repo = ProfilesRepository("./profiles")
-    >>> profiles = repo.list_all_profiles()
+    >>> profiles = repo.list_all_profiles_launch()
 """
 
 # -----------------------------------------------------------------------------
@@ -17,6 +17,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from models.profile_launch_model import ProfileLaunchModel
+from models.profiles_list_model import ProfilesListModel
 from repositories.json_repository import JsonFileRepository
 from shared.exception_util import (
     AspirabotError,
@@ -25,9 +27,6 @@ from shared.exception_util import (
     ProfileNotFoundError,
 )
 from shared.operating_system_util import open_folder
-
-from __src__.models.profile_launch_model import ProfileLaunchModel
-from __src__.models.profiles_list_model import ProfilesListModel
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -215,7 +214,7 @@ class ProfilesRepository:
 
         try:
             profiles = self.read_profiles(id_scenario)  # Load existing profiles
-            profiles.add_or_replace_profile(profile)  # Update the specific profile
+            profiles.replace_profile_launch(profile)  # Update the specific profile
             provider_dict = profiles.export_to_data_json()  # Serialize the whole list
             self._json_repo.write_from_dict(full_filepath, provider_dict)  # Save back to disk
             self._logger.debug("Profil de lancement mis à jour : %s", full_filepath)

@@ -19,8 +19,7 @@ from datetime import datetime
 from typing import Any
 
 from models.profile_launch_model import ProfileLaunchModel
-
-from __src__.shared.datetime_util import dict_with_key_to_optional_datetime
+from shared.datetime_util import dict_with_key_to_optional_datetime
 
 # -----------------------------------------------------------------------------
 # Classes

@@ -39,8 +39,8 @@ class ProviderModel:
         id_file: Unique provider identifier as a canonical timestamp in milliseconds.
         provider_name: Human-readable provider name.
         provider_desc: Description of the provider.
-        created_date_provider: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
-        modified_date_provider: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
+        created_date_scenario: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
+        modified_date_scenario: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
         version: Provider version string (for example 1.0.0).
         steps: Ordered list of scraping actions.
 

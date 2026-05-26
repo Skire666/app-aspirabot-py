@@ -195,18 +195,19 @@ class ScrapingView(ttk.Frame):
             providers: List of dicts with keys ``id_file``, ``provider_name``,
                 ``provider_desc``, ``version``, ``modified_date``.
         """
+        print(f"PCOPCO - Rendering {len(providers)} providers in the view")
         selection_retained = self._provider_panel.render_providers_list(providers)
         if not selection_retained:
             self._profile_panel.set_enabled(False)
             self._workflow_panel.set_launch_enabled(False)
 
-    def set_selected_provider(self, id_file: str) -> None:
+    def set_selected_scenario(self, id_file: str) -> None:
         """Highlight the combobox entry matching id_file.
 
         Args:
-            id_file: The unique provider file identifier to select.
+            id_file: The unique scenario file identifier to select.
         """
-        self._provider_panel.set_selected_provider(id_file)
+        self._provider_panel.set_selected_scenario(id_file)
 
     # ---------------------------------------------------------------
     # Profile data — delegates to ProfileManagementPanel

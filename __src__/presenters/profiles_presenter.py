@@ -13,8 +13,6 @@ from models.profile_launch_model import ProfileLaunchModel
 from services.profiles_service import ProfilesService
 from views.profiles_view import ProfilesView
 
-from __src__.models.profiles_list_model import ProfilesListModel
-
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
@@ -88,12 +86,12 @@ class ProfilesPresenter:
         """
         # Retrieve all (provider_id, profile) tuples from the service.
         try:
-            all_profiles = self._service_profile.list_all_profiles()
+            all_profiles = self._service_profile.list_all_profiles_launch()
         except Exception:
             self._logger.exception("Échec du chargement des profils")
             all_profiles = []
 
-        sorted_tuples = self._sort_tuples(all_profiles)
+        sorted_tuples = self._sort_profiles(all_profiles)
 
         # Push formatted rows to the view and stamp the load time.
         path_folder = self._service_profile.get_path_profiles_folder()
@@ -101,11 +99,11 @@ class ProfilesPresenter:
         self._last_loaded = datetime.now()
 
     @staticmethod
-    def _format_rows(tuples: list[tuple[str, ProfileLaunchModel]]) -> list[dict[str, Any]]:
+    def _format_rows(list_profiles: list[ProfileLaunchModel]) -> list[dict[str, Any]]:
         """Convert (provider_id, profile) pairs into DataGrid row dicts.
 
         Args:
-            tuples: Sorted list of (provider_id, ProfileLaunchModel) pairs.
+            list_profiles: Sorted list of ProfileLaunchModel instances.
 
         Returns:
             A list of row dicts ready to pass to render_profiles().
@@ -113,27 +111,16 @@ class ProfilesPresenter:
         rows: list[dict[str, Any]] = []
 
         # Build one dict per profile with a composite id for routing.
-        for id_profile, profile in tuples:
-            rows.append(
-                {
-                    "id": profile.id_profile,
-                    "id_scenario": profile.id_scenario,
-                    "profile_name": profile.id_scenario,
-                    "provider_parent": profile.provider_parent or "—",
-                    "url_source_type": profile.url_source_type or "—",
-                    "used_date_profile": profile.used_date_profile or "—",
-                    "launch_count": str(profile.launch_count),
-                    "id_profile": profile.id_profile,
-                }
-            )
+        for profile in list_profiles:
+            rows.append(profile.export_to_data_json())
 
         return rows
 
-    def _sort_tuples(self, tuples: list[ProfilesListModel]) -> list[ProfilesListModel]:
+    def _sort_profiles(self, tuples: list[ProfileLaunchModel]) -> list[ProfileLaunchModel]:
         """Sort profile tuples by the current sort column and direction."""
         col = self._sort_column
 
-        def key_fn(t: ProfilesListModel) -> str:
+        def key_fn(t: ProfileLaunchModel) -> str:
             profile = t
             value = getattr(profile, col, None)
             if col == "launch_count":
