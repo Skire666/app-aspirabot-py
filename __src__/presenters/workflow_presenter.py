@@ -8,15 +8,14 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from models.launch_profile_model import ProfileLaunchModel
+from models.profile_launch_model import ProfileLaunchModel
 from models.scenario_model import ProviderModel
 from presenters.steps_list_presenter import StepsListPresenter
+from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
 from shared.random_util import merge_unique_list_id_step
 from views.workflow_view import WorkflowView
-
-from __src__.services.profiles_service import ProfilesService
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -96,11 +95,11 @@ class WorkflowPresenter:
         """
         self._is_creation_mode = False
 
-        if not self._service.exists_provider(id_file):
+        if not self._service.exists_scenario(id_file):
             self._view.show_error(f"Le fournisseur avec l'ID '{id_file}' n'existe pas.")
             return False
 
-        self._current_provider = self._service.read_provider(id_file)
+        self._current_provider = self._service.read_scenario(id_file)
 
         unique_list_id_step: set[str] = set()
         unique_list_id_step.update(
@@ -170,13 +169,13 @@ class WorkflowPresenter:
 
         if self._is_creation_mode:
             # Cancel when the ID file already exists and the user declines overwrite.
-            already_exists = self._service.exists_provider(self._current_provider.id_file)
+            already_exists = self._service.exists_scenario(self._current_provider.id_file)
             if already_exists and not self._view.ask_overwrite_confirmation():
                 return
-            self._service.create_provider(self._current_provider)
+            self._service.create_scenario(self._current_provider)
         else:
             self._current_provider.mark_as_modified()
-            self._service.update_provider(self._current_provider)
+            self._service.update_scenario(self._current_provider)
 
         self._workflow_presenter.clear_steps()
         self._view.clear_data()

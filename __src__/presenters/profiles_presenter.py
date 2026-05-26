@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from models.launch_profile_model import ProfileLaunchModel
+from models.profile_launch_model import ProfileLaunchModel
 from services.profiles_service import ProfilesService
 from views.profiles_view import ProfilesView
 
@@ -147,7 +147,7 @@ class ProfilesPresenter:
         self._sort_ascending = ascending
         self._load_profiles()
 
-    def _on_open_folder(self, _: str) -> None:
+    def _on_open_folder(self) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
         self._service.open_profiles_folder()
 

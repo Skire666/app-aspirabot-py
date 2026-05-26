@@ -17,7 +17,7 @@ Example:
 from dataclasses import dataclass, field
 from typing import Any
 
-from models.launch_profile_model import ProfileLaunchModel
+from models.profile_launch_model import ProfileLaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes

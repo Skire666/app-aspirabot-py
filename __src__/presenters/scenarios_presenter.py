@@ -11,7 +11,7 @@ from datetime import datetime
 from models.scenario_model import ProviderModel
 from services.scenarios_service import ScenariosService
 from shared.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
-from views.providers_view import ScenariosView
+from views.scenarios_view import ScenariosView
 
 
 class ScenariosPresenter:
@@ -190,7 +190,7 @@ class ScenariosPresenter:
         if not ask_duplicate_scenario_confirmation():
             return
         try:
-            self._service.duplicate_provider(id_file)
+            self._service.duplicate_scenario(id_file)
             self._load_scenarios()
         except Exception as exc:
             self._logger.error("Erreur lors de la duplication du scénario", exc_info=True)
@@ -205,13 +205,13 @@ class ScenariosPresenter:
         if not ask_delete_scenario_confirmation():
             return
         try:
-            self._service.delete_provider(id_file)
+            self._service.delete_scenario(id_file)
             self._load_scenarios()
         except Exception as exc:
             self._logger.error("Erreur lors de la suppression du scénario", exc_info=True)
             self._view.show_error(f"La suppression a échoué : {exc}")
 
-    def _on_open_folder(self, _: str) -> None:
+    def _on_open_folder(self) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
         self._service.open_scenarios_folder()
 

@@ -97,7 +97,7 @@ class StepsListPresenter:
         """
         self._provider_id_file = provider_id_file
         self._is_new_provider = False
-        self._provider_content: ProviderModel = self._service_provider.read_provider(provider_id_file)
+        self._provider_content: ProviderModel = self._service_provider.read_scenario(provider_id_file)
         self._steps = list(self._provider_content.steps)
         self._refresh_view()
         self._view.set_validation_status("Vérification : --", False)

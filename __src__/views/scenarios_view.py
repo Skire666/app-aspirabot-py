@@ -54,7 +54,7 @@ class ScenariosView(ttk.Frame):
         super().__init__(parent)
 
         self._on_create_provider: Callable[[], None] | None = None
-        self._on_open_folder: Callable[[str], None] | None = None
+        self._on_open_folder_callback: Callable[[], None] | None = None
         self._on_refresh: Callable[[], None] | None = None
         self._on_sort: Callable[[str, bool], None] | None = None
         self._on_edit: Callable[[str], None] | None = None
@@ -103,7 +103,7 @@ class ScenariosView(ttk.Frame):
     def set_callbacks(
         self,
         on_create: Callable[[], None],
-        on_open_folder: Callable[[str], None],
+        on_open_folder: Callable[[], None],
         on_refresh: Callable[[], None],
         on_sort: Callable[[str, bool], None],
         on_edit: Callable[[str], None],
@@ -126,7 +126,7 @@ class ScenariosView(ttk.Frame):
             on_validate: Callback for validating provider files.
         """
         self._on_create_provider = on_create
-        self._on_open_folder = on_open_folder
+        self._on_open_folder_callback = on_open_folder
         self._on_refresh = on_refresh
         self._on_sort = on_sort
         self._on_edit = on_edit
@@ -151,9 +151,9 @@ class ScenariosView(ttk.Frame):
         if self._on_create_provider:
             self._on_create_provider()
 
-    def _notify_open_folder(self, path: str) -> None:
-        if self._on_open_folder:
-            self._on_open_folder(path)
+    def _notify_open_folder(self) -> None:
+        if self._on_open_folder_callback:
+            self._on_open_folder_callback()
 
     def _notify_refresh(self) -> None:
         if self._on_refresh:

@@ -43,28 +43,11 @@ class ProfilesService:
         Returns:
             A list of (provider_id, profile) tuples, one per profile found.
         """
-        result: list[tuple[str, ProfilesModel]] = []
+        return self._repository.read_all_profiles()
 
-        # Load every known provider from the repository.
-        providers: list[ProfilesModel] = self._repository.list_all_scenarios()
-
-        for provider in providers:
-            # Collect profiles from this provider, skipping on error.
-            try:
-                for profile in provider.launch_profiles:
-                    profile.provider_parent = provider.provider_name
-                    result.append((provider.id_file, profile))
-            except Exception:
-                self._logger.exception(
-                    "Échec du listage des profils pour le fournisseur %s",
-                    provider.id_file,
-                )
-
-        return result
-0
     def open_profiles_folder(self) -> None:
         """Open the folder containing provider files in the OS file explorer."""
-        self._repository.open_scenarios_folder()
+        self._repository.open_profiles_folder()
 
     def get_path_profiles_folder(self) -> str:
         """Get the path of the folder containing provider files.

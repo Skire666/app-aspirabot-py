@@ -20,13 +20,14 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
-from models.launch_profile_model import ProfileLaunchModel
+from models.profile_launch_model import ProfileLaunchModel
 from models.scenario_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfig
 from models.workflow_run_handlers_model import WorkflowRunHandlers
+from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from shared.constants import C_KEY_URL_MODE
@@ -55,8 +56,6 @@ from shared.i18n_fra import (
 )
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
-
-from __src__.services.profiles_service import ProfilesService
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -170,7 +169,7 @@ class ExecutorPresenter:
         self._cancel_active_run()
 
         self._logging.info("Loading provider id_file=%s", id_file)
-        self._provider = self._service_scenarios.read_provider(id_file)
+        self._provider = self._service_scenarios.read_scenario(id_file)
         self._cancel_event.clear()
 
         # Guarantee at least one profile exists, then populate the view.
@@ -191,7 +190,7 @@ class ExecutorPresenter:
         """Add and persist a default profile when the provider has none."""
         if not self._provider.launch_profiles:
             self._provider.launch_profiles.append(ProfileLaunchModel.get_default())
-            self._service_scenarios.update_provider(self._provider)
+            self._service_scenarios.update_scenario(self._provider)
 
     def _setup_view_after_load(self, id_file: str) -> None:
         """Reset the view, populate profiles, and seed the date label.
@@ -335,7 +334,7 @@ class ExecutorPresenter:
         # Build a new profile with default values and attach it to the provider.
         new_profile = ProfileLaunchModel.get_default(name)
         self._provider.launch_profiles.append(new_profile)
-        self._service_scenarios.update_provider(self._provider)
+        self._service_scenarios.update_scenario(self._provider)
 
         self._refresh_profiles_list()
         self._view.set_selected_profile(new_profile.id_profile)
@@ -352,7 +351,7 @@ class ExecutorPresenter:
 
         # Remove the matching profile from the list.
         self._provider.launch_profiles = [p for p in self._provider.launch_profiles if p.id_profile != id_profile]
-        self._service_scenarios.update_provider(self._provider)
+        self._service_scenarios.update_scenario(self._provider)
         self._refresh_profiles_list()
 
         # No profile is selected after deletion — disable rename/save, keep file date.
@@ -377,7 +376,7 @@ class ExecutorPresenter:
         # Apply the new name and stamp the modification date.
         profile.id_scenario = new_name
         profile.mark_profile_as_modified()
-        self._service_scenarios.update_provider(self._provider)
+        self._service_scenarios.update_scenario(self._provider)
 
         # Restore selection and update the date label with the provider file date.
         self._refresh_profiles_list()
@@ -412,7 +411,7 @@ class ExecutorPresenter:
             profile.emergency_stop_threshold = threshold
 
         profile.mark_profile_as_modified()
-        self._service_scenarios.update_provider(self._provider)
+        self._service_scenarios.update_scenario(self._provider)
         self._is_profile_dirty = False
 
         self._refresh_profiles_list()
@@ -531,7 +530,7 @@ class ExecutorPresenter:
             None.
         """
         if self._provider:
-            self._service_scenarios.update_provider(self._provider)
+            self._service_scenarios.update_scenario(self._provider)
 
     # ------------------------------------------------------------------
     # Workflow control callbacks

@@ -202,10 +202,14 @@ pythonVersion = "3.14"
 include = ["__src__", "interfaces", "models", "services", "repositories", "presenters", "views", "shared"]
 
 # Folders excluded from analysis — tests do not need to be type-checked.
-exclude = ["__tests__"]
+exclude = ["__tests__", "**/__pycache__", "**/node_modules", ".venv"]
+
+# virtual environments
+venvPath = "."
+venv = ".venv"
 
 # Strictest level available in basedpyright (superset of "strict").
-typeCheckingMode = "strict"
+typeCheckingMode = "strict" # "off" | "basic" | "standard" | "strict" | "all"
 
 # Suppresses errors on third-party libraries without type stubs (py.typed / stubs missing).
 reportMissingModuleSource = "none"

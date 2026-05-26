@@ -4,9 +4,9 @@ Provides ProvidersRepository, which discovers, reads, writes, and deletes
 JSON provider configuration files stored in a local directory.
 
 Example:
-    >>> from repositories.providers_repository import ProvidersRepository
-    >>> repo = ProvidersRepository("./providers")
-    >>> providers = repo.list_all_scenarios()
+    >>> from repositories.profiles_repository import ProfilesRepository
+    >>> repo = ProfilesRepository("./profiles")
+    >>> profiles = repo.list_all_profiles()
 """
 
 # -----------------------------------------------------------------------------
@@ -22,6 +22,7 @@ from models.profiles_model import ProfilesModel
 from repositories.json_repository import JsonFileRepository
 from shared.exception_util import (
     AspirabotError,
+    InvalidProfilesFolderPathError,
     ProfileDataMissingError,
     ProfileNotFoundError,
 )
@@ -83,7 +84,7 @@ class ProfilesRepository(IProfilesRepository):
         return []
 
     @staticmethod
-    def _dict_to_launch_profile_model(data: dict[str, Any]) -> ProfilesModel:
+    def _dict_to_profile_launch_model(data: dict[str, Any]) -> ProfilesModel:
         """Deserializes a raw JSON dictionary into a ProfilesModel instance.
 
         Args:
@@ -130,7 +131,7 @@ class ProfilesRepository(IProfilesRepository):
             self._logger.warning("Le fichier %s est vide.", full_filepath)
             raise ProfileDataMissingError(id_file)
 
-        provider_model = self._dict_to_launch_profile_model(provider_data)
+        provider_model = self._dict_to_profile_launch_model(provider_data)
         self._logger.debug("Profil chargé : %s", full_filepath)
         return provider_model
 
@@ -149,7 +150,7 @@ class ProfilesRepository(IProfilesRepository):
                 provider_data = self._json_repo.read(file_path)
 
                 if provider_data:
-                    provider_model = self._dict_to_launch_profile_model(provider_data)
+                    provider_model = self._dict_to_profile_launch_model(provider_data)
                     profiles.append(provider_model)
                     self._logger.debug("Profil ajouté à la liste : %s", file_path.name)
             except OSError, AspirabotError:
@@ -168,27 +169,27 @@ class ProfilesRepository(IProfilesRepository):
             OSError: When the file cannot be written.
         """
         full_filepath = self._compute_fullpath_from_id_file(provider.id_file)
-        self.create_folder_providers_if_missing()
+        self.create_folder_profiles_if_missing()
 
         try:
             provider_dict = provider.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, provider_dict)
-            self._logger.debug("Fournisseur sauvegardé : %s", full_filepath)
+            self._logger.debug("Profil sauvegardé : %s", full_filepath)
         except Exception:
-            self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
+            self._logger.error("Erreur lors de la création du profil.", exc_info=True)
             raise
 
-    def update_scenario(self, provider: ProfilesModel) -> None:
-        """Overwrites an existing provider file with updated data.
+    def update_profile(self, provider: ProfilesModel) -> None:
+        """Overwrites an existing profile file with updated data.
 
         Args:
-            provider: The provider model to save.
+            provider: The profile model to save.
 
         Raises:
             OSError: When the file cannot be written.
         """
         full_filepath = self._compute_fullpath_from_id_file(provider.id_file)
-        self.create_folder_providers_if_missing()
+        self.create_folder_profiles_if_missing()
 
         try:
             provider_dict = provider.export_to_data_json()
@@ -204,18 +205,18 @@ class ProfilesRepository(IProfilesRepository):
             Path(self._folder_path).mkdir(exist_ok=True, parents=True)
             self._logger.debug("Dossier créé : %s", self._folder_path)
 
-    def delete_scenario(self, id_file: str) -> None:
-        """Deletes the JSON file for the given provider identifier.
+    def delete_profile(self, id_file: str) -> None:
+        """Deletes the JSON file for the given profile identifier.
 
         Args:
-            id_file: Unique identifier of the provider to delete.
+            id_file: Unique identifier of the profile to delete.
 
         Raises:
-            ProviderNotFoundError: When no matching file exists.
+            ProfileNotFoundError: When no matching file exists.
             OSError: When the file cannot be deleted.
         """
-        self._logger.debug("Suppression du fournisseur id=%s", id_file)
-        self.create_folder_providers_if_missing()
+        self._logger.debug("Suppression du profil id=%s", id_file)
+        self.create_folder_profiles_if_missing()
 
         full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_file)
 
@@ -224,9 +225,9 @@ class ProfilesRepository(IProfilesRepository):
 
         try:
             Path(full_pathfile_to_delete).unlink()
-            self._logger.debug("Fournisseur supprimé : %s", full_pathfile_to_delete)
+            self._logger.debug("Profil supprimé : %s", full_pathfile_to_delete)
         except Exception:
-            self._logger.error("Erreur lors de la suppression du fournisseur.", exc_info=True)
+            self._logger.error("Erreur lors de la suppression du profil.", exc_info=True)
             raise
 
     def open_profiles_folder(self) -> None:
@@ -268,4 +269,4 @@ class ProfilesRepository(IProfilesRepository):
         Returns:
             The full Path to the provider's JSON file.
         """
-        return self._folder_path / (id_file + "_scenario.json")
+        return self._folder_path / (id_file + C_PROFILE_FILE_SUFFIX)

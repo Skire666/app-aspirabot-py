@@ -49,7 +49,7 @@ class IProfilesRepository(Protocol):
         """
         ...
 
-    def list_all_profiles(self) -> list[ProviderModel]:
+    def read_all_profiles(self) -> list[ProviderModel]:
         """Return all valid profiles found in the profiles folder.
 
         Returns:

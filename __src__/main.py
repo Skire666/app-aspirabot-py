@@ -46,7 +46,7 @@ from views.faq_view import FaqView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.profiles_view import ProfilesView
-from views.providers_view import ScenariosView
+from views.scenarios_view import ScenariosView
 from views.scraping_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
 from views.workflow_view import WorkflowView

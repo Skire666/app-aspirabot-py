@@ -1,8 +1,5 @@
 import tkinter as tk
-from collections.abc import Callable
 from pathlib import Path
-
-from shared.operating_system_util import open_folder as _os_open_folder
 
 
 class FolderLinkWidget(tk.Frame):
@@ -21,7 +18,7 @@ class FolderLinkWidget(tk.Frame):
         parent: tk.Widget,
         title: str = "",
         path: str = "",
-        callback: Callable[[str], None] | None = None,
+        callback: callable | None = None,
         **kwargs: object,
     ) -> None:
         """Initialize the folder link widget.
@@ -30,12 +27,13 @@ class FolderLinkWidget(tk.Frame):
             parent: The parent Tkinter widget.
             title: The title for the widget. Displayed before the path.
             path: The initial path to display.
-            callback: The function to call when the link is clicked.
+            callable: The function to call when the link is clicked.
             **kwargs: Additional Tkinter Frame options.
         """
         super().__init__(parent, **kwargs)
 
         self._path = path
+        self._callback = callback
 
         self._label = tk.Label(self, text=title or "Path :")
         self._label.pack(side="left")
@@ -59,13 +57,13 @@ class FolderLinkWidget(tk.Frame):
         )
 
     def _bind_events(self) -> None:
-        self._link.bind("<Button-1>", self._on_click)
+        self._link.bind("<Button-1>", lambda e: self._on_click())
         self._link.bind("<Enter>", lambda e: self._on_hover(True))
         self._link.bind("<Leave>", lambda e: self._on_hover(False))
 
-    def _on_click(self, _: tk.Event | None = None) -> None:
-        if self._path:
-            self._open_folder(self._path)
+    def _on_click(self) -> None:
+        if self._callback:
+            self._callback()
 
     def _on_hover(self, entering: bool) -> None:
         """Change link color on hover if a path is set."""
@@ -77,8 +75,3 @@ class FolderLinkWidget(tk.Frame):
         self._path = path
         self._link.config(text=str(path) if path else "(no path)")
         self._apply_style()
-
-    @staticmethod
-    def _open_folder(path: str | Path) -> None:
-        """Open the folder in the native file explorer via the shared OS utility."""
-        _os_open_folder(path)

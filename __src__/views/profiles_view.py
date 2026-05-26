@@ -60,7 +60,7 @@ class ProfilesView(ttk.Frame):
         # Callback registered by the presenter via set_on_launch().
         self._on_refresh: Callable[[], None] | None = None
         self._on_launch_callback: Callable[[str, str], None] | None = None
-        self._on_open_folder_callback: Callable[[str], None] | None = None
+        self._on_open_folder_callback: Callable[[], None] | None = None
         self._on_sort_callback: Callable[[str, bool], None] | None = None
 
         self._create_widgets()
@@ -78,7 +78,7 @@ class ProfilesView(ttk.Frame):
         self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
 
         self._btn_open_folder = FolderLinkWidget(
-            top_frame, title="Dossier des fournisseurs :", path="", callback=self._notify_open_folder
+            top_frame, title="Dossier des profiles :", path="", callback=self._notify_open_folder
         )
         self._btn_open_folder.pack(side=tk.RIGHT, padx=(0, 10), pady=(0, 5))
 
@@ -114,11 +114,11 @@ class ProfilesView(ttk.Frame):
         """
         self._on_sort_callback = callback
 
-    def set_on_open_folder(self, callback: Callable[[str], None]) -> None:
+    def set_on_open_folder(self, callback: Callable[[], None]) -> None:
         """Register the callback invoked when the user clicks Ouvrir dossier des fournisseurs.
 
         Args:
-            callback: Callable receiving the folder path as an argument.
+            callback: Callable receiving no arguments.
         """
         self._on_open_folder_callback = callback
 
@@ -150,9 +150,9 @@ class ProfilesView(ttk.Frame):
         if self._on_refresh:
             self._on_refresh()
 
-    def _notify_open_folder(self, path: str) -> None:
+    def _notify_open_folder(self) -> None:
         if self._on_open_folder_callback:
-            self._on_open_folder_callback(path)
+            self._on_open_folder_callback()
 
     def _notify_sort(self, column: str, ascending: bool) -> None:
         if self._on_sort_callback:

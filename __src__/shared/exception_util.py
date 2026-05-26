@@ -251,6 +251,18 @@ class InvalidProviderJsonContentError(ValueError, AspirabotError):
         super().__init__(f"Contenu JSON invalide dans {file_name}")
 
 
+class InvalidProfilesFolderPathError(NotADirectoryError, AspirabotError):
+    """Raised when the profiles folder path is not a directory."""
+
+    def __init__(self, folder_path: str | Path) -> None:
+        """Initialize the error message.
+
+        Args:
+            folder_path: Path evaluated for folder access.
+        """
+        super().__init__(f"Le chemin spécifié n'est pas un dossier: {folder_path}")
+
+
 class ProfileNotFoundError(FileNotFoundError, AspirabotError):
     """Raised when a provider file cannot be found."""
 
