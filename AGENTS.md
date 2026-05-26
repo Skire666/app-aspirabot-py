@@ -282,10 +282,6 @@ def fetch_page(url: str, timeout: int = 30) -> str:
 
     Raises:
         PlaywrightTimeoutError: If the page does not respond within the allotted time.
-
-    Examples:
-        >>> fetch_page("https://example.com", 30)
-        "<html>...</html>"
     """
 ```
 

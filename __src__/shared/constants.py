@@ -76,6 +76,20 @@ C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
 # -----------------------------------------------------------------------------
 
+# Supported URL modes for the OPEN_URL step (mirrors view layer allowed modes).
+C_SCENARIO_FILE_SUFFIX = "_scenario.json"
+
+# Glob pattern to match all scenario files in the scenarios folder.
+C_SCENARIOS_FILES_REGEXP = f"*{C_SCENARIO_FILE_SUFFIX}"
+
+# Suffix for profile files associated with scenarios (mirrors view layer naming convention).
+C_PROFILE_FILE_SUFFIX = "_profiles.json"
+
+# Glob pattern to match all profile files in the profiles folder.
+C_PROFILES_FILES_REGEXP = f"*{C_PROFILE_FILE_SUFFIX}"
+
+# -----------------------------------------------------------------------------
+
 # Special string used to indicate an error occurred during JavaScript evaluation in the browser context.
 C_STR_ERROR_JS_EVALUATION: str = "<[__ERROR__]>"
 

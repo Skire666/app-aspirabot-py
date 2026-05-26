@@ -27,12 +27,8 @@ from shared.exception_util import (
 )
 from shared.operating_system_util import open_folder
 
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-C_SCENARIO_FILE_SUFFIX = "_scenario.json"
-C_SCENARIOS_FILES_REGEXP = f"*{C_SCENARIO_FILE_SUFFIX}"
+from __src__.models.profile_launch_model import ProfileLaunchModel
+from __src__.shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -124,7 +120,7 @@ class ScenariosRepository:
         if not full_filepath.exists():
             raise ScenarioNotFoundError(id_file)
 
-        provider_data = self._json_repo.read(full_filepath)
+        provider_data = self._json_repo.read_from_path(full_filepath)
 
         if not provider_data:
             self._logger.warning("Le fichier %s est vide.", full_filepath)
@@ -146,7 +142,7 @@ class ScenariosRepository:
 
         for file_path in self._list_scenarios_files():
             try:
-                provider_data = self._json_repo.read(file_path)
+                provider_data = self._json_repo.read_from_path(file_path)
 
                 if provider_data:
                     provider_model = self._dict_to_provider_model(provider_data)
@@ -229,6 +225,23 @@ class ScenariosRepository:
             self._logger.error("Erreur lors de la suppression du fournisseur.", exc_info=True)
             raise
 
+    def create_default_profile_for_scenario(self, id_scenario: str) -> None:
+        """Creates a default profile for the given scenario identifier.
+
+        Args:
+            id_scenario: Unique identifier of the scenario to create a profile for.
+        """
+        full_filepath = self._compute_fullpath_from_id_file(id_scenario, suffix=C_PROFILE_FILE_SUFFIX)
+        tmp: ProfileLaunchModel = ProfileLaunchModel.get_default(id_scenario)
+
+        try:
+            dicts = tmp.export_to_data_json()
+            self._json_repo.write_from_dict(full_filepath, dicts)
+            self._logger.debug("Profil de lancement sauvegardé : %s", full_filepath)
+        except Exception:
+            self._logger.error("Erreur lors de la création du profil de lancement.", exc_info=True)
+            raise
+
     def open_scenarios_folder(self) -> None:
         """Opens the providers folder in the OS file explorer.
 
@@ -259,13 +272,14 @@ class ScenariosRepository:
         """
         return self._folder_path
 
-    def _compute_fullpath_from_id_file(self, id_file: str) -> Path:
+    def _compute_fullpath_from_id_file(self, id_file: str, suffix: str = C_SCENARIO_FILE_SUFFIX) -> Path:
         """Computes the full JSON file path for a given provider identifier.
 
         Args:
             id_file: Unique identifier of the provider.
+            suffix: The file suffix to append (default is C_SCENARIO_FILE_SUFFIX).
 
         Returns:
             The full Path to the provider's JSON file.
         """
-        return self._folder_path / (id_file + C_SCENARIO_FILE_SUFFIX)
+        return self._folder_path / (id_file + suffix)

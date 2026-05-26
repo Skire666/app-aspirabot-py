@@ -22,12 +22,12 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 DATA_GRID_COLUMNS: list[dict[str, Any]] = [
     {"id": "action_launch", "title": "Lancer", "width": 62, "type": "button", "button_text": "Lancer"},
     {"id": "profile_name", "title": "Nom du profil", "width": 160, "type": "text"},
-    {"id": "provider_parent", "title": "Scénario", "width": 160, "type": "text"},
+    {"id": "scenario_name", "title": "Scénario", "width": 150, "type": "text"},
     {"id": "url_source_type", "title": "Source", "width": 100, "type": "text"},
     {"id": "used_date_profile", "title": "Dernier usage", "width": 140, "type": "text", "format": "%d/%m/%Y %H:%M"},
     {"id": "launch_count", "title": "Utilisés", "width": 100, "type": "text"},
-    {"id": "id_profile", "title": "ID Profil", "width": 50, "type": "text"},
-    {"id": "id_scenario", "title": "ID Scénario", "width": 50, "type": "text"},
+    {"id": "id_profile", "title": "ID Profil", "width": 80, "type": "text"},
+    {"id": "id_scenario", "title": "ID Scénario", "width": 80, "type": "text"},
 ]
 
 # -----------------------------------------------------------------------------
@@ -161,6 +161,7 @@ class ProfilesView(ttk.Frame):
             action_id: Column id of the button that was clicked.
             row_id: The ``id`` value of the clicked row (``id_provider:::id_profile``).
         """
+        print(f"PCOPCO - Action {action_id} on row {row_id}")
         if action_id != "action_launch" or not self._on_launch_callback:
             return
 

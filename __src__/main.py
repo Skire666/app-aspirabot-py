@@ -290,7 +290,7 @@ def _init_scenarios_components(
     """
     # Shared service and repository for both list and edit sub-components.
     scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
-    scenarios_service = ScenariosService(scenario_repo, profiles_service)
+    scenarios_service = ScenariosService(scenario_repo)
 
     # Provider list view and presenter.
     provider_view = ScenariosView(main_view.content_area)

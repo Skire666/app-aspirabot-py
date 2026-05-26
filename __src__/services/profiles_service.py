@@ -238,6 +238,21 @@ class ProfilesService:
         """
         self._repository.delete_profile_launch(id_scenario, id_profile)
 
+    def get_scenario_name(self, id_scenario: str) -> str:
+        """Get the name of the scenario associated with a given profile.
+
+        Args:
+            id_scenario: Unique identifier of the scenario to which the profile belongs.
+
+        Returns:
+            The name of the scenario associated with the given profile.
+
+        Raises:
+            ProviderNotFoundError: If no file matches *id_scenario*.
+        """
+        scenario = self._repository.read_scenario(id_scenario)
+        return scenario.provider_name if scenario else ""
+
     # -------------------------------------------------------------------------
     # Utility operations
     # -------------------------------------------------------------------------

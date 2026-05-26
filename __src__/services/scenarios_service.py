@@ -22,7 +22,6 @@ import logging
 
 from models.scenario_model import ProviderModel
 from repositories.scenarios_repository import ScenariosRepository
-from services.profiles_service import ProfilesService
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -55,7 +54,7 @@ class ScenariosService:
         True
     """
 
-    def __init__(self, repository: ScenariosRepository, profiles_service: ProfilesService) -> None:
+    def __init__(self, repository: ScenariosRepository) -> None:
         """Initialise the service with its required repository dependency.
 
         Args:
@@ -70,7 +69,6 @@ class ScenariosService:
         # Configure a named logger so log records are traceable to this module.
         self._logger = logging.getLogger(__name__)
         self._repository: ScenariosRepository = repository
-        self._profiles_service: ProfilesService = profiles_service
 
     # -------------------------------------------------------------------------
     # Read operations
@@ -133,10 +131,6 @@ class ScenariosService:
     def create_scenario(self, provider: ProviderModel) -> None:
         """Stamp timestamps on *provider* and persist it as a new scenario.
 
-        Calls :meth:`~models.scenario_model.ProviderModel.mark_as_created` to
-        set both ``created_date_scenario`` and ``modified_date_scenario`` to the
-        current time before delegating to the repository.
-
         Args:
             provider: A :class:`~models.scenario_model.ProviderModel` instance
                 that has not yet been persisted. Its ``id_file`` must be unique.
@@ -151,13 +145,10 @@ class ScenariosService:
             True
         """
         # Stamp creation/modification timestamps before writing.
-        id_file = provider.id_file
 
         provider.mark_as_created()
         self._repository.create_scenario(provider)
-
-        if not self._profiles_service.exists_profiles(id_file):
-            self._profiles_service.create_profile(id_file)
+        self._repository.create_default_profile_for_scenario(provider)
 
     def read_scenario(self, id_file: str) -> ProviderModel:
         """Load a single scenario by its file identifier and wire step context.

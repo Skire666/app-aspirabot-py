@@ -25,15 +25,12 @@ from shared.exception_util import (
     InvalidProfilesFolderPathError,
     ProfileDataMissingError,
     ProfileNotFoundError,
+    ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
 
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-C_PROFILE_FILE_SUFFIX = "_profiles.json"
-C_PROFILES_FILES_REGEXP = f"*{C_PROFILE_FILE_SUFFIX}"
+from __src__.models.scenario_model import ProviderModel
+from __src__.shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -104,7 +101,7 @@ class ProfilesRepository:
         Returns:
             True when a matching JSON file is found on disk, False otherwise.
         """
-        full_filepath = self._compute_fullpath_from_id_file(id_scenario)
+        full_filepath = self._compute_fullpath_from_id_file(id_scenario, suffix=C_PROFILE_FILE_SUFFIX)
         return full_filepath.exists() and full_filepath.is_file()
 
     def read_profiles(self, id_scenario: str) -> ProfilesListModel:
@@ -125,7 +122,7 @@ class ProfilesRepository:
         if not full_filepath.exists():
             raise ProfileNotFoundError(id_scenario)
 
-        provider_data = self._json_repo.read(full_filepath)
+        provider_data = self._json_repo.read_from_path(full_filepath)
 
         if not provider_data:
             self._logger.warning("Le fichier %s est vide.", full_filepath)
@@ -147,7 +144,7 @@ class ProfilesRepository:
 
         for file_path in self._list_profiles_files():
             try:
-                provider_data = self._json_repo.read(file_path)
+                provider_data = self._json_repo.read_from_path(file_path)
 
                 if provider_data:
                     provider_model = self._dict_to_profile_launch_model(provider_data)
@@ -282,6 +279,18 @@ class ProfilesRepository:
             self._logger.error("Erreur lors de la suppression du profil.", exc_info=True)
             raise
 
+    def read_scenario(self, id_scenario: str) -> ProviderModel:
+        """Loads a scenario file by ID and returns it as a ProfilesListModel.
+
+        Args:
+            id_scenario: Unique identifier of the scenario to load.
+        """
+        full_pathfile = self._compute_fullpath_from_id_file(id_scenario, suffix=C_SCENARIO_FILE_SUFFIX)
+        if not full_pathfile.exists():
+            raise ScenarioNotFoundError(id_scenario)
+        scenario_data = self._json_repo.read_from_path(full_pathfile)
+        return ProviderModel.import_from_data_json(scenario_data)
+
     def open_profiles_folder(self) -> None:
         """Opens the profiles folder in the OS file explorer.
 
@@ -312,11 +321,12 @@ class ProfilesRepository:
         """
         return self._folder_path
 
-    def _compute_fullpath_from_id_file(self, id_file: str) -> Path:
+    def _compute_fullpath_from_id_file(self, id_file: str, suffix: str = C_PROFILE_FILE_SUFFIX) -> Path:
         """Computes the full JSON file path for a given provider identifier.
 
         Args:
             id_file: Unique identifier of the provider.
+            suffix: The file suffix to append (default is C_PROFILE_FILE_SUFFIX).
 
         Returns:
             The full Path to the provider's JSON file.
@@ -324,4 +334,4 @@ class ProfilesRepository:
         if not id_file:
             raise ValueError("L'identifiant du scénario ne peut pas être vide.")
 
-        return self._folder_path / (id_file + C_PROFILE_FILE_SUFFIX)
+        return self._folder_path / (id_file + suffix)

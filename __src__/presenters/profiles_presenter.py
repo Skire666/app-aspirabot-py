@@ -98,8 +98,7 @@ class ProfilesPresenter:
         self._view.render_profiles(path_folder, self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
-    @staticmethod
-    def _format_rows(list_profiles: list[ProfileLaunchModel]) -> list[dict[str, Any]]:
+    def _format_rows(self, list_profiles: list[ProfileLaunchModel]) -> list[dict[str, Any]]:
         """Convert (provider_id, profile) pairs into DataGrid row dicts.
 
         Args:
@@ -111,8 +110,19 @@ class ProfilesPresenter:
         rows: list[dict[str, Any]] = []
 
         # Build one dict per profile with a composite id for routing.
-        for profile in list_profiles:
-            rows.append(profile.export_to_data_json())
+        for p in list_profiles:
+            rows.append(
+                {
+                    "action_launch": {"id_scenario": p.id_scenario, "id_profile": p.id_profile},
+                    "profile_name": p.profile_name,
+                    "scenario_name": self._service_profile.get_scenario_name(p.id_scenario),
+                    "url_source_type": p.url_source_type,
+                    "used_date_profile": p.used_date_profile.strftime("%d/%m/%Y %H:%M") if p.used_date_profile else "",
+                    "launch_count": str(p.launch_count),
+                    "id_profile": p.id_profile,
+                    "id_scenario": p.id_scenario,
+                }
+            )
 
         return rows
 

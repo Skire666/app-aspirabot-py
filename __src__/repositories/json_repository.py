@@ -22,7 +22,7 @@ import logging
 from datetime import date, datetime, time
 from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from shared.exception_util import JsonFileRepositoryError
 
@@ -78,6 +78,12 @@ def _decode_hook(raw: dict[str, Any]) -> dict[str, Any] | date | datetime | time
 
 
 # -----------------------------------------------------------------------------
+# Module-level cache shared by all JsonFileRepository instances/subclasses
+# -----------------------------------------------------------------------------
+
+_cache: dict[Path, dict[str, Any]] = {}
+
+# -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
 
@@ -85,16 +91,13 @@ def _decode_hook(raw: dict[str, Any]) -> dict[str, Any] | date | datetime | time
 class JsonFileRepository:
     """Read/write JSON files backed by a shared, path-keyed in-memory cache.
 
-    All instances share the same class-level ``_cache`` dict so any caller
-    benefits from a previously loaded file without requiring a single shared
-    instance.  Every ``read`` call returns a deep copy to prevent accidental
-    mutation of shared state.
+    All instances and subclasses share the same module-level ``_cache`` dict
+    so any caller benefits from a previously loaded file.  Every ``read`` call
+    returns a deep copy to prevent accidental mutation of shared state.
 
     Supported value types beyond native JSON:
         ``date``, ``datetime``, ``time`` — encoded as ISO 8601 tagged objects.
     """
-
-    _cache: ClassVar[dict[Path, dict[str, Any]]] = {}
 
     def __init__(self) -> None:
         """Initialise the repository logger."""
@@ -104,7 +107,7 @@ class JsonFileRepository:
     # Public API
     # ------------------------------------------------------------------
 
-    def read(self, path: Path) -> dict[str, Any]:
+    def read_from_path(self, path: Path) -> dict[str, Any]:
         """Return the JSON content of *path*, loading from disk when needed.
 
         On a cache hit a deep copy of the cached value is returned.
@@ -125,9 +128,9 @@ class JsonFileRepository:
         resolved = path.resolve()
 
         # Return a deep copy from cache on hit.
-        if resolved in self._cache:
-            self._logger.debug("Cache hit pour '%s'.", resolved)
-            return copy.deepcopy(self._cache[resolved])
+        if resolved in _cache:
+            self._logger.debug("Déjà chargé. Lecture du cache '%s'.", resolved)
+            return copy.deepcopy(_cache[resolved])
 
         # File absent: nothing to cache, return empty dict.
         if not resolved.exists():
@@ -136,7 +139,7 @@ class JsonFileRepository:
 
         # Load from disk, populate cache, return a deep copy.
         data = self._load_from_disk(resolved)
-        self._cache[resolved] = data
+        _cache[resolved] = data
         return copy.deepcopy(data)
 
     def write_from_dict(self, path: Path, data: dict[str, Any]) -> None:
@@ -166,7 +169,7 @@ class JsonFileRepository:
             raise JsonFileRepositoryError(resolved, str(exc)) from exc
 
         # Invalidate stale cache entry after a successful write.
-        self._cache.pop(resolved, None)
+        _cache.pop(resolved, None)
         self._logger.debug("Cache invalidé pour '%s'.", resolved)
 
     def invalidate(self, path: Path) -> None:
@@ -178,7 +181,7 @@ class JsonFileRepository:
             path: Path whose cache entry should be evicted.
         """
         resolved = path.resolve()
-        removed = self._cache.pop(resolved, None)
+        removed = _cache.pop(resolved, None)
         if removed is not None:
             self._logger.debug("Entrée cache supprimée manuellement pour '%s'.", resolved)
 
