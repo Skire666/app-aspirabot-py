@@ -10,8 +10,8 @@ class TitleModuleEnum(Enum):
     """
 
     E_LOGS = "LOGS"
-    E_HISTORY = "HISTORIC"
-    E_SCRIPTS = "PROVIDER"
+    E_PROFILES = "HISTORIC"
+    E_SCENARIOS = "PROVIDER"
     E_EDITOR = "WORKFLOW"
     E_EXECUTOR = "EXECUTE"
     E_FAQ = "FAQ"

@@ -12,9 +12,9 @@ Example:
     >>> report = service.run_workflow(provider, cancel, pause)
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import logging
 import threading
@@ -25,7 +25,7 @@ from pathlib import Path
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.app_configuration_model import AppConfigurationModel
-from models.provider_model import ProviderModel
+from models.scenario_model import ProviderModel
 from models.scraping_context_model import ExtractedData, ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
@@ -42,9 +42,9 @@ from shared.constants import (
 from shared.enums import EventScrapingEnum, StepTypeEnum
 from shared.exception_util import UnsupportedBrowserEngineError
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Class
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class ScrapingService:

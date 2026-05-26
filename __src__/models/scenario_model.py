@@ -10,23 +10,22 @@ Example:
     True
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, cast
 
-from models.launch_profile_model import LaunchProfileModel
 from models.step_scraping_model import StepScrapingModel
-from shared.constants import C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID, C_SIZE_HEXASTRING_PROVIDER_ID
+from shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.random_util import generate_rng_hexastring
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 @dataclass
@@ -58,7 +57,6 @@ class ProviderModel:
     modified_date_provider: datetime | None
     version: str
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
-    launch_profiles: list[LaunchProfileModel] = field(default_factory=list)
 
     @classmethod
     def get_default_data(cls) -> ProviderModel:
@@ -171,11 +169,6 @@ class ProviderModel:
         duplicate = copy.deepcopy(source)
         duplicate.id_file = generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID)
         duplicate.provider_name = f"Copie de {source.provider_name}"
-        for profile in duplicate.launch_profiles:
-            profile.id_profile = generate_rng_hexastring(C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID)
-            profile.name_profile = f"Copie de {profile.name_profile}"
-            profile.used_date_profile = None
-            profile.launch_count = 0
         return duplicate
 
     @classmethod
@@ -197,7 +190,6 @@ class ProviderModel:
             '1.0.0'
         """
         steps = cls._deserialize_steps(data.get("steps", []))
-        profiles = cls._deserialize_profiles(data.get("launch_profiles", []))
         return cls(
             id_file=data.get("id_file"),
             provider_name=data.get("provider_name"),
@@ -206,7 +198,6 @@ class ProviderModel:
             modified_date_provider=dict_with_key_to_optional_datetime(data, "modified_date_provider"),
             version=data.get("version"),
             steps=steps,
-            launch_profiles=profiles,
         )
 
     @staticmethod
@@ -233,22 +224,6 @@ class ProviderModel:
                 continue
         return result
 
-    @staticmethod
-    def _deserialize_profiles(profiles_data: object) -> list[LaunchProfileModel]:
-        """Convert a raw JSON list into validated launch profile instances.
-
-        Args:
-            profiles_data: Raw value loaded from the JSON file.
-
-        Returns:
-            A list of profiles; empty when the input is missing or malformed.
-        """
-        if not isinstance(profiles_data, list):
-            return []
-
-        # Skip non-dict entries silently for forward-compatibility.
-        return [LaunchProfileModel.import_from_data_json(raw) for raw in profiles_data if isinstance(raw, dict)]
-
     def export_to_data_json(self) -> dict[str, Any]:
         """Converts the provider model to a JSON-serializable dictionary.
 
@@ -272,5 +247,4 @@ class ProviderModel:
             "modified_date_provider": self.modified_date_provider,
             "version": self.version,
             "steps": [step.export_to_data_json() for step in self.steps],
-            "launch_profiles": [p.export_to_data_json() for p in self.launch_profiles],
         }

@@ -10,20 +10,20 @@ This module defines various constants used throughout the Aspirabot application,
 These constants are intended to centralize configuration values and make them easily maintainable.
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 from shared.path_util import get_current_working_directory
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Expected = './'   ('_src_' must be visible)
 C_CURRENT_WORKING_DIR = get_current_working_directory()
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Name of the application
 C_APP_NAME: str = "Aspirabot"
@@ -37,7 +37,7 @@ C_APP_VERSION: str = "1.0.0"
 # JSON configuration file for Aspirabot
 C_APP_CONFIG_FILE: str = "config-aspirabot.json"
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Base name for log files
 C_LOGS_FILE_NAME_WITH_EXT: str = f"aspirabot_{C_APP_VERSION}_trace.log"
@@ -54,7 +54,7 @@ C_LOGS_DEFAULT_LEVEL_TRACE: str = "DEBUG"
 # Default folder for log files (relative to current working directory)
 C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 # Default folders for data storage (relative to current working directory)
@@ -68,13 +68,13 @@ C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 4  # must be even (aka % 2 == 0)
 C_SIZE_HEXASTRING_PROVIDER_ID: int = 8  # must be even (aka % 2 == 0)
 C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID: int = 8  # must be even (aka % 2 == 0)
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Supported browser engine identifiers for the scraping service.
 C_BROWSER_ENGINE_PLAYWRIGHT: str = "Playwright"
 C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Special string used to indicate an error occurred during JavaScript evaluation in the browser context.
 C_STR_ERROR_JS_EVALUATION: str = "<[__ERROR__]>"
@@ -107,7 +107,7 @@ C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
 # Default threshold for considering a scraping step as having an error
 C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 1
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # default color background
 C_COLOR_GRAY_BACKGROUND: str = "#F0F0F0"

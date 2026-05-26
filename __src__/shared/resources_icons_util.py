@@ -1,19 +1,19 @@
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageTk
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # black big buttons
 C_RESS_ICON_BLACK_LOGS = "./__ress__/icons/b_128_logs.png"
-C_RESS_ICON_BLACK_HISTORY = "./__ress__/icons/b_128_history.png"
-C_RESS_ICON_BLACK_PROVIDER = "./__ress__/icons/b_128_provider.png"
+C_RESS_ICON_BLACK_PROFILES = "./__ress__/icons/b_128_profiles.png"
+C_RESS_ICON_BLACK_SCENARIOS = "./__ress__/icons/b_128_provider.png"
 C_RESS_ICON_BLACK_EDITOR = "./__ress__/icons/b_128_editor.png"
 C_RESS_ICON_BLACK_EXECUTE = "./__ress__/icons/b_128_execute.png"
 C_RESS_ICON_BLACK_FAQ = "./__ress__/icons/b_128_faq.png"
@@ -22,8 +22,8 @@ C_RESS_ICON_BLACK_DEBUG = "./__ress__/icons/b_128_debug.png"
 
 # white big buttons
 C_RESS_ICON_WHITE_LOGS = "./__ress__/icons/w_128_logs.png"
-C_RESS_ICON_WHITE_HISTORY = "./__ress__/icons/w_128_history.png"
-C_RESS_ICON_WHITE_PROVIDER = "./__ress__/icons/w_128_provider.png"
+C_RESS_ICON_WHITE_PROFILES = "./__ress__/icons/w_128_profiles.png"
+C_RESS_ICON_WHITE_SCENARIOS = "./__ress__/icons/w_128_provider.png"
 C_RESS_ICON_WHITE_EDITOR = "./__ress__/icons/w_128_editor.png"
 C_RESS_ICON_WHITE_EXECUTE = "./__ress__/icons/w_128_execute.png"
 C_RESS_ICON_WHITE_FAQ = "./__ress__/icons/w_128_faq.png"
@@ -39,9 +39,9 @@ C_RESS_ICON_WHITE_UP = "./__ress__/icons/w_128_up.png"
 C_RESS_ICON_WHITE_TOGGLE_ON = "./__ress__/icons/w_128_toggle_on.png"
 C_RESS_ICON_WHITE_TOGGLE_OFF = "./__ress__/icons/w_128_toggle_off.png"
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 # super wrapper

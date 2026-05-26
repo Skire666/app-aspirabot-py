@@ -10,9 +10,9 @@ Example:
     >>> panel.reset()
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import tkinter as tk
 from collections.abc import Callable
@@ -30,9 +30,9 @@ from views.scraping.provider_selection_panel import ProviderSelectionPanel
 from views.scraping.scraping_journal_panel import ScrapingJournalPanel
 from views.scraping.workflow_controls_panel import WorkflowControlsPanel
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)

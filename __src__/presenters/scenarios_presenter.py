@@ -1,29 +1,27 @@
 """Module contenant le présentateur pour la gestion des fournisseurs."""
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import logging
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any
 
-from models.launch_profile_model import LaunchProfileModel
-from models.provider_model import ProviderModel
-from models.provider_validation_report_model import ProviderValidationReport
-from services.provider_service import ProviderService
-from views.providers_view import ProvidersView
+from models.scenario_model import ProviderModel
+from services.scenarios_service import ScenariosService
+from shared.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
+from views.providers_view import ScenariosView
 
 
-class ProviderPresenter:
+class ScenariosPresenter:
     """Présentateur (Presenter) pour coordonner la vue et le service des fournisseurs.
 
     Ce présentateur écoute les interactions de la vue, exécute la logique
     métier via le service et met à jour la vue avec les nouvelles données.
     """
 
-    def __init__(self, view: ProvidersView, service: ProviderService) -> None:
+    def __init__(self, view: ScenariosView, service: ScenariosService) -> None:
         """Initialise le présentateur avec sa vue et son service affiliés.
 
         Args:
@@ -156,13 +154,6 @@ class ProviderPresenter:
             return
         if self.on_request_create_provider:
             self.on_request_create_provider()
-        else:
-            new_provider = ProviderModel.get_default_data()
-            # Ensure every new provider starts with a default launch profile.
-            if not new_provider.launch_profiles:
-                new_provider.launch_profiles.append(LaunchProfileModel.get_default())
-            self._service.create_provider(new_provider)
-            self._load_scenarios()
 
     def _on_edit_provider(self, id_file: str) -> None:
         """Gère l'événement de modification d'un fournisseur.
@@ -196,7 +187,7 @@ class ProviderPresenter:
         Args:
             id_file: L'ID fichier du fournisseur à dupliquer.
         """
-        if not self._view.ask_duplicate_confirmation():
+        if not ask_duplicate_scenario_confirmation():
             return
         try:
             self._service.duplicate_provider(id_file)
@@ -211,7 +202,7 @@ class ProviderPresenter:
         Args:
             id_file: L'ID fichier du fournisseur à supprimer.
         """
-        if not self._view.ask_delete_confirmation():
+        if not ask_delete_scenario_confirmation():
             return
         try:
             self._service.delete_provider(id_file)
@@ -230,41 +221,21 @@ class ProviderPresenter:
 
     def _on_validate_scenarios(self) -> None:
         """Validates provider files and displays the validation summary."""
-        self._view.set_validation_state(True, "Validation en cours...")
+        self._view.set_validation_state(True, "TODO A CODER")
 
-        try:
-            report: ProviderValidationReport = self._service.validate_scenarios()
-            self._load_scenarios()
-            self._view.show_validation_report(self._format_validation_report(report))
-        except Exception as exc:
-            self._logger.error("Une erreur s'est produite", exc_info=True)
-            self._view.show_error(f"La validation des fournisseurs a échoué: {exc}")
-        finally:
-            self._view.set_validation_state(False)
+        raise NotImplementedError("La validation des fournisseurs n'est pas encore implémentée.")
 
-    @staticmethod
-    def _format_validation_report(report: ProviderValidationReport) -> dict[str, Any]:
-        """Converts a domain validation report into a view-friendly dict.
+        # self._view.set_validation_state(True, "Validation en cours...")
 
-        Args:
-            report: Domain model produced by the service.
-
-        Returns:
-            Flat dict safe to pass to the view layer.
-        """
-        return {
-            "total_files": report.total_files,
-            "valid_files": report.valid_files,
-            "invalid_files": report.invalid_files,
-            "issues": [
-                {
-                    "file_name": issue.file_name,
-                    "broken_path": issue.broken_path,
-                    "reasons": issue.reasons,
-                }
-                for issue in report.issues
-            ],
-        }
+        # try:
+        #     report: ProviderValidationReport = self._service.validate_scenarios()
+        #     self._load_scenarios()
+        #     self._view.show_validation_report(self._format_validation_report(report))
+        # except Exception as exc:
+        #     self._logger.error("Une erreur s'est produite", exc_info=True)
+        #     self._view.show_error(f"La validation des fournisseurs a échoué: {exc}")
+        # finally:
+        #     self._view.set_validation_state(False)
 
     def _on_sort(self, column: str, ascending: bool) -> None:
         """Trie la liste des fournisseurs et met à jour la vue.

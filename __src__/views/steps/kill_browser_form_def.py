@@ -20,9 +20,9 @@ from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 C_KEY_WAIT_DURATION = "wait_duration"
 C_KEY_WAIT_UNIT = "wait_unit"
@@ -31,9 +31,9 @@ C_KEY_COMMENT = "comment"
 
 C_DEFAULT_WAIT_DURATION = 3
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class KillBrowserFormDef(IStepFormDef):

@@ -29,9 +29,9 @@ def view(tk_root: tk.Tk) -> WorkflowView:
     frame.destroy()
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # load_data / get_data / clear_data
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_load_data_populates_all_fields(view: WorkflowView) -> None:
@@ -80,9 +80,9 @@ def test_load_data_missing_keys_use_empty_string(view: WorkflowView) -> None:
     assert result["provider_desc"] == ""
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # set_workflow_validation_message
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_set_workflow_validation_message_ok_state(view: WorkflowView) -> None:
@@ -97,9 +97,9 @@ def test_set_workflow_validation_message_error_state(view: WorkflowView) -> None
     assert view._lbl_workflow_status.cget("text") == "Bad step"
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # set_callbacks — save/cancel wiring
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_set_callbacks_wires_save(view: WorkflowView) -> None:
@@ -118,9 +118,9 @@ def test_set_callbacks_wires_cancel(view: WorkflowView) -> None:
     assert called == [True]
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # workflow_builder_view property
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_workflow_builder_view_property_returns_inner_widget(view: WorkflowView) -> None:
@@ -130,9 +130,9 @@ def test_workflow_builder_view_property_returns_inner_widget(view: WorkflowView)
     assert isinstance(view.workflow_builder_view, WorkflowListCrudView)
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # set_available_steps
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_set_available_steps_forwards_to_inline_form(view: WorkflowView) -> None:
@@ -142,9 +142,9 @@ def test_set_available_steps_forwards_to_inline_form(view: WorkflowView) -> None
     assert view._inline_form._available_steps == steps
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # show_inline_form
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_show_inline_form_none_triggers_creation_mode(view: WorkflowView) -> None:
@@ -161,9 +161,9 @@ def test_show_inline_form_step_triggers_edit_mode(view: WorkflowView) -> None:
     assert view._is_edit_mode
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # _on_inline_confirm / _on_inline_cancel
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_on_inline_confirm_forwards_to_builder_view(view: WorkflowView) -> None:
@@ -200,9 +200,9 @@ def test_on_inline_cancel_resets_edit_mode(view: WorkflowView) -> None:
     assert not view._is_edit_mode
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # ask_overwrite_confirmation / show_error (static methods)
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_ask_overwrite_confirmation_returns_true_on_yes(view: WorkflowView) -> None:
@@ -224,9 +224,9 @@ def test_show_error_calls_messagebox(view: WorkflowView) -> None:
     mock_err.assert_called_once()
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # _on_type_list_select
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_on_type_list_select_rebuilds_form_for_new_type(view: WorkflowView) -> None:

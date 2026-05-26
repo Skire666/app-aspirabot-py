@@ -4,9 +4,9 @@ Hides the concrete StepsListCrudView (Tkinter) from the Presenter so that
 the Presenter remains testable without a display.
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -14,9 +14,9 @@ from typing import Any, Protocol
 from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Interface
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class IStepsListCrudView(Protocol):

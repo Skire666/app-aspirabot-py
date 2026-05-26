@@ -1,5 +1,6 @@
 import tkinter as tk
 from collections.abc import Callable
+from pathlib import Path
 
 from shared.operating_system_util import open_folder as _os_open_folder
 
@@ -35,7 +36,6 @@ class FolderLinkWidget(tk.Frame):
         super().__init__(parent, **kwargs)
 
         self._path = path
-        self._notify_open_folder = callback or self._default_open
 
         self._label = tk.Label(self, text=title or "Path :")
         self._label.pack(side="left")
@@ -65,24 +65,20 @@ class FolderLinkWidget(tk.Frame):
 
     def _on_click(self, _: tk.Event | None = None) -> None:
         if self._path:
-            self._notify_open_folder(self._path)
+            self._open_folder(self._path)
 
     def _on_hover(self, entering: bool) -> None:
         """Change link color on hover if a path is set."""
         if self._path:
             self._link.config(fg="purple" if entering else "blue")
 
-    def set_path(self, path: str) -> None:
+    def set_path(self, path: str | Path) -> None:
         """Update the displayed path and link state."""
         self._path = path
-        self._link.config(text=path if path else "(no path)")
+        self._link.config(text=str(path) if path else "(no path)")
         self._apply_style()
 
-    def get_path(self) -> str:
-        """Return the current path."""
-        return self._path
-
     @staticmethod
-    def _default_open(path: str) -> None:
+    def _open_folder(path: str | Path) -> None:
         """Open the folder in the native file explorer via the shared OS utility."""
         _os_open_folder(path)

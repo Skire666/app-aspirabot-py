@@ -1,24 +1,24 @@
 """Presenter wiring HistoricView to HistoricService."""
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import logging
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from models.launch_profile_model import LaunchProfileModel
-from services.history_service import HistoryService
-from views.history_view import HistoryView
+from models.launch_profile_model import ProfileLaunchModel
+from services.profiles_service import ProfilesService
+from views.profiles_view import ProfilesView
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
-class HistoryPresenter:
+class ProfilesPresenter:
     """Orchestrates the historic panel between HistoryView and HistoryService.
 
     Loads launch profiles on demand, formats them for the view, and
@@ -32,7 +32,7 @@ class HistoryPresenter:
             called with (id_provider, id_profile) when the user clicks Lancer.
     """
 
-    def __init__(self, view: HistoryView, service: HistoryService) -> None:
+    def __init__(self, view: ProfilesView, service: ProfilesService) -> None:
         """Initialize the presenter and wire the launch callback on the view.
 
         Args:
@@ -94,15 +94,15 @@ class HistoryPresenter:
         sorted_tuples = self._sort_tuples(tuples)
 
         # Push formatted rows to the view and stamp the load time.
-        self._view.render_profiles(self._service.get_folder_path_scenarios(), self._format_rows(sorted_tuples))
+        self._view.render_profiles(self._service.get_path_profiles_folder(), self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
     @staticmethod
-    def _format_rows(tuples: list[tuple[str, LaunchProfileModel]]) -> list[dict[str, Any]]:
+    def _format_rows(tuples: list[tuple[str, ProfileLaunchModel]]) -> list[dict[str, Any]]:
         """Convert (provider_id, profile) pairs into DataGrid row dicts.
 
         Args:
-            tuples: Sorted list of (provider_id, LaunchProfileModel) pairs.
+            tuples: Sorted list of (provider_id, ProfileLaunchModel) pairs.
 
         Returns:
             A list of row dicts ready to pass to render_profiles().
@@ -114,7 +114,7 @@ class HistoryPresenter:
             rows.append(
                 {
                     "id": f"{id_provider}:::{profile.id_profile}",
-                    "name_profile": profile.name_profile,
+                    "name_profile": profile.id_scenario,
                     "provider_parent": profile.provider_parent or "—",
                     "url_source_type": profile.url_source_type or "—",
                     "used_date_profile": profile.used_date_profile or "—",
@@ -149,7 +149,7 @@ class HistoryPresenter:
 
     def _on_open_folder(self, _: str) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
-        self._service.open_providers_folder()
+        self._service.open_profiles_folder()
 
     def _on_refresh(self) -> None:
         """Handle a refresh request from the view."""

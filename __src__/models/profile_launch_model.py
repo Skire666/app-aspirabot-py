@@ -4,14 +4,14 @@ A launch profile stores user-configured parameters for a single scraping
 session: export folder, URL source mode, and usage statistics.
 
 Example:
-    >>> profile = LaunchProfileModel.get_default()
-    >>> profile.name_profile
+    >>> profile = ProfileLaunchModel.get_default()
+    >>> profile.id_scenario
     'Profil par défaut'
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -27,20 +27,20 @@ from shared.constants import (
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.random_util import generate_rng_hexastring
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Default export folder: project root / data_scraping.
 _C_DEFAULT_EXPORT_FOLDER: str = str(Path(C_CURRENT_WORKING_DIR) / C_DATA_DEFAULT_FOLDER_SCRAPING)
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 @dataclass
-class LaunchProfileModel:
+class ProfileLaunchModel:
     """Stores user-configured parameters for a scraping session.
 
     A profile captures the export folder, URL source mode and its collected
@@ -48,7 +48,7 @@ class LaunchProfileModel:
 
     Attributes:
         id_profile: Unique identifier as a hex string.
-        name_profile: Human-readable profile name.
+        id_scenario: Human-readable scenario name.
         export_folder: Absolute path of the export destination folder.
         url_source_type: One of "manual", "folder", "csv", or "" when unset.
         url_source_value: List of URLs for "manual"; path string for others.
@@ -58,13 +58,13 @@ class LaunchProfileModel:
         modified_date_profile: Last manual-save timestamp in YYYY-MM-DD HH:MM:SS format.
 
     Example:
-        >>> profile = LaunchProfileModel.get_default()
+        >>> profile = ProfileLaunchModel.get_default()
         >>> profile.launch_count
         0
     """
 
     id_profile: str
-    name_profile: str
+    id_scenario: str
     export_folder: str
     url_source_type: str
     url_source_value: list[str] | str | None
@@ -74,26 +74,26 @@ class LaunchProfileModel:
     modified_date_profile: datetime | None
 
     @classmethod
-    def get_default(cls, name_profile: str = "Profil par défaut") -> LaunchProfileModel:
+    def get_default(cls, id_scenario: str = "Profil par défaut") -> ProfileLaunchModel:
         """Build a new profile with application-default values.
 
         Args:
-            name_profile: Human-readable profile name.
+            id_scenario: Human-readable scenario name.
 
         Returns:
-            LaunchProfileModel: A ready-to-use default profile.
+            ProfileLaunchModel: A ready-to-use default profile.
 
         Raises:
             None.
 
         Example:
-            >>> profile = LaunchProfileModel.get_default()
+            >>> profile = ProfileLaunchModel.get_default()
             >>> profile.export_folder  # CWD/data_scraping
             ...
         """
         return cls(
             id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID),
-            name_profile=name_profile,
+            id_scenario=id_scenario,
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
             url_source_value=None,
@@ -104,26 +104,26 @@ class LaunchProfileModel:
         )
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> LaunchProfileModel:
+    def import_from_data_json(cls, data: dict[str, Any]) -> ProfileLaunchModel:
         """Deserialize a profile from a raw dictionary.
 
         Args:
             data: A dict produced by ``export_to_data_json``.
 
         Returns:
-            LaunchProfileModel: A fully reconstructed profile instance.
+            ProfileLaunchModel: A fully reconstructed profile instance.
 
         Raises:
             None.
 
         Example:
-            >>> raw = {"name_profile": "P1", "launch_count": 2}
-            >>> LaunchProfileModel.import_from_data_json(raw).name_profile
+            >>> raw = {"id_scenario": "P1", "launch_count": 2}
+            >>> ProfileLaunchModel.import_from_data_json(raw).id_scenario
             'P1'
         """
         return cls(
             id_profile=data.get("id_profile"),
-            name_profile=data.get("name_profile"),
+            id_scenario=data.get("id_scenario"),
             export_folder=data.get("export_folder"),
             url_source_type=data.get("url_source_type"),
             url_source_value=data.get("url_source_value"),
@@ -143,13 +143,13 @@ class LaunchProfileModel:
             None.
 
         Example:
-            >>> profile = LaunchProfileModel.get_default()
+            >>> profile = ProfileLaunchModel.get_default()
             >>> isinstance(profile.export_to_data_json(), dict)
             True
         """
         return {
             "id_profile": self.id_profile,
-            "name_profile": self.name_profile,
+            "id_scenario": self.id_scenario,
             "export_folder": self.export_folder,
             "url_source_type": self.url_source_type,
             "url_source_value": self.url_source_value,
@@ -169,7 +169,7 @@ class LaunchProfileModel:
             None.
 
         Example:
-            >>> profile = LaunchProfileModel.get_default()
+            >>> profile = ProfileLaunchModel.get_default()
             >>> profile.increment_launch_count()
             >>> profile.launch_count
             1
@@ -189,7 +189,7 @@ class LaunchProfileModel:
             None.
 
         Example:
-            >>> profile = LaunchProfileModel.get_default()
+            >>> profile = ProfileLaunchModel.get_default()
             >>> profile.mark_profile_as_modified()
             >>> profile.modified_date_profile is not None
             True

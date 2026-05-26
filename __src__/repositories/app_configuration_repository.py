@@ -37,9 +37,9 @@ Example:
     >>> repo.save_config(config)
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import json
 import logging
@@ -50,9 +50,9 @@ from interfaces.i_config_repository import IConfigRepository
 from models.app_configuration_model import AppConfigurationModel
 from shared.path_util import make_all_folders_if_not_exists
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class AppConfigurationRepository(IConfigRepository):
@@ -83,16 +83,16 @@ class AppConfigurationRepository(IConfigRepository):
         >>> repo.save_config(current_config)
     """
 
-    # ---------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     # Variables
-    # ---------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
 
     _full_pathfile: Path
     _logger: logging.Logger
 
-    # ---------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     # Methods
-    # ---------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
 
     def __init__(self, file_path: Path | str) -> None:
         """Initialize the repository with a target JSON file path.
@@ -248,7 +248,7 @@ class AppConfigurationRepository(IConfigRepository):
             with Path(self._full_pathfile).open(encoding="utf-8") as file:
                 # Parse JSON with UTF-8 encoding to handle special characters.
                 return AppConfigurationModel(**json.load(file))
-        except (OSError, json.JSONDecodeError):
+        except OSError, json.JSONDecodeError:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             # Return defaults as a safe fallback.
             return AppConfigurationModel()

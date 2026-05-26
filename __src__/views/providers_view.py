@@ -1,8 +1,8 @@
 """Tkinter view for managing providers."""
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import tkinter as tk
 from collections.abc import Callable
@@ -13,9 +13,9 @@ from views.components.data_grid import DataGrid
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Column definitions for the profiles DataGrid.
 DATA_GRID_COLUMNS: list[dict[str, Any]] = [
@@ -37,12 +37,12 @@ DATA_GRID_COLUMNS: list[dict[str, Any]] = [
     {"id": "id_file", "title": "ID Fichier", "width": 100, "type": "text"},
 ]
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
-class ProvidersView(ttk.Frame):
+class ScenariosView(ttk.Frame):
     """View component that renders the list of providers."""
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -255,24 +255,6 @@ class ProvidersView(ttk.Frame):
         lines.append("")
         lines.append("Aucun fichier fournisseur invalide n'a été détecté.")
         messagebox.showinfo("Validation des fournisseurs", "\n".join(lines))
-
-    @staticmethod
-    def ask_duplicate_confirmation() -> bool:
-        """Prompts the user for duplication confirmation.
-
-        Returns:
-            True if user confirmed the duplication, False otherwise.
-        """
-        return messagebox.askyesno("Confirmer", "Voulez-vous dupliquer ce fournisseur ?")
-
-    @staticmethod
-    def ask_delete_confirmation() -> bool:
-        """Prompts the user for deletion confirmation.
-
-        Returns:
-            True if user confirmed the deletion, False otherwise.
-        """
-        return messagebox.askyesno("Confirmer", "Voulez-vous vraiment supprimer ce fournisseur ?")
 
 
 # EOF

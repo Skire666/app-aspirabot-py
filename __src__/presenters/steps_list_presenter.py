@@ -8,25 +8,25 @@ Example:
     >>> presenter.load("some-provider-guid")
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import logging
 from typing import Any
 
 from interfaces.i_steps_list_crud_view import IStepsListCrudView
 from interfaces.i_steps_list_gestion_view import IStepsListGestionView
-from models.provider_model import ProviderModel
+from models.scenario_model import ProviderModel
 from models.step_scraping_model import StepScrapingModel
-from services.provider_service import ProviderService
+from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
 from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class StepsListPresenter:
@@ -46,7 +46,7 @@ class StepsListPresenter:
     def __init__(
         self,
         view: IStepsListCrudView,
-        service_provider: ProviderService,
+        service_provider: ScenariosService,
         workflow_service: WorkflowService,
         gestion_view: IStepsListGestionView | None = None,
     ) -> None:
@@ -62,7 +62,7 @@ class StepsListPresenter:
         self._logger = logging.getLogger(__name__)
         self._view = view
         self._gestion_view: IStepsListGestionView | None = gestion_view
-        self._service_provider: ProviderService = service_provider
+        self._service_provider: ScenariosService = service_provider
         self._workflow_service: WorkflowService = workflow_service
 
         self._provider_id_file: str | None = None

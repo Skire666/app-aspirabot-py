@@ -19,9 +19,9 @@ from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 C_INPUT_DEFAULT_DURATION = 3
 
@@ -29,9 +29,9 @@ C_KEY_DURATION = "duration"
 C_KEY_UNIT_TIME = "unit"
 C_KEY_COMMENT = "comment"
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class WaitFixedTimeFormDef(IStepFormDef):
@@ -143,9 +143,7 @@ class WaitFixedTimeFormDef(IStepFormDef):
         """
         unit_time = model.params.get(C_KEY_UNIT_TIME, "")
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return (
-            f"Attendre une durée fixe\n{model.params.get(C_KEY_DURATION, C_INPUT_DEFAULT_DURATION)} {unit_display}"
-        )
+        return f"Attendre une durée fixe\n{model.params.get(C_KEY_DURATION, C_INPUT_DEFAULT_DURATION)} {unit_display}"
 
 
 register_form(WaitFixedTimeFormDef())

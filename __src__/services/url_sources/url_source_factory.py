@@ -9,9 +9,9 @@ Example:
     True
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 from __future__ import annotations
 
@@ -21,9 +21,9 @@ from services.url_sources.folder_url_source import FolderUrlSourceProvider
 from services.url_sources.manual_url_source import ManualUrlSourceProvider
 from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSourceTypeError
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Factory
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def build_url_source_provider(

@@ -15,9 +15,9 @@ from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import DOWNLOAD_MODES, safe_int_widget
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_MODE_DDL = DOWNLOAD_MODES[-1]  # all
@@ -30,9 +30,9 @@ C_KEY_WIDTH_MIN = "width_min"
 C_KEY_WIDTH_MAX = "width_max"
 C_KEY_COMMENT = "comment"
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class DownloadImageFormDef(IStepFormDef):

@@ -27,9 +27,9 @@ def view(tk_root: tk.Tk) -> WorkflowListCrudView:
     frame.destroy()
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Initialization
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_all_callbacks_are_none_at_init(view: WorkflowListCrudView) -> None:
@@ -45,9 +45,9 @@ def test_all_callbacks_are_none_at_init(view: WorkflowListCrudView) -> None:
     assert view.on_duplicate_step is None
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # reset
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_reset_clears_selected_index(view: WorkflowListCrudView) -> None:
@@ -64,9 +64,9 @@ def test_reset_clears_last_steps(view: WorkflowListCrudView) -> None:
     assert view._last_steps == []
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # render_steps
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_render_steps_updates_last_steps(view: WorkflowListCrudView) -> None:
@@ -104,9 +104,9 @@ def test_render_steps_skipped_during_dnd_busy(view: WorkflowListCrudView) -> Non
     view._dnd_busy = False
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # clear_selection
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_clear_selection_sets_index_to_none(view: WorkflowListCrudView) -> None:
@@ -117,9 +117,9 @@ def test_clear_selection_sets_index_to_none(view: WorkflowListCrudView) -> None:
     assert view._selected_index is None
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Callback wiring
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_edit_step_callback_is_forwarded(view: WorkflowListCrudView) -> None:
@@ -151,9 +151,9 @@ def test_reorder_steps_callback_receives_list(view: WorkflowListCrudView) -> Non
     assert captured[0] == steps
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # scroll_to_bottom
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_scroll_to_bottom_does_not_raise(view: WorkflowListCrudView) -> None:
@@ -161,9 +161,9 @@ def test_scroll_to_bottom_does_not_raise(view: WorkflowListCrudView) -> None:
     view.scroll_to_bottom()  # schedules after_idle — just must not throw
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # move-up / move-down callbacks
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_move_up_callback_is_forwarded(view: WorkflowListCrudView) -> None:
@@ -200,9 +200,9 @@ def test_move_down_adjusts_selected_index(view: WorkflowListCrudView) -> None:
     assert view._selected_index == 1
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # delete callback
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_delete_confirmed_calls_on_delete_step(view: WorkflowListCrudView) -> None:
@@ -227,9 +227,9 @@ def test_delete_cancelled_does_not_call_on_delete_step(view: WorkflowListCrudVie
     assert deleted == []
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # duplicate callback
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_duplicate_callback_is_forwarded(view: WorkflowListCrudView) -> None:
@@ -241,9 +241,9 @@ def test_duplicate_callback_is_forwarded(view: WorkflowListCrudView) -> None:
     assert result is clone
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # _fire_clear_all_steps
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def test_fire_clear_all_steps_confirmed_calls_callback(view: WorkflowListCrudView) -> None:

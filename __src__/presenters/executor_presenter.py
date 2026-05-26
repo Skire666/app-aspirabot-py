@@ -10,9 +10,9 @@ Example:
     >>> # The Lancer button in the view then drives the rest.
 """
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import logging
 import threading
@@ -20,14 +20,14 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
-from models.launch_profile_model import LaunchProfileModel
-from models.provider_model import ProviderModel
+from models.launch_profile_model import ProfileLaunchModel
+from models.scenario_model import ProviderModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfig
 from models.workflow_run_handlers_model import WorkflowRunHandlers
-from services.provider_service import ProviderService
+from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from shared.constants import C_KEY_URL_MODE
 from shared.datetime_util import (
@@ -56,12 +56,14 @@ from shared.i18n_fra import (
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
 
-# ---------------------------------------------------------------------------
+from __src__.services.profiles_service import ProfilesService
+
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
-class ScrapingPresenter:
+class ExecutorPresenter:
     """Orchestrates a scraping workflow between ScrapingView and ScrapingService.
 
     The workflow runs in a daemon thread so Tkinter's event loop stays
@@ -89,7 +91,8 @@ class ScrapingPresenter:
         self,
         view: ScrapingView,
         service_scraping: ScrapingService,
-        service_provider: ProviderService,
+        service_scenarios: ScenariosService,
+        service_profile: ProfilesService,
         provider: ProviderModel | None = None,
     ) -> None:
         """Initialize the presenter and register all view callbacks.
@@ -102,7 +105,8 @@ class ScrapingPresenter:
         """
         self._view = view
         self._service_scraping = service_scraping
-        self._service_provider = service_provider
+        self._service_scenarios = service_scenarios
+        self._service_profile = service_profile
         self._provider: ProviderModel | None = provider
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -166,7 +170,7 @@ class ScrapingPresenter:
         self._cancel_active_run()
 
         self._logging.info("Loading provider id_file=%s", id_file)
-        self._provider = self._service_provider.read_provider(id_file)
+        self._provider = self._service_scenarios.read_provider(id_file)
         self._cancel_event.clear()
 
         # Guarantee at least one profile exists, then populate the view.
@@ -186,8 +190,8 @@ class ScrapingPresenter:
     def _ensure_default_profile(self) -> None:
         """Add and persist a default profile when the provider has none."""
         if not self._provider.launch_profiles:
-            self._provider.launch_profiles.append(LaunchProfileModel.get_default())
-            self._service_provider.update_provider(self._provider)
+            self._provider.launch_profiles.append(ProfileLaunchModel.get_default())
+            self._service_scenarios.update_provider(self._provider)
 
     def _setup_view_after_load(self, id_file: str) -> None:
         """Reset the view, populate profiles, and seed the date label.
@@ -271,7 +275,7 @@ class ScrapingPresenter:
     def _on_refresh_scenarios(self) -> None:
         """Reload the providers list and forward it to the view dropdown."""
         try:
-            providers: list[ProviderModel] = self._service_provider.list_all_scenarios()
+            providers: list[ProviderModel] = self._service_scenarios.list_all_scenarios()
         except AspirabotError, OSError:
             self._logging.exception("Échec du chargement de la liste des providers")
             providers = []
@@ -329,9 +333,9 @@ class ScrapingPresenter:
             return
 
         # Build a new profile with default values and attach it to the provider.
-        new_profile = LaunchProfileModel.get_default(name)
+        new_profile = ProfileLaunchModel.get_default(name)
         self._provider.launch_profiles.append(new_profile)
-        self._service_provider.update_provider(self._provider)
+        self._service_scenarios.update_provider(self._provider)
 
         self._refresh_profiles_list()
         self._view.set_selected_profile(new_profile.id_profile)
@@ -348,7 +352,7 @@ class ScrapingPresenter:
 
         # Remove the matching profile from the list.
         self._provider.launch_profiles = [p for p in self._provider.launch_profiles if p.id_profile != id_profile]
-        self._service_provider.update_provider(self._provider)
+        self._service_scenarios.update_provider(self._provider)
         self._refresh_profiles_list()
 
         # No profile is selected after deletion — disable rename/save, keep file date.
@@ -371,9 +375,9 @@ class ScrapingPresenter:
             return
 
         # Apply the new name and stamp the modification date.
-        profile.name_profile = new_name
+        profile.id_scenario = new_name
         profile.mark_profile_as_modified()
-        self._service_provider.update_provider(self._provider)
+        self._service_scenarios.update_provider(self._provider)
 
         # Restore selection and update the date label with the provider file date.
         self._refresh_profiles_list()
@@ -408,7 +412,7 @@ class ScrapingPresenter:
             profile.emergency_stop_threshold = threshold
 
         profile.mark_profile_as_modified()
-        self._service_provider.update_provider(self._provider)
+        self._service_scenarios.update_provider(self._provider)
         self._is_profile_dirty = False
 
         self._refresh_profiles_list()
@@ -417,14 +421,14 @@ class ScrapingPresenter:
         self._view.set_rename_profile_button_state(True)
         self._view.set_profile_modified_date(self._provider.modified_date_provider)
 
-    def _find_profile(self, id_profile: str | None) -> LaunchProfileModel | None:
+    def _find_profile(self, id_profile: str | None) -> ProfileLaunchModel | None:
         """Search the current provider's profiles for a matching id_profile.
 
         Args:
             id_profile: The profile identifier to look for.
 
         Returns:
-            LaunchProfileModel | None: The matching profile, or None if not found.
+            ProfileLaunchModel | None: The matching profile, or None if not found.
         """
         if not self._provider or not id_profile:
             return None
@@ -527,7 +531,7 @@ class ScrapingPresenter:
             None.
         """
         if self._provider:
-            self._service_provider.update_provider(self._provider)
+            self._service_scenarios.update_provider(self._provider)
 
     # ------------------------------------------------------------------
     # Workflow control callbacks
@@ -829,7 +833,7 @@ class ScrapingPresenter:
         """
         try:
             return self._service_scraping.run_workflow(self._provider, config, handlers)
-        except (ValueError, RuntimeError, OSError):
+        except ValueError, RuntimeError, OSError:
             self._logging.exception("Échec de l'exécution du workflow")
             return None
 

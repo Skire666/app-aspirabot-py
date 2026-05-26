@@ -26,9 +26,9 @@ from views.steps._constants import (
     safe_int_widget,
 )
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 C_INPUT_DEFAULT_POST_WAIT_DURATION: int = 3
 C_INPUT_DEFAULT_CONDITION: str = CONDITION_DISPLAY[-1]  # "Toujours"
@@ -38,9 +38,9 @@ C_KEY_WAIT_DURATION = "wait_duration"
 C_KEY_WAIT_UNIT = "wait_unit"
 C_KEY_COMMENT = "comment"
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class WaitUserActionFormDef(IStepFormDef):
@@ -136,9 +136,7 @@ class WaitUserActionFormDef(IStepFormDef):
         widgets[C_KEY_CONDITION].set(
             CONDITION_MODEL_TO_VIEW.get(model.params.get(C_KEY_CONDITION, "always"), C_INPUT_DEFAULT_CONDITION)
         )
-        widgets[C_KEY_WAIT_DURATION].set(
-            str(model.params.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION))
-        )
+        widgets[C_KEY_WAIT_DURATION].set(str(model.params.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION)))
         widgets[C_KEY_WAIT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
                 model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW

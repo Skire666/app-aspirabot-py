@@ -1,11 +1,12 @@
 """Tkinter view for the launch-profile history panel."""
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import tkinter as tk
 from collections.abc import Callable
+from pathlib import Path
 from tkinter import ttk
 from typing import Any
 
@@ -13,9 +14,9 @@ from views.components.data_grid import DataGrid
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Column definitions for the profiles DataGrid.
 DATA_GRID_COLUMNS: list[dict[str, Any]] = [
@@ -31,12 +32,12 @@ DATA_GRID_COLUMNS: list[dict[str, Any]] = [
 # Expected number of parts in a composite row_id ("id_provider:::id_profile").
 _ROW_ID_PARTS_COUNT = 2
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
-class HistoryView(ttk.Frame):
+class ProfilesView(ttk.Frame):
     """View component that renders the list of launch profiles across all providers.
 
     Displays a DataGrid with one row per profile. Fires a callback when the
@@ -121,7 +122,7 @@ class HistoryView(ttk.Frame):
         """
         self._on_open_folder_callback = callback
 
-    def render_profiles(self, folder_path: str, profiles: list[dict[str, Any]]) -> None:
+    def render_profiles(self, folder_path: Path, profiles: list[dict[str, Any]]) -> None:
         """Pass a fresh list of profile rows to the DataGrid.
 
         Args:

@@ -7,22 +7,22 @@ from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_EDITOR,
     C_RESS_ICON_BLACK_EXECUTE,
     C_RESS_ICON_BLACK_FAQ,
-    C_RESS_ICON_BLACK_HISTORY,
     C_RESS_ICON_BLACK_LOGS,
-    C_RESS_ICON_BLACK_PROVIDER,
+    C_RESS_ICON_BLACK_PROFILES,
+    C_RESS_ICON_BLACK_SCENARIOS,
     C_RESS_ICON_WHITE_CONFIG,
     C_RESS_ICON_WHITE_DEBUG,
     C_RESS_ICON_WHITE_EDITOR,
     C_RESS_ICON_WHITE_EXECUTE,
     C_RESS_ICON_WHITE_FAQ,
-    C_RESS_ICON_WHITE_HISTORY,
     C_RESS_ICON_WHITE_LOGS,
-    C_RESS_ICON_WHITE_PROVIDER,
+    C_RESS_ICON_WHITE_PROFILES,
+    C_RESS_ICON_WHITE_SCENARIOS,
 )
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Views
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Scraping panel — status labels
 C_SCRAPING_STATUS_INACTIVE = "Est inactif"
@@ -78,17 +78,17 @@ C_SCRAPING_NO_URL_SOURCE_MSG = (
     "Souhaitez-vous continuer quand meme ?"
 )
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Labels
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 # Mapping of module names to their corresponding black and white icon resource names.
 # Order of modules is determined by the order of entries in this dictionary.
 C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
     TitleModuleEnum.E_LOGS: ["Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
-    TitleModuleEnum.E_HISTORY: ["Historique", C_RESS_ICON_BLACK_HISTORY, C_RESS_ICON_WHITE_HISTORY],
-    TitleModuleEnum.E_SCRIPTS: ["Scénarios", C_RESS_ICON_BLACK_PROVIDER, C_RESS_ICON_WHITE_PROVIDER],
+    TitleModuleEnum.E_PROFILES: ["Profils", C_RESS_ICON_BLACK_PROFILES, C_RESS_ICON_WHITE_PROFILES],
+    TitleModuleEnum.E_SCENARIOS: ["Scénarios", C_RESS_ICON_BLACK_SCENARIOS, C_RESS_ICON_WHITE_SCENARIOS],
     TitleModuleEnum.E_EDITOR: ["Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR],
     TitleModuleEnum.E_EXECUTOR: ["Exécuter", C_RESS_ICON_BLACK_EXECUTE, C_RESS_ICON_WHITE_EXECUTE],
     TitleModuleEnum.E_FAQ: ["F.A.Q.", C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
@@ -121,9 +121,9 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_KILL_BROWSER: "Quitter navigateur",
 }
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Templates errors
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 """User-facing message templates for all presenters.
 

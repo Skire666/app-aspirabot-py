@@ -1,24 +1,26 @@
 """Module contenant le presentateur pour la modification de fournisseur."""
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import logging
 from collections.abc import Callable
 from typing import Any
 
-from models.launch_profile_model import LaunchProfileModel
-from models.provider_model import ProviderModel
+from models.launch_profile_model import ProfileLaunchModel
+from models.scenario_model import ProviderModel
 from presenters.steps_list_presenter import StepsListPresenter
-from services.provider_service import ProviderService
+from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
 from shared.random_util import merge_unique_list_id_step
 from views.workflow_view import WorkflowView
 
-# ---------------------------------------------------------------------------
+from __src__.services.profiles_service import ProfilesService
+
+# -----------------------------------------------------------------------------
 # Classes
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class WorkflowPresenter:
@@ -31,7 +33,8 @@ class WorkflowPresenter:
     def __init__(
         self,
         view: WorkflowView,
-        provider_service: ProviderService,
+        scenarios_service: ScenariosService,
+        profiles_service: ProfilesService,
     ) -> None:
         """Initialise le présentateur.
 
@@ -42,7 +45,7 @@ class WorkflowPresenter:
         """
         self._logger = logging.getLogger(__name__)
         self._view: WorkflowView = view
-        self._service = provider_service
+        self._service = scenarios_service
         self._is_creation_mode = False
         self._current_provider: ProviderModel | None = None
         self._on_done: Callable[[], None] | None = None
@@ -50,7 +53,7 @@ class WorkflowPresenter:
         # Sub-presenter that owns the step list and workflow execution.
         self._workflow_presenter = StepsListPresenter(
             view=view.workflow_builder_view,
-            service_provider=provider_service,
+            service_provider=scenarios_service,
             workflow_service=WorkflowService(),
             gestion_view=view,
         )
@@ -78,7 +81,7 @@ class WorkflowPresenter:
 
         # Ensure every new provider starts with a default launch profile.
         if not self._current_provider.launch_profiles:
-            self._current_provider.launch_profiles.append(LaunchProfileModel.get_default())
+            self._current_provider.launch_profiles.append(ProfileLaunchModel.get_default())
 
         # Initialize an empty workflow for the new provider.
         self._workflow_presenter.init_new(self._current_provider.id_file)
@@ -164,10 +167,6 @@ class WorkflowPresenter:
         """Creates or updates the provider in the service layer."""
         if not self._current_provider:
             return
-
-        # Guard: always provide at least one launch profile before persisting.
-        if not self._current_provider.launch_profiles:
-            self._current_provider.launch_profiles.append(LaunchProfileModel.get_default())
 
         if self._is_creation_mode:
             # Cancel when the ID file already exists and the user declines overwrite.

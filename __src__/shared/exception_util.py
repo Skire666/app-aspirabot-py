@@ -251,8 +251,25 @@ class InvalidProviderJsonContentError(ValueError, AspirabotError):
         super().__init__(f"Contenu JSON invalide dans {file_name}")
 
 
-class ProviderNotFoundError(FileNotFoundError, AspirabotError):
+class ProfileNotFoundError(FileNotFoundError, AspirabotError):
     """Raised when a provider file cannot be found."""
+
+    def __init__(self, id_file: str, context: str | None = None) -> None:
+        """Initialize the error message.
+
+        Args:
+            id_file: Profile identifier used for lookup.
+            context: Optional context label such as "suppression".
+        """
+        if context:
+            message = f"Profil non trouvé pour {context}: {id_file}"
+        else:
+            message = f"Profil non trouvé: {id_file}"
+        super().__init__(message)
+
+
+class ScenarioNotFoundError(FileNotFoundError, AspirabotError):
+    """Raised when a scenario file cannot be found."""
 
     def __init__(self, id_file: str, context: str | None = None) -> None:
         """Initialize the error message.
@@ -268,14 +285,26 @@ class ProviderNotFoundError(FileNotFoundError, AspirabotError):
         super().__init__(message)
 
 
-class ProviderDataMissingError(ValueError, AspirabotError):
-    """Raised when a provider JSON file has no usable payload."""
+class ScenarioDataMissingError(ValueError, AspirabotError):
+    """Raised when a scenario JSON file has no usable payload."""
 
     def __init__(self, id_file: str) -> None:
         """Initialize the error message.
 
         Args:
             id_file: Provider identifier used for lookup.
+        """
+        super().__init__(f"Données manquantes pour {id_file}")
+
+
+class ProfileDataMissingError(ValueError, AspirabotError):
+    """Raised when a profile JSON file has no usable payload."""
+
+    def __init__(self, id_file: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            id_file: Profile identifier used for lookup.
         """
         super().__init__(f"Données manquantes pour {id_file}")
 
@@ -545,9 +574,9 @@ class InvalidLruCacheCapacityError(ValueError, AspirabotError):
         super().__init__(f"La capacité du cache LRU doit être >= 1, reçu : {capacity}")
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Time utility errors
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class InvalidTimeUnitError(ValueError, AspirabotError):
@@ -574,9 +603,9 @@ class InvalidDurationError(ValueError, AspirabotError):
         super().__init__(f"Durée invalide (doit être >= 0) : {duration}")
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # URL source errors
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class UnknownUrlSourceTypeError(ValueError, AspirabotError):
@@ -653,9 +682,9 @@ class UrlSourceFileNotFoundError(FileNotFoundError, AspirabotError):
         super().__init__(f"Fichier ou dossier source URL introuvable : {path}")
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Browser / navigation errors
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class DnsSolverTimeoutExceededError(RuntimeError, AspirabotError):
@@ -679,9 +708,9 @@ class UrlNavigationMismatchError(RuntimeError, AspirabotError):
         super().__init__(f"URL finale différente de la cible : {final_url} vs {target_url}")
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Step execution errors
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class NoDataToExportError(AspirabotError):
@@ -736,9 +765,9 @@ class ScriptExecutionFailedError(RuntimeError, AspirabotError):
         super().__init__(f"Échec de l'exécution du script '{script_name}' après plusieurs tentatives.")
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Repository errors
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class JsonFileRepositoryError(AspirabotError):
@@ -754,9 +783,9 @@ class JsonFileRepositoryError(AspirabotError):
         super().__init__(f"Erreur JSON sur '{path}' : {reason}")
 
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # UI widget errors
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class DuplicateColumnKeyError(ValueError, AspirabotError):

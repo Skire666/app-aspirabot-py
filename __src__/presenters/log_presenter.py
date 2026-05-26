@@ -1,8 +1,8 @@
 """Central Presenter module linking Model log items to the View."""
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 from models.log_entry_model import LogEntryModel
 from services.logging_service import LoggingService
