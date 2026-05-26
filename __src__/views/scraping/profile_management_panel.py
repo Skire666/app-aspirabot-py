@@ -176,14 +176,14 @@ class ProfileManagementPanel(ttk.Frame):
         """Populate the Listbox with the given profile rows.
 
         Args:
-            profiles: List of dicts with keys ``id_profile`` and ``name_profile``.
+            profiles: List of dicts with keys ``id_profile`` and ``profile_name``.
         """
         self._lst_profiles.delete(0, tk.END)
         self._profile_ids = []
 
         # Insert each profile name and keep a parallel id list.
         for p in profiles:
-            self._lst_profiles.insert(tk.END, p["name_profile"])
+            self._lst_profiles.insert(tk.END, p["profile_name"])
             self._profile_ids.append(p["id_profile"])
 
     def get_selected_id_profile(self) -> str | None:

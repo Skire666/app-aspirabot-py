@@ -65,8 +65,8 @@ C_DATA_DEFAULT_FOLDER_SCRAPING: str = "data_scraping"
 
 # size of the hex string used for generating unique IDs (e.g., for workflow items)
 C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 4  # must be even (aka % 2 == 0)
-C_SIZE_HEXASTRING_PROVIDER_ID: int = 8  # must be even (aka % 2 == 0)
-C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID: int = 8  # must be even (aka % 2 == 0)
+C_SIZE_HEXASTRING_SCENARIO_ID: int = 8  # must be even (aka % 2 == 0)
+C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID: int = 8  # must be even (aka % 2 == 0)
 
 # -----------------------------------------------------------------------------
 

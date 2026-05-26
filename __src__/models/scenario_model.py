@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import Any, cast
 
 from models.step_scraping_model import StepScrapingModel
-from shared.constants import C_SIZE_HEXASTRING_PROVIDER_ID
+from shared.constants import C_SIZE_HEXASTRING_SCENARIO_ID
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.random_util import generate_rng_hexastring
 
@@ -53,8 +53,8 @@ class ProviderModel:
     id_file: str
     provider_name: str
     provider_desc: str
-    created_date_provider: datetime | None
-    modified_date_provider: datetime | None
+    created_date_scenario: datetime | None
+    modified_date_scenario: datetime | None
     version: str
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
 
@@ -78,12 +78,12 @@ class ProviderModel:
 
         # Return a ready-to-use default provider.
         return cls(
-            id_file=generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID),
+            id_file=generate_rng_hexastring(C_SIZE_HEXASTRING_SCENARIO_ID),
             provider_name="Nouv. scénario",
             provider_desc="Description du scénario (ou URL)",
             version="1.0.0",
-            created_date_provider=current_timestamp,
-            modified_date_provider=current_timestamp,
+            created_date_scenario=current_timestamp,
+            modified_date_scenario=current_timestamp,
         )
 
     def mark_as_created(self) -> None:
@@ -102,9 +102,8 @@ class ProviderModel:
             >>> provider.mark_as_created()
         """
         # Use one value so both fields remain perfectly synchronized.
-        current_timestamp = datetime.now()
-        self.created_date_provider = current_timestamp
-        self.modified_date_provider = current_timestamp
+        self.created_date_scenario = datetime.now()
+        self.modified_date_scenario = self.created_date_scenario
 
     def mark_as_modified(self) -> None:
         """Updates the modification timestamp to the current time.
@@ -120,7 +119,7 @@ class ProviderModel:
             >>> provider.mark_as_modified()
         """
         # Refresh only the modification date to preserve creation metadata.
-        self.modified_date_provider = datetime.now()
+        self.modified_date_scenario = datetime.now()
 
     @staticmethod
     def is_valid_id(value: str) -> bool:
@@ -167,7 +166,7 @@ class ProviderModel:
         import copy
 
         duplicate = copy.deepcopy(source)
-        duplicate.id_file = generate_rng_hexastring(C_SIZE_HEXASTRING_PROVIDER_ID)
+        duplicate.id_file = generate_rng_hexastring(C_SIZE_HEXASTRING_SCENARIO_ID)
         duplicate.provider_name = f"Copie de {source.provider_name}"
         return duplicate
 
@@ -194,8 +193,8 @@ class ProviderModel:
             id_file=data.get("id_file"),
             provider_name=data.get("provider_name"),
             provider_desc=data.get("provider_desc"),
-            created_date_provider=dict_with_key_to_optional_datetime(data, "created_date_provider"),
-            modified_date_provider=dict_with_key_to_optional_datetime(data, "modified_date_provider"),
+            created_date_scenario=dict_with_key_to_optional_datetime(data, "created_date_scenario"),
+            modified_date_scenario=dict_with_key_to_optional_datetime(data, "modified_date_scenario"),
             version=data.get("version"),
             steps=steps,
         )
@@ -243,8 +242,8 @@ class ProviderModel:
             "id_file": self.id_file,
             "provider_name": self.provider_name,
             "provider_desc": self.provider_desc,
-            "created_date_provider": self.created_date_provider,
-            "modified_date_provider": self.modified_date_provider,
+            "created_date_scenario": self.created_date_scenario,
+            "modified_date_scenario": self.modified_date_scenario,
             "version": self.version,
             "steps": [step.export_to_data_json() for step in self.steps],
         }

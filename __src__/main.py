@@ -289,8 +289,8 @@ def _init_scenarios_components(
         WorkflowPresenter, ScenariosService) tuple.
     """
     # Shared service and repository for both list and edit sub-components.
-    provider_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
-    scenarios_service = ScenariosService(provider_repo)
+    scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
+    scenarios_service = ScenariosService(scenario_repo, profiles_service)
 
     # Provider list view and presenter.
     provider_view = ScenariosView(main_view.content_area)
@@ -419,7 +419,7 @@ def _wire_scraping_launch(
 
     def on_request_launch_provider(id_file: str) -> None:
         # Resolve the full provider model before handing off to scraping.
-        scraping_presenter.load_provider(id_file)
+        scraping_presenter.load_scenario(id_file)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_EXECUTOR)
 
@@ -429,20 +429,20 @@ def _wire_scraping_launch(
 def _wire_history_launch(
     main_view: MainView,
     historic_presenter: ProfilesPresenter,
-    scraping_presenter: ExecutorPresenter,
+    executor_presenter: ExecutorPresenter,
 ) -> None:
     """Connect the launch action from the historic list to the scraping panel.
 
     Args:
         main_view: Shell managing tab visibility.
         historic_presenter: Presenter that fires the launch request.
-        scraping_presenter: Presenter that loads the provider and profile.
+        executor_presenter: Presenter that loads the scenario and profile.
     """
 
-    def on_request_launch_profile(id_provider: str, id_profile: str) -> None:
-        # Load provider then select the specific profile before navigating.
-        scraping_presenter.load_provider(id_provider)
-        scraping_presenter.load_profile(id_profile)
+    def on_request_launch_profile(id_scenario: str, id_profile: str) -> None:
+        # Load scenario then select the specific profile before navigating.
+        executor_presenter.load_scenario(id_scenario)
+        executor_presenter.load_profile(id_profile)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_EXECUTOR)
 

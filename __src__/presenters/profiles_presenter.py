@@ -13,6 +13,8 @@ from models.profile_launch_model import ProfileLaunchModel
 from services.profiles_service import ProfilesService
 from views.profiles_view import ProfilesView
 
+from __src__.models.profiles_list_model import ProfilesListModel
+
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
@@ -41,7 +43,7 @@ class ProfilesPresenter:
         """
         self._logger = logging.getLogger(__name__)
         self._view = view
-        self._service = service
+        self._service_profile = service
         self._last_loaded: datetime | None = None
         self._sort_column = "used_date_profile"
         self._sort_ascending = True
@@ -86,15 +88,16 @@ class ProfilesPresenter:
         """
         # Retrieve all (provider_id, profile) tuples from the service.
         try:
-            tuples = self._service.list_all_profiles()
+            all_profiles = self._service_profile.list_all_profiles()
         except Exception:
             self._logger.exception("Échec du chargement des profils")
-            tuples = []
+            all_profiles = []
 
-        sorted_tuples = self._sort_tuples(tuples)
+        sorted_tuples = self._sort_tuples(all_profiles)
 
         # Push formatted rows to the view and stamp the load time.
-        self._view.render_profiles(self._service.get_path_profiles_folder(), self._format_rows(sorted_tuples))
+        path_folder = self._service_profile.get_path_profiles_folder()
+        self._view.render_profiles(path_folder, self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
     @staticmethod
@@ -110,11 +113,12 @@ class ProfilesPresenter:
         rows: list[dict[str, Any]] = []
 
         # Build one dict per profile with a composite id for routing.
-        for id_provider, profile in tuples:
+        for id_profile, profile in tuples:
             rows.append(
                 {
-                    "id": f"{id_provider}:::{profile.id_profile}",
-                    "name_profile": profile.id_scenario,
+                    "id": profile.id_profile,
+                    "id_scenario": profile.id_scenario,
+                    "profile_name": profile.id_scenario,
                     "provider_parent": profile.provider_parent or "—",
                     "url_source_type": profile.url_source_type or "—",
                     "used_date_profile": profile.used_date_profile or "—",
@@ -125,12 +129,12 @@ class ProfilesPresenter:
 
         return rows
 
-    def _sort_tuples(self, tuples: list[tuple[str, Any]]) -> list[tuple[str, Any]]:
+    def _sort_tuples(self, tuples: list[ProfilesListModel]) -> list[ProfilesListModel]:
         """Sort profile tuples by the current sort column and direction."""
         col = self._sort_column
 
-        def key_fn(t: tuple[str, Any]) -> str:
-            profile = t[1]
+        def key_fn(t: ProfilesListModel) -> str:
+            profile = t
             value = getattr(profile, col, None)
             if col == "launch_count":
                 try:
@@ -149,21 +153,21 @@ class ProfilesPresenter:
 
     def _on_open_folder(self) -> None:
         """Gère l'événement d'ouverture du dossier des fournisseurs."""
-        self._service.open_profiles_folder()
+        self._service_profile.open_profiles_folder()
 
     def _on_refresh(self) -> None:
         """Handle a refresh request from the view."""
         self._load_profiles()
 
-    def _on_launch(self, id_provider: str, id_profile: str) -> None:
+    def _on_launch(self, id_scenario: str, id_profile: str) -> None:
         """Forward a launch request from the view to the injected hook.
 
         Args:
-            id_provider: ID of the provider owning the selected profile.
+            id_scenario: ID of the scenario owning the selected profile.
             id_profile: ID of the profile to load and launch.
         """
         if self.on_request_launch_profile:
-            self.on_request_launch_profile(id_provider, id_profile)
+            self.on_request_launch_profile(id_scenario, id_profile)
 
 
 # EOF

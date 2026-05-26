@@ -216,7 +216,7 @@ class ScrapingView(ttk.Frame):
         """Populate the profile Listbox and disable the launch form when empty.
 
         Args:
-            profiles: List of dicts with keys ``id_profile`` and ``name_profile``.
+            profiles: List of dicts with keys ``id_profile`` and ``profile_name``.
         """
         self._profile_panel.render_profiles_list(profiles)
         if not profiles:

@@ -22,7 +22,7 @@ from shared.constants import (
     C_CURRENT_WORKING_DIR,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
     C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
-    C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID,
+    C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID,
 )
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.random_util import generate_rng_hexastring
@@ -54,8 +54,6 @@ class ProfileLaunchModel:
         url_source_value: List of URLs for "manual"; path string for others.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
         launch_count: Number of times the profile was launched.
-        used_date_profile: Last launch timestamp in YYYY-MM-DD HH:MM:SS format.
-        modified_date_profile: Last manual-save timestamp in YYYY-MM-DD HH:MM:SS format.
 
     Example:
         >>> profile = ProfileLaunchModel.get_default()
@@ -65,16 +63,16 @@ class ProfileLaunchModel:
 
     id_profile: str
     id_scenario: str
+    profile_name: str
     export_folder: str
     url_source_type: str
     url_source_value: list[str] | str | None
     emergency_stop_threshold: int
     launch_count: int
     used_date_profile: datetime | None
-    modified_date_profile: datetime | None
 
     @classmethod
-    def get_default(cls, id_scenario: str = "Profil par défaut") -> ProfileLaunchModel:
+    def get_default(cls, id_scenario: str) -> ProfileLaunchModel:
         """Build a new profile with application-default values.
 
         Args:
@@ -92,15 +90,15 @@ class ProfileLaunchModel:
             ...
         """
         return cls(
-            id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_LAUNCH_PROFILE_ID),
+            id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID),
             id_scenario=id_scenario,
+            profile_name="Nouveau profil",
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
             url_source_value=None,
             emergency_stop_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             launch_count=0,
             used_date_profile=None,
-            modified_date_profile=datetime.now(),
         )
 
     @classmethod
@@ -124,13 +122,13 @@ class ProfileLaunchModel:
         return cls(
             id_profile=data.get("id_profile"),
             id_scenario=data.get("id_scenario"),
+            profile_name=data.get("profile_name"),
             export_folder=data.get("export_folder"),
             url_source_type=data.get("url_source_type"),
             url_source_value=data.get("url_source_value"),
             emergency_stop_threshold=int(data.get("emergency_stop_threshold")),
             launch_count=int(data.get("launch_count")),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
-            modified_date_profile=dict_with_key_to_optional_datetime(data, "modified_date_profile"),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -150,14 +148,33 @@ class ProfileLaunchModel:
         return {
             "id_profile": self.id_profile,
             "id_scenario": self.id_scenario,
+            "profile_name": self.profile_name,
             "export_folder": self.export_folder,
             "url_source_type": self.url_source_type,
             "url_source_value": self.url_source_value,
             "emergency_stop_threshold": self.emergency_stop_threshold,
             "launch_count": self.launch_count,
             "used_date_profile": self.used_date_profile,
-            "modified_date_profile": self.modified_date_profile,
         }
+
+    @classmethod
+    def copy_business(cls, source: ProfileLaunchModel) -> ProfileLaunchModel:
+        """Creates a duplicate of *source* with a new ID, a 'Copie de' name prefix, and fresh timestamps.
+
+        Steps and launch profiles are deep-copied so the duplicate is fully independent.
+
+        Args:
+            source: The provider to duplicate.
+
+        Returns:
+            A new unsaved ProviderModel ready to be persisted.
+        """
+        import copy
+
+        duplicate = copy.deepcopy(source)
+        duplicate.id_profile = generate_rng_hexastring(C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID)
+        duplicate.profile_name = f"Copie de {source.profil_name}"
+        return duplicate
 
     def increment_launch_count(self) -> None:
         """Increment the launch counter and update the last-used timestamp.
@@ -176,22 +193,3 @@ class ProfileLaunchModel:
         """
         self.launch_count += 1
         self.used_date_profile = datetime.now()
-
-    def mark_profile_as_modified(self) -> None:
-        """Update the modification timestamp to the current time.
-
-        Call this whenever the user explicitly saves the profile.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-
-        Example:
-            >>> profile = ProfileLaunchModel.get_default()
-            >>> profile.mark_profile_as_modified()
-            >>> profile.modified_date_profile is not None
-            True
-        """
-        self.modified_date_profile = datetime.now()

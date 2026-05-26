@@ -5,10 +5,6 @@ scenario-related operations in the application core. It sits between the
 presentation layer and the persistence layer, enforcing business rules such as
 automatic timestamp stamping and step context injection.
 
-The service depends on :class:`~interfaces.i_scenarios_repository.IScenariosRepository`
-through dependency injection so that the concrete storage backend (JSON files,
-database, …) can be swapped without touching this module.
-
 Example:
     >>> from repositories.scenarios_repository import ScenariosRepository
     >>> repo = ScenariosRepository()
@@ -24,8 +20,10 @@ Example:
 
 import logging
 
-from interfaces.i_scenarios_repository import IScenariosRepository
 from models.scenario_model import ProviderModel
+
+from __src__.repositories.scenarios_repository import ScenariosRepository
+from __src__.services.profiles_service import ProfilesService
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -49,7 +47,7 @@ class ScenariosService:
 
     Attributes:
         _logger: Module-level logger for diagnostic messages.
-        _repository: Concrete implementation of :class:`IScenariosRepository`.
+        _repository: class:`ScenariosRepository`.
 
     Example:
         >>> service = ScenariosService(repo)
@@ -58,20 +56,22 @@ class ScenariosService:
         True
     """
 
-    def __init__(self, repository: IScenariosRepository) -> None:
+    def __init__(self, repository: ScenariosRepository, profiles_service: ProfilesService) -> None:
         """Initialise the service with its required repository dependency.
 
         Args:
             repository: Any object that satisfies the
-                :class:`~interfaces.i_scenarios_repository.IScenariosRepository`
+                :class:`ScenariosRepository`
                 protocol. Typically injected by the application's composition root.
+            profiles_service: The service for managing profile data.
 
         Example:
             >>> service = ScenariosService(ScenariosRepository())
         """
         # Configure a named logger so log records are traceable to this module.
         self._logger = logging.getLogger(__name__)
-        self._repository: IScenariosRepository = repository
+        self._repository: ScenariosRepository = repository
+        self._profiles_service: ProfilesService = profiles_service
 
     # -------------------------------------------------------------------------
     # Read operations
@@ -97,6 +97,68 @@ class ScenariosService:
             True
         """
         return self._repository.read_all_scenarios()
+
+    def exists_scenario(self, id_file: str) -> bool:
+        """Check whether a scenario with the given identifier exists on disk.
+
+        Args:
+            id_file: Unique alphanumeric identifier to look up.
+
+        Returns:
+            ``True`` if a matching scenario file is found, ``False`` otherwise.
+
+        Example:
+            >>> service.exists_scenario("nonexistent")
+            False
+        """
+        return self._repository.exists_scenario(id_file)
+
+    def get_folder_path_scenarios(self) -> str:
+        """Return the absolute path of the scenarios storage folder as a string.
+
+        Returns:
+            The path returned by the repository, converted to ``str`` for
+            callers that do not accept :class:`pathlib.Path` objects.
+
+        Example:
+            >>> path = service.get_folder_path_scenarios()
+            >>> path.endswith("scenarios")
+            True
+        """
+        return self._repository.get_path_scenarios_folder()
+
+    # -------------------------------------------------------------------------
+    # CRUS operations
+    # -------------------------------------------------------------------------
+
+    def create_scenario(self, provider: ProviderModel) -> None:
+        """Stamp timestamps on *provider* and persist it as a new scenario.
+
+        Calls :meth:`~models.scenario_model.ProviderModel.mark_as_created` to
+        set both ``created_date_provider`` and ``modified_date_provider`` to the
+        current time before delegating to the repository.
+
+        Args:
+            provider: A :class:`~models.scenario_model.ProviderModel` instance
+                that has not yet been persisted. Its ``id_file`` must be unique.
+
+        Raises:
+            DatabaseUnavailableError: If the file cannot be written to disk.
+
+        Example:
+            >>> scenario = ProviderModel.get_default_data()
+            >>> service.create_scenario(scenario)
+            >>> service.exists_scenario(scenario.id_file)
+            True
+        """
+        # Stamp creation/modification timestamps before writing.
+        id_file = provider.id_file
+
+        provider.mark_as_created()
+        self._repository.create_scenario(provider)
+
+        if not self._profiles_service.exists_profiles(id_file):
+            self._profiles_service.create_profile(id_file)
 
     def read_scenario(self, id_file: str) -> ProviderModel:
         """Load a single scenario by its file identifier and wire step context.
@@ -132,63 +194,6 @@ class ScenariosService:
             step.parent_context = model.steps
 
         return model
-
-    def exists_scenario(self, id_file: str) -> bool:
-        """Check whether a scenario with the given identifier exists on disk.
-
-        Args:
-            id_file: Unique alphanumeric identifier to look up.
-
-        Returns:
-            ``True`` if a matching scenario file is found, ``False`` otherwise.
-
-        Example:
-            >>> service.exists_scenario("nonexistent")
-            False
-        """
-        return self._repository.exists_scenario(id_file)
-
-    def get_folder_path_scenarios(self) -> str:
-        """Return the absolute path of the scenarios storage folder as a string.
-
-        Returns:
-            The path returned by the repository, converted to ``str`` for
-            callers that do not accept :class:`pathlib.Path` objects.
-
-        Example:
-            >>> path = service.get_folder_path_scenarios()
-            >>> path.endswith("scenarios")
-            True
-        """
-        return self._repository.get_path_scenarios_folder()
-
-    # -------------------------------------------------------------------------
-    # Write operations
-    # -------------------------------------------------------------------------
-
-    def create_scenario(self, provider: ProviderModel) -> None:
-        """Stamp timestamps on *provider* and persist it as a new scenario.
-
-        Calls :meth:`~models.scenario_model.ProviderModel.mark_as_created` to
-        set both ``created_date_provider`` and ``modified_date_provider`` to the
-        current time before delegating to the repository.
-
-        Args:
-            provider: A :class:`~models.scenario_model.ProviderModel` instance
-                that has not yet been persisted. Its ``id_file`` must be unique.
-
-        Raises:
-            DatabaseUnavailableError: If the file cannot be written to disk.
-
-        Example:
-            >>> scenario = ProviderModel.get_default_data()
-            >>> service.create_scenario(scenario)
-            >>> service.exists_scenario(scenario.id_file)
-            True
-        """
-        # Stamp creation/modification timestamps before writing.
-        provider.mark_as_created()
-        self._repository.create_scenario(provider)
 
     def update_scenario(self, provider: ProviderModel) -> None:
         """Refresh the modification timestamp on *provider* and overwrite it on disk.

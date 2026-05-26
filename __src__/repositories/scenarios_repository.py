@@ -17,7 +17,6 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from interfaces.i_scenarios_repository import IScenariosRepository
 from models.scenario_model import ProviderModel
 from repositories.json_repository import JsonFileRepository
 from shared.exception_util import (
@@ -40,7 +39,7 @@ C_SCENARIOS_FILES_REGEXP = f"*{C_SCENARIO_FILE_SUFFIX}"
 # -----------------------------------------------------------------------------
 
 
-class ScenariosRepository(IScenariosRepository):
+class ScenariosRepository:
     """Manages provider configuration data stored on the filesystem.
 
     Encapsulates directory listing, JSON file loading/saving, ProviderModel

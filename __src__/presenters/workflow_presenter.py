@@ -8,7 +8,6 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from models.profile_launch_model import ProfileLaunchModel
 from models.scenario_model import ProviderModel
 from presenters.steps_list_presenter import StepsListPresenter
 from services.profiles_service import ProfilesService
@@ -78,10 +77,6 @@ class WorkflowPresenter:
         self._is_creation_mode = True
         self._current_provider = ProviderModel.get_default_data()
 
-        # Ensure every new provider starts with a default launch profile.
-        if not self._current_provider.launch_profiles:
-            self._current_provider.launch_profiles.append(ProfileLaunchModel.get_default())
-
         # Initialize an empty workflow for the new provider.
         self._workflow_presenter.init_new(self._current_provider.id_file)
         self._view.load_data(self._provider_to_dict(self._current_provider))
@@ -128,8 +123,8 @@ class WorkflowPresenter:
             "provider_name": provider.provider_name,
             "provider_desc": provider.provider_desc,
             "version": provider.version,
-            "created_date_provider": provider.created_date_provider,
-            "modified_date_provider": provider.modified_date_provider,
+            "created_date_provider": provider.created_date_scenario,
+            "modified_date_provider": provider.modified_date_scenario,
         }
 
     def _on_save(self, form_data: dict[str, Any]) -> None:
@@ -156,14 +151,14 @@ class WorkflowPresenter:
             # Collect steps from the sub-presenter.
             self._current_provider.steps = self._workflow_presenter.get_steps()
 
-            self._persist_provider()
+            self._persist_scenario()
 
         except Exception as exc:
             self._logger.exception("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
 
-    def _persist_provider(self) -> None:
-        """Creates or updates the provider in the service layer."""
+    def _persist_scenario(self) -> None:
+        """Creates or updates the scenario in the service layer."""
         if not self._current_provider:
             return
 

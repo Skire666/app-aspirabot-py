@@ -57,6 +57,8 @@ from shared.i18n_fra import (
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
 
+from __src__.models.profiles_list_model import ProfilesListModel
+
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
@@ -157,18 +159,18 @@ class ExecutorPresenter:
         self._view.set_selected_profile(id_profile)
         self._on_profile_selected(id_profile)
 
-    def load_provider(self, id_file: str) -> None:
-        """Load a provider by id_file and reset the view for a fresh run.
+    def load_scenario(self, id_file: str) -> None:
+        """Load a scenario by id_file and reset the view for a fresh run.
 
         If a workflow is currently running it is cancelled before switching.
 
         Args:
-            id_file: The ID of the provider file to load.
+            id_file: The ID of the scenario file to load.
         """
         # Abort any in-progress run before swapping the provider.
         self._cancel_active_run()
 
-        self._logging.info("Loading provider id_file=%s", id_file)
+        self._logging.info("Loading scenario id_file=%s", id_file)
         self._provider = self._service_scenarios.read_scenario(id_file)
         self._cancel_event.clear()
 
@@ -188,27 +190,27 @@ class ExecutorPresenter:
 
     def _ensure_default_profile(self) -> None:
         """Add and persist a default profile when the provider has none."""
-        if not self._provider.launch_profiles:
-            self._provider.launch_profiles.append(ProfileLaunchModel.get_default())
-            self._service_scenarios.update_scenario(self._provider)
+        if not self._service_profile.exists_profiles(self._provider.id_file):
+            profiles = ProfilesListModel.get_default(self._provider.id_file)
+            self._service_profile.create_profiles(profiles)
 
     def _setup_view_after_load(self, id_file: str) -> None:
         """Reset the view, populate profiles, and seed the date label.
 
         Args:
-            id_file: ID of the newly loaded provider, forwarded to the dropdown.
+            id_file: ID of the newly loaded scenario, forwarded to the dropdown.
         """
-        # Select the provider in the dropdown and clear stale run state.
-        self._view.set_selected_provider(id_file)
+        # Select the scenario in the dropdown and clear stale run state.
+        self._view.set_selected_profile(id_file)
         self._view.reset()
 
-        # Unlock the profiles frame and populate it from the loaded provider.
+        # Unlock the profiles frame and populate it from the loaded scenario.
         self._view.set_profile_management_enabled(True)
         self._refresh_profiles_list()
         self._load_last_used_profile()
 
-        # Seed the date label with the provider file's current modification date.
-        self._view.set_profile_modified_date(self._provider.modified_date_provider)
+        # Seed the date label with the scenario file's current modification date.
+        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
 
     # ------------------------------------------------------------------
     # View callback wiring
@@ -269,7 +271,7 @@ class ExecutorPresenter:
             return
 
         self._logging.info("Provider selected from view: id_file=%s", id_file)
-        self.load_provider(id_file)
+        self.load_scenario(id_file)
 
     def _on_refresh_scenarios(self) -> None:
         """Reload the providers list and forward it to the view dropdown."""
@@ -286,7 +288,7 @@ class ExecutorPresenter:
                 "provider_name": p.provider_name,
                 "provider_desc": p.provider_desc,
                 "version": p.version,
-                "modified_date": str(p.modified_date_provider),
+                "modified_date": str(p.modified_date_scenario),
             }
             for p in providers
         ]
@@ -317,7 +319,7 @@ class ExecutorPresenter:
         # Enable rename/save and display the provider file's last modification date.
         self._view.set_rename_profile_button_state(True)
         self._view.set_save_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date_provider)
+        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
 
     def _on_profile_new(self, name: str) -> None:
         """Create a new named profile, persist it and select it in the view.
@@ -331,14 +333,15 @@ class ExecutorPresenter:
         if not self._provider:
             return
 
-        # Build a new profile with default values and attach it to the provider.
-        new_profile = ProfileLaunchModel.get_default(name)
-        self._provider.launch_profiles.append(new_profile)
-        self._service_scenarios.update_scenario(self._provider)
+        id_scenario = self._provider.id_file
+        new_profile_launch = ProfileLaunchModel.get_default(id_scenario)
+        new_profile_launch.profile_name = name
+
+        self._service_profile.update_profile_launch(self._provider.id_file, new_profile_launch)
 
         self._refresh_profiles_list()
-        self._view.set_selected_profile(new_profile.id_profile)
-        self._on_profile_selected(new_profile.id_profile)
+        self._view.set_selected_profile(new_profile_launch.id_profile)
+        self._on_profile_selected(new_profile_launch.id_profile)
 
     def _on_profile_delete(self, id_profile: str) -> None:
         """Remove a profile from the provider and persist the change.
@@ -350,14 +353,14 @@ class ExecutorPresenter:
             return
 
         # Remove the matching profile from the list.
-        self._provider.launch_profiles = [p for p in self._provider.launch_profiles if p.id_profile != id_profile]
-        self._service_scenarios.update_scenario(self._provider)
+        id_scenario = self._provider.id_file
+        self._service_profile.delete_profile_launch(id_scenario, id_profile)
         self._refresh_profiles_list()
 
         # No profile is selected after deletion — disable rename/save, keep file date.
         self._view.set_rename_profile_button_state(False)
         self._view.set_save_profile_button_state(False)
-        self._view.set_profile_modified_date(self._provider.modified_date_provider)
+        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
 
     def _on_profile_rename(self, id_profile: str, new_name: str) -> None:
         """Rename the given profile, persist the change, and refresh the list.
@@ -369,21 +372,20 @@ class ExecutorPresenter:
         Returns:
             None.
         """
-        profile = self._find_profile(id_profile)
+        profile: ProfileLaunchModel = self._find_profile(id_profile)
         if profile is None:
             return
 
         # Apply the new name and stamp the modification date.
-        profile.id_scenario = new_name
-        profile.mark_profile_as_modified()
-        self._service_scenarios.update_scenario(self._provider)
+        profile.profile_name = new_name
+        self._service_profile.update_profile_launch(self._provider.id_file, profile)
 
         # Restore selection and update the date label with the provider file date.
         self._refresh_profiles_list()
         self._view.set_selected_profile(id_profile)
         self._view.set_rename_profile_button_state(True)
         self._view.set_save_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date_provider)
+        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
 
     def _on_profile_save(self, id_profile: str) -> None:
         """Persist current form settings into the profile without changing its name.
@@ -410,7 +412,7 @@ class ExecutorPresenter:
         if threshold is not None:
             profile.emergency_stop_threshold = threshold
 
-        profile.mark_profile_as_modified()
+        profile.mark_as_modified()
         self._service_scenarios.update_scenario(self._provider)
         self._is_profile_dirty = False
 
@@ -418,7 +420,7 @@ class ExecutorPresenter:
         self._view.set_selected_profile(id_profile)
         self._view.set_save_profile_button_state(True)
         self._view.set_rename_profile_button_state(True)
-        self._view.set_profile_modified_date(self._provider.modified_date_provider)
+        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
 
     def _find_profile(self, id_profile: str | None) -> ProfileLaunchModel | None:
         """Search the current provider's profiles for a matching id_profile.
@@ -432,10 +434,9 @@ class ExecutorPresenter:
         if not self._provider or not id_profile:
             return None
 
-        for profile in self._provider.launch_profiles:
-            if profile.id_profile == id_profile:
-                return profile
-        return None
+        profiles: ProfilesListModel = self._service_profile.read_profiles(self._provider.id_file)
+
+        return profiles.get_profile_by_id(id_profile)
 
     def _refresh_profiles_list(self) -> None:
         """Rebuild the profile Listbox in the view from the current provider.
@@ -447,7 +448,9 @@ class ExecutorPresenter:
             self._view.render_profiles_list([])
             return
 
-        rows = [{"id_profile": p.id_profile, "name_profile": p.name_profile} for p in self._provider.launch_profiles]
+        profiles: ProfilesListModel = self._service_profile.read_profiles(self._provider.id_file)
+
+        rows = [{"id_profile": p.id_profile, "profile_name": p.profile_name} for p in profiles.launch_profiles]
         self._view.render_profiles_list(rows)
 
     def _on_form_changed(self) -> None:
@@ -484,13 +487,14 @@ class ExecutorPresenter:
         Returns:
             None.
         """
-        if not self._provider or not self._provider.launch_profiles:
+        if not self._provider:
             self._view.set_launch_profile_enabled(False)
             return
 
-        # Select the profile with the most recent used_date_profile if any.
-        used = [p for p in self._provider.launch_profiles if p.used_date_profile]
-        target = max(used, key=lambda p: p.used_date_profile or "") if used else self._provider.launch_profiles[0]
+        # Select the profile with the most recent if any.
+        profiles: ProfilesListModel = self._service_profile.read_profiles(self._provider.id_file)
+
+        target = profiles.get_most_recently_used_profile()
 
         self._view.set_selected_profile(target.id_profile)
         self._on_profile_selected(target.id_profile)
@@ -579,7 +583,7 @@ class ExecutorPresenter:
         self._persist_provider_before_launch()
 
         # Refresh the date label — update_provider stamped a new modified_date.
-        self._view.set_profile_modified_date(self._provider.modified_date_provider)
+        self._view.set_profile_modified_date(self._provider.modified_date_scenario)
         self._start_workflow_thread()
 
     def _start_workflow_thread(self) -> None:
