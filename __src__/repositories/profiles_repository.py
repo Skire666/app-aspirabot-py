@@ -1,6 +1,6 @@
 """Repository for scraping provider configuration files.
 
-Provides ProvidersRepository, which discovers, reads, writes, and deletes
+Provides ScenariosRepository, which discovers, reads, writes, and deletes
 JSON provider configuration files stored in a local directory.
 
 Example:
@@ -81,7 +81,7 @@ class ProfilesRepository:
             return list(self._folder_path.glob(C_PROFILES_FILES_REGEXP))
         return []
 
-    def exists_profiles(self, id_scenario: str) -> bool:
+    def exists_scenarios(self, id_scenario: str) -> bool:
         """Returns True if a profile file exists for the given identifier.
 
         Args:
@@ -131,15 +131,15 @@ class ProfilesRepository:
         if not full_filepath.exists():
             raise ProfileNotFoundError(id_scenario)
 
-        provider_data = self._json_repo.read_from_path(full_filepath)
+        scenario_data = self._json_repo.read_from_path(full_filepath)
 
-        if not provider_data:
+        if not scenario_data:
             self._logger.warning("Le fichier %s est vide.", full_filepath)
             raise ProfileDataMissingError(id_scenario)
 
-        provider_model = ProfilesModel.import_from_data_json(provider_data)
+        scenario_model = ProfilesModel.import_from_data_json(scenario_data)
         self._logger.debug("Profil chargé : %s", full_filepath)
-        return provider_model
+        return scenario_model
 
     def read_all_profiles(self) -> list[ProfilesModel]:
         """Lists all valid profiles found in the configured folder.
@@ -153,11 +153,11 @@ class ProfilesRepository:
 
         for file_path in self._list_profiles_files():
             try:
-                provider_data = self._json_repo.read_from_path(file_path)
+                scenario_data = self._json_repo.read_from_path(file_path)
 
-                if provider_data:
-                    provider_model = ProfilesModel.import_from_data_json(provider_data)
-                    profiles.append(provider_model)
+                if scenario_data:
+                    scenario_model = ProfilesModel.import_from_data_json(scenario_data)
+                    profiles.append(scenario_model)
                     self._logger.debug("Profil ajouté à la liste : %s", file_path.name)
             except OSError, AspirabotError:
                 self._logger.error("Impossible de charger le profil %s.", file_path.name, exc_info=True)
@@ -178,8 +178,8 @@ class ProfilesRepository:
         self.create_folder_profiles_if_missing()
 
         try:
-            provider_dict = profiles.export_to_data_json()
-            self._json_repo.write_from_dict(full_filepath, provider_dict)
+            scenario_dict = profiles.export_to_data_json()
+            self._json_repo.write_from_dict(full_filepath, scenario_dict)
             self._logger.debug("Profil sauvegardé : %s", full_filepath)
         except Exception:
             self._logger.error("Erreur lors de la MAJ du profil.", exc_info=True)
@@ -255,22 +255,22 @@ class ProfilesRepository:
             raise
 
     def get_path_profiles_folder(self) -> Path:
-        """Gets the path of the providers folder.
+        """Gets the path of the scenarios folder.
 
         Returns:
-            The path of the providers folder as a Path object.
+            The path of the scenarios folder as a Path object.
         """
         return self._folder_path
 
     def _compute_fullpath_from_id_file(self, id_file: str, suffix: str = C_PROFILE_FILE_SUFFIX) -> Path:
-        """Computes the full JSON file path for a given provider identifier.
+        """Computes the full JSON file path for a given scenario identifier.
 
         Args:
-            id_file: Unique identifier of the provider.
+            id_file: Unique identifier of the scenario.
             suffix: The file suffix to append (default is C_PROFILE_FILE_SUFFIX).
 
         Returns:
-            The full Path to the provider's JSON file.
+            The full Path to the scenario's JSON file.
         """
         if not id_file:
             raise ValueError("L'identifiant du scénario ne peut pas être vide.")  # noqa: TRY003

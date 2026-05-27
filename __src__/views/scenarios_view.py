@@ -1,4 +1,4 @@
-"""Tkinter view for managing providers."""
+"""Tkinter view for managing scenarios."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -6,6 +6,7 @@
 
 import tkinter as tk
 from collections.abc import Callable
+from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any
 
@@ -23,8 +24,8 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
     GridColumn(id="action_edit", title="Modif.", width=62, col_type="button", button_text="Modif."),
     GridColumn(id="action_duplicate", title="Dupp.", width=62, col_type="button", button_text="Dupp."),
     GridColumn(id="action_delete", title="Supp.", width=62, col_type="button", button_text="Supp."),
-    GridColumn(id="provider_name", title="Nom", width=160),
-    GridColumn(id="provider_desc", title="Description", width=160),
+    GridColumn(id="scenario_name", title="Nom", width=160),
+    GridColumn(id="scenario_desc", title="Description", width=160),
     GridColumn(id="version", title="Version", width=82),
     GridColumn(id="created_date_scenario", title="Création", width=125, format="%d/%m/%Y %H:%M"),
     GridColumn(id="modified_date_scenario", title="Modification", width=125, format="%d/%m/%Y %H:%M"),
@@ -37,17 +38,17 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
 
 
 class ScenariosView(ttk.Frame):
-    """View component that renders the list of providers."""
+    """View component that renders the list of scenarios."""
 
     def __init__(self, parent: tk.Widget) -> None:
-        """Initializes the ProviderView component in Tkinter.
+        """Initializes the ScenarioView component in Tkinter.
 
         Args:
             parent: The parent Tkinter widget.
         """
         super().__init__(parent)
 
-        self._on_create_provider: Callable[[], None] | None = None
+        self._on_create_scenario: Callable[[], None] | None = None
         self._on_open_folder_callback: Callable[[], None] | None = None
         self._on_refresh: Callable[[], None] | None = None
         self._on_sort: Callable[[str, bool], None] | None = None
@@ -61,19 +62,19 @@ class ScenariosView(ttk.Frame):
         self._create_grid_widgets()
 
     def _create_actions_widgets(self) -> None:
-        """Constructs UI elements including top bar and provider list tree."""
+        """Constructs UI elements including top bar and Scenario list tree."""
         # Top panel
         top_frame = HorizontalLineFrame(self, text="Actions")
         top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_create = ttk.Button(top_frame, text="Créer un scénario", command=self._notify_create_provider)
+        self._btn_create = ttk.Button(top_frame, text="Créer un scénario", command=self._notify_create_scenario)
         self._btn_create.pack(side=tk.LEFT, padx=(5, 10))
 
         self._btn_validate = ttk.Button(top_frame, text="Valider les scénarios", command=self._notify_validate)
         self._btn_validate.pack(side=tk.LEFT, padx=(0, 10))
 
     def _create_grid_widgets(self) -> None:
-        """Constructs UI elements including top bar and provider list tree."""
+        """Constructs UI elements including top bar and Scenario list tree."""
         # Top panel
         top_frame = HorizontalLineFrame(self, text="Liste des scénarios")
         top_frame.pack(side=tk.TOP, fill=tk.X)
@@ -89,9 +90,9 @@ class ScenariosView(ttk.Frame):
         )
         self._btn_open_folder.pack(side=tk.RIGHT, padx=(10), pady=(0, 5))
 
-        # Main DataGrid for providers
+        # Main DataGrid for scenarios
         self.grid = DataGrid(self, columns=DATA_GRID_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
-        self.grid.set_sort_state("provider_name", True)
+        self.grid.set_sort_state("scenario_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def set_callbacks(
@@ -109,17 +110,17 @@ class ScenariosView(ttk.Frame):
         """Sets the callbacks for UI interactions.
 
         Args:
-            on_create: Callback for creating a new provider.
-            on_open_folder: Callback for opening the providers folder.
-            on_refresh: Callback for refreshing the providers list.
+            on_create: Callback for creating a new scenario.
+            on_open_folder: Callback for opening the scenarios folder.
+            on_refresh: Callback for refreshing the scenarios list.
             on_sort: Callback for sorting columns.
             on_edit: Callback for executing the edit action.
             on_duplicate: Callback for executing the duplicate action.
             on_launch: Callback for executing the launch action.
             on_delete: Callback for executing the delete action.
-            on_validate: Callback for validating provider files.
+            on_validate: Callback for validating scenario files.
         """
-        self._on_create_provider = on_create
+        self._on_create_scenario = on_create
         self._on_open_folder_callback = on_open_folder
         self._on_refresh = on_refresh
         self._on_sort = on_sort
@@ -141,9 +142,9 @@ class ScenariosView(ttk.Frame):
         elif action_id == "action_delete" and self._on_delete:
             self._on_delete(id_file)
 
-    def _notify_create_provider(self) -> None:
-        if self._on_create_provider:
-            self._on_create_provider()
+    def _notify_create_scenario(self) -> None:
+        if self._on_create_scenario:
+            self._on_create_scenario()
 
     def _notify_open_folder(self) -> None:
         if self._on_open_folder_callback:
@@ -171,14 +172,14 @@ class ScenariosView(ttk.Frame):
 
         self._btn_validate.config(state=tk.NORMAL)
 
-    def render_scenarios(self, folder_path: str, providers_data: list[dict[str, Any]]) -> None:
-        """Clears existing UI providers and renders the new list.
+    def render_scenarios(self, folder_path: Path, scenarios_data: list[dict[str, Any]]) -> None:
+        """Clears existing UI scenarios and renders the new list.
 
         Args:
-            folder_path: The path of the providers folder.
-            providers_data: A list of dictionaries mapping to the DataGrid columns.
+            folder_path: The path of the scenarios folder.
+            scenarios_data: A list of dictionaries mapping to the DataGrid columns.
         """
-        count = len(providers_data)
+        count = len(scenarios_data)
         if count == 0:
             self._lbl_counter.config(text="Trouvé : Aucun scénario")
         elif count == 1:
@@ -187,7 +188,7 @@ class ScenariosView(ttk.Frame):
             self._lbl_counter.config(text=f"Trouvé : {count} scénarios")
 
         self._btn_open_folder.set_path(folder_path)
-        self.grid.render_data(providers_data)
+        self.grid.render_data(scenarios_data)
 
     @staticmethod
     def show_info(message: str) -> None:
@@ -243,12 +244,12 @@ class ScenariosView(ttk.Frame):
                 if issue.get("broken_path"):
                     lines.append(f"Fichier déplacé : {issue['broken_path']}\n")
 
-            messagebox.showerror("Validation des fournisseurs", "\n".join(lines))
+            messagebox.showerror("Validation des scénarios", "\n".join(lines))
             return
 
         lines.append("")
-        lines.append("Aucun fichier fournisseur invalide n'a été détecté.")
-        messagebox.showinfo("Validation des fournisseurs", "\n".join(lines))
+        lines.append("Aucun fichier scénario invalide n'a été détecté.")
+        messagebox.showinfo("Validation des scénarios", "\n".join(lines))
 
 
 # EOF

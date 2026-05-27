@@ -1,6 +1,6 @@
 """Domain model for a scraping workflow step.
 
-This module defines a strongly typed step entity used by providers.
+This module defines a strongly typed step entity used by scenarios.
 It includes the StepType enumeration and default parameter values for each type.
 
 Example:

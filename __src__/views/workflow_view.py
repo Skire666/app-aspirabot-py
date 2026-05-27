@@ -1,4 +1,4 @@
-"""Tkinter view for creating and editing a provider."""
+"""Tkinter view for creating and editing a Scenario."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -28,10 +28,10 @@ _HEIGHT_FRAME_GESTION = 194
 
 
 class WorkflowView(ttk.Frame):
-    """View for creating and editing a provider workflow.
+    """View for creating and editing a Scenario workflow.
 
     Contains three stacked panels (top to bottom):
-    1. Informations        — provider name, URL, version, file ID fields.
+    1. Informations        — Scenario name, URL, version, file ID fields.
     2. Gestion des étapes  — step type selector and inline edit form.
     3. Liste des étapes    — drag-and-drop step list.
 
@@ -97,7 +97,7 @@ class WorkflowView(ttk.Frame):
         info_lf = HorizontalLineFrame(parent, text="Informations")
         info_lf.grid(row=0, column=0, columnspan=2, sticky="nwes", padx=(5, 5))
 
-        # Row 1 — provider name and auto-generated file ID.
+        # Row 1 — Scenario name and auto-generated file ID.
         line1 = ttk.Frame(info_lf)
         line1.pack(fill="x", padx=5, pady=(0, 8))
         self._build_name_row(line1)
@@ -425,13 +425,13 @@ class WorkflowView(ttk.Frame):
         disabled after a load.
 
         Args:
-            data: Dict with keys 'id_file', 'provider_name', 'provider_desc', 'version'.
+            data: Dict with keys 'id_file', 'scenario_name', 'scenario_desc', 'version'.
         """
         self._loading = True
         try:
             self._var_id_file.set(data.get("id_file", ""))
-            self._var_name.set(data.get("provider_name", ""))
-            self._var_desc.set(data.get("provider_desc", ""))
+            self._var_name.set(data.get("scenario_name", ""))
+            self._var_desc.set(data.get("scenario_desc", ""))
             self._var_version.set(data.get("version", ""))
             self._workflow_builder_view.set_validation_status("Vérification : --", False)
         finally:
@@ -442,12 +442,12 @@ class WorkflowView(ttk.Frame):
         """Reads all form fields and returns them as a dictionary.
 
         Returns:
-            Dict with keys 'id_file', 'provider_name', 'provider_desc', 'version'.
+            Dict with keys 'id_file', 'scenario_name', 'scenario_desc', 'version'.
         """
         return {
             "id_file": self._var_id_file.get(),
-            "provider_name": self._var_name.get(),
-            "provider_desc": self._var_desc.get(),
+            "scenario_name": self._var_name.get(),
+            "scenario_desc": self._var_desc.get(),
             "version": self._var_version.get(),
         }
 
@@ -470,14 +470,14 @@ class WorkflowView(ttk.Frame):
 
     @staticmethod
     def ask_overwrite_confirmation() -> bool:
-        """Shows a dialog asking whether to overwrite an existing provider file.
+        """Shows a dialog asking whether to overwrite an existing Scenario file.
 
         Returns:
             True if the user confirmed the overwrite; False otherwise.
         """
         return messagebox.askyesno(
             "Écraser?",
-            "Un fournisseur avec cette ID existe déjà. Voulez-vous l'écraser ?",
+            "Un scénario avec cette ID existe déjà. Voulez-vous l'écraser ?",
         )
 
     @staticmethod

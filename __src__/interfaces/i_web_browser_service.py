@@ -3,15 +3,6 @@
 Decouples the scraping orchestration from any specific browser library
 (Playwright, etc.). Concrete implementations handle all browser
 lifecycle details: launching, page management, stealth patching, and shutdown.
-
-Example:
-    >>> svc = ConcreteWebBrowserService(Path("."))
-    >>> svc.launch(provider)
-    >>> svc.append_new_page()
-    >>> page = svc.get_current_page()
-    >>> svc.close_browser()
-    >>> svc.is_launched
-    False
 """
 
 # -----------------------------------------------------------------------------
@@ -37,15 +28,6 @@ class IWebBrowserService(Protocol):
     All open pages are tracked internally. Pages opened by JavaScript (e.g.
     via ``target="_blank"`` clicks) are included automatically. When a page
     is closed, it is removed from the internal list without any manual action.
-
-    Example:
-        >>> svc = ConcreteWebBrowserService(Path("."))
-        >>> svc.launch(provider)
-        >>> svc.append_new_page()
-        >>> page = svc.get_current_page()
-        >>> svc.close_browser()
-        >>> svc.is_launched
-        False
     """
 
     def launch(self) -> None:

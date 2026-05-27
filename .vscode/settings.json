@@ -1,3 +1,7 @@
 {
-    "todo-tree.tree.scanMode": "workspace"
+    "editor.codeLens": true,
+    "todo-tree.tree.scanMode": "workspace",
+    "terminal.integrated.env.windows": {
+        "PYTHONUTF8": "1"
+    }
 }

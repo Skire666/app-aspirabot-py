@@ -1,6 +1,6 @@
-"""Contract for URL source providers used by the OPEN_URL executor.
+"""Contract for URL source scenarios used by the OPEN_URL executor.
 
-A URL source provider supplies URLs one at a time to the workflow engine.
+A URL source scenario supplies URLs one at a time to the workflow engine.
 Concrete implementations cover manual lists, and folder-based sources.
 
 Example:
@@ -26,17 +26,8 @@ from typing import Protocol
 class IUrlSourceProvider(Protocol):
     """Contract for iterating over a sequence of URLs during a scraping run.
 
-    Implementations must be resettable so that the same provider instance
+    Implementations must be resettable so that the same scenario instance
     can be reused across multiple workflow runs without being reconstructed.
-
-    Example:
-        >>> provider = ConcreteProvider(["https://example.com"])
-        >>> provider.has_next()
-        True
-        >>> provider.next_url()
-        'https://example.com'
-        >>> provider.has_next()
-        False
     """
 
     def has_next(self) -> bool:

@@ -5,19 +5,21 @@ from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_CONFIG,
     C_RESS_ICON_BLACK_DEBUG,
     C_RESS_ICON_BLACK_EDITOR,
-    C_RESS_ICON_BLACK_EXECUTE,
+    C_RESS_ICON_BLACK_EXECUTOR,
     C_RESS_ICON_BLACK_FAQ,
     C_RESS_ICON_BLACK_LOGS,
     C_RESS_ICON_BLACK_PROFILES,
     C_RESS_ICON_BLACK_SCENARIOS,
+    C_RESS_ICON_BLACK_SCRAPING,
     C_RESS_ICON_WHITE_CONFIG,
     C_RESS_ICON_WHITE_DEBUG,
     C_RESS_ICON_WHITE_EDITOR,
-    C_RESS_ICON_WHITE_EXECUTE,
+    C_RESS_ICON_WHITE_EXECUTOR,
     C_RESS_ICON_WHITE_FAQ,
     C_RESS_ICON_WHITE_LOGS,
     C_RESS_ICON_WHITE_PROFILES,
     C_RESS_ICON_WHITE_SCENARIOS,
+    C_RESS_ICON_WHITE_SCRAPING,
 )
 
 # -----------------------------------------------------------------------------
@@ -41,10 +43,10 @@ C_SCRAPING_EMERGENCY_STOP_INVALID_MSG = (
 )
 
 # Scraping panel — workflow guard warnings
-C_SCRAPING_NO_PROVIDER_LOADED = "Veuillez charger un fournisseur avant de lancer le scraping."
+C_SCRAPING_NO_PROVIDER_LOADED = "Veuillez charger un scénario avant de lancer le scraping."
 C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER = (
     "Un Workflow est déjà en cours de modification.\n"
-    "Veuillez terminer ou annuler la modification avant de changer de fournisseur."
+    "Veuillez terminer ou annuler la modification avant de changer de scénario."
 )
 C_SCRAPING_WORKFLOW_ACTIVE_LAUNCH = (
     "Un Workflow est déjà en cours de modification.\n"
@@ -72,11 +74,6 @@ C_DEBUG_DNS_DELAY_INVALID = "Le délai d'attente DNS doit être un entier entre 
 
 # Scraping panel — no URL source confirmation dialog
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
-C_SCRAPING_NO_URL_SOURCE_MSG = (
-    "Aucune source d'URLs n'est selectionnee.\n\n"
-    "Les etapes OPEN_URL en mode '<<SOURCE>>' seront en erreur.\n\n"
-    "Souhaitez-vous continuer quand meme ?"
-)
 
 # -----------------------------------------------------------------------------
 # Labels
@@ -86,14 +83,15 @@ C_SCRAPING_NO_URL_SOURCE_MSG = (
 # Mapping of module names to their corresponding black and white icon resource names.
 # Order of modules is determined by the order of entries in this dictionary.
 C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
-    TitleModuleEnum.E_LOGS: ["Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS],
-    TitleModuleEnum.E_PROFILES: ["Profils", C_RESS_ICON_BLACK_PROFILES, C_RESS_ICON_WHITE_PROFILES],
-    TitleModuleEnum.E_SCENARIOS: ["Scénarios", C_RESS_ICON_BLACK_SCENARIOS, C_RESS_ICON_WHITE_SCENARIOS],
-    TitleModuleEnum.E_EDITOR: ["Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR],
-    TitleModuleEnum.E_EXECUTOR: ["Exécuter", C_RESS_ICON_BLACK_EXECUTE, C_RESS_ICON_WHITE_EXECUTE],
-    TitleModuleEnum.E_FAQ: ["F.A.Q.", C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ],
-    TitleModuleEnum.E_DEBUG: ["Debug", C_RESS_ICON_BLACK_DEBUG, C_RESS_ICON_WHITE_DEBUG],
-    TitleModuleEnum.E_OPTIONS: ["Options", C_RESS_ICON_BLACK_CONFIG, C_RESS_ICON_WHITE_CONFIG],
+    TitleModuleEnum.E_LOGS: ("Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS),
+    TitleModuleEnum.E_PROFILES: ("Profils", C_RESS_ICON_BLACK_PROFILES, C_RESS_ICON_WHITE_PROFILES),
+    TitleModuleEnum.E_SCENARIOS: ("Scénarios", C_RESS_ICON_BLACK_SCENARIOS, C_RESS_ICON_WHITE_SCENARIOS),
+    TitleModuleEnum.E_WORKFLOW: ("Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR),
+    TitleModuleEnum.E_EXECUTOR: ("Exécuter", C_RESS_ICON_BLACK_EXECUTOR, C_RESS_ICON_WHITE_EXECUTOR),
+    TitleModuleEnum.E_SCRAPING: ("Scraping", C_RESS_ICON_BLACK_SCRAPING, C_RESS_ICON_WHITE_SCRAPING),
+    TitleModuleEnum.E_FAQ: ("F.A.Q.", C_RESS_ICON_BLACK_FAQ, C_RESS_ICON_WHITE_FAQ),
+    TitleModuleEnum.E_DEBUG: ("Debug", C_RESS_ICON_BLACK_DEBUG, C_RESS_ICON_WHITE_DEBUG),
+    TitleModuleEnum.E_OPTIONS: ("Options", C_RESS_ICON_BLACK_CONFIG, C_RESS_ICON_WHITE_CONFIG),
 }
 
 

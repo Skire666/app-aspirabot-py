@@ -40,7 +40,7 @@ class OpenUrlExecutor(IStepExecutor):
         """Execute the step."""
         p = OpenUrlParams.from_dict(context.step_params)
 
-        # Resolve the target URL from the source provider or the custom field.
+        # Resolve the target URL from the source scenario or the custom field.
         target_url = self._extract_next_url_used(context, p)
 
         # obligé de le mettre avant de goto
@@ -61,7 +61,7 @@ class OpenUrlExecutor(IStepExecutor):
         """Extract the next URL to open based on the step parameters and context.
 
         Args:
-            context: The current scraping context, which may contain a URL source provider.
+            context: The current scraping context, which may contain a URL source scenario.
             p: The parameters for the open URL step, including mode and custom URL.
 
         Returns:
@@ -76,7 +76,7 @@ class OpenUrlExecutor(IStepExecutor):
                 raise EmptyCustomUrlError()
             target_url = p.url_custom
         else:
-            # Consume the next URL from the injected source provider.
+            # Consume the next URL from the injected source
             if context.url_source is None or not context.url_source.has_next():
                 raise UrlSourceExhaustedError()
             target_url = context.url_source.next_url()

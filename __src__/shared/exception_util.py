@@ -165,12 +165,12 @@ class InvalidFolderLogsError(AspirabotError):
         super().__init__("Le chemin du dossier de journalisation ne peut pas être vide.")
 
 
-class InvalidFolderProvidersError(AspirabotError):
-    """Raised when the providers folder path is empty or invalid."""
+class InvalidFolderScenariosError(AspirabotError):
+    """Raised when the scenarios folder path is empty or invalid."""
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Le chemin du dossier des fournisseurs ne peut pas être vide.")
+        super().__init__("Le chemin du dossier des scénarios ne peut pas être vide.")
 
 
 class InvalidFolderScrapingError(AspirabotError):
@@ -239,14 +239,14 @@ class UnsupportedBrowserEngineError(AspirabotError):
         super().__init__(f"Moteur de navigateur non pris en charge : {engine}")
 
 
-class InvalidProviderJsonContentError(ValueError, AspirabotError):
-    """Raised when a provider JSON file does not contain a valid object."""
+class InvalidScenarioJsonContentError(ValueError, AspirabotError):
+    """Raised when a scenario JSON file does not contain a valid object."""
 
     def __init__(self, file_name: str) -> None:
         """Initialize the error message.
 
         Args:
-            file_name: Provider JSON filename.
+            file_name: Scenario JSON filename.
         """
         super().__init__(f"Contenu JSON invalide dans {file_name}")
 
@@ -264,7 +264,7 @@ class InvalidProfilesFolderPathError(NotADirectoryError, AspirabotError):
 
 
 class ProfileNotFoundError(FileNotFoundError, AspirabotError):
-    """Raised when a provider file cannot be found."""
+    """Raised when a Scenario file cannot be found."""
 
     def __init__(self, id_file: str, context: str | None = None) -> None:
         """Initialize the error message.
@@ -284,13 +284,10 @@ class ScenarioNotFoundError(FileNotFoundError, AspirabotError):
         """Initialize the error message.
 
         Args:
-            id_file: Provider identifier used for lookup.
+            id_file: Scenario identifier used for lookup.
             context: Optional context label such as "suppression".
         """
-        if context:
-            message = f"Fournisseur non trouvé pour {context}: {id_file}"
-        else:
-            message = f"Fournisseur non trouvé: {id_file}"
+        message = f"Scénario non trouvé pour {context}: {id_file}" if context else f"Scénario non trouvé: {id_file}"
         super().__init__(message)
 
 
@@ -301,7 +298,7 @@ class ScenarioDataMissingError(ValueError, AspirabotError):
         """Initialize the error message.
 
         Args:
-            id_file: Provider identifier used for lookup.
+            id_file: Scenario identifier used for lookup.
         """
         super().__init__(f"Données manquantes pour {id_file}")
 
@@ -318,8 +315,8 @@ class ProfileDataMissingError(ValueError, AspirabotError):
         super().__init__(f"Données manquantes pour {id_file}")
 
 
-class InvalidProvidersFolderPathError(NotADirectoryError, AspirabotError):
-    """Raised when the providers folder path is not a directory."""
+class InvalidScenariosFolderPathError(NotADirectoryError, AspirabotError):
+    """Raised when the scenarios folder path is not a directory."""
 
     def __init__(self, folder_path: str | Path) -> None:
         """Initialize the error message.

@@ -1,5 +1,3 @@
-"""Module contenant le presentateur pour la modification de fournisseur."""
-
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
@@ -22,12 +20,6 @@ from views.workflow_view import WorkflowView
 
 
 class WorkflowPresenter:
-    """Présentateur (Presenter) pour gerer la creation et modification d'un fournisseur.
-
-    Owns both the provider form and the embedded WorkflowBuilderPresenter.
-    Steps are delegated entirely to the workflow sub-presenter.
-    """
-
     def __init__(
         self,
         view: WorkflowView,
@@ -45,13 +37,13 @@ class WorkflowPresenter:
         self._view: WorkflowView = view
         self._service = scenarios_service
         self._is_creation_mode = False
-        self._current_provider: ScenarioModel | None = None
+        self._current_scenario: ScenarioModel | None = None
         self._on_done: Callable[[], None] | None = None
 
         # Sub-presenter that owns the step list and workflow execution.
         self._workflow_presenter = StepsListPresenter(
             view=view.workflow_builder_view,
-            service_provider=scenarios_service,
+            service_scenario=scenarios_service,
             workflow_service=WorkflowService(),
             gestion_view=view,
         )
@@ -75,66 +67,61 @@ class WorkflowPresenter:
     def create_new(self) -> None:
         """Passe le presentateur en mode creation et charge un modele vide."""
         self._is_creation_mode = True
-        self._current_provider = ScenarioModel.get_default_data()
+        self._current_scenario = ScenarioModel.get_default_data()
 
-        # Initialize an empty workflow for the new provider.
-        self._workflow_presenter.init_new(self._current_provider.id_file)
-        self._view.load_data(self._provider_to_dict(self._current_provider))
+        # Initialize an empty workflow for the new scenario.
+        self._workflow_presenter.init_new(self._current_scenario.id_file)
+        self._view.load_data(self._scenario_to_dict(self._current_scenario))
         self._view.show_inline_form(None)
 
-    def load_provider(self, id_file: str) -> bool:
-        """Passe le presentateur en mode modification et charge le modele specifie.
-
-        Args:
-            id_file: L'ID fichier du fournisseur à supprimer.
-        """
+    def load_scenario(self, id_file: str) -> bool:
         self._is_creation_mode = False
 
         if not self._service.exists_scenario(id_file):
-            self._view.show_error(f"Le fournisseur avec l'ID '{id_file}' n'existe pas.")
+            self._view.show_error(f"Le scénario avec l'ID '{id_file}' n'existe pas.")
             return False
 
-        self._current_provider = self._service.read_scenario(id_file)
+        self._current_scenario = self._service.read_scenario(id_file)
 
         unique_list_id_step: set[str] = set()
         unique_list_id_step.update(
-            step.step_id for step in self._current_provider.steps
+            step.step_id for step in self._current_scenario.steps
         )  # Guard against duplicate step IDs.
         merge_unique_list_id_step(unique_list_id_step)
 
         # Load existing workflow steps from the repository.
-        self._workflow_presenter.load(self._current_provider.id_file)
-        self._view.load_data(self._provider_to_dict(self._current_provider))
+        self._workflow_presenter.load(self._current_scenario.id_file)
+        self._view.load_data(self._scenario_to_dict(self._current_scenario))
         self._view.show_inline_form(None)
         return True
 
     @staticmethod
-    def _provider_to_dict(provider: ScenarioModel) -> dict[str, Any]:
-        """Converts provider model fields to a form-data dictionary.
+    def _scenario_to_dict(scenario: ScenarioModel) -> dict[str, Any]:
+        """Converts scenario model fields to a form-data dictionary.
 
         Args:
-            provider: Source provider model.
+            scenario: Source scenario model.
 
         Returns:
             Dict with all form-relevant fields.
         """
         return {
-            "id_file": provider.id_file,
-            "provider_name": provider.provider_name,
-            "provider_desc": provider.provider_desc,
-            "version": provider.version,
-            "created_date_scenario": provider.created_date_scenario,
-            "modified_date_scenario": provider.modified_date_scenario,
+            "id_file": scenario.id_file,
+            "scenario_name": scenario.scenario_name,
+            "scenario_desc": scenario.scenario_desc,
+            "version": scenario.version,
+            "created_date_scenario": scenario.created_date_scenario,
+            "modified_date_scenario": scenario.modified_date_scenario,
         }
 
     def _on_save(self, form_data: dict[str, Any]) -> None:
-        """Valide et sauvegarde le fournisseur.
+        """Valide et sauvegarde le scénario.
 
         Args:
             form_data: Les données brutes récupérées de la vue.
         """
         try:
-            if not self._current_provider:
+            if not self._current_scenario:
                 return
 
             # Validate workflow steps before persisting.
@@ -143,13 +130,13 @@ class WorkflowPresenter:
                 self._view.show_error(errors[0])
                 return
 
-            # Merge form data into the provider model.
-            self._current_provider.provider_name = form_data["provider_name"]
-            self._current_provider.provider_desc = form_data["provider_desc"]
-            self._current_provider.version = form_data["version"]
+            # Merge form data into the scenario model.
+            self._current_scenario.scenario_name = form_data["scenario_name"]
+            self._current_scenario.scenario_desc = form_data["scenario_desc"]
+            self._current_scenario.version = form_data["version"]
 
             # Collect steps from the sub-presenter.
-            self._current_provider.steps = self._workflow_presenter.get_steps()
+            self._current_scenario.steps = self._workflow_presenter.get_steps()
 
             self._persist_scenario()
 
@@ -159,18 +146,18 @@ class WorkflowPresenter:
 
     def _persist_scenario(self) -> None:
         """Creates or updates the scenario in the service layer."""
-        if not self._current_provider:
+        if not self._current_scenario:
             return
 
         if self._is_creation_mode:
             # Cancel when the ID file already exists and the user declines overwrite.
-            already_exists = self._service.exists_scenario(self._current_provider.id_file)
+            already_exists = self._service.exists_scenario(self._current_scenario.id_file)
             if already_exists and not self._view.ask_overwrite_confirmation():
                 return
-            self._service.create_scenario(self._current_provider)
+            self._service.create_scenario(self._current_scenario)
         else:
-            self._current_provider.mark_as_modified()
-            self._service.update_scenario(self._current_provider)
+            self._current_scenario.mark_as_modified()
+            self._service.update_scenario(self._current_scenario)
 
         self._workflow_presenter.clear_steps()
         self._view.clear_data()
@@ -183,6 +170,6 @@ class WorkflowPresenter:
         # must leave the presenter and view in the same clean state.
         self._workflow_presenter.clear_steps()
         self._view.clear_data()
-        self._current_provider = None
+        self._current_scenario = None
         if self._on_done:
             self._on_done()

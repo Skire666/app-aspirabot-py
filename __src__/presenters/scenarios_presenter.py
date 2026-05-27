@@ -1,5 +1,3 @@
-"""Module contenant le présentateur pour la gestion des fournisseurs."""
-
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
@@ -15,31 +13,25 @@ from views.scenarios_view import ScenariosView
 
 
 class ScenariosPresenter:
-    """Présentateur (Presenter) pour coordonner la vue et le service des fournisseurs.
-
-    Ce présentateur écoute les interactions de la vue, exécute la logique
-    métier via le service et met à jour la vue avec les nouvelles données.
-    """
-
     def __init__(self, view: ScenariosView, service: ScenariosService) -> None:
         """Initialise le présentateur avec sa vue et son service affiliés.
 
         Args:
-            view (ProviderView): L'interface utilisateur.
-            service (ProviderService): Le service gérant la logique métier.
+            view : L'interface utilisateur.
+            service : Le service gérant la logique métier.
         """
         self._logger = logging.getLogger(__name__)
         self._view = view
         self._service = service
         self._last_loaded: datetime | None = None
         self._all_scenarios: list[ScenarioModel] = []
-        self._current_sort_column = "provider_name"
+        self._current_sort_column = "scenario_name"
         self._current_sort_ascending = True
 
         # Hooks optionnels injectés depuis le main
-        self.on_request_create_provider: Callable[[], None] | None = None
-        self.on_request_edit_provider: Callable[[str], None] | None = None
-        self.on_request_launch_provider: Callable[[str], None] | None = None
+        self.on_request_create_scenario: Callable[[], None] | None = None
+        self.on_request_edit_scenario: Callable[[str], None] | None = None
+        self.on_request_launch_scenario: Callable[[str], None] | None = None
         # Guard: returns True when a Workflow edit session is already open.
         self.is_workflow_active: Callable[[], bool] | None = None
 
@@ -68,19 +60,18 @@ class ScenariosPresenter:
     def _bind_view_events(self) -> None:
         """Associe les callbacks de la vue aux méthodes du présentateur."""
         self._view.set_callbacks(
-            on_create=self._on_create_provider,
+            on_create=self._on_create_scenario,
             on_open_folder=self._on_open_folder,
             on_refresh=self._on_refresh,
             on_sort=self._on_sort,
-            on_edit=self._on_edit_provider,
-            on_duplicate=self._on_duplicate_provider,
-            on_launch=self._on_launch_provider,
-            on_delete=self._on_delete_provider,
+            on_edit=self._on_edit_scenario,
+            on_duplicate=self._on_duplicate_scenario,
+            on_launch=self._on_launch_scenario,
+            on_delete=self._on_delete_scenario,
             on_validate=self._on_validate_scenarios,
         )
 
     def _load_scenarios(self) -> None:
-        """Charge la liste complète des fournisseurs et met à jour la vue."""
         try:
             self._all_scenarios = self._service.list_all_scenarios()
         except FileNotFoundError:
@@ -104,10 +95,10 @@ class ScenariosPresenter:
         """
         if column == "id_file":
             self._all_scenarios.sort(key=lambda p: self._text_key(p.id_file), reverse=not ascending)
-        elif column == "provider_name":
-            self._all_scenarios.sort(key=lambda p: self._text_key(p.provider_name), reverse=not ascending)
-        elif column == "provider_desc":
-            self._all_scenarios.sort(key=lambda p: self._text_key(p.provider_desc), reverse=not ascending)
+        elif column == "scenario_name":
+            self._all_scenarios.sort(key=lambda p: self._text_key(p.scenario_name), reverse=not ascending)
+        elif column == "scenario_desc":
+            self._all_scenarios.sort(key=lambda p: self._text_key(p.scenario_desc), reverse=not ascending)
         elif column == "created_date_scenario":
             self._all_scenarios.sort(key=lambda p: self._text_key(p.created_date_scenario), reverse=not ascending)
         elif column == "modified_date_scenario":
@@ -115,27 +106,19 @@ class ScenariosPresenter:
 
     def _update_view(self) -> None:
         """Update the view with the current list of scenarios, sorted and formatted for display."""
-        providers_data = self._format_scenarios(self._all_scenarios)
-        self._view.render_scenarios(self._service.get_folder_path_scenarios(), providers_data)
+        scenarios_data = self._format_scenarios(self._all_scenarios)
+        self._view.render_scenarios(self._service.get_folder_path_scenarios(), scenarios_data)
 
     @staticmethod
-    def _format_scenarios(providers: list[ScenarioModel]) -> list[dict[str, str]]:
-        """Formate une liste de modèles en données tabulaires pour la vue.
-
-        Args:
-            providers (List[ScenarioModel]): Liste des modèles de fournisseurs.
-
-        Returns:
-            List[Dict[str, str]]: Liste formatée pour affichage.
-        """
+    def _format_scenarios(scenarios: list[ScenarioModel]) -> list[dict[str, str]]:
         formatted: list[dict[str, str]] = []
-        for p in providers:
+        for p in scenarios:
             formatted.append(
                 {
                     "__bound__": p,
                     "id_file": p.id_file,
-                    "provider_name": p.provider_name,
-                    "provider_desc": p.provider_desc,
+                    "scenario_name": p.scenario_name,
+                    "scenario_desc": p.scenario_desc,
                     "version": p.version,
                     "created_date_scenario": p.created_date_scenario,
                     "modified_date_scenario": p.modified_date_scenario,
@@ -143,8 +126,7 @@ class ScenariosPresenter:
             )
         return formatted
 
-    def _on_create_provider(self) -> None:
-        """Gère l'événement de création d'un fournisseur depuis la vue."""
+    def _on_create_scenario(self) -> None:
         # Block creation when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
             self._view.show_warning(
@@ -152,15 +134,10 @@ class ScenariosPresenter:
                 "Veuillez terminer ou annuler la modification en cours avant de continuer."
             )
             return
-        if self.on_request_create_provider:
-            self.on_request_create_provider()
+        if self.on_request_create_scenario:
+            self.on_request_create_scenario()
 
-    def _on_edit_provider(self, id_file: str) -> None:
-        """Gère l'événement de modification d'un fournisseur.
-
-        Args:
-            id_file: L'ID fichier du fournisseur à éditer.
-        """
+    def _on_edit_scenario(self, id_file: str) -> None:
         # Block edit when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
             self._view.show_warning(
@@ -168,25 +145,20 @@ class ScenariosPresenter:
                 "Veuillez terminer ou annuler la modification en cours avant de continuer."
             )
             return
-        if self.on_request_edit_provider:
-            self.on_request_edit_provider(id_file)
+        if self.on_request_edit_scenario:
+            self.on_request_edit_scenario(id_file)
 
-    def _on_launch_provider(self, id_file: str) -> None:
+    def _on_launch_scenario(self, id_file: str) -> None:
         """Delegates the launch request to the shell via the injected callback.
 
         Args:
-            id_file: The file ID of the provider to launch.
+            id_file: The file ID of the scenario to launch.
         """
-        # Fire the hook injected from main.py, identical pattern to on_request_edit_provider.
-        if self.on_request_launch_provider:
-            self.on_request_launch_provider(id_file)
+        # Fire the hook injected from main.py, identical pattern to on_request_edit_scenario.
+        if self.on_request_launch_scenario:
+            self.on_request_launch_scenario(id_file)
 
-    def _on_duplicate_provider(self, id_file: str) -> None:
-        """Gère l'événement de duplication d'un fournisseur.
-
-        Args:
-            id_file: L'ID fichier du fournisseur à dupliquer.
-        """
+    def _on_duplicate_scenario(self, id_file: str) -> None:
         if not ask_duplicate_scenario_confirmation():
             return
         try:
@@ -196,12 +168,7 @@ class ScenariosPresenter:
             self._logger.error("Erreur lors de la duplication du scénario", exc_info=True)
             self._view.show_error(f"La duplication a échoué : {exc}")
 
-    def _on_delete_provider(self, id_file: str) -> None:
-        """Gère l'événement de suppression d'un fournisseur.
-
-        Args:
-            id_file: L'ID fichier du fournisseur à supprimer.
-        """
+    def _on_delete_scenario(self, id_file: str) -> None:
         if not ask_delete_scenario_confirmation():
             return
         try:
@@ -212,26 +179,17 @@ class ScenariosPresenter:
             self._view.show_error(f"La suppression a échoué : {exc}")
 
     def _on_open_folder(self) -> None:
-        """Gère l'événement d'ouverture du dossier des fournisseurs."""
         self._service.open_scenarios_folder()
 
     def _on_refresh(self) -> None:
-        """Gère l'événement de rafraîchissement de la liste des fournisseurs."""
         self._load_scenarios()
 
     def _on_validate_scenarios(self) -> None:
-        """Validates provider files and displays the validation summary."""
         self._view.set_validation_state(True, "TODO A CODER")
 
-        raise NotImplementedError("La validation des fournisseurs n'est pas encore implémentée.")
+        raise NotImplementedError("La validation des scénarios n'est pas encore implémentée.")
 
     def _on_sort(self, column: str, ascending: bool) -> None:
-        """Trie la liste des fournisseurs et met à jour la vue.
-
-        Args:
-            column (str): La colonne sur laquelle trier.
-            ascending (bool): Si True le tri est ascendant, sinon descendant.
-        """
         self._current_sort_column = column
         self._current_sort_ascending = ascending
         self._sort_scenarios(column, ascending)

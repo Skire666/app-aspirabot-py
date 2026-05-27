@@ -28,13 +28,6 @@ def make_all_folders_if_not_exists(
         is_file_path: Force file or directory behavior. When None, the function
             infers the intent from the existing path or file suffix. Set this to
             False for directory names that include dots.
-
-    Example:
-        make_all_folders_if_not_exists(Path("./data_providers"), is_file_path=False)
-        make_all_folders_if_not_exists(
-            Path("./data_providers/provider1.json"),
-            is_file_path=True,
-        )
     """
     target_path = Path(path)
     if is_file_path is True:

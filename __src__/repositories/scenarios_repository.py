@@ -1,12 +1,7 @@
-"""Repository for scraping provider configuration files.
+"""Repository for scraping scenario configuration files.
 
-Provides ProvidersRepository, which discovers, reads, writes, and deletes
-JSON provider configuration files stored in a local directory.
-
-Example:
-    >>> from repositories.providers_repository import ProvidersRepository
-    >>> repo = ProvidersRepository("./providers")
-    >>> providers = repo.list_all_scenarios()
+Provides InvalidScenariosFolderPathErrorRepository, which discovers, reads, writes, and deletes
+JSON scenario configuration files stored in a local directory.
 """
 
 # -----------------------------------------------------------------------------
@@ -17,18 +12,17 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from models.launcher_model import LaunchModel
 from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
 from shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
 from shared.exception_util import (
     AspirabotError,
-    InvalidProvidersFolderPathError,
+    InvalidScenariosFolderPathError,
     ScenarioDataMissingError,
     ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
-
-from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -47,7 +41,7 @@ class ScenariosRepository:
     """
 
     def __init__(self, folder_scenarios: str | Path, json_repo: JsonFileRepository) -> None:
-        """Initializes the repository pointing to a local providers folder.
+        """Initializes the repository pointing to a local scenarios folder.
 
         Args:
             folder_scenarios: Path to the folder containing provider JSON files.
@@ -59,12 +53,12 @@ class ScenariosRepository:
 
     @property
     def folder_path(self) -> Path:
-        """Path to the JSON providers folder."""
+        """Path to the JSON scenarios folder."""
         return self._folder_path
 
     @folder_path.setter
     def folder_path(self, value: str | Path) -> None:
-        """Sets the JSON providers folder path."""
+        """Sets the JSON scenarios folder path."""
         self._folder_path = Path(value)
 
     def _list_scenarios_files(self) -> list[Path]:
@@ -79,22 +73,22 @@ class ScenariosRepository:
         return []
 
     @staticmethod
-    def _dict_to_provider_model(data: dict[str, Any]) -> ScenarioModel:
+    def _dict_to_scenario_model(data: dict[str, Any]) -> ScenarioModel:
         """Deserializes a raw JSON dictionary into a ScenarioModel instance.
 
         Args:
-            data: The decoded JSON content of a provider file.
+            data: The decoded JSON content of a scenario file.
 
         Returns:
-            The fully reconstructed provider model.
+            The fully reconstructed scenario model.
         """
         return ScenarioModel.import_from_data_json(data)
 
     def exists_scenario(self, id_file: str) -> bool:
-        """Returns True if a provider file exists for the given identifier.
+        """Returns True if a scenario file exists for the given identifier.
 
         Args:
-            id_file: Unique identifier of the provider to check.
+            id_file: Unique identifier of the scenario to check.
 
         Returns:
             True when a matching JSON file is found on disk, False otherwise.
@@ -103,99 +97,99 @@ class ScenariosRepository:
         return full_filepath.exists() and full_filepath.is_file()
 
     def read_scenario(self, id_file: str) -> ScenarioModel:
-        """Loads a provider file by ID and returns it as a ScenarioModel.
+        """Loads a scenario file by ID and returns it as a ScenarioModel.
 
         Args:
-            id_file: Unique identifier of the provider to load.
+            id_file: Unique identifier of the scenario to load.
 
         Returns:
             The deserialized ScenarioModel.
 
         Raises:
-            ProviderNotFoundError: When no file matches id_file.
-            ProviderDataMissingError: When the matching file is empty.
+            ScenarioNotFoundError: When no file matches id_file.
+            ScenarioDataMissingError: When the matching file is empty.
         """
         full_filepath = self._compute_fullpath_from_id_file(id_file)
 
         if not full_filepath.exists():
             raise ScenarioNotFoundError(id_file)
 
-        provider_data = self._json_repo.read_from_path(full_filepath)
+        scenario_data = self._json_repo.read_from_path(full_filepath)
 
-        if not provider_data:
+        if not scenario_data:
             self._logger.warning("Le fichier %s est vide.", full_filepath)
             raise ScenarioDataMissingError(id_file)
 
-        provider_model = self._dict_to_provider_model(provider_data)
-        self._logger.debug("Fournisseur chargé : %s", full_filepath)
-        return provider_model
+        scenario_model = self._dict_to_scenario_model(scenario_data)
+        self._logger.debug("Scénario chargé : %s", full_filepath)
+        return scenario_model
 
     def read_all_scenarios(self) -> list[ScenarioModel]:
-        """Lists all valid providers found in the configured folder.
+        """Lists all valid scenarios found in the configured folder.
 
         Skips files that cannot be read or deserialized; logs an error for each.
 
         Returns:
             List of ScenarioModel instances; empty when no valid files exist.
         """
-        providers: list[ScenarioModel] = []
+        scenarios: list[ScenarioModel] = []
 
         for file_path in self._list_scenarios_files():
             try:
-                provider_data = self._json_repo.read_from_path(file_path)
+                scenario_data = self._json_repo.read_from_path(file_path)
 
-                if provider_data:
-                    provider_model = self._dict_to_provider_model(provider_data)
-                    providers.append(provider_model)
-                    self._logger.debug("Fournisseur ajouté à la liste : %s", file_path.name)
+                if scenario_data:
+                    scenario_model = self._dict_to_scenario_model(scenario_data)
+                    scenarios.append(scenario_model)
+                    self._logger.debug("Scénario ajouté à la liste : %s", file_path.name)
             except OSError, AspirabotError:
-                self._logger.error("Impossible de charger le provider %s.", file_path.name, exc_info=True)
+                self._logger.error("Impossible de charger le scénario %s.", file_path.name, exc_info=True)
 
-        self._logger.debug("Total de %s provider(s) chargé(s).", len(providers))
-        return providers
+        self._logger.debug("Total de %s scénario(s) chargé(s).", len(scenarios))
+        return scenarios
 
-    def create_scenario(self, provider: ScenarioModel) -> None:
-        """Persists a new provider to disk as a JSON file.
+    def create_scenario(self, scenario: ScenarioModel) -> None:
+        """Persists a new scenario to disk as a JSON file.
 
         Args:
-            provider: The provider model to save.
+            scenario: The scenario model to save.
 
         Raises:
             OSError: When the file cannot be written.
         """
-        full_filepath = self._compute_fullpath_from_id_file(provider.id_file)
-        self.create_folder_providers_if_missing()
+        full_filepath = self._compute_fullpath_from_id_file(scenario.id_file)
+        self.create_folder_if_missing()
 
         try:
-            provider_dict = provider.export_to_data_json()
-            self._json_repo.write_from_dict(full_filepath, provider_dict)
-            self._logger.debug("Fournisseur sauvegardé : %s", full_filepath)
+            scenario_dict = scenario.export_to_data_json()
+            self._json_repo.write_from_dict(full_filepath, scenario_dict)
+            self._logger.debug("Scénario sauvegardé : %s", full_filepath)
         except Exception:
-            self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
+            self._logger.error("Erreur lors de la création du scénario.", exc_info=True)
             raise
 
-    def update_scenario(self, provider: ScenarioModel) -> None:
-        """Overwrites an existing provider file with updated data.
+    def update_scenario(self, scenario: ScenarioModel) -> None:
+        """Overwrites an existing scenario file with updated data.
 
         Args:
-            provider: The provider model to save.
+            scenario: The scenario model to save.
 
         Raises:
             OSError: When the file cannot be written.
         """
-        full_filepath = self._compute_fullpath_from_id_file(provider.id_file)
-        self.create_folder_providers_if_missing()
+        full_filepath = self._compute_fullpath_from_id_file(scenario.id_file)
+        self.create_folder_if_missing()
 
         try:
-            provider_dict = provider.export_to_data_json()
-            self._json_repo.write_from_dict(full_filepath, provider_dict)
-            self._logger.debug("Fournisseur sauvegardé : %s", full_filepath)
+            scenario_dict = scenario.export_to_data_json()
+            self._json_repo.write_from_dict(full_filepath, scenario_dict)
+            self._logger.debug("Scénario sauvegardé : %s", full_filepath)
         except Exception:
-            self._logger.error("Erreur lors de la MAJ du fournisseur.", exc_info=True)
+            self._logger.error("Erreur lors de la MAJ du scénario.", exc_info=True)
             raise
 
-    def create_folder_providers_if_missing(self) -> None:
-        """Creates the providers folder if it does not already exist."""
+    def create_folder_if_missing(self) -> None:
+        """Creates the scenarios folder if it does not already exist."""
         if not self._folder_path.exists():
             Path(self._folder_path).mkdir(exist_ok=True, parents=True)
             self._logger.debug("Dossier créé : %s", self._folder_path)
@@ -204,14 +198,14 @@ class ScenariosRepository:
         """Deletes the JSON file for the given provider identifier.
 
         Args:
-            id_file: Unique identifier of the provider to delete.
+            id_file: Unique identifier of the scenario to delete.
 
         Raises:
-            ProviderNotFoundError: When no matching file exists.
+            ScenarioNotFoundError: When no matching file exists.
             OSError: When the file cannot be deleted.
         """
-        self._logger.debug("Suppression du fournisseur id=%s", id_file)
-        self.create_folder_providers_if_missing()
+        self._logger.debug("Suppression du scénario id=%s", id_file)
+        self.create_folder_if_missing()
 
         full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_file)
 
@@ -220,9 +214,9 @@ class ScenariosRepository:
 
         try:
             Path(full_pathfile_to_delete).unlink()
-            self._logger.debug("Fournisseur supprimé : %s", full_pathfile_to_delete)
+            self._logger.debug("Scénario supprimé : %s", full_pathfile_to_delete)
         except Exception:
-            self._logger.error("Erreur lors de la suppression du fournisseur.", exc_info=True)
+            self._logger.error("Erreur lors de la suppression du scénario.", exc_info=True)
             raise
 
     def create_default_profile_for_scenario(self, id_scenario: str) -> None:
@@ -243,19 +237,19 @@ class ScenariosRepository:
             raise
 
     def open_scenarios_folder(self) -> None:
-        """Opens the providers folder in the OS file explorer.
+        """Opens the scenarios folder in the OS file explorer.
 
         Raises:
-            InvalidProvidersFolderPathError: When the configured path is not a directory.
+            InvalidScenariosFolderPathError: When the configured path is not a directory.
             UnsupportedOperatingSystemError: When the OS is not Windows, macOS, or Linux.
         """
         folder: Path = self.get_path_scenarios_folder()
-        self._logger.debug("Ouverture du dossier des fournisseurs : %s", folder)
+        self._logger.debug("Ouverture du dossier des scénarios : %s", folder)
 
-        self.create_folder_providers_if_missing()
+        self.create_folder_if_missing()
 
         if not folder.is_dir():
-            raise InvalidProvidersFolderPathError(folder)
+            raise InvalidScenariosFolderPathError(folder)
 
         try:
             open_folder(folder)
@@ -265,10 +259,10 @@ class ScenariosRepository:
             raise
 
     def get_path_scenarios_folder(self) -> Path:
-        """Gets the path of the providers folder.
+        """Gets the path of the scenarios folder.
 
         Returns:
-            The path of the providers folder as a Path object.
+            The path of the scenarios folder as a Path object.
         """
         return self._folder_path
 

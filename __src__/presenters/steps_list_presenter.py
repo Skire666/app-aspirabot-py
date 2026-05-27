@@ -2,10 +2,6 @@
 
 Manages the in-memory step list, opens the inline step form through the
 view, and persists changes via the repository.
-
-Example:
-    >>> presenter = StepsListPresenter(view, service, repository)
-    >>> presenter.load("some-provider-guid")
 """
 
 # -----------------------------------------------------------------------------
@@ -39,14 +35,14 @@ class StepsListPresenter:
 
     Attributes:
         _view: The embedded workflow list widget.
-        _service_provider: Manages provider-related operations.
+        _service_scenario: Manages provider-related operations.
         _edit_index: Index of the step being edited, or None in add mode.
     """
 
     def __init__(
         self,
         view: IStepsListCrudView,
-        service_provider: ScenariosService,
+        service_scenario: ScenariosService,
         workflow_service: WorkflowService,
         gestion_view: IStepsListGestionView | None = None,
     ) -> None:
@@ -54,7 +50,7 @@ class StepsListPresenter:
 
         Args:
             view: The step-list view implementing IStepsListCrudView.
-            service_provider: ProviderService for provider-related operations.
+            service_scenario: ScenariosService for provider-related operations.
             workflow_service: WorkflowService used to validate each step on confirm.
             gestion_view: View that owns show_inline_form / set_available_steps.
                           Defaults to None when not provided.
@@ -62,13 +58,13 @@ class StepsListPresenter:
         self._logger = logging.getLogger(__name__)
         self._view = view
         self._gestion_view: IStepsListGestionView | None = gestion_view
-        self._service_provider: ScenariosService = service_provider
+        self._service_scenario: ScenariosService = service_scenario
         self._workflow_service: WorkflowService = workflow_service
 
-        self._provider_id_file: str | None = None
+        self._scenario_id_file: str | None = None
         self._steps: list[StepScrapingModel] = []
         self._edit_index: int | None = None
-        self._is_new_provider: bool = False
+        self._is_new_scenario: bool = False
 
         self._bind_view_events()
 
@@ -86,30 +82,30 @@ class StepsListPresenter:
         self._view.on_duplicate_step = self._on_duplicate_step
 
     # ---------------------------------------------------------------
-    # Public API called by ProviderEditPresenter
+    # Public API called by WorkflowPresenter
     # ---------------------------------------------------------------
 
-    def load(self, provider_id_file: str) -> None:
-        """Loads the workflow for an existing provider from the repository.
+    def load(self, id_scenario: str) -> None:
+        """Loads the workflow for an existing scenario from the repository.
 
         Args:
-            provider_id_file: GUID of the provider to load.
+            id_scenario: GUID of the scenario to load.
         """
-        self._provider_id_file = provider_id_file
-        self._is_new_provider = False
-        self._provider_content: ScenarioModel = self._service_provider.read_scenario(provider_id_file)
-        self._steps = list(self._provider_content.steps)
+        self._scenario_id_file = id_scenario
+        self._is_new_scenario = False
+        self._scenario_content: ScenarioModel = self._service_scenario.read_scenario(id_scenario)
+        self._steps = list(self._scenario_content.steps)
         self._refresh_view()
         self._view.set_validation_status("Vérification : --", False)
 
-    def init_new(self, provider_id_file: str) -> None:
+    def init_new(self, id_scenario: str) -> None:
         """Initializes an empty workflow for a brand-new provider.
 
         Args:
-            provider_id_file: GUID of the new provider.
+            id_scenario: GUID of the new provider.
         """
-        self._provider_id_file = provider_id_file
-        self._is_new_provider = True
+        self._scenario_id_file = id_scenario
+        self._is_new_scenario = True
         self._steps = []
         self._refresh_view()
         self._view.set_validation_status("Vérification : --", False)

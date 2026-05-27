@@ -164,7 +164,7 @@ class LaunchModel:
         Steps and launch profiles are deep-copied so the duplicate is fully independent.
 
         Args:
-            source: The provider to duplicate.
+            source: The scenario to duplicate.
 
         Returns:
             A new unsaved ScenarioModel ready to be persisted.

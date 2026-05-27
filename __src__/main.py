@@ -8,9 +8,9 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 
-import models.steps  # noqa: F401
-import services.steps  # noqa: F401
-import views.steps  # noqa: F401
+import models.steps  # noqa: F401 - load registry entries
+import services.steps  # noqa: F401 - load registry entries
+import views.steps  # noqa: F401 - load registry entries
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.debug_presenter import DebugPresenter
@@ -18,23 +18,21 @@ from presenters.executor_presenter import ExecutorPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.profiles_presenter import ProfilesPresenter
 from presenters.scenarios_presenter import ScenariosPresenter
+from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
 from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.json_repository import JsonFileRepository
 from repositories.profiles_repository import ProfilesRepository
 from repositories.scenarios_repository import ScenariosRepository
-from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.app_configuration_service import ConfigService
 from services.debug_browser_service import DebugBrowserService
 from services.logging_service import LoggingService
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
-from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
 
 # Bootstrap: import all step packages to populate the central registry.
-from services.workflow_service import WorkflowService
 from shared.constants import (
     C_APP_CONFIG_FILE,
 )
@@ -42,6 +40,7 @@ from shared.i18n_fra import TitleModuleEnum
 from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
 from views.debug_view import DebugView
+from views.executor_view import ExecutorView
 from views.faq_view import FaqView
 from views.log_view import LogView
 from views.main_view import MainView
@@ -111,26 +110,24 @@ def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) ->
 
 def _wire_all_navigation(
     main_view: MainView,
-    provider_presenter: ScenariosPresenter,
-    provider_edit_presenter: WorkflowPresenter,
-    scraping_presenter: ExecutorPresenter,
-    history_presenter: ProfilesPresenter,
+    scenario_presenter: ScenariosPresenter,
+    workflow_presenter: WorkflowPresenter,
+    executor_presenter: ExecutorPresenter,
+    profiles_presenter: ProfilesPresenter,
 ) -> None:
     """Wire all inter-component navigation callbacks and lazy-loading hooks.
 
     Args:
         main_view: Navigation shell that controls tab visibility.
-        provider_presenter: Presenter for the provider list view.
-        provider_edit_presenter: Presenter for the provider edit view.
-        scraping_presenter: Presenter for the scraping panel.
-        history_presenter: Presenter for the history panel.
+        scenario_presenter: Presenter for the scenario list view.
+        workflow_presenter: Presenter for the scenario edit view.
+        executor_presenter: Presenter for the executor panel.
+        profiles_presenter: Presenter for the profiles panel.
     """
-    _wire_provider_navigation(main_view, provider_presenter, provider_edit_presenter)
-    _wire_scraping_launch(main_view, provider_presenter, scraping_presenter)
-    _wire_workflow_guard(main_view, provider_presenter, scraping_presenter)
-    _wire_history_launch(main_view, history_presenter, scraping_presenter)
-    main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, scraping_presenter.ensure_scenarios_loaded)
-    main_view.set_on_show(TitleModuleEnum.E_PROFILES, history_presenter.ensure_profiles_loaded)
+    _wire_scenario_navigation(main_view, scenario_presenter, workflow_presenter)
+    _wire_executor_launch(main_view, scenario_presenter, executor_presenter)
+    _wire_profiles_launch(main_view, profiles_presenter, executor_presenter)
+    main_view.set_on_show(TitleModuleEnum.E_PROFILES, profiles_presenter.ensure_profiles_loaded)
 
 
 def _build_and_wire_components(  # noqa: PLR0914
@@ -146,29 +143,31 @@ def _build_and_wire_components(  # noqa: PLR0914
     # equivalent to sharing one — both benefit from the same cached data.
     log_view, log_pr = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_pr = _init_config_component(main_view, config_repo)
-    prof_view, prof_pr, prof_svc = _init_profiles_components(
+    profiles_view, prof_pr, prof_svc = _init_profiles_components(
         main_view, startup_service.config_model, JsonFileRepository()
     )
     scen_view, scen_pre, edit_view, edit_p, scen_svc = _init_scenarios_components(
         main_view, prof_svc, startup_service.config_model, JsonFileRepository()
     )
+    exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     dbg_view, dbg_p = _init_debug_component(main_view)
 
     # Wire navigation and finalize the window.
-    _wire_all_navigation(main_view, scen_pre, edit_p, scrap_pre, prof_pr)
+    _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr)
     _register_views(
         main_view,
         log_view,
-        prof_view,
+        profiles_view,
         cfg_view,
         scen_view,
         edit_view,
+        exec_view,
         scrap_view,
         FaqView(main_view.content_area),
         dbg_view,
     )
-    _anchor_presenters(root, [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, scrap_pre, dbg_p])
+    _anchor_presenters(root, [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, exec_pre, dbg_p])
 
 
 def _launch_main_app(
@@ -251,8 +250,8 @@ def _init_profiles_components(
 
     Args:
         main_view: Main container providing the content area as parent.
-        config_model: Configuration model supplying the providers folder path.
-        json_repo: Shared JSON repository injected into the providers repository.
+        config_model: Configuration model supplying the scenarios folder path.
+        json_repo: Shared JSON repository injected into the scenarios repository.
 
     Returns:
         A (ProfilesView, ProfilesPresenter, ProfilesService) tuple.
@@ -276,7 +275,7 @@ def _init_scenarios_components(
     WorkflowPresenter,
     ScenariosService,
 ]:
-    """Create and wire the provider list and edit components.
+    """Create and wire the scenario list and edit components.
 
     Args:
         main_view: Main container providing the content area as parent.
@@ -288,19 +287,16 @@ def _init_scenarios_components(
         A (ScenariosView, ScenariosPresenter, WorkflowView,
         WorkflowPresenter, ScenariosService) tuple.
     """
-    # Shared service and repository for both list and edit sub-components.
     scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
     scenarios_service = ScenariosService(scenario_repo)
 
-    # Provider list view and presenter.
-    provider_view = ScenariosView(main_view.content_area)
-    provider_presenter = ScenariosPresenter(view=provider_view, service=scenarios_service)
+    scenario_view = ScenariosView(main_view.content_area)
+    scenario_presenter = ScenariosPresenter(view=scenario_view, service=scenarios_service)
 
-    # Provider edit view and presenter.
     workflow_view = WorkflowView(main_view.content_area)
-    provider_edit_presenter = WorkflowPresenter(workflow_view, scenarios_service, profiles_service)
+    workflow_presenter = WorkflowPresenter(workflow_view, scenarios_service, profiles_service)
 
-    return provider_view, provider_presenter, workflow_view, provider_edit_presenter, scenarios_service
+    return scenario_view, scenario_presenter, workflow_view, workflow_presenter, scenarios_service
 
 
 def _init_debug_component(
@@ -319,12 +315,34 @@ def _init_debug_component(
     return debug_view, debug_presenter
 
 
+def _init_executor_component(
+    main_view: MainView,
+    config_model: AppConfigurationModel,
+    scenario_service: ScenariosService,
+    profiles_service: ProfilesService,
+) -> tuple[ExecutorView, ExecutorPresenter]:
+    """Create and wire the executor panel component.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+        config_model: Configuration model supplying the executor output folder.
+        scenario_service: The scenario service for managing scenario data.
+        profiles_service: The profiles service for managing profile data.
+
+    Returns:
+        A (ExecutorView, ExecutorPresenter) tuple.
+    """
+    executor_view: ExecutorView = ExecutorView(config_model, main_view.content_area)
+    executor_presenter: ExecutorPresenter = ExecutorPresenter(executor_view)
+    return executor_view, executor_presenter
+
+
 def _init_scraping_component(
     main_view: MainView,
     config_model: AppConfigurationModel,
     scenario_service: ScenariosService,
     profiles_service: ProfilesService,
-) -> tuple[ScrapingView, ExecutorPresenter]:
+) -> tuple[ScrapingView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
     Args:
@@ -334,18 +352,10 @@ def _init_scraping_component(
         profiles_service: The profiles service for managing profile data.
 
     Returns:
-        A (ScrapingPanelView, ScrapingPresenter) tuple.
+        A (ScrapingView, ScrapingPresenter) tuple.
     """
-    workflow_service = WorkflowService()
-    journal_repository = ScrapingJournalRepository()
-    scraping_service = ScrapingService(
-        config_model,
-        workflow_service,
-        journal_repository,
-        JsonFileRepository(),
-    )
-    scraping_view = ScrapingView(config_model, main_view.content_area)
-    scraping_presenter = ExecutorPresenter(scraping_view, scraping_service, scenario_service, profiles_service)
+    scraping_view: ScrapingView = ScrapingView(config_model, main_view.content_area)
+    scraping_presenter: ScrapingPresenter = ScrapingPresenter(scraping_view)
     return scraping_view, scraping_presenter
 
 
@@ -354,84 +364,85 @@ def _init_scraping_component(
 # -----------------------------------------------------------------------------
 
 
-def _wire_provider_navigation(
+def _wire_scenario_navigation(
     main_view: MainView,
-    provider_presenter: ScenariosPresenter,
-    provider_edit_presenter: WorkflowPresenter,
+    scenario_presenter: ScenariosPresenter,
+    workflow_presenter: WorkflowPresenter,
 ) -> None:
-    """Connect create / edit / done navigation between provider views.
+    """Connect create / edit / done navigation between views.
 
     Args:
         main_view: Shell managing tab visibility and enabled states.
-        provider_presenter: Presenter for the provider list view.
-        provider_edit_presenter: Presenter for the provider edit view.
+        scenario_presenter: Presenter for the scenario list view.
+        workflow_presenter: Presenter for the scenario edit view.
     """
 
-    def on_request_create_provider() -> None:
+    def on_request_create_scenario() -> None:
         # Open the edit form in creation mode and navigate to it.
-        provider_edit_presenter.create_new()
-        main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
+        workflow_presenter.create_new()
+        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
-        main_view.show_view(TitleModuleEnum.E_EDITOR)
+        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
+        main_view.show_view(TitleModuleEnum.E_WORKFLOW)
 
-    def on_request_edit_provider(id_file: str) -> None:
-        # Load the selected provider into the edit form and navigate to it.
-        if provider_edit_presenter.load_provider(id_file):
-            main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.NORMAL)
+    def on_request_edit_scenario(id_file: str) -> None:
+        # Load the selected into the edit form and navigate to it.
+        if workflow_presenter.load_scenario(id_file):
+            main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
             main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.DISABLED)
             main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.DISABLED)
             main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
-            main_view.show_view(TitleModuleEnum.E_EDITOR)
+            main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
+            main_view.show_view(TitleModuleEnum.E_WORKFLOW)
 
     def on_edit_done() -> None:
         # Return to the list and disable the edit tab after save/cancel.
-        provider_presenter.ensure_profiles_loaded()
-        main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.DISABLED)
+        scenario_presenter.ensure_profiles_loaded()
+        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
         main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.NORMAL)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_SCENARIOS)
 
     # Inject all navigation callbacks into the two presenters.
-    provider_presenter.on_request_create_provider = on_request_create_provider
-    provider_presenter.on_request_edit_provider = on_request_edit_provider
-    provider_edit_presenter.set_on_done_callback(on_edit_done)
+    scenario_presenter.on_request_create_scenario = on_request_create_scenario
+    scenario_presenter.on_request_edit_scenario = on_request_edit_scenario
+    workflow_presenter.set_on_done_callback(on_edit_done)
 
-    # Initial state: workflow tab is disabled until a provider session is opened.
-    main_view.set_tab_state(TitleModuleEnum.E_EDITOR, tk.DISABLED)
+    # Initial state: workflow tab is disabled
+    main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
 
 
-def _wire_scraping_launch(
+def _wire_executor_launch(
     main_view: MainView,
-    provider_presenter: ScenariosPresenter,
-    scraping_presenter: ExecutorPresenter,
+    scenario_presenter: ScenariosPresenter,
+    executor_presenter: ExecutorPresenter,
 ) -> None:
-    """Connect the launch action from the provider list to the scraping panel.
+    """Connect the launch action from the scenario list to the executor panel.
 
     Args:
         main_view: Shell managing tab visibility and enabled states.
-        provider_presenter: Presenter that fires the launch request.
-        provider_service: Service used to retrieve the full provider model by id.
-        scraping_presenter: Presenter that loads and runs the scraping session.
+        scenario_presenter: Presenter that fires the launch request.
+        scenario_service: Service used to retrieve the full provider model by id.
+        executor_presenter: Presenter that loads and runs the executor session.
     """
 
-    def on_request_launch_provider(id_file: str) -> None:
-        # Resolve the full provider model before handing off to scraping.
-        scraping_presenter.load_scenario(id_file)
+    def on_request_launch_scenario(id_file: str) -> None:
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_EXECUTOR)
 
-    provider_presenter.on_request_launch_provider = on_request_launch_provider
+    scenario_presenter.on_request_launch_scenario = on_request_launch_scenario
 
 
-def _wire_history_launch(
+def _wire_profiles_launch(
     main_view: MainView,
     historic_presenter: ProfilesPresenter,
     executor_presenter: ExecutorPresenter,
 ) -> None:
-    """Connect the launch action from the historic list to the scraping panel.
+    """Connect the launch action from the historic list to the executor panel.
 
     Args:
         main_view: Shell managing tab visibility.
@@ -441,37 +452,10 @@ def _wire_history_launch(
 
     def on_request_launch_profile(id_scenario: str, id_profile: str) -> None:
         # Load scenario then select the specific profile before navigating.
-        executor_presenter.load_scenario(id_scenario)
-        executor_presenter.load_profile(id_profile)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_EXECUTOR)
 
     historic_presenter.on_request_launch_profile = on_request_launch_profile
-
-
-def _wire_workflow_guard(
-    main_view: MainView,
-    provider_presenter: ScenariosPresenter,
-    scraping_presenter: ExecutorPresenter,
-) -> None:
-    """Inject the workflow-active guard into presenters that need it.
-
-    The guard returns True when the Workflow tab is enabled (i.e. a provider
-    creation or edit session is already in progress). Both ProviderPresenter and
-    ScrapingPresenter use it to block conflicting actions and prompt the user.
-
-    Args:
-        main_view: Shell that owns the sidebar tab state.
-        provider_presenter: Presenter for the providers list.
-        scraping_presenter: Presenter for the scraping panel.
-    """
-
-    def is_workflow_active() -> bool:
-        return main_view.get_tab_state(TitleModuleEnum.E_EDITOR) == tk.NORMAL
-
-    # Inject into both presenters so either can check the guard independently.
-    provider_presenter.is_workflow_active = is_workflow_active
-    scraping_presenter.is_workflow_active = is_workflow_active
 
 
 # -----------------------------------------------------------------------------
@@ -484,8 +468,9 @@ def _register_views(
     log_view: LogView,
     historic_view: ProfilesView,
     config_view: AppConfigurationView,
-    provider_view: ScenariosView,
-    provider_edit_view: WorkflowView,
+    scenario_view: ScenariosView,
+    workflow_view: WorkflowView,
+    executor_view: ExecutorView,
     scraping_view: ScrapingView,
     faq_view: FaqView,
     debug_view: DebugView,
@@ -494,14 +479,15 @@ def _register_views(
     # Map each sidebar label to its corresponding view widget.
     main_view.add_view(TitleModuleEnum.E_LOGS, log_view)
     main_view.add_view(TitleModuleEnum.E_PROFILES, historic_view)
-    main_view.add_view(TitleModuleEnum.E_SCENARIOS, provider_view)
-    main_view.add_view(TitleModuleEnum.E_EDITOR, provider_edit_view)
-    main_view.add_view(TitleModuleEnum.E_EXECUTOR, scraping_view)
+    main_view.add_view(TitleModuleEnum.E_SCENARIOS, scenario_view)
+    main_view.add_view(TitleModuleEnum.E_WORKFLOW, workflow_view)
+    main_view.add_view(TitleModuleEnum.E_EXECUTOR, executor_view)
+    main_view.add_view(TitleModuleEnum.E_SCRAPING, scraping_view)
     main_view.add_view(TitleModuleEnum.E_FAQ, faq_view)
     main_view.add_view(TitleModuleEnum.E_OPTIONS, config_view)
     main_view.add_view(TitleModuleEnum.E_DEBUG, debug_view)
 
-    # Land on the providers list as the startup default.
+    # Land on the scenarios list as the startup default.
     main_view.show_view(TitleModuleEnum.E_SCENARIOS)
 
 

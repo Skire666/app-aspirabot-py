@@ -1,4 +1,4 @@
-"""Tkinter view for the launch-profile history panel."""
+"""Tkinter view for the launch-profile panel."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -36,19 +36,19 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
 
 
 class ProfilesView(ttk.Frame):
-    """View component that renders the list of launch profiles across all providers.
+    """View component that renders the list of launch profiles across all scenarios.
 
     Displays a DataGrid with one row per profile. Fires a callback when the
     user clicks the launch button on a row.
 
     Attributes:
         _grid: The DataGrid used to display all profiles.
-        _on_launch_callback: Optional callback invoked with (id_provider_id, id_profile).
+        _on_launch_callback: Optional callback invoked with (id_scenario_id, id_profile).
         _on_open_folder_callback: Optional callback invoked when the user clicks the folder button.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
-        """Initialize the HistoryView widget.
+        """Initialize the widget.
 
         Args:
             parent: Parent Tkinter widget that owns this frame.
@@ -100,7 +100,7 @@ class ProfilesView(ttk.Frame):
         """Register the callback invoked when the user clicks Lancer.
 
         Args:
-            callback: Callable receiving (id_provider_id, id_profile) strings.
+            callback: Callable receiving (id_scenario_id, id_profile) strings.
         """
         self._on_launch_callback = callback
 
@@ -113,18 +113,13 @@ class ProfilesView(ttk.Frame):
         self._on_sort_callback = callback
 
     def set_on_open_folder(self, callback: Callable[[], None]) -> None:
-        """Register the callback invoked when the user clicks Ouvrir dossier des fournisseurs.
-
-        Args:
-            callback: Callable receiving no arguments.
-        """
         self._on_open_folder_callback = callback
 
     def render_profiles(self, folder_path: Path, profiles: list[dict[str, Any]]) -> None:
         """Pass a fresh list of profile rows to the DataGrid.
 
         Args:
-            folder_path: The path of the folder containing provider files.
+            folder_path: The path of the folder containing scenario files.
             profiles: List of row dicts whose keys match the column ids.
         """
         count = len(profiles)

@@ -1,12 +1,4 @@
-"""URL source provider backed by an in-memory list of URLs.
-
-Example:
-    >>> provider = ManualUrlSourceProvider(["https://a.com", "", "https://b.com"])
-    >>> provider.has_next()
-    True
-    >>> provider.next_url()
-    'https://a.com'
-"""
+"""URL source scenario backed by an in-memory list of URLs."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -97,7 +89,7 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
         Raises:
             None.
         """
-        if self._urls is None:
+        if not self._urls:
             return "Liste : non chargée"
         remaining = len(self._urls) - self._index
         if remaining > 0:

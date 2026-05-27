@@ -4,9 +4,9 @@
 
 1. Read `AGENTS.md` fully and follow every instruction it contains.
 2. Read and understand these files before touching anything:
-   - `src/models/provider_model.py` — fully implemented, source of truth for provider structure
+   - `src/models/scenario_model.py` — fully implemented, source of truth for provider structure
    - `src/models/step_scraping_model.py` — class is a **placeholder**: defined and referenced but empty body. You will implement it.
-   - `src/views/provider_edit_view.py` — existing view; the Workflow Builder will be embedded inside it. Locate the frame named **"Workflow & Instructions"** — this is your insertion point.
+   - `src/views/workflow_view.py` — existing view; the Workflow Builder will be embedded inside it. Locate the frame named **"Workflow & Instructions"** — this is your insertion point.
 3. Inspect `src/interfaces/` — list all existing abstract base classes before creating new ones.
 4. Inspect `src/shared/` — identify base classes and utilities to inherit from or reuse.
 
@@ -18,7 +18,7 @@ Do not create anything until steps 1–4 are complete.
 
 Implement the **Workflow Builder** UI and its full backend stack (service, repository, model).
 
-The UI must be embedded **inside the existing `"Workflow & Instructions"` frame** in `provider_edit_view.py` — not as a new window or a separate top-level. Replace the placeholder content of that frame with the workflow builder widget.
+The UI must be embedded **inside the existing `"Workflow & Instructions"` frame** in `workflow_view.py` — not as a new window or a separate top-level. Replace the placeholder content of that frame with the workflow builder widget.
 
 ---
 
@@ -26,7 +26,7 @@ The UI must be embedded **inside the existing `"Workflow & Instructions"` frame*
 
 The class in `src/models/step_scraping_model.py` is empty. Implement it now.
 
-- Inspect `provider_model.py` to understand how `StepScraping` is referenced and what fields are expected.
+- Inspect `scenario_model.py` to understand how `StepScraping` is referenced and what fields are expected.
 - Define a `StepType` enum in `step_scraping_model.py` — do not create it elsewhere.
 - Use Python dataclass conventions (`@dataclass`, native type hints, no `from __future__ import annotations`).
 
@@ -74,9 +74,9 @@ Files to create if absent:
 # workflow_repository_interface.py
 class WorkflowRepositoryInterface(ABC):
     @abstractmethod
-    def load(self, provider_id_file: str) -> Workflow: ...
+    def load(self, id_scenario: str) -> Workflow: ...
     @abstractmethod
-    def save(self, provider_id_file: str, workflow: Workflow) -> None: ...
+    def save(self, id_scenario: str, workflow: Workflow) -> None: ...
 ```
 
 ---
@@ -101,7 +101,7 @@ File: `src/repositories/workflow_repository.py`
 
 - Persistence target: `config-aspirabot.json`
 - **Read the existing JSON structure before writing any serialization code.** Do not overwrite or rename existing keys.
-- Serialize/deserialize `Workflow` ↔ JSON under a key scoped to the provider (e.g. `providers.<provider_id_file>.workflow`). Adapt to the actual structure found in the file.
+- Serialize/deserialize `Workflow` ↔ JSON under a key scoped to the scenario (e.g. `scenarios.<id_scenario>.workflow`). Adapt to the actual structure found in the file.
 
 ---
 
@@ -133,7 +133,7 @@ A `tk.Toplevel` modal. Layout:
 
 Validation runs on Confirm click. Show inline error messages (red label below offending field) — do not close the dialog on error. Validation rules mirror the service layer (see Step 4).
 
-### 6b. Workflow builder widget — embedded in `provider_edit_view.py`
+### 6b. Workflow builder widget — embedded in `workflow_view.py`
 
 Locate the `"Workflow & Instructions"` frame and replace its placeholder content with:
 
@@ -207,7 +207,7 @@ view.append_log(line: str) -> None
 6. Implement `WorkflowService`
 7. Read `config-aspirabot.json` structure, then implement `WorkflowRepository`
 8. Implement `step_edit_dialog_view.py`
-9. Embed the workflow builder UI into the `"Workflow & Instructions"` frame in `provider_edit_view.py`
+9. Embed the workflow builder UI into the `"Workflow & Instructions"` frame in `workflow_view.py`
 10. Implement `WorkflowBuilderPresenter`
-11. Wire the presenter into the existing presenter that owns `provider_edit_view.py`
+11. Wire the presenter into the existing presenter that owns `workflow_view.py`
 12. Launch the application — confirm the frame renders correctly and all interactions work

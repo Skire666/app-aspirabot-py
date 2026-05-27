@@ -29,7 +29,7 @@ from shared.constants import (
 from shared.exception_util import (
     InvalidBrowserEngineError,
     InvalidFolderLogsError,
-    InvalidFolderProvidersError,
+    InvalidFolderScenariosError,
     InvalidFolderScrapingError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
@@ -54,7 +54,7 @@ class AppConfigurationModel:
     Attributes:
         log_level: Logging level used by the application.
         folder_logs: Directory where log files are stored.
-        folder_scenarios: Directory containing provider definitions.
+        folder_scenarios: Directory containing scenario definitions.
         folder_scraping: Directory for scraping data exports.
 
     Example:
@@ -141,14 +141,14 @@ class AppConfigurationModel:
 
     @property
     def folder_scenarios(self) -> Path:
-        """Returns the folder path for providers."""
+        """Returns the folder path for scenarios."""
         return self._folder_scenarios
 
     @folder_scenarios.setter
     def folder_scenarios(self, value: Path | str) -> None:
-        """Sets the folder path for providers."""
+        """Sets the folder path for scenarios."""
         if not value or str(value).strip() == "":
-            raise InvalidFolderProvidersError()
+            raise InvalidFolderScenariosError()
         self._folder_scenarios = Path(value) if isinstance(value, str) else value
 
     @property

@@ -84,7 +84,7 @@ class ScrapingContextModel:
         cancel_event: Threading event set when the run is cancelled.
         on_user_wait: Optional callback fired by WAIT_USER_ACTION steps.
         step_params: Raw step-specific parameter dict from the step model.
-        url_source: Optional URL source provider consumed by OPEN_URL steps.
+        url_source: Optional URL source scenario consumed by OPEN_URL steps.
         last_message_step: Output — human-readable result set by the executor.
         pending_jump: Output — jump target (index or step_id) set by the executor.
         end_process: Output — set to True by the executor to stop the workflow.
@@ -115,7 +115,7 @@ class ScrapingContextModel:
     # date extracted
     extracted_data: ExtractedData
 
-    # Optional URL source provider injected by the service before each run.
+    # Optional URL source scenario injected by the service before each run.
     url_source: IUrlSourceProvider | None = field(default=None)
 
     # Output signals written by executors and read back by the orchestrator.

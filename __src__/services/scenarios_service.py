@@ -19,6 +19,7 @@ Example:
 # -----------------------------------------------------------------------------
 
 import logging
+from pathlib import Path
 
 from models.scenario_model import ScenarioModel
 from repositories.scenarios_repository import ScenariosRepository
@@ -110,7 +111,7 @@ class ScenariosService:
         """
         return self._repository.exists_scenario(id_file)
 
-    def get_folder_path_scenarios(self) -> str:
+    def get_folder_path_scenarios(self) -> Path:
         """Return the absolute path of the scenarios storage folder as a string.
 
         Returns:
@@ -128,11 +129,11 @@ class ScenariosService:
     # CRUS operations
     # -------------------------------------------------------------------------
 
-    def create_scenario(self, provider: ScenarioModel) -> None:
-        """Stamp timestamps on *provider* and persist it as a new scenario.
+    def create_scenario(self, scenario: ScenarioModel) -> None:
+        """Stamp timestamps on *scenario* and persist it as a new scenario.
 
         Args:
-            provider: A :class:`~models.scenario_model.ScenarioModel` instance
+            scenario: A :class:`~models.scenario_model.ScenarioModel` instance
                 that has not yet been persisted. Its ``id_file`` must be unique.
 
         Raises:
@@ -146,9 +147,9 @@ class ScenariosService:
         """
         # Stamp creation/modification timestamps before writing.
 
-        provider.mark_as_created()
-        self._repository.create_scenario(provider)
-        self._repository.create_default_profile_for_scenario(provider)
+        scenario.mark_as_created()
+        self._repository.create_scenario(scenario)
+        self._repository.create_default_profile_for_scenario(scenario)
 
     def read_scenario(self, id_file: str) -> ScenarioModel:
         """Load a single scenario by its file identifier and wire step context.
@@ -167,7 +168,7 @@ class ScenariosService:
             inter-step context injected.
 
         Raises:
-            ProviderNotFoundError: If no file matches *id_file*.
+            ScenarioNotFoundError: If no file matches *id_file*.
             DatabaseUnavailableError: If the file exists but cannot be read or
                 parsed.
 
@@ -194,11 +195,11 @@ class ScenariosService:
                 must match an existing file.
 
         Raises:
-            ProviderNotFoundError: If no existing file matches ``provider.id_file``.
+            ScenarioNotFoundError: If no existing file matches ``scenario.id_file``.
             DatabaseUnavailableError: If the file cannot be overwritten.
 
         Example:
-            >>> scenario.provider_name = "Renamed"
+            >>> scenario.scenario_name = "Renamed"
             >>> service.update_scenario(scenario)
         """
         # Refresh modification date to reflect the current save time.
@@ -219,7 +220,7 @@ class ScenariosService:
             The ``id_file`` of the newly created duplicate scenario.
 
         Raises:
-            ProviderNotFoundError: If no scenario matches *id_file*.
+            ScenarioNotFoundError: If no scenario matches *id_file*.
             DatabaseUnavailableError: If the original cannot be read or the
                 duplicate cannot be written.
 
@@ -227,7 +228,7 @@ class ScenariosService:
             >>> new_id = service.duplicate_scenario("abc123")
             >>> service.exists_scenario(new_id)
             True
-            >>> service.read_scenario(new_id).provider_name.startswith("Copie de")
+            >>> service.read_scenario(new_id).scenario_name.startswith("Copie de")
             True
         """
         # Load the original before building the copy.
@@ -247,7 +248,7 @@ class ScenariosService:
             id_file: Unique identifier of the scenario to delete.
 
         Raises:
-            ProviderNotFoundError: If no file matches *id_file*.
+            ScenarioNotFoundError: If no file matches *id_file*.
 
         Example:
             >>> service.delete_scenario("abc123")

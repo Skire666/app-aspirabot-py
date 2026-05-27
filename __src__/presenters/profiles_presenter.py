@@ -7,12 +7,12 @@
 import logging
 from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
+from models.launcher_model import LaunchModel
 from services.profiles_service import ProfilesService
 from views.profiles_view import ProfilesView
-
-from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -20,17 +20,17 @@ from __src__.models.launcher_model import LaunchModel
 
 
 class ProfilesPresenter:
-    """Orchestrates the historic panel between HistoryView and HistoryService.
+    """Orchestrates the historic panel between ProfilesView and ProfilesService.
 
     Loads launch profiles on demand, formats them for the view, and
     delegates the launch action to an injectable hook supplied by main.py.
 
     Attributes:
         _view: The historic panel view.
-        _service: Service that aggregates profiles across providers.
+        _service: Service that aggregates profiles across scenarios.
         _last_loaded: Timestamp of the last successful profile load.
         on_request_launch_profile: Optional hook injected from main.py,
-            called with (id_provider, id_profile) when the user clicks Lancer.
+            called with (id_scenario, id_profile) when the user clicks Lancer.
     """
 
     def __init__(self, view: ProfilesView, service: ProfilesService) -> None:
@@ -85,7 +85,7 @@ class ProfilesPresenter:
         Returns:
             None.
         """
-        # Retrieve all (provider_id, profile) tuples from the service.
+        # Retrieve all profiles from the service.
         try:
             all_profiles = self._service_profile.list_all_profiles_launch()
         except Exception:
@@ -95,12 +95,12 @@ class ProfilesPresenter:
         sorted_tuples = self._sort_profiles(all_profiles)
 
         # Push formatted rows to the view and stamp the load time.
-        path_folder = self._service_profile.get_path_profiles_folder()
+        path_folder: Path = self._service_profile.get_path_profiles_folder()
         self._view.render_profiles(path_folder, self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
     def _format_rows(self, list_profiles: list[LaunchModel]) -> list[dict[str, Any]]:
-        """Convert (provider_id, profile) pairs into DataGrid row dicts.
+        """Convert into DataGrid row dicts.
 
         Args:
             list_profiles: Sorted list of ProfileLaunchModel instances.
@@ -150,7 +150,6 @@ class ProfilesPresenter:
         self._load_profiles()
 
     def _on_open_folder(self) -> None:
-        """Gère l'événement d'ouverture du dossier des fournisseurs."""
         self._service_profile.open_profiles_folder()
 
     def _on_refresh(self) -> None:

@@ -1,13 +1,8 @@
-"""Domain model for a scraping provider.
+"""Domain model for a scraping scenario.
 
 This module defines ScenarioModel, a pure data entity used by the
 application core. The model intentionally avoids any persistence, network, or
 UI dependency.
-
-Example:
-    >>> provider = ScenarioModel.get_default_data()
-    >>> ScenarioModel.is_valid_id(provider.id_file)
-    True
 """
 
 # -----------------------------------------------------------------------------
@@ -30,29 +25,24 @@ from shared.random_util import generate_rng_hexastring
 
 @dataclass
 class ScenarioModel:
-    """Represents a scraping provider as a domain entity.
+    """Represents a scraping scenario as a domain entity.
 
-    The class contains provider metadata and scraping steps. It is a simple
+    The class contains scenario metadata and scraping steps. It is a simple
     data container used by services and repositories.
 
     Attributes:
-        id_file: Unique provider identifier as a canonical timestamp in milliseconds.
-        provider_name: Human-readable provider name.
-        provider_desc: Description of the provider.
+        id_file: Unique scenario identifier as a canonical timestamp in milliseconds.
+        scenario_name: Human-readable scenario name.
+        scenario_desc: Description of the scenario.
         created_date_scenario: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
         modified_date_scenario: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
-        version: Provider version string (for example 1.0.0).
+        version: scenario version string (for example 1.0.0).
         steps: Ordered list of scraping actions.
-
-    Example:
-        >>> provider = ScenarioModel.get_default_data()
-        >>> provider.provider_name
-        'Nouv. Fournisseur'
     """
 
     id_file: str
-    provider_name: str
-    provider_desc: str
+    scenario_name: str
+    scenario_desc: str
     created_date_scenario: datetime | None
     modified_date_scenario: datetime | None
     version: str
@@ -60,27 +50,22 @@ class ScenarioModel:
 
     @classmethod
     def get_default_data(cls) -> ScenarioModel:
-        """Builds a new provider instance with default values.
+        """Builds a new scenario instance with default values.
 
         Returns:
-            ScenarioModel: A fully initialized provider entity.
+            ScenarioModel: A fully initialized scenario entity.
 
         Raises:
             None.
-
-        Example:
-            >>> provider = ScenarioModel.get_default_data()
-            >>> provider.provider_desc
-            'Description du fournisseur'
         """
         # Capture a single timestamp to keep creation and modification aligned.
         current_timestamp = datetime.now()
 
-        # Return a ready-to-use default provider.
+        # Return a ready-to-use default scenario.
         return cls(
             id_file=generate_rng_hexastring(C_SIZE_HEXASTRING_SCENARIO_ID),
-            provider_name="Nouv. scénario",
-            provider_desc="Description du scénario (ou URL)",
+            scenario_name="Nouv. scénario",
+            scenario_desc="Description du scénario (ou URL)",
             version="1.0.0",
             created_date_scenario=current_timestamp,
             modified_date_scenario=current_timestamp,
@@ -96,10 +81,6 @@ class ScenarioModel:
 
         Raises:
             None.
-
-        Example:
-            >>> provider = ScenarioModel.get_default_data()
-            >>> provider.mark_as_created()
         """
         # Use one value so both fields remain perfectly synchronized.
         self.created_date_scenario = datetime.now()
@@ -113,10 +94,6 @@ class ScenarioModel:
 
         Raises:
             None.
-
-        Example:
-            >>> provider = ScenarioModel.get_default_data()
-            >>> provider.mark_as_modified()
         """
         # Refresh only the modification date to preserve creation metadata.
         self.modified_date_scenario = datetime.now()
@@ -133,12 +110,6 @@ class ScenarioModel:
 
         Raises:
             None: Parsing errors are handled and converted to False.
-
-        Example:
-            >>> ScenarioModel.is_valid_id('123456789')
-            True
-            >>> ScenarioModel.is_valid_id('INVALID-ID')
-            False
         """
         # Fast-fail on empty values before any normalization/parsing.
         if not value:
@@ -158,7 +129,7 @@ class ScenarioModel:
         Steps and launch profiles are deep-copied so the duplicate is fully independent.
 
         Args:
-            source: The provider to duplicate.
+            source: The scenario to duplicate.
 
         Returns:
             A new unsaved ScenarioModel ready to be persisted.
@@ -167,32 +138,27 @@ class ScenarioModel:
 
         duplicate = copy.deepcopy(source)
         duplicate.id_file = generate_rng_hexastring(C_SIZE_HEXASTRING_SCENARIO_ID)
-        duplicate.provider_name = f"Copie de {source.provider_name}"
+        duplicate.scenario_name = f"Copie de {source.scenario_name}"
         return duplicate
 
     @classmethod
     def import_from_data_json(cls, data: dict[str, Any]) -> ScenarioModel:
-        """Reconstruct a provider model from a JSON-compatible dictionary.
+        """Reconstruct a scenario model from a JSON-compatible dictionary.
 
         Args:
             data: A dict produced by ``export_to_data_json``.
 
         Returns:
-            ScenarioModel: A fully reconstructed provider instance.
+            ScenarioModel: A fully reconstructed scenario instance.
 
         Raises:
             None.
-
-        Example:
-            >>> raw = ScenarioModel.get_default_data().export_to_data_json()
-            >>> ScenarioModel.import_from_data_json(raw).version
-            '1.0.0'
         """
         steps = cls._deserialize_steps(data.get("steps", []))
         return cls(
             id_file=data.get("id_file"),
-            provider_name=data.get("provider_name"),
-            provider_desc=data.get("provider_desc"),
+            scenario_name=data.get("scenario_name"),
+            scenario_desc=data.get("scenario_desc"),
             created_date_scenario=dict_with_key_to_optional_datetime(data, "created_date_scenario"),
             modified_date_scenario=dict_with_key_to_optional_datetime(data, "modified_date_scenario"),
             version=data.get("version"),
@@ -224,24 +190,18 @@ class ScenarioModel:
         return result
 
     def export_to_data_json(self) -> dict[str, Any]:
-        """Converts the provider model to a JSON-serializable dictionary.
+        """Converts the scenario model to a JSON-serializable dictionary.
 
         Returns:
-            dict: A dictionary representation of the provider suitable for JSON serialization.
+            dict: A dictionary representation of the scenario suitable for JSON serialization.
 
         Raises:
             None.
-
-        Example:
-            >>> provider = ScenarioModel.get_default_data()
-            >>> data_json = provider.export_to_data_json()
-            >>> isinstance(data_json, dict)
-            True
         """
         return {
             "id_file": self.id_file,
-            "provider_name": self.provider_name,
-            "provider_desc": self.provider_desc,
+            "scenario_name": self.scenario_name,
+            "scenario_desc": self.scenario_desc,
             "created_date_scenario": self.created_date_scenario,
             "modified_date_scenario": self.modified_date_scenario,
             "version": self.version,

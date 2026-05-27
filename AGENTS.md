@@ -111,7 +111,7 @@ def on_save_clicked(self) -> None:
 def on_save_clicked(self) -> None:
     data = self._view.get_form_data()
     try:
-        self._service.save_provider(data)
+        self._service.save_scenario(data)
     except ProviderValidationError as e:
         self._view.show_errors([format_error(e)])
 ```
@@ -180,8 +180,8 @@ They must be present in `.gitignore` — the AI must never create or commit them
 | Path | Description |
 |------|-------------|
 | `./tmp_app_logs/` | Temporary execution logs |
-| `./data_scraping/` | User provider data |
-| `./data_providers/` | Output for scraping |
+| `./data_scraping/` | Output for scraping |
+| `./data_scenarios/` | User scenario data |
 | `./config-aspirabot.json` | Main application configuration |
 
 ---
@@ -194,7 +194,7 @@ Language rules by content type:
 
 | Content | Language | Example |
 |---|---|---|
-| Docstrings | **English** | `"""Load the provider from disk."""` |
+| Docstrings | **English** | `"""Load the scenario from disk."""` |
 | Inline comments | **English** | `# Extract the main result blocks` |
 | Log messages (all levels) | **French** | `"Démarrage du scraping pour id=%s"` |
 | Exception messages | **French** | `"Provider introuvable : {id}"` |
@@ -252,9 +252,9 @@ result = some_function(
 )
 
 # GOOD — decompose by semantic step, not by arbitrary line count
-def process_provider(self, provider_id: str) -> None:
-    provider = self._fetch_provider(provider_id)
-    self._validate_provider(provider)
+def process_scenario(self, id_scenario: str) -> None:
+    provider = self._fetch_scenario(id_scenario)
+    self._validate_scenario(provider)
     self._apply_defaults(provider)
 ```
 
@@ -315,7 +315,7 @@ All inter-layer contracts are defined as `typing.Protocol` in `interfaces/`.
 ### Naming convention
 
 - Interface files: `i_<name>.py` (e.g. `i_scraping_view.py`)
-- Interface classes: prefix `I` in PascalCase (e.g. `IScrapingView`)
+- Interface classes: prefix `I` in PascalCase (e.g. `IExecutorView`)
 
 ### Definition
 
@@ -331,12 +331,12 @@ class IErrorDisplayView(Protocol):
 ### Usage in Presenter
 
 ```python
-# presenters/scraping_presenter.py
-from views.scraping_view import ScrapingView
+# presenters/executor_presenter.py
+from views.scraping_view import ExecutorView
 from services.scraping_service import ScrapingService
 
 class ScrapingPresenter:
-    def __init__(self, view: ScrapingView, service: ScrapingService) -> None:
+    def __init__(self, view: ExecutorView, service: ScrapingService) -> None:
         self._view = view
         self._service = service
 ```
@@ -347,7 +347,7 @@ class ScrapingPresenter:
 ```python
 # BAD
 from abc import ABC, abstractmethod
-class IScrapingView(ABC):
+class IExecutorView(ABC):
     @abstractmethod
     def show_errors(self, messages: list[str]) -> None: ...
 ```
@@ -386,10 +386,10 @@ class AppState:
     """Holds runtime state shared across services.
 
     Attributes:
-        active_provider_id: ID of the currently selected provider, or None.
+        active_scenario_id: ID of the currently selected provider, or None.
         is_scraping: True while a scraping session is running.
     """
-    active_provider_id: str | None = None
+    active_scenario_id: str | None = None
     is_scraping: bool = False
 ```
 
@@ -421,18 +421,19 @@ class TitleModuleEnum(Enum):
     """Enum for the main view sidebar button labels.
 
     The values are the actual display labels shown in the sidebar (French).
-    The enum name (e.g. E_SCRIPTS) is the stable internal identifier used
+    The enum name (e.g. E_SCENARIOS) is the stable internal identifier used
     to register lazy-load callbacks via MainView.set_on_show().
     """
 
-    E_LOGS     = "LOGS"
-    E_HISTORY  = "HISTORIC"
-    E_SCRIPTS  = "PROVIDER"
-    E_EDITOR   = "WORKFLOW"
-    E_EXECUTOR = "EXECUTE"
-    E_FAQ      = "FAQ"
-    E_DEBUG    = "DEBUG"
-    E_OPTIONS  = "OPTIONS"
+    E_LOGS = "LOGS"
+    E_PROFILES = "PROFILES"
+    E_SCENARIOS = "SCENARIOS"
+    E_WORKFLOW = "WORKFLOW"
+    E_EXECUTOR = "EXECUTOR"
+    E_SCRAPING = "SCRAPING"
+    E_FAQ = "FAQ"
+    E_DEBUG = "DEBUG"
+    E_OPTIONS = "OPTIONS"
 ```
 
 For lazy tab initialization, register a callback via `MainView.set_on_show()`:
@@ -440,8 +441,8 @@ the callback is invoked once, the first time the user navigates to that tab.
 
 ```python
 # main.py — register lazy loaders after wiring
-main_view.set_on_show(TitleModuleEnum.E_SCRIPTS, scripts_presenter.ensure_providers_loaded)
-main_view.set_on_show(TitleModuleEnum.E_EDITOR,  editor_presenter.ensure_workflows_loaded)
+main_view.set_on_show(TitleModuleEnum.E_SCENARIOS, scripts_presenter.ensure_scenarios_loaded)
+main_view.set_on_show(TitleModuleEnum.E_WORKFLOW,  editor_presenter.ensure_workflows_loaded)
 ```
 
 ---
@@ -471,19 +472,19 @@ class ScrapingService:
 
 ```python
 # Repository — trace I/O at DEBUG (message in French)
-def find_by_id(self, provider_id: str) -> Provider | None:
-    self._logger.debug("Lecture du provider id=%s", provider_id)
+def find_by_id(self, id_scenario: str) -> Provider | None:
+    self._logger.debug("Lecture du provider id=%s", id_scenario)
     ...
 
 # Service — trace flow at INFO (message in French)
-def start_scraping(self, provider_id: str) -> None:
-    self._logger.info("Démarrage du scraping pour provider id=%s", provider_id)
+def start_scraping(self, id_scenario: str) -> None:
+    self._logger.info("Démarrage du scraping pour provider id=%s", id_scenario)
     ...
 
 # Presenter — log unexpected errors at ERROR (message in French)
-def on_start_clicked(self, provider_id: str) -> None:
+def on_start_clicked(self, id_scenario: str) -> None:
     try:
-        self._service.start_scraping(provider_id)
+        self._service.start_scraping(id_scenario)
     except AppError as e:
         self._logger.error("Erreur lors du scraping : %s", e, exc_info=True)
         self._view.show_errors([format_error(e)])
@@ -511,7 +512,7 @@ class AppError(Exception):
 class ScrapingError(AppError): ...
 class PageLoadError(ScrapingError): ...
 class ProviderError(AppError): ...
-class ProviderNotFoundError(ProviderError): ...
+class ScenarioNotFoundError(ProviderError): ...
 class RepositoryError(AppError): ...
 class DatabaseUnavailableError(RepositoryError): ...
 ```
@@ -528,7 +529,7 @@ Exception messages (the string passed to `raise`) are written in **French**.
 | Layer | Raises | Catches |
 |---|---|---|
 | `Repository` | `RepositoryError` subclasses | Low-level errors (`IOError`, `json.JSONDecodeError`…) — wraps and re-raises |
-| `Service` | Domain exceptions (`ProviderNotFoundError`…) | `RepositoryError` if a transformation is needed |
+| `Service` | Domain exceptions (`ScenarioNotFoundError`…) | `RepositoryError` if a transformation is needed |
 | `Presenter` | — | Domain exceptions → formats into `list[str]` for the View |
 | `View` | — | Nothing — the Presenter delivers ready-to-display messages |
 
@@ -542,18 +543,18 @@ def load_config(self) -> dict:
         raise DatabaseUnavailableError("Impossible de lire la config.") from e
 
 # Service — raise domain errors (message in French)
-def get_provider(self, provider_id: str) -> Provider:
-    provider = self._repository.find_by_id(provider_id)
+def get_scenario(self, id_scenario: str) -> Provider:
+    provider = self._repository.find_by_id(id_scenario)
     if provider is None:
-        raise ProviderNotFoundError(f"Provider introuvable : {provider_id}")
+        raise ScenarioNotFoundError(f"Provider introuvable : {id_scenario}")
     return provider
 
 # Presenter — only layer that catches for the View
-def on_provider_requested(self, provider_id: str) -> None:
+def on_scenario_requested(self, id_scenario: str) -> None:
     try:
-        provider = self._service.get_provider(provider_id)
-        self._view.display_provider(provider)
-    except ProviderNotFoundError as e:
+        provider = self._service.get_scenario(id_scenario)
+        self._view.display_scenario(provider)
+    except ScenarioNotFoundError as e:
         self._view.show_errors([str(e)])
     except AppError as e:
         self._logger.error("Erreur inattendue : %s", e, exc_info=True)
@@ -584,7 +585,7 @@ raise ValueError("Provider not found")
 raise FileNotFoundError("File not found")
 
 # GOOD
-raise ProviderNotFoundError("Provider introuvable : {id}") from None
+raise ScenarioNotFoundError("Provider introuvable : {id}") from None
 raise UrlSourceFileNotFoundError(path) from exc
 ```
 
@@ -837,7 +838,7 @@ class IScrapingService(Protocol):
 ❌ Never place business logic inside `shared/`
 ```python
 # BAD — shared/ contains utilities only, not domain rules
-def shared_validate_provider(provider: dict) -> bool:
+def shared_validate_scenario(provider: dict) -> bool:
     if provider["type"] == "premium":  # ← domain rule, belongs in a service
         ...
 ```
@@ -853,7 +854,7 @@ view.on_start = service.run  # ← the presenter must be the bridge
 ❌ Never store shared runtime state in a Presenter, a View, or a module-level global
 ```python
 # BAD — global state, not injectable, not testable
-_current_provider_id: str | None = None
+_current_scenario_id: str | None = None
 
 # GOOD — use AppState defined in models/ and injected into services
 ```
@@ -876,7 +877,7 @@ _current_provider_id: str | None = None
 # These must stay in .gitignore — never create or commit them manually
 tmp_app_logs/
 data_scraping/
-data_providers/
+data_scenarios/
 config-aspirabot.json
 ```
 
@@ -954,5 +955,5 @@ class ProviderEditPresenter:
 
 For lazy tab initialization (content loaded only on first visit), use `MainView.set_on_show()`:
 ```python
-main_view.set_on_show(TitleModuleEnum.E_SCRIPTS, scripts_presenter.ensure_providers_loaded)
+main_view.set_on_show(TitleModuleEnum.E_SCENARIOS, scripts_presenter.ensure_scenarios_loaded)
 ```

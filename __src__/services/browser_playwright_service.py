@@ -145,7 +145,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         if self._browser is None:
             raise BrowserNotLaunchedError()
-        if self._browser.contexts is None or len(self._browser.contexts) == 0:
+        if len(self._browser.contexts) <= 0:
             raise BrowserNotLaunchedError()
 
         context = self._browser.contexts[0]
@@ -165,7 +165,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         if self._browser is None:
             raise BrowserNotLaunchedError()
-        if self._browser.contexts is None or len(self._browser.contexts) == 0:
+        if len(self._browser.contexts) <= 0:
             raise BrowserNotLaunchedError()
 
         # Close each page; the context event will handle de-registration.

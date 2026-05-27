@@ -1,15 +1,3 @@
-"""Domain model for a scraping provider.
-
-This module defines ScenarioModel, a pure data entity used by the
-application core. The model intentionally avoids any persistence, network, or
-UI dependency.
-
-Example:
-    >>> provider = ScenarioModel.get_default_data()
-    >>> ScenarioModel.is_valid_id(provider.id_file)
-    True
-"""
-
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
@@ -18,9 +6,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from models.launcher_model import LaunchModel
 from shared.datetime_util import dict_with_key_to_optional_datetime
-
-from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -50,7 +37,7 @@ class ProfilesModel:
     @classmethod
     def get_default(cls, id_scenario: str) -> ProfilesModel:
         """Return a default profiles list model with a single default profile."""
-        # Return a ready-to-use default provider.
+        # Return a ready-to-use default profiles list.
         date_now = datetime.now()
         return cls(
             id_scenario=id_scenario,

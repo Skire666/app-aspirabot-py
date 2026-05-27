@@ -1,15 +1,15 @@
-"""Service for listing launch profiles across all providers."""
+"""Service for listing launch profiles across all scenarios."""
 
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
 
 import logging
+from pathlib import Path
 
+from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
 from repositories.profiles_repository import ProfilesRepository
-
-from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -17,38 +17,38 @@ from __src__.models.launcher_model import LaunchModel
 
 
 class ProfilesService:
-    """Business logic for aggregating launch profiles from all providers.
+    """Business logic for aggregating launch profiles from all scenarios.
 
-    This service reads the provider repository and exposes the complete list
-    of (provider_id, profile) pairs for display in the historic panel.
+    This service reads the scenario repository and exposes the complete list
+    of (id_scenario, profile) pairs for display in the historic panel.
 
     Attributes:
-        _repository: Repository used to read provider data from disk.
+        _repository: Repository used to read scenario data from disk.
     """
 
     def __init__(self, repository: ProfilesRepository) -> None:
-        """Initialize the service with its provider repository.
+        """Initialize the service with its scenario repository.
 
         Args:
-            repository: Repository for reading provider data.
+            repository: Repository for reading scenario data.
         """
         self._logger = logging.getLogger(__name__)
         self._repository = repository
 
     def list_all_profiles_launch(self) -> list[LaunchModel]:
-        """Return all launch profiles paired with their owning provider id.
+        """Return all launch profiles paired with their owning scenario id.
 
-        Iterates every provider returned by the repository and yields one
-        tuple per profile. Errors for a single provider are logged and
+        Iterates every scenario returned by the repository and yields one
+        tuple per profile. Errors for a single scenario are logged and
         skipped so the rest of the list is always returned.
 
         Returns:
-            A list of (provider_id, profile) tuples, one per profile found.
+            A list of (scenario_id, profile) tuples, one per profile found.
         """
         profils = self._repository.read_all_profiles()
         return [profile_item for scenario in profils for profile_item in scenario.launch_profiles]
 
-    def exists_profiles(self, id_scenario: str) -> bool:
+    def exists_scenarios(self, id_scenario: str) -> bool:
         """Check whether a scenario with the given identifier exists on disk.
 
         Args:
@@ -58,17 +58,17 @@ class ProfilesService:
             ``True`` if a matching scenario file is found, ``False`` otherwise.
 
         Example:
-            >>> service.exists_profiles("nonexistent")
+            >>> service.exists_scenarios("nonexistent")
             False
         """
-        return self._repository.exists_profiles(id_scenario)
+        return self._repository.exists_scenarios(id_scenario)
 
     # -------------------------------------------------------------------------
     # CRUD operations
     # -------------------------------------------------------------------------
 
     def create_profiles(self, profiles: ProfilesModel) -> None:
-        """Stamp timestamps on *provider* and persist it as a new profile.
+        """Stamp timestamps on scenario and persist it as a new profile.
 
         Args:
             profiles : A :class:`~models.profiles_model.ProfilesModel` instance
@@ -101,14 +101,8 @@ class ProfilesService:
             inter-step context injected.
 
         Raises:
-            ProviderNotFoundError: If no file matches *id_file*.
             DatabaseUnavailableError: If the file exists but cannot be read or
                 parsed.
-
-        Example:
-            >>> profile = service.read_profile("abc123")
-            >>> profile.steps[0].parent_context is profile.steps
-            True
         """
         return self._repository.read_profiles(id_file)
 
@@ -124,11 +118,11 @@ class ProfilesService:
                 must match an existing file.
 
         Raises:
-            ProviderNotFoundError: If no existing file matches ``profile.id_file``.
+            ScenarioNotFoundError: If no existing file matches ``profile.id_file``.
             DatabaseUnavailableError: If the file cannot be overwritten.
 
         Example:
-            >>> profile.provider_name = "Renamed"
+            >>> profile.scenario_name = "Renamed"
             >>> service.update_profiles(profile)
         """
         # Refresh modification date to reflect the current save time.
@@ -142,11 +136,11 @@ class ProfilesService:
             id_file: Unique identifier of the profile to delete.
 
         Raises:
-            ProviderNotFoundError: If no file matches *id_file*.
+            ScenarioNotFoundError: If no file matches *id_file*.
 
         Example:
             >>> service.delete_profiles("abc123")
-            >>> service.exists_profiles("abc123")
+            >>> service.exists_scenarios("abc123")
             False
         """
         self._repository.delete_profiles(id_file)
@@ -172,7 +166,7 @@ class ProfilesService:
         new_profile_launch = LaunchModel.get_default(id_scenario)
         new_profile_launch.profile_name = profile_name
 
-        if self._repository.exists_profiles(id_scenario):
+        if self._repository.exists_scenarios(id_scenario):
             # existing scenario: read it, update its profile list, and save it back
             found = self._repository.read_profiles(id_scenario)
             found.create_profile_launch(new_profile_launch)
@@ -198,7 +192,7 @@ class ProfilesService:
         Raises:
             DatabaseUnavailableError: If the file cannot be written to disk.
         """
-        if self._repository.exists_profiles(id_scenario):
+        if self._repository.exists_scenarios(id_scenario):
             # existing scenario: read it, update its profile list, and save it back
             found = self._repository.read_profiles(id_scenario)
             found.update_profile_launch(profile)
@@ -218,9 +212,9 @@ class ProfilesService:
             id_profile: Unique identifier of the profile to delete.
 
         Raises:
-            ProviderNotFoundError: If no file matches *id_scenario* and *id_profile*.
+            ScenarioNotFoundError: If no file matches *id_scenario* and *id_profile*.
         """
-        if self._repository.exists_profiles(id_scenario):
+        if self._repository.exists_scenarios(id_scenario):
             # existing scenario: read it, update its profile list, and save it back
             found: ProfilesModel = self._repository.read_profiles(id_scenario)
             found.delete_profile_by_id(id_profile)
@@ -240,23 +234,23 @@ class ProfilesService:
             The name of the scenario associated with the given profile.
 
         Raises:
-            ProviderNotFoundError: If no file matches *id_scenario*.
+            ScenarioNotFoundError: If no file matches *id_scenario*.
         """
         scenario = self._repository.read_scenario(id_scenario)
-        return scenario.provider_name if scenario else ""
+        return scenario.scenario_name if scenario else ""
 
     # -------------------------------------------------------------------------
     # Utility operations
     # -------------------------------------------------------------------------
 
     def open_profiles_folder(self) -> None:
-        """Open the folder containing provider files in the OS file explorer."""
+        """Open the folder containing scenario files in the OS file explorer."""
         self._repository.open_profiles_folder()
 
-    def get_path_profiles_folder(self) -> str:
-        """Get the path of the folder containing provider files.
+    def get_path_profiles_folder(self) -> Path:
+        """Get the path of the folder containing scenario files.
 
         Returns:
-            The path of the folder containing provider files.
+            The path of the folder containing scenario files.
         """
         return self._repository.get_path_profiles_folder()

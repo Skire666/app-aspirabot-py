@@ -184,7 +184,7 @@ These are created automatically when the app runs. **Do not version them** (alre
 ```
 ./tmp_app_logs/
 ./data_scraping/
-./data_providers/
+./data_scenarios/
 ./config-aspirabot.json
 ```
 

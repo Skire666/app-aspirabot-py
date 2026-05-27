@@ -70,7 +70,7 @@ class AppConfigurationView(ttk.Frame):
 
         self._add_enum_row_log(frame, 0, "Niveau log", self._log_level_var)
         self._add_path_row(frame, 1, "Dossier logs", self._folder_logs_var)
-        self._add_path_row(frame, 2, "Dossier providers", self._folder_scenarios_var)
+        self._add_path_row(frame, 2, "Dossier scénarios", self._folder_scenarios_var)
         self._add_path_row(frame, 3, "Dossier scraping", self._folder_scraping_var)
         self._add_text_row(frame, 4, "Taille fenêtre libre (WxH)", self._gui_booting_size_var)
         self._add_bool_row(frame, 5, "Démarrer en plein écran", self._gui_booting_fullscreen_var)

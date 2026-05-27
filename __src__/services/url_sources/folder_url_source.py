@@ -1,14 +1,9 @@
-"""URL source provider backed by a folder of .txt files (one URL per file).
+"""URL source scenario backed by a folder of .txt files (one URL per file).
 
 Discovery is lazy: the folder is scanned only on the first ``has_next()`` or
 ``next_url()`` call. File content is read one file at a time with a one-URL
 look-ahead buffer so that ``has_next()`` is accurate even when some files
 are empty.
-
-Example:
-    >>> provider = FolderUrlSourceProvider("/path/to/urls_folder")
-    >>> provider.has_next()   # triggers lazy discovery
-    True
 """
 
 # -----------------------------------------------------------------------------
@@ -166,10 +161,12 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         """
         if self._buffered is not _SENTINEL:
             return
+        if self._file_paths is None:
+            raise UrlSourceFilesNotDiscoveredError()
 
         # Scan forward until a non-empty URL is found.
-        while self._index < len(self._file_paths):  # type: ignore[arg-type]
-            file_path = self._file_paths[self._index]  # type: ignore[index]
+        while self._index < len(self._file_paths):
+            file_path = self._file_paths[self._index]
             self._index += 1
             url = self._read_url_from_file(file_path)
             if url:
@@ -180,7 +177,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         """Update the modified time of the current file to now.
 
         This can be used to move the file to the end of the processing order
-        if the provider is reset and accessed again.
+        if the scenario is reset and accessed again.
 
         Returns:
             None.
@@ -195,7 +192,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         if self._index == 0:
             raise UrlSourceNoUrlBufferedError()
 
-        current_file = self._file_paths[self._index - 1]  # type: ignore[index]
+        current_file = self._file_paths[self._index - 1]
         if not current_file.exists():
             raise UrlSourceFileNotFoundError(current_file)
 

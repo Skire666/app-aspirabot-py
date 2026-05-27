@@ -4,12 +4,6 @@ Orchestrates the browser lifecycle (via IWebBrowserService), iterates over
 workflow steps, handles pause/cancel/jump signals, and produces a final report.
 All browser-level concerns (launch, page management, stealth, routing) are
 delegated to the injected IWebBrowserService implementation.
-
-Example:
-    >>> from services.web_browser_service import BrowserService
-    >>> browser = BrowserService(folder)
-    >>> service = ScrapingService(folder, browser, workflow_service)
-    >>> report = service.run_workflow(provider, cancel, pause)
 """
 
 # -----------------------------------------------------------------------------
@@ -32,9 +26,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.json_repository import JsonFileRepository
-from repositories.scraping_journal_repository import ScrapingJournalRepository
 from services.browser_playwright_service import BrowserPlaywrightService
-from services.url_sources.url_source_factory import build_url_source_provider
 from services.workflow_service import WorkflowService
 from shared.constants import (
     C_BROWSER_ENGINE_PLAYWRIGHT,
@@ -48,26 +40,18 @@ from shared.exception_util import UnsupportedBrowserEngineError
 
 
 class ScrapingService:
-    """Executes a provider workflow step by step using a pluggable browser service.
+    """Executes a scenario workflow step by step using a pluggable browser service.
 
     All browser and page concerns are delegated to IWebBrowserService. Cross-step
     state (pending jump, end-process flag, image dedup set, statistics) is
     owned by a single ScrapingContextModel reference and injected into each
     executor directly.
-
-    Example:
-        >>> from services.web_browser_service import BrowserService
-        >>> svc = ScrapingService(AppConfigModel(), BrowserService(Path(".")), WorkflowService())
-        >>> report = svc.run_workflow(provider, cancel, pause)
-        >>> report.steps_total
-        0
     """
 
     def __init__(
         self,
         model_config: AppConfigurationModel,
         workflow_service: WorkflowService,
-        journal_repository: ScrapingJournalRepository,
         extracted_data_repository: JsonFileRepository,
     ) -> None:
         """Initialise the service and its per-run execution state.
@@ -75,13 +59,11 @@ class ScrapingService:
         Args:
             model_config: Application configuration model.
             workflow_service: Service for resolving step executors by type.
-            journal_repository: Repository used to persist journal exports to disk.
             extracted_data_repository: Repository used to persist extracted data as JSON.
         """
         self._logger = logging.getLogger(__name__)
         self._browser_service = None
         self._workflow_service = workflow_service
-        self._journal_repository = journal_repository
         self._extracted_data_repository = extracted_data_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
@@ -119,28 +101,16 @@ class ScrapingService:
     # Public API
     # ------------------------------------------------------------------
 
-    def export_journal(self, path: str, rows: list[str]) -> None:
-        """Persist journal rows to a file on disk via the journal repository.
-
-        Args:
-            path: Absolute path of the destination .txt file.
-            rows: Ordered list of journal row strings to write.
-
-        Raises:
-            OSError: If the file cannot be written.
-        """
-        self._journal_repository.save(path, rows)
-
     def run_workflow(
         self,
-        provider: ScenarioModel,
+        scenario: ScenarioModel,
         config: WorkflowRunConfigModel,
         handlers: WorkflowRunHandlers,
     ) -> ScrapingReportModel:
-        """Execute all steps of a provider workflow sequentially.
+        """Execute all steps of a scenario workflow sequentially.
 
         Args:
-            provider: The provider model containing the steps to execute.
+            scenario: The scenario model containing the steps to execute.
             config: Source and export configuration for this run — URL source
                 type/value and the export folder path.
             handlers: Threading signals and observer callbacks — cancel/pause
@@ -158,7 +128,7 @@ class ScrapingService:
         self._on_emergency_stop = handlers.on_emergency_stop
         self._started_at = datetime.now()
 
-        # Build and attach the URL source provider when requested.
+        # Build and attach the URL source scenario when requested.
         self._context.url_source = self._build_url_source(config.url_source_type, config.url_source_value)
         self._context.folder_export = Path(config.export_folder)
 
@@ -170,7 +140,7 @@ class ScrapingService:
             raise UnsupportedBrowserEngineError(self._context.app_config.browser_engine)
 
         # Initialise the browser and run all steps.
-        cancelled = self._run_browser_lifecycle(provider)
+        cancelled = self._run_browser_lifecycle(scenario)
         return self._build_report(cancelled)
 
     @staticmethod
@@ -178,7 +148,7 @@ class ScrapingService:
         source_type: str,
         source_value: list[str] | str | None,
     ) -> IUrlSourceProvider | None:
-        """Build the URL source provider when type and value are supplied.
+        """Build the URL source scenario when type and value are supplied.
 
         Args:
             source_type: One of ``"manual"``, ``"folder"``, or ``""``.
@@ -191,7 +161,7 @@ class ScrapingService:
             None — errors are not raised here; the executor handles missing source.
         """
         if source_type and source_value is not None:
-            return build_url_source_provider(source_type, source_value)
+            return build_url_source_scenario(source_type, source_value)
         return None
 
     @property
@@ -218,12 +188,12 @@ class ScrapingService:
 
     def _run_browser_lifecycle(
         self,
-        provider: ScenarioModel,
+        scenario: ScenarioModel,
     ) -> bool:
         """Launch browser, open initial page, run steps, close browser.
 
         Args:
-            provider: Provider model with browser config and workflow steps.
+            scenario: Scenario model with browser config and workflow steps.
 
         Returns:
             True if the run was aborted by the cancel signal.
@@ -234,7 +204,7 @@ class ScrapingService:
             self._on_event_logging(EventScrapingEnum.E_CONTEXT_INIT, None, None)
             self._browser_service.append_new_page()
             self._on_event_logging(EventScrapingEnum.E_WORKFLOW_INIT, None, None)
-            self._run_all_steps(provider.steps)
+            self._run_all_steps(scenario.steps)
         finally:
             # Always close the browser even if a step raised an exception.
             self._browser_service.close_browser()
