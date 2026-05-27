@@ -149,7 +149,7 @@ class ProfilesService:
     # Profile launch operations - CRUD
     # -------------------------------------------------------------------------
 
-    def create_profile_launch(self, id_scenario: str, profile_name: str) -> LaunchModel:
+    def create_profile_launch(self, id_scenario: str, profile_name: str = "Profil par défaut") -> LaunchModel:
         """Stamp timestamps on *profile* and persist it as a new launch profile.
 
         Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
@@ -194,12 +194,12 @@ class ProfilesService:
         """
         if self._repository.exists_scenarios(id_scenario):
             # existing scenario: read it, update its profile list, and save it back
-            found = self._repository.read_profiles(id_scenario)
+            found: ProfilesModel = self._repository.read_profiles(id_scenario)
             found.update_profile_launch(profile)
             self._repository.update_profiles(found)
 
         # no existing scenario: create a new one with the profile and save it
-        new_profiles = ProfilesModel.get_default(id_scenario=id_scenario)
+        new_profiles: ProfilesModel = ProfilesModel.get_default(id_scenario=id_scenario)
         new_profiles.create_profile_launch(profile)
         self._repository.create_profiles(new_profiles)
         return profile

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from services.url_sources.folder_url_source import FolderUrlSourceProvider
+from services.url_sources.json_url_source import JsonUrlSourceProvider
 from services.url_sources.manual_url_source import ManualUrlSourceProvider
 from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSourceTypeError
 
@@ -32,8 +33,8 @@ def build_url_source_scenario(
     """Instantiate the appropriate URL source scenario for the given type.
 
     Args:
-        source_type: One of ``"manual"``, or ``"folder"``.
-        source_value: For ``"manual"`` a ``list[str]`` of URLs; for ``"folder"`` a ``str`` path.
+        source_type: One of ``"manual"``, ``"folder"``, or ``"json"``.
+        source_value: For ``"manual"`` a ``list[str]`` of URLs; for ``"folder"`` or ``"json"`` a ``str`` path.
 
     Returns:
         A concrete ``IUrlSourceProvider`` ready for iteration.
@@ -47,6 +48,8 @@ def build_url_source_scenario(
         return _build_manual(source_value)
     if source_type == "folder":
         return _build_folder(source_value)
+    if source_type == "json":
+        return _build_json(source_value)
 
     raise UnknownUrlSourceTypeError(source_type)
 
@@ -83,3 +86,20 @@ def _build_folder(source_value: list[str] | str) -> FolderUrlSourceProvider:
     if not isinstance(source_value, str):
         raise InvalidUrlSourceValueTypeError("folder", "str", type(source_value).__name__)
     return FolderUrlSourceProvider(source_value)
+
+
+def _build_json(source_value: list[str] | str) -> JsonUrlSourceProvider:
+    """Build a JsonUrlSourceProvider from a folder path string.
+
+    Args:
+        source_value: Must be a ``str`` path to a folder containing .json files.
+
+    Returns:
+        A ``JsonUrlSourceProvider`` instance.
+
+    Raises:
+        InvalidUrlSourceValueTypeError: When ``source_value`` is not a string.
+    """
+    if not isinstance(source_value, str):
+        raise InvalidUrlSourceValueTypeError("json", "str", type(source_value).__name__)
+    return JsonUrlSourceProvider(source_value)

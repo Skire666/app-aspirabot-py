@@ -1,0 +1,204 @@
+"""URL source scenario backed by a folder of .json files.
+
+Each JSON file is scanned for strings starting with ``http``.  URLs are consumed
+one at a time; once all URLs in a file are exhausted the next file is opened.
+Discovery is lazy: the folder is scanned only on the first ``has_next()`` or
+``next_url()`` call.
+"""
+
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from interfaces.i_url_source_provider import IUrlSourceProvider
+from shared.exception_util import (
+    UrlSourceExhaustedError,
+    UrlSourceFileNotFoundError,
+    UrlSourceFilesNotDiscoveredError,
+)
+
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+_SENTINEL = object()
+
+
+def _collect_urls(obj: object, result: list[str]) -> None:
+    """Recursively walk any JSON value and append HTTP strings to *result*."""
+    if isinstance(obj, str):
+        if obj.startswith("http"):
+            result.append(obj)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _collect_urls(v, result)
+    elif isinstance(obj, list):
+        for item in obj:
+            _collect_urls(item, result)
+
+
+# -----------------------------------------------------------------------------
+# Class
+# -----------------------------------------------------------------------------
+
+
+class JsonUrlSourceProvider(IUrlSourceProvider):
+    """Iterates over .json files in a folder, yielding every HTTP URL found.
+
+    Files are sorted by modification time (oldest first).  Within each file,
+    all strings starting with ``http`` are extracted in traversal order.
+    A one-URL look-ahead buffer makes ``has_next()`` accurate.
+
+    Example:
+        >>> p = JsonUrlSourceProvider("/tmp/json-urls")
+        >>> p.has_next()
+        True
+    """
+
+    def __init__(self, folder_path: str) -> None:
+        """Store the folder path without scanning it yet.
+
+        Args:
+            folder_path: Absolute or relative path to the JSON source folder.
+        """
+        self._folder_path: str = folder_path
+        self._file_paths: list[Path] | None = None
+        self._file_index: int = 0
+        # Remaining URLs from the current file, stored in reverse order so
+        # pop() is O(1).
+        self._pending_urls: list[str] = []
+        self._buffered: object = _SENTINEL
+
+    # ------------------------------------------------------------------
+    # IUrlSourceProvider
+    # ------------------------------------------------------------------
+
+    def has_next(self) -> bool:
+        """Return True when at least one URL remains available.
+
+        Triggers lazy folder discovery and fills the look-ahead buffer.
+
+        Returns:
+            True when ``next_url`` can be called without raising StopIteration.
+
+        Raises:
+            UrlSourceFileNotFoundError: If the folder does not exist on first access.
+        """
+        self._ensure_discovered()
+        self._fill_one_url_if_empty()
+        return self._buffered is not _SENTINEL
+
+    def next_url(self) -> str:
+        """Drain the look-ahead buffer and return the next URL.
+
+        Returns:
+            The next HTTP URL found across the JSON files.
+
+        Raises:
+            UrlSourceExhaustedError: When all files have been consumed.
+            UrlSourceFileNotFoundError: If the folder does not exist on first access.
+        """
+        if not self.has_next():
+            raise UrlSourceExhaustedError()
+        url = str(self._buffered)
+        self._buffered = _SENTINEL
+        return url
+
+    def reset(self) -> None:
+        """Rewind to the first file; the discovered path list is preserved.
+
+        Returns:
+            None.
+        """
+        self._file_index = 0
+        self._pending_urls = []
+        self._buffered = _SENTINEL
+
+    def display_progress_tuple_text(self) -> str:
+        """Return a string describing the current progress for display purposes.
+
+        Returns:
+            A string like "JSON : 3/10 fichier(s) consommé(s)".
+        """
+        if self._file_paths is None:
+            return "JSON : non chargé"
+        if self._file_index >= len(self._file_paths) and not self._pending_urls and self._buffered is _SENTINEL:
+            return "JSON : plus aucune URL"
+        return f"JSON : {self._file_index} / {len(self._file_paths)} fichier(s) consommé(s)"
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _ensure_discovered(self) -> None:
+        """Scan the folder on first access and populate the sorted file list.
+
+        Raises:
+            UrlSourceFileNotFoundError: If the folder path does not exist.
+        """
+        if self._file_paths is not None:
+            return
+        self._file_paths = self._discover_files()
+
+    def _discover_files(self) -> list[Path]:
+        """Collect all .json files in the folder, sorted by modification time.
+
+        Returns:
+            Sorted list of Path objects for every .json file found.
+
+        Raises:
+            UrlSourceFileNotFoundError: If ``self._folder_path`` does not exist.
+        """
+        folder = Path(self._folder_path)
+        if not folder.is_dir():
+            raise UrlSourceFileNotFoundError(self._folder_path)
+        return sorted(folder.glob("*.json"), key=lambda f: f.stat().st_mtime)
+
+    def _fill_one_url_if_empty(self) -> None:
+        """Advance through files until a URL is buffered or all files are done.
+
+        Raises:
+            UrlSourceFilesNotDiscoveredError: If called before discovery.
+        """
+        if self._buffered is not _SENTINEL:
+            return
+        if self._file_paths is None:
+            raise UrlSourceFilesNotDiscoveredError()
+
+        while not self._pending_urls and self._file_index < len(self._file_paths):
+            file_path = self._file_paths[self._file_index]
+            self._file_index += 1
+            urls = self._extract_urls_from_file(file_path)
+            # Reverse so pop() consumes in original order (O(1) per call).
+            self._pending_urls = list(reversed(urls))
+
+        if self._pending_urls:
+            self._buffered = self._pending_urls.pop()
+
+    @staticmethod
+    def _extract_urls_from_file(file_path: Path) -> list[str]:
+        """Return all HTTP strings found anywhere in the JSON file.
+
+        Args:
+            file_path: Path to the .json file to parse.
+
+        Returns:
+            Ordered list of strings starting with ``http``; empty on error.
+        """
+        try:
+            with file_path.open(encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return []
+
+        urls: list[str] = []
+        _collect_urls(data, urls)
+        return urls
+
+
+# EOF
