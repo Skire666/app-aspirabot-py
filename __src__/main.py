@@ -133,7 +133,7 @@ def _wire_all_navigation(
     main_view.set_on_show(TitleModuleEnum.E_PROFILES, history_presenter.ensure_profiles_loaded)
 
 
-def _build_and_wire_components(
+def _build_and_wire_components(  # noqa: PLR0914
     root: tk.Tk,
     main_view: MainView,
     config_repo: AppConfigurationRepository,

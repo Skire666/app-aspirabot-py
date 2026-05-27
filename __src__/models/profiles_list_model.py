@@ -142,10 +142,12 @@ class ProfilesListModel:
         """Update an existing profile in the list with new data.
 
         The profile to update is identified by matching the id_profile of the input profile.
-        If a matching profile is found, it is replaced with the input profile. If no match is found, the method does nothing.
+        If a matching profile is found, it is replaced with the input profile.
+        If no match is found, the method does nothing.
 
         Args:
-            profile: A ProfileLaunchModel instance containing the updated data. Its id_profile must match an existing profile in the list.
+            profile: A ProfileLaunchModel instance containing the updated data.
+                Its id_profile must match an existing profile in the list.
 
         Raises:
             None.
@@ -224,10 +226,12 @@ class ProfilesListModel:
         """Update an existing profile in the list with new data.
 
         The profile to update is identified by matching the id_profile of the updated_profile.
-        If a matching profile is found, it is replaced with the updated_profile. If no match is found, the method does nothing.
+        If a matching profile is found, it is replaced with the updated_profile.
+        If no match is found, the method does nothing.
 
         Args:
-            updated_profile: A ProfileLaunchModel instance containing the updated data. Its id_profile must match an existing profile in the list.
+            updated_profile: A ProfileLaunchModel instance containing the updated data.
+                Its id_profile must match an existing profile in the list.
         """
         is_updated = False
         for idx, profile in enumerate(self.launch_profiles):

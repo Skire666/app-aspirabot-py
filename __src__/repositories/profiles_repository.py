@@ -273,6 +273,6 @@ class ProfilesRepository:
             The full Path to the provider's JSON file.
         """
         if not id_file:
-            raise ValueError("L'identifiant du scénario ne peut pas être vide.")
+            raise ValueError("L'identifiant du scénario ne peut pas être vide.")  # noqa: TRY003
 
         return self._folder_path / (id_file + suffix)

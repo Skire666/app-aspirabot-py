@@ -27,7 +27,7 @@ class FolderLinkWidget(tk.Frame):
             parent: The parent Tkinter widget.
             title: The title for the widget. Displayed before the path.
             path: The initial path to display.
-            callable: The function to call when the link is clicked.
+            callback: The function to call when the link is clicked.
             **kwargs: Additional Tkinter Frame options.
         """
         super().__init__(parent, **kwargs)

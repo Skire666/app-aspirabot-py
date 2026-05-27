@@ -102,7 +102,7 @@ class ExecutorPresenter:
             service_scraping: Service that executes Playwright workflow steps and journal exports.
             service_scenarios: Service for reading and listing scenarios.
             service_profile: Service for reading and listing profiles.
-            provider: Optional initial provider model.
+            scenario: Optional initial scenario model.
         """
         self._view = view
         self._service_scraping = service_scraping
@@ -166,7 +166,7 @@ class ExecutorPresenter:
         If a workflow is currently running it is cancelled before switching.
 
         Args:
-            id_file: The ID of the scenario file to load.
+            id_scenario: The ID of the scenario file to load.
         """
         # Abort any in-progress run before swapping the provider.
         self._cancel_active_run()

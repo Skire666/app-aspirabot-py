@@ -273,10 +273,7 @@ class ProfileNotFoundError(FileNotFoundError, AspirabotError):
             id_file: Profile identifier used for lookup.
             context: Optional context label such as "suppression".
         """
-        if context:
-            message = f"Profil non trouvé pour {context}: {id_file}"
-        else:
-            message = f"Profil non trouvé: {id_file}"
+        message = f"Profil non trouvé pour {context}: {id_file}" if context else f"Profil non trouvé: {id_file}"
         super().__init__(message)
 
 

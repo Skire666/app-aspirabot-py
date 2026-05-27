@@ -56,7 +56,7 @@ class ScrapingViewCallbacks:
     on_export_journal: Callable[[str], None]
 
 
-class ScrapingView(ttk.Frame):
+class ScrapingView(ttk.Frame):  # noqa: PLR0904
     """Scraping panel composed of five vertically stacked sub-panels.
 
     Panel order (top to bottom):

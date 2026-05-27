@@ -38,8 +38,8 @@ class WorkflowPresenter:
 
         Args:
             view: L'interface utilisateur de modification.
-            service: Le service gérant la logique métier des fournisseurs.
-            provider_service: Service de gestion des fournisseurs.
+            scenarios_service: Le service gérant la logique métier des scénarios.
+            profiles_service: Service de gestion des profils.
         """
         self._logger = logging.getLogger(__name__)
         self._view: WorkflowView = view
