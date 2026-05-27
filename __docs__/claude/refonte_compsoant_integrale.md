@@ -33,7 +33,7 @@ Tu es un expert en architecture logicielle et UI tkinter. Tu dois analyser le co
 
 ### 4. Manque de typage et documentation
 - **État actuel** : Typage partiel, documentation éparse
-- **Objectif** : Typage exhaustif (mypy strict), docstrings complètes, invariants explicites
+- **Objectif** : Typage exhaustif (basedpyright strict), docstrings complètes, invariants explicites
 
 ### 5. Performances problématiques
 - **État actuel** : Calculs redondants (`_item_y`, `_btn_rects` appelés trop souvent)

@@ -199,14 +199,14 @@ max-nested-blocks = 4  # default: 5
 pythonVersion = "3.14"
 
 # Folders containing source code to analyse.
-include = ["__src__", "interfaces", "models", "services", "repositories", "presenters", "views", "shared"]
+include = ["__src__"]
 
 # Folders excluded from analysis — tests do not need to be type-checked.
 exclude = ["__tests__", "**/__pycache__", "**/node_modules", ".venv"]
 
 # virtual environments
 venvPath = "."
-venv = ".venv"
+venv = "venv"
 
 # Strictest level available in basedpyright (superset of "strict").
 typeCheckingMode = "strict" # "off" | "basic" | "standard" | "strict" | "all"

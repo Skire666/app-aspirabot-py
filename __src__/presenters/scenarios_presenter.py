@@ -225,18 +225,6 @@ class ScenariosPresenter:
 
         raise NotImplementedError("La validation des fournisseurs n'est pas encore implémentée.")
 
-        # self._view.set_validation_state(True, "Validation en cours...")
-
-        # try:
-        #     report: ProviderValidationReport = self._service.validate_scenarios()
-        #     self._load_scenarios()
-        #     self._view.show_validation_report(self._format_validation_report(report))
-        # except Exception as exc:
-        #     self._logger.error("Une erreur s'est produite", exc_info=True)
-        #     self._view.show_error(f"La validation des fournisseurs a échoué: {exc}")
-        # finally:
-        #     self._view.set_validation_state(False)
-
     def _on_sort(self, column: str, ascending: bool) -> None:
         """Trie la liste des fournisseurs et met à jour la vue.
 
