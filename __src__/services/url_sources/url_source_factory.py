@@ -19,6 +19,7 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from services.url_sources.folder_url_source import FolderUrlSourceProvider
 from services.url_sources.json_url_source import JsonUrlSourceProvider
 from services.url_sources.manual_url_source import ManualUrlSourceProvider
+from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSourceTypeError
 
 # -----------------------------------------------------------------------------
@@ -29,12 +30,14 @@ from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSour
 def build_url_source_scenario(
     source_type: str,
     source_value: list[str] | str,
+    sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC,
 ) -> IUrlSourceProvider:
     """Instantiate the appropriate URL source scenario for the given type.
 
     Args:
         source_type: One of ``"manual"``, ``"folder"``, or ``"json"``.
         source_value: For ``"manual"`` a ``list[str]`` of URLs; for ``"folder"`` or ``"json"`` a ``str`` path.
+        sort_order: File ordering strategy for ``"folder"`` and ``"json"`` sources; ignored for ``"manual"``.
 
     Returns:
         A concrete ``IUrlSourceProvider`` ready for iteration.
@@ -44,12 +47,12 @@ def build_url_source_scenario(
         InvalidUrlSourceValueTypeError: When ``source_value`` has an incompatible
             type for the requested source.
     """
-    if source_type == "manual":
+    if source_type == UrlSourceTypeEnum.E_MANUAL.value:
         return _build_manual(source_value)
-    if source_type == "folder":
-        return _build_folder(source_value)
-    if source_type == "json":
-        return _build_json(source_value)
+    if source_type == UrlSourceTypeEnum.E_FOLDER.value:
+        return _build_folder(source_value, sort_order)
+    if source_type == UrlSourceTypeEnum.E_JSON.value:
+        return _build_json(source_value, sort_order)
 
     raise UnknownUrlSourceTypeError(source_type)
 
@@ -71,11 +74,12 @@ def _build_manual(source_value: list[str] | str) -> ManualUrlSourceProvider:
     return ManualUrlSourceProvider(source_value)
 
 
-def _build_folder(source_value: list[str] | str) -> FolderUrlSourceProvider:
+def _build_folder(source_value: list[str] | str, sort_order: UrlSortOrderEnum) -> FolderUrlSourceProvider:
     """Build a FolderUrlSourceProvider from a folder path string.
 
     Args:
         source_value: Must be a ``str`` path to a folder.
+        sort_order: File ordering strategy.
 
     Returns:
         A ``FolderUrlSourceProvider`` instance.
@@ -85,14 +89,15 @@ def _build_folder(source_value: list[str] | str) -> FolderUrlSourceProvider:
     """
     if not isinstance(source_value, str):
         raise InvalidUrlSourceValueTypeError("folder", "str", type(source_value).__name__)
-    return FolderUrlSourceProvider(source_value)
+    return FolderUrlSourceProvider(source_value, sort_order)
 
 
-def _build_json(source_value: list[str] | str) -> JsonUrlSourceProvider:
+def _build_json(source_value: list[str] | str, sort_order: UrlSortOrderEnum) -> JsonUrlSourceProvider:
     """Build a JsonUrlSourceProvider from a folder path string.
 
     Args:
         source_value: Must be a ``str`` path to a folder containing .json files.
+        sort_order: File ordering strategy.
 
     Returns:
         A ``JsonUrlSourceProvider`` instance.
@@ -102,4 +107,4 @@ def _build_json(source_value: list[str] | str) -> JsonUrlSourceProvider:
     """
     if not isinstance(source_value, str):
         raise InvalidUrlSourceValueTypeError("json", "str", type(source_value).__name__)
-    return JsonUrlSourceProvider(source_value)
+    return JsonUrlSourceProvider(source_value, sort_order)

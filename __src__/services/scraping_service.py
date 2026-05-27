@@ -151,7 +151,7 @@ class ScrapingService:
         """Build the URL source scenario when type and value are supplied.
 
         Args:
-            source_type: One of ``"manual"``, ``"folder"``, or ``""``.
+            source_type: One of ``"manual"``, ``"folder"``, or ``"json"``.
             source_value: Matching value for the given type, or None.
 
         Returns:

@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from shared.enums import UrlSortOrderEnum
 from shared.exception_util import (
     UrlSourceExhaustedError,
     UrlSourceFileNotFoundError,
@@ -27,6 +28,7 @@ from shared.exception_util import (
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
+_PREVIEW_LIMIT = 10
 
 
 def _collect_urls(obj: object, result: list[str]) -> None:
@@ -60,13 +62,19 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
         True
     """
 
-    def __init__(self, folder_path: str) -> None:
+    def __init__(
+        self,
+        folder_path: str,
+        sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC,
+    ) -> None:
         """Store the folder path without scanning it yet.
 
         Args:
             folder_path: Absolute or relative path to the JSON source folder.
+            sort_order: Strategy used to order .json files before iteration.
         """
         self._folder_path: str = folder_path
+        self._sort_order: UrlSortOrderEnum = sort_order
         self._file_paths: list[Path] | None = None
         self._file_index: int = 0
         # Remaining URLs from the current file, stored in reverse order so
@@ -119,6 +127,44 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
         self._pending_urls = []
         self._buffered = _SENTINEL
 
+    def preview_url_listed(self) -> list[str]:
+        """Return up to 10 upcoming URLs without altering any internal state.
+
+        Drains the look-ahead buffer and pending list virtually, then peeks
+        at subsequent files — leaving ``_file_index``, ``_pending_urls``, and
+        ``_buffered`` untouched.
+
+        Returns:
+            A list of at most 10 URL strings in iteration order; empty when
+            no files have been discovered yet or all are exhausted.
+
+        Raises:
+            None.
+        """
+        if self._file_paths is None:
+            return []
+
+        result: list[str] = []
+
+        if self._buffered is not _SENTINEL:
+            result.append(str(self._buffered))
+
+        # _pending_urls is stored reversed; iterate from end to get original order.
+        for url in reversed(self._pending_urls):
+            if len(result) >= _PREVIEW_LIMIT:
+                break
+            result.append(url)
+
+        peek = self._file_index
+        while len(result) < _PREVIEW_LIMIT and peek < len(self._file_paths):
+            for url in self._extract_urls_from_file(self._file_paths[peek]):
+                if len(result) >= _PREVIEW_LIMIT:
+                    break
+                result.append(url)
+            peek += 1
+
+        return result
+
     def display_progress_tuple_text(self) -> str:
         """Return a string describing the current progress for display purposes.
 
@@ -157,7 +203,16 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
         folder = Path(self._folder_path)
         if not folder.is_dir():
             raise UrlSourceFileNotFoundError(self._folder_path)
-        return sorted(folder.glob("*.json"), key=lambda f: f.stat().st_mtime)
+        files = list(folder.glob("*.json"))
+        match self._sort_order:
+            case UrlSortOrderEnum.E_MTIME_DESC:
+                return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
+            case UrlSortOrderEnum.E_NAME_ASC:
+                return sorted(files, key=lambda f: f.name)
+            case UrlSortOrderEnum.E_NAME_DESC:
+                return sorted(files, key=lambda f: f.name, reverse=True)
+            case _:  # E_MTIME_ASC (default)
+                return sorted(files, key=lambda f: f.stat().st_mtime)
 
     def _fill_one_url_if_empty(self) -> None:
         """Advance through files until a URL is buffered or all files are done.

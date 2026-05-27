@@ -65,5 +65,16 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
+    def preview_url_listed(self) -> list[str]:
+        """Return up to 10 upcoming URLs without altering any internal state.
+
+        The current cursor position, look-ahead buffer, and underlying data
+        are all left untouched.
+
+        Returns:
+            A list of at most 10 URL strings, in iteration order.
+        """
+        ...
+
 
 # EOF

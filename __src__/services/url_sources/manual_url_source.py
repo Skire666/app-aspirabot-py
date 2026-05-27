@@ -10,6 +10,12 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from shared.exception_util import UrlSourceExhaustedError
 
 # -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+
+_PREVIEW_LIMIT = 10
+
+# -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
@@ -79,6 +85,17 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
             None.
         """
         self._index = 0
+
+    def preview_url_listed(self) -> list[str]:
+        """Return up to 10 upcoming URLs from the current cursor position.
+
+        Returns:
+            A slice of at most 10 URLs; empty when the list is exhausted.
+
+        Raises:
+            None.
+        """
+        return self._urls[self._index : self._index + _PREVIEW_LIMIT]
 
     def display_progress_tuple_text(self) -> str:
         """Return a human-readable progress string for display in the journal.
