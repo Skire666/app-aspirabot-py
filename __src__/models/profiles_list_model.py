@@ -20,7 +20,7 @@ from typing import Any
 
 from shared.datetime_util import dict_with_key_to_optional_datetime
 
-from __src__.models.launcher_model import ProfileLaunchModel
+from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -45,7 +45,7 @@ class ProfilesModel:
     id_scenario: str
     created_date_profile: datetime | None
     modified_date_profile: datetime | None
-    launch_profiles: list[ProfileLaunchModel] = field(default_factory=list)
+    launch_profiles: list[LaunchModel] = field(default_factory=list)
 
     @classmethod
     def get_default(cls, id_scenario: str) -> ProfilesModel:
@@ -56,7 +56,7 @@ class ProfilesModel:
             id_scenario=id_scenario,
             created_date_profile=date_now,
             modified_date_profile=date_now,
-            launch_profiles=[ProfileLaunchModel.get_default(id_scenario=id_scenario)],
+            launch_profiles=[LaunchModel.get_default(id_scenario=id_scenario)],
         )
 
     @classmethod
@@ -86,7 +86,7 @@ class ProfilesModel:
         )
 
     @staticmethod
-    def _deserialize_profiles(profiles_data: object) -> list[ProfileLaunchModel]:
+    def _deserialize_profiles(profiles_data: object) -> list[LaunchModel]:
         """Convert a raw JSON list into validated launch profile instances.
 
         Args:
@@ -99,7 +99,7 @@ class ProfilesModel:
             return []
 
         # Skip non-dict entries silently for forward-compatibility.
-        return [ProfileLaunchModel.import_from_data_json(raw) for raw in profiles_data if isinstance(raw, dict)]
+        return [LaunchModel.import_from_data_json(raw) for raw in profiles_data if isinstance(raw, dict)]
 
     def copy_business(self) -> ProfilesModel:
         """Create a deep copy of the model for use in business logic.
@@ -127,7 +127,7 @@ class ProfilesModel:
             "launch_profiles": [profile.export_to_data_json() for profile in self.launch_profiles],
         }
 
-    def create_profile_launch(self, profile: ProfileLaunchModel) -> None:
+    def create_profile_launch(self, profile: LaunchModel) -> None:
         """Add a new profile to the list.
 
         Args:
@@ -139,7 +139,7 @@ class ProfilesModel:
         self._append_or_replace_profile_launch(profile)
         self.mark_as_modified()
 
-    def update_profile_launch(self, profile: ProfileLaunchModel) -> None:
+    def update_profile_launch(self, profile: LaunchModel) -> None:
         """Update an existing profile in the list with new data.
 
         The profile to update is identified by matching the id_profile of the input profile.
@@ -165,7 +165,7 @@ class ProfilesModel:
         self.launch_profiles = [p for p in self.launch_profiles if p.id_profile != id_profile]
         self.mark_as_modified()
 
-    def get_profile_by_id(self, id_profile: str) -> ProfileLaunchModel | None:
+    def get_profile_by_id(self, id_profile: str) -> LaunchModel | None:
         """Retrieve a profile from the list by its ID.
 
         Args:
@@ -179,7 +179,7 @@ class ProfilesModel:
                 return profile
         return None
 
-    def get_most_recently_used_profile(self) -> ProfileLaunchModel | None:
+    def get_most_recently_used_profile(self) -> LaunchModel | None:
         """Get the profile with the most recent used_date_profile.
 
         Returns:
@@ -223,7 +223,7 @@ class ProfilesModel:
         """
         self.modified_date_profile = datetime.now()
 
-    def _append_or_replace_profile_launch(self, updated_profile: ProfileLaunchModel) -> None:
+    def _append_or_replace_profile_launch(self, updated_profile: LaunchModel) -> None:
         """Update an existing profile in the list with new data.
 
         The profile to update is identified by matching the id_profile of the updated_profile.

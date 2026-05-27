@@ -288,7 +288,7 @@ class ScrapingView(ttk.Frame):  # noqa: PLR0904
         """Restore the URL source radio selection and internal value.
 
         Args:
-            source_type: One of ``"manual"``, ``"folder"``, ``"csv"``, or ``""``.
+            source_type: One of ``"manual"``, ``"folder"``, `or ``""``.
             source_value: Matching value — list of URLs, a path string, or None.
         """
         self._launch_panel.set_url_source(source_type, source_value)

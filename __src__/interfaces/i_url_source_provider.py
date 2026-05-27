@@ -1,7 +1,7 @@
 """Contract for URL source providers used by the OPEN_URL executor.
 
 A URL source provider supplies URLs one at a time to the workflow engine.
-Concrete implementations cover manual lists, CSV files, and folder-based sources.
+Concrete implementations cover manual lists, and folder-based sources.
 
 Example:
     >>> class MyProvider(IUrlSourceProvider):

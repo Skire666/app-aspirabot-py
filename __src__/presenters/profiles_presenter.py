@@ -12,7 +12,7 @@ from typing import Any
 from services.profiles_service import ProfilesService
 from views.profiles_view import ProfilesView
 
-from __src__.models.launcher_model import ProfileLaunchModel
+from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -99,7 +99,7 @@ class ProfilesPresenter:
         self._view.render_profiles(path_folder, self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
-    def _format_rows(self, list_profiles: list[ProfileLaunchModel]) -> list[dict[str, Any]]:
+    def _format_rows(self, list_profiles: list[LaunchModel]) -> list[dict[str, Any]]:
         """Convert (provider_id, profile) pairs into DataGrid row dicts.
 
         Args:
@@ -127,11 +127,11 @@ class ProfilesPresenter:
 
         return rows
 
-    def _sort_profiles(self, tuples: list[ProfileLaunchModel]) -> list[ProfileLaunchModel]:
+    def _sort_profiles(self, tuples: list[LaunchModel]) -> list[LaunchModel]:
         """Sort profile tuples by the current sort column and direction."""
         col = self._sort_column
 
-        def key_fn(t: ProfileLaunchModel) -> str:
+        def key_fn(t: LaunchModel) -> str:
             profile = t
             value = getattr(profile, col, None)
             if col == "launch_count":

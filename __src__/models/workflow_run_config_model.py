@@ -28,32 +28,21 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class WorkflowRunConfig:
+class WorkflowRunConfigModel:
     """Immutable configuration for a single scraping workflow run.
 
     All fields are optional so callers that do not use URL injection or file
     export can omit them without breaking the interface.
 
     Attributes:
-        url_source_type: One of ``"manual"``, ``"csv"``, ``"folder"``, or
+        url_source_type: One of ``"manual"``,  ``"folder"``, or
             ``""`` to disable URL injection entirely.
         url_source_value: Matching value for the given type — a list of
-            explicit URLs (manual) or a path string (csv/folder).
+            explicit URLs (manual) or a path string (folder).
             Ignored when ``url_source_type`` is empty.
         export_folder: Absolute path of the output directory where downloaded
             files and extracted data are written.  An empty string means no
             export folder is configured.
-
-    Example:
-        >>> cfg = WorkflowRunConfig(
-        ...     url_source_type="csv",
-        ...     url_source_value="/data/urls.csv",
-        ...     export_folder="/tmp/out",
-        ... )
-        >>> cfg.export_folder
-        '/tmp/out'
-        >>> WorkflowRunConfig().url_source_type
-        ''
     """
 
     url_source_type: str = ""

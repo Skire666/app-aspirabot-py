@@ -626,7 +626,7 @@ class UnknownUrlSourceTypeError(ValueError, AspirabotError):
         Args:
             source_type: The unrecognised source type string.
         """
-        super().__init__(f"Type de source URL inconnu : '{source_type}'. Types attendus : 'manual', 'csv', 'folder'.")
+        super().__init__(f"Type de source URL inconnu : '{source_type}'. Types attendus : 'manual', 'folder'.")
 
 
 class InvalidUrlSourceValueTypeError(TypeError, AspirabotError):

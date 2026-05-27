@@ -28,7 +28,7 @@ from shared.exception_util import (
 )
 from shared.operating_system_util import open_folder
 
-from __src__.models.launcher_model import ProfileLaunchModel
+from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -232,7 +232,7 @@ class ScenariosRepository:
             id_scenario: Unique identifier of the scenario to create a profile for.
         """
         full_filepath = self._compute_fullpath_from_id_file(id_scenario, suffix=C_PROFILE_FILE_SUFFIX)
-        tmp: ProfileLaunchModel = ProfileLaunchModel.get_default(id_scenario)
+        tmp: LaunchModel = LaunchModel.get_default(id_scenario)
 
         try:
             dicts = tmp.export_to_data_json()

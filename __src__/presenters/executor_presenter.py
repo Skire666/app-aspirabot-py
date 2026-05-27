@@ -25,7 +25,7 @@ from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
-from models.workflow_run_config_model import WorkflowRunConfig
+from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
@@ -57,7 +57,7 @@ from shared.i18n_fra import (
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
 
-from __src__.models.launcher_model import ProfileLaunchModel
+from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -110,7 +110,7 @@ class ExecutorPresenter:
         self._service_scenarios: ScenariosService = service_scenarios
         self._service_profile: ProfilesService = service_profile
         self._scenario: ScenarioModel | None = scenario
-        self._profile: ProfileLaunchModel | None = None
+        self._profile: LaunchModel | None = None
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._logging = logging.getLogger(__name__)
@@ -373,7 +373,7 @@ class ExecutorPresenter:
         Returns:
             None.
         """
-        profile: ProfileLaunchModel = self._find_profile(id_profile)
+        profile: LaunchModel = self._find_profile(id_profile)
         if profile is None:
             return
 
@@ -424,7 +424,7 @@ class ExecutorPresenter:
         date_modified = self._profile.modified_date_profile if self._profile else self._scenario.modified_date_scenario
         self._view.set_profile_modified_date(date_modified)
 
-    def _find_profile(self, id_profile: str | None) -> ProfileLaunchModel | None:
+    def _find_profile(self, id_profile: str | None) -> LaunchModel | None:
         """Search the current provider's profiles for a matching id_profile.
 
         Args:
@@ -513,7 +513,7 @@ class ExecutorPresenter:
             None.
         """
         id_profile = self._view.get_selected_id_profile()
-        profile: ProfileLaunchModel = self._find_profile(id_profile)
+        profile: LaunchModel = self._find_profile(id_profile)
         if profile is None:
             return
 
@@ -599,7 +599,7 @@ class ExecutorPresenter:
         self._emergency_stop_threshold = self._view.get_emergency_stop_threshold() or 0
 
         # Snapshot run configuration — captured on the main thread before the worker starts.
-        config = WorkflowRunConfig(
+        config = WorkflowRunConfigModel(
             url_source_type=url_source["type"],
             url_source_value=raw_value if raw_value is not None else [],
             export_folder=self._view.get_export_folder(),
@@ -821,7 +821,7 @@ class ExecutorPresenter:
 
     def _call_service_workflow(
         self,
-        config: WorkflowRunConfig,
+        config: WorkflowRunConfigModel,
         handlers: WorkflowRunHandlers,
     ) -> ScrapingReportModel | None:
         """Invoke the scraping service; return the report or None on exception.
@@ -839,7 +839,7 @@ class ExecutorPresenter:
             self._logging.exception("Échec de l'exécution du workflow")
             return None
 
-    def _run_workflow(self, config: WorkflowRunConfig, handlers: WorkflowRunHandlers) -> None:
+    def _run_workflow(self, config: WorkflowRunConfigModel, handlers: WorkflowRunHandlers) -> None:
         """Thread target: run the workflow and dispatch the result to the view.
 
         Args:

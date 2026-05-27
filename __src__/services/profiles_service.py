@@ -9,7 +9,7 @@ import logging
 from models.profiles_list_model import ProfilesModel
 from repositories.profiles_repository import ProfilesRepository
 
-from __src__.models.launcher_model import ProfileLaunchModel
+from __src__.models.launcher_model import LaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -35,7 +35,7 @@ class ProfilesService:
         self._logger = logging.getLogger(__name__)
         self._repository = repository
 
-    def list_all_profiles_launch(self) -> list[ProfileLaunchModel]:
+    def list_all_profiles_launch(self) -> list[LaunchModel]:
         """Return all launch profiles paired with their owning provider id.
 
         Iterates every provider returned by the repository and yields one
@@ -155,7 +155,7 @@ class ProfilesService:
     # Profile launch operations - CRUD
     # -------------------------------------------------------------------------
 
-    def create_profile_launch(self, id_scenario: str, profile_name: str) -> ProfileLaunchModel:
+    def create_profile_launch(self, id_scenario: str, profile_name: str) -> LaunchModel:
         """Stamp timestamps on *profile* and persist it as a new launch profile.
 
         Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
@@ -169,7 +169,7 @@ class ProfilesService:
         Raises:
             DatabaseUnavailableError: If the file cannot be written to disk.
         """
-        new_profile_launch = ProfileLaunchModel.get_default(id_scenario)
+        new_profile_launch = LaunchModel.get_default(id_scenario)
         new_profile_launch.profile_name = profile_name
 
         if self._repository.exists_profiles(id_scenario):
@@ -184,7 +184,7 @@ class ProfilesService:
         self._repository.create_profiles(new_scenario)
         return new_profile_launch
 
-    def update_profile_launch(self, id_scenario: str, profile: ProfileLaunchModel) -> ProfileLaunchModel:
+    def update_profile_launch(self, id_scenario: str, profile: LaunchModel) -> LaunchModel:
         """Stamp timestamps on *profile* and persist it as a new launch profile.
 
         Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to

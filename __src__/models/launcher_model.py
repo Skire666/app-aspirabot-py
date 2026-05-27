@@ -40,7 +40,7 @@ _C_DEFAULT_EXPORT_FOLDER: str = str(Path(C_CURRENT_WORKING_DIR) / C_DATA_DEFAULT
 
 
 @dataclass
-class ProfileLaunchModel:
+class LaunchModel:
     """Stores user-configured parameters for a scraping session.
 
     A profile captures the export folder, URL source mode and its collected
@@ -50,7 +50,7 @@ class ProfileLaunchModel:
         id_profile: Unique identifier as a hex string.
         id_scenario: Human-readable scenario name.
         export_folder: Absolute path of the export destination folder.
-        url_source_type: One of "manual", "folder", "csv", or "" when unset.
+        url_source_type: One of "manual", "folder", or "" when unset.
         url_source_value: List of URLs for "manual"; path string for others.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
         launch_count: Number of times the profile was launched.
@@ -72,7 +72,7 @@ class ProfileLaunchModel:
     used_date_profile: datetime | None
 
     @classmethod
-    def get_default(cls, id_scenario: str) -> ProfileLaunchModel:
+    def get_default(cls, id_scenario: str) -> LaunchModel:
         """Build a new profile with application-default values.
 
         Args:
@@ -102,7 +102,7 @@ class ProfileLaunchModel:
         )
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> ProfileLaunchModel:
+    def import_from_data_json(cls, data: dict[str, Any]) -> LaunchModel:
         """Deserialize a profile from a raw dictionary.
 
         Args:
@@ -158,7 +158,7 @@ class ProfileLaunchModel:
         }
 
     @classmethod
-    def copy_business(cls, source: ProfileLaunchModel) -> ProfileLaunchModel:
+    def copy_business(cls, source: LaunchModel) -> LaunchModel:
         """Creates a duplicate of *source* with a new ID, a 'Copie de' name prefix, and fresh timestamps.
 
         Steps and launch profiles are deep-copied so the duplicate is fully independent.

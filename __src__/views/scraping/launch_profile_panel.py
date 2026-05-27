@@ -22,7 +22,6 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 # Radio button value tokens for URL source selection.
 _URL_SOURCE_MANUAL = "manual"
 _URL_SOURCE_FOLDER = "folder"
-_URL_SOURCE_CSV = "csv"
 
 # Emergency stop threshold bounds.
 _C_EMERGENCY_STOP_MIN = 1
@@ -134,7 +133,6 @@ class LaunchProfilePanel(ttk.Frame):
         radio_defs = [
             ("Depuis une liste", _URL_SOURCE_MANUAL),
             ("Depuis un dossier", _URL_SOURCE_FOLDER),
-            ("Depuis un fichier CSV", _URL_SOURCE_CSV),
         ]
         for label, value in radio_defs:
             ttk.Radiobutton(
@@ -230,7 +228,7 @@ class LaunchProfilePanel(ttk.Frame):
         """Restore the URL source radio selection and internal value.
 
         Args:
-            source_type: One of ``"manual"``, ``"folder"``, ``"csv"``, or ``""``.
+            source_type: One of ``"manual"``, ``"folder"``, or ``""``.
             source_value: Matching value — list of URLs, a path string, or None.
         """
         self._url_source_type = source_type
@@ -264,7 +262,7 @@ class LaunchProfilePanel(ttk.Frame):
         """Return the selected URL source type and its collected value.
 
         Returns:
-            Dict with keys ``type`` (``"manual"``, ``"folder"``, or ``"csv"``)
+            Dict with keys ``type``
             and ``value`` (list of URL strings or a path string).
         """
         return {"type": self._url_source_type, "value": self._url_source_value}
@@ -304,14 +302,12 @@ class LaunchProfilePanel(ttk.Frame):
         """Open the appropriate dialog when the user switches URL source.
 
         Args:
-            source_type: One of ``"manual"``, ``"folder"``, or ``"csv"``.
+            source_type:
         """
         if source_type == _URL_SOURCE_MANUAL:
             self._collect_manual_urls()
         elif source_type == _URL_SOURCE_FOLDER:
             self._collect_folder_source()
-        elif source_type == _URL_SOURCE_CSV:
-            self._collect_csv_source()
 
     def _collect_manual_urls(self) -> None:
         """Open a popup for the user to paste a newline-separated URL list."""
@@ -367,21 +363,6 @@ class LaunchProfilePanel(ttk.Frame):
             # Revert radio to the previous source type on cancel.
             self._var_url_source.set(self._url_source_type)
 
-    def _collect_csv_source(self) -> None:
-        """Open a file dialog to select a CSV file as the URL source."""
-        path = filedialog.askopenfilename(
-            title="Sélectionner un fichier CSV",
-            filetypes=[("Fichiers CSV", "*.csv"), ("Tous les fichiers", "*.*")],
-        )
-        if path:
-            self._url_source_type = _URL_SOURCE_CSV
-            self._url_source_value = path
-            self._refresh_source_detail()
-            self._notify_form_changed()
-        else:
-            # Revert radio to the previous source type on cancel.
-            self._var_url_source.set(self._url_source_type)
-
     def _browse_export_folder(self) -> None:
         """Open a folder dialog to select the export destination."""
         folder = filedialog.askdirectory(
@@ -408,7 +389,7 @@ class LaunchProfilePanel(ttk.Frame):
             # Show first URL from the list, or a placeholder when the list is empty.
             urls = self._url_source_value if isinstance(self._url_source_value, list) else []
             text = urls[0] if urls else "(aucune URL renseignée)"
-        elif self._url_source_type in {_URL_SOURCE_FOLDER, _URL_SOURCE_CSV}:
+        elif self._url_source_type in {_URL_SOURCE_FOLDER}:
             # Show the selected path, or a placeholder when none was chosen.
             path = self._url_source_value if isinstance(self._url_source_value, str) else ""
             text = path if path else "(aucun chemin renseigné)"

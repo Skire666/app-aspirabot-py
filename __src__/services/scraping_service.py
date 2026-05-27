@@ -29,7 +29,7 @@ from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ExtractedData, ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
-from models.workflow_run_config_model import WorkflowRunConfig
+from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.json_repository import JsonFileRepository
 from repositories.scraping_journal_repository import ScrapingJournalRepository
@@ -134,7 +134,7 @@ class ScrapingService:
     def run_workflow(
         self,
         provider: ScenarioModel,
-        config: WorkflowRunConfig,
+        config: WorkflowRunConfigModel,
         handlers: WorkflowRunHandlers,
     ) -> ScrapingReportModel:
         """Execute all steps of a provider workflow sequentially.
@@ -181,7 +181,7 @@ class ScrapingService:
         """Build the URL source provider when type and value are supplied.
 
         Args:
-            source_type: One of ``"manual"``, ``"csv"``, ``"folder"``, or ``""``.
+            source_type: One of ``"manual"``, ``"folder"``, or ``""``.
             source_value: Matching value for the given type, or None.
 
         Returns:

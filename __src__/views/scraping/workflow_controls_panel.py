@@ -272,7 +272,7 @@ class WorkflowControlsPanel(ttk.Frame):
         tabs_info = f"Dernier OpenUrlExec : {url or '—'}"
         self._var_prog_tabs.set(tabs_info)
 
-        if stats:
+        if stats and self._run_started_at:
             txt1 = f"Démarré à {self._run_started_at.strftime('%H:%M:%S')}"
             txt2 = f"    |     Succès : {stats.steps_success:<3d}    |     Erreurs : {stats.steps_failed:<3d}"
             txt3 = (
