@@ -265,7 +265,7 @@ class ProfileManagementPanel(ttk.Frame):
     def _notify_new(self) -> None:
         """Ask the user for a name then fire on_profile_new with it."""
         name = simpledialog.askstring("Nouveau profil", "Nom du profil :", parent=self)
-        if name and self._on_profile_new_cb:
+        if name and name.strip() and self._on_profile_new_cb:
             self._on_profile_new_cb(name.strip())
 
     def _notify_delete(self) -> None:

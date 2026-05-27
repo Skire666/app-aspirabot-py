@@ -8,7 +8,7 @@ import logging
 from collections.abc import Callable
 from datetime import datetime
 
-from models.scenario_model import ProviderModel
+from models.scenario_model import ScenarioModel
 from services.scenarios_service import ScenariosService
 from shared.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
 from views.scenarios_view import ScenariosView
@@ -32,7 +32,7 @@ class ScenariosPresenter:
         self._view = view
         self._service = service
         self._last_loaded: datetime | None = None
-        self._all_scenarios: list[ProviderModel] = []
+        self._all_scenarios: list[ScenarioModel] = []
         self._current_sort_column = "provider_name"
         self._current_sort_ascending = True
 
@@ -119,11 +119,11 @@ class ScenariosPresenter:
         self._view.render_scenarios(self._service.get_folder_path_scenarios(), providers_data)
 
     @staticmethod
-    def _format_scenarios(providers: list[ProviderModel]) -> list[dict[str, str]]:
+    def _format_scenarios(providers: list[ScenarioModel]) -> list[dict[str, str]]:
         """Formate une liste de modèles en données tabulaires pour la vue.
 
         Args:
-            providers (List[ProviderModel]): Liste des modèles de fournisseurs.
+            providers (List[ScenarioModel]): Liste des modèles de fournisseurs.
 
         Returns:
             List[Dict[str, str]]: Liste formatée pour affichage.

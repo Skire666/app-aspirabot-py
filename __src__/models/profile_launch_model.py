@@ -167,7 +167,7 @@ class ProfileLaunchModel:
             source: The provider to duplicate.
 
         Returns:
-            A new unsaved ProviderModel ready to be persisted.
+            A new unsaved ScenarioModel ready to be persisted.
         """
         import copy
 

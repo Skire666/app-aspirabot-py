@@ -15,11 +15,11 @@ Example:
 
 import logging
 from pathlib import Path
-from typing import Any
 
-from models.profile_launch_model import ProfileLaunchModel
 from models.profiles_list_model import ProfilesListModel
+from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
+from shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
 from shared.exception_util import (
     AspirabotError,
     InvalidProfilesFolderPathError,
@@ -28,9 +28,6 @@ from shared.exception_util import (
     ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
-
-from __src__.models.scenario_model import ProviderModel
-from __src__.shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -69,6 +66,10 @@ class ProfilesRepository:
         """Sets the JSON profiles folder path."""
         self._folder_path = Path(value)
 
+    # -------------------------------------------------------------------------
+    # main operations
+    # -------------------------------------------------------------------------
+
     def _list_profiles_files(self) -> list[Path]:
         """Scans the configured folder and returns all .json file paths.
 
@@ -79,18 +80,6 @@ class ProfilesRepository:
         if self._folder_path.exists() and self._folder_path.is_dir():
             return list(self._folder_path.glob(C_PROFILES_FILES_REGEXP))
         return []
-
-    @staticmethod
-    def _dict_to_profile_launch_model(data: dict[str, Any]) -> ProfilesListModel:
-        """Deserializes a raw JSON dictionary into a ProfilesModel instance.
-
-        Args:
-            data: The decoded JSON content of a profile file.
-
-        Returns:
-            The fully reconstructed launch profile model.
-        """
-        return ProfilesListModel.import_from_data_json(data)
 
     def exists_profiles(self, id_scenario: str) -> bool:
         """Returns True if a profile file exists for the given identifier.
@@ -103,6 +92,26 @@ class ProfilesRepository:
         """
         full_filepath = self._compute_fullpath_from_id_file(id_scenario, suffix=C_PROFILE_FILE_SUFFIX)
         return full_filepath.exists() and full_filepath.is_file()
+
+    def create_profiles(self, profiles: ProfilesListModel) -> None:
+        """Persists a new profile to disk as a JSON file.
+
+        Args:
+            profiles: The profile model to save.
+
+        Raises:
+            OSError: When the file cannot be written.
+        """
+        full_filepath = self._compute_fullpath_from_id_file(profiles.id_scenario)
+        self.create_folder_profiles_if_missing()
+
+        try:
+            provider_dict = profiles.export_to_data_json()
+            self._json_repo.write_from_dict(full_filepath, provider_dict)
+            self._logger.debug("Profil sauvegardé : %s", full_filepath)
+        except Exception:
+            self._logger.error("Erreur lors de la création du profil.", exc_info=True)
+            raise
 
     def read_profiles(self, id_scenario: str) -> ProfilesListModel:
         """Loads a profile file by ID and returns it as a ProfileLaunchModel.
@@ -128,7 +137,7 @@ class ProfilesRepository:
             self._logger.warning("Le fichier %s est vide.", full_filepath)
             raise ProfileDataMissingError(id_scenario)
 
-        provider_model = self._dict_to_profile_launch_model(provider_data)
+        provider_model = ProfilesListModel.import_from_data_json(provider_data)
         self._logger.debug("Profil chargé : %s", full_filepath)
         return provider_model
 
@@ -147,7 +156,7 @@ class ProfilesRepository:
                 provider_data = self._json_repo.read_from_path(file_path)
 
                 if provider_data:
-                    provider_model = self._dict_to_profile_launch_model(provider_data)
+                    provider_model = ProfilesListModel.import_from_data_json(provider_data)
                     profiles.append(provider_model)
                     self._logger.debug("Profil ajouté à la liste : %s", file_path.name)
             except OSError, AspirabotError:
@@ -155,26 +164,6 @@ class ProfilesRepository:
 
         self._logger.debug("Total de %s profile(s) chargé(s).", len(profiles))
         return profiles
-
-    def create_profiles(self, profiles: ProfilesListModel) -> None:
-        """Persists a new profile to disk as a JSON file.
-
-        Args:
-            profiles: The profile model to save.
-
-        Raises:
-            OSError: When the file cannot be written.
-        """
-        full_filepath = self._compute_fullpath_from_id_file(profiles.id_scenario)
-        self.create_folder_profiles_if_missing()
-
-        try:
-            provider_dict = profiles.export_to_data_json()
-            self._json_repo.write_from_dict(full_filepath, provider_dict)
-            self._logger.debug("Profil sauvegardé : %s", full_filepath)
-        except Exception:
-            self._logger.error("Erreur lors de la création du profil.", exc_info=True)
-            raise
 
     def update_profiles(self, profiles: ProfilesListModel) -> None:
         """Overwrites an existing profile file with updated data.
@@ -195,35 +184,6 @@ class ProfilesRepository:
         except Exception:
             self._logger.error("Erreur lors de la MAJ du profil.", exc_info=True)
             raise
-
-    def update_profile_launch(self, id_scenario: str, profile: ProfileLaunchModel) -> None:
-        """Overwrites an existing profile file with updated data.
-
-        Args:
-            id_scenario: Unique identifier of the scenario to which the profile belongs.
-            profile: The profile model to save.
-
-        Raises:
-            OSError: When the file cannot be written.
-        """
-        full_filepath = self._compute_fullpath_from_id_file(id_scenario)
-        self.create_folder_profiles_if_missing()
-
-        try:
-            profiles = self.read_profiles(id_scenario)  # Load existing profiles
-            profiles.replace_profile_launch(profile)  # Update the specific profile
-            provider_dict = profiles.export_to_data_json()  # Serialize the whole list
-            self._json_repo.write_from_dict(full_filepath, provider_dict)  # Save back to disk
-            self._logger.debug("Profil de lancement mis à jour : %s", full_filepath)
-        except Exception:
-            self._logger.error("Erreur lors de la mise à jour du profil de lancement.", exc_info=True)
-            raise
-
-    def create_folder_profiles_if_missing(self) -> None:
-        """Creates the profiles folder if it does not already exist."""
-        if not self._folder_path.exists():
-            Path(self._folder_path).mkdir(exist_ok=True, parents=True)
-            self._logger.debug("Dossier créé : %s", self._folder_path)
 
     def delete_profiles(self, id_scenario: str) -> None:
         """Deletes the JSON file for the given profile identifier.
@@ -250,36 +210,7 @@ class ProfilesRepository:
             self._logger.error("Erreur lors de la suppression du profil.", exc_info=True)
             raise
 
-    def delete_profile_launch(self, id_scenario: str, id_profile: str) -> None:
-        """Deletes the JSON file for the given profile identifier.
-
-        Args:
-            id_scenario: Unique identifier of the scenario to which the profile belongs.
-            id_profile: Unique identifier of the profile to delete.
-
-        Raises:
-            ProfileNotFoundError: When no matching file exists.
-            OSError: When the file cannot be deleted.
-        """
-        self._logger.debug("Suppression du profil id=%s pour le scénario id=%s", id_profile, id_scenario)
-        self.create_folder_profiles_if_missing()
-
-        full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_profile)
-
-        if not full_pathfile_to_delete.exists():
-            raise ProfileNotFoundError(id_profile, context="suppression")
-
-        try:
-            profiles = self.read_profiles(id_scenario)  # Check existence before deletion
-            profiles.remove_profile_by_id(id_profile)  # Remove the profile from the model
-            self.update_profiles(profiles)  # Save the updated model back to disk
-
-            self._logger.debug("Profil de lancement supprimé : %s", full_pathfile_to_delete)
-        except Exception:
-            self._logger.error("Erreur lors de la suppression du profil.", exc_info=True)
-            raise
-
-    def read_scenario(self, id_scenario: str) -> ProviderModel:
+    def read_scenario(self, id_scenario: str) -> ScenarioModel:
         """Loads a scenario file by ID and returns it as a ProfilesListModel.
 
         Args:
@@ -289,7 +220,17 @@ class ProfilesRepository:
         if not full_pathfile.exists():
             raise ScenarioNotFoundError(id_scenario)
         scenario_data = self._json_repo.read_from_path(full_pathfile)
-        return ProviderModel.import_from_data_json(scenario_data)
+        return ScenarioModel.import_from_data_json(scenario_data)
+
+    # -------------------------------------------------------------------------
+    # trivial operations
+    # -------------------------------------------------------------------------
+
+    def create_folder_profiles_if_missing(self) -> None:
+        """Creates the profiles folder if it does not already exist."""
+        if not self._folder_path.exists():
+            Path(self._folder_path).mkdir(exist_ok=True, parents=True)
+            self._logger.debug("Dossier créé : %s", self._folder_path)
 
     def open_profiles_folder(self) -> None:
         """Opens the profiles folder in the OS file explorer.

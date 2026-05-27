@@ -1,12 +1,12 @@
 """Domain model for a scraping provider.
 
-This module defines ProviderModel, a pure data entity used by the
+This module defines ScenarioModel, a pure data entity used by the
 application core. The model intentionally avoids any persistence, network, or
 UI dependency.
 
 Example:
-    >>> provider = ProviderModel.get_default_data()
-    >>> ProviderModel.is_valid_id(provider.id_file)
+    >>> provider = ScenarioModel.get_default_data()
+    >>> ScenarioModel.is_valid_id(provider.id_file)
     True
 """
 
@@ -29,7 +29,7 @@ from shared.random_util import generate_rng_hexastring
 
 
 @dataclass
-class ProviderModel:
+class ScenarioModel:
     """Represents a scraping provider as a domain entity.
 
     The class contains provider metadata and scraping steps. It is a simple
@@ -45,7 +45,7 @@ class ProviderModel:
         steps: Ordered list of scraping actions.
 
     Example:
-        >>> provider = ProviderModel.get_default_data()
+        >>> provider = ScenarioModel.get_default_data()
         >>> provider.provider_name
         'Nouv. Fournisseur'
     """
@@ -59,17 +59,17 @@ class ProviderModel:
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
 
     @classmethod
-    def get_default_data(cls) -> ProviderModel:
+    def get_default_data(cls) -> ScenarioModel:
         """Builds a new provider instance with default values.
 
         Returns:
-            ProviderModel: A fully initialized provider entity.
+            ScenarioModel: A fully initialized provider entity.
 
         Raises:
             None.
 
         Example:
-            >>> provider = ProviderModel.get_default_data()
+            >>> provider = ScenarioModel.get_default_data()
             >>> provider.provider_desc
             'Description du fournisseur'
         """
@@ -98,7 +98,7 @@ class ProviderModel:
             None.
 
         Example:
-            >>> provider = ProviderModel.get_default_data()
+            >>> provider = ScenarioModel.get_default_data()
             >>> provider.mark_as_created()
         """
         # Use one value so both fields remain perfectly synchronized.
@@ -115,7 +115,7 @@ class ProviderModel:
             None.
 
         Example:
-            >>> provider = ProviderModel.get_default_data()
+            >>> provider = ScenarioModel.get_default_data()
             >>> provider.mark_as_modified()
         """
         # Refresh only the modification date to preserve creation metadata.
@@ -135,9 +135,9 @@ class ProviderModel:
             None: Parsing errors are handled and converted to False.
 
         Example:
-            >>> ProviderModel.is_valid_id('123456789')
+            >>> ScenarioModel.is_valid_id('123456789')
             True
-            >>> ProviderModel.is_valid_id('INVALID-ID')
+            >>> ScenarioModel.is_valid_id('INVALID-ID')
             False
         """
         # Fast-fail on empty values before any normalization/parsing.
@@ -152,7 +152,7 @@ class ProviderModel:
         return normalized_value.isalnum()
 
     @classmethod
-    def copy_business(cls, source: ProviderModel) -> ProviderModel:
+    def copy_business(cls, source: ScenarioModel) -> ScenarioModel:
         """Creates a duplicate of *source* with a new ID, a 'Copie de' name prefix, and fresh timestamps.
 
         Steps and launch profiles are deep-copied so the duplicate is fully independent.
@@ -161,7 +161,7 @@ class ProviderModel:
             source: The provider to duplicate.
 
         Returns:
-            A new unsaved ProviderModel ready to be persisted.
+            A new unsaved ScenarioModel ready to be persisted.
         """
         import copy
 
@@ -171,21 +171,21 @@ class ProviderModel:
         return duplicate
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> ProviderModel:
+    def import_from_data_json(cls, data: dict[str, Any]) -> ScenarioModel:
         """Reconstruct a provider model from a JSON-compatible dictionary.
 
         Args:
             data: A dict produced by ``export_to_data_json``.
 
         Returns:
-            ProviderModel: A fully reconstructed provider instance.
+            ScenarioModel: A fully reconstructed provider instance.
 
         Raises:
             None.
 
         Example:
-            >>> raw = ProviderModel.get_default_data().export_to_data_json()
-            >>> ProviderModel.import_from_data_json(raw).version
+            >>> raw = ScenarioModel.get_default_data().export_to_data_json()
+            >>> ScenarioModel.import_from_data_json(raw).version
             '1.0.0'
         """
         steps = cls._deserialize_steps(data.get("steps", []))
@@ -233,7 +233,7 @@ class ProviderModel:
             None.
 
         Example:
-            >>> provider = ProviderModel.get_default_data()
+            >>> provider = ScenarioModel.get_default_data()
             >>> data_json = provider.export_to_data_json()
             >>> isinstance(data_json, dict)
             True

@@ -25,7 +25,7 @@ from pathlib import Path
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.app_configuration_model import AppConfigurationModel
-from models.scenario_model import ProviderModel
+from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ExtractedData, ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
@@ -133,7 +133,7 @@ class ScrapingService:
 
     def run_workflow(
         self,
-        provider: ProviderModel,
+        provider: ScenarioModel,
         config: WorkflowRunConfig,
         handlers: WorkflowRunHandlers,
     ) -> ScrapingReportModel:
@@ -218,7 +218,7 @@ class ScrapingService:
 
     def _run_browser_lifecycle(
         self,
-        provider: ProviderModel,
+        provider: ScenarioModel,
     ) -> bool:
         """Launch browser, open initial page, run steps, close browser.
 

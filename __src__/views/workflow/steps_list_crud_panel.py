@@ -26,7 +26,7 @@ from typing import Any
 from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 from views.components.drag_drop_list import DragDropList
-from views.components.step_item_renderer import StepItemRenderer
+from views.workflow.step_item_renderer import StepItemRenderer
 
 # -----------------------------------------------------------------------------
 # Constants

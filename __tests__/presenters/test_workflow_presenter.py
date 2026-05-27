@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from models.provider_model import ProviderModel
+from models.provider_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
 from presenters.workflow_presenter import WorkflowPresenter
 
@@ -88,27 +88,27 @@ class _StubWorkflowView:
 class _StubProviderService:
     """Stub for ProviderService — returns configurable provider data."""
 
-    def __init__(self, provider: ProviderModel | None = None) -> None:
+    def __init__(self, provider: ScenarioModel | None = None) -> None:
         self._provider = provider or _default_provider()
-        self.created: list[ProviderModel] = []
-        self.updated: list[ProviderModel] = []
+        self.created: list[ScenarioModel] = []
+        self.updated: list[ScenarioModel] = []
 
-    def read_provider(self, id_file: str) -> ProviderModel:
+    def read_provider(self, id_file: str) -> ScenarioModel:
         return self._provider
 
     def exists_provider(self, id_file: str) -> bool:
         return False
 
-    def create_provider(self, provider: ProviderModel) -> None:
+    def create_provider(self, provider: ScenarioModel) -> None:
         self.created.append(provider)
 
-    def update_provider(self, provider: ProviderModel) -> None:
+    def update_provider(self, provider: ScenarioModel) -> None:
         self.updated.append(provider)
 
 
-def _default_provider(steps: list[StepScrapingModel] | None = None) -> ProviderModel:
-    """Return a minimal ProviderModel for test setup."""
-    return ProviderModel(
+def _default_provider(steps: list[StepScrapingModel] | None = None) -> ScenarioModel:
+    """Return a minimal ScenarioModel for test setup."""
+    return ScenarioModel(
         id_file="prov-id",
         provider_name="Test Provider",
         provider_desc="https://example.com",
@@ -120,7 +120,7 @@ def _default_provider(steps: list[StepScrapingModel] | None = None) -> ProviderM
 
 
 def _make_presenter(
-    provider: ProviderModel | None = None,
+    provider: ScenarioModel | None = None,
 ) -> tuple[WorkflowPresenter, _StubWorkflowView, _StubProviderService]:
     """Build a WorkflowPresenter with stub dependencies."""
     view = _StubWorkflowView()

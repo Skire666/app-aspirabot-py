@@ -1,12 +1,12 @@
 """Domain model for a scraping provider.
 
-This module defines ProviderModel, a pure data entity used by the
+This module defines ScenarioModel, a pure data entity used by the
 application core. The model intentionally avoids any persistence, network, or
 UI dependency.
 
 Example:
-    >>> provider = ProviderModel.get_default_data()
-    >>> ProviderModel.is_valid_id(provider.id_file)
+    >>> provider = ScenarioModel.get_default_data()
+    >>> ScenarioModel.is_valid_id(provider.id_file)
     True
 """
 
@@ -48,6 +48,7 @@ class ProfilesListModel:
 
     @classmethod
     def get_default(cls, id_scenario: str) -> ProfilesListModel:
+        """Return a default profiles list model with a single default profile."""
         # Return a ready-to-use default provider.
         date_now = datetime.now()
         return cls(
@@ -125,7 +126,34 @@ class ProfilesListModel:
             "launch_profiles": [profile.export_to_data_json() for profile in self.launch_profiles],
         }
 
-    def remove_profile_by_id(self, id_profile: str) -> None:
+    def create_profile_launch(self, profile: ProfileLaunchModel) -> None:
+        """Add a new profile to the list.
+
+        Args:
+            profile: A ProfileLaunchModel instance to add to the list. Its id_profile must be unique.
+
+        Raises:
+            None.
+        """
+        self._append_or_replace_profile_launch(profile)
+        self.mark_as_modified()
+
+    def update_profile_launch(self, profile: ProfileLaunchModel) -> None:
+        """Update an existing profile in the list with new data.
+
+        The profile to update is identified by matching the id_profile of the input profile.
+        If a matching profile is found, it is replaced with the input profile. If no match is found, the method does nothing.
+
+        Args:
+            profile: A ProfileLaunchModel instance containing the updated data. Its id_profile must match an existing profile in the list.
+
+        Raises:
+            None.
+        """
+        self._append_or_replace_profile_launch(profile)
+        self.mark_as_modified()
+
+    def delete_profile_by_id(self, id_profile: str) -> None:
         """Remove a profile from the list by its ID.
 
         Args:
@@ -159,26 +187,6 @@ class ProfilesListModel:
         used = [p for p in self.launch_profiles if p.used_date_profile]
         return max(used, key=lambda p: p.used_date_profile or "") if used else self.launch_profiles[0]
 
-    def replace_profile_launch(self, updated_profile: ProfileLaunchModel) -> None:
-        """Update an existing profile in the list with new data.
-
-        The profile to update is identified by matching the id_profile of the updated_profile.
-        If a matching profile is found, it is replaced with the updated_profile. If no match is found, the method does nothing.
-
-        Args:
-            updated_profile: A ProfileLaunchModel instance containing the updated data. Its id_profile must match an existing profile in the list.
-        """
-        is_updated = False
-        for idx, profile in enumerate(self.launch_profiles):
-            if profile.id_profile == updated_profile.id_profile:
-                self.launch_profiles[idx] = updated_profile
-                is_updated = True
-                break
-        # no profile was updated, which means no matching id_profile was found
-        if not is_updated:
-            self.launch_profiles.append(updated_profile)
-        self.mark_as_modified()
-
     def mark_as_created(self) -> None:
         """Update the creation timestamp to the current time.
 
@@ -189,12 +197,6 @@ class ProfilesListModel:
 
         Raises:
             None.
-
-        Example:
-            >>> profile = ProfileLaunchModel.get_default()
-            >>> profile.mark_profile_as_created()
-            >>> profile.created_date_profile is not None
-            True
         """
         self.created_date_profile = datetime.now()
         self.modified_date_profile = self.created_date_profile
@@ -217,3 +219,22 @@ class ProfilesListModel:
             True
         """
         self.modified_date_profile = datetime.now()
+
+    def _append_or_replace_profile_launch(self, updated_profile: ProfileLaunchModel) -> None:
+        """Update an existing profile in the list with new data.
+
+        The profile to update is identified by matching the id_profile of the updated_profile.
+        If a matching profile is found, it is replaced with the updated_profile. If no match is found, the method does nothing.
+
+        Args:
+            updated_profile: A ProfileLaunchModel instance containing the updated data. Its id_profile must match an existing profile in the list.
+        """
+        is_updated = False
+        for idx, profile in enumerate(self.launch_profiles):
+            if profile.id_profile == updated_profile.id_profile:
+                self.launch_profiles[idx] = updated_profile
+                is_updated = True
+                break
+        # no profile was updated, which means no matching id_profile was found
+        if not is_updated:
+            self.launch_profiles.append(updated_profile)

@@ -8,7 +8,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from models.scenario_model import ProviderModel
+from models.scenario_model import ScenarioModel
 from presenters.steps_list_presenter import StepsListPresenter
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
@@ -45,7 +45,7 @@ class WorkflowPresenter:
         self._view: WorkflowView = view
         self._service = scenarios_service
         self._is_creation_mode = False
-        self._current_provider: ProviderModel | None = None
+        self._current_provider: ScenarioModel | None = None
         self._on_done: Callable[[], None] | None = None
 
         # Sub-presenter that owns the step list and workflow execution.
@@ -75,7 +75,7 @@ class WorkflowPresenter:
     def create_new(self) -> None:
         """Passe le presentateur en mode creation et charge un modele vide."""
         self._is_creation_mode = True
-        self._current_provider = ProviderModel.get_default_data()
+        self._current_provider = ScenarioModel.get_default_data()
 
         # Initialize an empty workflow for the new provider.
         self._workflow_presenter.init_new(self._current_provider.id_file)
@@ -109,7 +109,7 @@ class WorkflowPresenter:
         return True
 
     @staticmethod
-    def _provider_to_dict(provider: ProviderModel) -> dict[str, Any]:
+    def _provider_to_dict(provider: ScenarioModel) -> dict[str, Any]:
         """Converts provider model fields to a form-data dictionary.
 
         Args:

@@ -17,8 +17,10 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from models.scenario_model import ProviderModel
+from models.profile_launch_model import ProfileLaunchModel
+from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
+from shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
 from shared.exception_util import (
     AspirabotError,
     InvalidProvidersFolderPathError,
@@ -26,9 +28,6 @@ from shared.exception_util import (
     ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
-
-from __src__.models.profile_launch_model import ProfileLaunchModel
-from __src__.shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -38,7 +37,7 @@ from __src__.shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFF
 class ScenariosRepository:
     """Manages provider configuration data stored on the filesystem.
 
-    Encapsulates directory listing, JSON file loading/saving, ProviderModel
+    Encapsulates directory listing, JSON file loading/saving, ScenarioModel
     serialization, OS-native folder navigation, and file deletion.
 
     Attributes:
@@ -79,8 +78,8 @@ class ScenariosRepository:
         return []
 
     @staticmethod
-    def _dict_to_provider_model(data: dict[str, Any]) -> ProviderModel:
-        """Deserializes a raw JSON dictionary into a ProviderModel instance.
+    def _dict_to_provider_model(data: dict[str, Any]) -> ScenarioModel:
+        """Deserializes a raw JSON dictionary into a ScenarioModel instance.
 
         Args:
             data: The decoded JSON content of a provider file.
@@ -88,7 +87,7 @@ class ScenariosRepository:
         Returns:
             The fully reconstructed provider model.
         """
-        return ProviderModel.import_from_data_json(data)
+        return ScenarioModel.import_from_data_json(data)
 
     def exists_scenario(self, id_file: str) -> bool:
         """Returns True if a provider file exists for the given identifier.
@@ -102,14 +101,14 @@ class ScenariosRepository:
         full_filepath = self._compute_fullpath_from_id_file(id_file)
         return full_filepath.exists() and full_filepath.is_file()
 
-    def read_scenario(self, id_file: str) -> ProviderModel:
-        """Loads a provider file by ID and returns it as a ProviderModel.
+    def read_scenario(self, id_file: str) -> ScenarioModel:
+        """Loads a provider file by ID and returns it as a ScenarioModel.
 
         Args:
             id_file: Unique identifier of the provider to load.
 
         Returns:
-            The deserialized ProviderModel.
+            The deserialized ScenarioModel.
 
         Raises:
             ProviderNotFoundError: When no file matches id_file.
@@ -130,15 +129,15 @@ class ScenariosRepository:
         self._logger.debug("Fournisseur chargé : %s", full_filepath)
         return provider_model
 
-    def read_all_scenarios(self) -> list[ProviderModel]:
+    def read_all_scenarios(self) -> list[ScenarioModel]:
         """Lists all valid providers found in the configured folder.
 
         Skips files that cannot be read or deserialized; logs an error for each.
 
         Returns:
-            List of ProviderModel instances; empty when no valid files exist.
+            List of ScenarioModel instances; empty when no valid files exist.
         """
-        providers: list[ProviderModel] = []
+        providers: list[ScenarioModel] = []
 
         for file_path in self._list_scenarios_files():
             try:
@@ -154,7 +153,7 @@ class ScenariosRepository:
         self._logger.debug("Total de %s provider(s) chargé(s).", len(providers))
         return providers
 
-    def create_scenario(self, provider: ProviderModel) -> None:
+    def create_scenario(self, provider: ScenarioModel) -> None:
         """Persists a new provider to disk as a JSON file.
 
         Args:
@@ -174,7 +173,7 @@ class ScenariosRepository:
             self._logger.error("Erreur lors de la création du fournisseur.", exc_info=True)
             raise
 
-    def update_scenario(self, provider: ProviderModel) -> None:
+    def update_scenario(self, provider: ScenarioModel) -> None:
         """Overwrites an existing provider file with updated data.
 
         Args:

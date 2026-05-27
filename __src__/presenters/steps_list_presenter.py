@@ -17,7 +17,7 @@ from typing import Any
 
 from interfaces.i_steps_list_crud_view import IStepsListCrudView
 from interfaces.i_steps_list_gestion_view import IStepsListGestionView
-from models.scenario_model import ProviderModel
+from models.scenario_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
 from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
@@ -97,7 +97,7 @@ class StepsListPresenter:
         """
         self._provider_id_file = provider_id_file
         self._is_new_provider = False
-        self._provider_content: ProviderModel = self._service_provider.read_scenario(provider_id_file)
+        self._provider_content: ScenarioModel = self._service_provider.read_scenario(provider_id_file)
         self._steps = list(self._provider_content.steps)
         self._refresh_view()
         self._view.set_validation_status("Vérification : --", False)

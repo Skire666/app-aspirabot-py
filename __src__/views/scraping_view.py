@@ -195,7 +195,6 @@ class ScrapingView(ttk.Frame):
             providers: List of dicts with keys ``id_file``, ``provider_name``,
                 ``provider_desc``, ``version``, ``modified_date``.
         """
-        print(f"PCOPCO - Rendering {len(providers)} providers in the view")
         selection_retained = self._provider_panel.render_providers_list(providers)
         if not selection_retained:
             self._profile_panel.set_enabled(False)
@@ -362,7 +361,7 @@ class ScrapingView(ttk.Frame):
         self._journal_panel.clear()
 
     @staticmethod
-    def ask_confirm_launch_without_source() -> bool:
+    def dialog_ask_confirm_launch_without_source() -> bool:
         """Show a confirmation dialog when no URL source has been selected.
 
         Returns:
@@ -374,7 +373,7 @@ class ScrapingView(ttk.Frame):
         )
 
     @staticmethod
-    def ask_confirm_cancel_browsing() -> bool:
+    def dialog_ask_confirm_cancel_browsing() -> bool:
         """Show a confirmation dialog when the user tries to cancel while browsing.
 
         Returns:
@@ -386,7 +385,7 @@ class ScrapingView(ttk.Frame):
         )
 
     @staticmethod
-    def show_warning(message: str) -> None:
+    def dialog_show_warning(message: str) -> None:
         """Display a warning message box.
 
         Args:

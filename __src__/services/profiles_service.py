@@ -70,7 +70,7 @@ class ProfilesService:
         """Stamp timestamps on *provider* and persist it as a new profile.
 
         Args:
-            provider: A :class:`~models.profiles_model.ProfilesModel` instance
+            profiles : A :class:`~models.profiles_model.ProfilesModel` instance
                 that has not yet been persisted. Its ``id_file`` must be unique.
 
         Raises:
@@ -78,33 +78,10 @@ class ProfilesService:
 
         Example:
             >>> profile = ProfilesModel.get_default_data()
-            >>> service.create_profile(profile)
+            >>> service.create_profiles(profile)
         """
         profiles.mark_as_created()
         self._repository.create_profiles(profiles)
-
-    def create_profile_launch(self, id_scenario: str, profile: ProfileLaunchModel) -> None:
-        """Stamp timestamps on *profile* and persist it as a new launch profile.
-
-        Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
-        set both ``created_date_profile`` and ``modified_date_profile`` to the
-        current time before delegating to the repository.
-
-        Args:
-            id_scenario: Unique identifier of the scenario to which the profile belongs.
-            profile: A :class:`~models.profile_launch_model.ProfileLaunchModel` instance
-                that has not yet been persisted. Its ``id_file`` must be unique.
-
-        Raises:
-            DatabaseUnavailableError: If the file cannot be written to disk.
-
-        Example:
-            >>> profile = ProfileLaunchModel.get_default_data()
-            >>> service.create_profile_launch("scenario1", profile)
-        """
-        if self._repository.exists_profiles(id_scenario):
-            self._repository.update_profile_launch(id_scenario, profile)
-        self._repository.create_profile_launch(id_scenario, profile)
 
     def read_profiles(self, id_file: str) -> ProfilesListModel:
         """Load a single profile by its file identifier and wire step context.
@@ -157,59 +134,6 @@ class ProfilesService:
         profile.mark_as_modified()
         self._repository.update_profiles(profile)
 
-    def update_profile_launch(self, id_scenario: str, profile: ProfileLaunchModel) -> None:
-        """Refresh the modification timestamp on *profile* and overwrite it on disk.
-
-        Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_modified` so
-        that ``modified_date_profile`` always reflects the last save time.
-
-        Args:
-            id_scenario: Unique identifier of the scenario to which the profile belongs.
-            profile: A previously persisted
-                :class:`~models.profile_launch_model.ProfileLaunchModel`. Its ``id_profile``
-                must match an existing profile file.
-
-        Raises:
-            ProviderNotFoundError: If no existing file matches ``profile.id_profile``.
-            DatabaseUnavailableError: If the file cannot be overwritten.
-        """
-        self._repository.update_profile_launch(id_scenario, profile)
-
-    def duplicate_profiles(self, id_file: str) -> str:
-        """Create an independent copy of an existing profile and return its new ID.
-
-        The copy is produced by :meth:`~models.profiles_model.ProfilesModel.copy_business`,
-        which performs a deep copy and prefixes the name with ``"Copie de "``.
-        The duplicate is immediately persisted as a new profile.
-
-        Args:
-            id_file: Unique identifier of the profile to duplicate.
-
-        Returns:
-            The ``id_file`` of the newly created duplicate profile.
-
-        Raises:
-            ProviderNotFoundError: If no profile matches *id_file*.
-            DatabaseUnavailableError: If the original cannot be read or the
-                duplicate cannot be written.
-
-        Example:
-            >>> new_id = service.duplicate_profile("abc123")
-            >>> service.exists_profile(new_id)
-            True
-            >>> service.read_profile(new_id).provider_name.startswith("Copie de")
-            True
-        """
-        # Load the original before building the copy.
-        original = self._repository.read_profiles(id_file)
-
-        # Deep-copy with a new ID and a "Copie de" name prefix.
-        copy = ProfilesListModel.copy_business(original)
-
-        # Persist the duplicate as a brand-new profile.
-        self.create_profiles(copy)
-        return copy.id_file
-
     def delete_profiles(self, id_file: str) -> None:
         """Remove a profile file from disk permanently.
 
@@ -226,6 +150,65 @@ class ProfilesService:
         """
         self._repository.delete_profiles(id_file)
 
+    # -------------------------------------------------------------------------
+    # Profile launch operations - CRUD
+    # -------------------------------------------------------------------------
+
+    def create_profile_launch(self, id_scenario: str, profile_name: str) -> ProfileLaunchModel:
+        """Stamp timestamps on *profile* and persist it as a new launch profile.
+
+        Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
+        set both ``created_date_profile`` and ``modified_date_profile`` to the
+        current time before delegating to the repository.
+
+        Args:
+            id_scenario: Unique identifier of the scenario to which the profile belongs.
+            profile_name: The name of the new profile to create.
+
+        Raises:
+            DatabaseUnavailableError: If the file cannot be written to disk.
+        """
+        new_profile_launch = ProfileLaunchModel.get_default(id_scenario)
+        new_profile_launch.profile_name = profile_name
+
+        if self._repository.exists_profiles(id_scenario):
+            # existing scenario: read it, update its profile list, and save it back
+            found = self._repository.read_profiles(id_scenario)
+            found.create_profile_launch(new_profile_launch)
+            self._repository.update_profiles(found)
+
+        # no existing scenario: create a new one with the profile and save it
+        new_scenario = ProfilesListModel.get_default(id_scenario=id_scenario)
+        new_scenario.create_profile_launch(new_profile_launch)
+        self._repository.create_profiles(new_scenario)
+        return new_profile_launch
+
+    def update_profile_launch(self, id_scenario: str, profile: ProfileLaunchModel) -> ProfileLaunchModel:
+        """Stamp timestamps on *profile* and persist it as a new launch profile.
+
+        Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
+        set both ``created_date_profile`` and ``modified_date_profile`` to the
+        current time before delegating to the repository.
+
+        Args:
+            id_scenario: Unique identifier of the scenario to which the profile belongs.
+            profile: The profile model to update.
+
+        Raises:
+            DatabaseUnavailableError: If the file cannot be written to disk.
+        """
+        if self._repository.exists_profiles(id_scenario):
+            # existing scenario: read it, update its profile list, and save it back
+            found = self._repository.read_profiles(id_scenario)
+            found.update_profile_launch(profile)
+            self._repository.update_profiles(found)
+
+        # no existing scenario: create a new one with the profile and save it
+        new_profiles = ProfilesListModel.get_default(id_scenario=id_scenario)
+        new_profiles.create_profile_launch(profile)
+        self._repository.create_profiles(new_profiles)
+        return profile
+
     def delete_profile_launch(self, id_scenario: str, id_profile: str) -> None:
         """Remove a profile file from disk permanently.
 
@@ -236,7 +219,15 @@ class ProfilesService:
         Raises:
             ProviderNotFoundError: If no file matches *id_scenario* and *id_profile*.
         """
-        self._repository.delete_profile_launch(id_scenario, id_profile)
+        if self._repository.exists_profiles(id_scenario):
+            # existing scenario: read it, update its profile list, and save it back
+            found: ProfilesListModel = self._repository.read_profiles(id_scenario)
+            found.delete_profile_by_id(id_profile)
+            self._repository.update_profiles(found)
+        else:
+            self._logger.warning(
+                f"Impossible de supprimer le profil '{id_profile}'. Scénario inexistant '{id_scenario}'."
+            )
 
     def get_scenario_name(self, id_scenario: str) -> str:
         """Get the name of the scenario associated with a given profile.

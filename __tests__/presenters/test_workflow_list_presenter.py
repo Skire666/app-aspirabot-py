@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from models.provider_model import ProviderModel
+from models.provider_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
 from presenters.workflow_list_presenter import WorkflowListPresenter
 from shared.enums import StepTypeEnum
@@ -53,12 +53,12 @@ class _StubGestionView:
 
 
 class _StubProviderService:
-    """Stub for ProviderService — returns a configurable ProviderModel."""
+    """Stub for ProviderService — returns a configurable ScenarioModel."""
 
-    def __init__(self, provider: ProviderModel) -> None:
+    def __init__(self, provider: ScenarioModel) -> None:
         self._provider = provider
 
-    def read_provider(self, id_file: str) -> ProviderModel:
+    def read_provider(self, id_file: str) -> ScenarioModel:
         return self._provider
 
 
@@ -82,9 +82,9 @@ def _make_step(step_id: str, step_type: StepTypeEnum = StepTypeEnum.E_OPEN_URL) 
     return StepScrapingModel(step_type=step_type, step_id=step_id)
 
 
-def _make_provider(steps: list[StepScrapingModel] | None = None) -> ProviderModel:
-    """Return a minimal ProviderModel for test setup."""
-    return ProviderModel(
+def _make_provider(steps: list[StepScrapingModel] | None = None) -> ScenarioModel:
+    """Return a minimal ScenarioModel for test setup."""
+    return ScenarioModel(
         id_file="test-file",
         provider_name="Test",
         provider_desc="https://example.com",

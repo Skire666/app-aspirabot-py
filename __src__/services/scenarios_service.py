@@ -20,7 +20,7 @@ Example:
 
 import logging
 
-from models.scenario_model import ProviderModel
+from models.scenario_model import ScenarioModel
 from repositories.scenarios_repository import ScenariosRepository
 
 # -----------------------------------------------------------------------------
@@ -34,9 +34,9 @@ class ScenariosService:
     This class enforces domain invariants that must hold across all callers:
 
     * Every new scenario receives consistent creation and modification timestamps
-      via :meth:`ProviderModel.mark_as_created` before it is persisted.
+      via :meth:`ScenarioModel.mark_as_created` before it is persisted.
     * Every update refreshes the modification timestamp via
-      :meth:`ProviderModel.mark_as_modified`.
+      :meth:`ScenarioModel.mark_as_modified`.
     * After loading a scenario, each step's ``parent_context`` is wired to the
       sibling list so that steps can inspect neighbouring steps at runtime.
 
@@ -74,14 +74,14 @@ class ScenariosService:
     # Read operations
     # -------------------------------------------------------------------------
 
-    def list_all_scenarios(self) -> list[ProviderModel]:
+    def list_all_scenarios(self) -> list[ScenarioModel]:
         """Return all scenarios found in the scenarios folder.
 
         Delegates directly to the repository. Invalid or unreadable files are
         silently skipped by the repository implementation.
 
         Returns:
-            An ordered list of :class:`~models.scenario_model.ProviderModel`
+            An ordered list of :class:`~models.scenario_model.ScenarioModel`
             instances. The list is empty when no valid scenario files exist.
 
         Raises:
@@ -90,7 +90,7 @@ class ScenariosService:
 
         Example:
             >>> scenarios = service.list_all_scenarios()
-            >>> all(isinstance(s, ProviderModel) for s in scenarios)
+            >>> all(isinstance(s, ScenarioModel) for s in scenarios)
             True
         """
         return self._repository.read_all_scenarios()
@@ -128,18 +128,18 @@ class ScenariosService:
     # CRUS operations
     # -------------------------------------------------------------------------
 
-    def create_scenario(self, provider: ProviderModel) -> None:
+    def create_scenario(self, provider: ScenarioModel) -> None:
         """Stamp timestamps on *provider* and persist it as a new scenario.
 
         Args:
-            provider: A :class:`~models.scenario_model.ProviderModel` instance
+            provider: A :class:`~models.scenario_model.ScenarioModel` instance
                 that has not yet been persisted. Its ``id_file`` must be unique.
 
         Raises:
             DatabaseUnavailableError: If the file cannot be written to disk.
 
         Example:
-            >>> scenario = ProviderModel.get_default_data()
+            >>> scenario = ScenarioModel.get_default_data()
             >>> service.create_scenario(scenario)
             >>> service.exists_scenario(scenario.id_file)
             True
@@ -150,7 +150,7 @@ class ScenariosService:
         self._repository.create_scenario(provider)
         self._repository.create_default_profile_for_scenario(provider)
 
-    def read_scenario(self, id_file: str) -> ProviderModel:
+    def read_scenario(self, id_file: str) -> ScenarioModel:
         """Load a single scenario by its file identifier and wire step context.
 
         After loading, each :class:`~models.step_scraping_model.StepScrapingModel`
@@ -163,7 +163,7 @@ class ScenariosService:
             id_file: Unique alphanumeric identifier of the scenario file to load.
 
         Returns:
-            A fully populated :class:`~models.scenario_model.ProviderModel` with
+            A fully populated :class:`~models.scenario_model.ScenarioModel` with
             inter-step context injected.
 
         Raises:
@@ -185,12 +185,12 @@ class ScenariosService:
 
         return model
 
-    def update_scenario(self, scenario: ProviderModel) -> None:
+    def update_scenario(self, scenario: ScenarioModel) -> None:
         """Refresh the modification timestamp on *scenario* and overwrite it on disk.
 
         Args:
             scenario: A previously persisted
-                :class:`~models.scenario_model.ProviderModel`. Its ``id_file``
+                :class:`~models.scenario_model.ScenarioModel`. Its ``id_file``
                 must match an existing file.
 
         Raises:
@@ -208,7 +208,7 @@ class ScenariosService:
     def duplicate_scenario(self, id_file: str) -> str:
         """Create an independent copy of an existing scenario and return its new ID.
 
-        The copy is produced by :meth:`~models.scenario_model.ProviderModel.copy_business`,
+        The copy is produced by :meth:`~models.scenario_model.ScenarioModel.copy_business`,
         which performs a deep copy and prefixes the name with ``"Copie de "``.
         The duplicate is immediately persisted as a new scenario.
 
@@ -234,7 +234,7 @@ class ScenariosService:
         original = self._repository.read_scenario(id_file)
 
         # Deep-copy with a new ID and a "Copie de" name prefix.
-        copy = ProviderModel.copy_business(original)
+        copy = ScenarioModel.copy_business(original)
 
         # Persist the duplicate as a brand-new scenario.
         self.create_scenario(copy)

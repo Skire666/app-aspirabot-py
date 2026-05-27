@@ -22,7 +22,7 @@ from pathlib import Path
 
 from models.profile_launch_model import ProfileLaunchModel
 from models.profiles_list_model import ProfilesListModel
-from models.scenario_model import ProviderModel
+from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
 from models.step_scraping_model import StepScrapingModel
@@ -93,7 +93,7 @@ class ExecutorPresenter:
         service_scraping: ScrapingService,
         service_scenarios: ScenariosService,
         service_profile: ProfilesService,
-        scenario: ProviderModel | None = None,
+        scenario: ScenarioModel | None = None,
     ) -> None:
         """Initialize the presenter and register all view callbacks.
 
@@ -108,7 +108,7 @@ class ExecutorPresenter:
         self._service_scraping = service_scraping
         self._service_scenarios: ScenariosService = service_scenarios
         self._service_profile: ProfilesService = service_profile
-        self._scenario: ProviderModel | None = scenario
+        self._scenario: ScenarioModel | None = scenario
         self._profile: ProfileLaunchModel | None = None
         self._cancel_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -172,7 +172,6 @@ class ExecutorPresenter:
         self._cancel_active_run()
 
         self._logging.info("lecture du scénario - id_file=%s", id_scenario)
-        print(f"PCOPCO - Loading scenario id_file={id_scenario}")
         self._scenario = self._service_scenarios.read_scenario(id_scenario)
         self._cancel_event.clear()
 
@@ -261,7 +260,7 @@ class ExecutorPresenter:
             self._service_scraping.export_journal(path, rows)
         except OSError as exc:
             self._logging.exception("Échec de l'export du journal")
-            self._view.show_warning(C_SCRAPING_EXPORT_WRITE_ERROR.format(exc=exc))
+            self._view.dialog_show_warning(C_SCRAPING_EXPORT_WRITE_ERROR.format(exc=exc))
 
     def _on_provider_selected(self, id_file: str) -> None:
         """Load the provider chosen from the view's dropdown.
@@ -271,7 +270,7 @@ class ExecutorPresenter:
         """
         # Guard: block provider switch while a workflow edit session is open.
         if self.is_workflow_active and self.is_workflow_active():
-            self._view.show_warning(C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER)
+            self._view.dialog_show_warning(C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER)
             return
 
         self._logging.info("Provider selected from view: id_file=%s", id_file)
@@ -280,12 +279,10 @@ class ExecutorPresenter:
     def _on_refresh_scenarios(self) -> None:
         """Reload the providers list and forward it to the view dropdown."""
         try:
-            providers: list[ProviderModel] = self._service_scenarios.list_all_scenarios()
+            providers: list[ScenarioModel] = self._service_scenarios.list_all_scenarios()
         except AspirabotError, OSError:
             self._logging.exception("Échec du chargement de la liste des providers")
             providers = []
-
-        print(f"PCOPCO - Loaded {len(providers)} providers")
 
         # Build display-ready dicts and push to the view.
         rows: list[dict[str, str]] = [
@@ -340,11 +337,7 @@ class ExecutorPresenter:
         if not self._scenario:
             return
 
-        id_scenario = self._scenario.id_file
-        new_profile_launch = ProfileLaunchModel.get_default(id_scenario)
-        new_profile_launch.profile_name = name
-
-        self._service_profile.update_profile_launch(self._scenario.id_file, new_profile_launch)
+        new_profile_launch = self._service_profile.create_profile_launch(self._scenario.id_file, name)
 
         self._refresh_profiles_list()
         self._view.set_selected_profile(new_profile_launch.id_profile)
@@ -360,8 +353,7 @@ class ExecutorPresenter:
             return
 
         # Remove the matching profile from the list.
-        id_scenario = self._scenario.id_file
-        self._service_profile.delete_profile_launch(id_scenario, id_profile)
+        self._service_profile.delete_profile_launch(self._scenario.id_file, id_profile)
         self._refresh_profiles_list()
 
         # No profile is selected after deletion — disable rename/save, keep file date.
@@ -550,22 +542,22 @@ class ExecutorPresenter:
         """Return True if all launch guards pass; show a warning and return False if any fails."""
         # Provider must be loaded before launching.
         if not self._scenario:
-            self._view.show_warning(C_SCRAPING_NO_PROVIDER_LOADED)
+            self._view.dialog_show_warning(C_SCRAPING_NO_PROVIDER_LOADED)
             return False
 
         # Block launch when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
-            self._view.show_warning(C_SCRAPING_WORKFLOW_ACTIVE_LAUNCH)
+            self._view.dialog_show_warning(C_SCRAPING_WORKFLOW_ACTIVE_LAUNCH)
             return False
 
         # Confirm intent when no URL source is configured.
         url_source = self._view.get_url_source()
-        if not url_source.get("type") and not self._view.ask_confirm_launch_without_source():
+        if not url_source.get("type") and not self._view.dialog_ask_confirm_launch_without_source():
             return False
 
         # Abort when the emergency stop threshold is invalid.
         if self._view.get_emergency_stop_threshold() is None:
-            self._view.show_warning(C_SCRAPING_EMERGENCY_STOP_INVALID_MSG)
+            self._view.dialog_show_warning(C_SCRAPING_EMERGENCY_STOP_INVALID_MSG)
             return False
 
         return True
@@ -634,7 +626,7 @@ class ExecutorPresenter:
             None.
         """
         # Unblock any pause so the cancel signal is observed immediately.
-        asked_agree = self._view.ask_confirm_cancel_browsing()
+        asked_agree = self._view.dialog_ask_confirm_cancel_browsing()
         if asked_agree:
             self._pause_event.set()
             self._cancel_event.set()

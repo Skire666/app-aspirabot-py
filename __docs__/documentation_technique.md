@@ -9,7 +9,7 @@ L'application est développée en **Python 3** avec typage fort explicite, en re
 - `views/` : Composants `Tkinter` modulaires (`RootFrameView`, `MultiTabsPanel`, tab panels...) gérant uniquement la logique de rafraichissement de l'interface homme-machine.
 - `view_models/` et `converters/` : Classes de conteneurs (`tk.StringVar`, etc.) servant d'intermédiaire pour éviter que `views` n'interagisse trop directement avec `models`, grâce à des méthodes de traduction de listes et d'états réactifs.
 - `controllers/` : Logique d'orchestration (`UpdateController`, `ScrapingController`). Pilote les actions issues de l'UI (ex. suppression, sauvegarde) en sollicitant les repository ou services backend.
-- `models/` : Entités métier pures abstraites (ex: `ProviderModel`) qui symbolisent la donnée pure.
+- `models/` : Entités métier pures abstraites (ex: `ScenarioModel`) qui symbolisent la donnée pure.
 - `repositories/` : Couche d'accès aux fichiers, spécialisée dans la lecture, l'écriture et la validation des schémas de données du format persistant JSON (vers ou depuis les objects `models`).
 - `services/` : Contient `scraping_service.py` traitant l'intégration fine entre l'IHM et le moteur asynchrone `Playwright`.
 - `utils/` : Outils partagés tels que la configuration du logger (via `queue.Queue` pour assurer le mode `Thread-Safe`) et la surcouche interne `WebBrowserUtil` utilisant Playwright.
@@ -34,7 +34,7 @@ Dans `services/scraping_service.py`, le contrôleur orchestre le fractionnement 
 2. **Le Retour d'Opération (UI Update) :** Des fonctions de callback `ui_logger` et `on_finish` sont passées de la vue au service pour remonter la fin de traitement ou les retours contextuels sans jamais toucher nativement à l'état de la fenêtre depuis le mauvais thread.
 
 ### 3.3. Contournement Anti-Bot (Obfuscation avec Playwright)
-Le singleton de contexte navigateur `WebBrowserUtil` (`utils/web_browser_util.py`) utilise nativement des astuces lorsque le `ProviderModel` le requiert (`automation_obfuscated`):
+Le singleton de contexte navigateur `WebBrowserUtil` (`utils/web_browser_util.py`) utilise nativement des astuces lorsque le `ScenarioModel` le requiert (`automation_obfuscated`):
 - **Drapeaux (Flags) Chromium :**
   Désactive l'option `--enable-automation` native souvent repérée par les capteurs d'empreinte.
 - **Spoofing Javascript (`navigator.webdriver`) :**
