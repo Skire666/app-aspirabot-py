@@ -20,8 +20,7 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
-from models.profile_launch_model import ProfileLaunchModel
-from models.profiles_list_model import ProfilesListModel
+from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_report_model import ScrapingReportModel
@@ -57,6 +56,8 @@ from shared.i18n_fra import (
 )
 from shared.operating_system_util import open_folder
 from views.scraping_view import ScrapingView, ScrapingViewCallbacks
+
+from __src__.models.launcher_model import ProfileLaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -192,7 +193,7 @@ class ExecutorPresenter:
     def _ensure_default_profile(self) -> None:
         """Add and persist a default profile when the provider has none."""
         if not self._service_profile.exists_profiles(self._scenario.id_file):
-            profiles = ProfilesListModel.get_default(self._scenario.id_file)
+            profiles = ProfilesModel.get_default(self._scenario.id_file)
             self._service_profile.create_profiles(profiles)
 
     def _setup_view_after_load(self, id_scenario: str) -> None:
@@ -436,7 +437,7 @@ class ExecutorPresenter:
             self._profile = None
             return None
 
-        profiles: ProfilesListModel = self._service_profile.read_profiles(self._scenario.id_file)
+        profiles: ProfilesModel = self._service_profile.read_profiles(self._scenario.id_file)
 
         self._profile = profiles
 
@@ -452,7 +453,7 @@ class ExecutorPresenter:
             self._view.render_profiles_list([])
             return
 
-        profiles: ProfilesListModel = self._service_profile.read_profiles(self._scenario.id_file)
+        profiles: ProfilesModel = self._service_profile.read_profiles(self._scenario.id_file)
 
         rows = [{"id_profile": p.id_profile, "profile_name": p.profile_name} for p in profiles.launch_profiles]
         self._view.render_profiles_list(rows)
@@ -496,7 +497,7 @@ class ExecutorPresenter:
             return
 
         # Select the profile with the most recent if any.
-        profiles: ProfilesListModel = self._service_profile.read_profiles(self._scenario.id_file)
+        profiles: ProfilesModel = self._service_profile.read_profiles(self._scenario.id_file)
 
         target = profiles.get_most_recently_used_profile()
 

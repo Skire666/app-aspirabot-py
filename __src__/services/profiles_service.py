@@ -6,9 +6,10 @@
 
 import logging
 
-from models.profile_launch_model import ProfileLaunchModel
-from models.profiles_list_model import ProfilesListModel
+from models.profiles_list_model import ProfilesModel
 from repositories.profiles_repository import ProfilesRepository
+
+from __src__.models.launcher_model import ProfileLaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -66,7 +67,7 @@ class ProfilesService:
     # CRUD operations
     # -------------------------------------------------------------------------
 
-    def create_profiles(self, profiles: ProfilesListModel) -> None:
+    def create_profiles(self, profiles: ProfilesModel) -> None:
         """Stamp timestamps on *provider* and persist it as a new profile.
 
         Args:
@@ -83,7 +84,7 @@ class ProfilesService:
         profiles.mark_as_created()
         self._repository.create_profiles(profiles)
 
-    def read_profiles(self, id_file: str) -> ProfilesListModel:
+    def read_profiles(self, id_file: str) -> ProfilesModel:
         """Load a single profile by its file identifier and wire step context.
 
         After loading, each :class:`~models.step_scraping_model.StepScrapingModel`
@@ -111,7 +112,7 @@ class ProfilesService:
         """
         return self._repository.read_profiles(id_file)
 
-    def update_profiles(self, profile: ProfilesListModel) -> None:
+    def update_profiles(self, profile: ProfilesModel) -> None:
         """Refresh the modification timestamp on *provider* and overwrite it on disk.
 
         Calls :meth:`~models.profiles_model.ProfilesModel.mark_as_modified` so
@@ -178,7 +179,7 @@ class ProfilesService:
             self._repository.update_profiles(found)
 
         # no existing scenario: create a new one with the profile and save it
-        new_scenario = ProfilesListModel.get_default(id_scenario=id_scenario)
+        new_scenario = ProfilesModel.get_default(id_scenario=id_scenario)
         new_scenario.create_profile_launch(new_profile_launch)
         self._repository.create_profiles(new_scenario)
         return new_profile_launch
@@ -204,7 +205,7 @@ class ProfilesService:
             self._repository.update_profiles(found)
 
         # no existing scenario: create a new one with the profile and save it
-        new_profiles = ProfilesListModel.get_default(id_scenario=id_scenario)
+        new_profiles = ProfilesModel.get_default(id_scenario=id_scenario)
         new_profiles.create_profile_launch(profile)
         self._repository.create_profiles(new_profiles)
         return profile
@@ -221,7 +222,7 @@ class ProfilesService:
         """
         if self._repository.exists_profiles(id_scenario):
             # existing scenario: read it, update its profile list, and save it back
-            found: ProfilesListModel = self._repository.read_profiles(id_scenario)
+            found: ProfilesModel = self._repository.read_profiles(id_scenario)
             found.delete_profile_by_id(id_profile)
             self._repository.update_profiles(found)
         else:

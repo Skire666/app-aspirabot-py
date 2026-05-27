@@ -9,9 +9,10 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from models.profile_launch_model import ProfileLaunchModel
 from services.profiles_service import ProfilesService
 from views.profiles_view import ProfilesView
+
+from __src__.models.launcher_model import ProfileLaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -136,7 +137,7 @@ class ProfilesPresenter:
             if col == "launch_count":
                 try:
                     return f"{int(value or 0):020d}"
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     return "0" * 20
             return str(value or "").casefold()
 

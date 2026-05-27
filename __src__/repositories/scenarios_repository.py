@@ -17,7 +17,6 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from models.profile_launch_model import ProfileLaunchModel
 from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
 from shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
@@ -28,6 +27,8 @@ from shared.exception_util import (
     ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
+
+from __src__.models.launcher_model import ProfileLaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes

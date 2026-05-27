@@ -16,7 +16,7 @@ Example:
 import logging
 from pathlib import Path
 
-from models.profiles_list_model import ProfilesListModel
+from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
 from shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
@@ -93,7 +93,7 @@ class ProfilesRepository:
         full_filepath = self._compute_fullpath_from_id_file(id_scenario, suffix=C_PROFILE_FILE_SUFFIX)
         return full_filepath.exists() and full_filepath.is_file()
 
-    def create_profiles(self, profiles: ProfilesListModel) -> None:
+    def create_profiles(self, profiles: ProfilesModel) -> None:
         """Persists a new profile to disk as a JSON file.
 
         Args:
@@ -113,7 +113,7 @@ class ProfilesRepository:
             self._logger.error("Erreur lors de la création du profil.", exc_info=True)
             raise
 
-    def read_profiles(self, id_scenario: str) -> ProfilesListModel:
+    def read_profiles(self, id_scenario: str) -> ProfilesModel:
         """Loads a profile file by ID and returns it as a ProfileLaunchModel.
 
         Args:
@@ -137,11 +137,11 @@ class ProfilesRepository:
             self._logger.warning("Le fichier %s est vide.", full_filepath)
             raise ProfileDataMissingError(id_scenario)
 
-        provider_model = ProfilesListModel.import_from_data_json(provider_data)
+        provider_model = ProfilesModel.import_from_data_json(provider_data)
         self._logger.debug("Profil chargé : %s", full_filepath)
         return provider_model
 
-    def read_all_profiles(self) -> list[ProfilesListModel]:
+    def read_all_profiles(self) -> list[ProfilesModel]:
         """Lists all valid profiles found in the configured folder.
 
         Skips files that cannot be read or deserialized; logs an error for each.
@@ -149,14 +149,14 @@ class ProfilesRepository:
         Returns:
             List of ProfileModel instances; empty when no valid files exist.
         """
-        profiles: list[ProfilesListModel] = []
+        profiles: list[ProfilesModel] = []
 
         for file_path in self._list_profiles_files():
             try:
                 provider_data = self._json_repo.read_from_path(file_path)
 
                 if provider_data:
-                    provider_model = ProfilesListModel.import_from_data_json(provider_data)
+                    provider_model = ProfilesModel.import_from_data_json(provider_data)
                     profiles.append(provider_model)
                     self._logger.debug("Profil ajouté à la liste : %s", file_path.name)
             except OSError, AspirabotError:
@@ -165,7 +165,7 @@ class ProfilesRepository:
         self._logger.debug("Total de %s profile(s) chargé(s).", len(profiles))
         return profiles
 
-    def update_profiles(self, profiles: ProfilesListModel) -> None:
+    def update_profiles(self, profiles: ProfilesModel) -> None:
         """Overwrites an existing profile file with updated data.
 
         Args:
@@ -211,7 +211,7 @@ class ProfilesRepository:
             raise
 
     def read_scenario(self, id_scenario: str) -> ScenarioModel:
-        """Loads a scenario file by ID and returns it as a ProfilesListModel.
+        """Loads a scenario file by ID and returns it as a ProfilesModel.
 
         Args:
             id_scenario: Unique identifier of the scenario to load.

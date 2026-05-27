@@ -18,8 +18,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from models.profile_launch_model import ProfileLaunchModel
 from shared.datetime_util import dict_with_key_to_optional_datetime
+
+from __src__.models.launcher_model import ProfileLaunchModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -27,7 +28,7 @@ from shared.datetime_util import dict_with_key_to_optional_datetime
 
 
 @dataclass
-class ProfilesListModel:
+class ProfilesModel:
     """Domain model for a list of launch profiles.
 
     This model represents the list of launch profiles for a scenario, as displayed in the historic panel.
@@ -47,7 +48,7 @@ class ProfilesListModel:
     launch_profiles: list[ProfileLaunchModel] = field(default_factory=list)
 
     @classmethod
-    def get_default(cls, id_scenario: str) -> ProfilesListModel:
+    def get_default(cls, id_scenario: str) -> ProfilesModel:
         """Return a default profiles list model with a single default profile."""
         # Return a ready-to-use default provider.
         date_now = datetime.now()
@@ -59,21 +60,21 @@ class ProfilesListModel:
         )
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> ProfilesListModel:
+    def import_from_data_json(cls, data: dict[str, Any]) -> ProfilesModel:
         """Reconstruct a launch profiles list model from a JSON-compatible dictionary.
 
         Args:
             data: A dict produced by ``export_to_data_json``.
 
         Returns:
-            ProfilesListModel: A fully reconstructed profiles list instance.
+            ProfilesModel: A fully reconstructed profiles list instance.
 
         Raises:
             None.
 
         Example:
-            >>> raw = LaunchProfilesListModel.get_default_data("scenario_1").export_to_data_json()
-            >>> LaunchProfilesListModel.import_from_data_json(raw).scenario_id
+            >>> raw = LaunchProfilesModel.get_default_data("scenario_1").export_to_data_json()
+            >>> LaunchProfilesModel.import_from_data_json(raw).scenario_id
             'scenario_1'
         """
         profiles = cls._deserialize_profiles(data.get("launch_profiles", []))
@@ -100,7 +101,7 @@ class ProfilesListModel:
         # Skip non-dict entries silently for forward-compatibility.
         return [ProfileLaunchModel.import_from_data_json(raw) for raw in profiles_data if isinstance(raw, dict)]
 
-    def copy_business(self) -> ProfilesListModel:
+    def copy_business(self) -> ProfilesModel:
         """Create a deep copy of the model for use in business logic.
 
         This method is used to create an independent instance of the model that can be safely modified
@@ -111,7 +112,7 @@ class ProfilesListModel:
             A deep copy of the ProfilesModel instance.
         """
         copied_profiles = [profile.copy_business() for profile in self.launch_profiles]
-        return ProfilesListModel(launch_profiles=copied_profiles)
+        return ProfilesModel(launch_profiles=copied_profiles)
 
     def export_to_data_json(self) -> dict[str, Any]:
         """Converts the launch profiles list model to a JSON-serializable dictionary.

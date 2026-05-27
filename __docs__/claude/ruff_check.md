@@ -1,4 +1,5 @@
 Lance la commande 'ruff check ./__src__/' avec l'environnement 'venv' d'activé.
+Corrige toutes les erreurs.
 
 ERA001   commented-out-code
 D101     undocumented-public-class

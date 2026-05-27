@@ -173,7 +173,7 @@ class ProfileLaunchModel:
 
         duplicate = copy.deepcopy(source)
         duplicate.id_profile = generate_rng_hexastring(C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID)
-        duplicate.profile_name = f"Copie de {source.profil_name}"
+        duplicate.profile_name = f"Copie de {source.profile_name}"
         return duplicate
 
     def increment_launch_count(self) -> None:
