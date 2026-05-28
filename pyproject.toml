@@ -100,6 +100,12 @@ quote-style = "double"
 # indent with spaces, rather than tabs.
 indent-style = "space"
 
+# avoid useless new line after comma
+skip-magic-trailing-comma = true
+
+# "auto" | "lf" | "crlf" | "cr" | "native"
+line-ending = "lf"
+
 [tool.ruff.lint]
 
 # List of rule families to enable.
@@ -111,7 +117,6 @@ select = [
     "BLE",  # exceptions (avoid the catch-all term)
     "C4",   # Catch incorrect use of comprehensions, dict, list, etc
     "C90",  # mccabe — cyclomatic complexity (flags overly complex functions)
-    "COM",  # strict usage of comma
     "D",    # pydocstyle — docstring presence and format
     "DTZ",  # strict usage of time zone with datetime
     "E",    # pycodestyle errors

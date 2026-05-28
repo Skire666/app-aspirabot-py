@@ -30,7 +30,7 @@ from shared.step_registry import get_form
 # Constants
 # -----------------------------------------------------------------------------
 
-# Reverse mapping for label → StepType lookup.
+# Reverse mapping for label → StepTypeEnum lookup.
 _LABEL_TO_TYPE: dict[str, StepTypeEnum] = {v: k for k, v in C_STEP_TYPE_TO_LABELS.items()}
 
 

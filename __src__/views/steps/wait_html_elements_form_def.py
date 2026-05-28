@@ -52,7 +52,7 @@ class WaitHtmlElementsFormDef(IStepFormDef):
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
-        """Return the StepType handled by this form."""
+        """Return the StepTypeEnum handled by this form."""
         return StepTypeEnum.E_WAIT_HTML_ELEMENTS
 
     @classmethod
@@ -104,13 +104,13 @@ class WaitHtmlElementsFormDef(IStepFormDef):
 
         op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_KEY_OPERATOR] = op_var
 
         val_var = tk.StringVar(value="1")
         ttk.Spinbox(row2, from_=0, to=C_MAXIMUM_QTY_COUNTER, textvariable=val_var, width=6).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_KEY_QUANTITY_EXPECTED] = val_var
         ttk.Label(row2, text="d'élément(s)").pack(side=tk.LEFT, padx=(0, 5))
@@ -130,17 +130,17 @@ class WaitHtmlElementsFormDef(IStepFormDef):
         ttk.Label(line2, text="Toutes les").pack(side=tk.LEFT, padx=(0, 5))
         every_var = tk.StringVar(value=str(C_INPUT_DEFAULT_RETRY_DELAY))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_QTY_COUNTER, textvariable=every_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         unit_var = tk.StringVar(value=C_INPUT_DEFAULT_RETRY_UNIT)
         ttk.Combobox(
-            line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10,
+            line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 5))
 
         ttk.Label(line2, text="avec").pack(side=tk.LEFT, padx=(0, 5))
         max_var = tk.StringVar(value="10")
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_QTY_COUNTER, textvariable=max_var, width=6).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(line2, text="essai(s) max.").pack(side=tk.LEFT)
 
@@ -180,8 +180,8 @@ class WaitHtmlElementsFormDef(IStepFormDef):
         widgets[C_KEY_RETRY_DELAY].set(str(model.params.get(C_KEY_RETRY_DELAY, C_INPUT_DEFAULT_RETRY_DELAY)))
         widgets[C_KEY_RETRY_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_RETRY_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
-            ),
+                model.params.get(C_KEY_RETRY_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+            )
         )
         widgets[C_KEY_RETRY_MAX].set(str(model.params.get(C_KEY_RETRY_MAX, 10)))
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))

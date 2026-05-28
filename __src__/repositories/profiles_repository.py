@@ -21,7 +21,7 @@ from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
 from shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
 from shared.exception_util import (
-    AspirabotError,
+    AspirabotBaseError,
     ExportFolderNotADirectoryError,
     InvalidProfilesFolderPathError,
     ProfileDataMissingError,
@@ -110,7 +110,7 @@ class ProfilesRepository:
             provider_dict = profiles.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, provider_dict)
             self._logger.debug("Profil sauvegardé : %s", full_filepath)
-        except Exception:
+        except OSError:
             self._logger.error("Erreur lors de la création du profil.", exc_info=True)
             raise
 
@@ -160,7 +160,7 @@ class ProfilesRepository:
                     scenario_model = ProfilesModel.import_from_data_json(scenario_data)
                     profiles.append(scenario_model)
                     self._logger.debug("Profil ajouté à la liste : %s", file_path.name)
-            except OSError, AspirabotError:
+            except OSError, AspirabotBaseError:
                 self._logger.error("Impossible de charger le profil %s.", file_path.name, exc_info=True)
 
         self._logger.debug("Total de %s profile(s) chargé(s).", len(profiles))
@@ -182,7 +182,7 @@ class ProfilesRepository:
             scenario_dict = profiles.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, scenario_dict)
             self._logger.debug("Profil sauvegardé : %s", full_filepath)
-        except Exception:
+        except OSError:
             self._logger.error("Erreur lors de la MAJ du profil.", exc_info=True)
             raise
 
@@ -207,7 +207,7 @@ class ProfilesRepository:
         try:
             Path(full_pathfile_to_delete).unlink()
             self._logger.debug("Profil supprimé : %s", full_pathfile_to_delete)
-        except Exception:
+        except OSError:
             self._logger.error("Erreur lors de la suppression du profil.", exc_info=True)
             raise
 
@@ -268,7 +268,7 @@ class ProfilesRepository:
         try:
             open_folder(folder)
             self._logger.debug("Dossier ouvert : %s", folder)
-        except Exception:
+        except OSError, AspirabotBaseError:
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
 

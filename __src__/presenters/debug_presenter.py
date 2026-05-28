@@ -25,6 +25,7 @@ from playwright.sync_api import Page
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
 from shared.enums import ExtractTextHtmlEnum
+from shared.exception_util import AspirabotBaseError
 from views.debug_view import DebugView
 from views.workflow.debug_page_view import DebugPageView
 
@@ -126,10 +127,7 @@ class DebugPresenter:
             self._debug_browser.launch()
             self._debug_browser.append_new_page()
             self._debug_browser.safe_goto_url(
-                url,
-                wait_state="networkidle",
-                timeout_ms=timeout * 1000,
-                wait_dns_solver_sec=dns_delay,
+                url, wait_state="networkidle", timeout_ms=timeout * 1000, wait_dns_solver_sec=dns_delay
             )
 
             page = self._debug_browser.get_current_page()
@@ -146,7 +144,7 @@ class DebugPresenter:
                 if task is None:
                     break
                 task(page)
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.exception("Échec du démarrage du worker navigateur")
             win = self._debug_window
             msg = f"Erreur lors du chargement :\n{exc}"
@@ -201,7 +199,7 @@ class DebugPresenter:
             win = self._debug_window
             if win and win.winfo_exists():
                 win.after(0, lambda: win.set_html_content(html))
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.exception("Échec du rafraîchissement debug")
             win = self._debug_window
             msg = f"Erreur lors du rafraîchissement : {exc}"
@@ -221,7 +219,7 @@ class DebugPresenter:
             win = self._debug_window
             if win and win.winfo_exists():
                 win.after(0, lambda: win.set_text_results(text))
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.exception("Échec de l'analyse des textes")
             win = self._debug_window
             msg = f"Erreur : {exc}"
@@ -241,7 +239,7 @@ class DebugPresenter:
             win = self._debug_window
             if win and win.winfo_exists():
                 win.after(0, lambda: win.set_image_results(text))
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.exception("Échec de l'analyse des images")
             win = self._debug_window
             msg = f"Erreur : {exc}"

@@ -20,7 +20,7 @@ from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.url_sources.url_source_factory import build_url_source_scenario
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
-from shared.exception_util import AspirabotError
+from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_EXEC_FOLDER_URL_SOURCE_EMPTY,
     C_EXEC_INVALID_GLOBAL_THRESHOLD,
@@ -47,10 +47,7 @@ class ExecutorPresenter:
     """
 
     def __init__(
-        self,
-        view: ExecutorView,
-        scenarios_service: ScenariosService,
-        profiles_service: ProfilesService,
+        self, view: ExecutorView, scenarios_service: ScenariosService, profiles_service: ProfilesService
     ) -> None:
         """Wire all view callbacks and initialise internal state.
 
@@ -130,7 +127,7 @@ class ExecutorPresenter:
         """Fetch all scenarios and push them to the view."""
         try:
             scenarios = self._svc_scenarios.list_all_scenarios()
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.exception("Échec du chargement des scénarios")
             scenarios = []
         self._view.set_scenarios(scenarios)
@@ -142,7 +139,7 @@ class ExecutorPresenter:
         """React to a new scenario selection: load its profiles."""
         try:
             self._current_scenario = self._svc_scenarios.read_scenario(id_scenario)
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.exception("Impossible de lire le scénario %s", id_scenario)
             self._current_scenario = None
 
@@ -173,7 +170,7 @@ class ExecutorPresenter:
         id_scenario = self._current_scenario.id_file
         try:
             self._current_profiles_model = self._svc_profiles.read_profiles(id_scenario)
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.info("Aucun profil trouvé pour %s — création d'un profil par défaut.", id_scenario)
             default = self._svc_profiles.create_profile_launch(id_scenario, "Profil par défaut")
             self._current_profiles_model = self._svc_profiles.read_profiles(id_scenario)
@@ -220,7 +217,7 @@ class ExecutorPresenter:
         self._view.set_profile_section_enabled(True)
         self._view.set_profile_form(profile, steps)
         self._view.set_saved_date(
-            self._current_profiles_model.modified_date_profile if self._current_profiles_model else None,
+            self._current_profiles_model.modified_date_profile if self._current_profiles_model else None
         )
         self._set_dirty(False)
         self._refresh_url_preview(profile)
@@ -241,11 +238,7 @@ class ExecutorPresenter:
     def _refresh_url_preview_from_form(self) -> None:
         """Build a URL preview from the live form state and push it to the view."""
         data = self._view.get_profile_form_data()
-        self._update_url_preview(
-            data["url_source_type"],
-            data["url_source_value"],
-            data["url_sort_order"],
-        )
+        self._update_url_preview(data["url_source_type"], data["url_source_value"], data["url_sort_order"])
 
     def _update_url_preview(self, source_type: str, source_value: list[str] | str | None, sort_str: str) -> None:
         """Fetch preview URLs from the provider and push them to the view.
@@ -267,7 +260,7 @@ class ExecutorPresenter:
             sort = self._parse_sort_order(sort_str)
             provider = build_url_source_scenario(source_type, source_value, sort)
             self._view.set_url_preview(provider.preview_url_listed())
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.exception("Erreur lors de la prévisualisation des URLs")
             self._view.set_url_preview([])
 
@@ -299,7 +292,7 @@ class ExecutorPresenter:
         try:
             new = self._svc_profiles.create_profile_launch(self._current_scenario.id_file, name.strip())
             self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.exception("Erreur lors de la création du profil")
             return
         self._view.set_profiles(self._current_profiles_model.launch_profiles)
@@ -324,7 +317,7 @@ class ExecutorPresenter:
         try:
             self._svc_profiles.delete_profile_launch(self._current_scenario.id_file, self._current_profile.id_profile)
             self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.exception("Erreur lors de la suppression du profil")
             return
         self._view.set_profiles(self._current_profiles_model.launch_profiles)
@@ -338,7 +331,7 @@ class ExecutorPresenter:
         try:
             self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
             self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde du profil")
             return
         self._view.set_profiles(self._current_profiles_model.launch_profiles)
@@ -464,7 +457,7 @@ class ExecutorPresenter:
         self._current_profile.increment_launch_count()
         try:
             self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
-        except AspirabotError:
+        except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde pré-lancement")
 
     def _on_open_export_folder(self) -> None:
@@ -474,7 +467,7 @@ class ExecutorPresenter:
             return
         try:
             self._svc_profiles.open_export_folder(folder)
-        except (AspirabotError, OSError) as e:
+        except (AspirabotBaseError, OSError) as e:
             self._view.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
 
 

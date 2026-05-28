@@ -22,10 +22,12 @@ from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
 from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
+from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
 from repositories.profiles_repository import ProfilesRepository
 from repositories.scenarios_repository import ScenariosRepository
 from services.app_configuration_service import ConfigService
+from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
 from services.logging_service import LoggingService
 from services.profiles_service import ProfilesService
@@ -35,9 +37,7 @@ from services.startup_service import StartupService
 from services.workflow_service import WorkflowService
 
 # Bootstrap: import all step packages to populate the central registry.
-from shared.constants import (
-    C_APP_CONFIG_FILE,
-)
+from shared.constants import C_APP_CONFIG_FILE
 from shared.i18n_fra import TitleModuleEnum
 from shared.path_util import get_current_working_directory
 from views.app_configuration_view import AppConfigurationView
@@ -148,10 +148,7 @@ def _wire_all_navigation(
 
 
 def _build_and_wire_components(  # noqa: PLR0914
-    root: tk.Tk,
-    main_view: MainView,
-    config_repo: AppConfigurationRepository,
-    startup_service: StartupService,
+    root: tk.Tk, main_view: MainView, config_repo: AppConfigurationRepository, startup_service: StartupService
 ) -> None:
     """Instantiate all MVP groups, wire navigation, register views, and anchor presenters."""
     # Initialize each component group.
@@ -161,10 +158,10 @@ def _build_and_wire_components(  # noqa: PLR0914
     log_view, log_pr = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_pr = _init_config_component(main_view, config_repo)
     profiles_view, prof_pr, prof_svc = _init_profiles_components(
-        main_view, startup_service.config_model, JsonFileRepository(),
+        main_view, startup_service.config_model, JsonFileRepository()
     )
     scen_view, scen_pre, edit_view, edit_p, scen_svc = _init_scenarios_components(
-        main_view, prof_svc, startup_service.config_model, JsonFileRepository(),
+        main_view, prof_svc, startup_service.config_model, JsonFileRepository()
     )
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
@@ -187,11 +184,7 @@ def _build_and_wire_components(  # noqa: PLR0914
     _anchor_presenters(root, [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, exec_pre, dbg_p])
 
 
-def _launch_main_app(
-    root: tk.Tk,
-    config_repo: AppConfigurationRepository,
-    startup_service: StartupService,
-) -> None:
+def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, startup_service: StartupService) -> None:
     """Configure and reveal the main window after startup succeeds."""
     _override_gui_and_style(root, startup_service.config_model)
     main_view = _build_main_view(root)
@@ -220,10 +213,7 @@ def _build_main_view(root: tk.Tk) -> MainView:
 # -----------------------------------------------------------------------------
 
 
-def _init_log_component(
-    main_view: MainView,
-    logging_service: LoggingService,
-) -> tuple[LogView, LogPresenter]:
+def _init_log_component(main_view: MainView, logging_service: LoggingService) -> tuple[LogView, LogPresenter]:
     """Create and wire the journal (log display) component.
 
     Args:
@@ -240,8 +230,7 @@ def _init_log_component(
 
 
 def _init_config_component(
-    main_view: MainView,
-    config_repo: AppConfigurationRepository,
+    main_view: MainView, config_repo: AppConfigurationRepository
 ) -> tuple[AppConfigurationView, AppConfigurationPresenter]:
     """Create and wire the application configuration component.
 
@@ -259,9 +248,7 @@ def _init_config_component(
 
 
 def _init_profiles_components(
-    main_view: MainView,
-    config_model: AppConfigurationModel,
-    json_repo: JsonFileRepository,
+    main_view: MainView, config_model: AppConfigurationModel, json_repo: JsonFileRepository
 ) -> tuple[ProfilesView, ProfilesPresenter, ProfilesService]:
     """Create and wire the historic component.
 
@@ -285,13 +272,7 @@ def _init_scenarios_components(
     profiles_service: ProfilesService,
     config_model: AppConfigurationModel,
     json_repo: JsonFileRepository,
-) -> tuple[
-    ScenariosView,
-    ScenariosPresenter,
-    WorkflowView,
-    WorkflowPresenter,
-    ScenariosService,
-]:
+) -> tuple[ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter, ScenariosService]:
     """Create and wire the scenario list and edit components.
 
     Args:
@@ -311,14 +292,12 @@ def _init_scenarios_components(
     scenario_presenter = ScenariosPresenter(view=scenario_view, service=scenarios_service)
 
     workflow_view = WorkflowView(main_view.content_area)
-    workflow_presenter = WorkflowPresenter(workflow_view, scenarios_service, profiles_service)
+    workflow_presenter = WorkflowPresenter(workflow_view, scenarios_service, profiles_service, WorkflowService())
 
     return scenario_view, scenario_presenter, workflow_view, workflow_presenter, scenarios_service
 
 
-def _init_debug_component(
-    main_view: MainView,
-) -> tuple[DebugView, DebugPresenter]:
+def _init_debug_component(main_view: MainView) -> tuple[DebugView, DebugPresenter]:
     """Create and wire the debug browser component.
 
     Args:
@@ -351,16 +330,13 @@ def _init_executor_component(
     """
     executor_view = ExecutorView(config_model, main_view.content_area)
     executor_presenter = ExecutorPresenter(
-        view=executor_view,
-        scenarios_service=scenario_service,
-        profiles_service=profiles_service,
+        view=executor_view, scenarios_service=scenario_service, profiles_service=profiles_service
     )
     return executor_view, executor_presenter
 
 
 def _init_scraping_component(
-    main_view: MainView,
-    config_model: AppConfigurationModel,
+    main_view: MainView, config_model: AppConfigurationModel
 ) -> tuple[ScrapingView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
@@ -376,6 +352,8 @@ def _init_scraping_component(
         model_config=config_model,
         workflow_service=WorkflowService(),
         extracted_data_repository=JsonFileRepository(),
+        browser_service_factory=BrowserPlaywrightService,
+        journal_repository=JournalRepository(),
     )
     scraping_presenter = ScrapingPresenter(view=scraping_view, service=scraping_service)
     return scraping_view, scraping_presenter
@@ -387,9 +365,7 @@ def _init_scraping_component(
 
 
 def _wire_scenario_navigation(
-    main_view: MainView,
-    scenario_presenter: ScenariosPresenter,
-    workflow_presenter: WorkflowPresenter,
+    main_view: MainView, scenario_presenter: ScenariosPresenter, workflow_presenter: WorkflowPresenter
 ) -> None:
     """Connect create / edit / done navigation between views.
 
@@ -439,9 +415,7 @@ def _wire_scenario_navigation(
 
 
 def _wire_scraping_navigation(
-    main_view: MainView,
-    executor_presenter: ExecutorPresenter,
-    scraping_presenter: ScrapingPresenter,
+    main_view: MainView, executor_presenter: ExecutorPresenter, scraping_presenter: ScrapingPresenter
 ) -> None:
     """Connect executor launch to the scraping panel and wire start/stop hooks.
 
@@ -477,9 +451,7 @@ def _wire_scraping_navigation(
 
 
 def _wire_executor_launch(
-    main_view: MainView,
-    scenario_presenter: ScenariosPresenter,
-    executor_presenter: ExecutorPresenter,
+    main_view: MainView, scenario_presenter: ScenariosPresenter, executor_presenter: ExecutorPresenter
 ) -> None:
     """Connect the launch action from the scenario list to the executor panel.
 
@@ -499,9 +471,7 @@ def _wire_executor_launch(
 
 
 def _wire_profiles_launch(
-    main_view: MainView,
-    historic_presenter: ProfilesPresenter,
-    executor_presenter: ExecutorPresenter,
+    main_view: MainView, historic_presenter: ProfilesPresenter, executor_presenter: ExecutorPresenter
 ) -> None:
     """Connect the launch action from the historic list to the executor panel.
 

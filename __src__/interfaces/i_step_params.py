@@ -72,6 +72,6 @@ class IStepParams(Protocol):
         """Return the step type string associated with these parameters.
 
         Returns:
-            The StepType value corresponding to these params.
+            The StepTypeEnum value corresponding to these params.
         """
         ...

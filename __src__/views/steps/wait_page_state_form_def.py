@@ -55,7 +55,7 @@ class WaitPageStateFormDef(IStepFormDef):
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
-        """Return the StepType handled by this form definition."""
+        """Return the StepTypeEnum handled by this form definition."""
         return StepTypeEnum.E_WAIT_PAGE_STATE
 
     @classmethod
@@ -89,7 +89,7 @@ class WaitPageStateFormDef(IStepFormDef):
         ttk.Label(line1, text="Attendre le chargement :").pack(side=tk.LEFT, padx=(0, 5))
         ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_STATE)
         ttk.Combobox(line1, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_STATE, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(line1, text="(dom > load > idle 500ms)").pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_WAIT_STATE] = ws_var
@@ -108,11 +108,11 @@ class WaitPageStateFormDef(IStepFormDef):
         ttk.Label(line2, text="Timeout :").pack(side=tk.LEFT, padx=(0, 5))
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=td_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
         ttk.Combobox(line2, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_KEY_TIMEOUT_DURATION] = td_var
         widgets[C_KEY_TIMEOUT_UNIT] = tu_var
@@ -143,12 +143,12 @@ class WaitPageStateFormDef(IStepFormDef):
         """
         widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
         widgets[C_KEY_TIMEOUT_DURATION].set(
-            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION)),
+            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
         )
         widgets[C_KEY_TIMEOUT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
-            ),
+                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
+            )
         )
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 
@@ -186,7 +186,7 @@ class WaitPageStateFormDef(IStepFormDef):
 
         return (
             f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\n"
-             f"Attendre : {model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE)}"
+            f"Attendre : {model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE)}"
         )
 
 

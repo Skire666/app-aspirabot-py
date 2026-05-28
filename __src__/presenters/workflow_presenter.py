@@ -1,3 +1,10 @@
+"""Presenter for the workflow scenario editor.
+
+Manages scenario creation and editing. Delegates step-list management to
+StepsListPresenter. No business logic lives here — only orchestration between
+the view, ScenariosService, ProfilesService, and WorkflowService.
+"""
+
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
@@ -11,6 +18,7 @@ from presenters.steps_list_presenter import StepsListPresenter
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
+from shared.exception_util import AspirabotBaseError
 from shared.random_util import merge_unique_list_id_step
 from views.workflow_view import WorkflowView
 
@@ -27,6 +35,7 @@ class WorkflowPresenter:
         view: WorkflowView,
         scenarios_service: ScenariosService,
         profiles_service: ProfilesService,
+        workflow_service: WorkflowService,
     ) -> None:
         """Initialise the presenter.
 
@@ -34,6 +43,7 @@ class WorkflowPresenter:
             view: The editing user interface.
             scenarios_service: The service handling scenario business logic.
             profiles_service: The profile management service.
+            workflow_service: Shared workflow validation service injected from main.py.
         """
         self._logger = logging.getLogger(__name__)
         self._view: WorkflowView = view
@@ -46,7 +56,7 @@ class WorkflowPresenter:
         self._workflow_presenter = StepsListPresenter(
             view=view.workflow_builder_view,
             service_scenario=scenarios_service,
-            workflow_service=WorkflowService(),
+            workflow_service=workflow_service,
             gestion_view=view,
         )
         self._bind_view_events()
@@ -61,10 +71,7 @@ class WorkflowPresenter:
 
     def _bind_view_events(self) -> None:
         """Wires the Save and Cancel buttons to their handlers."""
-        self._view.set_callbacks(
-            on_save=self._on_save,
-            on_cancel=self._on_cancel,
-        )
+        self._view.set_callbacks(on_save=self._on_save, on_cancel=self._on_cancel)
 
     def create_new(self) -> None:
         """Switch the presenter to creation mode and load an empty model."""
@@ -143,8 +150,8 @@ class WorkflowPresenter:
 
             self._persist_scenario()
 
-        except Exception as exc:
-            self._logger.exception("Une erreur s'est produite", exc_info=True)
+        except AspirabotBaseError as exc:
+            self._logger.exception("Une erreur s'est produite")
             self._view.show_error(str(exc))
 
     def _persist_scenario(self) -> None:

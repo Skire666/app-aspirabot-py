@@ -9,11 +9,11 @@ Do not retrieve the contents of variables or display the contents of strings;
 from pathlib import Path
 
 
-class AspirabotError(Exception):
+class AspirabotBaseError(Exception):
     """Base validation error."""
 
 
-class ValueMustBePositiveError(AspirabotError):
+class ValueMustBePositiveError(AspirabotBaseError):
     """Raised when a value is not greater than zero."""
 
     def __init__(self) -> None:
@@ -21,7 +21,7 @@ class ValueMustBePositiveError(AspirabotError):
         super().__init__("La valeur doit être strictement supérieure à 0.")
 
 
-class ValueMustBePositiveAndEvenError(AspirabotError):
+class ValueMustBePositiveAndEvenError(AspirabotBaseError):
     """Raised when a value is not a positive even integer."""
 
     def __init__(self) -> None:
@@ -29,7 +29,7 @@ class ValueMustBePositiveAndEvenError(AspirabotError):
         super().__init__("La valeur doit être un entier pair strictement positif.")
 
 
-class ValueMustBeNonNegativeError(AspirabotError):
+class ValueMustBeNonNegativeError(AspirabotBaseError):
     """Raised when a value is negative."""
 
     def __init__(self) -> None:
@@ -37,7 +37,7 @@ class ValueMustBeNonNegativeError(AspirabotError):
         super().__init__("La valeur doit être supérieure ou égale à 0.")
 
 
-class ValueTooLargeError(AspirabotError):
+class ValueTooLargeError(AspirabotBaseError):
     """Raised when a value exceeds the maximum allowed."""
 
     def __init__(self, max_value: int | float) -> None:
@@ -49,7 +49,7 @@ class ValueTooLargeError(AspirabotError):
         super().__init__(f"La valeur dépasse le maximum autorisé : {max_value}.")
 
 
-class ValueTooSmallError(AspirabotError):
+class ValueTooSmallError(AspirabotBaseError):
     """Raised when a value is below the minimum allowed."""
 
     def __init__(self, min_value: int | float) -> None:
@@ -61,7 +61,7 @@ class ValueTooSmallError(AspirabotError):
         super().__init__(f"La valeur est inférieure au minimum autorisé : {min_value}.")
 
 
-class EmptyStringError(AspirabotError):
+class EmptyStringError(AspirabotBaseError):
     """Raised when a required string is empty."""
 
     def __init__(self) -> None:
@@ -69,7 +69,7 @@ class EmptyStringError(AspirabotError):
         super().__init__("La chaîne ne peut pas être vide.")
 
 
-class BlankStringError(AspirabotError):
+class BlankStringError(AspirabotBaseError):
     """Raised when a string contains only whitespace."""
 
     def __init__(self) -> None:
@@ -77,7 +77,7 @@ class BlankStringError(AspirabotError):
         super().__init__("La chaîne ne peut pas contenir uniquement des espaces.")
 
 
-class StringTooLongError(AspirabotError):
+class StringTooLongError(AspirabotBaseError):
     """Raised when a string exceeds the maximum allowed length."""
 
     def __init__(self, max_length: int) -> None:
@@ -89,7 +89,7 @@ class StringTooLongError(AspirabotError):
         super().__init__(f"La chaîne dépasse la longueur maximale autorisée : {max_length}.")
 
 
-class StringTooShortError(AspirabotError):
+class StringTooShortError(AspirabotBaseError):
     """Raised when a string is below the minimum required length."""
 
     def __init__(self, min_length: int) -> None:
@@ -101,7 +101,7 @@ class StringTooShortError(AspirabotError):
         super().__init__(f"La chaîne est en dessous de la longueur minimale requise : {min_length}.")
 
 
-class InvalidBooleanError(AspirabotError):
+class InvalidBooleanError(AspirabotBaseError):
     """Raised when a value is not a valid boolean."""
 
     def __init__(self) -> None:
@@ -109,7 +109,7 @@ class InvalidBooleanError(AspirabotError):
         super().__init__("Valeur booléenne invalide.")
 
 
-class ListEmptyError(AspirabotError):
+class ListEmptyError(AspirabotBaseError):
     """Raised when a required list is empty."""
 
     def __init__(self) -> None:
@@ -117,7 +117,7 @@ class ListEmptyError(AspirabotError):
         super().__init__("La liste ne peut pas être vide.")
 
 
-class ListTooLongError(AspirabotError):
+class ListTooLongError(AspirabotBaseError):
     """Raised when a list exceeds the maximum allowed size."""
 
     def __init__(self, max_length: int) -> None:
@@ -129,7 +129,7 @@ class ListTooLongError(AspirabotError):
         super().__init__(f"La liste dépasse la taille maximale autorisée : {max_length}.")
 
 
-class DuplicateItemError(AspirabotError):
+class DuplicateItemError(AspirabotBaseError):
     """Raised when a duplicate item is found where uniqueness is required."""
 
     def __init__(self) -> None:
@@ -137,7 +137,7 @@ class DuplicateItemError(AspirabotError):
         super().__init__("Élément en double détecté.")
 
 
-class InvalidRangeNumbersError(AspirabotError):
+class InvalidRangeNumbersError(AspirabotBaseError):
     """Raised when a numeric range is invalid because min is not less than max."""
 
     def __init__(self) -> None:
@@ -145,7 +145,7 @@ class InvalidRangeNumbersError(AspirabotError):
         super().__init__("Plage invalide : la valeur minimale doit être inférieure à la valeur maximale.")
 
 
-class InvalidLogLevelError(AspirabotError):
+class InvalidLogLevelError(AspirabotBaseError):
     """Raised when the configured log level is not a valid option."""
 
     def __init__(self, valid_levels: list[str]) -> None:
@@ -157,7 +157,7 @@ class InvalidLogLevelError(AspirabotError):
         super().__init__(f"Niveau de journalisation invalide. Options valides : {', '.join(valid_levels)}.")
 
 
-class InvalidFolderLogsError(AspirabotError):
+class InvalidFolderLogsError(AspirabotBaseError):
     """Raised when the logs folder path is empty or invalid."""
 
     def __init__(self) -> None:
@@ -165,7 +165,7 @@ class InvalidFolderLogsError(AspirabotError):
         super().__init__("Le chemin du dossier de journalisation ne peut pas être vide.")
 
 
-class InvalidFolderScenariosError(AspirabotError):
+class InvalidFolderScenariosError(AspirabotBaseError):
     """Raised when the scenarios folder path is empty or invalid."""
 
     def __init__(self) -> None:
@@ -173,7 +173,7 @@ class InvalidFolderScenariosError(AspirabotError):
         super().__init__("Le chemin du dossier des scénarios ne peut pas être vide.")
 
 
-class InvalidFolderScrapingError(AspirabotError):
+class InvalidFolderScrapingError(AspirabotBaseError):
     """Raised when the scraping data folder path is empty or invalid."""
 
     def __init__(self) -> None:
@@ -181,17 +181,17 @@ class InvalidFolderScrapingError(AspirabotError):
         super().__init__("Le chemin du dossier de données de scraping ne peut pas être vide.")
 
 
-class InvalidGuiBootingSizeError(AspirabotError):
+class InvalidGuiBootingSizeError(AspirabotBaseError):
     """Raised when the GUI booting size string is not in the expected WIDTHxHEIGHT format."""
 
     def __init__(self) -> None:
         """Initialize the error message."""
         super().__init__(
-            "Taille de démarrage GUI invalide. Format attendu : 'LARGEURxHAUTEUR' avec des valeurs numériques.",
+            "Taille de démarrage GUI invalide. Format attendu : 'LARGEURxHAUTEUR' avec des valeurs numériques."
         )
 
 
-class InvalidBrowserEngineError(AspirabotError):
+class InvalidBrowserEngineError(AspirabotBaseError):
     """Raised when the configured browser engine is not a valid option."""
 
     def __init__(self, valid_engines: list[str]) -> None:
@@ -203,7 +203,7 @@ class InvalidBrowserEngineError(AspirabotError):
         super().__init__(f"Moteur de navigateur invalide. Options valides : {', '.join(valid_engines)}.")
 
 
-class FailedToLoadConfigurationDuringRuntimeError(AspirabotError):
+class FailedToLoadConfigurationDuringRuntimeError(AspirabotBaseError):
     """Raised when the application configuration cannot be loaded at runtime."""
 
     def __init__(self) -> None:
@@ -211,7 +211,7 @@ class FailedToLoadConfigurationDuringRuntimeError(AspirabotError):
         super().__init__("Impossible de charger la configuration au démarrage.")
 
 
-class FailedToCreateRequiredDirectoriesDuringRuntimeError(AspirabotError):
+class FailedToCreateRequiredDirectoriesDuringRuntimeError(AspirabotBaseError):
     """Raised when the application cannot create required directories at runtime."""
 
     def __init__(self) -> None:
@@ -219,7 +219,7 @@ class FailedToCreateRequiredDirectoriesDuringRuntimeError(AspirabotError):
         super().__init__("Impossible de créer les répertoires requis au démarrage.")
 
 
-class FailedToInitializeLoggingDuringRuntimeError(AspirabotError):
+class FailedToInitializeLoggingDuringRuntimeError(AspirabotBaseError):
     """Raised when the logging system cannot be initialized at runtime."""
 
     def __init__(self) -> None:
@@ -227,7 +227,7 @@ class FailedToInitializeLoggingDuringRuntimeError(AspirabotError):
         super().__init__("Impossible d'initialiser le système de journalisation au démarrage.")
 
 
-class UnsupportedBrowserEngineError(AspirabotError):
+class UnsupportedBrowserEngineError(AspirabotBaseError):
     """Raised when the configured browser engine is unsupported."""
 
     def __init__(self, engine: str) -> None:
@@ -239,7 +239,7 @@ class UnsupportedBrowserEngineError(AspirabotError):
         super().__init__(f"Moteur de navigateur non pris en charge : {engine}")
 
 
-class InvalidScenarioJsonContentError(ValueError, AspirabotError):
+class InvalidScenarioJsonContentError(ValueError, AspirabotBaseError):
     """Raised when a scenario JSON file does not contain a valid object."""
 
     def __init__(self, file_name: str) -> None:
@@ -251,7 +251,7 @@ class InvalidScenarioJsonContentError(ValueError, AspirabotError):
         super().__init__(f"Contenu JSON invalide dans {file_name}")
 
 
-class InvalidProfilesFolderPathError(NotADirectoryError, AspirabotError):
+class InvalidProfilesFolderPathError(NotADirectoryError, AspirabotBaseError):
     """Raised when the profiles folder path is not a directory."""
 
     def __init__(self, folder_path: str | Path) -> None:
@@ -263,7 +263,7 @@ class InvalidProfilesFolderPathError(NotADirectoryError, AspirabotError):
         super().__init__(f"Le chemin spécifié n'est pas un dossier: {folder_path}")
 
 
-class ProfileNotFoundError(FileNotFoundError, AspirabotError):
+class ProfileNotFoundError(FileNotFoundError, AspirabotBaseError):
     """Raised when a Scenario file cannot be found."""
 
     def __init__(self, id_file: str, context: str | None = None) -> None:
@@ -277,7 +277,7 @@ class ProfileNotFoundError(FileNotFoundError, AspirabotError):
         super().__init__(message)
 
 
-class ScenarioNotFoundError(FileNotFoundError, AspirabotError):
+class ScenarioNotFoundError(FileNotFoundError, AspirabotBaseError):
     """Raised when a scenario file cannot be found."""
 
     def __init__(self, id_file: str, context: str | None = None) -> None:
@@ -291,7 +291,7 @@ class ScenarioNotFoundError(FileNotFoundError, AspirabotError):
         super().__init__(message)
 
 
-class ScenarioDataMissingError(ValueError, AspirabotError):
+class ScenarioDataMissingError(ValueError, AspirabotBaseError):
     """Raised when a scenario JSON file has no usable payload."""
 
     def __init__(self, id_file: str) -> None:
@@ -303,7 +303,7 @@ class ScenarioDataMissingError(ValueError, AspirabotError):
         super().__init__(f"Données manquantes pour {id_file}")
 
 
-class ProfileDataMissingError(ValueError, AspirabotError):
+class ProfileDataMissingError(ValueError, AspirabotBaseError):
     """Raised when a profile JSON file has no usable payload."""
 
     def __init__(self, id_file: str) -> None:
@@ -315,7 +315,7 @@ class ProfileDataMissingError(ValueError, AspirabotError):
         super().__init__(f"Données manquantes pour {id_file}")
 
 
-class InvalidScenariosFolderPathError(NotADirectoryError, AspirabotError):
+class InvalidScenariosFolderPathError(NotADirectoryError, AspirabotBaseError):
     """Raised when the scenarios folder path is not a directory."""
 
     def __init__(self, folder_path: str | Path) -> None:
@@ -327,7 +327,7 @@ class InvalidScenariosFolderPathError(NotADirectoryError, AspirabotError):
         super().__init__(f"Le chemin spécifié n'est pas un dossier: {folder_path}")
 
 
-class LogFolderNotADirectoryError(NotADirectoryError, AspirabotError):
+class LogFolderNotADirectoryError(NotADirectoryError, AspirabotBaseError):
     """Raised when the logs folder path exists but is not a directory."""
 
     def __init__(self, folder_path: str | Path) -> None:
@@ -339,7 +339,7 @@ class LogFolderNotADirectoryError(NotADirectoryError, AspirabotError):
         super().__init__(f"Le chemin des logs n'est pas un dossier : {folder_path}")
 
 
-class ExportFolderNotADirectoryError(NotADirectoryError, AspirabotError):
+class ExportFolderNotADirectoryError(NotADirectoryError, AspirabotBaseError):
     """Raised when the export folder path exists but is not a directory."""
 
     def __init__(self, folder_path: str | Path) -> None:
@@ -351,7 +351,7 @@ class ExportFolderNotADirectoryError(NotADirectoryError, AspirabotError):
         super().__init__(f"Le chemin d'export n'est pas un dossier : {folder_path}")
 
 
-class UnsupportedOperatingSystemError(OSError, AspirabotError):
+class UnsupportedOperatingSystemError(OSError, AspirabotBaseError):
     """Raised when the current operating system is not supported."""
 
     def __init__(self, enum_os: object) -> None:
@@ -363,7 +363,7 @@ class UnsupportedOperatingSystemError(OSError, AspirabotError):
         super().__init__(f"Système d'exploitation non pris en charge: {enum_os}")
 
 
-class ConfigurationNotLoadedError(ValueError, AspirabotError):
+class ConfigurationNotLoadedError(ValueError, AspirabotBaseError):
     """Raised when startup configuration has not been loaded yet."""
 
     def __init__(self, action: str | None = None) -> None:
@@ -379,7 +379,7 @@ class ConfigurationNotLoadedError(ValueError, AspirabotError):
         super().__init__(message)
 
 
-class LoggingNotInitializedError(ValueError, AspirabotError):
+class LoggingNotInitializedError(ValueError, AspirabotBaseError):
     """Raised when logging has not been initialized yet."""
 
     def __init__(self) -> None:
@@ -387,7 +387,7 @@ class LoggingNotInitializedError(ValueError, AspirabotError):
         super().__init__("Journalisation non initialisée. Appelez initialize_logging() en premier.")
 
 
-class ElementNotFoundForClickError(ValueError, AspirabotError):
+class ElementNotFoundForClickError(ValueError, AspirabotBaseError):
     """Raised when a click target cannot be found for the requested mode."""
 
     def __init__(self, selector: str, mode: str) -> None:
@@ -400,7 +400,7 @@ class ElementNotFoundForClickError(ValueError, AspirabotError):
         super().__init__(f"Élément {selector!r} introuvable pour le clic en mode {mode}.")
 
 
-class UnsupportedClickModeError(ValueError, AspirabotError):
+class UnsupportedClickModeError(ValueError, AspirabotBaseError):
     """Raised when a click mode is not supported."""
 
     def __init__(self, click_mode: str) -> None:
@@ -412,7 +412,7 @@ class UnsupportedClickModeError(ValueError, AspirabotError):
         super().__init__(f"Mode de clic non pris en charge : {click_mode}")
 
 
-class CurrentPageClosedUnexpectedlyError(ValueError, AspirabotError):
+class CurrentPageClosedUnexpectedlyError(ValueError, AspirabotBaseError):
     """Raised when the active page is closed during a close-tabs step."""
 
     def __init__(self) -> None:
@@ -420,7 +420,7 @@ class CurrentPageClosedUnexpectedlyError(ValueError, AspirabotError):
         super().__init__("La page courante a été fermée de manière inattendue.")
 
 
-class CountHtmlElementsConditionNotMetError(ValueError, AspirabotError):
+class CountHtmlElementsConditionNotMetError(ValueError, AspirabotBaseError):
     """Raised when the COUNT_HTML_ELEMENTS condition is not satisfied."""
 
     def __init__(self, count: int, operator: str, value_ask: str) -> None:
@@ -434,7 +434,7 @@ class CountHtmlElementsConditionNotMetError(ValueError, AspirabotError):
         super().__init__(f"Condition non satisfaite (COUNT={count}, {operator} {value_ask})")
 
 
-class CountHtmlImagesConditionNotMetError(ValueError, AspirabotError):
+class CountHtmlImagesConditionNotMetError(ValueError, AspirabotBaseError):
     """Raised when the COUNT_HTML_IMAGES condition is not satisfied."""
 
     def __init__(self, count: int, operator: str, value_desc: str) -> None:
@@ -448,7 +448,7 @@ class CountHtmlImagesConditionNotMetError(ValueError, AspirabotError):
         super().__init__(f"Condition non satisfaite (COUNT={count}, {operator} {value_desc})")
 
 
-class NoMatchingImageFoundError(ValueError, AspirabotError):
+class NoMatchingImageFoundError(ValueError, AspirabotBaseError):
     """Raised when no image matches the configured size constraints."""
 
     def __init__(self) -> None:
@@ -456,7 +456,7 @@ class NoMatchingImageFoundError(ValueError, AspirabotError):
         super().__init__("Aucune image correspondant aux contraintes de taille n'a été trouvée sur la page.")
 
 
-class ImageDownloadFailedError(ValueError, AspirabotError):
+class ImageDownloadFailedError(ValueError, AspirabotBaseError):
     """Raised when an image download fails with an HTTP error."""
 
     def __init__(self, status: int) -> None:
@@ -468,7 +468,7 @@ class ImageDownloadFailedError(ValueError, AspirabotError):
         super().__init__(f"Échec du téléchargement de l'image : HTTP {status}")
 
 
-class ImageNotDownloadedError(ValueError, AspirabotError):
+class ImageNotDownloadedError(ValueError, AspirabotBaseError):
     """Raised when no image could be downloaded from selected targets."""
 
     def __init__(self, found: int) -> None:
@@ -480,7 +480,7 @@ class ImageNotDownloadedError(ValueError, AspirabotError):
         super().__init__(f"Aucune image n'a été téléchargée (cibles trouvées : {found}).")
 
 
-class ImageWaitTimeoutError(TimeoutError, AspirabotError):
+class ImageWaitTimeoutError(TimeoutError, AspirabotBaseError):
     """Raised when waiting for an image size times out."""
 
     def __init__(self, wait_seconds: float) -> None:
@@ -491,11 +491,11 @@ class ImageWaitTimeoutError(TimeoutError, AspirabotError):
         """
         super().__init__(
             f"Aucune image correspondant aux contraintes de taille n'est apparue"
-            f" dans le délai imparti ({wait_seconds}s).",
+            f" dans le délai imparti ({wait_seconds}s)."
         )
 
 
-class BrowserAlreadyLaunchedError(RuntimeError, AspirabotError):
+class BrowserAlreadyLaunchedError(RuntimeError, AspirabotBaseError):
     """Raised when launch is called while a browser is already active."""
 
     def __init__(self) -> None:
@@ -503,7 +503,7 @@ class BrowserAlreadyLaunchedError(RuntimeError, AspirabotError):
         super().__init__("Le navigateur est déjà lancé. Appelez close_browser() en premier.")
 
 
-class BrowserLaunchFailedError(RuntimeError, AspirabotError):
+class BrowserLaunchFailedError(RuntimeError, AspirabotBaseError):
     """Raised when the browser fails to launch."""
 
     def __init__(self) -> None:
@@ -511,7 +511,7 @@ class BrowserLaunchFailedError(RuntimeError, AspirabotError):
         super().__init__("Échec du lancement du navigateur. Consultez les journaux pour plus de détails.")
 
 
-class BrowserNotLaunchedError(RuntimeError, AspirabotError):
+class BrowserNotLaunchedError(RuntimeError, AspirabotBaseError):
     """Raised when a browser operation requires a launched instance."""
 
     def __init__(self) -> None:
@@ -519,7 +519,7 @@ class BrowserNotLaunchedError(RuntimeError, AspirabotError):
         super().__init__("Le navigateur n'est pas lancé. Appelez launch() en premier.")
 
 
-class PageNotAvailableOrClosedError(RuntimeError, AspirabotError):
+class PageNotAvailableOrClosedError(RuntimeError, AspirabotBaseError):
     """Raised when a browser operation requires a launched instance."""
 
     def __init__(self) -> None:
@@ -527,7 +527,7 @@ class PageNotAvailableOrClosedError(RuntimeError, AspirabotError):
         super().__init__("La page n'est pas disponible ou a été fermée.")
 
 
-class NoExecutorsRegisteredError(ValueError, AspirabotError):
+class NoExecutorsRegisteredError(ValueError, AspirabotBaseError):
     """Raised when the workflow registry is empty."""
 
     def __init__(self) -> None:
@@ -535,7 +535,7 @@ class NoExecutorsRegisteredError(ValueError, AspirabotError):
         super().__init__("Aucun exécuteur enregistré dans le registre.")
 
 
-class ExecutorNotRegisteredError(ValueError, AspirabotError):
+class ExecutorNotRegisteredError(ValueError, AspirabotBaseError):
     """Raised when no executor is registered for a step type."""
 
     def __init__(self, step_type: object) -> None:
@@ -547,7 +547,7 @@ class ExecutorNotRegisteredError(ValueError, AspirabotError):
         super().__init__(f"Aucun exécuteur enregistré pour le type d'étape {step_type}.")
 
 
-class WorkflowStepsContextRequiredError(ValueError, AspirabotError):
+class WorkflowStepsContextRequiredError(ValueError, AspirabotBaseError):
     """Raised when workflow validation is missing the steps context."""
 
     def __init__(self) -> None:
@@ -555,7 +555,7 @@ class WorkflowStepsContextRequiredError(ValueError, AspirabotError):
         super().__init__("Le contexte des étapes du workflow est requis pour la validation.")
 
 
-class FormNotRegisteredError(ValueError, AspirabotError):
+class FormNotRegisteredError(ValueError, AspirabotBaseError):
     """Raised when no form definition is registered for a step type."""
 
     def __init__(self, step_type: object) -> None:
@@ -567,7 +567,7 @@ class FormNotRegisteredError(ValueError, AspirabotError):
         super().__init__(f"Aucun formulaire enregistré pour le type d'étape : {step_type}")
 
 
-class LazyAttributeNotFoundError(AttributeError, AspirabotError):
+class LazyAttributeNotFoundError(AttributeError, AspirabotBaseError):
     """Raised when a lazy-exported attribute is not part of the public API."""
 
     def __init__(self, module_name: str, attribute_name: str) -> None:
@@ -580,7 +580,7 @@ class LazyAttributeNotFoundError(AttributeError, AspirabotError):
         super().__init__(f"Le module {module_name!r} n'a pas d'attribut {attribute_name!r}")
 
 
-class InvalidLruCacheCapacityError(ValueError, AspirabotError):
+class InvalidLruCacheCapacityError(ValueError, AspirabotBaseError):
     """Raised when an LRU cache capacity is less than one."""
 
     def __init__(self, capacity: int) -> None:
@@ -597,7 +597,7 @@ class InvalidLruCacheCapacityError(ValueError, AspirabotError):
 # -----------------------------------------------------------------------------
 
 
-class InvalidTimeUnitError(ValueError, AspirabotError):
+class InvalidTimeUnitError(ValueError, AspirabotBaseError):
     """Raised when a time unit is missing or not in the recognised set."""
 
     def __init__(self, time_unit: str | None) -> None:
@@ -609,7 +609,7 @@ class InvalidTimeUnitError(ValueError, AspirabotError):
         super().__init__(f"Unité de temps invalide ou manquante : '{time_unit}'")
 
 
-class InvalidDurationError(ValueError, AspirabotError):
+class InvalidDurationError(ValueError, AspirabotBaseError):
     """Raised when a duration value is negative."""
 
     def __init__(self, duration: int | float) -> None:
@@ -626,7 +626,7 @@ class InvalidDurationError(ValueError, AspirabotError):
 # -----------------------------------------------------------------------------
 
 
-class UnknownUrlSourceTypeError(ValueError, AspirabotError):
+class UnknownUrlSourceTypeError(ValueError, AspirabotBaseError):
     """Raised when an unrecognised URL source type is requested."""
 
     def __init__(self, source_type: str) -> None:
@@ -638,7 +638,7 @@ class UnknownUrlSourceTypeError(ValueError, AspirabotError):
         super().__init__(f"Type de source URL inconnu : '{source_type}'. Types attendus : 'manual', 'folder'.")
 
 
-class InvalidUrlSourceValueTypeError(TypeError, AspirabotError):
+class InvalidUrlSourceValueTypeError(TypeError, AspirabotBaseError):
     """Raised when the source value type does not match the requested source type."""
 
     def __init__(self, source_type: str, expected: str, got: str) -> None:
@@ -652,7 +652,7 @@ class InvalidUrlSourceValueTypeError(TypeError, AspirabotError):
         super().__init__(f"Source '{source_type}' attend {expected}, reçu {got}.")
 
 
-class UrlSourceNotReadyError(RuntimeError, AspirabotError):
+class UrlSourceNotReadyError(RuntimeError, AspirabotBaseError):
     """Raised when a URL source operation is called before the source is ready."""
 
     def __init__(self, reason: str) -> None:
@@ -680,7 +680,7 @@ class UrlSourceNoUrlBufferedError(UrlSourceNotReadyError):
         super().__init__("aucune URL bufferisée")
 
 
-class UrlSourceExhaustedError(ValueError, AspirabotError):
+class UrlSourceExhaustedError(ValueError, AspirabotBaseError):
     """Raised when a URL source has no more URLs to provide."""
 
     def __init__(self) -> None:
@@ -688,7 +688,7 @@ class UrlSourceExhaustedError(ValueError, AspirabotError):
         super().__init__("Aucune URL disponible dans la source.")
 
 
-class UrlSourceFileNotFoundError(FileNotFoundError, AspirabotError):
+class UrlSourceFileNotFoundError(FileNotFoundError, AspirabotBaseError):
     """Raised when a required URL source file or folder cannot be found."""
 
     def __init__(self, path: object) -> None:
@@ -705,7 +705,7 @@ class UrlSourceFileNotFoundError(FileNotFoundError, AspirabotError):
 # -----------------------------------------------------------------------------
 
 
-class DnsSolverTimeoutExceededError(RuntimeError, AspirabotError):
+class DnsSolverTimeoutExceededError(RuntimeError, AspirabotBaseError):
     """Raised when the DNS solver wait duration exceeds the maximum allowed."""
 
     def __init__(self) -> None:
@@ -713,7 +713,7 @@ class DnsSolverTimeoutExceededError(RuntimeError, AspirabotError):
         super().__init__("Délai DNS solver atteint (>= 30 sec).")
 
 
-class UrlNavigationMismatchError(RuntimeError, AspirabotError):
+class UrlNavigationMismatchError(RuntimeError, AspirabotBaseError):
     """Raised when the browser lands on a different URL than the intended target."""
 
     def __init__(self, final_url: str, target_url: str) -> None:
@@ -731,7 +731,7 @@ class UrlNavigationMismatchError(RuntimeError, AspirabotError):
 # -----------------------------------------------------------------------------
 
 
-class NoDataToExportError(AspirabotError):
+class NoDataToExportError(AspirabotBaseError):
     """Raised when there is no extracted data available to export."""
 
     def __init__(self) -> None:
@@ -739,7 +739,7 @@ class NoDataToExportError(AspirabotError):
         super().__init__("Aucune donnée extraite à exporter.")
 
 
-class ExportFolderNotConfiguredError(AspirabotError):
+class ExportFolderNotConfiguredError(AspirabotBaseError):
     """Raised when the export folder has not been configured."""
 
     def __init__(self) -> None:
@@ -747,7 +747,7 @@ class ExportFolderNotConfiguredError(AspirabotError):
         super().__init__("Dossier d'export non configuré.")
 
 
-class DownloadNotDetectedError(AspirabotError):
+class DownloadNotDetectedError(AspirabotBaseError):
     """Raised when a click was executed but no file download was detected."""
 
     def __init__(self) -> None:
@@ -755,7 +755,7 @@ class DownloadNotDetectedError(AspirabotError):
         super().__init__("Le clic a été effectué mais aucun téléchargement n'a été détecté.")
 
 
-class MissingUrlFilterError(ValueError, AspirabotError):
+class MissingUrlFilterError(ValueError, AspirabotBaseError):
     """Raised when no URL filter is available to execute a close-tabs step."""
 
     def __init__(self) -> None:
@@ -763,7 +763,7 @@ class MissingUrlFilterError(ValueError, AspirabotError):
         super().__init__("Aucun filtre URL disponible. Configurez un mode ou ouvrez une page avant d'exécuter ce step.")
 
 
-class EmptyCustomUrlError(ValueError, AspirabotError):
+class EmptyCustomUrlError(ValueError, AspirabotBaseError):
     """Raised when a custom URL step parameter is empty."""
 
     def __init__(self) -> None:
@@ -771,7 +771,7 @@ class EmptyCustomUrlError(ValueError, AspirabotError):
         super().__init__("URL personnalisée vide.")
 
 
-class ScriptExecutionFailedError(RuntimeError, AspirabotError):
+class ScriptExecutionFailedError(RuntimeError, AspirabotBaseError):
     """Raised when a browser script fails after all retries are exhausted."""
 
     def __init__(self, script_name: str) -> None:
@@ -788,7 +788,7 @@ class ScriptExecutionFailedError(RuntimeError, AspirabotError):
 # -----------------------------------------------------------------------------
 
 
-class JsonFileRepositoryError(AspirabotError):
+class JsonFileRepositoryError(AspirabotBaseError):
     """Raised when a JSON file cannot be read from or written to disk."""
 
     def __init__(self, path: Path, reason: str) -> None:
@@ -806,7 +806,7 @@ class JsonFileRepositoryError(AspirabotError):
 # -----------------------------------------------------------------------------
 
 
-class DuplicateColumnKeyError(ValueError, AspirabotError):
+class DuplicateColumnKeyError(ValueError, AspirabotBaseError):
     """Raised when a column key is registered twice in the same widget."""
 
     def __init__(self, key: str) -> None:
@@ -818,7 +818,7 @@ class DuplicateColumnKeyError(ValueError, AspirabotError):
         super().__init__(f"Colonne '{key}' déjà existante.")
 
 
-class ColumnNotFoundError(ValueError, AspirabotError):
+class ColumnNotFoundError(ValueError, AspirabotBaseError):
     """Raised when a column key is not found in the widget."""
 
     def __init__(self, key: str) -> None:

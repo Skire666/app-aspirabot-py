@@ -12,6 +12,7 @@ from typing import Any
 
 from models.launcher_model import LaunchModel
 from services.profiles_service import ProfilesService
+from shared.exception_util import AspirabotBaseError
 from views.profiles_view import ProfilesView
 
 # -----------------------------------------------------------------------------
@@ -88,7 +89,7 @@ class ProfilesPresenter:
         # Retrieve all profiles from the service.
         try:
             all_profiles = self._service_profile.list_all_profiles_launch()
-        except Exception:
+        except AspirabotBaseError:
             self._logger.exception("Échec du chargement des profils")
             all_profiles = []
 
@@ -122,7 +123,7 @@ class ProfilesPresenter:
                     "launch_count": str(p.launch_count),
                     "id_profile": p.id_profile,
                     "id_scenario": p.id_scenario,
-                },
+                }
             )
 
         return rows

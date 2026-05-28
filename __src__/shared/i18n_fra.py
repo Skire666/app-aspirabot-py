@@ -139,18 +139,6 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
 # Templates errors
 # -----------------------------------------------------------------------------
 
-"""User-facing message templates for all presenters.
-
-All user-visible strings are defined here.  No presenter, service, or view
-may ever write a user-facing string inline; every message must be formatted
-from one of the templates below.
-
-Example:
-    >>> msg = ERROR_TEMPLATES["image_dim_not_int"].format(step="02", key="height_min")
-    >>> msg
-    "Étape 02 : height_min doit être un nombre entier."
-"""
-
 ERROR_TEMPLATES: dict[str, str] = {
     # --- Shared image dimension validation (download_image, count_html_images, wait_html_images) ---
     "image_dim_not_int": "Étape {step} : {key} doit être un nombre entier.",

@@ -53,10 +53,10 @@ class IStepExecutor(Protocol):
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
-        """Return the StepType this executor handles.
+        """Return the StepTypeEnum this executor handles.
 
         Returns:
-            The matching StepType enum member.
+            The matching StepTypeEnum enum member.
         """
         ...
 

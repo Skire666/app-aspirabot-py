@@ -48,10 +48,10 @@ class IStepFormDef(Protocol):
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
-        """Return the StepType this definition handles.
+        """Return the StepTypeEnum this definition handles.
 
         Returns:
-            The matching StepType enum member.
+            The matching StepTypeEnum enum member.
         """
         ...
 

@@ -17,7 +17,7 @@ from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
 from shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
 from shared.exception_util import (
-    AspirabotError,
+    AspirabotBaseError,
     InvalidScenariosFolderPathError,
     ScenarioDataMissingError,
     ScenarioNotFoundError,
@@ -142,7 +142,7 @@ class ScenariosRepository:
                     scenario_model = self._dict_to_scenario_model(scenario_data)
                     scenarios.append(scenario_model)
                     self._logger.debug("Scénario ajouté à la liste : %s", file_path.name)
-            except OSError, AspirabotError:
+            except OSError, AspirabotBaseError:
                 self._logger.error("Impossible de charger le scénario %s.", file_path.name, exc_info=True)
 
         self._logger.debug("Total de %s scénario(s) chargé(s).", len(scenarios))
@@ -164,7 +164,7 @@ class ScenariosRepository:
             scenario_dict = scenario.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, scenario_dict)
             self._logger.debug("Scénario sauvegardé : %s", full_filepath)
-        except Exception:
+        except OSError:
             self._logger.error("Erreur lors de la création du scénario.", exc_info=True)
             raise
 
@@ -184,7 +184,7 @@ class ScenariosRepository:
             scenario_dict = scenario.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, scenario_dict)
             self._logger.debug("Scénario sauvegardé : %s", full_filepath)
-        except Exception:
+        except OSError:
             self._logger.error("Erreur lors de la MAJ du scénario.", exc_info=True)
             raise
 
@@ -215,7 +215,7 @@ class ScenariosRepository:
         try:
             Path(full_pathfile_to_delete).unlink()
             self._logger.debug("Scénario supprimé : %s", full_pathfile_to_delete)
-        except Exception:
+        except OSError:
             self._logger.error("Erreur lors de la suppression du scénario.", exc_info=True)
             raise
 
@@ -232,7 +232,7 @@ class ScenariosRepository:
             dicts = tmp.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, dicts)
             self._logger.debug("Profil de lancement sauvegardé : %s", full_filepath)
-        except Exception:
+        except OSError:
             self._logger.error("Erreur lors de la création du profil de lancement.", exc_info=True)
             raise
 
@@ -254,7 +254,7 @@ class ScenariosRepository:
         try:
             open_folder(folder)
             self._logger.debug("Dossier ouvert : %s", folder)
-        except Exception:
+        except OSError, AspirabotBaseError:
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
 

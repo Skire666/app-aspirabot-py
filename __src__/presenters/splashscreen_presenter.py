@@ -13,7 +13,7 @@ from shared.constants import (
     C_SPLASHSCREEN_DISPLAY_MS_TOTAL,
     C_SPLASHSCREEN_STEP_LABELS,
 )
-from shared.exception_util import AspirabotError
+from shared.exception_util import AspirabotBaseError
 from views.splashscreen_view import SplashscreenView
 
 # -----------------------------------------------------------------------------
@@ -83,7 +83,7 @@ class SplashscreenPresenter:
             self._service.load_configuration()
             # Show icon and wait before moving on to keep it readable.
             self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
-        except AspirabotError as exc:
+        except AspirabotBaseError as exc:
             self._handle_error(str(exc))
 
     def _run_step_2(self) -> None:
@@ -93,7 +93,7 @@ class SplashscreenPresenter:
             self._service.create_required_directories()
             # Show icon and wait before moving on to keep it readable.
             self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_3)
-        except AspirabotError as exc:
+        except AspirabotBaseError as exc:
             traceback.print_stack()
             self._handle_error(str(exc))
 
@@ -104,7 +104,7 @@ class SplashscreenPresenter:
             self._service.initialize_logging()
             # Show icon, then wait one last second before launching the app.
             self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_4)
-        except AspirabotError as exc:
+        except AspirabotBaseError as exc:
             self._handle_error(str(exc))
 
     def _run_step_4(self) -> None:
@@ -115,7 +115,7 @@ class SplashscreenPresenter:
             elapsed_ms = self._service.get_time_elapsed_when_booting()
             remaining_ms = max(0, C_SPLASHSCREEN_DISPLAY_MS_TOTAL - elapsed_ms)
             self._view.after(int(remaining_ms), self._on_startup_complete)
-        except AspirabotError as exc:
+        except AspirabotBaseError as exc:
             self._handle_error(str(exc))
 
     # -----------------------------------------------------------------------------

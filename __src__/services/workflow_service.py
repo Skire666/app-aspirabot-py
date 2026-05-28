@@ -100,12 +100,12 @@ class WorkflowService:
         Raises:
             None.
         """
-        try:
-            if steps is None:
-                raise WorkflowStepsContextRequiredError()
+        if steps is None:
+            raise WorkflowStepsContextRequiredError()
 
+        try:
             executor: IStepExecutor = self.get_step_executor(step.step_type)
             step.parent_context = steps  # type: ignore
             return executor.validate_model(step, step_index)
-        except ValueError:
+        except (NoExecutorsRegisteredError, ExecutorNotRegisteredError):
             return []

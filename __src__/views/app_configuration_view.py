@@ -82,15 +82,10 @@ class AppConfigurationView(ttk.Frame):
         frame = ttk.Frame(parent)
 
         ttk.Button(frame, text="Réinitialiser", command=self._notify_reset).pack(side=tk.LEFT, padx=(0, 5))
-        self._btn_cancel = ttk.Button(
-            frame,
-            text="Annuler",
-            command=self._notify_cancel,
-            state=tk.DISABLED,
-        )
+        self._btn_cancel = ttk.Button(frame, text="Annuler", command=self._notify_cancel, state=tk.DISABLED)
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
         self._btn_save = ttk.Button(
-            frame, text="Sauvegarder les modifications", command=self._notify_save, state=tk.DISABLED,
+            frame, text="Sauvegarder les modifications", command=self._notify_save, state=tk.DISABLED
         )
         self._btn_save.pack(side=tk.LEFT, padx=5)
 
@@ -114,24 +109,13 @@ class AppConfigurationView(ttk.Frame):
     @staticmethod
     def _add_text_row(frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
-        ttk.Entry(frame, textvariable=var).grid(
-            row=row,
-            column=1,
-            columnspan=2,
-            sticky="ew",
-            padx=5,
-            pady=5,
-        )
+        ttk.Entry(frame, textvariable=var).grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
 
     def _add_path_row(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         ttk.Entry(frame, textvariable=var).grid(row=row, column=1, sticky="ew", padx=5, pady=5)
         ttk.Button(frame, text="Parcourir", command=lambda: self._browse_directory(var)).grid(
-            row=row,
-            column=2,
-            sticky="e",
-            padx=5,
-            pady=5,
+            row=row, column=2, sticky="e", padx=5, pady=5
         )
 
     @staticmethod
@@ -159,10 +143,7 @@ class AppConfigurationView(ttk.Frame):
             var.trace_add("write", self._notify_change)
 
     def set_callbacks(
-        self,
-        on_save: Callable[[], None],
-        on_reset: Callable[[], None],
-        on_cancel: Callable[[], None],
+        self, on_save: Callable[[], None], on_reset: Callable[[], None], on_cancel: Callable[[], None]
     ) -> None:
         """Sets callbacks for save and reset actions.
 

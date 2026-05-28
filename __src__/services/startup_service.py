@@ -12,7 +12,7 @@ from repositories.log_repository import LogRepository
 from services.logging_service import LoggingService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
 from shared.exception_util import (
-    AspirabotError,
+    AspirabotBaseError,
     ConfigurationNotLoadedError,
     FailedToCreateRequiredDirectoriesDuringRuntimeError,
     FailedToInitializeLoggingDuringRuntimeError,
@@ -72,7 +72,7 @@ class StartupService:
             # Ensure the config file exists before reading it.
             self._config_repo.ensure_file_exists()
             self._config_model = self._config_repo.read_configuration()
-        except (AspirabotError, OSError) as exc:
+        except (AspirabotBaseError, OSError) as exc:
             raise FailedToLoadConfigurationDuringRuntimeError() from exc
 
     def create_required_directories(self) -> None:
@@ -109,11 +109,9 @@ class StartupService:
             log_file_path = self._config_model.folder_logs / C_LOGS_FILE_NAME_WITH_EXT
             log_repository = LogRepository(self._config_model.folder_logs)
             self._logging_service = LoggingService(
-                str(log_file_path),
-                self._config_model.log_level_enum,
-                log_repository,
+                str(log_file_path), self._config_model.log_level_enum, log_repository
             )
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             raise FailedToInitializeLoggingDuringRuntimeError() from exc
 
     def get_time_elapsed_when_booting(self) -> float:

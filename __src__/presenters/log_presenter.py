@@ -6,7 +6,7 @@
 
 from models.log_entry_model import LogEntryModel
 from services.logging_service import LoggingService
-from shared.exception_util import AspirabotError
+from shared.exception_util import AspirabotBaseError
 from views.log_view import LogView
 
 
@@ -40,7 +40,7 @@ class LogPresenter:
         """Requests the service to open the logs folder; shows error on failure."""
         try:
             self._service.open_logs_folder()
-        except (AspirabotError, OSError) as e:
+        except (AspirabotBaseError, OSError) as e:
             self._view.show_error("Erreur", f"Impossible d'ouvrir le dossier des logs :\n{e}")
 
     def _update_view(self) -> None:

@@ -12,6 +12,7 @@ from models.app_configuration_model import AppConfigurationModel
 from services.app_configuration_service import ConfigService
 from shared.constants import C_BROWSER_ENGINE_PLAYWRIGHT
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
+from shared.exception_util import AspirabotBaseError
 from views.app_configuration_view import AppConfigurationView
 
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -39,11 +40,7 @@ class AppConfigurationPresenter:
         self._is_loading = False
         self._last_loaded_data: dict[str, Any] | None = None
 
-        self._view.set_callbacks(
-            on_save=self._on_save,
-            on_reset=self._on_reset,
-            on_cancel=self._on_cancel,
-        )
+        self._view.set_callbacks(on_save=self._on_save, on_reset=self._on_reset, on_cancel=self._on_cancel)
         self._view.set_on_change_callback(self._on_form_change)
         self._view.set_log_level_options(_LOG_LEVEL_OPTIONS)
         self._view.set_browser_engine_options(_BROWSER_ENGINE_OPTIONS)
@@ -53,7 +50,7 @@ class AppConfigurationPresenter:
         """Loads the persisted configuration into the view."""
         try:
             config = self._service.read_configuration()
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
             config = AppConfigurationModel()
@@ -66,7 +63,7 @@ class AppConfigurationPresenter:
         try:
             new_config = self._build_model(form_data)
             self._service.update_configuration(new_config)
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
             return
@@ -81,7 +78,7 @@ class AppConfigurationPresenter:
         try:
             default_config = AppConfigurationModel()
             self._service.update_configuration(default_config)
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             self._view.show_error(str(exc))
             return

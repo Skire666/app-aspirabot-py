@@ -24,18 +24,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from shared.enums import StepTypeEnum
 from shared.exception_util import FormNotRegisteredError
 
 if TYPE_CHECKING:
     from interfaces.i_step_form_def import IStepFormDef
-    from models.step_scraping_model import StepType
 
 # -----------------------------------------------------------------------------
 # Internal storage
 # -----------------------------------------------------------------------------
 
 # Populated at import time by each concrete executor / form-def module.
-_forms: dict[StepType, IStepFormDef] = {}
+_forms: dict[StepTypeEnum, IStepFormDef] = {}
 
 # -----------------------------------------------------------------------------
 # Registration helpers (called by concrete classes at module level)
@@ -62,11 +62,11 @@ def register_form(form: IStepFormDef) -> None:
 # -----------------------------------------------------------------------------
 
 
-def get_form(step_type: StepType) -> IStepFormDef:
+def get_form(step_type: StepTypeEnum) -> IStepFormDef:
     """Returns the registered form definition for the given step type.
 
     Args:
-        step_type: The StepType to look up.
+        step_type: The StepTypeEnum to look up.
 
     Returns:
         The IStepFormDef instance registered for that type.

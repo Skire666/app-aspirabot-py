@@ -1,3 +1,10 @@
+"""Presenter mediating ScenariosView and ScenariosService.
+
+Loads, sorts, and displays the scenario list. Delegates creation, editing,
+duplication, deletion, and launch actions to the service or to injectable
+navigation hooks supplied by main.py. No business logic lives here.
+"""
+
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
@@ -9,6 +16,7 @@ from datetime import datetime
 from models.scenario_model import ScenarioModel
 from services.scenarios_service import ScenariosService
 from shared.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
+from shared.exception_util import AspirabotBaseError
 from views.scenarios_view import ScenariosView
 
 
@@ -74,6 +82,7 @@ class ScenariosPresenter:
         )
 
     def _load_scenarios(self) -> None:
+        """Fetch all scenarios from the service, sort them, and refresh the view."""
         try:
             self._all_scenarios = self._service.list_all_scenarios()
         except FileNotFoundError:
@@ -124,7 +133,7 @@ class ScenariosPresenter:
                     "version": p.version,
                     "created_date_scenario": p.created_date_scenario,
                     "modified_date_scenario": p.modified_date_scenario,
-                },
+                }
             )
         return formatted
 
@@ -133,7 +142,7 @@ class ScenariosPresenter:
         if self.is_workflow_active and self.is_workflow_active():
             self._view.show_warning(
                 "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification en cours avant de continuer.",
+                "Veuillez terminer ou annuler la modification en cours avant de continuer."
             )
             return
         if self.on_request_create_scenario:
@@ -144,7 +153,7 @@ class ScenariosPresenter:
         if self.is_workflow_active and self.is_workflow_active():
             self._view.show_warning(
                 "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification en cours avant de continuer.",
+                "Veuillez terminer ou annuler la modification en cours avant de continuer."
             )
             return
         if self.on_request_edit_scenario:
@@ -166,7 +175,7 @@ class ScenariosPresenter:
         try:
             self._service.duplicate_scenario(id_file)
             self._load_scenarios()
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.error("Erreur lors de la duplication du scénario", exc_info=True)
             self._view.show_error(f"La duplication a échoué : {exc}")
 
@@ -176,7 +185,7 @@ class ScenariosPresenter:
         try:
             self._service.delete_scenario(id_file)
             self._load_scenarios()
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             self._logger.error("Erreur lors de la suppression du scénario", exc_info=True)
             self._view.show_error(f"La suppression a échoué : {exc}")
 
@@ -187,8 +196,12 @@ class ScenariosPresenter:
         self._load_scenarios()
 
     def _on_validate_scenarios(self) -> None:
-        self._view.set_validation_state(True, "TODO A CODER")
+        """Trigger batch validation of all loaded scenarios.
 
+        Not yet implemented — raises ``NotImplementedError`` until the feature
+        is built out in a future iteration.
+        """
+        self._view.set_validation_state(True, "TODO A CODER")
         raise NotImplementedError("La validation des scénarios n'est pas encore implémentée.")
 
     def _on_sort(self, column: str, ascending: bool) -> None:

@@ -25,7 +25,7 @@ from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scraping_service import ScrapingService
 from shared.enums import EventScrapingEnum
-from shared.exception_util import AspirabotError
+from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_SCRAPING_EVENT_BROWSER_INIT,
     C_SCRAPING_EVENT_CONTEXT_INIT,
@@ -122,9 +122,7 @@ class ScrapingPresenter:
         self._scenario = scenario
         self._profile = profile
         self._view.set_launch_context(
-            scenario_name=scenario.scenario_name,
-            profile_name=profile.profile_name,
-            folder=profile.export_folder,
+            scenario_name=scenario.scenario_name, profile_name=profile.profile_name, folder=profile.export_folder
         )
         has_folder = bool(profile.export_folder.strip())
         self._view.update_context_state(has_context=True, has_folder=has_folder)
@@ -204,7 +202,7 @@ class ScrapingPresenter:
             return
         try:
             self._service.open_export_folder(self._profile.export_folder)
-        except (AspirabotError, OSError) as e:
+        except (AspirabotBaseError, OSError) as e:
             self._view.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
 
     # ------------------------------------------------------------------
@@ -219,7 +217,7 @@ class ScrapingPresenter:
         handlers = self._build_run_handlers()
         try:
             report = self._service.run_workflow(self._scenario, config, handlers)
-        except Exception:
+        except AspirabotBaseError:
             self._logger.exception("Erreur critique pendant le scraping")
             report = None
 
@@ -281,10 +279,7 @@ class ScrapingPresenter:
         self._view.update_process_status(C_SCRAPING_STATUS_EMERGENCY_STOP)
 
     def _on_logging_event(
-        self,
-        event: EventScrapingEnum,
-        step: StepScrapingModel | None,
-        context: ScrapingContextModel | None,
+        self, event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
     ) -> None:
         """Route a scraping lifecycle event to the journal (from worker thread).
 
@@ -298,10 +293,7 @@ class ScrapingPresenter:
             self._view.after(0, lambda entry=line: self._append_journal(entry))
 
     def _format_journal_line(
-        self,
-        event: EventScrapingEnum,
-        step: StepScrapingModel | None,
-        context: ScrapingContextModel | None,
+        self, event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
     ) -> str:
         """Build a formatted journal entry from a scraping event.
 
@@ -380,28 +372,23 @@ class ScrapingPresenter:
         ts = datetime.now().strftime("%H:%M:%S")
         self._append_journal(f"{ts} - === Résumé final ===")
         self._append_journal(
-            f"{ts} | Étapes : total={rp.steps_executed} | OK={rp.steps_success} | KO={rp.steps_failed}",
+            f"{ts} | Étapes : total={rp.steps_executed} | OK={rp.steps_success} | KO={rp.steps_failed}"
         )
         self._append_journal(
-            f"{ts} | OpenURL : total={rp.open_urls_executed} | OK={rp.open_urls_success} | KO={rp.open_urls_failed}",
+            f"{ts} | OpenURL : total={rp.open_urls_executed} | OK={rp.open_urls_success} | KO={rp.open_urls_failed}"
         )
         self._append_journal(
-            f"{ts} | Clics : total={rp.clicks_executed} | OK={rp.clicks_success} | KO={rp.clicks_failed}",
+            f"{ts} | Clics : total={rp.clicks_executed} | OK={rp.clicks_success} | KO={rp.clicks_failed}"
         )
 
     def _export_journal(self) -> None:
-        """Write the journal buffer to a .txt file inside the export folder."""
+        """Delegate journal persistence to ScrapingService and push the path to the view."""
         if not self._profile or not self._journal_lines:
             return
         folder = Path(self._profile.export_folder)
-        folder.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        path = folder / f"journal_{timestamp}.txt"
-        try:
-            path.write_text("\n".join(self._journal_lines), encoding="utf-8")
+        path = self._service.export_journal(self._journal_lines, folder)
+        if path is not None:
             self._view.set_journal_path(str(path))
-        except OSError:
-            self._logger.exception("Impossible d'écrire le fichier journal %s", path)
 
     # ------------------------------------------------------------------
     # Polling loop (runs on main thread)

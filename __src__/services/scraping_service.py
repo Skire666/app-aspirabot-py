@@ -17,6 +17,7 @@ from pathlib import Path
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from interfaces.i_web_browser_service import IWebBrowserService
 from models.app_configuration_model import AppConfigurationModel
 from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ExtractedData, ScrapingContextModel
@@ -24,13 +25,12 @@ from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
+from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
-from services.browser_playwright_service import BrowserPlaywrightService
 from services.url_sources.url_source_factory import build_url_source_scenario
 from services.workflow_service import WorkflowService
-from shared.constants import C_BROWSER_ENGINE_PLAYWRIGHT
 from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum
-from shared.exception_util import ExportFolderNotADirectoryError, UnsupportedBrowserEngineError
+from shared.exception_util import AspirabotBaseError, ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 
 # -----------------------------------------------------------------------------
@@ -72,6 +72,8 @@ class ScrapingService:
         model_config: AppConfigurationModel,
         workflow_service: WorkflowService,
         extracted_data_repository: JsonFileRepository,
+        browser_service_factory: Callable[[], IWebBrowserService],
+        journal_repository: JournalRepository,
     ) -> None:
         """Initialise the service and its per-run execution state.
 
@@ -79,11 +81,16 @@ class ScrapingService:
             model_config: Application configuration model.
             workflow_service: Service for resolving step executors by type.
             extracted_data_repository: Repository used to persist extracted data as JSON.
+            browser_service_factory: Zero-argument callable that returns a fresh
+                IWebBrowserService instance for each scraping run.
+            journal_repository: Repository used to persist run journal lines.
         """
         self._logger = logging.getLogger(__name__)
-        self._browser_service = None
+        self._browser_service: IWebBrowserService | None = None
+        self._browser_service_factory = browser_service_factory
         self._workflow_service = workflow_service
         self._extracted_data_repository = extracted_data_repository
+        self._journal_repository = journal_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
         self._context: ScrapingContextModel = ScrapingContextModel(
@@ -121,10 +128,7 @@ class ScrapingService:
     # ------------------------------------------------------------------
 
     def run_workflow(
-        self,
-        scenario: ScenarioModel,
-        config: WorkflowRunConfigModel,
-        handlers: WorkflowRunHandlers,
+        self, scenario: ScenarioModel, config: WorkflowRunConfigModel, handlers: WorkflowRunHandlers
     ) -> ScrapingStatisticsModel:
         """Execute all steps of a scenario workflow sequentially.
 
@@ -151,16 +155,12 @@ class ScrapingService:
 
         # Build and attach the URL source when requested, forwarding sort order.
         self._context.url_source = self._build_url_source(
-            config.url_source_type, config.url_source_value, config.url_sort_order,
+            config.url_source_type, config.url_source_value, config.url_sort_order
         )
         self._context.folder_export = Path(config.export_folder)
 
-        # TODO PCO, si déjà instancié, recycler l'ancien ?
-        engine_used: str = self._context.app_config.browser_engine
-        if engine_used == C_BROWSER_ENGINE_PLAYWRIGHT:
-            self._browser_service = BrowserPlaywrightService()
-        else:
-            raise UnsupportedBrowserEngineError(self._context.app_config.browser_engine)
+        # Create a fresh browser service instance for each run via the injected factory.
+        self._browser_service = self._browser_service_factory()
 
         # Initialise the browser and run all steps.
         cancelled = self._run_browser_lifecycle(scenario)
@@ -192,11 +192,27 @@ class ScrapingService:
         self._logger.debug("Ouverture du dossier d'export : %s", folder)
         open_folder(folder)
 
+    def export_journal(self, lines: list[str], folder: Path) -> Path | None:
+        """Persist run journal lines to disk via the journal repository.
+
+        Args:
+            lines: Ordered journal entries produced during the run.
+            folder: Export directory where the journal file is written.
+
+        Returns:
+            The ``Path`` of the written file, or ``None`` when the write fails.
+        """
+        if not lines:
+            return None
+        try:
+            return self._journal_repository.write_journal(lines, folder)
+        except OSError:
+            self._logger.exception("Impossible d'écrire le fichier journal dans %s", folder)
+            return None
+
     @staticmethod
     def _build_url_source(
-        source_type: str,
-        source_value: list[str] | str | None,
-        sort_order_str: str = "",
+        source_type: str, source_value: list[str] | str | None, sort_order_str: str = ""
     ) -> IUrlSourceProvider | None:
         """Build the URL source provider when type and value are supplied.
 
@@ -227,10 +243,7 @@ class ScrapingService:
     # Browser lifecycle
     # ------------------------------------------------------------------
 
-    def _run_browser_lifecycle(
-        self,
-        scenario: ScenarioModel,
-    ) -> bool:
+    def _run_browser_lifecycle(self, scenario: ScenarioModel) -> bool:
         """Launch browser, open initial page, run steps, close browser.
 
         Args:
@@ -294,7 +307,7 @@ class ScrapingService:
             i = self._run_one_step(steps[i], i)  # i+1 dedans
             if i >= len(steps):
                 self._context.end_process = True
-            # manual ending, or automatic enging
+            # manual or automatic end-of-process
             if self._context.end_process:
                 break
             # Pause when the failure quota reaches the configured threshold.
@@ -450,13 +463,14 @@ class ScrapingService:
             self._context.set_result_execution(True, "SKIP")
             return True
 
+        assert self._browser_service is not None
         try:
             executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
             executor.execute_logical(self._browser_service, self._context)
-        except Exception as exc:
+        except AspirabotBaseError as exc:
             # Log the exception and set the step result to failure, but allow the run to continue.
             self._context.set_result_execution(False, f"Excep : <<{exc}>>")
-            self._logger.exception("Error executing step %s", step.step_id)
+            self._logger.exception("Erreur lors de l'exécution de l'étape %s", step.step_id)
             return False
 
         # end success path — the executor should have set the result and message on the context.
