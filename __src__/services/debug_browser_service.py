@@ -79,7 +79,7 @@ class DebugBrowserService:
                     ExtractTextHtmlEnum.E_INNER_HTML.value: el.evaluate("el => el.innerHTML") or "",
                     ExtractTextHtmlEnum.E_OUTER_HTML.value: el.evaluate("el => el.outerHTML") or "",
                     ExtractTextHtmlEnum.E_INPUT_VALUE.value: el.evaluate("el => el.value") or "",
-                }
+                },
             )
 
         return results
@@ -109,7 +109,7 @@ class DebugBrowserService:
                 "    naturalHeight: el.naturalHeight || 0,"
                 "    clientWidth: el.clientWidth || 0,"
                 "    clientHeight: el.clientHeight || 0,"
-                "})"
+                "})",
             )
             data["ext"] = self._extract_extension(str(data.get("src", "")))
             results.append(data)

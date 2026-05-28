@@ -72,13 +72,13 @@ class WaitFixedTimeFormDef(IStepFormDef):
         ttk.Label(line1, text="Attendre une durée de :").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_DURATION))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         widgets[C_KEY_DURATION] = dur_var
 
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+            line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12,
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_UNIT_TIME] = unit_var
 
@@ -109,8 +109,8 @@ class WaitFixedTimeFormDef(IStepFormDef):
         widgets[C_KEY_DURATION].set(str(model.params.get(C_KEY_DURATION, C_INPUT_DEFAULT_DURATION)))
         widgets[C_KEY_UNIT_TIME].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_UNIT_TIME, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+                model.params.get(C_KEY_UNIT_TIME, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
+            ),
         )
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 

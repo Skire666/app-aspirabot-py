@@ -117,10 +117,10 @@ COUNT_OP_MODEL_TO_VIEW: dict[str, str] = dict(zip(COUNT_OP_VALUES, COUNT_OP_DISP
 COUNT_SUCCESS_IF_DISPLAY: list[str] = ["succès", "échec"]
 COUNT_SUCCESS_IF_VALUES: list[str] = ["success", "failure"]
 COUNT_SUCCESS_IF_VIEW_TO_MODEL: dict[str, str] = dict(
-    zip(COUNT_SUCCESS_IF_DISPLAY, COUNT_SUCCESS_IF_VALUES, strict=True)
+    zip(COUNT_SUCCESS_IF_DISPLAY, COUNT_SUCCESS_IF_VALUES, strict=True),
 )
 COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(
-    zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY, strict=True)
+    zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY, strict=True),
 )
 
 # -----------------------------------------------------------------------------

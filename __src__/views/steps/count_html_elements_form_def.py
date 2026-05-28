@@ -105,14 +105,14 @@ class CountHtmlElementsFormDef(IStepFormDef):
         ttk.Label(row2, text="Est un").pack(side=tk.LEFT, padx=(0, 5))
         si_var = tk.StringVar(value=COUNT_SUCCESS_IF_DISPLAY[0])
         ttk.Combobox(row2, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         ttk.Label(row2, text="si compte").pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_SUCCESS_IF] = si_var
 
         op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         widgets[C_KEY_OPERATOR] = op_var
 
@@ -146,7 +146,7 @@ class CountHtmlElementsFormDef(IStepFormDef):
         """
         widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, C_INPUT_DEFAULT_CSS_SELECTOR))
         si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(
-            model.params.get(C_KEY_SUCCESS_IF, "success"), COUNT_SUCCESS_IF_DISPLAY[0]
+            model.params.get(C_KEY_SUCCESS_IF, "success"), COUNT_SUCCESS_IF_DISPLAY[0],
         )
         widgets[C_KEY_SUCCESS_IF].set(si_display)
 

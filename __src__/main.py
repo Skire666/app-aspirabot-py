@@ -161,10 +161,10 @@ def _build_and_wire_components(  # noqa: PLR0914
     log_view, log_pr = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_pr = _init_config_component(main_view, config_repo)
     profiles_view, prof_pr, prof_svc = _init_profiles_components(
-        main_view, startup_service.config_model, JsonFileRepository()
+        main_view, startup_service.config_model, JsonFileRepository(),
     )
     scen_view, scen_pre, edit_view, edit_p, scen_svc = _init_scenarios_components(
-        main_view, prof_svc, startup_service.config_model, JsonFileRepository()
+        main_view, prof_svc, startup_service.config_model, JsonFileRepository(),
     )
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)

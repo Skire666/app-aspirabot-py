@@ -380,13 +380,13 @@ class ScrapingPresenter:
         ts = datetime.now().strftime("%H:%M:%S")
         self._append_journal(f"{ts} - === Résumé final ===")
         self._append_journal(
-            f"{ts} | Étapes : total={rp.steps_executed} | OK={rp.steps_success} | KO={rp.steps_failed}"
+            f"{ts} | Étapes : total={rp.steps_executed} | OK={rp.steps_success} | KO={rp.steps_failed}",
         )
         self._append_journal(
-            f"{ts} | OpenURL : total={rp.open_urls_executed} | OK={rp.open_urls_success} | KO={rp.open_urls_failed}"
+            f"{ts} | OpenURL : total={rp.open_urls_executed} | OK={rp.open_urls_success} | KO={rp.open_urls_failed}",
         )
         self._append_journal(
-            f"{ts} | Clics : total={rp.clicks_executed} | OK={rp.clicks_success} | KO={rp.clicks_failed}"
+            f"{ts} | Clics : total={rp.clicks_executed} | OK={rp.clicks_success} | KO={rp.clicks_failed}",
         )
 
     def _export_journal(self) -> None:

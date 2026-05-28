@@ -151,7 +151,7 @@ class ScrapingService:
 
         # Build and attach the URL source when requested, forwarding sort order.
         self._context.url_source = self._build_url_source(
-            config.url_source_type, config.url_source_value, config.url_sort_order
+            config.url_source_type, config.url_source_value, config.url_sort_order,
         )
         self._context.folder_export = Path(config.export_folder)
 

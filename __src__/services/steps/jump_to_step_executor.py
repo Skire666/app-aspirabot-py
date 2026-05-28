@@ -50,7 +50,7 @@ class JumpToStepExecutor(IStepExecutor):
         step_idx_display = str(step_index + 1).zfill(2)
         if condition not in {"success", "failure", "always"}:
             errors.append(
-                ERROR_TEMPLATES["jump_to_step_condition_invalid"].format(step=step_idx_display, value=condition)
+                ERROR_TEMPLATES["jump_to_step_condition_invalid"].format(step=step_idx_display, value=condition),
             )
 
         # Basic check for presence of target step ID.
@@ -73,7 +73,7 @@ class JumpToStepExecutor(IStepExecutor):
 
             if step_found is None:
                 errors.append(
-                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step_idx_display, value=target_step_id)
+                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step_idx_display, value=target_step_id),
                 )
 
         # Note: We cannot check for jump loops here, as it would require analyzing the entire workflow

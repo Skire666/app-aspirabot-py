@@ -64,7 +64,7 @@ class ScrollDownFormDef(IStepFormDef):
         ttk.Label(row0, text="Pixels:").pack(side="left", padx=(0, 5))
         pixels_var = tk.StringVar(value="1000")
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=pixels_var, width=10).pack(
-            side="left", padx=(0, 5)
+            side="left", padx=(0, 5),
         )
         widgets[C_KEY_PIXELS_DISTANCE] = pixels_var
 

@@ -54,7 +54,7 @@ def get_script_js_image() -> str:
 def get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) -> list[dict[str, Any]]:
     script = get_script_js_image()
     is_success, all_imgs = browser.evaluate_script_with_safe_retry(
-        script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+        script, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
     )
     # return an empty list if the script evaluation failed after all retries
     if not is_success or all_imgs is None or str(all_imgs) == C_STR_ERROR_JS_EVALUATION:

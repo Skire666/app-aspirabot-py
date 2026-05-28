@@ -122,7 +122,7 @@ class ScenariosPresenter:
                     "version": p.version,
                     "created_date_scenario": p.created_date_scenario,
                     "modified_date_scenario": p.modified_date_scenario,
-                }
+                },
             )
         return formatted
 
@@ -131,7 +131,7 @@ class ScenariosPresenter:
         if self.is_workflow_active and self.is_workflow_active():
             self._view.show_warning(
                 "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification en cours avant de continuer."
+                "Veuillez terminer ou annuler la modification en cours avant de continuer.",
             )
             return
         if self.on_request_create_scenario:
@@ -142,7 +142,7 @@ class ScenariosPresenter:
         if self.is_workflow_active and self.is_workflow_active():
             self._view.show_warning(
                 "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification en cours avant de continuer."
+                "Veuillez terminer ou annuler la modification en cours avant de continuer.",
             )
             return
         if self.on_request_edit_scenario:

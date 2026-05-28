@@ -100,7 +100,7 @@ class ScrapingView(ttk.Frame):
         self._lbl_folder = ttk.Label(grid, text="—")
         self._lbl_folder.grid(row=2, column=1, sticky=tk.W, pady=2)
         self._btn_open_folder = ttk.Button(
-            grid, text="Ouvrir dossier", command=self._notify_open_folder, state=tk.DISABLED
+            grid, text="Ouvrir dossier", command=self._notify_open_folder, state=tk.DISABLED,
         )
         self._btn_open_folder.grid(row=2, column=2, padx=(8, 0), pady=2)
 
@@ -157,7 +157,7 @@ class ScrapingView(ttk.Frame):
         style.configure("Resume.TButton")
         style.configure("ResumeBlink.TButton", background=C_COLOR_ORANGE_BLINKING, foreground="white")
         self._btn_resume = ttk.Button(
-            row, text="Reprendre", command=self._notify_resume, style="Resume.TButton", state=tk.DISABLED
+            row, text="Reprendre", command=self._notify_resume, style="Resume.TButton", state=tk.DISABLED,
         )
         self._btn_resume.pack(side=tk.LEFT)
 
@@ -237,13 +237,13 @@ class ScrapingView(ttk.Frame):
         """
         self._lbl_tabs.config(text=f"URL en cours : {current_url or '—'}")
         self._lbl_stats_global.config(
-            text=f"Total exec : {stats.steps_executed} | OK : {stats.steps_success} | KO : {stats.steps_failed}"
+            text=f"Total exec : {stats.steps_executed} | OK : {stats.steps_success} | KO : {stats.steps_failed}",
         )
         self._lbl_stats_open_url.config(
-            text=f"Open URL : {stats.open_urls_executed} | OK : {stats.open_urls_success} | KO : {stats.open_urls_failed}"
+            text=f"Open URL : {stats.open_urls_executed} | OK : {stats.open_urls_success} | KO : {stats.open_urls_failed}",
         )
         self._lbl_stats_click.config(
-            text=f"Clicks : {stats.clicks_executed} | OK : {stats.clicks_success} | KO : {stats.clicks_failed}"
+            text=f"Clicks : {stats.clicks_executed} | OK : {stats.clicks_success} | KO : {stats.clicks_failed}",
         )
         self._lbl_current_step.config(text=current_step_text or "—")
         self._update_started_row(stats.started_at, threshold_global, threshold_step, threshold_step_id)

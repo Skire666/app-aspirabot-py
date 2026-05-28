@@ -78,14 +78,14 @@ class WaitRngPauseFormDef(IStepFormDef):
         # Min and max bounds with a shared unit selector
         ttk.Label(line1, text="Pause aléatoire entre :").pack(side=tk.LEFT, padx=(0, 5))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=min_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         ttk.Label(line1, text=" et ").pack(side=tk.LEFT)
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=max_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         ttk.Combobox(
-            line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+            line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12,
         ).pack(side=tk.LEFT)
 
     @staticmethod
@@ -116,8 +116,8 @@ class WaitRngPauseFormDef(IStepFormDef):
         widgets[C_KEY_MAX_PAUSE].set(str(model.params.get(C_KEY_MAX_PAUSE, 1)))
         widgets[C_KEY_UNIT_TIME].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_UNIT_TIME, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+                model.params.get(C_KEY_UNIT_TIME, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
+            ),
         )
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 

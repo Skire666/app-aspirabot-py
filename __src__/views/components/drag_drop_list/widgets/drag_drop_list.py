@@ -550,7 +550,7 @@ class DragDropList[T](tk.Frame):
             draw_btns = btn_start <= i < btn_end
 
             updated = has_resize_update and renderer.resize_update(
-                self.canvas, self.items[i], i, x, y, w - bw, h, "normal"
+                self.canvas, self.items[i], i, x, y, w - bw, h, "normal",
             )
             if updated:
                 if draw_btns and self._visible_btns:

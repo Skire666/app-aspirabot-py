@@ -25,7 +25,7 @@ class WaitHtmlElementsParams(IStepParams):
     def default(cls) -> Self:
         """Return default instance."""
         return cls(
-            selector="", operator="equal", quantity=1, retry_delay=500, retry_unit="ms", retry_max=5, comment=""
+            selector="", operator="equal", quantity=1, retry_delay=500, retry_unit="ms", retry_max=5, comment="",
         )
 
     def to_dict(self) -> dict[str, Any]:

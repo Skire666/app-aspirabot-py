@@ -222,7 +222,7 @@ class ExecutorPresenter:
         self._view.set_profile_section_enabled(True)
         self._view.set_profile_form(profile, steps)
         self._view.set_saved_date(
-            self._current_profiles_model.modified_date_profile if self._current_profiles_model else None
+            self._current_profiles_model.modified_date_profile if self._current_profiles_model else None,
         )
         self._set_dirty(False)
         self._refresh_url_preview(profile)

@@ -89,7 +89,7 @@ class ClickForDownloadExecutor(IStepExecutor):
 
     @staticmethod
     def _do_click_for_download(
-        browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int
+        browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int,
     ) -> object:
         page = browser.get_current_page()
         elements = page.query_selector_all(selector)

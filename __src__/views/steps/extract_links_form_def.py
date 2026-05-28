@@ -88,7 +88,7 @@ class ExtractLinksFormDef(IStepFormDef):
         ttk.Label(row2, text="Cible :").pack(side=tk.LEFT, padx=(0, 5))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 30)
+            side=tk.LEFT, padx=(0, 30),
         )
         widgets[C_KEY_TARGET_EXTRACTED] = target_var
 
@@ -124,8 +124,8 @@ class ExtractLinksFormDef(IStepFormDef):
         widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, ""))
         widgets[C_KEY_TARGET_EXTRACTED].set(
             EXTRACT_TARGET_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_TARGET_EXTRACTED, "first"), EXTRACT_TARGET_DISPLAY[-1]
-            )
+                model.params.get(C_KEY_TARGET_EXTRACTED, "first"), EXTRACT_TARGET_DISPLAY[-1],
+            ),
         )
         widgets[C_KEY_MAPPING].set(model.params.get(C_KEY_MAPPING, "key_name"))
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))

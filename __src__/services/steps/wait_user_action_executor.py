@@ -57,13 +57,13 @@ class WaitUserActionExecutor(IStepExecutor):
         index_display = str(step_index + 1).zfill(2)
         if p.condition not in {"always", "success", "failure"}:
             errors.append(
-                ERROR_TEMPLATES["wait_user_action_condition_invalid"].format(step=index_display, value=p.condition)
+                ERROR_TEMPLATES["wait_user_action_condition_invalid"].format(step=index_display, value=p.condition),
             )
         if p.wait_duration <= 0:
             errors.append(ERROR_TEMPLATES["wait_user_action_wait_duration_invalid"].format(step=index_display))
         if p.wait_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             errors.append(
-                ERROR_TEMPLATES["wait_user_action_wait_unit_invalid"].format(step=index_display, value=p.wait_unit)
+                ERROR_TEMPLATES["wait_user_action_wait_unit_invalid"].format(step=index_display, value=p.wait_unit),
             )
         return errors
 

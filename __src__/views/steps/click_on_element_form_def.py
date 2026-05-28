@@ -85,7 +85,7 @@ class ClickOnElementFormDef(IStepFormDef):
         ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) :").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value="Normal")
         ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5),
         )
         widgets[C_KEY_CLICK_MODE] = mode_var
 

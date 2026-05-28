@@ -72,7 +72,7 @@ class JumpToStepFormDef(IStepFormDef):
         ttk.Label(row0, text="Condition:").pack(side=tk.LEFT, padx=(0, 5))
         cond_var = tk.StringVar(value=CONDITION_DISPLAY[0])
         ttk.Combobox(row0, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5),
         )
         widgets[C_KEY_CONDITION] = cond_var
 

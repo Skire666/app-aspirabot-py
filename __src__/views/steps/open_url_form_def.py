@@ -157,7 +157,7 @@ class OpenUrlFormDef(IStepFormDef):
         ttk.Label(line2, text="Attendre le chargement :").pack(side=tk.LEFT, padx=(0, 5))
         ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_STATE)
         ttk.Combobox(line2, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_STATE, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         ttk.Label(line2, text="(dom > load > idle 500ms)").pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_WAIT_STATE] = ws_var
@@ -176,11 +176,11 @@ class OpenUrlFormDef(IStepFormDef):
         ttk.Label(line3, text="Timeout :").pack(side=tk.LEFT, padx=(0, 5))
         td_var = tk.StringVar(value=str(C_INPUT_DEFAULT_TIMEOUT_DURATION))
         ttk.Spinbox(line3, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=td_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         tu_var = tk.StringVar(value=C_INPUT_DEFAULT_TIMEOUT_UNIT)
         ttk.Combobox(line3, textvariable=tu_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
 
         dns = tk.StringVar(value="6")
@@ -219,12 +219,12 @@ class OpenUrlFormDef(IStepFormDef):
         widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
         widgets[C_KEY_WAIT_DNS_SOLVER].set(model.params.get(C_KEY_WAIT_DNS_SOLVER, 6))
         widgets[C_KEY_TIMEOUT_DURATION].set(
-            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
+            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION)),
         )
         widgets[C_KEY_TIMEOUT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
+            ),
         )
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 

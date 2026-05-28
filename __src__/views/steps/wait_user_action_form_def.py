@@ -82,7 +82,7 @@ class WaitUserActionFormDef(IStepFormDef):
         ttk.Label(line1, text="Déclenche l'attente lorsque :").pack(side=tk.LEFT, padx=(0, 5))
         cond_var = tk.StringVar(value=C_INPUT_DEFAULT_CONDITION)
         ttk.Combobox(line1, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         widgets[C_KEY_CONDITION] = cond_var
 
@@ -100,11 +100,11 @@ class WaitUserActionFormDef(IStepFormDef):
         ttk.Label(line2, text="Délai post-reprise :").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_POST_WAIT_DURATION))
         ttk.Spinbox(line2, from_=1, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
+            line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10,
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_WAIT_DURATION] = dur_var
         widgets[C_KEY_WAIT_UNIT] = unit_var
@@ -134,13 +134,13 @@ class WaitUserActionFormDef(IStepFormDef):
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
         widgets[C_KEY_CONDITION].set(
-            CONDITION_MODEL_TO_VIEW.get(model.params.get(C_KEY_CONDITION, "always"), C_INPUT_DEFAULT_CONDITION)
+            CONDITION_MODEL_TO_VIEW.get(model.params.get(C_KEY_CONDITION, "always"), C_INPUT_DEFAULT_CONDITION),
         )
         widgets[C_KEY_WAIT_DURATION].set(str(model.params.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION)))
         widgets[C_KEY_WAIT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+                model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
+            ),
         )
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 

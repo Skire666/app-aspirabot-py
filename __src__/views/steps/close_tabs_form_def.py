@@ -139,7 +139,7 @@ class CloseTabsFormDef(IStepFormDef):
         ttk.Label(row1, text="Max. onglets ouverts:").pack(side="left", padx=(0, 5))
         max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MAX_TABS))
         ttk.Spinbox(row1, from_=1, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).pack(
-            side="left", padx=(0, 5)
+            side="left", padx=(0, 5),
         )
         widgets[C_KEY_MAX_TABS] = max_var
 

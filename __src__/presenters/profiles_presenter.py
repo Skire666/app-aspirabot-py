@@ -122,7 +122,7 @@ class ProfilesPresenter:
                     "launch_count": str(p.launch_count),
                     "id_profile": p.id_profile,
                     "id_scenario": p.id_scenario,
-                }
+                },
             )
 
         return rows

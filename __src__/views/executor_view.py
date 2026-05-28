@@ -258,7 +258,7 @@ class ExecutorView(ttk.Frame):
         self._var_step_threshold = tk.StringVar()
         self._var_step_threshold.trace_add("write", lambda *_: self._notify_form_changed())
         ttk.Entry(grid, textvariable=self._var_step_threshold, width=12).grid(
-            row=6, column=3, sticky=tk.W, padx=(0, 4), pady=2
+            row=6, column=3, sticky=tk.W, padx=(0, 4), pady=2,
         )
         ttk.Label(grid, text="erreurs").grid(row=6, column=4, sticky=tk.W, pady=2)
 

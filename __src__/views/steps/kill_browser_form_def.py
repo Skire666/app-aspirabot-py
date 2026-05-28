@@ -75,13 +75,13 @@ class KillBrowserFormDef(IStepFormDef):
         ttk.Label(row0, text="Attendre avant de fermer:").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_DEFAULT_WAIT_DURATION))
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5)
+            side=tk.LEFT, padx=(0, 5),
         )
         widgets[C_KEY_WAIT_DURATION] = dur_var
 
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
+            row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12,
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_WAIT_UNIT] = unit_var
 
@@ -98,7 +98,7 @@ class KillBrowserFormDef(IStepFormDef):
 
         export_var = tk.BooleanVar(value=False)
         CanvasCheckbox(row1, text="Exporter enregistrements textuels", variable=export_var).pack(
-            side="left", padx=(0, 5)
+            side="left", padx=(0, 5),
         )
         widgets[C_KEY_EXPORT_DATA] = export_var
 
@@ -129,8 +129,8 @@ class KillBrowserFormDef(IStepFormDef):
         widgets[C_KEY_WAIT_DURATION].set(str(model.params.get(C_KEY_WAIT_DURATION, C_DEFAULT_WAIT_DURATION)))
         widgets[C_KEY_WAIT_UNIT].set(
             WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+                model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
+            ),
         )
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
 

@@ -219,7 +219,7 @@ class ProfilesService:
             self._repository.update_profiles(found)
         else:
             self._logger.warning(
-                f"Impossible de supprimer le profil '{id_profile}'. Scénario inexistant '{id_scenario}'."
+                f"Impossible de supprimer le profil '{id_profile}'. Scénario inexistant '{id_scenario}'.",
             )
 
     def get_scenario_name(self, id_scenario: str) -> str:

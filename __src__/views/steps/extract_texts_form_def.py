@@ -93,7 +93,7 @@ class ExtractTextsFormDef(IStepFormDef):
         ttk.Label(row1, text="Mode d'extraction :").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value=EXTRACT_MODE_DISPLAY[0])
         ttk.Combobox(row1, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5),
         )
         widgets[C_KEY_EXTRACT_MODE] = mode_var
 
@@ -111,7 +111,7 @@ class ExtractTextsFormDef(IStepFormDef):
         ttk.Label(row2, text="Cible :").pack(side=tk.LEFT, padx=(0, 5))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 30)
+            side=tk.LEFT, padx=(0, 30),
         )
         widgets[C_KEY_TARGET_EXTRACTED] = target_var
 
@@ -146,12 +146,12 @@ class ExtractTextsFormDef(IStepFormDef):
         """
         widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, ""))
         widgets[C_KEY_EXTRACT_MODE].set(
-            EXTRACT_MODE_MODEL_TO_VIEW.get(model.params.get(C_KEY_EXTRACT_MODE, "innerText"), EXTRACT_MODE_DISPLAY[0])
+            EXTRACT_MODE_MODEL_TO_VIEW.get(model.params.get(C_KEY_EXTRACT_MODE, "innerText"), EXTRACT_MODE_DISPLAY[0]),
         )
         widgets[C_KEY_TARGET_EXTRACTED].set(
             EXTRACT_TARGET_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_TARGET_EXTRACTED, "first"), EXTRACT_TARGET_DISPLAY[-1]
-            )
+                model.params.get(C_KEY_TARGET_EXTRACTED, "first"), EXTRACT_TARGET_DISPLAY[-1],
+            ),
         )
         widgets[C_KEY_MAPPING].set(model.params.get(C_KEY_MAPPING, "key_name"))
         widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))

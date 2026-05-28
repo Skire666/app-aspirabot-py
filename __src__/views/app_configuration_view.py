@@ -90,7 +90,7 @@ class AppConfigurationView(ttk.Frame):
         )
         self._btn_cancel.pack(side=tk.LEFT, padx=5)
         self._btn_save = ttk.Button(
-            frame, text="Sauvegarder les modifications", command=self._notify_save, state=tk.DISABLED
+            frame, text="Sauvegarder les modifications", command=self._notify_save, state=tk.DISABLED,
         )
         self._btn_save.pack(side=tk.LEFT, padx=5)
 

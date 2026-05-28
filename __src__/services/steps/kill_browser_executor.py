@@ -46,7 +46,7 @@ class KillBrowserExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["end_process_wait_duration_invalid"].format(step=index_display))
         if p.wait_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             errors.append(
-                ERROR_TEMPLATES["end_process_wait_unit_invalid"].format(step=index_display, value=p.wait_unit)
+                ERROR_TEMPLATES["end_process_wait_unit_invalid"].format(step=index_display, value=p.wait_unit),
             )
         return errors
 

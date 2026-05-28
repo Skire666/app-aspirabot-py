@@ -58,11 +58,11 @@ class CountHtmlImagesExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["count_html_images_value_negative"].format(step=step_label))
         if p.success_if not in {"success", "failure"}:
             errors.append(
-                ERROR_TEMPLATES["count_html_images_success_if_invalid"].format(step=step_label, value=p.success_if)
+                ERROR_TEMPLATES["count_html_images_success_if_invalid"].format(step=step_label, value=p.success_if),
             )
         if p.operator not in allowed_operators:
             errors.append(
-                ERROR_TEMPLATES["count_html_images_operator_invalid"].format(step=step_label, value=p.operator)
+                ERROR_TEMPLATES["count_html_images_operator_invalid"].format(step=step_label, value=p.operator),
             )
         return errors
 
@@ -99,7 +99,7 @@ class CountHtmlImagesExecutor(IStepExecutor):
         for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):
             if min_k in bounds and max_k in bounds and bounds[min_k] > bounds[max_k]:
                 errors.append(
-                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k)
+                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k),
                 )
         return errors
 

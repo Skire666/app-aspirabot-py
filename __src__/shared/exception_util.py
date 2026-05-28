@@ -187,7 +187,7 @@ class InvalidGuiBootingSizeError(AspirabotError):
     def __init__(self) -> None:
         """Initialize the error message."""
         super().__init__(
-            "Taille de démarrage GUI invalide. Format attendu : 'LARGEURxHAUTEUR' avec des valeurs numériques."
+            "Taille de démarrage GUI invalide. Format attendu : 'LARGEURxHAUTEUR' avec des valeurs numériques.",
         )
 
 
@@ -491,7 +491,7 @@ class ImageWaitTimeoutError(TimeoutError, AspirabotError):
         """
         super().__init__(
             f"Aucune image correspondant aux contraintes de taille n'est apparue"
-            f" dans le délai imparti ({wait_seconds}s)."
+            f" dans le délai imparti ({wait_seconds}s).",
         )
 
 
