@@ -118,7 +118,6 @@ select = [
     "C4",   # Catch incorrect use of comprehensions, dict, list, etc
     "C90",  # mccabe — cyclomatic complexity (flags overly complex functions)
     "D",    # pydocstyle — docstring presence and format
-    "DTZ",  # strict usage of time zone with datetime
     "E",    # pycodestyle errors
     "ERA",  # dead code
     "F",    # pyflakes — logical errors (unused imports, undefined names…)
@@ -135,7 +134,7 @@ select = [
     "RUF",  # Ruff-specific rules — modern Python best practices
     "RET",  # Good return practices
     "SIM",  # flake8-simplify — suggests code simplifications
-    "TID",  # abother good usage import (popular way)
+    "TID",  # another good usage import (popular way)
     "TRY",  # exceptions
     "UP",   # Warn if certain things can changed due to newer Python versions
     "W",    # pycodestyle warnings

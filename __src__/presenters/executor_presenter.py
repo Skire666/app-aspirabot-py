@@ -410,8 +410,6 @@ class ExecutorPresenter:
             return C_EXEC_NO_URL_SOURCE
         if p.url_source_type != UrlSourceTypeEnum.E_MANUAL.value and not p.url_source_value:
             return C_EXEC_FOLDER_URL_SOURCE_EMPTY
-        if not self._is_valid_threshold(str(p.emergency_stop_threshold)):
-            return C_EXEC_INVALID_GLOBAL_THRESHOLD
         return self._validate_step_threshold(p)
 
     def _validate_step_threshold(self, p: LaunchModel) -> str | None:
@@ -423,6 +421,9 @@ class ExecutorPresenter:
         Returns:
             An error string, or None if valid.
         """
+        if not self._is_valid_threshold(str(p.emergency_stop_threshold)):
+            return C_EXEC_INVALID_GLOBAL_THRESHOLD
+
         has_step = len(p.emergency_stop_step_id) >= 1
         if not has_step:
             return C_EXEC_STEP_THRESHOLD_WITHOUT_STEP
@@ -448,7 +449,7 @@ class ExecutorPresenter:
         except ValueError, TypeError:
             return False
         else:
-            return 1 <= n <= 9_999_999
+            return n >= 1
 
     def _save_before_launch(self) -> None:
         """Increment usage stats and persist the profile before launching."""

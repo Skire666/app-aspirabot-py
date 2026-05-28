@@ -20,12 +20,7 @@ from models.launcher_model import LaunchModel
 from models.scenario_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
-from shared.i18n_fra import (
-    C_EXEC_SAVED_DATE_EMPTY,
-    C_EXEC_SAVED_DATE_FMT,
-    C_EXEC_USED_DATE_EMPTY,
-    C_EXEC_USED_DATE_FMT,
-)
+from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY, C_EXEC_SAVED_DATE_FMT, C_EXEC_USED_DATE_EMPTY, C_EXEC_USED_DATE_FMT
 from views.components.column_combobox import ColumnCombobox
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
@@ -55,7 +50,7 @@ class ExecutorView(ttk.Frame):
     The view is purely passive: it renders data supplied by the presenter.
     """
 
-    def __init__(self, config_model: Any, parent: tk.Widget) -> None:
+    def __init__(self, parent: tk.Widget) -> None:
         """Build widget structure without loading any data.
 
         Args:
@@ -259,7 +254,7 @@ class ExecutorView(ttk.Frame):
         self._var_step_threshold = tk.StringVar()
         self._var_step_threshold.trace_add("write", lambda *_: self._notify_form_changed())
         ttk.Entry(grid, textvariable=self._var_step_threshold, width=12).grid(
-            row=6, column=3, sticky=tk.W, padx=(0, 4), pady=2,
+            row=6, column=3, sticky=tk.W, padx=(0, 4), pady=2
         )
         ttk.Label(grid, text="erreurs").grid(row=6, column=4, sticky=tk.W, pady=2)
 

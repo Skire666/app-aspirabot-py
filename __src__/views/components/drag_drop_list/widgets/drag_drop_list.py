@@ -23,11 +23,11 @@ from shared.resources_icons_util import (
     C_RESS_ICON_WHITE_UP,
 )
 
-from ..core.calculator import LayoutCalculator
-from ..core.controller import DragDropController
-from ..core.models import DirtyRegion, DragState
-from ..core.renderer import ButtonDef, RenderEngine
-from ..utils.throttling import Debouncer
+from drag_drop_list.core.calculator import LayoutCalculator
+from drag_drop_list.core.controller import DragDropController
+from drag_drop_list.core.models import DirtyRegion, DragState
+from drag_drop_list.core.renderer import ButtonDef, RenderEngine
+from drag_drop_list.utils.throttling import Debouncer
 
 T = TypeVar("T")
 
@@ -81,17 +81,7 @@ class ItemRenderer(Protocol[T]):
     - Accept state as exactly one of "normal", "ghost", or "floating".
     """
 
-    def __call__(
-        self,
-        canvas: tk.Canvas,
-        item: T,
-        idx: int,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        state: str,
-    ) -> None:
+    def __call__(self, canvas: tk.Canvas, item: T, idx: int, x: int, y: int, w: int, h: int, state: str) -> None:
         """Renders item at list position idx into canvas area (x, y, x+w, y+h)."""
         ...
 
@@ -248,11 +238,7 @@ class DragDropList[T](tk.Frame):
 
         self._calc.set_n_items(len(self.items))
         self.canvas = tk.Canvas(
-            self,
-            height=self._calc.total_height(),
-            bg=self._theme["bg"],
-            highlightthickness=0,
-            cursor="hand2",
+            self, height=self._calc.total_height(), bg=self._theme["bg"], highlightthickness=0, cursor="hand2"
         )
         self._engine = RenderEngine(self.canvas, self._theme)
         self.canvas.pack(fill=tk.BOTH, expand=True)
@@ -382,14 +368,7 @@ class DragDropList[T](tk.Frame):
                 self._engine.draw_button(bdef, x1, y1, x2, y2, hovered, tag=btn_tag)
 
     def _draw_toggle_for(
-        self,
-        idx: int,
-        x1: int,
-        y1: int,
-        x2: int,
-        y2: int,
-        hovered: bool,
-        tag: str | None = None,
+        self, idx: int, x1: int, y1: int, x2: int, y2: int, hovered: bool, tag: str | None = None
     ) -> None:
         """Draws the toggle-active button for item at idx.
 
@@ -438,19 +417,11 @@ class DragDropList[T](tk.Frame):
         ds = self._drag_state
         gap_h = self._calc._pad + (self._calc._gap_expand if ds is not None and ds.expand_gap == pos else 0)
         y_center = self._calc.item_y(pos) - gap_h // 2
-        self._engine.draw_insert_line(
-            self._calc._pad,
-            y_center,
-            self._calc.item_w(),
-        )
+        self._engine.draw_insert_line(self._calc._pad, y_center, self._calc.item_w())
 
     # ─── Public redraw interface ──────────────────────────────────────────────
 
-    def redraw(
-        self,
-        floating_idx: int | None = None,
-        floating_y: int | None = None,
-    ) -> None:
+    def redraw(self, floating_idx: int | None = None, floating_y: int | None = None) -> None:
         """Redraws the entire canvas. May be called externally.
 
         Args:
@@ -474,11 +445,7 @@ class DragDropList[T](tk.Frame):
         self._last_redraw_w = self._calc._canvas_w
         self._dirty.clear()
 
-    def _draw_floating_and_line(
-        self,
-        floating_idx: int | None,
-        floating_y: int | None,
-    ) -> None:
+    def _draw_floating_and_line(self, floating_idx: int | None, floating_y: int | None) -> None:
         """Draws the floating item and the insert-position indicator line.
 
         Args:
@@ -550,7 +517,7 @@ class DragDropList[T](tk.Frame):
             draw_btns = btn_start <= i < btn_end
 
             updated = has_resize_update and renderer.resize_update(
-                self.canvas, self.items[i], i, x, y, w - bw, h, "normal",
+                self.canvas, self.items[i], i, x, y, w - bw, h, "normal"
             )
             if updated:
                 if draw_btns and self._visible_btns:

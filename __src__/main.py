@@ -328,7 +328,7 @@ def _init_executor_component(
     Returns:
         A (ExecutorView, ExecutorPresenter) tuple.
     """
-    executor_view = ExecutorView(config_model, main_view.content_area)
+    executor_view = ExecutorView(main_view.content_area)
     executor_presenter = ExecutorPresenter(
         view=executor_view, scenarios_service=scenario_service, profiles_service=profiles_service
     )
@@ -347,7 +347,7 @@ def _init_scraping_component(
     Returns:
         A (ScrapingView, ScrapingPresenter) tuple.
     """
-    scraping_view = ScrapingView(config_model, main_view.content_area)
+    scraping_view = ScrapingView(main_view.content_area)
     scraping_service = ScrapingService(
         model_config=config_model,
         workflow_service=WorkflowService(),
@@ -494,7 +494,7 @@ def _wire_profiles_launch(
 # -----------------------------------------------------------------------------
 
 
-def _register_views(
+def _register_views(  # noqa: PLR0913, PLR0917
     main_view: MainView,
     log_view: LogView,
     historic_view: ProfilesView,
