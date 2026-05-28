@@ -20,18 +20,20 @@ from views.workflow_view import WorkflowView
 
 
 class WorkflowPresenter:
+    """Manages scenario creation and editing through the workflow view."""
+
     def __init__(
         self,
         view: WorkflowView,
         scenarios_service: ScenariosService,
         profiles_service: ProfilesService,
     ) -> None:
-        """Initialise le présentateur.
+        """Initialise the presenter.
 
         Args:
-            view: L'interface utilisateur de modification.
-            scenarios_service: Le service gérant la logique métier des scénarios.
-            profiles_service: Service de gestion des profils.
+            view: The editing user interface.
+            scenarios_service: The service handling scenario business logic.
+            profiles_service: The profile management service.
         """
         self._logger = logging.getLogger(__name__)
         self._view: WorkflowView = view
@@ -50,7 +52,7 @@ class WorkflowPresenter:
         self._bind_view_events()
 
     def set_on_done_callback(self, callback: Callable[[], None]) -> None:
-        """Définit la fonction appelée lorsque la modification/création est terminée/annulée.
+        """Register the callback invoked when editing or creation is completed or cancelled.
 
         Args:
             callback: Callback to invoke on completion.
@@ -65,7 +67,7 @@ class WorkflowPresenter:
         )
 
     def create_new(self) -> None:
-        """Passe le presentateur en mode creation et charge un modele vide."""
+        """Switch the presenter to creation mode and load an empty model."""
         self._is_creation_mode = True
         self._current_scenario = ScenarioModel.get_default_data()
 
@@ -75,6 +77,7 @@ class WorkflowPresenter:
         self._view.show_inline_form(None)
 
     def load_scenario(self, id_file: str) -> bool:
+        """Load the scenario identified by *id_file* into the view for editing."""
         self._is_creation_mode = False
 
         if not self._service.exists_scenario(id_file):
@@ -115,10 +118,10 @@ class WorkflowPresenter:
         }
 
     def _on_save(self, form_data: dict[str, Any]) -> None:
-        """Valide et sauvegarde le scénario.
+        """Validate and persist the current scenario.
 
         Args:
-            form_data: Les données brutes récupérées de la vue.
+            form_data: Raw data retrieved from the view.
         """
         try:
             if not self._current_scenario:
@@ -165,7 +168,7 @@ class WorkflowPresenter:
             self._on_done()
 
     def _on_cancel(self) -> None:
-        """Annule l'action courante."""
+        """Cancel the current operation and reset both view and presenter state."""
         # Reset the embedded workflow too: Save already clears it, so Cancel
         # must leave the presenter and view in the same clean state.
         self._workflow_presenter.clear_steps()

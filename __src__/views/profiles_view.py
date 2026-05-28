@@ -113,6 +113,7 @@ class ProfilesView(ttk.Frame):
         self._on_sort_callback = callback
 
     def set_on_open_folder(self, callback: Callable[[], None]) -> None:
+        """Register the callback invoked when the user clicks 'Open folder'."""
         self._on_open_folder_callback = callback
 
     def render_profiles(self, folder_path: Path, profiles: list[dict[str, Any]]) -> None:

@@ -13,12 +13,14 @@ from views.scenarios_view import ScenariosView
 
 
 class ScenariosPresenter:
+    """Mediates between ScenariosView and ScenariosService."""
+
     def __init__(self, view: ScenariosView, service: ScenariosService) -> None:
-        """Initialise le présentateur avec sa vue et son service affiliés.
+        """Initialise the presenter with its view and service.
 
         Args:
-            view : L'interface utilisateur.
-            service : Le service gérant la logique métier.
+            view: The user interface.
+            service: The service handling business logic.
         """
         self._logger = logging.getLogger(__name__)
         self._view = view

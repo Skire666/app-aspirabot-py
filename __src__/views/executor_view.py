@@ -9,6 +9,7 @@ delegated to ExecutorPresenter via registered callbacks.
 # Imports
 # -----------------------------------------------------------------------------
 
+import contextlib
 import tkinter as tk
 from collections.abc import Callable
 from datetime import datetime
@@ -365,10 +366,8 @@ class ExecutorView(ttk.Frame):
         """
         state = tk.NORMAL if enabled else tk.DISABLED
         for child in self._cfg_grid.winfo_children():
-            try:
+            with contextlib.suppress(tk.TclError):
                 child.configure(state=state)
-            except tk.TclError:
-                pass
 
     def set_profile_form(self, model: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Populate all form fields from a LaunchModel and its scenario steps.

@@ -73,7 +73,9 @@ class JumpToStepExecutor(IStepExecutor):
 
             if step_found is None:
                 errors.append(
-                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step_idx_display, value=target_step_id),
+                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(
+                        step=step_idx_display, value=target_step_id
+                    ),
                 )
 
         # Note: We cannot check for jump loops here, as it would require analyzing the entire workflow

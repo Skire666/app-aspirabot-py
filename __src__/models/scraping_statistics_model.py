@@ -7,7 +7,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from __src__.shared.enums import StepTypeEnum
+from shared.enums import StepTypeEnum
 
 # -----------------------------------------------------------------------------
 # Class
@@ -50,7 +50,7 @@ class ScrapingStatisticsModel:
         """Initializes all statistics to zero and timestamps to None."""
         self.clear()
 
-    def clear(self):
+    def clear(self) -> None:
         """Reset all statistics to zero and timestamps to None."""
         self.started_at = None
         self.finished_at = None
@@ -65,15 +65,15 @@ class ScrapingStatisticsModel:
         self.open_urls_failed = 0
         self.cancelled = False
 
-    def start_timer(self):
+    def start_timer(self) -> None:
         """Set the workflow start timestamp to the current time."""
         self.started_at = datetime.now()
 
-    def finish_timer(self):
+    def finish_timer(self) -> None:
         """Set the workflow end timestamp to the current time."""
         self.finished_at = datetime.now()
 
-    def update_result_step(self, step_type: StepTypeEnum, is_success: bool):
+    def update_result_step(self, step_type: StepTypeEnum, is_success: bool) -> None:
         """Update statistics counters based on the step type and success status."""
         self.steps_executed += 1
         if is_success:

@@ -33,8 +33,6 @@ from shared.i18n_fra import (
 )
 from views.executor_view import ExecutorView
 
-from __src__.models.launcher_model import LaunchModel
-
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
@@ -369,11 +367,11 @@ class ExecutorPresenter:
             return
         try:
             self._current_profile.emergency_stop_threshold = max(1, int(data["emergency_stop_threshold"]))
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             self._current_profile.emergency_stop_threshold = 1
         try:
             self._current_profile.emergency_stop_step_threshold = max(0, int(data["emergency_stop_step_threshold"]))
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             self._current_profile.emergency_stop_step_threshold = 0
 
     def _on_form_changed(self) -> None:
@@ -454,9 +452,10 @@ class ExecutorPresenter:
         """
         try:
             n = int(value)
-            return 1 <= n <= 9_999_999
         except ValueError, TypeError:
             return False
+        else:
+            return 1 <= n <= 9_999_999
 
     def _save_before_launch(self) -> None:
         """Increment usage stats and persist the profile before launching."""

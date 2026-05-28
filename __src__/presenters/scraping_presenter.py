@@ -375,7 +375,7 @@ class ScrapingPresenter:
         """Append summary statistics to the journal.
 
         Args:
-            report: The completed ``ScrapingReportModel``.
+            rp: The completed statistics model.
         """
         ts = datetime.now().strftime("%H:%M:%S")
         self._append_journal(f"{ts} - === Résumé final ===")

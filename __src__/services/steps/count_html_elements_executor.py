@@ -62,7 +62,9 @@ class CountHtmlElementsExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["count_html_elements_value_negative"].format(step=index_display))
         if p.success_if not in {"success", "failure"}:
             errors.append(
-                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(step=index_display, value=p.success_if),
+                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(
+                    step=index_display, value=p.success_if
+                ),
             )
         if p.operator not in allowed_operators:
             errors.append(

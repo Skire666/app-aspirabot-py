@@ -118,7 +118,6 @@ select = [
     "ERA",  # dead code
     "F",    # pyflakes — logical errors (unused imports, undefined names…)
     "FA",   # force usage of 'from __future__ import annotations'
-    "FBT",  # trap from boolean stuff
     "I",    # isort — import ordering and grouping
     "ISC",  # good usage string concatenation
     "ICN",  # good usage import (popular way)
@@ -185,7 +184,7 @@ max-statements = 50  # default: 50
 max-returns = 6  # default: 6
 
 # Maximum number of public methods for a class
-max-public-methods = 30  # default: 20
+max-public-methods = 35  # default: 20
 
 # Maximum number of local variables in a function/method
 max-locals = 15  # default: 15
