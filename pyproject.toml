@@ -115,16 +115,22 @@ select = [
     "N",    # pep8-naming — naming conventions (snake_case, PascalCase…)
     "C4",   # Catch incorrect use of comprehensions, dict, list, etc
     "ANN",  # flake8-annotations — ensures type hints are present everywhere
+    "BLE",  # exceptions (too many garbage)
+    "COM",  # strict usage of comma
     "ERA",  # dead code
     "C90",  # mccabe — cyclomatic complexity (flags overly complex functions)
+    "FBT",  # trap from boolean stuff
+    "ISC",  # good usage string concatenation
+    "ICN",  # good usage import (popular way)
+    "TID",  # abother good usage import (popular way)
     "SIM",  # flake8-simplify — suggests code simplifications
     "RUF",  # Ruff-specific rules — modern Python best practices
     "RET",  # Good return practices
     "PIE",  # useless patterns
     "PLR",  # do refactor
-    "TRY",  # exceptions
-    "BLE",  # exceptions larges
     "PTH",  # Use pathlib instead of os.path
+    "TRY",  # exceptions
+    "NPY",  # numpy stuff
 ]
 
 # Activate preview

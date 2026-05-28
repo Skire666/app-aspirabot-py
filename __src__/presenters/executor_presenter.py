@@ -365,14 +365,16 @@ class ExecutorPresenter:
         Args:
             data: Dictionary returned by ``view.get_profile_form_data()``.
         """
+        if not self._current_profile:
+            return
         try:
             self._current_profile.emergency_stop_threshold = max(1, int(data["emergency_stop_threshold"]))
-        except ValueError, TypeError:
-            pass
+        except (ValueError, TypeError):
+            self._current_profile.emergency_stop_threshold = 1
         try:
             self._current_profile.emergency_stop_step_threshold = max(0, int(data["emergency_stop_step_threshold"]))
-        except ValueError, TypeError:
-            pass
+        except (ValueError, TypeError):
+            self._current_profile.emergency_stop_step_threshold = 0
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)
@@ -407,8 +409,10 @@ class ExecutorPresenter:
             return C_EXEC_NO_SCENARIO
         if not self._current_profile:
             return C_EXEC_NO_PROFILE
+
         self._apply_form_to_profile()
         p: LaunchModel = self._current_profile
+
         if not p.export_folder.strip():
             return C_EXEC_NO_EXPORT_FOLDER
         if not p.url_source_type:
@@ -433,11 +437,9 @@ class ExecutorPresenter:
             return C_EXEC_STEP_THRESHOLD_WITHOUT_STEP
         if not self._is_valid_threshold(str(p.emergency_stop_step_threshold)):
             return C_EXEC_INVALID_STEP_THRESHOLD
-
         has_threshold = p.emergency_stop_step_threshold >= 1
         if not has_threshold:
             return C_EXEC_INVALID_STEP_THRESHOLD
-        print(f"DEBUG: step threshold {p.emergency_stop_step_threshold} for step {p.emergency_stop_step_id}")
         return None
 
     @staticmethod
