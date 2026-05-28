@@ -22,15 +22,10 @@ from services.url_sources.url_source_factory import build_url_source_scenario
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
-    C_EXEC_FOLDER_URL_SOURCE_EMPTY,
-    C_EXEC_INVALID_GLOBAL_THRESHOLD,
-    C_EXEC_INVALID_STEP_THRESHOLD,
-    C_EXEC_NO_EXPORT_FOLDER,
     C_EXEC_NO_PROFILE,
     C_EXEC_NO_SCENARIO,
-    C_EXEC_NO_URL_SOURCE,
-    C_EXEC_STEP_THRESHOLD_WITHOUT_STEP,
 )
+from validators.scraping_validator import ScrapingLaunchValidator
 from views.executor_view import ExecutorView
 
 # -----------------------------------------------------------------------------
@@ -391,65 +386,21 @@ class ExecutorPresenter:
             self.on_request_launch_scraping(self._current_scenario, self._current_profile)
 
     def _validate_launch(self) -> str | None:
-        """Run all pre-launch validation checks.
+        """Run all pre-launch checks: guard conditions then domain validation.
+
+        Guard conditions (scenario / profile presence) are coordinator logic
+        that stays here. Domain field validation is fully delegated to
+        ScrapingLaunchValidator.
 
         Returns:
-            A French error message, or None when the configuration is valid.
+            The first French error message, or None when valid.
         """
         if not self._current_scenario:
             return C_EXEC_NO_SCENARIO
         if not self._current_profile:
             return C_EXEC_NO_PROFILE
-
         self._apply_form_to_profile()
-        p: LaunchModel = self._current_profile
-
-        if not p.export_folder.strip():
-            return C_EXEC_NO_EXPORT_FOLDER
-        if not p.url_source_type:
-            return C_EXEC_NO_URL_SOURCE
-        if p.url_source_type != UrlSourceTypeEnum.E_MANUAL.value and not p.url_source_value:
-            return C_EXEC_FOLDER_URL_SOURCE_EMPTY
-        return self._validate_step_threshold(p)
-
-    def _validate_step_threshold(self, p: LaunchModel) -> str | None:
-        """Validate the per-step emergency stop fields.
-
-        Args:
-            p: The current launch profile.
-
-        Returns:
-            An error string, or None if valid.
-        """
-        if not self._is_valid_threshold(str(p.emergency_stop_threshold)):
-            return C_EXEC_INVALID_GLOBAL_THRESHOLD
-
-        has_step = len(p.emergency_stop_step_id) >= 1
-        if not has_step:
-            return C_EXEC_STEP_THRESHOLD_WITHOUT_STEP
-        if not self._is_valid_threshold(str(p.emergency_stop_step_threshold)):
-            return C_EXEC_INVALID_STEP_THRESHOLD
-        has_threshold = p.emergency_stop_step_threshold >= 1
-        if not has_threshold:
-            return C_EXEC_INVALID_STEP_THRESHOLD
-        return None
-
-    @staticmethod
-    def _is_valid_threshold(value: str) -> bool:
-        """Return True when *value* parses to an integer in [1, 9 999 999].
-
-        Args:
-            value: Raw string from the Entry widget.
-
-        Returns:
-            True when valid.
-        """
-        try:
-            n = int(value)
-        except ValueError, TypeError:
-            return False
-        else:
-            return n >= 1
+        return ScrapingLaunchValidator().validate(self._current_profile).first_error
 
     def _save_before_launch(self) -> None:
         """Increment usage stats and persist the profile before launching."""

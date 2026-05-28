@@ -254,6 +254,10 @@ class ScenarioEditViewState:
 This project targets **Python 3.14**. Do not use syntax or features incompatible with this version.
 It is expressly prohibited to use Python 2
 
+> **Note for AI agents:** `except ExcType1, ExcType2:` (without parentheses) is valid Python 3.14
+> syntax accepted by the project linter (ruff ≥ 0.15). Do **not** flag it as a Python 2
+> anti-pattern — it is the project's accepted form for catching multiple exception types.
+
 ---
 
 ## Environment & Installation (Windows 11)
@@ -882,6 +886,130 @@ self._view.show_errors(raw_errors)  # ← format first in the Presenter
 def show_errors(self, raw_errors: list[FieldValidationError]) -> None:
     for e in raw_errors:
         msg = ERROR_TEMPLATES[e.code].format(**e.context)  # ← Presenter's job
+```
+
+---
+
+## Validators — FluentValidation Pattern
+
+All domain-level field validation is centralised in `__src__/validators/`, following a
+FluentValidation-inspired design. **No validation logic is allowed inline in Presenters, Services,
+or Views.**
+
+### Location and naming
+
+- Folder: `__src__/validators/`
+- Base class: `abstract_validator.py` — `AbstractValidator[T]`
+- Concrete validators: `<domain>_validator.py` (e.g. `scraping_validator.py`)
+- Class name: `<Domain>Validator` in PascalCase (e.g. `ScrapingLaunchValidator`)
+
+### Dependency rules
+
+| Layer | May import from |
+|-------|----------------|
+| `AbstractValidator` | `shared/` only |
+| Concrete Validator | `models/`, `view_states/`, `shared/`, `AbstractValidator` |
+| `Presenter` | Concrete validator — forwards `first_error` to the view |
+| `Service` | Concrete validator — uses as a domain validation gate |
+
+A concrete validator may validate either a **domain Model** (`AbstractValidator[MyModel]`) or a
+**ViewState DTO** (`AbstractValidator[MyViewState]`) when the ViewState is used as a typed form
+input bag rather than a display snapshot.
+
+Validators must **never** import from `View`, `Presenter`, or `Repository`.
+
+### Definition pattern
+
+```python
+# validators/scraping_validator.py
+from models.launcher_model import LaunchModel
+from shared.enums import UrlSourceTypeEnum
+from shared.i18n_fra import C_EXEC_NO_EXPORT_FOLDER, C_EXEC_FOLDER_URL_SOURCE_EMPTY
+from validators.abstract_validator import AbstractValidator
+
+class ScrapingLaunchValidator(AbstractValidator[LaunchModel]):
+    """Validates a LaunchModel before triggering a scraping session."""
+
+    def __init__(self) -> None:
+        """Define all validation rules for a scraping launch profile."""
+        super().__init__()
+
+        self.rule_for(lambda p: p.export_folder, "export_folder").must(
+            lambda v: bool(v and v.strip()), C_EXEC_NO_EXPORT_FOLDER
+        )
+        self.rule_for(lambda p: p.url_source_value, "url_source_value").must(
+            bool, C_EXEC_FOLDER_URL_SOURCE_EMPTY
+        ).when(lambda p: p.url_source_type != UrlSourceTypeEnum.E_MANUAL.value)
+```
+
+### Usage in Presenter
+
+```python
+from validators.scraping_validator import ScrapingLaunchValidator
+
+def _validate_launch(self) -> str | None:
+    if not self._current_scenario:
+        return C_NO_SCENARIO          # coordinator guard — stays in Presenter
+    if not self._current_profile:
+        return C_NO_PROFILE           # coordinator guard — stays in Presenter
+    self._apply_form_to_profile()
+    return ScrapingLaunchValidator().validate(self._current_profile).first_error
+```
+
+### API — `AbstractValidator[T]`
+
+| Method | Description |
+|--------|-------------|
+| `rule_for(accessor, field_name="")` | Opens a rule chain for one field; returns `RuleBuilder` |
+| `validate(instance)` | Runs all rules; returns `ValidationResult` |
+
+### API — `RuleBuilder[T, V]` (chainable)
+
+| Method | Description |
+|--------|-------------|
+| `.not_empty(message)` | Fails when value is `None`, `""`, or whitespace |
+| `.not_equal(other, message)` | Fails when `value == other` |
+| `.must(predicate, message)` | Fails when `predicate(value)` returns `False` |
+| `.when(condition)` | Guards the **last** rule: skips it when `condition(instance)` is `False` |
+| `.with_message(message)` | Replaces the message on the last rule |
+
+> **`.when()` semantics:** the condition receives the **whole instance** (not just the field
+> value), enabling cross-field guards such as
+> `.when(lambda p: p.source_type != UrlSourceTypeEnum.E_MANUAL.value)`.
+
+### API — `ValidationResult`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `is_valid` | `bool` | `True` when `errors` is empty |
+| `errors` | `tuple[str, ...]` | All French error messages, display-ready |
+| `first_error` | `str \| None` | First error, or `None` when valid |
+
+Validators run **all rules** (not fail-fast). Use `first_error` when the UI displays one message
+at a time; iterate `errors` when the UI lists all failures.
+
+### Anti-patterns — Validators
+
+❌ Never write validation predicates inline in a Presenter or Service
+```python
+# BAD — domain rule embedded in the Presenter
+if not profile.export_folder.strip():
+    return "Le dossier d'export est requis."
+
+# GOOD — Presenter delegates entirely to the validator
+return ScrapingLaunchValidator().validate(profile).first_error
+```
+
+❌ Never import View, Presenter, or Repository from a Validator
+❌ Never place business logic inside a Validator beyond predicates and messages
+❌ Never use `.when()` before `.must()` — `.when()` guards the rule **above** it
+
+```python
+# BAD — when() must come AFTER the rule it guards
+self.rule_for(...).when(condition).must(predicate, msg)
+
+# GOOD
+self.rule_for(...).must(predicate, msg).when(condition)
 ```
 
 ---
