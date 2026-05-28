@@ -22,12 +22,11 @@ from shared.resources_icons_util import (
     C_RESS_ICON_WHITE_TOGGLE_ON,
     C_RESS_ICON_WHITE_UP,
 )
-
-from drag_drop_list.core.calculator import LayoutCalculator
-from drag_drop_list.core.controller import DragDropController
-from drag_drop_list.core.models import DirtyRegion, DragState
-from drag_drop_list.core.renderer import ButtonDef, RenderEngine
-from drag_drop_list.utils.throttling import Debouncer
+from views.components.drag_drop_list.core.calculator import LayoutCalculator
+from views.components.drag_drop_list.core.controller import DragDropController
+from views.components.drag_drop_list.core.models import DirtyRegion, DragState
+from views.components.drag_drop_list.core.renderer import ButtonDef, RenderEngine
+from views.components.drag_drop_list.utils.throttling import Debouncer
 
 T = TypeVar("T")
 

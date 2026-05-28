@@ -12,25 +12,19 @@ delegated to ExecutorPresenter via registered callbacks.
 import contextlib
 import tkinter as tk
 from collections.abc import Callable
-from datetime import datetime
 from tkinter import filedialog, messagebox, simpledialog, ttk
-from typing import Any
 
-from models.launcher_model import LaunchModel
-from models.scenario_model import ScenarioModel
-from models.step_scraping_model import StepScrapingModel
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
-from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY, C_EXEC_SAVED_DATE_FMT, C_EXEC_USED_DATE_EMPTY, C_EXEC_USED_DATE_FMT
+from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY, C_EXEC_USED_DATE_EMPTY
+from view_states.executor_view_state import (
+    ProfileFormViewState,
+    ProfileItemViewState,
+    ScenarioItemViewState,
+    StepItemViewState,
+    UrlSourceViewState,
+)
 from views.components.column_combobox import ColumnCombobox
 from views.components.horizontal_line_frame import HorizontalLineFrame
-
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-_DATE_FMT = "%d/%m/%Y %H:%M"
-_MAX_THRESHOLD = 9_999_999
-
 
 # -----------------------------------------------------------------------------
 # Class
@@ -54,8 +48,6 @@ class ExecutorView(ttk.Frame):
         """Build widget structure without loading any data.
 
         Args:
-            config_model: Application configuration (unused here, kept for
-                consistency with other views that may use it).
             parent: Parent Tkinter container.
         """
         super().__init__(parent)
@@ -72,6 +64,10 @@ class ExecutorView(ttk.Frame):
         self._on_form_changed: Callable[[], None] | None = None
         self._on_launch: Callable[[], None] | None = None
         self._on_open_export_folder: Callable[[], None] | None = None
+
+        # Internal lookup tables — initialised here, populated via set_* methods.
+        self._profile_items: list[ProfileItemViewState] = []
+        self._step_items: list[StepItemViewState] = []
 
         # Cooldown guard for refresh button.
         self._refresh_cooldown: bool = False
@@ -199,7 +195,7 @@ class ExecutorView(ttk.Frame):
         self._btn_browse_source.grid(row=2, column=4, pady=2)
 
     def _create_cfg_row3(self, grid: tk.Widget) -> None:
-        """Row 3 — URL preview (10 lines, scrollable, editable in manual mode)."""
+        """Row 3 — URL preview (scrollable, editable only in manual mode)."""
         ttk.Label(grid, text="Aperçu URLs :").grid(row=3, column=0, sticky=tk.NW, padx=(0, 4), pady=2)
         preview_frame = ttk.Frame(grid)
         preview_frame.grid(row=3, column=1, columnspan=4, sticky=tk.EW, pady=2)
@@ -277,14 +273,14 @@ class ExecutorView(ttk.Frame):
     # Public API — data setters
     # ------------------------------------------------------------------
 
-    def set_scenarios(self, scenarios: list[ScenarioModel]) -> None:
+    def set_scenarios(self, states: list[ScenarioItemViewState]) -> None:
         """Populate the scenario combobox.
 
         Args:
-            scenarios: Full list of available scenario models.
+            states: Ordered list of scenario view states to display.
         """
         self._combo_scenarios.clear()
-        self._combo_scenarios.add_items(scenarios)
+        self._combo_scenarios.add_items(states)
 
     def select_scenario_by_id(self, id_scenario: str) -> None:
         """Pre-select a scenario in the combobox by its id_file.
@@ -298,24 +294,25 @@ class ExecutorView(ttk.Frame):
                 self._combo_scenarios.current(idx)
                 return
 
-    def get_selected_scenario(self) -> ScenarioModel | None:
-        """Return the currently selected scenario model, or None.
+    def _get_selected_scenario(self) -> ScenarioItemViewState | None:
+        """Return the currently selected scenario view state, or None.
 
         Returns:
-            The bound ``ScenarioModel`` or ``None`` when nothing is selected.
+            The bound ``ScenarioItemViewState`` or ``None`` when nothing is selected.
         """
-        return self._combo_scenarios.get_selected_object()
+        obj = self._combo_scenarios.get_selected_object()
+        return obj if isinstance(obj, ScenarioItemViewState) else None
 
-    def set_profiles(self, profiles: list[LaunchModel]) -> None:
+    def set_profiles(self, states: list[ProfileItemViewState]) -> None:
         """Populate the profile listbox.
 
         Args:
-            profiles: Ordered list of launch profiles to display.
+            states: Ordered list of profile view states to display.
         """
         self._listbox_profiles.delete(0, tk.END)
-        self._profile_models: list[LaunchModel] = list(profiles)
-        for p in profiles:
-            self._listbox_profiles.insert(tk.END, p.profile_name)
+        self._profile_items = list(states)
+        for item in states:
+            self._listbox_profiles.insert(tk.END, item.profile_name)
 
     def select_profile_by_id(self, id_profile: str) -> None:
         """Select a profile in the listbox by ID.
@@ -323,25 +320,24 @@ class ExecutorView(ttk.Frame):
         Args:
             id_profile: The profile ID to select.
         """
-        for idx, p in enumerate(getattr(self, "_profile_models", [])):
-            if p.id_profile == id_profile:
+        for idx, item in enumerate(self._profile_items):
+            if item.id_profile == id_profile:
                 self._listbox_profiles.selection_clear(0, tk.END)
                 self._listbox_profiles.selection_set(idx)
                 self._listbox_profiles.see(idx)
                 return
 
-    def get_selected_profile(self) -> LaunchModel | None:
-        """Return the currently selected profile model, or None.
+    def _get_selected_profile(self) -> ProfileItemViewState | None:
+        """Return the currently selected profile view state, or None.
 
         Returns:
-            The selected ``LaunchModel`` instance, or ``None``.
+            The selected ``ProfileItemViewState`` instance, or ``None``.
         """
         sel = self._listbox_profiles.curselection()
         if not sel:
             return None
-        models = getattr(self, "_profile_models", [])
         idx = sel[0]
-        return models[idx] if idx < len(models) else None
+        return self._profile_items[idx] if idx < len(self._profile_items) else None
 
     def set_profiles_list_enabled(self, enabled: bool) -> None:
         """Gray out or restore the profiles listbox and the Nouveau button.
@@ -364,129 +360,142 @@ class ExecutorView(ttk.Frame):
             with contextlib.suppress(tk.TclError):
                 child.configure(state=state)
 
-    def set_profile_form(self, model: LaunchModel, steps: list[StepScrapingModel]) -> None:
-        """Populate all form fields from a LaunchModel and its scenario steps.
+    def set_profile_form(self, state: ProfileFormViewState) -> None:
+        """Populate all form fields from a ProfileFormViewState.
 
         Args:
-            model: The launch profile to render.
-            steps: The steps of the selected scenario (for the step combobox).
+            state: Immutable snapshot of the profile data to render.
         """
-        self._set_usage_stats(model)
-        self._var_export_folder.set(model.export_folder or "")
-        self._set_url_source_fields(model)
-        self._var_global_threshold.set(str(model.emergency_stop_threshold))
-        self._set_steps_combobox(steps, model.emergency_stop_step_id)
-        self._var_step_threshold.set(str(model.emergency_stop_step_threshold))
+        # Update usage statistics labels.
+        self._lbl_used_date.config(text=state.used_date)
+        self._lbl_launch_count.config(text=str(state.launch_count))
 
-    def _set_usage_stats(self, model: LaunchModel) -> None:
-        """Update usage-statistics labels from a model.
+        # Populate scalar fields.
+        self._var_export_folder.set(state.export_folder)
+        self._set_url_source_fields(state.url_source)
+        self._var_global_threshold.set(str(state.global_threshold))
+        self._set_steps_combobox(state.steps, state.step_id_selected)
+        self._var_step_threshold.set(str(state.step_threshold))
 
-        Args:
-            model: The launch model containing usage data.
-        """
-        if model.used_date_profile:
-            date_str = model.used_date_profile.strftime(_DATE_FMT)
-            self._lbl_used_date.config(text=C_EXEC_USED_DATE_FMT.format(date=date_str))
-        else:
-            self._lbl_used_date.config(text=C_EXEC_USED_DATE_EMPTY)
-        self._lbl_launch_count.config(text=str(model.launch_count))
-
-    def _set_url_source_fields(self, model: LaunchModel) -> None:
-        """Populate URL-source-related widgets from the model.
+    def _set_url_source_fields(self, state: UrlSourceViewState) -> None:
+        """Populate URL-source-related widgets from a UrlSourceViewState.
 
         Args:
-            model: The launch model containing URL-source configuration.
+            state: Snapshot of the URL-source configuration.
         """
         # Select matching combobox entry; default to "Liste manuelle" when unknown.
         for idx, (_, val) in enumerate(self._source_choices):
-            if val == model.url_source_type:
+            if val == state.source_type:
                 self._combo_source.current(idx)
                 break
         else:
             self._combo_source.current(0)
 
         # Populate path/URL value.
-        if model.url_source_type == UrlSourceTypeEnum.E_MANUAL.value:
-            urls = model.url_source_value if isinstance(model.url_source_value, list) else []
-            self._set_url_preview_text("\n".join(urls), editable=True)
+        if state.is_preview_editable:
+            self._set_url_preview_text("\n".join(state.manual_urls), editable=True)
         else:
-            path = model.url_source_value if isinstance(model.url_source_value, str) else ""
-            self._var_source_path.set(path or "")
+            self._var_source_path.set(state.source_path)
             self._set_url_preview_text("", editable=False)
 
-        # Sort-order radio buttons.
-        self._var_sort_order.set(model.url_sort_order or UrlSortOrderEnum.E_MTIME_ASC.value)
-        self._update_source_type_ui(model.url_source_type)
+        # Sort-order radio buttons and widget-enable state.
+        self._var_sort_order.set(state.sort_order)
+        self._update_source_type_ui(
+            is_path_enabled=state.is_path_entry_enabled,
+            is_sort_enabled=state.is_sort_order_enabled,
+            is_preview_editable=state.is_preview_editable,
+        )
 
-    def _set_steps_combobox(self, steps: list[StepScrapingModel], selected_id: str) -> None:
-        """Populate the per-step combobox with scenario steps.
+    def _set_steps_combobox(self, steps: tuple[StepItemViewState, ...], selected_id: str) -> None:
+        """Populate the per-step combobox with step view states.
 
         Args:
-            steps: All steps of the current scenario.
+            steps: Ordered step entries for the emergency-stop combobox.
             selected_id: The step_id to pre-select.
         """
-        self._step_models: list[StepScrapingModel] = list(steps)
-        labels = [f"{i + 1}. {s.step_type.value} — {s.step_id}" for i, s in enumerate(steps)]
-        self._combo_steps["values"] = labels
+        self._step_items = list(steps)
+        self._combo_steps["values"] = [s.label for s in steps]
         for idx, s in enumerate(steps):
             if s.step_id == selected_id:
                 self._combo_steps.current(idx)
                 return
         self._combo_steps.set("")
 
-    def get_profile_form_data(self) -> dict[str, Any]:
-        """Read all profile-configuration widgets into a plain dictionary.
+    # ------------------------------------------------------------------
+    # Public API — typed form getters (View → Presenter)
+    # ------------------------------------------------------------------
+
+    def get_export_folder(self) -> str:
+        """Return the current value of the export-folder entry.
 
         Returns:
-            A dict suitable for updating a ``LaunchModel``.
+            Stripped path string, or empty string when blank.
         """
-        source_type = self._get_selected_source_type()
-        url_value = self._get_url_source_value(source_type)
-        step_id = self._get_selected_step_id()
-        return {
-            "export_folder": self._var_export_folder.get().strip(),
-            "url_source_type": source_type,
-            "url_source_value": url_value,
-            "url_sort_order": self._var_sort_order.get(),
-            "emergency_stop_threshold": self._var_global_threshold.get().strip(),
-            "emergency_stop_step_id": step_id,
-            "emergency_stop_step_threshold": self._var_step_threshold.get().strip(),
-        }
+        return self._var_export_folder.get().strip()
 
-    def _get_selected_source_type(self) -> str:
-        """Return the raw source-type value of the selected combobox entry."""
+    def get_url_source_type(self) -> str:
+        """Return the raw source-type value of the selected combobox entry.
+
+        Returns:
+            A raw ``UrlSourceTypeEnum`` value string, or empty string.
+        """
         idx = self._combo_source.current()
         if idx < 0 or idx >= len(self._source_choices):
             return ""
         return self._source_choices[idx][1]
 
-    def _get_url_source_value(self, source_type: str) -> list[str] | str | None:
-        """Return the URL source value matching the current source type.
-
-        Args:
-            source_type: The selected URL source type string.
+    def get_url_source_value(self) -> list[str] | str | None:
+        """Return the URL source value for the current source type.
 
         Returns:
             A list of URLs for manual mode, or a path string for others.
         """
+        source_type = self.get_url_source_type()
         if source_type == UrlSourceTypeEnum.E_MANUAL.value:
             raw = self._txt_url_preview.get("1.0", tk.END).strip()
             return [u.strip() for u in raw.splitlines() if u.strip()]
         return self._var_source_path.get().strip() or None
 
-    def _get_selected_step_id(self) -> str:
-        """Return the step_id of the entry selected in the step combobox."""
+    def get_url_sort_order(self) -> str:
+        """Return the raw sort-order value from the selected radio button.
+
+        Returns:
+            A raw ``UrlSortOrderEnum`` value string.
+        """
+        return self._var_sort_order.get()
+
+    def get_global_threshold_raw(self) -> str:
+        """Return the raw string content of the global-threshold entry.
+
+        Returns:
+            Stripped string; may not be a valid integer.
+        """
+        return self._var_global_threshold.get().strip()
+
+    def get_emergency_stop_step_id(self) -> str:
+        """Return the step_id of the entry selected in the step combobox.
+
+        Returns:
+            The step_id string, or empty string when nothing is selected.
+        """
         idx = self._combo_steps.current()
-        models = getattr(self, "_step_models", [])
-        if 0 <= idx < len(models):
-            return models[idx].step_id
+        if 0 <= idx < len(self._step_items):
+            return self._step_items[idx].step_id
         return ""
+
+    def get_step_threshold_raw(self) -> str:
+        """Return the raw string content of the per-step threshold entry.
+
+        Returns:
+            Stripped string; may not be a valid integer.
+        """
+        return self._var_step_threshold.get().strip()
 
     def set_url_preview(self, urls: list[str]) -> None:
         """Update the read-only URL preview widget.
 
         Args:
-            urls: Preview URLs to display (up to 10 shown by the provider).
+            urls: Preview URLs to display.
         """
         self._set_url_preview_text("\n".join(urls), editable=False)
 
@@ -504,16 +513,13 @@ class ExecutorView(ttk.Frame):
         if not editable:
             self._txt_url_preview.configure(state=tk.DISABLED)
 
-    def set_saved_date(self, dt: datetime | None) -> None:
-        """Update the "Sauvegardé le" label.
+    def set_saved_date(self, date_str: str) -> None:
+        """Update the "Sauvegardé le" label with a pre-formatted string.
 
         Args:
-            dt: The save timestamp, or None when unsaved.
+            date_str: Ready-to-display date label built by the Presenter.
         """
-        if dt:
-            self._lbl_saved.config(text=C_EXEC_SAVED_DATE_FMT.format(date=dt.strftime(_DATE_FMT)))
-        else:
-            self._lbl_saved.config(text=C_EXEC_SAVED_DATE_EMPTY)
+        self._lbl_saved.config(text=date_str)
 
     def set_verification_message(self, msg: str) -> None:
         """Display or clear the validation-error message.
@@ -645,12 +651,21 @@ class ExecutorView(ttk.Frame):
             parent=self,
         )
 
+    def show_error(self, title: str, message: str) -> None:
+        """Display a modal error dialog.
+
+        Args:
+            title: Dialog window title.
+            message: Error message to display.
+        """
+        messagebox.showerror(title, message, parent=self)
+
     # ------------------------------------------------------------------
     # Private event handlers
     # ------------------------------------------------------------------
 
     def _on_combo_scenario_changed(self, _event: tk.Event) -> None:
-        obj = self._combo_scenarios.get_selected_object()
+        obj = self._get_selected_scenario()
         if obj and self._on_scenario_changed:
             self._on_scenario_changed(obj.id_file)
 
@@ -666,14 +681,14 @@ class ExecutorView(ttk.Frame):
         self._refresh_cooldown = False
 
     def _notify_edit_scenario(self) -> None:
-        obj = self._combo_scenarios.get_selected_object()
+        obj = self._get_selected_scenario()
         if obj and self._on_edit_scenario:
             self._on_edit_scenario(obj.id_file)
 
     def _on_listbox_profile_selected(self, _event: tk.Event) -> None:
-        model = self.get_selected_profile()
-        if model and self._on_profile_selected:
-            self._on_profile_selected(model.id_profile)
+        item = self._get_selected_profile()
+        if item and self._on_profile_selected:
+            self._on_profile_selected(item.id_profile)
 
     def _notify_new_profile(self) -> None:
         if self._on_new_profile:
@@ -700,27 +715,35 @@ class ExecutorView(ttk.Frame):
             self._on_launch()
 
     def _on_source_type_changed(self, _event: tk.Event) -> None:
-        source_type = self._get_selected_source_type()
-        self._update_source_type_ui(source_type)
+        source_type = self.get_url_source_type()
+        is_folder_json = source_type in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
+        is_manual = source_type == UrlSourceTypeEnum.E_MANUAL.value
+        self._update_source_type_ui(
+            is_path_enabled=is_folder_json,
+            is_sort_enabled=is_folder_json,
+            is_preview_editable=is_manual,
+        )
         self._notify_form_changed()
 
-    def _update_source_type_ui(self, source_type: str) -> None:
-        """Adapt widgets visibility based on the selected URL source type.
+    def _update_source_type_ui(
+        self, *, is_path_enabled: bool, is_sort_enabled: bool, is_preview_editable: bool
+    ) -> None:
+        """Adapt widget enable/disable state from explicit boolean flags.
 
         Args:
-            source_type: The raw source-type string.
+            is_path_enabled: When True, path entry and browse button are enabled.
+            is_sort_enabled: When True, sort-order radio buttons are enabled.
+            is_preview_editable: When True, the URL preview text area accepts typing.
         """
-        is_manual = source_type == UrlSourceTypeEnum.E_MANUAL.value
-        is_folder_or_json = source_type in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
-        path_state = tk.NORMAL if is_folder_or_json else tk.DISABLED
+        path_state = tk.NORMAL if is_path_enabled else tk.DISABLED
         self._entry_source_path.configure(state=path_state)
         self._btn_browse_source.configure(state=path_state)
 
-        rb_state = ["!disabled"] if is_folder_or_json else ["disabled"]
+        rb_state = ["!disabled"] if is_sort_enabled else ["disabled"]
         self._rb_recent.state(rb_state)
         self._rb_oldest.state(rb_state)
 
-        preview_state = tk.NORMAL if is_manual else tk.DISABLED
+        preview_state = tk.NORMAL if is_preview_editable else tk.DISABLED
         self._txt_url_preview.configure(state=preview_state)
 
     def _on_url_text_modified(self, _event: tk.Event) -> None:
@@ -741,19 +764,6 @@ class ExecutorView(ttk.Frame):
         folder = filedialog.askdirectory(title="Choisir le dossier source d'URL", parent=self)
         if folder:
             self._var_source_path.set(folder)
-
-    # ------------------------------------------------------------------
-    # Open-folder passthrough
-    # ------------------------------------------------------------------
-
-    def show_error(self, title: str, message: str) -> None:
-        """Display a modal error dialog.
-
-        Args:
-            title: Dialog window title.
-            message: Error message to display.
-        """
-        messagebox.showerror(title, message, parent=self)
 
 
 # EOF
