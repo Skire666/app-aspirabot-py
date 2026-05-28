@@ -15,10 +15,7 @@ from services.steps._helpers import get_filtered_images
 from services.workflow_service import register_step_executor
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepTypeEnum
-from shared.exception_util import (
-    ImageDownloadFailedError,
-    ImageNotDownloadedError,
-)
+from shared.exception_util import ImageDownloadFailedError, ImageNotDownloadedError
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.path_util import make_all_folders_if_not_exists
 
@@ -48,7 +45,7 @@ class DownloadImageExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p: DownloadImageParams = DownloadImageParams.from_dict(context.step_params)
+        p: DownloadImageParams = DownloadImageParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
         downloaded_urls = context.downloaded_urls
 
@@ -67,8 +64,7 @@ class DownloadImageExecutor(IStepExecutor):
 
             # Download via the page context request to preserve session cookies.
             response = page.context.request.get(
-                full_url,
-                headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")},
+                full_url, headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")}
             )
             if not response.ok:
                 raise ImageDownloadFailedError(response.status)
@@ -152,7 +148,7 @@ class DownloadImageExecutor(IStepExecutor):
         for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):
             if min_k in bounds and max_k in bounds and bounds[min_k] > bounds[max_k]:
                 errors.append(
-                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k),
+                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k)
                 )
         return errors
 

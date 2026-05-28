@@ -28,7 +28,7 @@ class KillBrowserExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = KillBrowserParams.from_dict(context.step_params)
+        p = KillBrowserParams.from_dict(context.step_scraping_data.params)
         delay = convert_to_sec(p.wait_duration, p.wait_unit)
         if delay > 0:
             time.sleep(delay)
@@ -46,7 +46,7 @@ class KillBrowserExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["end_process_wait_duration_invalid"].format(step=index_display))
         if p.wait_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             errors.append(
-                ERROR_TEMPLATES["end_process_wait_unit_invalid"].format(step=index_display, value=p.wait_unit),
+                ERROR_TEMPLATES["end_process_wait_unit_invalid"].format(step=index_display, value=p.wait_unit)
             )
         return errors
 

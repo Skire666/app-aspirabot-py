@@ -60,11 +60,7 @@ class ExtractedData:
         """Serialize to a plain dict for JSON export."""
         return {
             url: {
-                key: {
-                    "css_selector": val_kd.css_selector,
-                    "comment": val_kd.comment,
-                    "values": val_kd.values,
-                }
+                key: {"css_selector": val_kd.css_selector, "comment": val_kd.comment, "values": val_kd.values}
                 for key, val_kd in val_ud.keys.items()
             }
             for url, val_ud in self.urls.items()
@@ -110,10 +106,10 @@ class ScrapingContextModel:
     on_user_wait: Callable[[], None] | None
 
     # Step-specific raw params (used to construct typed param models).
-    step_params: dict[str, Any]
+    step_scraping_data: StepScrapingModel | None = field(default=None)
 
     # date extracted
-    extracted_data: ExtractedData
+    extracted_data: ExtractedData | None = field(default=None)
 
     # Optional URL source scenario injected by the service before each run.
     url_source: IUrlSourceProvider | None = field(default=None)
@@ -157,7 +153,7 @@ class ScrapingContextModel:
             step: The step about to be executed.
         """
         self._time_started = time.time()
-        self.step_params = step.params
+        self.step_scraping_data = step
         self.last_message_step = ""
         self.last_time_elapsed = 0.0
         self.pending_jump = None

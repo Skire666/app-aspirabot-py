@@ -40,7 +40,7 @@ class ExportDataToJsExecutor(IStepExecutor):
     @override
     def execute_logical(self, _: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = ExportDataToJsParams.from_dict(context.step_params)
+        p = ExportDataToJsParams.from_dict(context.step_scraping_data.params)
 
         # Nothing to write — skip without logging noise.
         if not context.extracted_data or not context.extracted_data.urls:

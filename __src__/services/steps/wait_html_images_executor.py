@@ -12,9 +12,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition, get_filtered_images
 from services.workflow_service import register_step_executor
-from shared.constants import (
-    C_UNITS_TIME_ALLOWED_FOR_MODEL,
-)
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
 from shared.i18n_fra import ERROR_TEMPLATES
@@ -32,7 +30,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitHtmlImagesParams.from_dict(context.step_params)
+        p = WaitHtmlImagesParams.from_dict(context.step_scraping_data.params)
         nbr_delay_in_sec = convert_to_sec(p.retry_delay, p.retry_unit)
         count: int = -1
 
@@ -60,14 +58,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         errors.extend(self._validate_dim_ranges(bounds, step_label))
 
         # Validate count comparison and retry parameters.
-        allowed_operators = {
-            "equal",
-            "not_equal",
-            "greater_than",
-            "less_than",
-            "greater_or_equal",
-            "less_or_equal",
-        }
+        allowed_operators = {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}
         if p.operator not in allowed_operators:
             errors.append(ERROR_TEMPLATES["wait_html_images_operator_invalid"].format(step=step_label))
         if p.quantity < 0:
@@ -107,7 +98,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
         for min_k, max_k in (("height_min", "height_max"), ("width_min", "width_max")):
             if min_k in bounds and max_k in bounds and bounds[min_k] > bounds[max_k]:
                 errors.append(
-                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k),
+                    ERROR_TEMPLATES["image_dim_range_invalid"].format(step=step_label, min_key=min_k, max_key=max_k)
                 )
         return errors
 

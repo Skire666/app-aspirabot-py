@@ -26,7 +26,7 @@ class CloseTabsExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = CloseTabsParams.from_dict(context.step_params)
+        p = CloseTabsParams.from_dict(context.step_scraping_data.params)
         filter_used = p.filter_custom if p.filter_mode == OpenUrlModeEnum.E_CUSTOM.value else context.last_url_opened
         filter_used = filter_used.strip().lower()
 

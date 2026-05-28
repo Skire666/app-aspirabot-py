@@ -55,7 +55,7 @@ class ClickForDownloadExecutor(IStepExecutor):
             ElementNotFoundForClickError: If the selector matches no element on the page.
             DownloadNotDetectedError: If no download was triggered after all click attempts.
         """
-        p = ClickOnElementParams.from_dict(context.step_params)
+        p = ClickOnElementParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
         if page.locator(p.selector).count() <= 0:
             raise ElementNotFoundForClickError(p.selector, p.mode)
@@ -89,7 +89,7 @@ class ClickForDownloadExecutor(IStepExecutor):
 
     @staticmethod
     def _do_click_for_download(
-        browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int,
+        browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int
     ) -> object:
         page = browser.get_current_page()
         elements = page.query_selector_all(selector)

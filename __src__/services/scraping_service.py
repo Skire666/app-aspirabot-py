@@ -103,7 +103,6 @@ class ScrapingService:
             pause_event=threading.Event(),
             cancel_event=threading.Event(),
             on_user_wait=None,
-            step_params={},
         )
 
         # Run-level statistics counters.

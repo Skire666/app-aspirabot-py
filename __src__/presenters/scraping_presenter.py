@@ -423,7 +423,7 @@ class ScrapingPresenter:
         Returns:
             A short descriptive string.
         """
-        if not ctx.step_params:
+        if not ctx.step_scraping_data:
             return ""
         step_ids = ctx.step_id_by_index
         step_idx = len(step_ids) - 1  # Last step started.

@@ -27,7 +27,7 @@ class WaitPageStateExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitPageStateParams.from_dict(context.step_params)
+        p = WaitPageStateParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
 
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)

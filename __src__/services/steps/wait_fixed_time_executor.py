@@ -27,7 +27,7 @@ class WaitFixedTimeExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitFixedTimeParams.from_dict(context.step_params)
+        p = WaitFixedTimeParams.from_dict(context.step_scraping_data.params)
         time_sec = convert_to_sec(p.duration, p.unit)
         if time_sec > 0:
             time.sleep(time_sec)

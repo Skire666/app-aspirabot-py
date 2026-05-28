@@ -40,7 +40,7 @@ class ExtractTextsExecutor(IStepExecutor):
             browser: Live browser service providing the current Playwright page.
             context: Scraping context; step_params is read and last_message_step is written.
         """
-        p = ExtractTextsParams.from_dict(context.step_params)
+        p = ExtractTextsParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
 
         elements: list[ElementHandle] = page.query_selector_all(p.selector)
@@ -90,7 +90,7 @@ class ExtractTextsExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["extract_texts_selector_required"].format(step=index_display))
         if p.extract_mode not in allowed_modes:
             errors.append(
-                ERROR_TEMPLATES["extract_texts_mode_invalid"].format(step=index_display, value=p.extract_mode),
+                ERROR_TEMPLATES["extract_texts_mode_invalid"].format(step=index_display, value=p.extract_mode)
             )
         if p.target not in allowed_targets:
             errors.append(ERROR_TEMPLATES["extract_texts_target_invalid"].format(step=index_display, value=p.target))

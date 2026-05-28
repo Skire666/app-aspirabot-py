@@ -38,7 +38,7 @@ class OpenUrlExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = OpenUrlParams.from_dict(context.step_params)
+        p = OpenUrlParams.from_dict(context.step_scraping_data.params)
 
         # Resolve the target URL from the source scenario or the custom field.
         target_url = self._extract_next_url_used(context, p)

@@ -40,7 +40,7 @@ class ExtractLinksExecutor(IStepExecutor):
             browser: Live browser service providing the current Playwright page.
             context: Scraping context; step_params is read and last_message_step is written.
         """
-        p = ExtractLinksParams.from_dict(context.step_params)
+        p = ExtractLinksParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
 
         elements: list[ElementHandle] = page.query_selector_all(p.selector)

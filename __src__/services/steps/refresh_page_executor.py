@@ -27,7 +27,7 @@ class RefreshPageExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = RefreshPageParams.from_dict(context.step_params)
+        p = RefreshPageParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
 
@@ -49,9 +49,7 @@ class RefreshPageExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["refresh_page_timeout_invalid"].format(step=index_display))
         if p.timeout_duration > 0 and p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             errors.append(
-                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(
-                    step=index_display, value=p.timeout_unit,
-                ),
+                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(step=index_display, value=p.timeout_unit)
             )
         return errors
 

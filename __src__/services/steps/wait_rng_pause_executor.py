@@ -28,7 +28,7 @@ class WaitRngPauseExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitRngPauseParams.from_dict(context.step_params)
+        p = WaitRngPauseParams.from_dict(context.step_scraping_data.params)
         delay = random.uniform(float(p.min_val), float(p.max_val))
         time_sec = convert_to_sec(delay, p.unit)
         if time_sec > 0:

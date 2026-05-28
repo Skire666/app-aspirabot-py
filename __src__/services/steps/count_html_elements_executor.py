@@ -30,7 +30,7 @@ class CountHtmlElementsExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = CountHtmlElementsParams.from_dict(context.step_params)
+        p = CountHtmlElementsParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
 
         count = page.locator(p.selector).count()
@@ -47,14 +47,7 @@ class CountHtmlElementsExecutor(IStepExecutor):
         """Validate the step model."""
         p = CountHtmlElementsParams.from_dict(model.params)
         index_display = str(step_index + 1).zfill(2)
-        allowed_operators = {
-            "equal",
-            "not_equal",
-            "greater_than",
-            "less_than",
-            "greater_or_equal",
-            "less_or_equal",
-        }
+        allowed_operators = {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}
         errors: list[str] = []
         if not p.selector.strip():
             errors.append(ERROR_TEMPLATES["count_html_elements_selector_required"].format(step=index_display))
@@ -62,13 +55,11 @@ class CountHtmlElementsExecutor(IStepExecutor):
             errors.append(ERROR_TEMPLATES["count_html_elements_value_negative"].format(step=index_display))
         if p.success_if not in {"success", "failure"}:
             errors.append(
-                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(
-                    step=index_display, value=p.success_if
-                ),
+                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(step=index_display, value=p.success_if)
             )
         if p.operator not in allowed_operators:
             errors.append(
-                ERROR_TEMPLATES["count_html_elements_operator_invalid"].format(step=index_display, value=p.operator),
+                ERROR_TEMPLATES["count_html_elements_operator_invalid"].format(step=index_display, value=p.operator)
             )
         return errors
 

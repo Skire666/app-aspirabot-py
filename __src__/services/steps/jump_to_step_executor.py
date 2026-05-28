@@ -25,13 +25,13 @@ class JumpToStepExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = JumpToStepParams.from_dict(context.step_params)
+        p = JumpToStepParams.from_dict(context.step_scraping_data.params)
         should_jump = (
             p.condition == "always"
             or (context.last_result_step and p.condition == "success")
             or (not context.last_result_step and p.condition == "failure")
         )
-        target_step_id = context.step_params.get("target_hexastring", "")
+        target_step_id = context.step_scraping_data.params.get("target_hexastring", "")
         if should_jump and target_step_id:
             context.pending_jump = target_step_id
 
@@ -50,7 +50,7 @@ class JumpToStepExecutor(IStepExecutor):
         step_idx_display = str(step_index + 1).zfill(2)
         if condition not in {"success", "failure", "always"}:
             errors.append(
-                ERROR_TEMPLATES["jump_to_step_condition_invalid"].format(step=step_idx_display, value=condition),
+                ERROR_TEMPLATES["jump_to_step_condition_invalid"].format(step=step_idx_display, value=condition)
             )
 
         # Basic check for presence of target step ID.
@@ -73,9 +73,7 @@ class JumpToStepExecutor(IStepExecutor):
 
             if step_found is None:
                 errors.append(
-                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(
-                        step=step_idx_display, value=target_step_id
-                    ),
+                    ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step_idx_display, value=target_step_id)
                 )
 
         # Note: We cannot check for jump loops here, as it would require analyzing the entire workflow

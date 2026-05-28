@@ -30,7 +30,7 @@ class WaitHtmlElementsExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = WaitHtmlElementsParams.from_dict(context.step_params)
+        p = WaitHtmlElementsParams.from_dict(context.step_scraping_data.params)
         page = browser.get_current_page()
         nbr_delay_in_sec = convert_to_sec(p.retry_delay, p.retry_unit)
         counted_items: int = -1
@@ -57,14 +57,7 @@ class WaitHtmlElementsExecutor(IStepExecutor):
 
         if not p.selector.strip():
             errors.append(ERROR_TEMPLATES["wait_html_elements_selector_required"].format(step=index_display))
-        if p.operator not in {
-            "equal",
-            "not_equal",
-            "greater_than",
-            "less_than",
-            "greater_or_equal",
-            "less_or_equal",
-        }:
+        if p.operator not in {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}:
             errors.append(ERROR_TEMPLATES["wait_html_elements_operator_invalid"].format(step=index_display))
         if p.quantity < 0:
             errors.append(ERROR_TEMPLATES["wait_html_elements_quantity_negative"].format(step=index_display))

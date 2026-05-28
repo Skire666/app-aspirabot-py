@@ -40,7 +40,7 @@ class ClickOnElementExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = ClickOnElementParams.from_dict(context.step_params)
+        p = ClickOnElementParams.from_dict(context.step_scraping_data.params)
 
         page = browser.get_current_page()  # can throw if page is closed
         if page.locator(p.selector).count() <= 0:
