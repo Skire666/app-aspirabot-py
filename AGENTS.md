@@ -21,6 +21,7 @@ __src__/
 ├── presenters/     # Orchestration: connects views to services
 ├── repositories/   # Data read/write layer (files, JSON…)
 ├── services/       # Business logic and domain rules
+├── view_states/    # Typed DTOs built by Presenters, consumed by Views
 └── main.py         # Application entry point
 ```
 
@@ -29,6 +30,7 @@ __src__/
 - `services` and `models` form the **domain**: they are independent of the UI and repositories.
 - `repositories` are the **only layer** allowed to read/write persistent data.
 - `presenters` are the **only layer** allowed to connect views to services.
+- `views` receive **ViewState objects**, never raw Model objects or `dict[str, Any]`.
 
 ### Supporting Structure
 
@@ -37,13 +39,15 @@ These folders are **not part of the MVP pattern** but participate in the overall
 ```
 __src__/
 ├── interfaces/     # Protocol-based contracts for MVP layers
-└── shared/         # Common utilities and base code shared across layers
+├── shared/         # Common utilities and base code shared across layers
+└── view_states/    # Typed DTOs — bridge between Presenter output and View input
 ```
 
 **Rules for supporting folders:**
 - `interfaces/` defines `Protocol` contracts implemented by MVP layers — never place concrete logic here.
 - `shared/` contains helpers, constants, and base classes usable by any layer — never place business logic here.
-- Neither `interfaces/` nor `shared/` belong to any MVP layer — they are cross-cutting concerns.
+- `view_states/` contains typed dataclasses built by Presenters and consumed by Views — no business logic, no methods.
+- Neither `interfaces/`, `shared/`, nor `view_states/` belong to any MVP layer — they are cross-cutting concerns.
 
 ---
 
@@ -60,11 +64,12 @@ Cross-layer imports in the opposite direction are a hard violation.
 
 | Importing layer | May import from | Must NEVER import from |
 |-----------------|-----------------|------------------------|
-| `View`          | `interfaces/`, `shared/`               | `Service`, `Repository`, `Model` directly |
-| `Presenter`     | `Service`, `interfaces/`, `shared/`    | `Repository` directly |
-| `Service`       | `Repository`, `interfaces/`, `Model`, `shared/` | `View`, `Presenter` |
-| `Repository`    | `Model`, `shared/`                     | `View`, `Presenter`, `Service` |
+| `View`          | `view_states/`, `interfaces/`, `shared/`               | `Service`, `Repository`, `Model` directly |
+| `Presenter`     | `view_states/`, `Service`, `interfaces/`, `shared/`    | `Repository` directly |
+| `Service`       | `Repository`, `interfaces/`, `Model`, `shared/` | `View`, `Presenter`, `view_states/` |
+| `Repository`    | `Model`, `shared/`                     | `View`, `Presenter`, `Service`, `view_states/` |
 | `Model`         | `shared/`                              | Everything else |
+| `ViewState`     | `shared/`                              | Everything else |
 
 > **Rule:** if adding an import would create a cycle or go against the arrow above, the design is wrong — refactor instead.
 
@@ -114,6 +119,132 @@ def on_save_clicked(self) -> None:
         self._service.save_scenario(data)
     except ProviderValidationError as e:
         self._view.show_errors([format_error(e)])
+```
+
+---
+
+## ViewState — Typed DTO from Presenter to View
+
+A `ViewState` is a **frozen dataclass** that the Presenter builds from Model data and passes to the View.
+It is the **only** way a View may receive structured data — never a raw Model, never a `dict[str, Any]`.
+
+### Purpose
+
+- Decouples the View from the domain model: the View never knows `Provider`, `Scenario`, etc. exist.
+- Provides full type safety and IDE autocomplete for the View layer.
+- Makes Presenter → View contracts explicit and auditable.
+
+### Location and naming
+
+- Folder: `__src__/view_states/`
+- File: `<module>_view_state.py` (e.g. `executor_view_state.py`, `scenario_list_view_state.py`)
+- Class: `<Module>ViewState` in PascalCase (e.g. `ExecutorViewState`, `ScenarioListViewState`)
+
+### Definition rules
+
+- Always `@dataclass(frozen=True)` — ViewStates are immutable snapshots.
+- Only primitive types or other ViewStates as fields — no Model objects, no services.
+- No methods, no business logic — data bag only.
+- May import from `shared/` (e.g. enums, constants) — nothing else.
+
+```python
+# view_states/scenario_edit_view_state.py
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class ScenarioEditViewState:
+    """Snapshot of scenario data ready for display in the edit form.
+
+    Attributes:
+        id_scenario: Unique identifier of the scenario.
+        name: Display name shown in the form header.
+        url: Target URL pre-filled in the URL field.
+        is_active: Whether the active toggle is checked.
+    """
+    id_scenario: str
+    name: str
+    url: str
+    is_active: bool
+```
+
+### Presenter — builds and pushes the ViewState
+
+The Presenter maps a Model to a ViewState. This mapping is the only allowed coupling point
+between the domain and the display layer.
+
+```python
+# presenters/scenario_edit_presenter.py
+from view_states.scenario_edit_view_state import ScenarioEditViewState
+
+class ScenarioEditPresenter:
+    def on_scenario_selected(self, id_scenario: str) -> None:
+        provider = self._service.get_scenario(id_scenario)
+        # Map domain model → ViewState (Presenter's job)
+        state = ScenarioEditViewState(
+            id_scenario=provider.id,
+            name=provider.name,
+            url=provider.url,
+            is_active=provider.active,
+        )
+        self._view.display_scenario(state)
+```
+
+### View — receives the ViewState, never the Model
+
+The View imports the ViewState class directly — no Protocol wrapping, no `dict[str, Any]`.
+
+```python
+# views/scenario_edit_view.py
+from view_states.scenario_edit_view_state import ScenarioEditViewState
+
+class ScenarioEditView(ttk.Frame):
+    def display_scenario(self, state: ScenarioEditViewState) -> None:
+        self._name_var.set(state.name)
+        self._url_var.set(state.url)
+        self._active_var.set(state.is_active)
+```
+
+### Anti-patterns — ViewState
+
+❌ Never pass a Model directly to a View
+```python
+# BAD — the View now depends on the domain model
+self._view.display_scenario(provider)  # provider: Provider
+
+# GOOD — the Presenter maps to a ViewState first
+state = ScenarioEditViewState(...)
+self._view.display_scenario(state)
+```
+
+❌ Never pass `dict[str, Any]` instead of a typed ViewState
+```python
+# BAD — loses type safety, IDE autocomplete, and refactor support
+self._view.display_scenario({"name": provider.name, "url": provider.url})
+
+# GOOD
+self._view.display_scenario(ScenarioEditViewState(name=provider.name, url=provider.url, ...))
+```
+
+
+❌ Never put business logic or methods inside a ViewState
+```python
+# BAD — a ViewState must be a passive snapshot
+@dataclass(frozen=True)
+class ScenarioEditViewState:
+    url: str
+
+    def is_valid_url(self) -> bool:   # ← domain rule, belongs in Service
+        return self.url.startswith("https://")
+```
+
+❌ Never import a Model inside a ViewState
+```python
+# BAD — ViewState must not depend on domain objects
+from models.provider import Provider
+
+@dataclass(frozen=True)
+class ScenarioEditViewState:
+    provider: Provider   # ← defeats the entire purpose of the ViewState
 ```
 
 ---
@@ -782,6 +913,44 @@ pytest __tests__/ -v
 
 These patterns violate the MVP architecture and must never appear in the codebase.
 If you are an AI agent, treat these rules as hard constraints — no exception, no workaround.
+
+---
+
+### ViewState Violations
+
+❌ Never pass a Model directly to a View
+```python
+# BAD — the View becomes coupled to the domain model
+self._view.display_scenario(provider)          # provider: Provider
+
+# GOOD
+self._view.display_scenario(ScenarioEditViewState(...))
+```
+
+❌ Never pass `dict[str, Any]` to a View instead of a typed ViewState
+```python
+# BAD — loses type safety, IDE support, and refactor coverage
+self._view.display_scenario({"name": provider.name, "url": provider.url})
+```
+
+❌ Never import a Model inside a ViewState
+```python
+# BAD
+from models.provider import Provider
+
+@dataclass(frozen=True)
+class ScenarioViewState:
+    provider: Provider   # ← defeats the isolation purpose
+```
+
+❌ Never put methods or business logic inside a ViewState — data bag only
+```python
+# BAD
+@dataclass(frozen=True)
+class ScenarioViewState:
+    url: str
+    def is_valid(self) -> bool: ...   # ← belongs in a Service
+```
 
 ---
 
