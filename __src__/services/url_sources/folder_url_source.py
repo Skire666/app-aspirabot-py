@@ -124,6 +124,11 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         Raises:
             None.
         """
+        try:
+            self._ensure_discovered()
+        except UrlSourceFileNotFoundError:
+            return []
+
         if self._file_paths is None:
             return []
 

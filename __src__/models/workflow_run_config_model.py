@@ -48,3 +48,5 @@ class WorkflowRunConfigModel:
     url_source_type: str = ""
     url_source_value: list[str] | str | None = None
     export_folder: str = ""
+    # Sort order for folder/json sources — matches UrlSortOrderEnum.value strings.
+    url_sort_order: str = ""

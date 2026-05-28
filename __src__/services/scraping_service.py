@@ -13,7 +13,6 @@ delegated to the injected IWebBrowserService implementation.
 import logging
 import threading
 from collections.abc import Callable
-from datetime import datetime
 from pathlib import Path
 
 from interfaces.i_step_executor import IStepExecutor
@@ -21,18 +20,38 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.app_configuration_model import AppConfigurationModel
 from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ExtractedData, ScrapingContextModel
-from models.scraping_report_model import ScrapingReportModel
+from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.json_repository import JsonFileRepository
 from services.browser_playwright_service import BrowserPlaywrightService
+from services.url_sources.url_source_factory import build_url_source_scenario
 from services.workflow_service import WorkflowService
-from shared.constants import (
-    C_BROWSER_ENGINE_PLAYWRIGHT,
-)
-from shared.enums import EventScrapingEnum, StepTypeEnum
-from shared.exception_util import UnsupportedBrowserEngineError
+from shared.constants import C_BROWSER_ENGINE_PLAYWRIGHT
+from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum
+from shared.exception_util import ExportFolderNotADirectoryError, UnsupportedBrowserEngineError
+from shared.operating_system_util import open_folder
+
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+
+def _parse_sort_order(value: str) -> UrlSortOrderEnum:
+    """Convert a raw sort-order string to its enum member, defaulting to E_MTIME_ASC.
+
+    Args:
+        value: A string matching one of the ``UrlSortOrderEnum`` values, or blank.
+
+    Returns:
+        The matching ``UrlSortOrderEnum`` member, or ``E_MTIME_ASC`` as fallback.
+    """
+    for member in UrlSortOrderEnum:
+        if member.value == value:
+            return member
+    return UrlSortOrderEnum.E_MTIME_ASC
+
 
 # -----------------------------------------------------------------------------
 # Class
@@ -81,16 +100,16 @@ class ScrapingService:
         )
 
         # Run-level statistics counters.
-        self._steps_success_count: int = 0
-        self._steps_failed_count: int = 0
-        self._clicks_count: int = 0
-        self._open_urls_executed_count: int = 0
+        self._statistics: ScrapingStatisticsModel = ScrapingStatisticsModel()
 
-        # Emergency stop configuration — set before each run.
+        # Global emergency-stop configuration — set before each run.
         self._emergency_stop_threshold: int = 0
         self._on_emergency_stop: Callable[[], None] | None = None
 
-        self._started_at: datetime | None = None
+        # Per-step emergency-stop configuration.
+        self._emergency_stop_step_id: str = ""
+        self._emergency_stop_step_threshold: int = 0
+        self._emergency_stop_step_failed: int = 0
 
         # Run-scoped callbacks.
         self._on_event_logging: Callable[[EventScrapingEnum, StepScrapingModel, ScrapingContextModel], None] | None = (
@@ -106,7 +125,7 @@ class ScrapingService:
         scenario: ScenarioModel,
         config: WorkflowRunConfigModel,
         handlers: WorkflowRunHandlers,
-    ) -> ScrapingReportModel:
+    ) -> ScrapingStatisticsModel:
         """Execute all steps of a scenario workflow sequentially.
 
         Args:
@@ -126,10 +145,14 @@ class ScrapingService:
         self._on_event_logging = handlers.on_logging_event
         self._emergency_stop_threshold = handlers.emergency_stop_threshold
         self._on_emergency_stop = handlers.on_emergency_stop
-        self._started_at = datetime.now()
+        self._emergency_stop_step_id = handlers.emergency_stop_step_id
+        self._emergency_stop_step_threshold = handlers.emergency_stop_step_threshold
+        self._statistics.start_timer()
 
-        # Build and attach the URL source scenario when requested.
-        self._context.url_source = self._build_url_source(config.url_source_type, config.url_source_value)
+        # Build and attach the URL source when requested, forwarding sort order.
+        self._context.url_source = self._build_url_source(
+            config.url_source_type, config.url_source_value, config.url_sort_order
+        )
         self._context.folder_export = Path(config.export_folder)
 
         # TODO PCO, si déjà instancié, recycler l'ancien ?
@@ -143,44 +166,62 @@ class ScrapingService:
         cancelled = self._run_browser_lifecycle(scenario)
         return self._build_report(cancelled)
 
+    @property
+    def current_context(self) -> ScrapingContextModel:
+        """Expose the live scraping context for read-only polling from the presenter.
+
+        Returns:
+            The shared ``ScrapingContextModel`` updated in place during execution.
+        """
+        return self._context
+
+    def open_export_folder(self, folder_path: str) -> None:
+        """Open the export folder in the OS file explorer, creating it if needed.
+
+        Args:
+            folder_path: Absolute path to the export folder to open.
+
+        Raises:
+            ExportFolderNotADirectoryError: If the path is not a directory.
+            UnsupportedOperatingSystemError: If the OS is not supported.
+        """
+        folder = Path(folder_path)
+        folder.mkdir(parents=True, exist_ok=True)
+        if not folder.is_dir():
+            raise ExportFolderNotADirectoryError(folder)
+        self._logger.debug("Ouverture du dossier d'export : %s", folder)
+        open_folder(folder)
+
     @staticmethod
     def _build_url_source(
         source_type: str,
         source_value: list[str] | str | None,
+        sort_order_str: str = "",
     ) -> IUrlSourceProvider | None:
-        """Build the URL source scenario when type and value are supplied.
+        """Build the URL source provider when type and value are supplied.
 
         Args:
             source_type: One of ``"manual"``, ``"folder"``, or ``"json"``.
             source_value: Matching value for the given type, or None.
+            sort_order_str: Raw string matching a ``UrlSortOrderEnum`` value;
+                defaults to ``E_MTIME_ASC`` when blank or unrecognised.
 
         Returns:
             A concrete ``IUrlSourceProvider`` or ``None``.
-
-        Raises:
-            None — errors are not raised here; the executor handles missing source.
         """
-        if source_type and source_value is not None:
-            return build_url_source_scenario(source_type, source_value)
-        return None
+        if not (source_type and source_value is not None):
+            return None
+        sort_order = _parse_sort_order(sort_order_str)
+        return build_url_source_scenario(source_type, source_value, sort_order)
 
     @property
-    def current_stats(self) -> ScrapingReportModel:
+    def current_stats(self) -> ScrapingStatisticsModel:
         """Running counters for the current (or most recent) workflow run.
 
         Returns:
             A ``ScrapingReportModel`` instance.
         """
-        return ScrapingReportModel(
-            started_at=self._started_at,
-            finished_at=None,
-            steps_total=len(self._context.step_id_by_index),
-            steps_success=self._steps_success_count,
-            steps_failed=self._steps_failed_count,
-            clicks_performed=self._clicks_count,
-            open_urls_executed=self._open_urls_executed_count,
-            cancelled=False,
-        )
+        return self._statistics
 
     # ------------------------------------------------------------------
     # Browser lifecycle
@@ -211,7 +252,7 @@ class ScrapingService:
 
         return self._context.cancel_event.is_set()
 
-    def _build_report(self, cancelled: bool) -> ScrapingReportModel:
+    def _build_report(self, cancelled: bool) -> ScrapingStatisticsModel:
         """Assemble the final report from run-level counters.
 
         Args:
@@ -222,22 +263,15 @@ class ScrapingService:
         """
         self._on_event_logging(EventScrapingEnum.E_COMPLETED, None, None)
 
-        return ScrapingReportModel(
-            started_at=self._started_at or datetime.now(),
-            finished_at=datetime.now(),
-            steps_total=len(self._context.step_id_by_index),
-            steps_success=self._steps_success_count,
-            steps_failed=self._steps_failed_count,
-            clicks_performed=self._clicks_count,
-            open_urls_executed=self._open_urls_executed_count,
-            cancelled=cancelled,
-        )
+        self._statistics.finish_timer()
+        self._statistics.cancelled = cancelled
+        return self._statistics
 
     # ------------------------------------------------------------------
     # Step iteration
     # ------------------------------------------------------------------
 
-    def _run_all_steps(self, steps: list[StepScrapingModel]) -> int:
+    def _run_all_steps(self, steps: list[StepScrapingModel]) -> None:
         """Iterate over steps, execute each, and return the failure count.
 
         Supports non-sequential execution via JUMP_TO_STEP and early
@@ -246,9 +280,6 @@ class ScrapingService:
 
         Args:
             steps: Ordered list of scraping steps to run.
-
-        Returns:
-            The number of steps that failed.
         """
         self._reset_run_state(steps)
         i = 0
@@ -269,8 +300,6 @@ class ScrapingService:
             # Pause when the failure quota reaches the configured threshold.
             self._check_emergency_stop(steps[i])
 
-        return self._steps_failed_count
-
     def _reset_run_state(self, steps: list[StepScrapingModel]) -> None:
         """Reset all per-run mutable state before a new workflow execution.
 
@@ -279,12 +308,11 @@ class ScrapingService:
         """
         # Rewind the URL source so it can be replayed in a new run.
         self._context.reset_before_new_process(steps)
+        self._statistics.clear()
+        self._statistics.start_timer()
 
-        # Reset per-run statistics counters.
-        self._steps_success_count = 0
-        self._steps_failed_count = 0
-        self._clicks_count = 0
-        self._open_urls_executed_count = 0
+        # Reset per-run statistics counters and per-step failure counter.
+        self._emergency_stop_step_failed = 0
 
     def _run_one_step(self, step: StepScrapingModel, index: int) -> int:
         """Execute one step, update stats, fire callback, return next index.
@@ -319,16 +347,11 @@ class ScrapingService:
             step: The step that just executed.
             is_success: True when the step completed without error.
         """
-        if is_success:
-            self._steps_success_count += 1
-        else:
-            self._steps_failed_count += 1
+        self._statistics.update_result_step(step.step_type, is_success)
 
-        # Track step-type-specific action counters.
-        if step.step_type == StepTypeEnum.E_CLICK_ON_ELEMENT:
-            self._clicks_count += 1
-        elif step.step_type == StepTypeEnum.E_OPEN_URL:
-            self._open_urls_executed_count += 1
+        # Track per-step failures for the step-level emergency stop.
+        if not is_success and step.step_id == self._emergency_stop_step_id:
+            self._emergency_stop_step_failed += 1
 
     def _consume_pending_jump(self, current_index: int) -> int:
         """Resolve and clear any pending JUMP_TO_STEP signal.
@@ -348,7 +371,7 @@ class ScrapingService:
         return next_index
 
     def _check_emergency_stop(self, next_step: StepScrapingModel) -> None:
-        """Pause the workflow when the failure count reaches the emergency threshold.
+        """Pause the workflow when a failure threshold (global or per-step) is reached.
 
         Clears the pause_event to block the next step and fires the optional
         callback so the UI can reflect the paused state.
@@ -356,18 +379,24 @@ class ScrapingService:
         Returns:
             None.
         """
-        if self._emergency_stop_threshold <= 0:
-            return
-        if self._steps_failed_count < self._emergency_stop_threshold:
-            return
+        # JUMP_TO_STEP and KILL_BROWSER steps are not subject to emergency stop, so skip the check.
         if next_step.step_type in {StepTypeEnum.E_JUMP_TO_STEP, StepTypeEnum.E_KILL_BROWSER}:
+            return
+
+        global_hit: bool = self._statistics.steps_failed >= self._emergency_stop_threshold
+        step_hit: bool = (
+            self._emergency_stop_step_threshold >= 1
+            and self._emergency_stop_step_failed >= self._emergency_stop_step_threshold
+        )
+        if not (global_hit or step_hit):
+            # Threshold not reached — continue execution.
             return
 
         # Threshold reached — block execution at the next iteration.
         self._context.pause_event.clear()
+        if callable(self._on_event_logging):
+            self._on_event_logging(EventScrapingEnum.E_EMERGENCY_STOP, next_step, self._context)
         if callable(self._on_emergency_stop):
-            if callable(self._on_event_logging):
-                self._on_event_logging(EventScrapingEnum.E_EMERGENCY_STOP, None, self._context)
             self._on_emergency_stop()
 
     def _resolve_jump_index(self, pending_jump: str | int, current_index: int) -> int:

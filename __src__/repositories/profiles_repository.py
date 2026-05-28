@@ -22,6 +22,7 @@ from repositories.json_repository import JsonFileRepository
 from shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
 from shared.exception_util import (
     AspirabotError,
+    ExportFolderNotADirectoryError,
     InvalidProfilesFolderPathError,
     ProfileDataMissingError,
     ProfileNotFoundError,
@@ -231,6 +232,23 @@ class ProfilesRepository:
         if not self._folder_path.exists():
             Path(self._folder_path).mkdir(exist_ok=True, parents=True)
             self._logger.debug("Dossier créé : %s", self._folder_path)
+
+    def open_export_folder(self, folder_path: str | Path) -> None:
+        """Opens an export folder in the OS file explorer, creating it if needed.
+
+        Args:
+            folder_path: Absolute path to the export folder to open.
+
+        Raises:
+            ExportFolderNotADirectoryError: When the path is not a directory.
+            UnsupportedOperatingSystemError: When the OS is not supported.
+        """
+        folder = Path(folder_path)
+        folder.mkdir(parents=True, exist_ok=True)
+        if not folder.is_dir():
+            raise ExportFolderNotADirectoryError(folder)
+        self._logger.debug("Ouverture du dossier d'export : %s", folder)
+        open_folder(folder)
 
     def open_profiles_folder(self) -> None:
         """Opens the profiles folder in the OS file explorer.

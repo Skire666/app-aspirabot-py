@@ -67,6 +67,22 @@ C_SCRAPING_STATUS_EMERGENCY_STOP = "Processus mise en pause : seuil d'erreurs d�
 # Scraping panel — export error message ({exc} is the caught exception)
 C_SCRAPING_EXPORT_WRITE_ERROR = "Impossible d'écrire le fichier :\n{exc}"
 
+# Executor panel — validation messages
+C_EXEC_NO_SCENARIO = "Veuillez sélectionner un scénario."
+C_EXEC_NO_PROFILE = "Veuillez sélectionner un profil de lancement."
+C_EXEC_NO_EXPORT_FOLDER = "Le dossier d'export est requis."
+C_EXEC_NO_URL_SOURCE = "Veuillez configurer une source d'URL."
+C_EXEC_INVALID_GLOBAL_THRESHOLD = "Le seuil global d'erreurs doit être un entier entre 1 et 9 999 999."
+C_EXEC_STEP_THRESHOLD_WITHOUT_STEP = "Veuillez sélectionner une étape pour le seuil par étape."
+C_EXEC_INVALID_STEP_THRESHOLD = "Le seuil par étape doit être un entier entre 1 et 9 999 999."
+C_EXEC_FOLDER_URL_SOURCE_EMPTY = "Le chemin de la source d'URL est requis."
+
+# Executor panel — labels
+C_EXEC_SAVED_DATE_FMT = "Sauvegardé le : {date}"
+C_EXEC_SAVED_DATE_EMPTY = "Sauvegardé le : --"
+C_EXEC_USED_DATE_FMT = "{date}"
+C_EXEC_USED_DATE_EMPTY = "--"
+
 # Debug panel — session launch validation errors
 C_DEBUG_URL_EMPTY = "L'URL ne peut pas être vide."
 C_DEBUG_TIMEOUT_INVALID = "Le timeout doit être un entier entre 1 et 30 secondes."

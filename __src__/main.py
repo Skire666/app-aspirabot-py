@@ -30,7 +30,9 @@ from services.debug_browser_service import DebugBrowserService
 from services.logging_service import LoggingService
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
+from services.scraping_service import ScrapingService
 from services.startup_service import StartupService
+from services.workflow_service import WorkflowService
 
 # Bootstrap: import all step packages to populate the central registry.
 from shared.constants import (
@@ -114,6 +116,7 @@ def _wire_all_navigation(
     workflow_presenter: WorkflowPresenter,
     executor_presenter: ExecutorPresenter,
     profiles_presenter: ProfilesPresenter,
+    scraping_presenter: ScrapingPresenter,
 ) -> None:
     """Wire all inter-component navigation callbacks and lazy-loading hooks.
 
@@ -123,11 +126,25 @@ def _wire_all_navigation(
         workflow_presenter: Presenter for the scenario edit view.
         executor_presenter: Presenter for the executor panel.
         profiles_presenter: Presenter for the profiles panel.
+        scraping_presenter: Presenter for the live scraping panel.
     """
     _wire_scenario_navigation(main_view, scenario_presenter, workflow_presenter)
     _wire_executor_launch(main_view, scenario_presenter, executor_presenter)
     _wire_profiles_launch(main_view, profiles_presenter, executor_presenter)
+    _wire_scraping_navigation(main_view, executor_presenter, scraping_presenter)
+
+    def on_executor_edit_scenario(id_file: str) -> None:
+        if workflow_presenter.load_scenario(id_file):
+            main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
+            main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
+            main_view.show_view(TitleModuleEnum.E_WORKFLOW)
+
+    executor_presenter.on_request_edit_scenario = on_executor_edit_scenario
     main_view.set_on_show(TitleModuleEnum.E_PROFILES, profiles_presenter.ensure_profiles_loaded)
+    main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, executor_presenter.ensure_scenarios_loaded)
 
 
 def _build_and_wire_components(  # noqa: PLR0914
@@ -150,11 +167,11 @@ def _build_and_wire_components(  # noqa: PLR0914
         main_view, prof_svc, startup_service.config_model, JsonFileRepository()
     )
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
-    scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc, prof_svc)
+    scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
     dbg_view, dbg_p = _init_debug_component(main_view)
 
     # Wire navigation and finalize the window.
-    _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr)
+    _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr, scrap_pre)
     _register_views(
         main_view,
         log_view,
@@ -332,30 +349,35 @@ def _init_executor_component(
     Returns:
         A (ExecutorView, ExecutorPresenter) tuple.
     """
-    executor_view: ExecutorView = ExecutorView(config_model, main_view.content_area)
-    executor_presenter: ExecutorPresenter = ExecutorPresenter(executor_view)
+    executor_view = ExecutorView(config_model, main_view.content_area)
+    executor_presenter = ExecutorPresenter(
+        view=executor_view,
+        scenarios_service=scenario_service,
+        profiles_service=profiles_service,
+    )
     return executor_view, executor_presenter
 
 
 def _init_scraping_component(
     main_view: MainView,
     config_model: AppConfigurationModel,
-    scenario_service: ScenariosService,
-    profiles_service: ProfilesService,
 ) -> tuple[ScrapingView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
     Args:
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the scraping output folder.
-        scenario_service: The scenario service for managing scenario data.
-        profiles_service: The profiles service for managing profile data.
 
     Returns:
         A (ScrapingView, ScrapingPresenter) tuple.
     """
-    scraping_view: ScrapingView = ScrapingView(config_model, main_view.content_area)
-    scraping_presenter: ScrapingPresenter = ScrapingPresenter(scraping_view)
+    scraping_view = ScrapingView(config_model, main_view.content_area)
+    scraping_service = ScrapingService(
+        model_config=config_model,
+        workflow_service=WorkflowService(),
+        extracted_data_repository=JsonFileRepository(),
+    )
+    scraping_presenter = ScrapingPresenter(view=scraping_view, service=scraping_service)
     return scraping_view, scraping_presenter
 
 
@@ -416,6 +438,44 @@ def _wire_scenario_navigation(
     main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
 
 
+def _wire_scraping_navigation(
+    main_view: MainView,
+    executor_presenter: ExecutorPresenter,
+    scraping_presenter: ScrapingPresenter,
+) -> None:
+    """Connect executor launch to the scraping panel and wire start/stop hooks.
+
+    Args:
+        main_view: Shell managing tab visibility.
+        executor_presenter: Source of the launch request.
+        scraping_presenter: Target that runs the session.
+    """
+    blocked_mods = (
+        TitleModuleEnum.E_PROFILES,
+        TitleModuleEnum.E_SCENARIOS,
+        TitleModuleEnum.E_EXECUTOR,
+        TitleModuleEnum.E_WORKFLOW,
+    )
+
+    def on_scraping_started() -> None:
+        for mod in blocked_mods:
+            main_view.set_tab_state(mod, tk.DISABLED)
+
+    def on_scraping_stopped() -> None:
+        for mod in blocked_mods:
+            main_view.set_tab_state(mod, tk.NORMAL)
+
+    def on_request_launch_scraping(scenario: object, profile: object) -> None:
+        scraping_presenter.set_launch_context(scenario, profile)  # type: ignore[arg-type]
+        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
+        main_view.show_view(TitleModuleEnum.E_SCRAPING)
+        scraping_presenter.start_scraping()
+
+    scraping_presenter.on_scraping_started = on_scraping_started
+    scraping_presenter.on_scraping_stopped = on_scraping_stopped
+    executor_presenter.on_request_launch_scraping = on_request_launch_scraping
+
+
 def _wire_executor_launch(
     main_view: MainView,
     scenario_presenter: ScenariosPresenter,
@@ -431,6 +491,7 @@ def _wire_executor_launch(
     """
 
     def on_request_launch_scenario(id_file: str) -> None:
+        executor_presenter.load_scenario(id_file)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_EXECUTOR)
 
@@ -451,7 +512,7 @@ def _wire_profiles_launch(
     """
 
     def on_request_launch_profile(id_scenario: str, id_profile: str) -> None:
-        # Load scenario then select the specific profile before navigating.
+        executor_presenter.load_scenario_and_profile(id_scenario, id_profile)
         main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
         main_view.show_view(TitleModuleEnum.E_EXECUTOR)
 

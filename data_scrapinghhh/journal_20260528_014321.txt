@@ -1,0 +1,45 @@
+01:42:14 - Initialisation du navigateur...
+01:42:22 - Création du contexte de navigation...
+01:42:22 - Démarrage des étapes du workflow...
+01:42:22 - Début étape | P3Aa | OPEN_URL
+01:42:24 - Fin étape | P3Aa | OPEN_URL | OK | 1.08s | Ouvert : https://e-hentai.org/?f_search=uploader%3ARobotDemon
+01:42:24 - Début étape | 49G8 | JUMP_TO_STEP
+01:42:24 - Fin étape | 49G8 | JUMP_TO_STEP | OK | 0.00s | Ne saute pas. Lit prochaine étape.
+01:42:24 - Début étape | 9Dd5 | WAIT_USER_ACTION
+01:42:46 - Fin étape | 9Dd5 | WAIT_USER_ACTION | OK | 22.02s | Reprise utilisateur détectée
+01:42:46 - Début étape | ePNE | JUMP_TO_STEP
+01:42:46 - Fin étape | ePNE | JUMP_TO_STEP | OK | 0.00s | Doit sauter vers l'étape [#P3Aa]
+01:42:46 - Début étape | P3Aa | OPEN_URL
+01:42:46 - Fin étape | P3Aa | OPEN_URL | OK | 0.66s | Ouvert : https://e-hentai.org/uploader/Trimbs
+01:42:46 - Début étape | 49G8 | JUMP_TO_STEP
+01:42:46 - Fin étape | 49G8 | JUMP_TO_STEP | OK | 0.00s | Ne saute pas. Lit prochaine étape.
+01:42:46 - Début étape | 9Dd5 | WAIT_USER_ACTION
+01:42:54 - Fin étape | 9Dd5 | WAIT_USER_ACTION | OK | 7.42s | Reprise utilisateur détectée
+01:42:54 - Début étape | ePNE | JUMP_TO_STEP
+01:42:54 - Fin étape | ePNE | JUMP_TO_STEP | OK | 0.00s | Doit sauter vers l'étape [#P3Aa]
+01:42:54 - Début étape | P3Aa | OPEN_URL
+01:42:54 - Fin étape | P3Aa | OPEN_URL | OK | 0.70s | Ouvert : https://e-hentai.org/uploader/zikkia1888
+01:42:54 - Début étape | 49G8 | JUMP_TO_STEP
+01:42:54 - Fin étape | 49G8 | JUMP_TO_STEP | OK | 0.00s | Ne saute pas. Lit prochaine étape.
+01:42:54 - Début étape | 9Dd5 | WAIT_USER_ACTION
+01:42:57 - Fin étape | 9Dd5 | WAIT_USER_ACTION | OK | 2.92s | Reprise utilisateur détectée
+01:42:57 - Début étape | ePNE | JUMP_TO_STEP
+01:42:57 - Fin étape | ePNE | JUMP_TO_STEP | OK | 0.00s | Doit sauter vers l'étape [#P3Aa]
+01:42:57 - Début étape | P3Aa | OPEN_URL
+01:42:58 - Fin étape | P3Aa | OPEN_URL | OK | 0.62s | Ouvert : https://e-hentai.org/uploader/femelle230514
+01:42:58 - Début étape | 49G8 | JUMP_TO_STEP
+01:42:58 - Fin étape | 49G8 | JUMP_TO_STEP | OK | 0.00s | Ne saute pas. Lit prochaine étape.
+01:42:58 - Début étape | 9Dd5 | WAIT_USER_ACTION
+01:43:02 - Fin étape | 9Dd5 | WAIT_USER_ACTION | OK | 4.09s | Reprise utilisateur détectée
+01:43:02 - Début étape | ePNE | JUMP_TO_STEP
+01:43:02 - Fin étape | ePNE | JUMP_TO_STEP | OK | 0.00s | Doit sauter vers l'étape [#P3Aa]
+01:43:02 - Début étape | P3Aa | OPEN_URL
+01:43:03 - Fin étape | P3Aa | OPEN_URL | OK | 0.74s | Ouvert : https://e-hentai.org/uploader/%E9%98%BF%E6%93%A6%E6%93%A6
+01:43:03 - Début étape | 49G8 | JUMP_TO_STEP
+01:43:03 - Fin étape | 49G8 | JUMP_TO_STEP | OK | 0.00s | Ne saute pas. Lit prochaine étape.
+01:43:03 - Début étape | 9Dd5 | WAIT_USER_ACTION
+01:43:21 - Fin étape | 9Dd5 | WAIT_USER_ACTION | OK | 18.36s | Attente annulée par l'utilisateur
+01:43:21 - === Résumé final ===
+01:43:21 - Étapes : total=6 | OK=19 | KO=0
+01:43:21 - OpenURL exécutés : 5
+01:43:21 - Clics exécutés : 0

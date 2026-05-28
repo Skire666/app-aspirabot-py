@@ -167,12 +167,11 @@ class ProfilesService:
         new_profile_launch.profile_name = profile_name
 
         if self._repository.exists_scenarios(id_scenario):
-            # existing scenario: read it, update its profile list, and save it back
             found = self._repository.read_profiles(id_scenario)
             found.create_profile_launch(new_profile_launch)
             self._repository.update_profiles(found)
+            return new_profile_launch
 
-        # no existing scenario: create a new one with the profile and save it
         new_scenario = ProfilesModel.get_default(id_scenario=id_scenario)
         new_scenario.create_profile_launch(new_profile_launch)
         self._repository.create_profiles(new_scenario)
@@ -193,12 +192,11 @@ class ProfilesService:
             DatabaseUnavailableError: If the file cannot be written to disk.
         """
         if self._repository.exists_scenarios(id_scenario):
-            # existing scenario: read it, update its profile list, and save it back
             found: ProfilesModel = self._repository.read_profiles(id_scenario)
             found.update_profile_launch(profile)
             self._repository.update_profiles(found)
+            return profile
 
-        # no existing scenario: create a new one with the profile and save it
         new_profiles: ProfilesModel = ProfilesModel.get_default(id_scenario=id_scenario)
         new_profiles.create_profile_launch(profile)
         self._repository.create_profiles(new_profiles)
@@ -246,6 +244,18 @@ class ProfilesService:
     def open_profiles_folder(self) -> None:
         """Open the folder containing scenario files in the OS file explorer."""
         self._repository.open_profiles_folder()
+
+    def open_export_folder(self, folder_path: str) -> None:
+        """Open an export folder in the OS file explorer, creating it if needed.
+
+        Args:
+            folder_path: Absolute path to the export folder to open.
+
+        Raises:
+            ExportFolderNotADirectoryError: If the path is not a directory.
+            UnsupportedOperatingSystemError: If the OS is not supported.
+        """
+        self._repository.open_export_folder(folder_path)
 
     def get_path_profiles_folder(self) -> Path:
         """Get the path of the folder containing scenario files.

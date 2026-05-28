@@ -70,6 +70,11 @@ class LaunchModel:
     emergency_stop_threshold: int
     launch_count: int
     used_date_profile: datetime | None
+    # Sort order for folder/json sources — matches UrlSortOrderEnum.value strings.
+    url_sort_order: str = ""
+    # Per-step emergency stop: step ID to monitor and its error threshold.
+    emergency_stop_step_id: str = ""
+    emergency_stop_step_threshold: int = 0
 
     @classmethod
     def get_default(cls, id_scenario: str) -> LaunchModel:
@@ -99,6 +104,9 @@ class LaunchModel:
             emergency_stop_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             launch_count=0,
             used_date_profile=None,
+            url_sort_order="",
+            emergency_stop_step_id="",
+            emergency_stop_step_threshold=0,
         )
 
     @classmethod
@@ -126,9 +134,12 @@ class LaunchModel:
             export_folder=data.get("export_folder"),
             url_source_type=data.get("url_source_type"),
             url_source_value=data.get("url_source_value"),
-            emergency_stop_threshold=int(data.get("emergency_stop_threshold")),
-            launch_count=int(data.get("launch_count")),
+            emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
+            launch_count=int(data.get("launch_count", 0)),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
+            url_sort_order=data.get("url_sort_order", ""),
+            emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
+            emergency_stop_step_threshold=int(data.get("emergency_stop_step_threshold", 0)),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -155,6 +166,9 @@ class LaunchModel:
             "emergency_stop_threshold": self.emergency_stop_threshold,
             "launch_count": self.launch_count,
             "used_date_profile": self.used_date_profile,
+            "url_sort_order": self.url_sort_order,
+            "emergency_stop_step_id": self.emergency_stop_step_id,
+            "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
         }
 
     @classmethod

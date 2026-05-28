@@ -339,6 +339,18 @@ class LogFolderNotADirectoryError(NotADirectoryError, AspirabotError):
         super().__init__(f"Le chemin des logs n'est pas un dossier : {folder_path}")
 
 
+class ExportFolderNotADirectoryError(NotADirectoryError, AspirabotError):
+    """Raised when the export folder path exists but is not a directory."""
+
+    def __init__(self, folder_path: str | Path) -> None:
+        """Initialize the error message.
+
+        Args:
+            folder_path: Path that was expected to be a directory.
+        """
+        super().__init__(f"Le chemin d'export n'est pas un dossier : {folder_path}")
+
+
 class UnsupportedOperatingSystemError(OSError, AspirabotError):
     """Raised when the current operating system is not supported."""
 

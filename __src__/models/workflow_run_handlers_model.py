@@ -76,9 +76,10 @@ class WorkflowRunHandlers:
 
     # Optional observer callbacks.
     on_user_wait: Callable[[], None] | None = None
+    # Step and context are None for lifecycle events (browser init, completed, etc.).
     on_logging_event: (
         Callable[
-            [EventScrapingEnum, StepScrapingModel, ScrapingContextModel],
+            [EventScrapingEnum, StepScrapingModel | None, ScrapingContextModel | None],
             None,
         ]
         | None
@@ -87,3 +88,7 @@ class WorkflowRunHandlers:
     # Emergency-stop configuration — threshold and callback are always paired.
     emergency_stop_threshold: int = 0
     on_emergency_stop: Callable[[], None] | None = None
+
+    # Per-step emergency stop — triggers pause when a specific step fails too often.
+    emergency_stop_step_id: str = ""
+    emergency_stop_step_threshold: int = 0
