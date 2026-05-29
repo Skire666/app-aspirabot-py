@@ -8,19 +8,16 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlElementsConditionNotMetError
-from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_sec
 
 
-class WaitHtmlElementsExecutor(IStepExecutor):
+class WaitHtmlElementsExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the wait element scraping step."""
 
     @classmethod
@@ -48,27 +45,6 @@ class WaitHtmlElementsExecutor(IStepExecutor):
         context.last_message_step = (
             f"Trouvé {counted_items} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
         )
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate the step model."""
-        errors: list[str] = []
-        p = cast(WaitHtmlElementsParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-
-        if not p.selector.strip():
-            errors.append(ERROR_TEMPLATES["wait_html_elements_selector_required"].format(step=index_display))
-        if p.operator not in {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}:
-            errors.append(ERROR_TEMPLATES["wait_html_elements_operator_invalid"].format(step=index_display))
-        if p.quantity < 0:
-            errors.append(ERROR_TEMPLATES["wait_html_elements_quantity_negative"].format(step=index_display))
-        if p.retry_delay <= 0:
-            errors.append(ERROR_TEMPLATES["wait_html_elements_retry_delay_invalid"].format(step=index_display))
-        if p.retry_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(ERROR_TEMPLATES["wait_html_elements_retry_unit_invalid"].format(step=index_display))
-        if p.retry_max <= 0:
-            errors.append(ERROR_TEMPLATES["wait_html_elements_retry_max_invalid"].format(step=index_display))
-        return errors
 
 
 register_step_executor(WaitHtmlElementsExecutor())

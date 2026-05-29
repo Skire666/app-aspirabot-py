@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from pydantic import ValidationInfo, field_validator
 
-from interfaces.i_step_params import IStepParams
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.enums import ExtractTargetEnum
+from shared.i18n_fra import ERROR_TEMPLATES
+
+_ALLOWED_TARGETS = frozenset({e.value for e in ExtractTargetEnum})
 
 
-@dataclass(frozen=True)
-class ExtractLinksParams(IStepParams):
+class ExtractLinksParams(BaseStepParams):
     """Parameters for the extract links scraping step."""
 
     selector: str
@@ -17,15 +19,35 @@ class ExtractLinksParams(IStepParams):
     mapping: str
     comment: str = ""
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to the flat dict format expected by the step JSON schema.
+    @field_validator("selector")
+    @classmethod
+    def check_selector(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(
+                ERROR_TEMPLATES["extract_links_selector_required"].format(step=step_label(info.context))
+            )
+        return v
 
-        Returns:
-            Dict with keys: selector, extract_mode, target, comment.
-        """
-        return {
-            "selector": self.selector,
-            "target": self.target,
-            "mapping": self.mapping,
-            "comment": self.comment,
-        }
+    @field_validator("target")
+    @classmethod
+    def check_target(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if v not in _ALLOWED_TARGETS:
+            raise ValueError(
+                ERROR_TEMPLATES["extract_links_target_invalid"].format(step=step_label(info.context), value=v)
+            )
+        return v
+
+    @field_validator("mapping")
+    @classmethod
+    def check_mapping(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(
+                ERROR_TEMPLATES["extract_links_mapping_required"].format(step=step_label(info.context))
+            )
+        return v

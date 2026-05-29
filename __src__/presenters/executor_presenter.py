@@ -30,7 +30,7 @@ from shared.i18n_fra import (
     C_EXEC_USED_DATE_EMPTY,
     C_EXEC_USED_DATE_FMT,
 )
-from validators.scraping_validator import ScrapingLaunchValidator
+from validators.launch_validator import validate_launch_profile_first_error
 from view_states.executor_view_state import (
     ProfileFormViewState,
     ProfileItemViewState,
@@ -526,7 +526,7 @@ class ExecutorPresenter:
         if not self._current_profile:
             return C_EXEC_NO_PROFILE
         self._apply_form_to_profile()
-        return ScrapingLaunchValidator().validate(self._current_profile).first_error
+        return validate_launch_profile_first_error(self._current_profile)
 
     def _save_before_launch(self) -> None:
         """Increment usage stats and persist the profile before launching."""

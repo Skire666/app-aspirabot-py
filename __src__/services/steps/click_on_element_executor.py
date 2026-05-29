@@ -7,15 +7,13 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.click_on_element_params import ClickOnElementParams
 from playwright.sync_api import ElementHandle
 from playwright.sync_api import Error as PlaywrightError
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
-from shared.i18n_fra import ERROR_TEMPLATES
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -30,7 +28,7 @@ C_LIMIT_TIMEOUT_CLICK_MS = 10000
 # -----------------------------------------------------------------------------
 
 
-class ClickOnElementExecutor(IStepExecutor):
+class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the click element scraping step."""
 
     @classmethod
@@ -80,19 +78,6 @@ class ClickOnElementExecutor(IStepExecutor):
         # NOTE PCO : Aucune idée de si ça plante.... (pas moyen de vérifier, pas de timeout)
         element.evaluate("element => element.click()", timeout=C_LIMIT_TIMEOUT_CLICK_MS)
         return "JS Direct"
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate the step model."""
-        p = cast(ClickOnElementParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-
-        if p.index_clicked <= -1:
-            return [ERROR_TEMPLATES["click_element_index_invalid"].format(step=index_display)]
-        # if selecteur est vide ou ne contient que des espaces
-        if not p.selector.strip():
-            return [ERROR_TEMPLATES["click_element_selector_required"].format(step=index_display)]
-        return []
 
 
 register_step_executor(ClickOnElementExecutor())

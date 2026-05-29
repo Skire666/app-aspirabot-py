@@ -7,18 +7,16 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.export_data_to_js_params import ExportDataToJsParams
 from repositories.json_repository import JsonFileRepository
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepTypeEnum
 from shared.exception_util import ExportFolderNotConfiguredError, NoDataToExportError
-from shared.i18n_fra import ERROR_TEMPLATES
 
 
-class ExportDataToJsExecutor(IStepExecutor):
+class ExportDataToJsExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the export data to JavaScript step."""
 
     def __init__(self) -> None:
@@ -50,17 +48,6 @@ class ExportDataToJsExecutor(IStepExecutor):
         self._json_repo.write_from_dict(dest, context.extracted_data.to_dict())
 
         context.last_message_step = f"Export vers fichier JSON. Préfixe : {p.prefix_file}."
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate the step model."""
-        p = cast(ExportDataToJsParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-
-        # if prefix_file est vide ou ne contient que des espaces
-        if not p.prefix_file.strip():
-            return [ERROR_TEMPLATES["export_data_to_js_prefix_file_required"].format(step=index_display)]
-        return []
 
 
 register_step_executor(ExportDataToJsExecutor())

@@ -2,28 +2,68 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from pydantic import ValidationInfo, field_validator
 
-from interfaces.i_step_params import IStepParams
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.i18n_fra import ERROR_TEMPLATES
+
+_ALLOWED_OPERATORS = frozenset({"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"})
+_ALLOWED_SUCCESS_IF = frozenset({"success", "failure"})
 
 
-@dataclass(frozen=True)
-class CountHtmlElementsParams(IStepParams):
+class CountHtmlElementsParams(BaseStepParams):
     """Parameters for the count html elements scraping step."""
 
     selector: str
     success_if: str
     operator: str
-    value: int  # si 1 seule valeur
+    value: int
     comment: str = ""
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to dict."""
-        return {
-            "selector": self.selector,
-            "success_if": self.success_if,
-            "operator": self.operator,
-            "value": self.value,
-            "comment": self.comment,
-        }
+    @field_validator("selector")
+    @classmethod
+    def check_selector(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(
+                ERROR_TEMPLATES["count_html_elements_selector_required"].format(step=step_label(info.context))
+            )
+        return v
+
+    @field_validator("value")
+    @classmethod
+    def check_value(cls, v: int, info: ValidationInfo) -> int:
+        if not info.context:
+            return v
+        if v < 0:
+            raise ValueError(
+                ERROR_TEMPLATES["count_html_elements_value_negative"].format(step=step_label(info.context))
+            )
+        return v
+
+    @field_validator("success_if")
+    @classmethod
+    def check_success_if(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if v not in _ALLOWED_SUCCESS_IF:
+            raise ValueError(
+                ERROR_TEMPLATES["count_html_elements_success_if_invalid"].format(
+                    step=step_label(info.context), value=v
+                )
+            )
+        return v
+
+    @field_validator("operator")
+    @classmethod
+    def check_operator(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if v not in _ALLOWED_OPERATORS:
+            raise ValueError(
+                ERROR_TEMPLATES["count_html_elements_operator_invalid"].format(
+                    step=step_label(info.context), value=v
+                )
+            )
+        return v

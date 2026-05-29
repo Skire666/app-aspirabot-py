@@ -2,19 +2,24 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from pydantic import ValidationInfo, field_validator
 
-from interfaces.i_step_params import IStepParams
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
-@dataclass(frozen=True)
-class ScrollDownParams(IStepParams):
+class ScrollDownParams(BaseStepParams):
     """Parameters for the scroll down scraping step."""
 
     pixels: int
     comment: str = ""
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to dict."""
-        return {"pixels": self.pixels, "comment": self.comment}
+    @field_validator("pixels")
+    @classmethod
+    def check_pixels(cls, v: int, info: ValidationInfo) -> int:
+        """Reject pixel counts below 1."""
+        if not info.context:
+            return v
+        if v < 1:
+            raise ValueError(ERROR_TEMPLATES["scroll_down_pixels_invalid"].format(step=step_label(info.context)))
+        return v

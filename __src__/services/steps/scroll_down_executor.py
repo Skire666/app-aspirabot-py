@@ -7,17 +7,15 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.scroll_down_params import ScrollDownParams
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
 from shared.enums import StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
-from shared.i18n_fra import ERROR_TEMPLATES
 
 
-class ScrollDownExecutor(IStepExecutor):
+class ScrollDownExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the scroll down scraping step."""
 
     @classmethod
@@ -35,15 +33,6 @@ class ScrollDownExecutor(IStepExecutor):
         )
         if not is_success:
             raise ScriptExecutionFailedError("scroll_down")
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate the step model parameters."""
-        p = cast(ScrollDownParams, model.params)
-        step_label = str(step_index + 1).zfill(2)
-        if p.pixels < 1:
-            return [ERROR_TEMPLATES["scroll_down_pixels_invalid"].format(step=step_label)]
-        return []
 
 
 register_step_executor(ScrollDownExecutor())

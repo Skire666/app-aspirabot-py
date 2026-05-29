@@ -7,14 +7,12 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.click_for_download_params import ClickForDownloadParams
 from playwright.sync_api import Error as PlaywrightError
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import DownloadNotDetectedError, ElementNotFoundForClickError
-from shared.i18n_fra import ERROR_TEMPLATES
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -28,7 +26,7 @@ C_LIMIT_TIMEOUT_CLICK_MS = 10000
 # -----------------------------------------------------------------------------
 
 
-class ClickForDownloadExecutor(IStepExecutor):
+class ClickForDownloadExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the click for download scraping step."""
 
     @classmethod
@@ -97,25 +95,6 @@ class ClickForDownloadExecutor(IStepExecutor):
         if not elements:
             raise ElementNotFoundForClickError(selector, mode_click)
         return ClickForDownloadExecutor._try_js_click(page, elements, index_clicked)
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Check that the step parameters are valid before execution.
-
-        Args:
-            model: The step model whose params will be read as ClickForDownloadParams.
-            step_index: Zero-based index of the step in the workflow.
-
-        Returns:
-            An empty list if all parameters are valid, or a list of French error messages.
-        """
-        p = cast(ClickForDownloadParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-        if p.index_clicked <= -1:
-            return [ERROR_TEMPLATES["click_element_index_invalid"].format(step=index_display)]
-        if not p.selector.strip():
-            return [ERROR_TEMPLATES["click_element_selector_required"].format(step=index_display)]
-        return []
 
 
 register_step_executor(ClickForDownloadExecutor())

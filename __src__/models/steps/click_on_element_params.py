@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from pydantic import ValidationInfo, field_validator
 
-from interfaces.i_step_params import IStepParams
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
-@dataclass(frozen=True)
-class ClickOnElementParams(IStepParams):
+class ClickOnElementParams(BaseStepParams):
     """Parameters for the click element scraping step."""
 
     selector: str
@@ -17,11 +16,20 @@ class ClickOnElementParams(IStepParams):
     index_clicked: int = 0
     comment: str = ""
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to dict."""
-        return {
-            "selector": self.selector,
-            "click_mode": self.click_mode,
-            "index_clicked": self.index_clicked,
-            "comment": self.comment,
-        }
+    @field_validator("index_clicked")
+    @classmethod
+    def check_index(cls, v: int, info: ValidationInfo) -> int:
+        if not info.context:
+            return v
+        if v < 0:
+            raise ValueError(ERROR_TEMPLATES["click_element_index_invalid"].format(step=step_label(info.context)))
+        return v
+
+    @field_validator("selector")
+    @classmethod
+    def check_selector(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(ERROR_TEMPLATES["click_element_selector_required"].format(step=step_label(info.context)))
+        return v

@@ -8,16 +8,14 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.wait_fixed_time_params import WaitFixedTimeParams
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_sec
 
 
-class WaitFixedTimeExecutor(IStepExecutor):
+class WaitFixedTimeExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the wait fixed time scraping step."""
 
     @classmethod
@@ -34,15 +32,6 @@ class WaitFixedTimeExecutor(IStepExecutor):
             time.sleep(time_sec)
 
         context.last_message_step = f"Pause durant {time_sec:.3f} sec."
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate the step model."""
-        p = cast(WaitFixedTimeParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-        if p.duration < 0:
-            return [ERROR_TEMPLATES["wait_fixed_time_duration_invalid"].format(step=index_display)]
-        return []
 
 
 register_step_executor(WaitFixedTimeExecutor())

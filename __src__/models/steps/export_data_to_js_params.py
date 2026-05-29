@@ -2,22 +2,25 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from pydantic import ValidationInfo, field_validator
 
-from interfaces.i_step_params import IStepParams
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
-@dataclass(frozen=True)
-class ExportDataToJsParams(IStepParams):
+class ExportDataToJsParams(BaseStepParams):
     """Parameters for the export data to JS scraping step."""
 
     prefix_file: str = ""
     comment: str = ""
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to dict."""
-        return {
-            "prefix_file": self.prefix_file,
-            "comment": self.comment,
-        }
+    @field_validator("prefix_file")
+    @classmethod
+    def check_prefix_file(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(
+                ERROR_TEMPLATES["export_data_to_js_prefix_file_required"].format(step=step_label(info.context))
+            )
+        return v

@@ -8,16 +8,14 @@ from urllib.parse import urljoin, urlparse
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.extract_links_params import ExtractLinksParams
 from playwright.sync_api import ElementHandle
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
 from shared.enums import ExtractTargetEnum, StepTypeEnum
-from shared.i18n_fra import ERROR_TEMPLATES
 
 
-class ExtractLinksExecutor(IStepExecutor):
+class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the extract links scraping step."""
 
     @classmethod
@@ -82,34 +80,6 @@ class ExtractLinksExecutor(IStepExecutor):
                 full_url = urljoin(base_url, href.strip())
                 links.append(full_url)
         return links
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Check that selector and target are valid.
-
-        Args:
-            model: The step model whose params are inspected.
-            step_index: Zero-based index used to format error messages.
-
-        Returns:
-            List of user-facing error strings; empty when the model is valid.
-        """
-        p = cast(ExtractLinksParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-        allowed_targets = {
-            ExtractTargetEnum.E_FIRST.value,
-            ExtractTargetEnum.E_LAST.value,
-            ExtractTargetEnum.E_ALL.value,
-        }
-        errors: list[str] = []
-
-        if not p.selector.strip():
-            errors.append(ERROR_TEMPLATES["extract_links_selector_required"].format(step=index_display))
-        if p.target not in allowed_targets:
-            errors.append(ERROR_TEMPLATES["extract_links_target_invalid"].format(step=index_display, value=p.target))
-        if not p.mapping.strip():
-            errors.append(ERROR_TEMPLATES["extract_links_mapping_required"].format(step=index_display))
-        return errors
 
 
 register_step_executor(ExtractLinksExecutor())

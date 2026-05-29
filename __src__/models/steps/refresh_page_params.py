@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
-from interfaces.i_step_params import IStepParams
+from pydantic import ValidationInfo, field_validator, model_validator
+
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
-@dataclass(frozen=True)
-class RefreshPageParams(IStepParams):
+class RefreshPageParams(BaseStepParams):
     """Parameters for the refresh page scraping step."""
 
     clear_cache: bool
@@ -18,12 +20,28 @@ class RefreshPageParams(IStepParams):
     timeout_unit: str
     comment: str
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to dict."""
-        return {
-            "clear_cache": self.clear_cache,
-            "wait_state": self.wait_state,
-            "timeout_duration": self.timeout_duration,
-            "timeout_unit": self.timeout_unit,
-            "comment": self.comment,
-        }
+    @field_validator("timeout_duration")
+    @classmethod
+    def check_timeout_duration(cls, v: int, info: ValidationInfo) -> int:
+        """Reject non-positive timeout durations."""
+        if not info.context:
+            return v
+        if v <= 0:
+            raise ValueError(ERROR_TEMPLATES["refresh_page_timeout_invalid"].format(step=step_label(info.context)))
+        return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_timeout_unit(cls, data: object, info: ValidationInfo) -> object:
+        """Reject invalid timeout units when timeout_duration is positive."""
+        if not isinstance(data, dict) or not info.context:
+            return data
+        duration = data.get("timeout_duration")
+        unit = data.get("timeout_unit", "")
+        if isinstance(duration, int) and duration > 0 and unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
+            raise ValueError(
+                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(
+                    step=step_label(info.context), value=unit
+                )
+            )
+        return data

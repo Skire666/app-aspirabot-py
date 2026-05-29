@@ -1,1 +1,1 @@
-"""Validators — FluentValidation-style domain validation layer."""
+"""Validators — Pydantic-based domain validation layer."""

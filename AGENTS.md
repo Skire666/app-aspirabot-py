@@ -2,7 +2,7 @@
 
 ## Project Description
 
-**Aspirabot** is a Web Scraping tool with a Tkinter-based GUI.
+**Aspirabot** is a web scraping tool with a Tkinter-based GUI.
 It allows users to create, configure, and execute data extraction or web automation workflows visually.
 The browser is simulated via **Playwright** (Chromium) to bypass standard antibot detection.
 
@@ -10,44 +10,44 @@ The browser is simulated via **Playwright** (Chromium) to bypass standard antibo
 
 ## Architecture
 
-### MVP Layers
+The project follows a strict **Model-View-Presenter** pattern adapted to Tkinter.
 
-The project strictly follows the **Model-View-Presenter** pattern:
+### Folder layout
 
 ```
 __src__/
 ├── models/         # Business entities and data structures (domain)
-├── views/          # Tkinter GUI components (no business logic)
-├── presenters/     # Orchestration: connects views to services
+├── views/          # Tkinter GUI components (passive, no logic)
+├── view_models/    # UI state holders built around tk.*Var
+├── presenters/     # Orchestration: wires ViewModel callbacks to services
 ├── repositories/   # Data read/write layer (files, JSON…)
 ├── services/       # Business logic and domain rules
-├── view_states/    # Typed DTOs built by Presenters, consumed by Views
-└── main.py         # Application entry point
+├── interfaces/     # Protocol-based contracts
+├── validators/     # FluentValidation-style domain validators
+├── shared/         # Cross-cutting utilities (enums, i18n, helpers)
+└── main.py         # Application entry point and composition root
 ```
 
-**MVP rules — strictly enforced:**
-- `views` contain **no business logic** — display and UI events only.
-- `services` and `models` form the **domain**: they are independent of the UI and repositories.
-- `repositories` are the **only layer** allowed to read/write persistent data.
-- `presenters` are the **only layer** allowed to connect views to services.
-- `views` receive **ViewState objects**, never raw Model objects or `dict[str, Any]`.
+### MVP — roles
 
-### Supporting Structure
+| Layer        | Responsibility                                                                                              | Forbidden                                                  |
+|--------------|-------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
+| `Model`      | Domain entities and value objects.                                                                          | Knowing about UI, Tkinter, or persistence format.          |
+| `Repository` | Read/write persistent data (JSON files, config). Sole owner of I/O.                                         | Business rules, Tkinter, UI strings.                       |
+| `Service`    | Business logic, domain rules, orchestration of repositories. UI-agnostic (would survive a CLI rewrite).     | Importing `View`, `Presenter`, `ViewModel`, or `tkinter`.  |
+| `ViewModel`  | Holds **all** UI state as `tk.StringVar` / `BooleanVar` / `IntVar`. Computes derived state via `trace_add`. Exposes action methods (`submit()`, `cancel()`…) and `bind_xxx(callback)` registration hooks. | Calling services, calling repositories, touching widgets.  |
+| `Presenter`  | Receives the `ViewModel` and a `Service`. Registers callbacks on the VM, mutates the VM's Vars in response. | Touching widgets, importing `tkinter`, importing a `View`. |
+| `View`       | Builds widgets and binds them to VM Vars (`textvariable=`, `variable=`) and adds `trace_add` for non-Var bindings (e.g. enabling/disabling a button). Forwards user actions by calling VM methods. | Any conditional logic, any service call, any direct mutation of state. |
 
-These folders are **not part of the MVP pattern** but participate in the overall code organization:
+### MVP + rules (strictly enforced)
 
-```
-__src__/
-├── interfaces/     # Protocol-based contracts for MVP layers
-├── shared/         # Common utilities and base code shared across layers
-└── view_states/    # Typed DTOs — bridge between Presenter output and View input
-```
-
-**Rules for supporting folders:**
-- `interfaces/` defines `Protocol` contracts implemented by MVP layers — never place concrete logic here.
-- `shared/` contains helpers, constants, and base classes usable by any layer — never place business logic here.
-- `view_states/` contains typed dataclasses built by Presenters and consumed by Views — no business logic, no methods.
-- Neither `interfaces/`, `shared/`, nor `view_states/` belong to any MVP layer — they are cross-cutting concerns.
+- The `View` is **passive**: widget construction + binding. No `if/else` on domain data, no service call, no validation.
+- All UI state — including derived state like `can_submit` — lives in the `ViewModel` as `tk.*Var`.
+- Derived state is recomputed inside the ViewModel via `trace_add("write", ...)` on the source Vars, **never** in the View.
+- User actions (button clicks, etc.) call a method on the ViewModel (`vm.submit()`), which dispatches to a handler registered by the Presenter through `vm.bind_xxx(callback)`.
+- The `Presenter` never touches a widget — it only mutates VM Vars.
+- The `Repository` is the **only** layer allowed to read/write persistent data.
+- Every `tk.*Var` must be stored as an **instance attribute** on the ViewModel — local-only Vars get garbage-collected and silently break bindings.
 
 ---
 
@@ -55,23 +55,40 @@ __src__/
 
 **Allowed import direction — strictly one way:**
 
-```
-View → Presenter → Service → Repository → Model
-```
+| Importing layer | May import from                                              | Must NEVER import from                                   |
+|-----------------|--------------------------------------------------------------|----------------------------------------------------------|
+| `View`          | `ViewModel`, `interfaces/`, `shared/`, `tkinter`             | `Service`, `Repository`, `Model`, `Presenter`            |
+| `ViewModel`     | `shared/`, `tkinter`                                         | `View`, `Presenter`, `Service`, `Repository`, `Model`    |
+| `Presenter`     | `ViewModel`, `Service`, `Model`, `interfaces/`, `shared/`, `validators/` | `View`, `Repository`, `tkinter`              |
+| `Service`       | `Repository`, `Model`, `interfaces/`, `shared/`, `validators/` | `View`, `ViewModel`, `Presenter`, `tkinter`            |
+| `Repository`    | `Model`, `shared/`                                           | `View`, `ViewModel`, `Presenter`, `Service`, `tkinter`   |
+| `Model`         | `shared/`                                                    | Everything else                                          |
+| `ViewModel` (Vars only) | `tkinter`                                            | `Service`, `Repository`, `Model`                         |
 
-Each layer may only import from layers **below** it in this chain.
-Cross-layer imports in the opposite direction are a hard violation.
+> If adding an import creates a cycle or runs against an arrow above, the design is wrong — refactor.
 
-| Importing layer | May import from | Must NEVER import from |
-|-----------------|-----------------|------------------------|
-| `View`          | `view_states/`, `interfaces/`, `shared/`               | `Service`, `Repository`, `Model` directly |
-| `Presenter`     | `view_states/`, `Service`, `interfaces/`, `shared/`    | `Repository` directly |
-| `Service`       | `Repository`, `interfaces/`, `Model`, `shared/` | `View`, `Presenter`, `view_states/` |
-| `Repository`    | `Model`, `shared/`                     | `View`, `Presenter`, `Service`, `view_states/` |
-| `Model`         | `shared/`                              | Everything else |
-| `ViewState`     | `shared/`                              | Everything else |
+> Presenter can also reads/writes ViewModel Vars
 
-> **Rule:** if adding an import would create a cycle or go against the arrow above, the design is wrong — refactor instead.
+> **Why ViewModel cannot import Model:** the ViewModel speaks Tkinter Vars, the Model speaks domain objects. Mapping between the two is the **Presenter's job**. Keeping the VM Model-free guarantees the VM stays a pure UI-state container.
+
+---
+
+## File Naming Convention
+
+Every Python file in an MVP layer is suffixed with its layer name. This makes layer identity readable from any import statement.
+
+| Folder          | File suffix         | Example                                |
+|-----------------|---------------------|----------------------------------------|
+| `models/`       | `_model.py`         | `provider_model.py`, `app_state_model.py` |
+| `services/`     | `_service.py`       | `scraping_service.py`                  |
+| `repositories/` | `_repository.py`    | `config_repository.py`                 |
+| `presenters/`   | `_presenter.py`     | `executor_presenter.py`                |
+| `view_models/`  | `_view_model.py`    | `scenario_edit_view_model.py`          |
+| `views/`        | `_view.py`          | `scenario_edit_view.py`                |
+| `validators/`   | `_validator.py`     | `scraping_validator.py`                |
+| `interfaces/`   | `i_*.py`            | `i_scraping_view.py`                   |
+
+The class inside a file is always the PascalCase counterpart of the file name (e.g. `provider_model.py` → `ProviderModel`, `scenario_edit_view_model.py` → `ScenarioEditViewModel`).
 
 ---
 
@@ -83,176 +100,341 @@ it would still be true if the application had no GUI at all (CLI, API, test runn
 A condition belongs in the **Presenter** if it is a **coordination decision**:
 it only exists because the UI needs to decide what to show or what to call next.
 
-| Question to ask | Answer → layer |
-|---|---|
-| "Would this rule exist in a headless version of the app?" | Yes → **Service** |
-| "Does this condition only make sense because of what the View expects?" | Yes → **Presenter** |
-| "Am I transforming or validating domain data?" | → **Service** |
-| "Am I deciding which view method to call, or in what order?" | → **Presenter** |
+| Question                                                       | Answer → layer  |
+|----------------------------------------------------------------|-----------------|
+| "Would this rule exist in a headless version of the app?"     | Yes → **Service**   |
+| "Does this only make sense because of what the View expects?" | Yes → **Presenter** |
+| "Am I transforming or validating domain data?"                | → **Service**       |
+| "Am I deciding which VM Var to update, or in what order?"     | → **Presenter**     |
 
 ```python
 # BAD — business rule hidden inside a Presenter
-def on_start_clicked(self) -> None:
-    url = self._view.get_url()
-    if not url.startswith("https://"):   # ← domain rule, belongs in Service
-        self._view.show_errors(["URL invalide."])
+def on_submit(self) -> None:
+    url = self._vm.url_var.get()
+    if not url.startswith("https://"):   # ← domain rule, belongs in a Service
+        self._vm.error_message_var.set("URL invalide.")
         return
     self._service.start_scraping(url)
 
 # GOOD — Presenter coordinates only; Service owns the rule
-def on_start_clicked(self) -> None:
-    url = self._view.get_url()
+def on_submit(self) -> None:
+    url = self._vm.url_var.get()
     try:
-        self._service.start_scraping(url)   # raises ScrapingError if URL invalid
+        self._service.start_scraping(url)        # raises ScrapingError if URL invalid
     except ScrapingError as e:
-        self._view.show_errors([str(e)])
-
-# BAD — Presenter duplicates a rule that already lives (or should live) in the Service
-def on_save_clicked(self) -> None:
-    if self._view.get_name().strip() == "":   # ← validation = domain rule
-        self._view.show_errors(["Le nom est requis."])
-
-# GOOD — Service validates, Presenter only formats and dispatches
-def on_save_clicked(self) -> None:
-    data = self._view.get_form_data()
-    try:
-        self._service.save_scenario(data)
-    except ProviderValidationError as e:
-        self._view.show_errors([format_error(e)])
+        self._vm.error_message_var.set(str(e))
 ```
 
 ---
 
-## ViewState — Typed DTO from Presenter to View
+## ViewModel — UI State Container
 
-A `ViewState` is a **frozen dataclass** that the Presenter builds from Model data and passes to the View.
-It is the **only** way a View may receive structured data — never a raw Model, never a `dict[str, Any]`.
+The `ViewModel` is the **only** owner of UI state. It is built around Tkinter's variable classes
+(`tk.StringVar`, `tk.BooleanVar`, `tk.IntVar`) and exposes:
 
-### Purpose
-
-- Decouples the View from the domain model: the View never knows `Provider`, `Scenario`, etc. exist.
-- Provides full type safety and IDE autocomplete for the View layer.
-- Makes Presenter → View contracts explicit and auditable.
+1. **Source Vars** — bound to user inputs via `textvariable=` / `variable=`.
+2. **Derived Vars** — recomputed via `trace_add("write", ...)` on source Vars.
+3. **Action methods** — `submit()`, `cancel()`, etc., which invoke handlers registered by the Presenter.
+4. **Binding hooks** — `bind_submit(callback)`, `bind_cancel(callback)`, … called once by the Presenter at composition time.
 
 ### Location and naming
 
-- Folder: `__src__/view_states/`
-- File: `<module>_view_state.py` (e.g. `executor_view_state.py`, `scenario_list_view_state.py`)
-- Class: `<Module>ViewState` in PascalCase (e.g. `ExecutorViewState`, `ScenarioListViewState`)
+- Folder: `__src__/view_models/`
+- File: `<module>_view_model.py` (e.g. `scenario_edit_view_model.py`)
+- Class: `<Module>ViewModel` in PascalCase (e.g. `ScenarioEditViewModel`)
 
 ### Definition rules
 
-- Always `@dataclass(frozen=True)` — ViewStates are immutable snapshots.
-- Only primitive types or other ViewStates as fields — no Model objects, no services.
-- No methods, no business logic — data bag only.
-- May import from `shared/` (e.g. enums, constants) — nothing else.
+- Every `tk.*Var` must be assigned to `self.` — never use a local-scoped Var (silent GC).
+- Derived state is computed **inside** the VM via `trace_add("write", ...)`; never in the View.
+- Action methods are short and only dispatch to a registered callback.
+- Guard the setters of derived Vars against binding loops (re-entrancy).
+- Debounce `trace_add` reactions that are expensive to recompute.
+- The VM never imports a Service, a Repository, a Model, or a View.
+
+### Canonical pattern
 
 ```python
-# view_states/scenario_edit_view_state.py
-from dataclasses import dataclass
+# view_models/scenario_edit_view_model.py
+import tkinter as tk
+from typing import Callable
 
-@dataclass(frozen=True)
-class ScenarioEditViewState:
-    """Snapshot of scenario data ready for display in the edit form.
+class ScenarioEditViewModel:
+    """UI state and action hooks for the scenario edit form.
 
-    Attributes:
-        id_scenario: Unique identifier of the scenario.
-        name: Display name shown in the form header.
-        url: Target URL pre-filled in the URL field.
-        is_active: Whether the active toggle is checked.
+    Source Vars are bound to widgets via textvariable=/variable=.
+    Derived Vars (e.g. can_submit) are recomputed automatically on every write
+    to the relevant source Vars and never touched by the View.
     """
-    id_scenario: str
-    name: str
-    url: str
-    is_active: bool
+
+    def __init__(self, master: tk.Misc) -> None:
+        # Source Vars — bound to widgets in the View
+        self.name_var = tk.StringVar(master=master, value="")
+        self.url_var = tk.StringVar(master=master, value="")
+        self.is_active_var = tk.BooleanVar(master=master, value=False)
+
+        # Status / message Vars
+        self.error_message_var = tk.StringVar(master=master, value="")
+        self.is_busy_var = tk.BooleanVar(master=master, value=False)
+
+        # Derived Vars — recomputed via trace_add, never set from the View
+        self.can_submit_var = tk.BooleanVar(master=master, value=False)
+
+        # Re-entrancy guard for derived Vars
+        self._updating_derived = False
+
+        # Registered Presenter callbacks
+        self._on_submit: Callable[[], None] | None = None
+        self._on_cancel: Callable[[], None] | None = None
+
+        # Wire derived-state recomputation
+        for var in (self.name_var, self.url_var, self.is_busy_var):
+            var.trace_add("write", self._recompute_can_submit)
+        # Initial computation
+        self._recompute_can_submit()
+
+    # ----- Derived state -----
+
+    def _recompute_can_submit(self, *_: object) -> None:
+        """Recompute can_submit_var whenever a source Var changes."""
+        if self._updating_derived:
+            return
+        self._updating_derived = True
+        try:
+            name_ok = bool(self.name_var.get().strip())
+            url_ok = bool(self.url_var.get().strip())
+            ready = name_ok and url_ok and not self.is_busy_var.get()
+            if self.can_submit_var.get() != ready:
+                self.can_submit_var.set(ready)
+        finally:
+            self._updating_derived = False
+
+    # ----- Presenter binding hooks -----
+
+    def bind_submit(self, callback: Callable[[], None]) -> None:
+        """Register the Presenter handler invoked on submit()."""
+        self._on_submit = callback
+
+    def bind_cancel(self, callback: Callable[[], None]) -> None:
+        """Register the Presenter handler invoked on cancel()."""
+        self._on_cancel = callback
+
+    # ----- Action methods called by the View -----
+
+    def submit(self) -> None:
+        """Dispatch the submit action to the registered Presenter callback."""
+        if self._on_submit is not None:
+            self._on_submit()
+
+    def cancel(self) -> None:
+        """Dispatch the cancel action to the registered Presenter callback."""
+        if self._on_cancel is not None:
+            self._on_cancel()
 ```
 
-### Presenter — builds and pushes the ViewState
-
-The Presenter maps a Model to a ViewState. This mapping is the only allowed coupling point
-between the domain and the display layer.
-
-```python
-# presenters/scenario_edit_presenter.py
-from view_states.scenario_edit_view_state import ScenarioEditViewState
-
-class ScenarioEditPresenter:
-    def on_scenario_selected(self, id_scenario: str) -> None:
-        provider = self._service.get_scenario(id_scenario)
-        # Map domain model → ViewState (Presenter's job)
-        state = ScenarioEditViewState(
-            id_scenario=provider.id,
-            name=provider.name,
-            url=provider.url,
-            is_active=provider.active,
-        )
-        self._view.display_scenario(state)
-```
-
-### View — receives the ViewState, never the Model
-
-The View imports the ViewState class directly — no Protocol wrapping, no `dict[str, Any]`.
+### View — binds to the ViewModel, contains zero logic
 
 ```python
 # views/scenario_edit_view.py
-from view_states.scenario_edit_view_state import ScenarioEditViewState
+import tkinter as tk
+from tkinter import ttk
+
+from view_models.scenario_edit_view_model import ScenarioEditViewModel
 
 class ScenarioEditView(ttk.Frame):
-    def display_scenario(self, state: ScenarioEditViewState) -> None:
-        self._name_var.set(state.name)
-        self._url_var.set(state.url)
-        self._active_var.set(state.is_active)
+    """Passive widget tree bound to the ScenarioEditViewModel."""
+
+    def __init__(self, master: tk.Misc, vm: ScenarioEditViewModel) -> None:
+        super().__init__(master)
+        self._vm = vm
+
+        # Build static widget tree
+        ttk.Label(self, text="Nom :").grid(row=0, column=0, sticky="w")
+        ttk.Entry(self, textvariable=vm.name_var).grid(row=0, column=1)
+
+        ttk.Label(self, text="URL :").grid(row=1, column=0, sticky="w")
+        ttk.Entry(self, textvariable=vm.url_var).grid(row=1, column=1)
+
+        ttk.Checkbutton(self, text="Actif", variable=vm.is_active_var) \
+            .grid(row=2, column=0, columnspan=2, sticky="w")
+
+        ttk.Label(self, textvariable=vm.error_message_var, foreground="red") \
+            .grid(row=3, column=0, columnspan=2, sticky="w")
+
+        self._submit_btn = ttk.Button(self, text="Valider", command=vm.submit)
+        self._submit_btn.grid(row=4, column=0)
+        ttk.Button(self, text="Annuler", command=vm.cancel).grid(row=4, column=1)
+
+        # Non-Var binding: button enabled state mirrors can_submit_var
+        vm.can_submit_var.trace_add("write", self._sync_submit_enabled)
+        self._sync_submit_enabled()
+
+    def _sync_submit_enabled(self, *_: object) -> None:
+        """Mirror vm.can_submit_var onto the submit button's state."""
+        state = "normal" if self._vm.can_submit_var.get() else "disabled"
+        self._submit_btn.configure(state=state)
 ```
 
-### Anti-patterns — ViewState
+### Presenter — registers callbacks, mutates Vars only
 
-❌ Never pass a Model directly to a View
 ```python
-# BAD — the View now depends on the domain model
-self._view.display_scenario(provider)  # provider: Provider
+# presenters/scenario_edit_presenter.py
+import logging
 
-# GOOD — the Presenter maps to a ViewState first
-state = ScenarioEditViewState(...)
-self._view.display_scenario(state)
+from services.scenario_service import ScenarioService
+from shared.exception_util import AppError, ScenarioNotFoundError
+from view_models.scenario_edit_view_model import ScenarioEditViewModel
+
+class ScenarioEditPresenter:
+    """Wires ScenarioEditViewModel actions to ScenarioService calls."""
+
+    def __init__(self, vm: ScenarioEditViewModel, service: ScenarioService) -> None:
+        self._vm = vm
+        self._service = service
+        self._logger = logging.getLogger(__name__)
+
+        # Register handlers — the VM will dispatch user actions to them
+        vm.bind_submit(self._on_submit)
+        vm.bind_cancel(self._on_cancel)
+
+    def load_scenario(self, id_scenario: str) -> None:
+        """Fetch a scenario and populate the ViewModel Vars."""
+        try:
+            scenario = self._service.get_scenario(id_scenario)
+        except ScenarioNotFoundError as e:
+            self._vm.error_message_var.set(str(e))
+            return
+        # Map domain model → VM Vars (the only allowed coupling point)
+        self._vm.name_var.set(scenario.name)
+        self._vm.url_var.set(scenario.url)
+        self._vm.is_active_var.set(scenario.active)
+        self._vm.error_message_var.set("")
+
+    def _on_submit(self) -> None:
+        """Triggered by vm.submit(); read Vars, call service, update Vars."""
+        self._vm.is_busy_var.set(True)
+        self._vm.error_message_var.set("")
+        try:
+            self._service.save_scenario(
+                name=self._vm.name_var.get(),
+                url=self._vm.url_var.get(),
+                active=self._vm.is_active_var.get(),
+            )
+        except AppError as e:
+            self._logger.error("Erreur lors de l'enregistrement : %s", e, exc_info=True)
+            self._vm.error_message_var.set(str(e))
+        finally:
+            self._vm.is_busy_var.set(False)
+
+    def _on_cancel(self) -> None:
+        """Reset the form Vars to a clean state."""
+        self._vm.name_var.set("")
+        self._vm.url_var.set("")
+        self._vm.is_active_var.set(False)
+        self._vm.error_message_var.set("")
 ```
 
-❌ Never pass `dict[str, Any]` instead of a typed ViewState
+### Composition root — `main.py`
+
 ```python
-# BAD — loses type safety, IDE autocomplete, and refactor support
-self._view.display_scenario({"name": provider.name, "url": provider.url})
+# main.py — assemble VM, View, and Presenter; keep references to prevent GC
+import tkinter as tk
+
+from presenters.scenario_edit_presenter import ScenarioEditPresenter
+from repositories.scenario_repository import ScenarioRepository
+from services.scenario_service import ScenarioService
+from view_models.scenario_edit_view_model import ScenarioEditViewModel
+from views.scenario_edit_view import ScenarioEditView
+
+def main() -> None:
+    root = tk.Tk()
+
+    # Wiring (bottom-up): Repository → Service → ViewModel → View → Presenter
+    repository = ScenarioRepository()
+    service = ScenarioService(repository=repository)
+
+    vm = ScenarioEditViewModel(master=root)
+    view = ScenarioEditView(master=root, vm=vm)
+    presenter = ScenarioEditPresenter(vm=vm, service=service)
+
+    # Keep a reference to the Presenter on the root so the GC does not collect it
+    root._presenter = presenter   # noqa: SLF001 — intentional GC anchor
+    view.pack(fill="both", expand=True)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
+```
+
+### Anti-patterns — ViewModel
+
+❌ Never store a Var as a local variable in a method — it must be `self.xxx_var`
+```python
+# BAD — local Var is GC'd after __init__ returns; binding silently breaks
+def __init__(self, master):
+    name_var = tk.StringVar(master=master)
+    ttk.Entry(self, textvariable=name_var)
 
 # GOOD
-self._view.display_scenario(ScenarioEditViewState(name=provider.name, url=provider.url, ...))
+def __init__(self, master):
+    self.name_var = tk.StringVar(master=master)
 ```
 
-
-❌ Never put business logic or methods inside a ViewState
+❌ Never compute derived state inside the View
 ```python
-# BAD — a ViewState must be a passive snapshot
-@dataclass(frozen=True)
-class ScenarioEditViewState:
-    url: str
+# BAD — the View reads two Vars and writes to a third
+def _on_name_change(self, *_):
+    self._vm.can_submit_var.set(bool(self._vm.name_var.get()) and bool(self._vm.url_var.get()))
 
-    def is_valid_url(self) -> bool:   # ← domain rule, belongs in Service
-        return self.url.startswith("https://")
+# GOOD — derived state belongs in the VM via trace_add
 ```
 
-❌ Never import a Model inside a ViewState
+❌ Never call a Service or a Repository from the ViewModel
 ```python
-# BAD — ViewState must not depend on domain objects
-from models.provider import Provider
+# BAD
+class ScenarioEditViewModel:
+    def submit(self):
+        self._service.save_scenario(...)   # ← VM must not know services exist
 
-@dataclass(frozen=True)
-class ScenarioEditViewState:
-    provider: Provider   # ← defeats the entire purpose of the ViewState
+# GOOD — VM dispatches to a Presenter-registered callback
+def submit(self):
+    if self._on_submit is not None:
+        self._on_submit()
+```
+
+❌ Never mutate a Var inside its own `trace_add` callback without a re-entrancy guard
+```python
+# BAD — write triggers the callback which writes again → infinite loop
+def _recompute(self, *_):
+    self.derived_var.set(self.source_var.get().upper())
+
+# GOOD — guard with self._updating_derived flag (see canonical pattern above)
+```
+
+❌ Never let the Presenter touch a widget directly
+```python
+# BAD
+self._view._submit_btn.configure(state="disabled")
+
+# GOOD — mutate a VM Var; the View's trace_add reflects it
+self._vm.is_busy_var.set(True)
+```
+
+❌ Never let the View import or call a Service or Presenter
+```python
+# BAD
+from services.scenario_service import ScenarioService
+
+# GOOD — the View only knows its ViewModel
+from view_models.scenario_edit_view_model import ScenarioEditViewModel
 ```
 
 ---
 
 ## Python Version
 
-This project targets **Python 3.14**. Do not use syntax or features incompatible with this version.
-It is expressly prohibited to use Python 2
+This project targets **Python 3.14+**. Do not use syntax or features incompatible with this version.
+Python 2 is strictly prohibited.
 
 > **Note for AI agents:** `except ExcType1, ExcType2:` (without parentheses) is valid Python 3.14
 > syntax accepted by the project linter (ruff ≥ 0.15). Do **not** flag it as a Python 2
@@ -312,12 +494,12 @@ python -m pyclean ./ -v
 These resources are created automatically at launch — **do not version them** and **do not add them manually**.
 They must be present in `.gitignore` — the AI must never create or commit them.
 
-| Path | Description |
-|------|-------------|
-| `./tmp_app_logs/` | Temporary execution logs |
-| `./data_scraping/` | Output for scraping |
-| `./data_scenarios/` | User scenario data |
-| `./config-aspirabot.json` | Main application configuration |
+| Path                          | Description                          |
+|-------------------------------|--------------------------------------|
+| `./tmp_app_logs/`             | Temporary execution logs             |
+| `./data_scraping/`            | Output for scraping                  |
+| `./data_scenarios/`           | User scenario data                   |
+| `./config-aspirabot.json`     | Main application configuration       |
 
 ---
 
@@ -327,13 +509,13 @@ This file and all agent instructions are in **English**.
 
 Language rules by content type:
 
-| Content | Language | Example |
-|---|---|---|
-| Docstrings | **English** | `"""Load the scenario from disk."""` |
-| Inline comments | **English** | `# Extract the main result blocks` |
-| Log messages (all levels) | **French** | `"Démarrage du scraping pour id=%s"` |
-| Exception messages | **French** | `"Provider introuvable : {id}"` |
-| User-facing strings | **French** — via `shared/i18n_fra.py` only | `ERROR_TEMPLATES["empty_field"]` |
+| Content                   | Language                              | Example                                       |
+|---------------------------|---------------------------------------|-----------------------------------------------|
+| Docstrings                | **English**                           | `"""Load the scenario from disk."""`          |
+| Inline comments           | **English**                           | `# Extract the main result blocks`            |
+| Log messages (all levels) | **French**                            | `"Démarrage du scraping pour id=%s"`          |
+| Exception messages        | **French**                            | `"Provider introuvable : {id}"`               |
+| User-facing strings       | **French** — via `shared/i18n_fra.py` only | `ERROR_TEMPLATES["empty_field"]`         |
 
 > **Reminder for AI agents:** log messages are in **French** by default in this project.
 > Never write `logger.info("Starting scraping for id=%s", ...)` — always use French.
@@ -344,8 +526,6 @@ Language rules by content type:
 ---
 
 ## Code Conventions
-
-This project enforces a high standard of code quality. All contributions must follow these rules.
 
 ### Import Order
 
@@ -360,51 +540,41 @@ from dataclasses import dataclass
 from playwright.async_api import Page
 
 # 3. Local application
-from models.provider import Provider
+from models.provider_model import ProviderModel
 from shared.i18n_fra import ERROR_TEMPLATES
 ```
 
-Never mix levels. Run `ruff check --select I --fix` before committing.
+Run `ruff check --select I --fix` before committing.
 
 ### General Style
-- Strict **PEP 8** compliance
-- **Docstrings** required on all public classes and functions, **Google style**, in **English**
-- **Inline comments** in **English**
+- Strict **PEP 8** compliance.
+- **Docstrings** required on all public classes and functions, **Google style**, in **English**.
+- **Inline comments** in **English**.
 - **Method length**: 25 lines of code maximum per method.
-  - Docstrings are excluded from the count.
-  - Blank lines are excluded from the count.
-  - Lines used solely to wrap arguments or chain calls (no logic) are excluded from the count.
-  - If a method exceeds 25 lines of *actual code*, break it into focused private helpers with a name that expresses intent.
-- **File length**: 1000 lines maximum — if a file exceeds this, split it into focused modules
-- **Comments**: one comment per logical block, approximately every 5 lines of code
+  - Docstrings, blank lines, and pure argument-wrapping lines are excluded from the count.
+  - Beyond 25 lines of actual code, split into focused private helpers with intent-revealing names.
+- **File length**: 1000 lines maximum — split into focused modules above that.
+- **Comments**: one comment per logical block, roughly every 5 lines of code.
 
 ```python
-# GOOD — argument wrapping lines do not count toward the 25-line limit
-result = some_function(
-    argument_one,
-    argument_two,
-    argument_three,
-)
-
 # GOOD — decompose by semantic step, not by arbitrary line count
 def process_scenario(self, id_scenario: str) -> None:
-    provider = self._fetch_scenario(id_scenario)
-    self._validate_scenario(provider)
-    self._apply_defaults(provider)
+    scenario = self._fetch_scenario(id_scenario)
+    self._validate_scenario(scenario)
+    self._apply_defaults(scenario)
 ```
 
 ### Expected Docstring Format (Google Style, English)
 
-A docstring must add information beyond what the signature already expresses.
-A docstring that only restates the method name is a violation of intent.
+A docstring must add information beyond the signature.
 
 ```python
-# BAD — tautological docstring, adds no value
+# BAD — tautological
 def load_config(self) -> dict:
     """Load the config."""
     ...
 
-# GOOD — explains contract, non-obvious behaviour, and raised exceptions
+# GOOD
 def fetch_page(url: str, timeout: int = 30) -> str:
     """Load the HTML content of a page via Playwright.
 
@@ -420,25 +590,8 @@ def fetch_page(url: str, timeout: int = 30) -> str:
     """
 ```
 
-### Expected Inline Comment Style (English)
-```python
-def parse_results(raw_html: str) -> list[dict]:
-    # Initialize the parser and clean the input
-    soup = BeautifulSoup(raw_html, "html.parser")
-    soup = _strip_scripts(soup)
-
-    # Extract the main result blocks
-    blocks = soup.select(".result-item")
-    if not blocks:
-        return []
-
-    # Convert each block into a structured dictionary
-    results = [_block_to_dict(b) for b in blocks]
-    return results
-```
-
 ### Type Hints
-- **Required** on all function and method signatures
+- **Required** on all function and method signatures.
 
 ---
 
@@ -449,75 +602,52 @@ All inter-layer contracts are defined as `typing.Protocol` in `interfaces/`.
 
 ### Naming convention
 
-- Interface files: `i_<name>.py` (e.g. `i_scraping_view.py`)
-- Interface classes: prefix `I` in PascalCase (e.g. `IExecutorView`)
+- Files: `i_<name>.py` (e.g. `i_scraping_view.py`).
+- Classes: `I<Name>` in PascalCase (e.g. `IExecutorView`).
 
 ### Definition
 
 ```python
-# interfaces/i_error_display_view.py
+# interfaces/i_scenario_service.py
 from typing import Protocol
 
-class IErrorDisplayView(Protocol):
-    def show_errors(self, messages: list[str]) -> None: ...
-    def clear_errors(self) -> None: ...
-```
+from models.scenario_model import ScenarioModel
 
-### Usage in Presenter
-
-```python
-# presenters/executor_presenter.py
-from views.scraping_view import ExecutorView
-from services.scraping_service import ScrapingService
-
-class ScrapingPresenter:
-    def __init__(self, view: ExecutorView, service: ScrapingService) -> None:
-        self._view = view
-        self._service = service
+class IScenarioService(Protocol):
+    def get_scenario(self, id_scenario: str) -> ScenarioModel: ...
+    def save_scenario(self, name: str, url: str, active: bool) -> None: ...
 ```
 
 ### Anti-patterns — Interfaces
 
-❌ Never use `ABC` for view or service contracts
-```python
-# BAD
-from abc import ABC, abstractmethod
-class IExecutorView(ABC):
-    @abstractmethod
-    def show_errors(self, messages: list[str]) -> None: ...
-```
-
-❌ Never place concrete logic inside `interfaces/`
-```python
-# BAD — interfaces define contracts only, no implementation
-class IScrapingService(Protocol):
-    def run(self, url: str) -> list[dict]:
-        return []  # ← must be left as "..."
-```
+❌ Never use `ABC`
+❌ Never place concrete logic in `interfaces/` (`return []` instead of `...` is a violation)
 
 ---
 
 ## Dependency Injection & Wiring
 
-**Never instantiate a Service or Repository inside another Service, Presenter, or View.**
-All concrete objects are assembled once and injected via `__init__`.
+**Never instantiate a Service, Repository, ViewModel, or Presenter inside another one.**
+All concrete objects are assembled once in `main.py` and injected via `__init__`.
+
+The composition root in `main.py` is also responsible for keeping a reference to every
+`Presenter` instance so it is not garbage-collected — losing the reference silently kills
+the bindings to the ViewModel.
 
 ---
 
-## Shared Application State
+## Shared Application State — `AppStateModel`
 
-Some data must be accessible across multiple modules (e.g. currently selected provider, global
-execution flags). This state must never be stored in a Presenter, a View, or a module-level global.
-
-**Rule:** define an `AppState` dataclass in `models/`, instantiate it once in `main.py`,
-and inject it into every Service that needs it.
+Data accessible across multiple modules (currently selected provider, global execution flags) lives
+in an `AppStateModel` dataclass in `models/`, instantiated once in `main.py` and injected into the
+Services that need it.
 
 ```python
-# models/app_state.py
+# models/app_state_model.py
 from dataclasses import dataclass
 
 @dataclass
-class AppState:
+class AppStateModel:
     """Holds runtime state shared across services.
 
     Attributes:
@@ -529,17 +659,20 @@ class AppState:
 ```
 
 ```python
-# main.py — AppState instantiated once, injected into services that need it
-from models.app_state import AppState
-state             = AppState()
-scraping_service  = ScrapingService(repository=scraping_repo, state=state)
-executor_service  = ExecutorService(repository=executor_repo, state=state)
+# main.py — AppStateModel injected into services that need it
+state = AppStateModel()
+scraping_service = ScrapingService(repository=scraping_repo, state=state)
+executor_service = ExecutorService(repository=executor_repo, state=state)
 ```
 
 **Rules:**
-- `AppState` is a plain dataclass — no methods, no business logic.
-- Only Services may read or write `AppState` — never Presenters or Views directly.
-- Never use a module-level global variable as a substitute for `AppState`.
+- `AppStateModel` is a plain dataclass — no methods, no business logic.
+- Only Services may read or write `AppStateModel` — never Presenters, ViewModels, or Views.
+- Never use a module-level global variable as a substitute.
+
+> **AppStateModel vs ViewModel:** `AppStateModel` is **cross-service** domain state.
+> `ViewModel` is **per-view** UI state. They never overlap. The Presenter is the only
+> component allowed to read `AppStateModel` (via a Service call) and reflect it into the VM.
 
 ---
 
@@ -572,7 +705,7 @@ class TitleModuleEnum(Enum):
 ```
 
 For lazy tab initialization, register a callback via `MainView.set_on_show()`:
-the callback is invoked once, the first time the user navigates to that tab.
+the callback runs once, the first time the user navigates to that tab.
 
 ```python
 # main.py — register lazy loaders after wiring
@@ -598,36 +731,37 @@ class ScrapingService:
 
 ### Log levels by layer
 
-| Layer | Levels to use | Rationale |
-|---|---|---|
-| `Repository` | `DEBUG` | Low-level I/O details, useful for tracing |
-| `Service` | `DEBUG`, `INFO` | Business flow steps |
-| `Presenter` | `ERROR` | Unexpected failures caught before the View |
-| `View` | — | Never logs — delegates all errors to the Presenter |
+| Layer        | Levels to use    | Rationale                                                |
+|--------------|------------------|----------------------------------------------------------|
+| `Repository` | `DEBUG`          | Low-level I/O details, useful for tracing.               |
+| `Service`    | `DEBUG`, `INFO`  | Business flow steps.                                     |
+| `Presenter`  | `ERROR`          | Unexpected failures caught before being shown to the user. |
+| `ViewModel`  | —                | Pure state holder — never logs.                          |
+| `View`       | —                | Passive UI — never logs, delegates to the Presenter.     |
 
 ```python
 # Repository — trace I/O at DEBUG (message in French)
-def find_by_id(self, id_scenario: str) -> Provider | None:
-    self._logger.debug("Lecture du provider id=%s", id_scenario)
+def find_by_id(self, id_scenario: str) -> ScenarioModel | None:
+    self._logger.debug("Lecture du scenario id=%s", id_scenario)
     ...
 
 # Service — trace flow at INFO (message in French)
 def start_scraping(self, id_scenario: str) -> None:
-    self._logger.info("Démarrage du scraping pour provider id=%s", id_scenario)
+    self._logger.info("Démarrage du scraping pour scenario id=%s", id_scenario)
     ...
 
 # Presenter — log unexpected errors at ERROR (message in French)
-def on_start_clicked(self, id_scenario: str) -> None:
+def _on_submit(self) -> None:
     try:
-        self._service.start_scraping(id_scenario)
+        self._service.start_scraping(self._vm.scenario_id_var.get())
     except AppError as e:
         self._logger.error("Erreur lors du scraping : %s", e, exc_info=True)
-        self._view.show_errors([format_error(e)])
+        self._vm.error_message_var.set(format_error(e))
 ```
 
 **Rules:**
-- Always use `%s` formatting in log calls — never f-strings (`logger.error("msg %s", var)` not `logger.error(f"msg {var}")`).
-- Use `exc_info=True` in `logger.error()` calls that catch exceptions, to capture the full stack trace.
+- Always use `%s` formatting in log calls — never f-strings.
+- Use `exc_info=True` in `logger.error()` calls that catch exceptions.
 - Log messages are written in **French**.
 - Never log sensitive data (passwords, tokens, personal data).
 
@@ -646,8 +780,8 @@ class AppError(Exception):
 
 class ScrapingError(AppError): ...
 class PageLoadError(ScrapingError): ...
-class ProviderError(AppError): ...
-class ScenarioNotFoundError(ProviderError): ...
+class ScenarioError(AppError): ...
+class ScenarioNotFoundError(ScenarioError): ...
 class RepositoryError(AppError): ...
 class DatabaseUnavailableError(RepositoryError): ...
 ```
@@ -657,19 +791,20 @@ Exception messages (the string passed to `raise`) are written in **French**.
 **Rules:**
 - Never raise `Exception`, `ValueError`, `RuntimeError`, or `FileNotFoundError` directly in business code.
 - Always raise the most **specific** exception available.
-- Always chain with `raise NewError("...") from original` to preserve the traceback.
+- Always chain with `raise NewError("...") from original`.
 
 ### Who raises, who catches
 
-| Layer | Raises | Catches |
-|---|---|---|
-| `Repository` | `RepositoryError` subclasses | Low-level errors (`IOError`, `json.JSONDecodeError`…) — wraps and re-raises |
-| `Service` | Domain exceptions (`ScenarioNotFoundError`…) | `RepositoryError` if a transformation is needed |
-| `Presenter` | — | Domain exceptions → formats into `list[str]` for the View |
-| `View` | — | Nothing — the Presenter delivers ready-to-display messages |
+| Layer        | Raises                                  | Catches                                                                  |
+|--------------|-----------------------------------------|--------------------------------------------------------------------------|
+| `Repository` | `RepositoryError` subclasses            | Low-level errors (`OSError`, `json.JSONDecodeError`…) — wraps and re-raises |
+| `Service`    | Domain exceptions                       | `RepositoryError` if a transformation is needed                          |
+| `Presenter`  | —                                       | Domain exceptions → formats and writes the message into a VM Var         |
+| `ViewModel`  | —                                       | Nothing — it is pure state.                                              |
+| `View`       | —                                       | Nothing — it only renders.                                               |
 
 ```python
-# Repository — wrap technical errors (message in French)
+# Repository — wrap technical errors
 def load_config(self) -> dict:
     try:
         with open(self._path) as f:
@@ -677,71 +812,33 @@ def load_config(self) -> dict:
     except (OSError, json.JSONDecodeError) as e:
         raise DatabaseUnavailableError("Impossible de lire la config.") from e
 
-# Service — raise domain errors (message in French)
-def get_scenario(self, id_scenario: str) -> Provider:
-    provider = self._repository.find_by_id(id_scenario)
-    if provider is None:
-        raise ScenarioNotFoundError(f"Provider introuvable : {id_scenario}")
-    return provider
+# Service — raise domain errors
+def get_scenario(self, id_scenario: str) -> ScenarioModel:
+    scenario = self._repository.find_by_id(id_scenario)
+    if scenario is None:
+        raise ScenarioNotFoundError(f"Scenario introuvable : {id_scenario}")
+    return scenario
 
-# Presenter — only layer that catches for the View
-def on_scenario_requested(self, id_scenario: str) -> None:
+# Presenter — only layer that catches for the UI; writes into a VM Var
+def _on_load(self) -> None:
     try:
-        provider = self._service.get_scenario(id_scenario)
-        self._view.display_scenario(provider)
+        scenario = self._service.get_scenario(self._vm.scenario_id_var.get())
+        self._vm.name_var.set(scenario.name)
+        self._vm.url_var.set(scenario.url)
+        self._vm.error_message_var.set("")
     except ScenarioNotFoundError as e:
-        self._view.show_errors([str(e)])
+        self._vm.error_message_var.set(str(e))
     except AppError as e:
         self._logger.error("Erreur inattendue : %s", e, exc_info=True)
-        self._view.show_errors(["Une erreur inattendue est survenue."])
+        self._vm.error_message_var.set("Une erreur inattendue est survenue.")
 ```
 
 ### Anti-patterns — Exceptions
 
 ❌ Never use a bare `except` or swallow errors silently
-```python
-# BAD
-try:
-    ...
-except:
-    pass
-
-# BAD
-try:
-    ...
-except Exception:
-    return None
-```
-
 ❌ Never raise generic exceptions in business code
-```python
-# BAD
-raise ValueError("Provider not found")
-raise FileNotFoundError("File not found")
-
-# GOOD
-raise ScenarioNotFoundError("Provider introuvable : {id}") from None
-raise UrlSourceFileNotFoundError(path) from exc
-```
-
-❌ Never forget to chain exceptions
-```python
-# BAD — original traceback is lost
-except OSError:
-    raise DatabaseUnavailableError("Erreur I/O")
-
-# GOOD
-except OSError as e:
-    raise DatabaseUnavailableError("Erreur I/O") from e
-```
-
+❌ Never forget `raise … from original` chaining
 ❌ Never catch exceptions in a layer that is not responsible for them
-```python
-# BAD — a Repository must not catch domain errors from a Service
-# BAD — a Service must not catch and swallow RepositoryError without re-raising
-```
-
-❌ Never use `try/except` blocks wrapping more than 4–5 lines without justification
 
 ---
 
@@ -749,22 +846,22 @@ except OSError as e:
 
 ### Ownership by layer
 
-| What | Where |
-|------|-------|
-| Raw errors (code + context) | `models/` — `FieldValidationError` dataclass |
-| Message templates | `shared/i18n_fra.py` |
-| Formatting logic | `shared/error_formatter.py` — via `format_error()` helper |
-| Display | `views/` — receives `list[str]`, renders only |
+| What                          | Where                                    |
+|-------------------------------|------------------------------------------|
+| Raw errors (code + context)   | `models/field_validation_error_model.py` |
+| Message templates             | `shared/i18n_fra.py`                     |
+| Formatting logic              | `shared/error_formatter.py` — `format_error()` |
+| Storage of formatted message  | `ViewModel` (`error_message_var`)        |
+| Display                       | `View` — bound to `vm.error_message_var` |
 
----
-
-### `FieldValidationError` — `models/`
+### `FieldValidationErrorModel`
 
 ```python
+# models/field_validation_error_model.py
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class FieldValidationError:
+class FieldValidationErrorModel:
     """Represents a business field validation error.
 
     Attributes:
@@ -775,14 +872,9 @@ class FieldValidationError:
     context: dict[str, str | int]
 ```
 
----
-
 ### Message templates — `shared/i18n_fra.py`
 
-All user-facing strings live here. **No string is ever written inline** in business logic or view code.
-
 ```python
-# shared/i18n_fra.py
 ERROR_TEMPLATES: dict[str, str] = {
     "invalid_operator": (
         "Étape {step} : l'opérateur doit être l'un de : "
@@ -793,23 +885,14 @@ ERROR_TEMPLATES: dict[str, str] = {
 }
 ```
 
----
-
 ### `format_error()` helper — `shared/error_formatter.py`
 
-This helper is placed in `shared/` because it is a pure formatting utility with no business logic
-and no dependency on any MVP layer. Any layer that produces user-facing messages (typically the
-Presenter) may import it.
-
-All formatting goes through this single helper. **Never call `.format(**e.context)` directly.**
-
 ```python
-# shared/error_formatter.py
-from models.field_validation_error import FieldValidationError
+from models.field_validation_error_model import FieldValidationErrorModel
 from shared.i18n_fra import ERROR_TEMPLATES
 
-def format_error(error: FieldValidationError) -> str:
-    """Format a FieldValidationError into a human-readable string.
+def format_error(error: FieldValidationErrorModel) -> str:
+    """Format a FieldValidationErrorModel into a ready-to-display French string.
 
     Args:
         error: The validation error to format.
@@ -819,7 +902,7 @@ def format_error(error: FieldValidationError) -> str:
     """
     template = ERROR_TEMPLATES.get(
         error.code,
-        "Erreur inconnue (code : {code})"
+        "Erreur inconnue (code : {code})",
     )
     try:
         return template.format(code=error.code, **error.context)
@@ -827,118 +910,70 @@ def format_error(error: FieldValidationError) -> str:
         return f"Erreur de formatage pour le code '{error.code}' : clé manquante {e}"
 ```
 
----
-
-### Presenter — formats and delegates
+### Presenter — formats and writes to a VM Var
 
 ```python
 from shared.error_formatter import format_error
 
 messages = [format_error(e) for e in raw_errors]
-self._view.show_errors(messages)
+self._vm.error_message_var.set("\n".join(messages))
 ```
-
----
-
-### View — passive display only
-
-```python
-def show_errors(self, messages: list[str]) -> None: ...
-def clear_errors(self) -> None: ...
-```
-
-The View receives ready-to-display strings. It never formats, conditions, or owns any message text.
-
----
-
-### Interface — `interfaces/i_error_display_view.py`
-
-```python
-from typing import Protocol
-
-class IErrorDisplayView(Protocol):
-    def show_errors(self, messages: list[str]) -> None: ...
-    def clear_errors(self) -> None: ...
-```
-
----
 
 ### Anti-patterns — Error Messages
 
-❌ Never write a user-facing string inline in a service or presenter
-```python
-# BAD
-errors.append(f"Étape {index} : l'opérateur doit être...")
-# GOOD — use shared/i18n_fra.py + format_error()
-```
-
-❌ Never call `.format(**e.context)` directly — always use `format_error()`
-
-❌ Never pass `FieldValidationError` objects to the View
-```python
-# BAD
-self._view.show_errors(raw_errors)  # ← format first in the Presenter
-```
-
-❌ Never format or build error messages inside the View
-```python
-# BAD
-def show_errors(self, raw_errors: list[FieldValidationError]) -> None:
-    for e in raw_errors:
-        msg = ERROR_TEMPLATES[e.code].format(**e.context)  # ← Presenter's job
-```
+❌ Never write a user-facing string inline in a Service, Presenter, or ViewModel
+❌ Never call `.format(**e.context)` directly — always go through `format_error()`
+❌ Never pass `FieldValidationErrorModel` instances into a VM Var — format first
+❌ Never compose or format error messages inside the View
 
 ---
 
 ## Validators — FluentValidation Pattern
 
-All domain-level field validation is centralised in `__src__/validators/`, following a
-FluentValidation-inspired design. **No validation logic is allowed inline in Presenters, Services,
-or Views.**
+All domain-level field validation is centralised in `__src__/validators/`. **No validation logic
+is allowed inline in Presenters, Services, ViewModels, or Views.**
 
 ### Location and naming
 
 - Folder: `__src__/validators/`
 - Base class: `abstract_validator.py` — `AbstractValidator[T]`
 - Concrete validators: `<domain>_validator.py` (e.g. `scraping_validator.py`)
-- Class name: `<Domain>Validator` in PascalCase (e.g. `ScrapingLaunchValidator`)
+- Class name: `<Domain>Validator` in PascalCase
 
 ### Dependency rules
 
-| Layer | May import from |
-|-------|----------------|
-| `AbstractValidator` | `shared/` only |
-| Concrete Validator | `models/`, `view_states/`, `shared/`, `AbstractValidator` |
-| `Presenter` | Concrete validator — forwards `first_error` to the view |
-| `Service` | Concrete validator — uses as a domain validation gate |
+| Layer                 | May import from                                                  |
+|-----------------------|------------------------------------------------------------------|
+| `AbstractValidator`   | `shared/` only                                                   |
+| Concrete Validator    | `models/`, `shared/`, `AbstractValidator`                        |
+| `Presenter`           | Concrete validator — runs it on a Model built from VM Vars       |
+| `Service`             | Concrete validator — used as a domain validation gate            |
 
-A concrete validator may validate either a **domain Model** (`AbstractValidator[MyModel]`) or a
-**ViewState DTO** (`AbstractValidator[MyViewState]`) when the ViewState is used as a typed form
-input bag rather than a display snapshot.
-
-Validators must **never** import from `View`, `Presenter`, or `Repository`.
+A concrete validator validates a **domain Model** (`AbstractValidator[MyModel]`). The Presenter is
+responsible for assembling a Model from the ViewModel's Vars before passing it to the validator.
+Validators **must never** import from `View`, `Presenter`, `Repository`, or `ViewModel`.
 
 ### Definition pattern
 
 ```python
 # validators/scraping_validator.py
-from models.launcher_model import LaunchModel
+from models.launcher_model import LauncherModel
 from shared.enums import UrlSourceTypeEnum
-from shared.i18n_fra import C_EXEC_NO_EXPORT_FOLDER, C_EXEC_FOLDER_URL_SOURCE_EMPTY
+from shared.i18n_fra import C_EXEC_FOLDER_URL_SOURCE_EMPTY, C_EXEC_NO_EXPORT_FOLDER
 from validators.abstract_validator import AbstractValidator
 
-class ScrapingLaunchValidator(AbstractValidator[LaunchModel]):
-    """Validates a LaunchModel before triggering a scraping session."""
+class ScrapingLaunchValidator(AbstractValidator[LauncherModel]):
+    """Validates a LauncherModel before triggering a scraping session."""
 
     def __init__(self) -> None:
         """Define all validation rules for a scraping launch profile."""
         super().__init__()
 
         self.rule_for(lambda p: p.export_folder, "export_folder").must(
-            lambda v: bool(v and v.strip()), C_EXEC_NO_EXPORT_FOLDER
+            lambda v: bool(v and v.strip()), C_EXEC_NO_EXPORT_FOLDER,
         )
         self.rule_for(lambda p: p.url_source_value, "url_source_value").must(
-            bool, C_EXEC_FOLDER_URL_SOURCE_EMPTY
+            bool, C_EXEC_FOLDER_URL_SOURCE_EMPTY,
         ).when(lambda p: p.url_source_type != UrlSourceTypeEnum.E_MANUAL.value)
 ```
 
@@ -947,67 +982,58 @@ class ScrapingLaunchValidator(AbstractValidator[LaunchModel]):
 ```python
 from validators.scraping_validator import ScrapingLaunchValidator
 
-def _validate_launch(self) -> str | None:
-    if not self._current_scenario:
-        return C_NO_SCENARIO          # coordinator guard — stays in Presenter
-    if not self._current_profile:
-        return C_NO_PROFILE           # coordinator guard — stays in Presenter
-    self._apply_form_to_profile()
-    return ScrapingLaunchValidator().validate(self._current_profile).first_error
+def _on_launch(self) -> None:
+    # Build a domain model from VM Vars
+    model = LauncherModel(
+        export_folder=self._vm.export_folder_var.get(),
+        url_source_value=self._vm.url_source_value_var.get(),
+        url_source_type=self._vm.url_source_type_var.get(),
+    )
+    result = ScrapingLaunchValidator().validate(model)
+    if not result.is_valid:
+        self._vm.error_message_var.set(result.first_error or "")
+        return
+    self._vm.error_message_var.set("")
+    self._service.start_scraping(model)
 ```
 
 ### API — `AbstractValidator[T]`
 
-| Method | Description |
-|--------|-------------|
-| `rule_for(accessor, field_name="")` | Opens a rule chain for one field; returns `RuleBuilder` |
-| `validate(instance)` | Runs all rules; returns `ValidationResult` |
+| Method                              | Description                                   |
+|-------------------------------------|-----------------------------------------------|
+| `rule_for(accessor, field_name="")` | Opens a rule chain; returns `RuleBuilder`.    |
+| `validate(instance)`                | Runs all rules; returns `ValidationResult`.   |
 
 ### API — `RuleBuilder[T, V]` (chainable)
 
-| Method | Description |
-|--------|-------------|
-| `.not_empty(message)` | Fails when value is `None`, `""`, or whitespace |
-| `.not_equal(other, message)` | Fails when `value == other` |
-| `.must(predicate, message)` | Fails when `predicate(value)` returns `False` |
-| `.when(condition)` | Guards the **last** rule: skips it when `condition(instance)` is `False` |
-| `.with_message(message)` | Replaces the message on the last rule |
-
-> **`.when()` semantics:** the condition receives the **whole instance** (not just the field
-> value), enabling cross-field guards such as
-> `.when(lambda p: p.source_type != UrlSourceTypeEnum.E_MANUAL.value)`.
+| Method                       | Description                                          |
+|------------------------------|------------------------------------------------------|
+| `.not_empty(message)`        | Fails when value is `None`, `""`, or whitespace.     |
+| `.not_equal(other, message)` | Fails when `value == other`.                         |
+| `.must(predicate, message)`  | Fails when `predicate(value)` returns `False`.       |
+| `.when(condition)`           | Guards the **last** rule; condition receives the whole instance. |
+| `.with_message(message)`     | Replaces the message on the last rule.               |
 
 ### API — `ValidationResult`
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `is_valid` | `bool` | `True` when `errors` is empty |
-| `errors` | `tuple[str, ...]` | All French error messages, display-ready |
-| `first_error` | `str \| None` | First error, or `None` when valid |
+| Property      | Type                | Description                                        |
+|---------------|---------------------|----------------------------------------------------|
+| `is_valid`    | `bool`              | `True` when `errors` is empty.                     |
+| `errors`      | `tuple[str, ...]`   | All French error messages, display-ready.          |
+| `first_error` | `str \| None`       | First error, or `None` when valid.                 |
 
-Validators run **all rules** (not fail-fast). Use `first_error` when the UI displays one message
-at a time; iterate `errors` when the UI lists all failures.
+Validators run **all rules** (not fail-fast). Use `first_error` when the UI shows one message at a
+time; iterate `errors` to list all failures.
 
 ### Anti-patterns — Validators
 
-❌ Never write validation predicates inline in a Presenter or Service
-```python
-# BAD — domain rule embedded in the Presenter
-if not profile.export_folder.strip():
-    return "Le dossier d'export est requis."
-
-# GOOD — Presenter delegates entirely to the validator
-return ScrapingLaunchValidator().validate(profile).first_error
-```
-
-❌ Never import View, Presenter, or Repository from a Validator
+❌ Never write validation predicates inline in a Presenter, Service, or ViewModel
+❌ Never import View, Presenter, ViewModel, or Repository from a Validator
 ❌ Never place business logic inside a Validator beyond predicates and messages
-❌ Never use `.when()` before `.must()` — `.when()` guards the rule **above** it
-
+❌ Never use `.when()` before `.must()` — `.when()` guards the rule above it
 ```python
-# BAD — when() must come AFTER the rule it guards
+# BAD
 self.rule_for(...).when(condition).must(predicate, msg)
-
 # GOOD
 self.rule_for(...).must(predicate, msg).when(condition)
 ```
@@ -1017,10 +1043,11 @@ self.rule_for(...).must(predicate, msg).when(condition)
 ## Tests
 
 When adding tests:
-- Place tests in a `__tests__/` folder at the project root
-- Use **pytest**
-- Mirror the `__src__/` folder structure inside `__tests__/`
-- Every new feature must be accompanied by its tests
+- Place tests in a `__tests__/` folder at the project root.
+- Use **pytest**.
+- Mirror the `__src__/` folder structure inside `__tests__/`.
+- Every new feature must be accompanied by its tests.
+- ViewModel tests instantiate a hidden `tk.Tk()` root and assert on Var values after action calls — no widget needed.
 - Run tests with:
 ```bash
 pytest __tests__/ -v
@@ -1030,227 +1057,84 @@ pytest __tests__/ -v
 
 ## Do Not Modify Without Prior Discussion
 
-- The MVP layer structure — never mix responsibilities between layers
-- `config-aspirabot.json` — runtime-generated file, never hardcode it
-- `tmp_*` folders — runtime-generated, never write to them manually
-- `data_*` folders — runtime-generated, never write to them manually
+- The MVP + ViewModel layer structure — never mix responsibilities between layers.
+- `config-aspirabot.json` — runtime-generated file, never hardcode it.
+- `tmp_*` folders — runtime-generated, never write to them manually.
+- `data_*` folders — runtime-generated, never write to them manually.
 
 ---
 
 ## Anti-patterns — Strictly Forbidden
 
-These patterns violate the MVP architecture and must never appear in the codebase.
-If you are an AI agent, treat these rules as hard constraints — no exception, no workaround.
+These patterns violate the MVP + ViewModel architecture and must never appear in the codebase.
+If you are an AI agent, treat these as hard constraints — no exception, no workaround.
 
----
+### ViewModel Violations
 
-### ViewState Violations
+❌ Never store a `tk.*Var` as a local variable instead of an instance attribute (silent GC).
+❌ Never compute derived state inside the View — use `trace_add` in the VM.
+❌ Never call a Service, Repository, or Model from a ViewModel.
+❌ Never mutate a Var inside its own `trace_add` callback without a re-entrancy guard.
+❌ Never pass raw domain Models into the View — the Presenter maps them onto VM Vars.
+❌ Never pass `dict[str, Any]` as UI state — UI state lives in typed Vars on the VM.
 
-❌ Never pass a Model directly to a View
+### View Violations
+
+❌ Never put `if/else` on domain values in the View — derive in the VM, bind in the View.
+❌ Never let the View import a Service, Repository, Presenter, or Model.
+❌ Never trigger data loading or dynamic content building inside a View constructor — only widget construction and bindings.
 ```python
-# BAD — the View becomes coupled to the domain model
-self._view.display_scenario(provider)          # provider: Provider
+# BAD — the View loads data at construction time
+class ScenarioEditView(ttk.Frame):
+    def __init__(self, master, vm):
+        super().__init__(master)
+        self._inline_form = StepInlineFormPanel(self)
+        self._inline_form.load(None)  # ← wrong, the Presenter decides when to load
 
-# GOOD
-self._view.display_scenario(ScenarioEditViewState(...))
+# GOOD — only widget construction and VM bindings
+class ScenarioEditView(ttk.Frame):
+    def __init__(self, master, vm):
+        super().__init__(master)
+        self._inline_form = StepInlineFormPanel(self, vm)
+        # No load() here — the Presenter triggers loading via a VM Var update
 ```
 
-❌ Never pass `dict[str, Any]` to a View instead of a typed ViewState
-```python
-# BAD — loses type safety, IDE support, and refactor coverage
-self._view.display_scenario({"name": provider.name, "url": provider.url})
-```
+### Presenter Violations
 
-❌ Never import a Model inside a ViewState
-```python
-# BAD
-from models.provider import Provider
+❌ Never touch a widget directly from a Presenter — mutate a VM Var instead.
+❌ Never import `tkinter` from a Presenter.
+❌ Never place business logic inside a Presenter — that belongs in a Service.
+❌ Never instantiate a Service or Repository inside a Presenter — inject via `__init__`.
 
-@dataclass(frozen=True)
-class ScenarioViewState:
-    provider: Provider   # ← defeats the isolation purpose
-```
+### Service / Repository Violations
 
-❌ Never put methods or business logic inside a ViewState — data bag only
-```python
-# BAD
-@dataclass(frozen=True)
-class ScenarioViewState:
-    url: str
-    def is_valid(self) -> bool: ...   # ← belongs in a Service
-```
-
----
-
-### Layer Violations
-
-❌ Never import a `View` inside a `Service`, `Model`, or `Repository`
-```python
-# BAD — a service must never know the UI exists
-from views.main_view import MainView
-```
-
-❌ Never import a `Repository` inside a `View`
-```python
-# BAD — a view must never access persistent data directly
-from repositories.config_repository import ConfigRepository
-```
-
-❌ Never import a `Service` inside a `View`
-```python
-# BAD — a view must never call business logic directly
-from services.scraping_service import ScrapingService
-```
-
-❌ Never place business logic inside a `Presenter`
-```python
-# BAD — a presenter orchestrates, it does not compute
-def on_start_clicked(self):
-    url = self._view.get_url()
-    if not url.startswith("https://"):  # ← business rule, belongs in a service
-        ...
-```
-
-❌ Never write to persistent storage outside a `Repository`
-```python
-# BAD — only repositories are allowed to read/write data
-with open("config-aspirabot.json", "w") as f:
-    json.dump(data, f)
-```
-
----
+❌ Never import a `View`, `ViewModel`, or `Presenter` inside a `Service` or `Repository`.
+❌ Never write to persistent storage outside a `Repository`.
+❌ Never store shared runtime state in a Presenter, View, ViewModel, or module-level global — use `AppStateModel`.
 
 ### Design Violations
 
-❌ Never use `ABC` to define an interface — always use `typing.Protocol`
-
-❌ Never place concrete logic inside `interfaces/`
-```python
-# BAD — interfaces define contracts only, no implementation
-class IScrapingService(Protocol):
-    def run(self, url: str) -> list[dict]:
-        return []  # ← must be left as "..."
-```
-
-❌ Never place business logic inside `shared/`
-```python
-# BAD — shared/ contains utilities only, not domain rules
-def shared_validate_scenario(provider: dict) -> bool:
-    if provider["type"] == "premium":  # ← domain rule, belongs in a service
-        ...
-```
-
-❌ Never bypass the `Presenter` to connect a `View` to a `Service` directly
-```python
-# BAD — views and services must never be directly coupled
-view = MainView()
-service = ScrapingService()
-view.on_start = service.run  # ← the presenter must be the bridge
-```
-
-❌ Never store shared runtime state in a Presenter, a View, or a module-level global
-```python
-# BAD — global state, not injectable, not testable
-_current_scenario_id: str | None = None
-
-# GOOD — use AppState defined in models/ and injected into services
-```
-
----
+❌ Never use `ABC` for an interface — always use `typing.Protocol`.
+❌ Never place concrete logic inside `interfaces/`.
+❌ Never place business logic inside `shared/`.
+❌ Never bypass the Presenter to wire a View to a Service directly.
+❌ Never forget to keep a reference to the Presenter at the composition root (silent GC kills bindings).
 
 ### Code Quality Violations
 
-❌ Never write a method longer than 25 lines of code — break it down instead
-(Blank lines, docstrings, and argument-wrapping lines are excluded from the count.)
-
-❌ Never write a file longer than 1000 lines — split into focused modules
-
-❌ Never use `print()` — always use `self._logger = logging.getLogger(__name__)`
-
-❌ Never use Python 2. Always use Python 3.13 and more.
-
-❌ Never commit runtime-generated files or folders
+❌ Never write a method longer than 25 lines of code — break it down.
+❌ Never write a file longer than 1000 lines — split into focused modules.
+❌ Never use `print()` — use `self._logger = logging.getLogger(__name__)`.
+❌ Never use Python 2.
+❌ Never commit runtime-generated files or folders.
 ```
-# These must stay in .gitignore — never create or commit them manually
+# Must stay in .gitignore — never create or commit them manually
 tmp_app_logs/
 data_scraping/
 data_scenarios/
 config-aspirabot.json
 ```
-
-❌ Never omit type hints on a function or method signature
-```python
-# BAD
-def fetch(url, timeout=30):
-    ...
-
-# GOOD
-def fetch(url: str, timeout: int = 30) -> str:
-    ...
-```
-
-❌ Never omit a docstring on a public class or function
-
-❌ Never write a tautological docstring
-```python
-# BAD — restates the method name, adds no value
-def load_config(self) -> dict:
-    """Load the config."""
-
-# GOOD — explains contract and failure modes
-def load_config(self) -> dict:
-    """Read and parse the application configuration from disk.
-
-    Returns:
-        A dictionary of configuration values ready for use by services.
-
-    Raises:
-        DatabaseUnavailableError: If the file is missing or contains invalid JSON.
-    """
-```
-
-❌ Never use bare `except` clauses
-```python
-# BAD — swallows all errors silently
-try:
-    ...
-except:
-    pass
-
-# GOOD
-try:
-    ...
-except PlaywrightTimeoutError as e:
-    logger.error("Délai de chargement dépassé : %s", e)
-    raise
-```
-
-❌ Never trigger data loading or dynamic content building inside a View constructor
-
-The View constructor must only build the widget structure (frames, labels, entries, buttons).
-It must never call `load()`, `initialize()`, or any method that populates or rebuilds dynamic content.
-The Presenter is responsible for deciding *when* content is loaded, via an explicit method call.
-
-```python
-# BAD — the View self-initializes its dynamic form at construction time
-class ProviderEditView(ttk.Frame):
-    def _create_gestion_widgets(self):
-        self._inline_form = StepInlineFormPanel(self)
-        self._inline_form.load(None)  # ← View decides when to load — wrong
-
-# GOOD — the View only builds widget structure; the Presenter triggers loading
-class ProviderEditView(ttk.Frame):
-    def _create_gestion_widgets(self):
-        self._inline_form = StepInlineFormPanel(self)
-        # No load() here — the Presenter calls show_inline_form() when needed
-
-class ProviderEditPresenter:
-    def create_new(self):
-        ...
-        self._view.show_inline_form(None)  # ← Presenter decides when to load
-```
-
-For lazy tab initialization (content loaded only on first visit), use `MainView.set_on_show()`:
-```python
-main_view.set_on_show(TitleModuleEnum.E_SCENARIOS, scripts_presenter.ensure_scenarios_loaded)
-```
+❌ Never omit type hints on a function or method signature.
+❌ Never omit a docstring on a public class or function.
+❌ Never write a tautological docstring.
+❌ Never use bare `except` clauses.

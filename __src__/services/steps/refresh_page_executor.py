@@ -7,17 +7,14 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.refresh_page_params import RefreshPageParams
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import ERROR_TEMPLATES
 from shared.time_util import convert_to_ms
 
 
-class RefreshPageExecutor(IStepExecutor):
+class RefreshPageExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the refresh page scraping step."""
 
     @classmethod
@@ -38,21 +35,6 @@ class RefreshPageExecutor(IStepExecutor):
         page.reload()
         page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
         context.last_message_step = "Page rafraîchie avec succès, attente de chargement"
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate the step model."""
-        p = cast(RefreshPageParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-
-        errors: list[str] = []
-        if p.timeout_duration <= 0:
-            errors.append(ERROR_TEMPLATES["refresh_page_timeout_invalid"].format(step=index_display))
-        if p.timeout_duration > 0 and p.timeout_unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
-            errors.append(
-                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(step=index_display, value=p.timeout_unit)
-            )
-        return errors
 
 
 register_step_executor(RefreshPageExecutor())

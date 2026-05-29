@@ -7,16 +7,14 @@ from typing import cast, override
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.close_tabs_params import CloseTabsParams
+from services.steps.step_executor_base import StepExecutorBase
 from shared.step_registry import register_step_executor
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.exception_util import CurrentPageClosedUnexpectedlyError, MissingUrlFilterError
-from shared.i18n_fra import ERROR_TEMPLATES
 
 
-class CloseTabsExecutor(IStepExecutor):
+class CloseTabsExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the close tabs scraping step."""
 
     @classmethod
@@ -59,18 +57,6 @@ class CloseTabsExecutor(IStepExecutor):
             others = [t for t in browser.get_all_pages() if t is not current_page]
             for t in others[p.max_tabs - 1 :]:
                 t.close()
-
-    @override
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate the step model."""
-        p = cast(CloseTabsParams, model.params)
-        index_display = str(step_index + 1).zfill(2)
-
-        if p.filter_mode == OpenUrlModeEnum.E_CUSTOM.value and not p.filter_custom.strip():
-            return [ERROR_TEMPLATES["close_tabs_filter_required"].format(step=index_display)]
-        if p.max_tabs <= 0:
-            return [ERROR_TEMPLATES["close_tabs_max_tabs_invalid"].format(step=index_display)]
-        return []
 
 
 register_step_executor(CloseTabsExecutor())

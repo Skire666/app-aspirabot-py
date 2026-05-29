@@ -2,20 +2,27 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from pydantic import ValidationInfo, field_validator
 
-from interfaces.i_step_params import IStepParams
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
-@dataclass(frozen=True)
-class WaitFixedTimeParams(IStepParams):
+class WaitFixedTimeParams(BaseStepParams):
     """Parameters for the wait fixed time scraping step."""
 
     duration: int
     unit: str
     comment: str = ""
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to dict."""
-        return {"duration": self.duration, "unit": self.unit, "comment": self.comment}
+    @field_validator("duration")
+    @classmethod
+    def check_duration(cls, v: int, info: ValidationInfo) -> int:
+        """Reject negative wait durations."""
+        if not info.context:
+            return v
+        if v < 0:
+            raise ValueError(
+                ERROR_TEMPLATES["wait_fixed_time_duration_invalid"].format(step=step_label(info.context))
+            )
+        return v

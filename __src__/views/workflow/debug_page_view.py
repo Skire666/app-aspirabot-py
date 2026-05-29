@@ -59,7 +59,6 @@ class DebugPageView(tk.Toplevel):
         self.title(f"Debug — {short_url}")
         self.geometry("960x720")
         self.resizable(True, True)
-        self.attributes("-topmost", True)
         self._init_callbacks()
         self._create_widgets()
 
@@ -138,7 +137,7 @@ class DebugPageView(tk.Toplevel):
         self._entry_text_selector = ttk.Entry(input_row)
         self._entry_text_selector.grid(row=0, column=1, sticky="ew")
         ttk.Button(input_row, text="Analyser textes", command=self._fire_analyze_texts).grid(
-            row=0, column=2, padx=(4, 0),
+            row=0, column=2, padx=(4, 0)
         )
 
         # Effacer button for the result zone.
@@ -172,7 +171,7 @@ class DebugPageView(tk.Toplevel):
         self._entry_image_selector.insert(0, "img")
         self._entry_image_selector.grid(row=0, column=1, sticky="ew")
         ttk.Button(input_row, text="Analyser images", command=self._fire_analyze_images).grid(
-            row=0, column=2, padx=(4, 0),
+            row=0, column=2, padx=(4, 0)
         )
 
         # Effacer button for the result zone.

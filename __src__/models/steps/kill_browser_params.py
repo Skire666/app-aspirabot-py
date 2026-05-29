@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from pydantic import ValidationInfo, field_validator
 
-from interfaces.i_step_params import IStepParams
+from models.steps.base_step_params import BaseStepParams, step_label
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.i18n_fra import ERROR_TEMPLATES
 
 
-@dataclass(frozen=True)
-class KillBrowserParams(IStepParams):
+class KillBrowserParams(BaseStepParams):
     """Parameters for the end process scraping step."""
 
     wait_duration: int
@@ -17,11 +17,24 @@ class KillBrowserParams(IStepParams):
     export_data: bool
     comment: str = ""
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to dict."""
-        return {
-            "wait_duration": self.wait_duration,
-            "wait_unit": self.wait_unit,
-            "export_data": self.export_data,
-            "comment": self.comment,
-        }
+    @field_validator("wait_duration")
+    @classmethod
+    def check_wait_duration(cls, v: int, info: ValidationInfo) -> int:
+        if not info.context:
+            return v
+        if v < 0:
+            raise ValueError(
+                ERROR_TEMPLATES["end_process_wait_duration_invalid"].format(step=step_label(info.context))
+            )
+        return v
+
+    @field_validator("wait_unit")
+    @classmethod
+    def check_wait_unit(cls, v: str, info: ValidationInfo) -> str:
+        if not info.context:
+            return v
+        if v not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
+            raise ValueError(
+                ERROR_TEMPLATES["end_process_wait_unit_invalid"].format(step=step_label(info.context), value=v)
+            )
+        return v
