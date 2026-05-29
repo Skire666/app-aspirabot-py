@@ -30,7 +30,11 @@ from repositories.json_repository import JsonFileRepository
 from services.url_sources.url_source_factory import build_url_source_scenario
 from services.workflow_service import WorkflowService
 from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum
-from shared.exception_util import AspirabotBaseError, ExportFolderNotADirectoryError
+from shared.exception_util import (
+    AspirabotBaseError,
+    BrowserNotLaunchedError,
+    ExportFolderNotADirectoryError,
+)
 from shared.operating_system_util import open_folder
 from shared.step_registry import get_step_executor
 
@@ -463,7 +467,8 @@ class ScrapingService:
             self._context.set_result_execution(True, "SKIP")
             return True
 
-        assert self._browser_service is not None
+        if self._browser_service is None:
+            raise BrowserNotLaunchedError()
         try:
             executor: IStepExecutor = get_step_executor(step.step_type)
             executor.execute_logical(self._browser_service, self._context)

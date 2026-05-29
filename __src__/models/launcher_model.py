@@ -106,7 +106,7 @@ class LaunchModel:
             used_date_profile=None,
             url_sort_order="",
             emergency_stop_step_id="",
-            emergency_stop_step_threshold=0,
+            emergency_stop_step_threshold=1,
         )
 
     @classmethod

@@ -5,11 +5,9 @@
 # -----------------------------------------------------------------------------
 
 import tkinter as tk
-from collections.abc import Callable
-from pathlib import Path
 from tkinter import ttk
-from typing import Any
 
+from view_models.profiles_view_model import ProfilesViewModel
 from views.components.data_grid import DataGrid, GridColumn
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
@@ -18,7 +16,6 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 # Constants
 # -----------------------------------------------------------------------------
 
-# Column definitions for the profiles DataGrid.
 DATA_GRID_COLUMNS: list[GridColumn] = [
     GridColumn(id="action_launch", title="Lancer", width=62, col_type="button", button_text="Lancer"),
     GridColumn(id="profile_name", title="Nom du profil", width=160),
@@ -38,91 +35,59 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
 class ProfilesView(ttk.Frame):
     """View component that renders the list of launch profiles across all scenarios.
 
-    Displays a DataGrid with one row per profile. Fires a callback when the
-    user clicks the launch button on a row.
-
-    Attributes:
-        _grid: The DataGrid used to display all profiles.
-        _on_launch_callback: Optional callback invoked with (id_scenario_id, id_profile).
-        _on_open_folder_callback: Optional callback invoked when the user clicks the folder button.
+    The DataGrid is re-rendered whenever ``vm.profiles_version_var`` increments.
+    All user actions are dispatched to the ViewModel action methods.
     """
 
-    def __init__(self, parent: tk.Widget) -> None:
-        """Initialize the widget.
+    def __init__(self, parent: tk.Widget, vm: ProfilesViewModel) -> None:
+        """Initialize the widget bound to *vm*.
 
         Args:
             parent: Parent Tkinter widget that owns this frame.
+            vm: The ProfilesViewModel that owns all UI state.
         """
         super().__init__(parent)
-
-        # Callback registered by the presenter via set_on_launch().
-        self._on_refresh: Callable[[], None] | None = None
-        self._on_launch_callback: Callable[[str, str], None] | None = None
-        self._on_open_folder_callback: Callable[[], None] | None = None
-        self._on_sort_callback: Callable[[str, bool], None] | None = None
-
+        self._vm = vm
         self._create_widgets()
+        self._bind_vm_vars()
 
     def _create_widgets(self) -> None:
         """Build the top bar and DataGrid."""
-        # Top panel
         top_frame = HorizontalLineFrame(self, text="Liste des profils de lancement")
         top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=self._notify_refresh)
+        self._btn_refresh = ttk.Button(
+            top_frame, text="Actualiser", command=lambda: self._vm.refresh()
+        )
         self._btn_refresh.pack(side=tk.LEFT, padx=(5, 40), pady=(0, 5))
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun profil")
         self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
 
         self._btn_open_folder = FolderLinkWidget(
-            top_frame, title="Dossier des profiles :", path="", callback=self._notify_open_folder,
+            top_frame,
+            title="Dossier des profiles :",
+            path="",
+            callback=lambda: self._vm.open_folder(),
         )
         self._btn_open_folder.pack(side=tk.RIGHT, padx=(0, 10), pady=(0, 5))
 
-        self._grid = DataGrid(self, columns=DATA_GRID_COLUMNS, on_sort=self._notify_sort, on_action=self._on_action)
+        self._grid = DataGrid(
+            self,
+            columns=DATA_GRID_COLUMNS,
+            on_sort=lambda col, asc: self._vm.sort(col, asc),
+            on_action=self._on_action,
+        )
         self._grid.set_sort_state("used_date_profile", True)
         self._grid.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
+    def _bind_vm_vars(self) -> None:
+        """Register trace_add on profiles_version_var to re-render on data change."""
+        self._vm.profiles_version_var.trace_add("write", self._sync_profiles)
 
-    def set_on_refresh(self, callback: Callable[[], None]) -> None:
-        """Register the callback invoked when the user clicks Actualiser.
-
-        Args:
-            callback: Callable with no arguments.
-        """
-        self._on_refresh = callback
-
-    def set_on_launch(self, callback: Callable[[str, str], None]) -> None:
-        """Register the callback invoked when the user clicks Lancer.
-
-        Args:
-            callback: Callable receiving (id_scenario_id, id_profile) strings.
-        """
-        self._on_launch_callback = callback
-
-    def set_on_sort(self, callback: Callable[[str, bool], None]) -> None:
-        """Register the callback invoked when the user clicks a sortable column header.
-
-        Args:
-            callback: Callable receiving (column_id, ascending) values.
-        """
-        self._on_sort_callback = callback
-
-    def set_on_open_folder(self, callback: Callable[[], None]) -> None:
-        """Register the callback invoked when the user clicks 'Open folder'."""
-        self._on_open_folder_callback = callback
-
-    def render_profiles(self, folder_path: Path, profiles: list[dict[str, Any]]) -> None:
-        """Pass a fresh list of profile rows to the DataGrid.
-
-        Args:
-            folder_path: The path of the folder containing scenario files.
-            profiles: List of row dicts whose keys match the column ids.
-        """
+    def _sync_profiles(self, *_: object) -> None:
+        """Re-render the DataGrid and counter from the ViewModel data."""
+        profiles = self._vm.get_profiles()
         count = len(profiles)
         if count == 0:
             self._lbl_counter.config(text="Trouvé : Aucun profil")
@@ -131,35 +96,19 @@ class ProfilesView(ttk.Frame):
         else:
             self._lbl_counter.config(text=f"Trouvé : {count} profils")
 
-        self._btn_open_folder.set_path(folder_path)
+        self._btn_open_folder.set_path(self._vm.get_folder_path())
         self._grid.render_data(profiles)
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
-
-    def _notify_refresh(self) -> None:
-        if self._on_refresh:
-            self._on_refresh()
-
-    def _notify_open_folder(self) -> None:
-        if self._on_open_folder_callback:
-            self._on_open_folder_callback()
-
-    def _notify_sort(self, column: str, ascending: bool) -> None:
-        if self._on_sort_callback:
-            self._on_sort_callback(column, ascending)
-
     def _on_action(self, action_id: str, bound: object) -> None:
-        """Forward DataGrid action events to the registered launch callback.
+        """Forward DataGrid action events to the ViewModel launch action.
 
         Args:
             action_id: Column id of the button that was clicked.
-            bound: The ``__bound__`` object set by the presenter (ProfileLaunchModel).
+            bound: The ``__bound__`` object set by the Presenter (LaunchModel).
         """
-        if action_id != "action_launch" or not self._on_launch_callback:
+        if action_id != "action_launch":
             return
-        self._on_launch_callback(
+        self._vm.launch(
             str(getattr(bound, "id_scenario", "")),
             str(getattr(bound, "id_profile", "")),
         )

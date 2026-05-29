@@ -8,12 +8,12 @@ import tkinter as tk
 from tkinter import messagebox
 
 from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_SPLASHSCREEN_SIZE_HEIGHT, C_SPLASHSCREEN_SIZE_WIDTH
+from view_models.splashscreen_view_model import SplashscreenViewModel
 
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
 
-# Color palette
 _BG_COLOR = "#ffffff"
 _TITLE_COLOR = C_COLOR_BLUE_HIGHLIGHT_DARK
 _STATUS_COLOR = "#555555"
@@ -27,29 +27,27 @@ _BORDER_COLOR = "#e0e0e0"
 class SplashscreenView(tk.Toplevel):
     """Overlay window shown during the three-step startup sequence.
 
-    Displays the application title, a live status label, and a row of
-    progress icons that grow left-to-right as each step completes.
-
-    Public interface is intentionally minimal — the presenter drives all
-    state changes through set_status(), and show_error().
+    Displays the application title and a live status label bound to
+    ``vm.status_var``.  The Presenter drives all state changes through the
+    ViewModel; this View is purely a passive widget tree.
 
     Attributes:
-        _status_label: Label updated by the presenter to reflect the current step.
-        _icons_frame: Container where progress icons are appended.
-        _icon_refs: Keeps PhotoImage references alive to prevent garbage collection.
+        _status_label: Label bound to ``vm.status_var``.
 
     Example:
-        >>> view = SplashscreenView(root)
-        >>> view.set_status("Loading configuration...")
+        >>> vm = SplashscreenViewModel(master=root)
+        >>> view = SplashscreenView(root, vm)
     """
 
-    def __init__(self, parent: tk.Widget) -> None:
+    def __init__(self, parent: tk.Widget, vm: SplashscreenViewModel) -> None:
         """Build and center the splash screen on top of the parent window.
 
         Args:
             parent: The root Tk window (which remains hidden during startup).
+            vm: The SplashscreenViewModel driving the startup status display.
         """
         super().__init__(parent)
+        self._vm = vm
 
         # Remove OS window decorations for a clean overlay appearance.
         self.overrideredirect(True)
@@ -57,23 +55,23 @@ class SplashscreenView(tk.Toplevel):
         self.lift()
         self.focus_force()
 
-        # Internal list keeps PhotoImage refs alive — Tkinter GC quirk.
-        self._icon_refs: list[tk.PhotoImage] = []
-
         self._center_on_screen()
         self._create_widgets()
+        self._bind_vm_vars()
+
+        # Register View as destroy/error providers for the Presenter.
+        vm.bind_destroy(self.destroy)
+        vm.bind_show_error(self._show_error)
 
     # -----------------------------------------------------------------------------
     # Widget construction
     # -----------------------------------------------------------------------------
 
     def _create_widgets(self) -> None:
-        """Build the full splash layout: border frame, title, status, icons."""
-        # Thin border frame for visual containment.
+        """Build the full splash layout: border frame, title, status."""
         border = tk.Frame(self, bg=_BORDER_COLOR)
         border.pack(expand=True)
 
-        # Inner white content area with comfortable padding.
         inner = tk.Frame(border, bg=_BG_COLOR)
         inner.pack(expand=True)
 
@@ -82,12 +80,11 @@ class SplashscreenView(tk.Toplevel):
 
     @staticmethod
     def _build_title(parent: tk.Frame) -> None:
-        """Render the application name and subtitle labels.
+        """Render the application name label.
 
         Args:
             parent: The inner content frame.
         """
-        # Bold app name in brand color.
         tk.Label(
             parent,
             text="Aspirabot",
@@ -97,12 +94,11 @@ class SplashscreenView(tk.Toplevel):
         ).pack(expand=True)
 
     def _build_status_label(self, parent: tk.Frame) -> None:
-        """Create the live status text label updated by the presenter.
+        """Create the live status text label bound to the ViewModel.
 
         Args:
             parent: The inner content frame.
         """
-        # Status label starts empty; the presenter fills it on each step.
         self._status_label = tk.Label(
             parent,
             text="",
@@ -113,6 +109,19 @@ class SplashscreenView(tk.Toplevel):
         self._status_label.pack(expand=True, pady=(0, 10))
 
     # -----------------------------------------------------------------------------
+    # ViewModel bindings
+    # -----------------------------------------------------------------------------
+
+    def _bind_vm_vars(self) -> None:
+        """Register trace_add on status_var to mirror it onto the status label."""
+        self._vm.status_var.trace_add("write", self._sync_status)
+
+    def _sync_status(self, *_: object) -> None:
+        """Update the status label and flush pending draw operations."""
+        self._status_label.config(text=self._vm.status_var.get())
+        self.update_idletasks()
+
+    # -----------------------------------------------------------------------------
     # Layout helper
     # -----------------------------------------------------------------------------
 
@@ -121,26 +130,15 @@ class SplashscreenView(tk.Toplevel):
         self.update_idletasks()
         screen_w = self.winfo_screenwidth()
         screen_h = self.winfo_screenheight()
-
-        # Compute top-left corner so the window is perfectly centered.
         x = (screen_w - C_SPLASHSCREEN_SIZE_WIDTH) // 2
         y = (screen_h - C_SPLASHSCREEN_SIZE_HEIGHT) // 2
         self.geometry(f"{C_SPLASHSCREEN_SIZE_WIDTH}x{C_SPLASHSCREEN_SIZE_HEIGHT}+{x}+{y}")
 
     # -----------------------------------------------------------------------------
-    # Presenter interface
+    # Dialog provider — registered on ViewModel
     # -----------------------------------------------------------------------------
 
-    def set_status(self, message: str) -> None:
-        """Update the status label text.
-
-        Args:
-            message: Human-readable description of the current startup step.
-        """
-        self._status_label.config(text=message)
-        self.update_idletasks()
-
-    def show_error(self, message: str) -> None:
+    def _show_error(self, message: str) -> None:
         """Display a modal error dialog over the splash screen.
 
         Args:

@@ -73,23 +73,9 @@ class DataGrid(ttk.Frame):
         self.columns = columns
         self.on_sort = on_sort
         self.on_action = on_action
-
-        self._row_height = 42
-        self._header_height = 40
         self._data: list[dict[str, Any]] = []
 
-        self._bg_header = "#e0e0e0"
-        self._bg_even = "#f4f4f4"
-        self._bg_odd = "#ffffff"
-        self._bg_hover = C_COLOR_BLUE_HIGHLIGHT_LIGHT
-        self._grid_line = "#cecece"
-        self._text_color = "#222222"
-
-        self._hover_row: int | None = None
-        self._button_hover_row: int | None = None
-        self._sorted_column: str | None = None
-        self._sort_ascending = True
-        self._redraw_job: str | None = None
+        self._init_display_config()
 
         # Track which row/col ranges are currently rendered to enable incremental updates.
         self._last_row_range: tuple[int, int] = (0, 0)
@@ -106,6 +92,22 @@ class DataGrid(ttk.Frame):
         self._create_layout()
         self._update_scroll_regions()
         self._schedule_redraw()
+
+    def _init_display_config(self) -> None:
+        """Initialise row sizes, colours, and interaction-state attributes."""
+        self._row_height = 42
+        self._header_height = 40
+        self._bg_header = "#e0e0e0"
+        self._bg_even = "#f4f4f4"
+        self._bg_odd = "#ffffff"
+        self._bg_hover = C_COLOR_BLUE_HIGHLIGHT_LIGHT
+        self._grid_line = "#cecece"
+        self._text_color = "#222222"
+        self._hover_row: int | None = None
+        self._button_hover_row: int | None = None
+        self._sorted_column: str | None = None
+        self._sort_ascending = True
+        self._redraw_job: str | None = None
 
     # ------------------------------------------------------------------
     # Column geometry
@@ -508,10 +510,7 @@ class DataGrid(ttk.Frame):
         """Incrementally updates the canvas: only adds/removes rows that changed visibility."""
         vis = self._visible_columns
         if not self._data or not vis:
-            self.body_canvas.delete("cell")
-            self._recycle_active_buttons()
-            self._last_row_range = (0, 0)
-            self._last_col_range = (0, 0)
+            self._clear_all_rows()
             return
 
         new_row_range = self._visible_row_range()
@@ -521,25 +520,64 @@ class DataGrid(ttk.Frame):
 
         if new_col_range != self._last_col_range:
             # Column viewport shifted — full redraw is cheaper than per-cell surgery.
-            self.body_canvas.delete("cell")
-            self._recycle_active_buttons()
-            for row_index in range(new_rs, new_re):
-                self._draw_single_row(row_index, new_col_range, vis)
+            self._redraw_full_viewport(new_rs, new_re, new_col_range, vis)
         else:
             # Vertical scroll only: remove rows that left, add rows that entered.
-            for row_index in range(old_rs, min(old_re, new_rs)):
-                self._recycle_buttons_for_row(row_index)
-                self.body_canvas.delete(f"row-{row_index}")
-            for row_index in range(max(old_rs, new_re), old_re):
-                self._recycle_buttons_for_row(row_index)
-                self.body_canvas.delete(f"row-{row_index}")
-            for row_index in range(new_rs, min(new_re, old_rs)):
-                self._draw_single_row(row_index, new_col_range, vis)
-            for row_index in range(max(new_rs, old_re), new_re):
-                self._draw_single_row(row_index, new_col_range, vis)
+            self._update_rows_incrementally(old_rs, old_re, new_rs, new_re, new_col_range, vis)
 
         self._last_row_range = new_row_range
         self._last_col_range = new_col_range
+
+    def _clear_all_rows(self) -> None:
+        """Clear the body canvas and recycle buttons when no data or columns exist."""
+        self.body_canvas.delete("cell")
+        self._recycle_active_buttons()
+        self._last_row_range = (0, 0)
+        self._last_col_range = (0, 0)
+
+    def _redraw_full_viewport(
+        self, new_rs: int, new_re: int, new_col_range: tuple[int, int], vis: list[GridColumn]
+    ) -> None:
+        """Redraw all visible rows after a column-viewport shift.
+
+        Args:
+            new_rs: First visible row index.
+            new_re: One-past-last visible row index.
+            new_col_range: Column index range (start, end) to render.
+            vis: List of currently visible GridColumn definitions.
+        """
+        self.body_canvas.delete("cell")
+        self._recycle_active_buttons()
+        for row_index in range(new_rs, new_re):
+            self._draw_single_row(row_index, new_col_range, vis)
+
+    def _update_rows_incrementally(
+        self,
+        old_rs: int, old_re: int,
+        new_rs: int, new_re: int,
+        new_col_range: tuple[int, int],
+        vis: list[GridColumn],
+    ) -> None:
+        """Remove rows that scrolled out and draw rows that scrolled in.
+
+        Args:
+            old_rs: Previous first visible row index.
+            old_re: Previous one-past-last visible row index.
+            new_rs: New first visible row index.
+            new_re: New one-past-last visible row index.
+            new_col_range: Column index range (start, end) to render.
+            vis: List of currently visible GridColumn definitions.
+        """
+        for row_index in range(old_rs, min(old_re, new_rs)):
+            self._recycle_buttons_for_row(row_index)
+            self.body_canvas.delete(f"row-{row_index}")
+        for row_index in range(max(old_rs, new_re), old_re):
+            self._recycle_buttons_for_row(row_index)
+            self.body_canvas.delete(f"row-{row_index}")
+        for row_index in range(new_rs, min(new_re, old_rs)):
+            self._draw_single_row(row_index, new_col_range, vis)
+        for row_index in range(max(new_rs, old_re), new_re):
+            self._draw_single_row(row_index, new_col_range, vis)
 
     def _draw_single_row(
         self,

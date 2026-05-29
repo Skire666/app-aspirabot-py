@@ -13,7 +13,7 @@ from typing import Any
 from models.launcher_model import LaunchModel
 from services.profiles_service import ProfilesService
 from shared.exception_util import AspirabotBaseError
-from views.profiles_view import ProfilesView
+from view_models.profiles_view_model import ProfilesViewModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -34,15 +34,15 @@ class ProfilesPresenter:
             called with (id_scenario, id_profile) when the user clicks Lancer.
     """
 
-    def __init__(self, view: ProfilesView, service: ProfilesService) -> None:
-        """Initialize the presenter and wire the launch callback on the view.
+    def __init__(self, vm: ProfilesViewModel, service: ProfilesService) -> None:
+        """Initialize the presenter and wire the launch callback on the ViewModel.
 
         Args:
-            view: The historic panel view.
+            vm: The profiles panel ViewModel.
             service: Service providing aggregated launch profiles.
         """
         self._logger = logging.getLogger(__name__)
-        self._view = view
+        self._vm = vm
         self._service_profile = service
         self._last_loaded: datetime | None = None
         self._sort_column = "used_date_profile"
@@ -51,11 +51,11 @@ class ProfilesPresenter:
         # Hook injected by main.py after construction.
         self.on_request_launch_profile: Callable[[str, str], None] | None = None
 
-        # Register the launch callback immediately so the view is wired.
-        self._view.set_on_refresh(self._on_refresh)
-        self._view.set_on_launch(self._on_launch)
-        self._view.set_on_open_folder(self._on_open_folder)
-        self._view.set_on_sort(self._on_sort)
+        # Register callbacks on the ViewModel.
+        self._vm.bind_refresh(self._on_refresh)
+        self._vm.bind_launch(self._on_launch)
+        self._vm.bind_open_folder(self._on_open_folder)
+        self._vm.bind_sort(self._on_sort)
 
     # ------------------------------------------------------------------
     # Public API
@@ -97,7 +97,7 @@ class ProfilesPresenter:
 
         # Push formatted rows to the view and stamp the load time.
         path_folder: Path = self._service_profile.get_path_profiles_folder()
-        self._view.render_profiles(path_folder, self._format_rows(sorted_tuples))
+        self._vm.set_profiles(path_folder, self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
     def _format_rows(self, list_profiles: list[LaunchModel]) -> list[dict[str, Any]]:

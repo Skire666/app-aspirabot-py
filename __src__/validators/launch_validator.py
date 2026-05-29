@@ -20,8 +20,6 @@ from shared.i18n_fra import (
 # Constants
 # -----------------------------------------------------------------------------
 
-_MAX_THRESHOLD = 9_999_999
-
 _NON_MANUAL_SOURCE_TYPES = {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
 
 
@@ -55,14 +53,14 @@ class _LaunchValidationSchema(BaseModel):
     @field_validator("url_source_type")
     @classmethod
     def check_url_source_type(cls, v: str) -> str:
-        if not v:
+        if not (v and len(v.strip()) >= 1):
             raise ValueError(C_EXEC_NO_URL_SOURCE)
         return v
 
     @field_validator("emergency_stop_threshold")
     @classmethod
     def check_global_threshold(cls, v: int) -> int:
-        if not (isinstance(v, int) and 1 <= v <= _MAX_THRESHOLD):
+        if not (isinstance(v, int) and v >= 1):
             raise ValueError(C_EXEC_INVALID_GLOBAL_THRESHOLD)
         return v
 
@@ -76,7 +74,7 @@ class _LaunchValidationSchema(BaseModel):
     @field_validator("emergency_stop_step_threshold")
     @classmethod
     def check_step_threshold(cls, v: int) -> int:
-        if not (isinstance(v, int) and 1 <= v <= _MAX_THRESHOLD):
+        if not (isinstance(v, int) and v >= 1):
             raise ValueError(C_EXEC_INVALID_STEP_THRESHOLD)
         return v
 
@@ -102,6 +100,7 @@ def validate_launch_profile(profile: LaunchModel) -> list[str]:
         An ordered list of error strings; empty when the profile is valid.
     """
     try:
+        print("Validating profile with data:", profile)
         _LaunchValidationSchema(
             export_folder=profile.export_folder or "",
             url_source_type=profile.url_source_type or "",

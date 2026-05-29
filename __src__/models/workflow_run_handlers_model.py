@@ -58,16 +58,6 @@ class WorkflowRunHandlers:
         on_emergency_stop: Called (from the worker thread) when the emergency
             threshold is triggered.  Only useful when
             ``emergency_stop_threshold`` is greater than 0.
-
-    Example:
-        >>> import threading
-        >>> h = WorkflowRunHandlers(
-        ...     cancel_event=threading.Event(),
-        ...     pause_event=threading.Event(),
-        ...     emergency_stop_threshold=5,
-        ... )
-        >>> h.on_user_wait is None
-        True
     """
 
     # Required — caller keeps references to drive cancellation and pause/resume.
@@ -78,11 +68,7 @@ class WorkflowRunHandlers:
     on_user_wait: Callable[[], None] | None = None
     # Step and context are None for lifecycle events (browser init, completed, etc.).
     on_logging_event: (
-        Callable[
-            [EventScrapingEnum, StepScrapingModel | None, ScrapingContextModel | None],
-            None,
-        ]
-        | None
+        Callable[[EventScrapingEnum, StepScrapingModel | None, ScrapingContextModel | None], None] | None
     ) = field(default=None)
 
     # Emergency-stop configuration — threshold and callback are always paired.

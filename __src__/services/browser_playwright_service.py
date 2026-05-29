@@ -72,33 +72,7 @@ class BrowserPlaywrightService(IWebBrowserService):
     # IWebBrowserService — public API
     # ------------------------------------------------------------------
 
-    special_debug = True  # Set to True to enable verbose logging for debugging purposes.
-
     def launch(self) -> None:
-        """Initialize and launch Chromium.
-
-        Raises:
-            BrowserAlreadyLaunchedError: If the browser is already launched.
-        """
-        if self._pw is not None:
-            raise BrowserAlreadyLaunchedError()
-
-        if self.special_debug:
-            self.launch_persistent()
-            return
-
-        # Obfuscated mode uses custom args; standard mode uses a plain context.
-        args = ["--disable-blink-features=AutomationControlled"]
-
-        # Start Playwright and create the browser + context.
-        self._pw = sync_playwright().start()
-        self._browser = self._pw.chromium.launch(headless=False, args=args)
-        self._context = self._browser.new_context(
-            no_viewport=True,
-            accept_downloads=True,
-        )
-
-    def launch_persistent(self) -> None:
         """Initialize and launch Chromium.
 
         Raises:
@@ -130,6 +104,18 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         # Le browser n'est pas exposé séparément avec un contexte persistant.
         self._browser = self._pw.chromium.connect_over_cdp("http://localhost:9222")
+
+    def _old_launch_without_cdp(self) -> None:
+        if self._pw is not None:
+            raise BrowserAlreadyLaunchedError()
+
+        # Obfuscated mode uses custom args; standard mode uses a plain context.
+        args = ["--disable-blink-features=AutomationControlled"]
+
+        # Start Playwright and create the browser + context.
+        self._pw = sync_playwright().start()
+        self._browser = self._pw.chromium.launch(headless=False, args=args)
+        self._context = self._browser.new_context(no_viewport=True)
 
     def append_new_page(self) -> None:
         """Open a new browser page and register it via the context page event.

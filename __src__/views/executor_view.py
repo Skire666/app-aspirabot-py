@@ -1,28 +1,19 @@
 """Tkinter view for the executor panel.
 
-Displays scenario selection, profile management, launch profile configuration,
-and the launch trigger. Contains no business logic — all orchestration is
-delegated to ExecutorPresenter via registered callbacks.
+Passive widget tree bound to ``ExecutorViewModel``.  All widget state is
+driven by ViewModel Vars; all user actions are forwarded to the ViewModel
+action methods.  No business logic, no service calls.
 """
 
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
 
-import contextlib
 import tkinter as tk
-from collections.abc import Callable
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
-from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY, C_EXEC_USED_DATE_EMPTY
-from view_states.executor_view_state import (
-    ProfileFormViewState,
-    ProfileItemViewState,
-    ScenarioItemViewState,
-    StepItemViewState,
-    UrlSourceViewState,
-)
+from view_models.executor_view_model import ExecutorViewModel, ScenarioItem
 from views.components.column_combobox import ColumnCombobox
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
@@ -40,39 +31,31 @@ class ExecutorView(ttk.Frame):
         3. Launch profile configuration (export folder, URL source, thresholds).
         4. Launch trigger (verification label + launch button).
 
-    All user actions are forwarded to the presenter via registered callbacks.
-    The view is purely passive: it renders data supplied by the presenter.
+    The view is purely passive: every widget is bound to a ``ExecutorViewModel``
+    Var or reacts to a version-trigger Var via ``trace_add``.
     """
 
-    def __init__(self, parent: tk.Widget) -> None:
-        """Build widget structure without loading any data.
+    def __init__(self, parent: tk.Widget, vm: ExecutorViewModel) -> None:
+        """Build widget structure and bind to the ViewModel.
 
         Args:
             parent: Parent Tkinter container.
+            vm: The ViewModel that owns all UI state for this panel.
         """
         super().__init__(parent)
+        self._vm = vm
 
-        # Callbacks registered by the presenter.
-        self._on_scenario_changed: Callable[[str], None] | None = None
-        self._on_refresh_scenarios: Callable[[], None] | None = None
-        self._on_edit_scenario: Callable[[str], None] | None = None
-        self._on_profile_selected: Callable[[str], None] | None = None
-        self._on_new_profile: Callable[[], None] | None = None
-        self._on_rename_profile: Callable[[], None] | None = None
-        self._on_delete_profile: Callable[[], None] | None = None
-        self._on_save_profile: Callable[[], None] | None = None
-        self._on_form_changed: Callable[[], None] | None = None
-        self._on_launch: Callable[[], None] | None = None
-        self._on_open_export_folder: Callable[[], None] | None = None
-
-        # Internal lookup tables — initialised here, populated via set_* methods.
-        self._profile_items: list[ProfileItemViewState] = []
-        self._step_items: list[StepItemViewState] = []
+        # Local rendering caches — refreshed from VM list data on version changes.
+        self._profile_items: list = []
+        self._step_items: list = []
 
         # Cooldown guard for refresh button.
         self._refresh_cooldown: bool = False
 
         self._create_widgets()
+        self._bind_vm_vars()
+        # Register View as the error-dialog provider for the Presenter.
+        vm.bind_show_error(self.show_error)
 
     # ------------------------------------------------------------------
     # Widget construction
@@ -100,10 +83,10 @@ class ExecutorView(ttk.Frame):
         self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
         self._combo_scenarios.pack(side=tk.LEFT, padx=(5, 8), pady=(0, 6))
 
-        self._btn_edit = ttk.Button(frame, text="Modifier", command=self._notify_edit_scenario)
+        self._btn_edit = ttk.Button(frame, text="Modifier", command=self._on_edit_clicked)
         self._btn_edit.pack(side=tk.RIGHT, padx=(4, 5), pady=(0, 6))
 
-        self._btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._notify_refresh_with_cooldown)
+        self._btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._on_refresh_clicked)
         self._btn_refresh.pack(side=tk.RIGHT, padx=(0, 4), pady=(0, 6))
 
     def _create_profiles_section(self, parent: tk.Widget) -> None:
@@ -118,23 +101,20 @@ class ExecutorView(ttk.Frame):
         btn_row = ttk.Frame(frame)
         btn_row.pack(fill=tk.X, padx=5, pady=(0, 6))
 
-        self._btn_new = ttk.Button(btn_row, text="Nouveau", command=self._notify_new_profile)
+        self._btn_new = ttk.Button(btn_row, text="Nouveau", command=self._on_new_clicked)
         self._btn_new.pack(side=tk.LEFT, padx=(0, 4))
 
-        self._btn_rename = ttk.Button(btn_row, text="Renommer", command=self._notify_rename_profile)
+        self._btn_rename = ttk.Button(btn_row, text="Renommer", command=self._on_rename_clicked)
         self._btn_rename.pack(side=tk.LEFT, padx=(0, 4))
 
-        self._btn_delete = ttk.Button(btn_row, text="Supprimer", command=self._notify_delete_profile)
+        self._btn_delete = ttk.Button(btn_row, text="Supprimer", command=self._on_delete_clicked)
         self._btn_delete.pack(side=tk.LEFT, padx=(0, 4))
 
-        self._btn_save = ttk.Button(btn_row, text="Sauvegarder", command=self._notify_save_profile)
+        self._btn_save = ttk.Button(btn_row, text="Sauvegarder", command=lambda: self._vm.save_profile())
         self._btn_save.pack(side=tk.LEFT, padx=(0, 8))
 
-        self._lbl_saved = ttk.Label(btn_row, text=C_EXEC_SAVED_DATE_EMPTY)
+        self._lbl_saved = ttk.Label(btn_row, textvariable=self._vm.saved_date_var)
         self._lbl_saved.pack(side=tk.LEFT)
-
-        self.set_profile_buttons_state(selected=False, dirty=False)
-        self.set_profiles_list_enabled(False)
 
     def _create_profile_config_section(self, parent: tk.Widget) -> None:
         """Build the launch-profile configuration section."""
@@ -154,26 +134,25 @@ class ExecutorView(ttk.Frame):
     def _create_cfg_row0(self, grid: tk.Widget) -> None:
         """Row 0 — usage statistics (last used date, launch count)."""
         ttk.Label(grid, text="Dernière utilisation :").grid(row=0, column=0, sticky=tk.W, padx=(0, 4), pady=2)
-        self._lbl_used_date = ttk.Label(grid, text=C_EXEC_USED_DATE_EMPTY)
-        self._lbl_used_date.grid(row=0, column=1, sticky=tk.W, padx=(0, 20), pady=2)
+        ttk.Label(grid, textvariable=self._vm.used_date_var).grid(row=0, column=1, sticky=tk.W, padx=(0, 20), pady=2)
         ttk.Label(grid, text="Lancements :").grid(row=0, column=2, sticky=tk.W, padx=(0, 4), pady=2)
-        self._lbl_launch_count = ttk.Label(grid, text="0")
-        self._lbl_launch_count.grid(row=0, column=3, sticky=tk.W, pady=2)
+        ttk.Label(grid, textvariable=self._vm.launch_count_var).grid(row=0, column=3, sticky=tk.W, pady=2)
 
     def _create_cfg_row1(self, grid: tk.Widget) -> None:
         """Row 1 — export folder path, browse button, open-folder button."""
         ttk.Label(grid, text="Dossier d'export :").grid(row=1, column=0, sticky=tk.W, padx=(0, 4), pady=2)
-        self._var_export_folder = tk.StringVar()
-        self._var_export_folder.trace_add("write", lambda *_: self._notify_form_changed())
-        entry = ttk.Entry(grid, textvariable=self._var_export_folder, width=50)
+        self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed())
+        entry = ttk.Entry(grid, textvariable=self._vm.export_folder_var, width=50)
         entry.grid(row=1, column=1, columnspan=2, sticky=tk.EW, padx=(0, 4), pady=2)
-        btn_browse = ttk.Button(grid, text="Parcourir", command=self._browse_export_folder)
-        btn_browse.grid(row=1, column=3, padx=(0, 4), pady=2)
-        btn_open = ttk.Button(grid, text="Ouvrir dossier", command=self._notify_open_export_folder)
-        btn_open.grid(row=1, column=4, pady=2)
+        ttk.Button(grid, text="Parcourir", command=self._browse_export_folder).grid(
+            row=1, column=3, padx=(0, 4), pady=2
+        )
+        ttk.Button(grid, text="Ouvrir dossier", command=lambda: self._vm.open_export_folder()).grid(
+            row=1, column=4, pady=2
+        )
 
     def _create_cfg_row2(self, grid: tk.Widget) -> None:
-        """Row 2 — URL source type combobox."""
+        """Row 2 — URL source type combobox and folder/json path entry."""
         ttk.Label(grid, text="Source d'URL :").grid(row=2, column=0, sticky=tk.W, padx=(0, 4), pady=2)
         source_choices = [
             ("Liste manuelle", UrlSourceTypeEnum.E_MANUAL.value),
@@ -186,10 +165,8 @@ class ExecutorView(ttk.Frame):
         self._combo_source.grid(row=2, column=1, sticky=tk.W, pady=2)
         self._combo_source.bind("<<ComboboxSelected>>", self._on_source_type_changed)
 
-        # Path entry for folder/json sources.
-        self._var_source_path = tk.StringVar()
-        self._var_source_path.trace_add("write", lambda *_: self._notify_form_changed())
-        self._entry_source_path = ttk.Entry(grid, textvariable=self._var_source_path, width=40)
+        self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed())
+        self._entry_source_path = ttk.Entry(grid, textvariable=self._vm.url_source_path_var, width=40)
         self._entry_source_path.grid(row=2, column=2, columnspan=2, sticky=tk.EW, padx=(8, 4), pady=2)
         self._btn_browse_source = ttk.Button(grid, text="Parcourir", command=self._browse_source_folder)
         self._btn_browse_source.grid(row=2, column=4, pady=2)
@@ -209,47 +186,43 @@ class ExecutorView(ttk.Frame):
     def _create_cfg_row4(self, grid: tk.Widget) -> None:
         """Row 4 — sort-order radio buttons (active for folder/json only)."""
         ttk.Label(grid, text="Ordre de lecture :").grid(row=4, column=0, sticky=tk.W, padx=(0, 4), pady=2)
-        self._var_sort_order = tk.StringVar(value=UrlSortOrderEnum.E_MTIME_ASC.value)
         rb_frame = ttk.Frame(grid)
         rb_frame.grid(row=4, column=1, columnspan=3, sticky=tk.W, pady=2)
         self._rb_recent = ttk.Radiobutton(
             rb_frame,
             text="Lire récemment modifié",
-            variable=self._var_sort_order,
+            variable=self._vm.url_sort_order_var,
             value=UrlSortOrderEnum.E_MTIME_DESC.value,
-            command=self._notify_form_changed,
+            command=lambda: self._vm.form_changed(),
         )
         self._rb_recent.pack(side=tk.LEFT, padx=(0, 12))
         self._rb_oldest = ttk.Radiobutton(
             rb_frame,
             text="Lire les plus anciens",
-            variable=self._var_sort_order,
+            variable=self._vm.url_sort_order_var,
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
-            command=self._notify_form_changed,
+            command=lambda: self._vm.form_changed(),
         )
         self._rb_oldest.pack(side=tk.LEFT)
-        # Disabled by default — enabled only for folder/json.
         self._rb_recent.state(["disabled"])
         self._rb_oldest.state(["disabled"])
 
     def _create_cfg_row5(self, grid: tk.Widget) -> None:
         """Row 5 — global error threshold."""
-        lbl = ttk.Label(grid, text="Erreurs globales max. avant mise en pause d'urgence :")
-        lbl.grid(row=5, column=0, columnspan=2, sticky=tk.W, padx=(0, 4), pady=2)
-        self._var_global_threshold = tk.StringVar()
-        self._var_global_threshold.trace_add("write", lambda *_: self._notify_form_changed())
-        entry = ttk.Entry(grid, textvariable=self._var_global_threshold, width=12)
-        entry.grid(row=5, column=2, sticky=tk.W, pady=2)
+        ttk.Label(grid, text="Erreurs globales max. avant mise en pause d'urgence :").grid(
+            row=5, column=0, columnspan=2, sticky=tk.W, padx=(0, 4), pady=2
+        )
+        self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed())
+        ttk.Entry(grid, textvariable=self._vm.global_threshold_var, width=12).grid(row=5, column=2, sticky=tk.W, pady=2)
 
     def _create_cfg_row6(self, grid: tk.Widget) -> None:
         """Row 6 — per-step error threshold with step selector."""
         ttk.Label(grid, text="Mise en pause d'urgence sur :").grid(row=6, column=0, sticky=tk.W, padx=(0, 4), pady=2)
         self._combo_steps = ttk.Combobox(grid, state="readonly", width=38)
         self._combo_steps.grid(row=6, column=1, columnspan=2, sticky=tk.EW, padx=(0, 4), pady=2)
-        self._combo_steps.bind("<<ComboboxSelected>>", lambda _: self._notify_form_changed())
-        self._var_step_threshold = tk.StringVar()
-        self._var_step_threshold.trace_add("write", lambda *_: self._notify_form_changed())
-        ttk.Entry(grid, textvariable=self._var_step_threshold, width=12).grid(
+        self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
+        self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed())
+        ttk.Entry(grid, textvariable=self._vm.step_threshold_var, width=12).grid(
             row=6, column=3, sticky=tk.W, padx=(0, 4), pady=2
         )
         ttk.Label(grid, text="erreurs").grid(row=6, column=4, sticky=tk.W, pady=2)
@@ -263,241 +236,276 @@ class ExecutorView(ttk.Frame):
         row.pack(fill=tk.X, padx=5, pady=(0, 6))
 
         ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=(0, 6))
-        self._lbl_verification = ttk.Label(row, text="", foreground="red")
-        self._lbl_verification.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Label(row, textvariable=self._vm.verification_message_var, foreground="red").pack(
+            side=tk.LEFT, fill=tk.X, expand=True
+        )
 
-        self._btn_launch = ttk.Button(row, text="Lancer le scraping", command=self._notify_launch)
+        self._btn_launch = ttk.Button(row, text="Lancer le scraping", command=lambda: self._vm.launch())
         self._btn_launch.pack(side=tk.RIGHT, padx=(8, 0))
 
     # ------------------------------------------------------------------
-    # Public API — data setters
+    # ViewModel bindings (trace_add for non-Var widgets)
     # ------------------------------------------------------------------
 
-    def set_scenarios(self, states: list[ScenarioItemViewState]) -> None:
-        """Populate the scenario combobox.
+    def _bind_vm_vars(self) -> None:
+        """Register trace_add listeners for all non-Var widget bindings."""
+        self._vm.scenarios_version_var.trace_add("write", self._sync_scenarios)
+        self._vm.selected_scenario_id_var.trace_add("write", self._sync_scenario_selection)
+        self._vm.profiles_version_var.trace_add("write", self._sync_profiles)
+        self._vm.selected_profile_id_var.trace_add("write", self._sync_profile_selection)
+        self._vm.steps_version_var.trace_add("write", self._sync_steps)
+        self._vm.step_id_selected_var.trace_add("write", self._sync_step_selection)
+        self._vm.url_preview_version_var.trace_add("write", self._sync_url_preview)
+        self._vm.url_source_type_var.trace_add("write", self._sync_url_source_type)
+        self._vm.is_profiles_list_enabled_var.trace_add("write", self._sync_profiles_list_enabled)
+        self._vm.is_profile_section_enabled_var.trace_add("write", self._sync_profile_section_enabled)
+        self._vm.is_edit_btn_enabled_var.trace_add("write", self._sync_edit_btn)
+        self._vm.is_rename_btn_enabled_var.trace_add("write", self._sync_rename_btn)
+        self._vm.is_delete_btn_enabled_var.trace_add("write", self._sync_delete_btn)
+        self._vm.is_save_btn_enabled_var.trace_add("write", self._sync_save_btn)
+        self._vm.is_path_entry_enabled_var.trace_add("write", self._sync_path_entry)
+        self._vm.is_sort_order_enabled_var.trace_add("write", self._sync_sort_order)
+        self._vm.is_preview_editable_var.trace_add("write", self._sync_preview_editable)
 
-        Args:
-            states: Ordered list of scenario view states to display.
-        """
+    # ------------------------------------------------------------------
+    # Sync methods (called by trace_add)
+    # ------------------------------------------------------------------
+
+    def _sync_scenarios(self, *_: object) -> None:
+        """Re-render the scenario combobox from the ViewModel list."""
         self._combo_scenarios.clear()
-        self._combo_scenarios.add_items(states)
+        self._combo_scenarios.add_items(self._vm.get_scenarios())
 
-    def select_scenario_by_id(self, id_scenario: str) -> None:
-        """Pre-select a scenario in the combobox by its id_file.
-
-        Args:
-            id_scenario: The scenario ID to select.
-        """
+    def _sync_scenario_selection(self, *_: object) -> None:
+        """Select the combobox entry matching selected_scenario_id_var."""
+        target_id = self._vm.selected_scenario_id_var.get()
         for idx in range(self._combo_scenarios.size()):
             obj = self._combo_scenarios.get_object_at(idx)
-            if obj and getattr(obj, "id_file", None) == id_scenario:
+            if obj and getattr(obj, "id_file", None) == target_id:
                 self._combo_scenarios.current(idx)
                 return
 
-    def _get_selected_scenario(self) -> ScenarioItemViewState | None:
-        """Return the currently selected scenario view state, or None.
-
-        Returns:
-            The bound ``ScenarioItemViewState`` or ``None`` when nothing is selected.
-        """
-        obj = self._combo_scenarios.get_selected_object()
-        return obj if isinstance(obj, ScenarioItemViewState) else None
-
-    def set_profiles(self, states: list[ProfileItemViewState]) -> None:
-        """Populate the profile listbox.
-
-        Args:
-            states: Ordered list of profile view states to display.
-        """
+    def _sync_profiles(self, *_: object) -> None:
+        """Re-render the profile listbox from the ViewModel list."""
+        self._profile_items = self._vm.get_profiles()
         self._listbox_profiles.delete(0, tk.END)
-        self._profile_items = list(states)
-        for item in states:
+        for item in self._profile_items:
             self._listbox_profiles.insert(tk.END, item.profile_name)
 
-    def select_profile_by_id(self, id_profile: str) -> None:
-        """Select a profile in the listbox by ID.
-
-        Args:
-            id_profile: The profile ID to select.
-        """
+    def _sync_profile_selection(self, *_: object) -> None:
+        """Select the listbox row matching selected_profile_id_var."""
+        target_id = self._vm.selected_profile_id_var.get()
         for idx, item in enumerate(self._profile_items):
-            if item.id_profile == id_profile:
+            if item.id_profile == target_id:
                 self._listbox_profiles.selection_clear(0, tk.END)
                 self._listbox_profiles.selection_set(idx)
                 self._listbox_profiles.see(idx)
                 return
 
-    def _get_selected_profile(self) -> ProfileItemViewState | None:
-        """Return the currently selected profile view state, or None.
+    def _sync_steps(self, *_: object) -> None:
+        """Re-render the emergency-stop combobox from the ViewModel step list."""
+        self._step_items = self._vm.get_steps()
+        self._combo_steps["values"] = [s.label for s in self._step_items]
 
-        Returns:
-            The selected ``ProfileItemViewState`` instance, or ``None``.
-        """
-        sel = self._listbox_profiles.curselection()
-        if not sel:
-            return None
-        idx = sel[0]
-        return self._profile_items[idx] if idx < len(self._profile_items) else None
-
-    def set_profiles_list_enabled(self, enabled: bool) -> None:
-        """Gray out or restore the profiles listbox and the Nouveau button.
-
-        Args:
-            enabled: When False, the listbox and Nouveau button are disabled.
-        """
-        state = tk.NORMAL if enabled else tk.DISABLED
-        self._listbox_profiles.configure(state=state)
-        self._btn_new.configure(state=state)
-
-    def set_profile_section_enabled(self, enabled: bool) -> None:
-        """Gray out or restore the entire profile-config section.
-
-        Args:
-            enabled: When False, the section is visually disabled.
-        """
-        state = tk.NORMAL if enabled else tk.DISABLED
-        for child in self._cfg_grid.winfo_children():
-            with contextlib.suppress(tk.TclError):
-                child.configure(state=state)
-
-    def set_profile_form(self, state: ProfileFormViewState) -> None:
-        """Populate all form fields from a ProfileFormViewState.
-
-        Args:
-            state: Immutable snapshot of the profile data to render.
-        """
-        # Update usage statistics labels.
-        self._lbl_used_date.config(text=state.used_date)
-        self._lbl_launch_count.config(text=str(state.launch_count))
-
-        # Populate scalar fields.
-        self._var_export_folder.set(state.export_folder)
-        self._set_url_source_fields(state.url_source)
-        self._var_global_threshold.set(str(state.global_threshold))
-        self._set_steps_combobox(state.steps, state.step_id_selected)
-        self._var_step_threshold.set(str(state.step_threshold))
-
-    def _set_url_source_fields(self, state: UrlSourceViewState) -> None:
-        """Populate URL-source-related widgets from a UrlSourceViewState.
-
-        Args:
-            state: Snapshot of the URL-source configuration.
-        """
-        # Select matching combobox entry; default to "Liste manuelle" when unknown.
-        for idx, (_, val) in enumerate(self._source_choices):
-            if val == state.source_type:
-                self._combo_source.current(idx)
-                break
-        else:
-            self._combo_source.current(0)
-
-        # Populate path/URL value.
-        if state.is_preview_editable:
-            self._set_url_preview_text("\n".join(state.manual_urls), editable=True)
-        else:
-            self._var_source_path.set(state.source_path)
-            self._set_url_preview_text("", editable=False)
-
-        # Sort-order radio buttons and widget-enable state.
-        self._var_sort_order.set(state.sort_order)
-        self._update_source_type_ui(
-            is_path_enabled=state.is_path_entry_enabled,
-            is_sort_enabled=state.is_sort_order_enabled,
-            is_preview_editable=state.is_preview_editable,
-        )
-
-    def _set_steps_combobox(self, steps: tuple[StepItemViewState, ...], selected_id: str) -> None:
-        """Populate the per-step combobox with step view states.
-
-        Args:
-            steps: Ordered step entries for the emergency-stop combobox.
-            selected_id: The step_id to pre-select.
-        """
-        self._step_items = list(steps)
-        self._combo_steps["values"] = [s.label for s in steps]
-        for idx, s in enumerate(steps):
-            if s.step_id == selected_id:
+    def _sync_step_selection(self, *_: object) -> None:
+        """Select the step combobox entry matching step_id_selected_var."""
+        target_id = self._vm.step_id_selected_var.get()
+        for idx, s in enumerate(self._step_items):
+            if s.step_id == target_id:
                 self._combo_steps.current(idx)
                 return
         self._combo_steps.set("")
 
+    def _sync_url_preview(self, *_: object) -> None:
+        """Update the URL preview Text widget from the ViewModel list."""
+        text = "\n".join(self._vm.get_url_preview())
+        self._set_url_preview_text(text, editable=False)
+
+    def _sync_url_source_type(self, *_: object) -> None:
+        """Select the URL-source combobox entry matching url_source_type_var."""
+        target = self._vm.url_source_type_var.get()
+        for idx, (_, value) in enumerate(self._source_choices):
+            if value == target:
+                self._combo_source.current(idx)
+                return
+        self._combo_source.set("")
+
+    def _sync_profiles_list_enabled(self, *_: object) -> None:
+        """Enable or disable the profile listbox and Nouveau button."""
+        state = tk.NORMAL if self._vm.is_profiles_list_enabled_var.get() else tk.DISABLED
+        self._listbox_profiles.configure(state=state)
+        self._btn_new.configure(state=state)
+
+    def _sync_profile_section_enabled(self, *_: object) -> None:
+        """Enable or disable the entire profile-config grid."""
+        import contextlib
+
+        enabled = self._vm.is_profile_section_enabled_var.get()
+        for child in self._cfg_grid.winfo_children():
+            with contextlib.suppress(tk.TclError):
+                if not enabled:
+                    child.configure(state=tk.DISABLED)
+                    continue
+                if isinstance(child, ttk.Combobox):
+                    child.configure(state="readonly")
+                else:
+                    child.configure(state=tk.NORMAL)
+        if enabled:
+            self._sync_url_source_type()
+            self._sync_path_entry()
+            self._sync_sort_order()
+            self._sync_preview_editable()
+        else:
+            self._txt_url_preview.configure(state=tk.DISABLED)
+
+    def _sync_edit_btn(self, *_: object) -> None:
+        """Mirror is_edit_btn_enabled_var onto the Modifier button."""
+        state = tk.NORMAL if self._vm.is_edit_btn_enabled_var.get() else tk.DISABLED
+        self._btn_edit.configure(state=state)
+
+    def _sync_rename_btn(self, *_: object) -> None:
+        """Mirror is_rename_btn_enabled_var onto the Renommer button."""
+        state = tk.NORMAL if self._vm.is_rename_btn_enabled_var.get() else tk.DISABLED
+        self._btn_rename.configure(state=state)
+
+    def _sync_delete_btn(self, *_: object) -> None:
+        """Mirror is_delete_btn_enabled_var onto the Supprimer button."""
+        state = tk.NORMAL if self._vm.is_delete_btn_enabled_var.get() else tk.DISABLED
+        self._btn_delete.configure(state=state)
+
+    def _sync_save_btn(self, *_: object) -> None:
+        """Mirror is_save_btn_enabled_var onto the Sauvegarder button."""
+        state = tk.NORMAL if self._vm.is_save_btn_enabled_var.get() else tk.DISABLED
+        self._btn_save.configure(state=state)
+
+    def _sync_path_entry(self, *_: object) -> None:
+        """Enable or disable the path entry and its browse button."""
+        if not self._vm.is_profile_section_enabled_var.get():
+            self._entry_source_path.configure(state=tk.DISABLED)
+            self._btn_browse_source.configure(state=tk.DISABLED)
+            return
+        state = tk.NORMAL if self._vm.is_path_entry_enabled_var.get() else tk.DISABLED
+        self._entry_source_path.configure(state=state)
+        self._btn_browse_source.configure(state=state)
+
+    def _sync_sort_order(self, *_: object) -> None:
+        """Enable or disable the sort-order radio buttons."""
+        if not self._vm.is_profile_section_enabled_var.get():
+            self._rb_recent.state(["disabled"])
+            self._rb_oldest.state(["disabled"])
+            return
+        rb_state = ["!disabled"] if self._vm.is_sort_order_enabled_var.get() else ["disabled"]
+        self._rb_recent.state(rb_state)
+        self._rb_oldest.state(rb_state)
+
+    def _sync_preview_editable(self, *_: object) -> None:
+        """Switch the URL preview Text widget between editable and read-only."""
+        if not self._vm.is_profile_section_enabled_var.get():
+            self._txt_url_preview.configure(state=tk.DISABLED)
+            return
+        editable = self._vm.is_preview_editable_var.get()
+        if editable:
+            self._txt_url_preview.configure(state=tk.NORMAL)
+        else:
+            self._txt_url_preview.configure(state=tk.DISABLED)
+
     # ------------------------------------------------------------------
-    # Public API — typed form getters (View → Presenter)
+    # Dialog helpers — owned by View (require parent=self)
     # ------------------------------------------------------------------
 
-    def get_export_folder(self) -> str:
-        """Return the current value of the export-folder entry.
-
-        Returns:
-            Stripped path string, or empty string when blank.
-        """
-        return self._var_export_folder.get().strip()
-
-    def get_url_source_type(self) -> str:
-        """Return the raw source-type value of the selected combobox entry.
-
-        Returns:
-            A raw ``UrlSourceTypeEnum`` value string, or empty string.
-        """
-        idx = self._combo_source.current()
-        if idx < 0 or idx >= len(self._source_choices):
-            return ""
-        return self._source_choices[idx][1]
-
-    def get_url_source_value(self) -> list[str] | str | None:
-        """Return the URL source value for the current source type.
-
-        Returns:
-            A list of URLs for manual mode, or a path string for others.
-        """
-        source_type = self.get_url_source_type()
-        if source_type == UrlSourceTypeEnum.E_MANUAL.value:
-            raw = self._txt_url_preview.get("1.0", tk.END).strip()
-            return [u.strip() for u in raw.splitlines() if u.strip()]
-        return self._var_source_path.get().strip() or None
-
-    def get_url_sort_order(self) -> str:
-        """Return the raw sort-order value from the selected radio button.
-
-        Returns:
-            A raw ``UrlSortOrderEnum`` value string.
-        """
-        return self._var_sort_order.get()
-
-    def get_global_threshold_raw(self) -> str:
-        """Return the raw string content of the global-threshold entry.
-
-        Returns:
-            Stripped string; may not be a valid integer.
-        """
-        return self._var_global_threshold.get().strip()
-
-    def get_emergency_stop_step_id(self) -> str:
-        """Return the step_id of the entry selected in the step combobox.
-
-        Returns:
-            The step_id string, or empty string when nothing is selected.
-        """
-        idx = self._combo_steps.current()
-        if 0 <= idx < len(self._step_items):
-            return self._step_items[idx].step_id
-        return ""
-
-    def get_step_threshold_raw(self) -> str:
-        """Return the raw string content of the per-step threshold entry.
-
-        Returns:
-            Stripped string; may not be a valid integer.
-        """
-        return self._var_step_threshold.get().strip()
-
-    def set_url_preview(self, urls: list[str]) -> None:
-        """Update the read-only URL preview widget.
+    def show_error(self, title: str, message: str) -> None:
+        """Display a modal error dialog.
 
         Args:
-            urls: Preview URLs to display.
+            title: Dialog window title.
+            message: Error message to display.
         """
-        self._set_url_preview_text("\n".join(urls), editable=False)
+        messagebox.showerror(title, message, parent=self)
+
+    # ------------------------------------------------------------------
+    # Private event handlers — delegate to ViewModel action methods
+    # ------------------------------------------------------------------
+
+    def _on_combo_scenario_changed(self, _event: tk.Event) -> None:
+        obj = self._combo_scenarios.get_selected_object()
+        if obj and isinstance(obj, ScenarioItem):
+            self._vm.scenario_changed(obj.id_file)
+
+    def _on_refresh_clicked(self) -> None:
+        if self._refresh_cooldown:
+            return
+        self._refresh_cooldown = True
+        self.after(1000, self._reset_refresh_cooldown)
+        self._vm.refresh_scenarios()
+
+    def _reset_refresh_cooldown(self) -> None:
+        self._refresh_cooldown = False
+
+    def _on_edit_clicked(self) -> None:
+        obj = self._combo_scenarios.get_selected_object()
+        if obj and isinstance(obj, ScenarioItem):
+            self._vm.edit_scenario(obj.id_file)
+
+    def _on_listbox_profile_selected(self, _event: tk.Event) -> None:
+        sel = self._listbox_profiles.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        if 0 <= idx < len(self._profile_items):
+            self._vm.profile_selected(self._profile_items[idx].id_profile)
+
+    def _on_new_clicked(self) -> None:
+        name = simpledialog.askstring("Nouveau profil", "Nom du profil :", initialvalue="", parent=self)
+        if name and name.strip():
+            self._vm.new_profile(name.strip())
+
+    def _on_rename_clicked(self) -> None:
+        current = self._vm.current_profile_name_var.get()
+        new_name = simpledialog.askstring("Renommer le profil", "Nouveau nom :", initialvalue=current, parent=self)
+        if new_name and new_name.strip() != current:
+            self._vm.rename_profile(new_name.strip())
+
+    def _on_delete_clicked(self) -> None:
+        name = self._vm.current_profile_name_var.get()
+        confirmed = messagebox.askyesno(
+            "Supprimer le profil", f"Supprimer le profil « {name} » ?\nCette action est irréversible.", parent=self
+        )
+        if confirmed:
+            self._vm.delete_profile()
+
+    def _on_step_selected(self, _event: tk.Event) -> None:
+        idx = self._combo_steps.current()
+        if 0 <= idx < len(self._step_items):
+            # Silently update the ViewModel Var without re-triggering form_changed.
+            self._vm.step_id_selected_var.set(self._step_items[idx].step_id)
+        self._vm.form_changed()
+
+    def _on_source_type_changed(self, _event: tk.Event) -> None:
+        idx = self._combo_source.current()
+        if 0 <= idx < len(self._source_choices):
+            self._vm.url_source_type_var.set(self._source_choices[idx][1])
+        self._vm.form_changed()
+
+    def _on_url_text_modified(self, _event: tk.Event) -> None:
+        if self._txt_url_preview.edit_modified():
+            self._txt_url_preview.edit_modified(False)
+            content = self._txt_url_preview.get("1.0", tk.END)
+            self._vm.manual_urls_var.set(content)
+            self._vm.form_changed()
+
+    def _browse_export_folder(self) -> None:
+        folder = filedialog.askdirectory(title="Choisir le dossier d'export", parent=self)
+        if folder:
+            self._vm.export_folder_var.set(folder)
+
+    def _browse_source_folder(self) -> None:
+        folder = filedialog.askdirectory(title="Choisir le dossier source d'URL", parent=self)
+        if folder:
+            self._vm.url_source_path_var.set(folder)
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
 
     def _set_url_preview_text(self, text: str, *, editable: bool) -> None:
         """Replace the content of the URL text widget.
@@ -512,258 +520,6 @@ class ExecutorView(ttk.Frame):
         self._txt_url_preview.edit_modified(False)
         if not editable:
             self._txt_url_preview.configure(state=tk.DISABLED)
-
-    def set_saved_date(self, date_str: str) -> None:
-        """Update the "Sauvegardé le" label with a pre-formatted string.
-
-        Args:
-            date_str: Ready-to-display date label built by the Presenter.
-        """
-        self._lbl_saved.config(text=date_str)
-
-    def set_verification_message(self, msg: str) -> None:
-        """Display or clear the validation-error message.
-
-        Args:
-            msg: The message to show (empty string to clear).
-        """
-        self._lbl_verification.config(text=msg)
-
-    def set_profile_buttons_state(self, *, selected: bool, dirty: bool) -> None:
-        """Enable or disable profile-management buttons based on state.
-
-        Args:
-            selected: Whether a profile is currently selected.
-            dirty: Whether unsaved changes exist.
-        """
-        sel_state = tk.NORMAL if selected else tk.DISABLED
-        self._btn_rename.configure(state=sel_state)
-        self._btn_delete.configure(state=sel_state)
-        self._btn_save.configure(state=tk.NORMAL if dirty else tk.DISABLED)
-
-    def set_scenario_edit_button_state(self, enabled: bool) -> None:
-        """Enable or disable the 'Modifier' button.
-
-        Args:
-            enabled: When False, the button is grayed out.
-        """
-        self._btn_edit.configure(state=tk.NORMAL if enabled else tk.DISABLED)
-
-    # ------------------------------------------------------------------
-    # Public API — callback registration
-    # ------------------------------------------------------------------
-
-    def set_on_scenario_changed(self, cb: Callable[[str], None]) -> None:
-        """Register callback invoked when the user selects a different scenario.
-
-        Args:
-            cb: Called with the selected scenario id_file.
-        """
-        self._on_scenario_changed = cb
-
-    def set_on_refresh_scenarios(self, cb: Callable[[], None]) -> None:
-        """Register callback invoked when the user clicks Rafraîchir.
-
-        Args:
-            cb: Zero-argument callable.
-        """
-        self._on_refresh_scenarios = cb
-
-    def set_on_edit_scenario(self, cb: Callable[[str], None]) -> None:
-        """Register callback invoked when the user clicks Modifier.
-
-        Args:
-            cb: Called with the selected scenario id_file.
-        """
-        self._on_edit_scenario = cb
-
-    def set_on_profile_selected(self, cb: Callable[[str], None]) -> None:
-        """Register callback invoked when the user clicks a profile in the listbox.
-
-        Args:
-            cb: Called with the selected profile id_profile.
-        """
-        self._on_profile_selected = cb
-
-    def set_on_new_profile(self, cb: Callable[[], None]) -> None:
-        """Register callback for the Nouveau profile button."""
-        self._on_new_profile = cb
-
-    def set_on_rename_profile(self, cb: Callable[[], None]) -> None:
-        """Register callback for the Renommer button."""
-        self._on_rename_profile = cb
-
-    def set_on_delete_profile(self, cb: Callable[[], None]) -> None:
-        """Register callback for the Supprimer button."""
-        self._on_delete_profile = cb
-
-    def set_on_save_profile(self, cb: Callable[[], None]) -> None:
-        """Register callback for the Sauvegarder button."""
-        self._on_save_profile = cb
-
-    def set_on_form_changed(self, cb: Callable[[], None]) -> None:
-        """Register callback invoked when any form field changes (dirty flag).
-
-        Args:
-            cb: Zero-argument callable.
-        """
-        self._on_form_changed = cb
-
-    def set_on_launch(self, cb: Callable[[], None]) -> None:
-        """Register callback for the Lancer le scraping button."""
-        self._on_launch = cb
-
-    def set_on_open_export_folder(self, cb: Callable[[], None]) -> None:
-        """Register callback for the Ouvrir dossier button."""
-        self._on_open_export_folder = cb
-
-    def ask_new_profile_name(self) -> str | None:
-        """Show a dialog asking for the name of the new profile.
-
-        Returns:
-            The user-entered string, or None if the dialog was cancelled.
-        """
-        return simpledialog.askstring("Nouveau profil", "Nom du profil :", initialvalue="", parent=self)
-
-    def ask_rename(self, current_name: str) -> str | None:
-        """Show a dialog asking for a new profile name.
-
-        Args:
-            current_name: The current profile name to pre-fill.
-
-        Returns:
-            The user-entered string, or None if the dialog was cancelled.
-        """
-        return simpledialog.askstring("Renommer le profil", "Nouveau nom :", initialvalue=current_name, parent=self)
-
-    def ask_delete_confirm(self, profile_name: str) -> bool:
-        """Show a confirmation dialog before deleting a profile.
-
-        Args:
-            profile_name: The name of the profile to be deleted.
-
-        Returns:
-            True when the user confirms, False when cancelled.
-        """
-        return messagebox.askyesno(
-            "Supprimer le profil",
-            f"Supprimer le profil « {profile_name} » ?\nCette action est irréversible.",
-            parent=self,
-        )
-
-    def show_error(self, title: str, message: str) -> None:
-        """Display a modal error dialog.
-
-        Args:
-            title: Dialog window title.
-            message: Error message to display.
-        """
-        messagebox.showerror(title, message, parent=self)
-
-    # ------------------------------------------------------------------
-    # Private event handlers
-    # ------------------------------------------------------------------
-
-    def _on_combo_scenario_changed(self, _event: tk.Event) -> None:
-        obj = self._get_selected_scenario()
-        if obj and self._on_scenario_changed:
-            self._on_scenario_changed(obj.id_file)
-
-    def _notify_refresh_with_cooldown(self) -> None:
-        if self._refresh_cooldown:
-            return
-        self._refresh_cooldown = True
-        self.after(1000, self._reset_refresh_cooldown)
-        if self._on_refresh_scenarios:
-            self._on_refresh_scenarios()
-
-    def _reset_refresh_cooldown(self) -> None:
-        self._refresh_cooldown = False
-
-    def _notify_edit_scenario(self) -> None:
-        obj = self._get_selected_scenario()
-        if obj and self._on_edit_scenario:
-            self._on_edit_scenario(obj.id_file)
-
-    def _on_listbox_profile_selected(self, _event: tk.Event) -> None:
-        item = self._get_selected_profile()
-        if item and self._on_profile_selected:
-            self._on_profile_selected(item.id_profile)
-
-    def _notify_new_profile(self) -> None:
-        if self._on_new_profile:
-            self._on_new_profile()
-
-    def _notify_rename_profile(self) -> None:
-        if self._on_rename_profile:
-            self._on_rename_profile()
-
-    def _notify_delete_profile(self) -> None:
-        if self._on_delete_profile:
-            self._on_delete_profile()
-
-    def _notify_save_profile(self) -> None:
-        if self._on_save_profile:
-            self._on_save_profile()
-
-    def _notify_form_changed(self) -> None:
-        if self._on_form_changed:
-            self._on_form_changed()
-
-    def _notify_launch(self) -> None:
-        if self._on_launch:
-            self._on_launch()
-
-    def _on_source_type_changed(self, _event: tk.Event) -> None:
-        source_type = self.get_url_source_type()
-        is_folder_json = source_type in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
-        is_manual = source_type == UrlSourceTypeEnum.E_MANUAL.value
-        self._update_source_type_ui(
-            is_path_enabled=is_folder_json,
-            is_sort_enabled=is_folder_json,
-            is_preview_editable=is_manual,
-        )
-        self._notify_form_changed()
-
-    def _update_source_type_ui(
-        self, *, is_path_enabled: bool, is_sort_enabled: bool, is_preview_editable: bool
-    ) -> None:
-        """Adapt widget enable/disable state from explicit boolean flags.
-
-        Args:
-            is_path_enabled: When True, path entry and browse button are enabled.
-            is_sort_enabled: When True, sort-order radio buttons are enabled.
-            is_preview_editable: When True, the URL preview text area accepts typing.
-        """
-        path_state = tk.NORMAL if is_path_enabled else tk.DISABLED
-        self._entry_source_path.configure(state=path_state)
-        self._btn_browse_source.configure(state=path_state)
-
-        rb_state = ["!disabled"] if is_sort_enabled else ["disabled"]
-        self._rb_recent.state(rb_state)
-        self._rb_oldest.state(rb_state)
-
-        preview_state = tk.NORMAL if is_preview_editable else tk.DISABLED
-        self._txt_url_preview.configure(state=preview_state)
-
-    def _on_url_text_modified(self, _event: tk.Event) -> None:
-        if self._txt_url_preview.edit_modified():
-            self._txt_url_preview.edit_modified(False)
-            self._notify_form_changed()
-
-    def _browse_export_folder(self) -> None:
-        folder = filedialog.askdirectory(title="Choisir le dossier d'export", parent=self)
-        if folder:
-            self._var_export_folder.set(folder)
-
-    def _notify_open_export_folder(self) -> None:
-        if self._on_open_export_folder:
-            self._on_open_export_folder()
-
-    def _browse_source_folder(self) -> None:
-        folder = filedialog.askdirectory(title="Choisir le dossier source d'URL", parent=self)
-        if folder:
-            self._var_source_path.set(folder)
 
 
 # EOF

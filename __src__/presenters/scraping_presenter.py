@@ -34,7 +34,7 @@ from shared.i18n_fra import (
     C_SCRAPING_STATUS_EMERGENCY_STOP,
     C_SCRAPING_STATUS_FINISHED,
 )
-from views.scraping_view import ScrapingView
+from view_models.scraping_view_model import ScrapingViewModel
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -63,15 +63,15 @@ class ScrapingPresenter:
         on_scraping_stopped: Hook injected by main.py — restores sibling modules.
     """
 
-    def __init__(self, view: ScrapingView, service: ScrapingService) -> None:
-        """Wire view callbacks and initialise per-run state.
+    def __init__(self, vm: ScrapingViewModel, service: ScrapingService) -> None:
+        """Wire ViewModel callbacks and initialise per-run state.
 
         Args:
-            view: The live scraping panel view.
+            vm: The live scraping panel ViewModel.
             service: The scraping orchestration service.
         """
         self._logger = logging.getLogger(__name__)
-        self._view = view
+        self._vm = vm
         self._service = service
 
         # Session context set by set_launch_context().
@@ -101,12 +101,12 @@ class ScrapingPresenter:
         self._bind_view_callbacks()
 
     def _bind_view_callbacks(self) -> None:
-        """Register all presenter methods as view callbacks."""
-        self._view.set_on_launch(self._on_launch)
-        self._view.set_on_cancel(self._on_cancel)
-        self._view.set_on_pause(self._on_pause)
-        self._view.set_on_resume(self._on_resume)
-        self._view.set_on_open_folder(self._on_open_folder)
+        """Register all presenter methods as ViewModel action callbacks."""
+        self._vm.bind_launch(self._on_launch)
+        self._vm.bind_cancel(self._on_cancel)
+        self._vm.bind_pause(self._on_pause)
+        self._vm.bind_resume(self._on_resume)
+        self._vm.bind_open_folder(self._on_open_folder)
 
     # ------------------------------------------------------------------
     # Public API — called from main.py navigation hook
@@ -121,11 +121,12 @@ class ScrapingPresenter:
         """
         self._scenario = scenario
         self._profile = profile
-        self._view.set_launch_context(
-            scenario_name=scenario.scenario_name, profile_name=profile.profile_name, folder=profile.export_folder
-        )
+        self._vm.scenario_name_var.set(scenario.scenario_name)
+        self._vm.profile_name_var.set(profile.profile_name)
+        self._vm.folder_var.set(profile.export_folder)
         has_folder = bool(profile.export_folder.strip())
-        self._view.update_context_state(has_context=True, has_folder=has_folder)
+        self._vm.has_context_var.set(True)
+        self._vm.has_folder_var.set(has_folder)
 
     def start_scraping(self) -> None:
         """Trigger an immediate scraping launch (called right after navigation).
@@ -155,10 +156,11 @@ class ScrapingPresenter:
         self._is_running = True
         self._is_paused = False
         self._journal_lines = []
-        self._view.clear_journal()
+        self._vm.clear_journal()
         self._init_thresholds()
-        self._view.set_scraping_running(True)
-        self._view.update_process_status("Démarrage...")
+        self._vm.is_running_var.set(True)
+        self._vm.is_pause_enabled_var.set(True)
+        self._vm.process_status_var.set("Démarrage...")
         if callable(self.on_scraping_started):
             self.on_scraping_started()
 
@@ -182,9 +184,9 @@ class ScrapingPresenter:
             return
         self._is_paused = True
         self._pause_event.clear()
-        self._view.set_pause_button_enabled(False)
-        self._view.set_resume_active(True)
-        self._view.update_process_status("En pause")
+        self._vm.is_pause_enabled_var.set(False)
+        self._vm.is_resume_active_var.set(True)
+        self._vm.process_status_var.set("En pause")
 
     def _on_resume(self) -> None:
         """Resume execution after a pause (manual or emergency)."""
@@ -192,9 +194,9 @@ class ScrapingPresenter:
             return
         self._is_paused = False
         self._pause_event.set()
-        self._view.set_resume_active(False)
-        self._view.set_pause_button_enabled(True)
-        self._view.update_process_status("Scraping en cours")
+        self._vm.is_resume_active_var.set(False)
+        self._vm.is_pause_enabled_var.set(True)
+        self._vm.process_status_var.set("Scraping en cours")
 
     def _on_open_folder(self) -> None:
         """Open the export folder of the current profile via the service."""
@@ -203,7 +205,7 @@ class ScrapingPresenter:
         try:
             self._service.open_export_folder(self._profile.export_folder)
         except (AspirabotBaseError, OSError) as e:
-            self._view.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
+            self._vm.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
 
     # ------------------------------------------------------------------
     # Worker thread
@@ -221,7 +223,7 @@ class ScrapingPresenter:
             self._logger.exception("Erreur critique pendant le scraping")
             report = None
 
-        self._view.after(0, lambda: self._on_run_finished(report))
+        self._vm.after(0, lambda: self._on_run_finished(report))
 
     def _build_run_config(self) -> WorkflowRunConfigModel:
         """Build the immutable run configuration from the current profile.
@@ -263,20 +265,20 @@ class ScrapingPresenter:
 
     def _on_user_wait(self) -> None:
         """Called by WAIT_USER_ACTION — activate the Reprendre button."""
-        self._view.after(0, lambda: self._view.set_resume_active(True))
+        self._vm.after(0, lambda: self._vm.is_resume_active_var.set(True))
 
     def _on_emergency_stop(self) -> None:
         """Called when a failure threshold is hit — pause and re-arm the limit."""
-        self._view.after(0, self._handle_emergency_stop_on_main)
+        self._vm.after(0, self._handle_emergency_stop_on_main)
 
     def _handle_emergency_stop_on_main(self) -> None:
         """Execute emergency-stop UI logic on the main Tkinter thread."""
         self._is_paused = True
         self._current_global_threshold += self._base_global_threshold
         self._current_step_threshold += self._base_step_threshold
-        self._view.set_pause_button_enabled(False)
-        self._view.set_resume_active(True)
-        self._view.update_process_status(C_SCRAPING_STATUS_EMERGENCY_STOP)
+        self._vm.is_pause_enabled_var.set(False)
+        self._vm.is_resume_active_var.set(True)
+        self._vm.process_status_var.set(C_SCRAPING_STATUS_EMERGENCY_STOP)
 
     def _on_logging_event(
         self, event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
@@ -290,7 +292,7 @@ class ScrapingPresenter:
         """
         line = self._format_journal_line(event, step, context)
         if line:
-            self._view.after(0, lambda entry=line: self._append_journal(entry))
+            self._vm.after(0, lambda entry=line: self._append_journal(entry))
 
     def _format_journal_line(
         self, event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
@@ -332,13 +334,13 @@ class ScrapingPresenter:
         return f"{ts} - Fin étape | {step.step_id} | {step.step_type.value} | {result} | {duration} | {msg}"
 
     def _append_journal(self, line: str) -> None:
-        """Add a line to the view widget and the internal buffer.
+        """Add a line to the ViewModel journal and the internal buffer.
 
         Args:
             line: The formatted journal line.
         """
         self._journal_lines.append(line)
-        self._view.append_journal(line)
+        self._vm.append_journal(line)
 
     # ------------------------------------------------------------------
     # Run completion
@@ -353,10 +355,12 @@ class ScrapingPresenter:
         """
         self._is_running = False
         self._is_paused = False
-        self._view.set_scraping_running(False)
+        self._vm.is_running_var.set(False)
+        self._vm.is_pause_enabled_var.set(False)
+        self._vm.is_resume_active_var.set(False)
         cancelled = self._cancel_event.is_set()
         status = C_SCRAPING_STATUS_CANCELLED if cancelled else C_SCRAPING_STATUS_FINISHED
-        self._view.update_process_status(status)
+        self._vm.process_status_var.set(status)
         if report:
             self._append_final_stats(report)
         self._export_journal()
@@ -388,7 +392,7 @@ class ScrapingPresenter:
         folder = Path(self._profile.export_folder)
         path = self._service.export_journal(self._journal_lines, folder)
         if path is not None:
-            self._view.set_journal_path(str(path))
+            self._vm.journal_path_var.set(f"Fichier journal : {path}")
 
     # ------------------------------------------------------------------
     # Polling loop (runs on main thread)
@@ -398,20 +402,33 @@ class ScrapingPresenter:
         """Schedule the next statistics poll cycle."""
         if self._is_running:
             self._poll_stats()
-            self._view.after(_POLL_INTERVAL_MS, self._schedule_poll)
+            self._vm.after(_POLL_INTERVAL_MS, self._schedule_poll)
 
     def _poll_stats(self) -> None:
-        """Read the current scraping context and push stats to the view."""
+        """Read the current scraping context and push formatted stats to the ViewModel."""
         ctx: ScrapingContextModel = self._service.current_context
         stats: ScrapingStatisticsModel = self._service.current_stats
-        self._view.update_stats(
-            stats,
-            threshold_global=self._current_global_threshold,
-            threshold_step=self._current_step_threshold,
-            threshold_step_id=self._profile.emergency_stop_step_id if self._profile else "",
-            current_url=ctx.last_url_opened,
-            current_step_text=self._describe_current_step(ctx),
+        _DATE_FMT = "%d/%m/%Y %H:%M:%S"
+        ts = stats.started_at.strftime(_DATE_FMT) if stats.started_at else "—"
+        tid = self._profile.emergency_stop_step_id if self._profile else ""
+        parts = [f"Démarré : {ts}", f"Seuil global : {self._current_global_threshold}"]
+        if tid:
+            parts.append(f"Seuil étape [{tid}] : {self._current_step_threshold}")
+        self._vm.stat_url_var.set(f"URL en cours : {ctx.last_url_opened or '—'}")
+        self._vm.stat_global_var.set(
+            f"Total exec : {stats.steps_executed}"
+            f" | OK : {stats.steps_success} | KO : {stats.steps_failed}"
         )
+        self._vm.stat_open_url_var.set(
+            f"Open URL : {stats.open_urls_executed}"
+            f" | OK : {stats.open_urls_success} | KO : {stats.open_urls_failed}"
+        )
+        self._vm.stat_click_var.set(
+            f"Clicks : {stats.clicks_executed}"
+            f" | OK : {stats.clicks_success} | KO : {stats.clicks_failed}"
+        )
+        self._vm.stat_started_var.set("  |  ".join(parts))
+        self._vm.stat_step_var.set(self._describe_current_step(ctx) or "—")
 
     @staticmethod
     def _describe_current_step(ctx: ScrapingContextModel) -> str:

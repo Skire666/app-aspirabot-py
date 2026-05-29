@@ -26,7 +26,7 @@ from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
 from shared.enums import ExtractTextHtmlEnum
 from shared.exception_util import AspirabotBaseError
-from views.debug_view import DebugView
+from view_models.debug_view_model import DebugViewModel
 from views.workflow.debug_page_view import DebugPageView
 
 # -----------------------------------------------------------------------------
@@ -47,15 +47,15 @@ class DebugPresenter:
         _view: The Debug sidebar module view.
     """
 
-    def __init__(self, view: DebugView, debug_service: DebugBrowserService) -> None:
-        """Initialises the presenter and binds the view callback.
+    def __init__(self, vm: DebugViewModel, debug_service: DebugBrowserService) -> None:
+        """Initialises the presenter and binds the ViewModel callback.
 
         Args:
-            view: The DebugView module widget.
+            vm: The DebugViewModel for the debug session panel.
             debug_service: Service providing DOM inspection utilities for the debug browser.
         """
         self._logger = logging.getLogger(__name__)
-        self._view = view
+        self._vm = vm
 
         # Debug session state — one active session at a time.
         self._debug_browser: BrowserPlaywrightService | None = None
@@ -64,7 +64,7 @@ class DebugPresenter:
         self._debug_queue: queue.Queue[Callable[[Page], None] | None] = queue.Queue()
         self._debug_thread: threading.Thread | None = None
 
-        self._view.on_start = self._on_debug_start
+        self._vm.bind_start(self._on_debug_start)
 
     # -----------------------------------------------------------------------
     # Debug session — public entry point
@@ -86,13 +86,13 @@ class DebugPresenter:
         # Fresh queue — old worker reads None from its own (now unreferenced) queue.
         self._debug_queue = queue.Queue()
         self._debug_browser = BrowserPlaywrightService()
-        self._debug_window = DebugPageView(self._view, url)
+        self._debug_window = DebugPageView(self._vm.master, url)
         self._debug_window.on_refresh = self._on_debug_refresh
         self._debug_window.on_analyze_texts = self._on_debug_analyze_texts
         self._debug_window.on_analyze_images = self._on_debug_analyze_images
         self._debug_window.on_close = self._on_debug_close
         self._debug_window.set_html_content("Chargement en cours…")
-        self._view.set_status_active(url)
+        self._vm.set_status_active(url)
         self._debug_thread = threading.Thread(target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True)
         self._debug_thread.start()
 
@@ -104,7 +104,7 @@ class DebugPresenter:
             self._debug_window = None
         # Sentinel None causes the worker loop to exit and close the browser.
         self._debug_queue.put(None)
-        self._view.set_status_idle()
+        self._vm.set_status_idle()
 
     # -----------------------------------------------------------------------
     # Browser worker (long-lived thread)
@@ -182,7 +182,7 @@ class DebugPresenter:
         """Stops the browser worker when the DebugPageView window is closed."""
         self._debug_window = None
         self._debug_queue.put(None)
-        self._view.set_status_idle()
+        self._vm.set_status_idle()
 
     # -----------------------------------------------------------------------
     # Task implementations (run inside the browser worker thread)

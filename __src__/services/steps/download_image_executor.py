@@ -43,7 +43,7 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
-        """Execute the step."""
+        """Execute the download-image step for all targeted images."""
         p = cast(DownloadImageParams, context.step_scraping_data.params)
         page = browser.get_current_page()
         downloaded_urls = context.downloaded_urls
@@ -54,33 +54,47 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
         downloaded_count = 0
 
         for image in targets:
-            img_src = str(image.get("src", ""))
-            full_url = urljoin(page.url, img_src)
-
-            # If unique_only is True, skip downloading if the URL has already been downloaded
+            full_url = urljoin(page.url, str(image.get("src", "")))
             if p.unique_only and full_url in downloaded_urls:
                 continue
-
-            # Download via the page context request to preserve session cookies.
-            response = page.context.request.get(
-                full_url, headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")}
-            )
-            if not response.ok:
-                raise ImageDownloadFailedError(response.status)
-
-            url_path = full_url.split("?")[0]  # Remove query parameters for filename generation
-            suffix = Path(url_path).suffix or ".jpg"
-            stem = Path(url_path).stem
-            filename = stem if len(stem) < _MAX_FILENAME_STEM_LENGTH else stem[:_MAX_FILENAME_STEM_LENGTH]
-            timestamp_ms = "_" + get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
-            dest = context.folder_export / (filename + timestamp_ms + suffix)
-            with dest.open("wb") as fh:
-                fh.write(response.body())
-            downloaded_urls.add(full_url)
+            self._save_image(page, full_url, context, downloaded_urls)
             downloaded_count += 1
 
         if downloaded_count == 0:
             raise ImageNotDownloadedError(len(targets))
+
+    @staticmethod
+    def _save_image(
+        page: Any,
+        full_url: str,
+        context: ScrapingContextModel,
+        downloaded_urls: set[str],
+    ) -> None:
+        """Download one image and persist it to the export folder.
+
+        Args:
+            page: The live Playwright page (provides request context).
+            full_url: Resolved absolute URL of the image.
+            context: Scraping context supplying the export folder.
+            downloaded_urls: Mutable set updated after each successful download.
+        """
+        # Download via the page context request to preserve session cookies.
+        response = page.context.request.get(
+            full_url,
+            headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")},
+        )
+        if not response.ok:
+            raise ImageDownloadFailedError(response.status)
+
+        # Build a safe, unique destination path.
+        url_path = full_url.split("?")[0]
+        suffix = Path(url_path).suffix or ".jpg"
+        stem = Path(url_path).stem
+        filename = stem if len(stem) < _MAX_FILENAME_STEM_LENGTH else stem[:_MAX_FILENAME_STEM_LENGTH]
+        dest = context.folder_export / (filename + "_" + get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() + suffix)
+        with dest.open("wb") as fh:
+            fh.write(response.body())
+        downloaded_urls.add(full_url)
 
 
 register_step_executor(DownloadImageExecutor())

@@ -7,24 +7,24 @@
 from models.log_entry_model import LogEntryModel
 from services.logging_service import LoggingService
 from shared.exception_util import AspirabotBaseError
-from views.log_view import LogView
+from view_models.log_view_model import LogViewModel
 
 
 class LogPresenter:
     """Coordinates logging UI interactions and log data retrieval."""
 
-    def __init__(self, view: LogView, service: LoggingService) -> None:
-        """Initializes Presenter linking a LogView and a LoggingService.
+    def __init__(self, vm: LogViewModel, service: LoggingService) -> None:
+        """Initializes Presenter linking a LogViewModel and a LoggingService.
 
         Args:
-            view: The LogView instance for displaying logs.
+            vm: The LogViewModel instance for displaying logs.
             service: The LoggingService that stores entries and broadcasts events.
         """
-        self._view = view
+        self._vm = vm
         self._service = service
 
-        self._view.set_filter_callback(self._on_filter_changed)
-        self._view.set_open_logs_folder_callback(self._on_open_logs_folder)
+        self._vm.bind_filter_changed(self._on_filter_changed)
+        self._vm.bind_open_logs_folder(self._on_open_logs_folder)
         self._service.attach_ui_callback(self._on_new_log)
 
     def _on_new_log(self, entry: LogEntryModel) -> None:
@@ -41,11 +41,11 @@ class LogPresenter:
         try:
             self._service.open_logs_folder()
         except (AspirabotBaseError, OSError) as e:
-            self._view.show_error("Erreur", f"Impossible d'ouvrir le dossier des logs :\n{e}")
+            self._vm.show_error("Erreur", f"Impossible d'ouvrir le dossier des logs :\n{e}")
 
     def _update_view(self) -> None:
-        """Fetches all log entries from the service, applies active filters, and renders to the View."""
-        active_filters = self._view.get_active_filters()
+        """Fetches all log entries from the service, applies active filters, and pushes to the ViewModel."""
+        active_filters = self._vm.get_active_filters()
         logs_data: list[tuple[str, str, str, str]] = []
 
         all_logs = self._service.get_all_log_entries()
@@ -54,4 +54,4 @@ class LogPresenter:
                 formatted_date = log.date.strftime("%Y-%m-%d %H:%M:%S")
                 logs_data.append((formatted_date, log.level, log.origin, log.message))
 
-        self._view.render_logs(logs_data)
+        self._vm.set_logs(logs_data)

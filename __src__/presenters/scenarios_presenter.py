@@ -17,21 +17,21 @@ from models.scenario_model import ScenarioModel
 from services.scenarios_service import ScenariosService
 from shared.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
 from shared.exception_util import AspirabotBaseError
-from views.scenarios_view import ScenariosView
+from view_models.scenarios_view_model import ScenariosViewModel
 
 
 class ScenariosPresenter:
     """Mediates between ScenariosView and ScenariosService."""
 
-    def __init__(self, view: ScenariosView, service: ScenariosService) -> None:
-        """Initialise the presenter with its view and service.
+    def __init__(self, vm: ScenariosViewModel, service: ScenariosService) -> None:
+        """Initialise the presenter with its ViewModel and service.
 
         Args:
-            view: The user interface.
+            vm: The scenarios panel ViewModel.
             service: The service handling business logic.
         """
         self._logger = logging.getLogger(__name__)
-        self._view = view
+        self._vm = vm
         self._service = service
         self._last_loaded: datetime | None = None
         self._all_scenarios: list[ScenarioModel] = []
@@ -45,7 +45,7 @@ class ScenariosPresenter:
         # Guard: returns True when a Workflow edit session is already open.
         self.is_workflow_active: Callable[[], bool] | None = None
 
-        self._bind_view_events()
+        self._bind_vm_callbacks()
         self._load_scenarios()
 
     # ------------------------------------------------------------------
@@ -67,19 +67,17 @@ class ScenariosPresenter:
 
         self._load_scenarios()
 
-    def _bind_view_events(self) -> None:
-        """Associe les callbacks de la vue aux méthodes du présentateur."""
-        self._view.set_callbacks(
-            on_create=self._on_create_scenario,
-            on_open_folder=self._on_open_folder,
-            on_refresh=self._on_refresh,
-            on_sort=self._on_sort,
-            on_edit=self._on_edit_scenario,
-            on_duplicate=self._on_duplicate_scenario,
-            on_launch=self._on_launch_scenario,
-            on_delete=self._on_delete_scenario,
-            on_validate=self._on_validate_scenarios,
-        )
+    def _bind_vm_callbacks(self) -> None:
+        """Registers Presenter handlers on the ViewModel action hooks."""
+        self._vm.bind_create(self._on_create_scenario)
+        self._vm.bind_open_folder(self._on_open_folder)
+        self._vm.bind_refresh(self._on_refresh)
+        self._vm.bind_sort(self._on_sort)
+        self._vm.bind_edit(self._on_edit_scenario)
+        self._vm.bind_duplicate(self._on_duplicate_scenario)
+        self._vm.bind_launch(self._on_launch_scenario)
+        self._vm.bind_delete(self._on_delete_scenario)
+        self._vm.bind_validate(self._on_validate_scenarios)
 
     def _load_scenarios(self) -> None:
         """Fetch all scenarios from the service, sort them, and refresh the view."""
@@ -118,7 +116,7 @@ class ScenariosPresenter:
     def _update_view(self) -> None:
         """Update the view with the current list of scenarios, sorted and formatted for display."""
         scenarios_data = self._format_scenarios(self._all_scenarios)
-        self._view.render_scenarios(self._service.get_folder_path_scenarios(), scenarios_data)
+        self._vm.set_scenarios(self._service.get_folder_path_scenarios(), scenarios_data)
 
     @staticmethod
     def _format_scenarios(scenarios: list[ScenarioModel]) -> list[dict[str, str]]:
@@ -140,7 +138,7 @@ class ScenariosPresenter:
     def _on_create_scenario(self) -> None:
         # Block creation when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
-            self._view.show_warning(
+            self._vm.show_warning(
                 "Un Workflow est déjà en cours de modification.\n"
                 "Veuillez terminer ou annuler la modification en cours avant de continuer."
             )
@@ -151,7 +149,7 @@ class ScenariosPresenter:
     def _on_edit_scenario(self, id_file: str) -> None:
         # Block edit when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
-            self._view.show_warning(
+            self._vm.show_warning(
                 "Un Workflow est déjà en cours de modification.\n"
                 "Veuillez terminer ou annuler la modification en cours avant de continuer."
             )
@@ -177,7 +175,7 @@ class ScenariosPresenter:
             self._load_scenarios()
         except AspirabotBaseError as exc:
             self._logger.error("Erreur lors de la duplication du scénario", exc_info=True)
-            self._view.show_error(f"La duplication a échoué : {exc}")
+            self._vm.show_error(f"La duplication a échoué : {exc}")
 
     def _on_delete_scenario(self, id_file: str) -> None:
         if not ask_delete_scenario_confirmation():
@@ -187,7 +185,7 @@ class ScenariosPresenter:
             self._load_scenarios()
         except AspirabotBaseError as exc:
             self._logger.error("Erreur lors de la suppression du scénario", exc_info=True)
-            self._view.show_error(f"La suppression a échoué : {exc}")
+            self._vm.show_error(f"La suppression a échoué : {exc}")
 
     def _on_open_folder(self) -> None:
         self._service.open_scenarios_folder()
@@ -201,7 +199,8 @@ class ScenariosPresenter:
         Not yet implemented — raises ``NotImplementedError`` until the feature
         is built out in a future iteration.
         """
-        self._view.set_validation_state(True, "TODO A CODER")
+        self._vm.is_validation_running_var.set(True)
+        self._vm.validation_status_text_var.set("TODO A CODER")
         raise NotImplementedError("La validation des scénarios n'est pas encore implémentée.")
 
     def _on_sort(self, column: str, ascending: bool) -> None:

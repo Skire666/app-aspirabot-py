@@ -98,18 +98,20 @@ class ExtractTargetEnum(Enum):
 class UrlSourceTypeEnum(Enum):
     """Enumerates the supported URL source provider types."""
 
-    E_MANUAL = "manual"
-    E_FOLDER = "folder"
-    E_JSON = "json"
+    E_UNSET = "UNSET"
+    E_MANUAL = "MANUAL"
+    E_FOLDER = "FOLDER"
+    E_JSON = "JSON"
+    E_UNKNOWN = "UNKNOWN"
 
 
 class UrlSortOrderEnum(Enum):
     """Enumerates the file ordering strategies for folder-based URL sources."""
 
-    E_MTIME_ASC = "mtime_asc"   # oldest modified first (default)
+    E_MTIME_ASC = "mtime_asc"  # oldest modified first (default)
     E_MTIME_DESC = "mtime_desc"  # newest modified first
-    E_NAME_ASC = "name_asc"     # alphabetical by filename
-    E_NAME_DESC = "name_desc"   # reverse alphabetical
+    E_NAME_ASC = "name_asc"  # alphabetical by filename
+    E_NAME_DESC = "name_desc"  # reverse alphabetical
 
 
 # EOF

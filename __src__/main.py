@@ -21,6 +21,7 @@ from presenters.profiles_presenter import ProfilesPresenter
 from presenters.scenarios_presenter import ScenariosPresenter
 from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
+from presenters.steps_list_presenter import StepsListPresenter
 from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.journal_repository import JournalRepository
@@ -39,8 +40,17 @@ from services.workflow_service import WorkflowService
 
 # Bootstrap: import all step packages to populate the central registry.
 from shared.constants import C_APP_CONFIG_FILE
-from shared.i18n_fra import TitleModuleEnum
+from shared.enums import TitleModuleEnum
 from shared.path_util import get_current_working_directory
+from view_models.app_configuration_view_model import AppConfigurationViewModel
+from view_models.debug_view_model import DebugViewModel
+from view_models.executor_view_model import ExecutorViewModel
+from view_models.log_view_model import LogViewModel
+from view_models.profiles_view_model import ProfilesViewModel
+from view_models.scenarios_view_model import ScenariosViewModel
+from view_models.scraping_view_model import ScrapingViewModel
+from view_models.splashscreen_view_model import SplashscreenViewModel
+from view_models.workflow_view_model import WorkflowViewModel
 from views.app_configuration_view import AppConfigurationView
 from views.debug_view import DebugView
 from views.executor_view import ExecutorView
@@ -64,19 +74,18 @@ def main() -> None:
     The root window is hidden until startup completes successfully.
     On failure the root is destroyed and the process exits cleanly.
     """
-    # Hide main window — it will be revealed by _launch_main_app.
     root = tk.Tk()
     root.withdraw()
 
-    # Build startup service from the configuration repository.
     config_file_path = get_current_working_directory() / C_APP_CONFIG_FILE
     config_repo = AppConfigurationRepository(config_file_path)
     startup_service = StartupService(config_repo)
 
-    # Display splash screen and wire success/failure outcomes.
-    splash_view = SplashscreenView(root)
+    # Build ViewModel before the View so both receive the same instance.
+    splash_vm = SplashscreenViewModel(master=root)
+    splash_view = SplashscreenView(root, vm=splash_vm)
     SplashscreenPresenter(
-        view=splash_view,
+        vm=splash_vm,
         service=startup_service,
         on_success=lambda: _launch_main_app(root, config_repo, startup_service),
         on_failure=root.destroy,
@@ -100,14 +109,12 @@ def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) ->
     root.title("Aspirabot")
     root.geometry(config_model.gui_booting_size)
 
-    # Maximize on launch — behavior depends on the window manager.
     if config_model.gui_booting_fullscreen:
         if sys.platform.startswith("win"):
             root.state("zoomed")
         else:
             root.attributes("-zoomed", True)
 
-    # Apply global padding to all ttk.Button widgets (style() -> Button())
     ttk.Style().configure("TButton", padding=(5, 5))
 
 
@@ -152,23 +159,18 @@ def _build_and_wire_components(  # noqa: PLR0914
     root: tk.Tk, main_view: MainView, config_repo: AppConfigurationRepository, startup_service: StartupService
 ) -> None:
     """Instantiate all MVP groups, wire navigation, register views, and anchor presenters."""
-    # Initialize each component group.
-    # JsonFileRepository instances share a class-level cache, so passing two
-    # separate instances to provider and historic components is functionally
-    # equivalent to sharing one — both benefit from the same cached data.
     log_view, log_pr = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_pr = _init_config_component(main_view, config_repo)
     profiles_view, prof_pr, prof_svc = _init_profiles_components(
         main_view, startup_service.config_model, JsonFileRepository()
     )
-    scen_view, scen_pre, edit_view, edit_p, scen_svc = _init_scenarios_components(
+    scen_view, scen_pre, edit_view, edit_p, steps_pr, scen_svc = _init_scenarios_components(
         main_view, prof_svc, startup_service.config_model, JsonFileRepository()
     )
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
     dbg_view, dbg_p = _init_debug_component(main_view)
 
-    # Wire navigation and finalize the window.
     _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr, scrap_pre)
     _register_views(
         main_view,
@@ -182,7 +184,9 @@ def _build_and_wire_components(  # noqa: PLR0914
         FaqView(main_view.content_area),
         dbg_view,
     )
-    _anchor_presenters(root, [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, exec_pre, dbg_p])
+    _anchor_presenters(
+        root, [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, steps_pr, exec_pre, scrap_pre, dbg_p]
+    )
 
 
 def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, startup_service: StartupService) -> None:
@@ -224,9 +228,9 @@ def _init_log_component(main_view: MainView, logging_service: LoggingService) ->
     Returns:
         A (LogView, LogPresenter) tuple.
     """
-    log_view = LogView(main_view.content_area)
-    # Presenter self-registers on logging_service via attach_ui_callback.
-    log_presenter = LogPresenter(view=log_view, service=logging_service)
+    log_vm = LogViewModel(master=main_view.content_area)
+    log_view = LogView(main_view.content_area, vm=log_vm)
+    log_presenter = LogPresenter(vm=log_vm, service=logging_service)
     return log_view, log_presenter
 
 
@@ -243,8 +247,9 @@ def _init_config_component(
         A (AppConfigurationView, AppConfigurationPresenter) tuple.
     """
     config_service = ConfigService(config_repo)
-    config_view = AppConfigurationView(main_view.content_area)
-    config_presenter = AppConfigurationPresenter(view=config_view, service=config_service)
+    config_vm = AppConfigurationViewModel(master=main_view.content_area)
+    config_view = AppConfigurationView(main_view.content_area, vm=config_vm)
+    config_presenter = AppConfigurationPresenter(vm=config_vm, service=config_service)
     return config_view, config_presenter
 
 
@@ -263,8 +268,9 @@ def _init_profiles_components(
     """
     repo = ProfilesRepository(config_model.folder_scenarios, json_repo)
     service = ProfilesService(repo)
-    view = ProfilesView(main_view.content_area)
-    presenter = ProfilesPresenter(view=view, service=service)
+    profiles_vm = ProfilesViewModel(master=main_view.content_area)
+    view = ProfilesView(main_view.content_area, vm=profiles_vm)
+    presenter = ProfilesPresenter(vm=profiles_vm, service=service)
     return view, presenter, service
 
 
@@ -273,7 +279,9 @@ def _init_scenarios_components(
     profiles_service: ProfilesService,
     config_model: AppConfigurationModel,
     json_repo: JsonFileRepository,
-) -> tuple[ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter, ScenariosService]:
+) -> tuple[
+    ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter, StepsListPresenter, ScenariosService
+]:
     """Create and wire the scenario list and edit components.
 
     Args:
@@ -283,19 +291,44 @@ def _init_scenarios_components(
         json_repo: Shared JSON repository injected into the scenarios repository.
 
     Returns:
-        A (ScenariosView, ScenariosPresenter, WorkflowView,
-        WorkflowPresenter, ScenariosService) tuple.
+        A (ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter,
+        StepsListPresenter, ScenariosService) tuple.
     """
     scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
     scenarios_service = ScenariosService(scenario_repo)
 
-    scenario_view = ScenariosView(main_view.content_area)
-    scenario_presenter = ScenariosPresenter(view=scenario_view, service=scenarios_service)
+    scenarios_vm = ScenariosViewModel(master=main_view.content_area)
+    scenario_view = ScenariosView(main_view.content_area, vm=scenarios_vm)
+    scenario_presenter = ScenariosPresenter(vm=scenarios_vm, service=scenarios_service)
 
-    workflow_view = WorkflowView(main_view.content_area)
-    workflow_presenter = WorkflowPresenter(workflow_view, scenarios_service, profiles_service, WorkflowService())
+    workflow_svc = WorkflowService()
+    workflow_vm = WorkflowViewModel(master=main_view.content_area)
+    workflow_view = WorkflowView(main_view.content_area, vm=workflow_vm)
 
-    return scenario_view, scenario_presenter, workflow_view, workflow_presenter, scenarios_service
+    # StepsListPresenter instantiated here (composition root) and injected into
+    # WorkflowPresenter — never created inside another presenter.
+    steps_list_presenter = StepsListPresenter(
+        view=workflow_view.workflow_builder_view,
+        service_scenario=scenarios_service,
+        workflow_service=workflow_svc,
+        gestion_view=workflow_view,
+    )
+    workflow_presenter = WorkflowPresenter(
+        vm=workflow_vm,
+        scenarios_service=scenarios_service,
+        profiles_service=profiles_service,
+        workflow_service=workflow_svc,
+        steps_list_presenter=steps_list_presenter,
+    )
+
+    return (
+        scenario_view,
+        scenario_presenter,
+        workflow_view,
+        workflow_presenter,
+        steps_list_presenter,
+        scenarios_service,
+    )
 
 
 def _init_debug_component(main_view: MainView) -> tuple[DebugView, DebugPresenter]:
@@ -307,8 +340,9 @@ def _init_debug_component(main_view: MainView) -> tuple[DebugView, DebugPresente
     Returns:
         A (DebugView, DebugPresenter) tuple.
     """
-    debug_view = DebugView(main_view.content_area)
-    debug_presenter = DebugPresenter(view=debug_view, debug_service=DebugBrowserService())
+    debug_vm = DebugViewModel(master=main_view.content_area)
+    debug_view = DebugView(main_view.content_area, vm=debug_vm)
+    debug_presenter = DebugPresenter(vm=debug_vm, debug_service=DebugBrowserService())
     return debug_view, debug_presenter
 
 
@@ -329,9 +363,12 @@ def _init_executor_component(
     Returns:
         A (ExecutorView, ExecutorPresenter) tuple.
     """
-    executor_view = ExecutorView(main_view.content_area)
+    vm = ExecutorViewModel(master=main_view.content_area)
+    executor_view = ExecutorView(main_view.content_area, vm=vm)
     executor_presenter = ExecutorPresenter(
-        view=executor_view, scenarios_service=scenario_service, profiles_service=profiles_service
+        vm=vm,
+        scenarios_service=scenario_service,
+        profiles_service=profiles_service,
     )
     return executor_view, executor_presenter
 
@@ -348,7 +385,8 @@ def _init_scraping_component(
     Returns:
         A (ScrapingView, ScrapingPresenter) tuple.
     """
-    scraping_view = ScrapingView(main_view.content_area)
+    scraping_vm = ScrapingViewModel(master=main_view.content_area)
+    scraping_view = ScrapingView(main_view.content_area, vm=scraping_vm)
     scraping_service = ScrapingService(
         model_config=config_model,
         workflow_service=WorkflowService(),
@@ -356,7 +394,7 @@ def _init_scraping_component(
         browser_service_factory=BrowserPlaywrightService,
         journal_repository=JournalRepository(),
     )
-    scraping_presenter = ScrapingPresenter(view=scraping_view, service=scraping_service)
+    scraping_presenter = ScrapingPresenter(vm=scraping_vm, service=scraping_service)
     return scraping_view, scraping_presenter
 
 
@@ -377,42 +415,47 @@ def _wire_scenario_navigation(
     """
 
     def on_request_create_scenario() -> None:
-        # Open the edit form in creation mode and navigate to it.
         workflow_presenter.create_new()
-        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
-        main_view.show_view(TitleModuleEnum.E_WORKFLOW)
+        _open_workflow_tab(main_view)
 
     def on_request_edit_scenario(id_file: str) -> None:
-        # Load the selected into the edit form and navigate to it.
         if workflow_presenter.load_scenario(id_file):
-            main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-            main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.DISABLED)
-            main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.DISABLED)
-            main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
-            main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
-            main_view.show_view(TitleModuleEnum.E_WORKFLOW)
+            _open_workflow_tab(main_view)
 
     def on_edit_done() -> None:
-        # Return to the list and disable the edit tab after save/cancel.
         scenario_presenter.ensure_profiles_loaded()
-        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
-        main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.NORMAL)
-        main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.NORMAL)
-        main_view.show_view(TitleModuleEnum.E_SCENARIOS)
+        _close_workflow_tab(main_view)
 
-    # Inject all navigation callbacks into the two presenters.
     scenario_presenter.on_request_create_scenario = on_request_create_scenario
     scenario_presenter.on_request_edit_scenario = on_request_edit_scenario
     workflow_presenter.set_on_done_callback(on_edit_done)
-
-    # Initial state: workflow tab is disabled
     main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
+
+
+def _open_workflow_tab(main_view: MainView) -> None:
+    """Enable the workflow tab and disable sibling tabs.
+
+    Args:
+        main_view: Navigation shell managing tab visibility.
+    """
+    main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
+    for mod in (TitleModuleEnum.E_SCENARIOS, TitleModuleEnum.E_PROFILES,
+                TitleModuleEnum.E_EXECUTOR, TitleModuleEnum.E_SCRAPING):
+        main_view.set_tab_state(mod, tk.DISABLED)
+    main_view.show_view(TitleModuleEnum.E_WORKFLOW)
+
+
+def _close_workflow_tab(main_view: MainView) -> None:
+    """Disable the workflow tab and re-enable sibling tabs.
+
+    Args:
+        main_view: Navigation shell managing tab visibility.
+    """
+    main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
+    for mod in (TitleModuleEnum.E_SCENARIOS, TitleModuleEnum.E_PROFILES,
+                TitleModuleEnum.E_EXECUTOR, TitleModuleEnum.E_SCRAPING):
+        main_view.set_tab_state(mod, tk.NORMAL)
+    main_view.show_view(TitleModuleEnum.E_SCENARIOS)
 
 
 def _wire_scraping_navigation(
@@ -459,7 +502,6 @@ def _wire_executor_launch(
     Args:
         main_view: Shell managing tab visibility and enabled states.
         scenario_presenter: Presenter that fires the launch request.
-        scenario_service: Service used to retrieve the full provider model by id.
         executor_presenter: Presenter that loads and runs the executor session.
     """
 
@@ -508,7 +550,6 @@ def _register_views(  # noqa: PLR0913, PLR0917
     debug_view: DebugView,
 ) -> None:
     """Map each sidebar entry to its view widget and show the default tab."""
-    # Map each sidebar label to its corresponding view widget.
     main_view.add_view(TitleModuleEnum.E_LOGS, log_view)
     main_view.add_view(TitleModuleEnum.E_PROFILES, historic_view)
     main_view.add_view(TitleModuleEnum.E_SCENARIOS, scenario_view)
@@ -519,7 +560,6 @@ def _register_views(  # noqa: PLR0913, PLR0917
     main_view.add_view(TitleModuleEnum.E_OPTIONS, config_view)
     main_view.add_view(TitleModuleEnum.E_DEBUG, debug_view)
 
-    # Land on the scenarios list as the startup default.
     main_view.show_view(TitleModuleEnum.E_SCENARIOS)
 
 

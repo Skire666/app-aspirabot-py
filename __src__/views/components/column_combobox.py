@@ -127,49 +127,77 @@ class _DropdownWindow:
         y = owner.winfo_rooty() + owner.winfo_height()
         owner_w = owner.winfo_width()
 
-        top = tk.Toplevel(owner, bg=_BORDER, border=1)
-        top.wm_overrideredirect(True)
-        top.lift()
-
-        sb = tk.Scrollbar(top, orient="vertical", command=self._on_sb)
-        sb.pack(side="right", fill="y")
-        sb_w = sb.winfo_reqwidth()
-        self._scrollbar = sb
-
-        # Viewport is at least as wide as the owner display area
-        self._viewport_w = max(cols_w, owner_w - sb_w) - 2
-        self._viewport_h = n_vis * _ROW_H
-
-        vp = tk.Frame(top, bg=_BG, width=self._viewport_w, height=self._viewport_h)
-        vp.pack(side="left", fill="both", expand=True)
-        vp.pack_propagate(False)
-        self._viewport = vp
-
-        top.geometry(f"{self._viewport_w + sb_w}x{self._viewport_h}+{x}+{y}")
-        self._top = top
-
-        pool_sz = n_vis + _POOL_EXTRA + 1
-        self._pool = []
-        self._pool_row = []
-        for _ in range(pool_sz):
-            c = tk.Canvas(vp, width=self._viewport_w, height=_ROW_H, highlightthickness=0, bd=0, bg=_BG)
-            c.bind("<MouseWheel>", self._on_wheel)
-            self._pool.append(c)
-            self._pool_row.append(-1)
-
-        top.bind("<Escape>", lambda _e: owner._close_dropdown())
-        top.bind("<MouseWheel>", self._on_wheel)
-
-        root = owner.winfo_toplevel()
-        self._root_bid = root.bind("<ButtonPress-1>", self._on_root_click, add=True)
-        self._configure_bid = root.bind("<Configure>", self._on_root_configure, add=True)
+        self._build_dropdown_window(owner, x, y, owner_w, n_vis, cols_w)
+        self._build_canvas_pool(n_vis)
+        self._wire_open_events(owner)
 
         self._is_open = True
         self._render()
         self._sync_sb()
-
         if owner._selected_index is not None:
             self._scroll_to(owner._selected_index)
+
+    def _build_dropdown_window(
+        self, owner: tk.Widget, x: int, y: int, owner_w: int, n_vis: int, cols_w: int
+    ) -> None:
+        """Create the Toplevel window, scrollbar, and viewport frame.
+
+        Args:
+            owner: The owning ColumnCombobox widget.
+            x: Screen x coordinate for the dropdown position.
+            y: Screen y coordinate (below the owner widget).
+            owner_w: Owner widget pixel width.
+            n_vis: Number of visible rows in the dropdown.
+            cols_w: Sum of all visible column widths.
+        """
+        top = tk.Toplevel(owner, bg=_BORDER, border=1)
+        top.wm_overrideredirect(True)
+        top.lift()
+        sb = tk.Scrollbar(top, orient="vertical", command=self._on_sb)
+        sb.pack(side="right", fill="y")
+        sb_w = sb.winfo_reqwidth()
+        self._scrollbar = sb
+        # Viewport is at least as wide as the owner display area.
+        self._viewport_w = max(cols_w, owner_w - sb_w) - 2
+        self._viewport_h = n_vis * _ROW_H
+        vp = tk.Frame(top, bg=_BG, width=self._viewport_w, height=self._viewport_h)
+        vp.pack(side="left", fill="both", expand=True)
+        vp.pack_propagate(False)
+        self._viewport = vp
+        top.geometry(f"{self._viewport_w + sb_w}x{self._viewport_h}+{x}+{y}")
+        self._top = top
+
+    def _build_canvas_pool(self, n_vis: int) -> None:
+        """Allocate the recycled Canvas pool for virtualised row rendering.
+
+        Args:
+            n_vis: Number of visible rows used to determine pool size.
+        """
+        pool_sz = n_vis + _POOL_EXTRA + 1
+        self._pool = []
+        self._pool_row = []
+        for _ in range(pool_sz):
+            c = tk.Canvas(
+                self._viewport, width=self._viewport_w, height=_ROW_H,
+                highlightthickness=0, bd=0, bg=_BG,
+            )
+            c.bind("<MouseWheel>", self._on_wheel)
+            self._pool.append(c)
+            self._pool_row.append(-1)
+
+    def _wire_open_events(self, owner: tk.Widget) -> None:
+        """Bind keyboard, wheel, and outside-click handlers to the open dropdown.
+
+        Args:
+            owner: The owning ColumnCombobox widget.
+        """
+        top = self._top
+        assert top is not None
+        top.bind("<Escape>", lambda _e: owner._close_dropdown())  # type: ignore[attr-defined]
+        top.bind("<MouseWheel>", self._on_wheel)
+        root = owner.winfo_toplevel()
+        self._root_bid = root.bind("<ButtonPress-1>", self._on_root_click, add=True)
+        self._configure_bid = root.bind("<Configure>", self._on_root_configure, add=True)
 
     def close(self) -> None:
         """Destroy the dropdown and clean up bindings."""
@@ -263,20 +291,46 @@ class _DropdownWindow:
         for col in owner._columns:
             if not col.visible:
                 continue
-            w = widths.get(col.key, col.width)
-            raw = cache.get(col.key, "")
-            text = str(raw) if raw is not None else ""
-            if x > 0:
-                canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
-            canvas.create_text(
-                x + _CELL_PAD,
-                _ROW_H // 2,
-                text=_truncate(text, w - _CELL_PAD * 2, font),
-                anchor="w",
-                font=font,
-                fill=fg,
-            )
-            x += w
+            x = self._paint_cell(canvas, col, x, widths, cache, fg, font)
+
+    @staticmethod
+    def _paint_cell(
+        canvas: tk.Canvas,
+        col: _ColumnDef,
+        x: int,
+        widths: dict[str, int],
+        cache: dict[str, Any],
+        fg: str,
+        font: tkfont.Font,
+    ) -> int:
+        """Draw one cell separator and text; return the next x offset.
+
+        Args:
+            canvas: Target canvas widget.
+            col: Column definition providing key and width.
+            x: Current left-edge pixel offset.
+            widths: Effective column widths keyed by column key.
+            cache: Row data dict keyed by column key.
+            fg: Foreground text colour.
+            font: Font used for the cell text.
+
+        Returns:
+            Updated x offset (x + column width) for the next cell.
+        """
+        w = widths.get(col.key, col.width)
+        raw = cache.get(col.key, "")
+        text = str(raw) if raw is not None else ""
+        if x > 0:
+            canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
+        canvas.create_text(
+            x + _CELL_PAD,
+            _ROW_H // 2,
+            text=_truncate(text, w - _CELL_PAD * 2, font),
+            anchor="w",
+            font=font,
+            fill=fg,
+        )
+        return x + w
 
     def _bind_canvas(self, canvas: tk.Canvas, data_row: int) -> None:
         canvas.bind("<ButtonRelease-1>", lambda _e, r=data_row: self._select(r))

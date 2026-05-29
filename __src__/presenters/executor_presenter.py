@@ -1,9 +1,9 @@
-"""Presenter wiring ExecutorView to ScenariosService and ProfilesService.
+"""Presenter wiring ExecutorViewModel to ScenariosService and ProfilesService.
 
 Manages scenario selection, profile CRUD, dirty-state tracking, form
 validation, and the hand-off to the scraping module. No business logic
-lives here — only orchestration between the view, services, and injectable
-navigation hooks from main.py.
+lives here — only orchestration between the ViewModel, services, and
+injectable navigation hooks from main.py.
 """
 
 # -----------------------------------------------------------------------------
@@ -12,6 +12,7 @@ navigation hooks from main.py.
 
 import logging
 from collections.abc import Callable
+from datetime import datetime
 
 from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
@@ -31,14 +32,12 @@ from shared.i18n_fra import (
     C_EXEC_USED_DATE_FMT,
 )
 from validators.launch_validator import validate_launch_profile_first_error
-from view_states.executor_view_state import (
-    ProfileFormViewState,
-    ProfileItemViewState,
-    ScenarioItemViewState,
-    StepItemViewState,
-    UrlSourceViewState,
+from view_models.executor_view_model import (
+    ExecutorViewModel,
+    ProfileItem,
+    ScenarioItem,
+    StepItem,
 )
-from views.executor_view import ExecutorView
 
 # -----------------------------------------------------------------------------
 # Module-level constant
@@ -52,7 +51,7 @@ _DATE_FMT = "%d/%m/%Y %H:%M"
 
 
 class ExecutorPresenter:
-    """Orchestrates ExecutorView against ScenariosService and ProfilesService.
+    """Orchestrates ExecutorViewModel against ScenariosService and ProfilesService.
 
     Attributes:
         on_request_edit_scenario: Hook injected by main.py to open the workflow editor.
@@ -60,17 +59,20 @@ class ExecutorPresenter:
     """
 
     def __init__(
-        self, view: ExecutorView, scenarios_service: ScenariosService, profiles_service: ProfilesService
+        self,
+        vm: ExecutorViewModel,
+        scenarios_service: ScenariosService,
+        profiles_service: ProfilesService,
     ) -> None:
-        """Wire all view callbacks and initialise internal state.
+        """Register ViewModel callbacks and initialise internal state.
 
         Args:
-            view: The executor panel view.
+            vm: The executor ViewModel that owns all UI state.
             scenarios_service: Service providing scenario CRUD and listing.
             profiles_service: Service providing profile CRUD and listing.
         """
         self._logger = logging.getLogger(__name__)
-        self._view = view
+        self._vm = vm
         self._svc_scenarios = scenarios_service
         self._svc_profiles = profiles_service
 
@@ -83,32 +85,28 @@ class ExecutorPresenter:
         self.on_request_edit_scenario: Callable[[str], None] | None = None
         self.on_request_launch_scraping: Callable[[ScenarioModel, LaunchModel], None] | None = None
 
-        self._bind_view_callbacks()
+        self._register_vm_callbacks()
 
-    def _bind_view_callbacks(self) -> None:
-        """Register all presenter methods as view callbacks."""
-        self._view.set_on_scenario_changed(self._on_scenario_changed)
-        self._view.set_on_refresh_scenarios(self._on_refresh_scenarios)
-        self._view.set_on_edit_scenario(self._on_edit_scenario)
-        self._view.set_on_profile_selected(self._on_profile_selected)
-        self._view.set_on_new_profile(self._on_new_profile)
-        self._view.set_on_rename_profile(self._on_rename_profile)
-        self._view.set_on_delete_profile(self._on_delete_profile)
-        self._view.set_on_save_profile(self._on_save_profile)
-        self._view.set_on_form_changed(self._on_form_changed)
-        self._view.set_on_launch(self._on_launch_clicked)
-        self._view.set_on_open_export_folder(self._on_open_export_folder)
+    def _register_vm_callbacks(self) -> None:
+        """Bind all Presenter handlers to ViewModel action hooks."""
+        self._vm.bind_scenario_changed(self._on_scenario_changed)
+        self._vm.bind_refresh_scenarios(self._on_refresh_scenarios)
+        self._vm.bind_edit_scenario(self._on_edit_scenario)
+        self._vm.bind_profile_selected(self._on_profile_selected)
+        self._vm.bind_new_profile(self._on_new_profile)
+        self._vm.bind_rename_profile(self._on_rename_profile)
+        self._vm.bind_delete_profile(self._on_delete_profile)
+        self._vm.bind_save_profile(self._on_save_profile)
+        self._vm.bind_form_changed(self._on_form_changed)
+        self._vm.bind_launch(self._on_launch_clicked)
+        self._vm.bind_open_export_folder(self._on_open_export_folder)
 
     # ------------------------------------------------------------------
     # Public API — called from main.py navigation hooks
     # ------------------------------------------------------------------
 
     def ensure_scenarios_loaded(self) -> None:
-        """Reload the scenario list (called on tab activation).
-
-        Returns:
-            None.
-        """
+        """Reload the scenario list (called on tab activation)."""
         self._load_scenarios()
 
     def load_scenario(self, id_scenario: str) -> None:
@@ -118,7 +116,7 @@ class ExecutorPresenter:
             id_scenario: The scenario ID to select.
         """
         self._load_scenarios()
-        self._view.select_scenario_by_id(id_scenario)
+        self._vm.selected_scenario_id_var.set(id_scenario)
         self._on_scenario_changed(id_scenario)
 
     def load_scenario_and_profile(self, id_scenario: str, id_profile: str) -> None:
@@ -129,7 +127,7 @@ class ExecutorPresenter:
             id_profile: The profile ID to select within that scenario.
         """
         self.load_scenario(id_scenario)
-        self._view.select_profile_by_id(id_profile)
+        self._vm.selected_profile_id_var.set(id_profile)
         self._on_profile_selected(id_profile)
 
     # ------------------------------------------------------------------
@@ -137,29 +135,28 @@ class ExecutorPresenter:
     # ------------------------------------------------------------------
 
     def _load_scenarios(self) -> None:
-        """Fetch all scenarios, map them to ViewStates, and push to the view."""
+        """Fetch all scenarios, map them to ScenarioItems, and push to the VM."""
         try:
             scenarios = self._svc_scenarios.list_all_scenarios()
         except AspirabotBaseError:
             self._logger.exception("Échec du chargement des scénarios")
             scenarios = []
-        states = [self._to_scenario_item(s) for s in scenarios]
-        self._view.set_scenarios(states)
+        self._vm.set_scenarios([self._to_scenario_item(s) for s in scenarios])
         if self._current_scenario:
-            self._view.select_scenario_by_id(self._current_scenario.id_file)
-        self._view.set_scenario_edit_button_state(self._current_scenario is not None)
+            self._vm.selected_scenario_id_var.set(self._current_scenario.id_file)
+        self._vm.is_edit_btn_enabled_var.set(self._current_scenario is not None)
 
     @staticmethod
-    def _to_scenario_item(scenario: ScenarioModel) -> ScenarioItemViewState:
-        """Map a ScenarioModel to its list-entry ViewState.
+    def _to_scenario_item(scenario: ScenarioModel) -> ScenarioItem:
+        """Map a ScenarioModel to its list-entry ScenarioItem.
 
         Args:
             scenario: The domain model to convert.
 
         Returns:
-            An immutable view snapshot for the scenario combobox.
+            An immutable ScenarioItem for the combobox.
         """
-        return ScenarioItemViewState(
+        return ScenarioItem(
             id_file=scenario.id_file,
             scenario_name=scenario.scenario_name,
             scenario_desc=scenario.scenario_desc,
@@ -172,8 +169,7 @@ class ExecutorPresenter:
         except AspirabotBaseError:
             self._logger.exception("Impossible de lire le scénario %s", id_scenario)
             self._current_scenario = None
-
-        self._view.set_scenario_edit_button_state(self._current_scenario is not None)
+        self._vm.is_edit_btn_enabled_var.set(self._current_scenario is not None)
         self._load_profiles_for_current_scenario()
 
     def _on_refresh_scenarios(self) -> None:
@@ -191,32 +187,45 @@ class ExecutorPresenter:
     def _load_profiles_for_current_scenario(self) -> None:
         """Load profiles for the selected scenario, creating a default if absent."""
         if not self._current_scenario:
-            self._view.set_profiles([])
-            self._view.set_profiles_list_enabled(False)
-            self._view.set_profile_section_enabled(False)
+            self._vm.set_profiles([])
+            self._vm.is_profiles_list_enabled_var.set(False)
+            self._vm.is_profile_section_enabled_var.set(False)
             return
 
-        self._view.set_profiles_list_enabled(True)
+        self._vm.is_profiles_list_enabled_var.set(True)
         id_scenario = self._current_scenario.id_file
 
         try:
             self._current_profiles_model = self._svc_profiles.read_profiles(id_scenario)
         except AspirabotBaseError:
-            self._logger.info("Aucun profil trouvé pour %s — création d'un profil par défaut.", id_scenario)
+            self._logger.info(
+                "Aucun profil trouvé pour %s — création d'un profil par défaut.",
+                id_scenario,
+            )
             self._current_profiles_model = self._ensure_default_profile(id_scenario)
             return
 
-        profiles = self._current_profiles_model.launch_profiles if self._current_profiles_model else []
+        profiles = (
+            self._current_profiles_model.launch_profiles
+            if self._current_profiles_model
+            else []
+        )
 
         if not profiles:
-            self._logger.info("Liste vide pour %s — création d'un profil par défaut.", id_scenario)
+            self._logger.info(
+                "Liste vide pour %s — création d'un profil par défaut.", id_scenario
+            )
             self._current_profiles_model = self._ensure_default_profile(id_scenario)
             return
 
         self._push_profiles(profiles)
-        best = self._current_profiles_model.get_most_recently_used_profile() if self._current_profiles_model else None
+        best = (
+            self._current_profiles_model.get_most_recently_used_profile()
+            if self._current_profiles_model
+            else None
+        )
         if best:
-            self._view.select_profile_by_id(best.id_profile)
+            self._vm.selected_profile_id_var.set(best.id_profile)
             self._on_profile_selected(best.id_profile)
         else:
             self._clear_profile_form()
@@ -231,38 +240,40 @@ class ExecutorPresenter:
             The reloaded ProfilesModel, or None when the reload fails.
         """
         default = self._svc_profiles.create_profile_launch(id_scenario, "Profil par défaut")
-        self._view.set_profiles([self._to_profile_item(default)])
+        self._vm.set_profiles([self._to_profile_item(default)])
         self._select_profile_model(default)
         try:
             return self._svc_profiles.read_profiles(id_scenario)
         except AspirabotBaseError:
-            self._logger.exception("Rechargement des profils impossible après création du profil par défaut")
+            self._logger.exception(
+                "Rechargement des profils impossible après création du profil par défaut"
+            )
             return None
 
     def _push_profiles(self, profiles: list[LaunchModel]) -> None:
-        """Map profiles to ViewStates and push them to the view.
+        """Map profiles to ProfileItems and push them to the ViewModel.
 
         Args:
             profiles: Domain profile list to display.
         """
-        self._view.set_profiles([self._to_profile_item(p) for p in profiles])
+        self._vm.set_profiles([self._to_profile_item(p) for p in profiles])
 
     @staticmethod
-    def _to_profile_item(profile: LaunchModel) -> ProfileItemViewState:
-        """Map a LaunchModel to its list-entry ViewState.
+    def _to_profile_item(profile: LaunchModel) -> ProfileItem:
+        """Map a LaunchModel to its list-entry ProfileItem.
 
         Args:
             profile: The domain model to convert.
 
         Returns:
-            An immutable view snapshot for the profile listbox.
+            An immutable ProfileItem for the listbox.
         """
-        return ProfileItemViewState(id_profile=profile.id_profile, profile_name=profile.profile_name)
+        return ProfileItem(id_profile=profile.id_profile, profile_name=profile.profile_name)
 
     def _select_profile_model(self, profile: LaunchModel) -> None:
-        """Select and render the given profile in the view."""
+        """Select and render the given profile in the ViewModel."""
         self._current_profile = profile
-        self._view.select_profile_by_id(profile.id_profile)
+        self._vm.selected_profile_id_var.set(profile.id_profile)
         self._render_profile_form(profile)
 
     def _on_profile_selected(self, id_profile: str) -> None:
@@ -276,63 +287,67 @@ class ExecutorPresenter:
         self._render_profile_form(profile)
 
     def _render_profile_form(self, profile: LaunchModel) -> None:
-        """Build a ProfileFormViewState from the profile and push it to the view."""
+        """Populate all ViewModel Vars from the given profile."""
         steps = self._current_scenario.steps if self._current_scenario else []
-        state = self._build_profile_form_state(profile, steps)
-        self._view.set_profile_section_enabled(True)
-        self._view.set_profile_form(state)
-        self._view.set_saved_date(self._format_saved_date(self._current_profiles_model))
+        self._push_profile_vars(profile, steps)
+        self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
         self._set_dirty(False)
         self._refresh_url_preview(profile)
-        self._view.set_profile_buttons_state(selected=True, dirty=False)
+        self._vm.is_profile_section_enabled_var.set(True)
 
-    @staticmethod
-    def _build_profile_form_state(
-        profile: LaunchModel, steps: list[StepScrapingModel]
-    ) -> ProfileFormViewState:
-        """Map a LaunchModel and its scenario steps to a ProfileFormViewState.
+    def _push_profile_vars(
+        self, profile: LaunchModel, steps: list[StepScrapingModel]
+    ) -> None:
+        """Write profile scalar fields and step list into the ViewModel Vars.
 
         Args:
-            profile: The launch profile to represent.
+            profile: The launch profile to render.
             steps: The ordered steps of the current scenario.
-
-        Returns:
-            An immutable snapshot ready for the view to render.
         """
-        source_type = profile.url_source_type or ""
-        is_folder_json = source_type in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
-        is_manual = source_type == UrlSourceTypeEnum.E_MANUAL.value
-        source_path = profile.url_source_value if isinstance(profile.url_source_value, str) else ""
-        manual_urls = tuple(profile.url_source_value) if isinstance(profile.url_source_value, list) else ()
-
-        url_source = UrlSourceViewState(
-            source_type=source_type,
-            source_path=source_path,
-            manual_urls=manual_urls,
-            sort_order=profile.url_sort_order or UrlSortOrderEnum.E_MTIME_ASC.value,
-            is_path_entry_enabled=is_folder_json,
-            is_sort_order_enabled=is_folder_json,
-            is_preview_editable=is_manual,
-        )
+        # Usage statistics
         used_date = (
             C_EXEC_USED_DATE_FMT.format(date=profile.used_date_profile.strftime(_DATE_FMT))
             if profile.used_date_profile
             else C_EXEC_USED_DATE_EMPTY
         )
-        step_items = tuple(
-            StepItemViewState(step_id=s.step_id, label=f"{i + 1}. {s.step_type.value} — {s.step_id}")
+        self._vm.used_date_var.set(used_date)
+        self._vm.launch_count_var.set(str(profile.launch_count))
+        self._vm.current_profile_name_var.set(profile.profile_name)
+
+        # Export folder
+        self._vm.export_folder_var.set(profile.export_folder or "")
+
+        # URL source
+        source_type = profile.url_source_type or ""
+        self._vm.url_source_type_var.set(source_type)
+        is_manual = source_type == UrlSourceTypeEnum.E_MANUAL.value
+        if is_manual:
+            manual = profile.url_source_value
+            text = "\n".join(manual) if isinstance(manual, list) else ""
+            self._vm.manual_urls_var.set(text)
+        else:
+            path = profile.url_source_value if isinstance(profile.url_source_value, str) else ""
+            self._vm.url_source_path_var.set(path)
+
+        # Sort order
+        self._vm.url_sort_order_var.set(
+            profile.url_sort_order or UrlSortOrderEnum.E_MTIME_ASC.value
+        )
+
+        # Thresholds
+        self._vm.global_threshold_var.set(str(profile.emergency_stop_threshold))
+        self._vm.step_threshold_var.set(str(profile.emergency_stop_step_threshold))
+
+        # Steps for the emergency-stop combobox
+        step_items = [
+            StepItem(
+                step_id=s.step_id,
+                label=f"{i + 1}. {s.step_type.value} — {s.step_id}",
+            )
             for i, s in enumerate(steps)
-        )
-        return ProfileFormViewState(
-            used_date=used_date,
-            launch_count=profile.launch_count,
-            export_folder=profile.export_folder or "",
-            url_source=url_source,
-            global_threshold=profile.emergency_stop_threshold,
-            step_threshold=profile.emergency_stop_step_threshold,
-            step_id_selected=profile.emergency_stop_step_id or "",
-            steps=step_items,
-        )
+        ]
+        self._vm.set_steps(step_items)
+        self._vm.step_id_selected_var.set(profile.emergency_stop_step_id or "")
 
     @staticmethod
     def _format_saved_date(profiles_model: ProfilesModel | None) -> str:
@@ -346,28 +361,37 @@ class ExecutorPresenter:
         """
         if not profiles_model or not profiles_model.modified_date_profile:
             return C_EXEC_SAVED_DATE_EMPTY
-        return C_EXEC_SAVED_DATE_FMT.format(date=profiles_model.modified_date_profile.strftime(_DATE_FMT))
+        return C_EXEC_SAVED_DATE_FMT.format(
+            date=profiles_model.modified_date_profile.strftime(_DATE_FMT)
+        )
 
     def _clear_profile_form(self) -> None:
         """Reset form and disable the profile section."""
         self._current_profile = None
-        self._view.set_profile_section_enabled(False)
-        self._view.set_profile_buttons_state(selected=False, dirty=False)
+        self._vm.is_profile_section_enabled_var.set(False)
+        self._vm.is_rename_btn_enabled_var.set(False)
+        self._vm.is_delete_btn_enabled_var.set(False)
+        self._vm.is_save_btn_enabled_var.set(False)
 
     def _refresh_url_preview(self, profile: LaunchModel) -> None:
-        """Build a URL preview from the profile's source and push it to the view."""
-        self._update_url_preview(profile.url_source_type, profile.url_source_value, profile.url_sort_order)
-
-    def _refresh_url_preview_from_form(self) -> None:
-        """Build a URL preview from the live form state and push it to the view."""
+        """Build a URL preview from the profile source and push it to the VM."""
         self._update_url_preview(
-            self._view.get_url_source_type(),
-            self._view.get_url_source_value(),
-            self._view.get_url_sort_order(),
+            profile.url_source_type, profile.url_source_value, profile.url_sort_order
         )
 
-    def _update_url_preview(self, source_type: str, source_value: list[str] | str | None, sort_str: str) -> None:
-        """Fetch preview URLs from the provider and push them to the view.
+    def _refresh_url_preview_from_form(self) -> None:
+        """Build a URL preview from the live VM state and push it to the VM."""
+        source_value = self._read_url_source_value_from_vm()
+        self._update_url_preview(
+            self._vm.url_source_type_var.get(),
+            source_value,
+            self._vm.url_sort_order_var.get(),
+        )
+
+    def _update_url_preview(
+        self, source_type: str, source_value: list[str] | str | None, sort_str: str
+    ) -> None:
+        """Fetch preview URLs from the provider and push them to the VM.
 
         Args:
             source_type: Raw URL source type string.
@@ -377,18 +401,18 @@ class ExecutorPresenter:
         if source_type == UrlSourceTypeEnum.E_MANUAL.value:
             return
         if source_type not in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}:
-            self._view.set_url_preview([])
+            self._vm.set_url_preview([])
             return
         if not source_value or not isinstance(source_value, str):
-            self._view.set_url_preview([])
+            self._vm.set_url_preview([])
             return
         try:
             sort = self._parse_sort_order(sort_str)
             provider = build_url_source_scenario(source_type, source_value, sort)
-            self._view.set_url_preview(provider.preview_url_listed())
+            self._vm.set_url_preview(provider.preview_url_listed())
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la prévisualisation des URLs")
-            self._view.set_url_preview([])
+            self._vm.set_url_preview([])
 
     @staticmethod
     def _parse_sort_order(value: str) -> UrlSortOrderEnum:
@@ -409,45 +433,48 @@ class ExecutorPresenter:
     # Profile CRUD
     # ------------------------------------------------------------------
 
-    def _on_new_profile(self) -> None:
+    def _on_new_profile(self, name: str) -> None:
         if not self._current_scenario:
             return
-        name = self._view.ask_new_profile_name()
-        if not name or not name.strip():
-            return
         try:
-            new = self._svc_profiles.create_profile_launch(self._current_scenario.id_file, name.strip())
-            self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
+            new = self._svc_profiles.create_profile_launch(
+                self._current_scenario.id_file, name
+            )
+            self._current_profiles_model = self._svc_profiles.read_profiles(
+                self._current_scenario.id_file
+            )
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la création du profil")
             return
         self._push_profiles(self._current_profiles_model.launch_profiles)
-        self._view.set_saved_date(self._format_saved_date(self._current_profiles_model))
+        self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
         self._select_profile_model(new)
 
-    def _on_rename_profile(self) -> None:
+    def _on_rename_profile(self, new_name: str) -> None:
         if not self._current_profile:
             return
-        new_name = self._view.ask_rename(self._current_profile.profile_name)
-        if not new_name or new_name.strip() == self._current_profile.profile_name:
+        if new_name == self._current_profile.profile_name:
             return
-        self._current_profile.profile_name = new_name.strip()
+        self._current_profile.profile_name = new_name
+        self._vm.current_profile_name_var.set(new_name)
         self._set_dirty(True)
         self._on_save_profile()
 
     def _on_delete_profile(self) -> None:
         if not self._current_profile or not self._current_scenario:
             return
-        if not self._view.ask_delete_confirm(self._current_profile.profile_name):
-            return
         try:
-            self._svc_profiles.delete_profile_launch(self._current_scenario.id_file, self._current_profile.id_profile)
-            self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
+            self._svc_profiles.delete_profile_launch(
+                self._current_scenario.id_file, self._current_profile.id_profile
+            )
+            self._current_profiles_model = self._svc_profiles.read_profiles(
+                self._current_scenario.id_file
+            )
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la suppression du profil")
             return
         self._push_profiles(self._current_profiles_model.launch_profiles)
-        self._view.set_saved_date(self._format_saved_date(self._current_profiles_model))
+        self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
         self._clear_profile_form()
 
     def _on_save_profile(self) -> None:
@@ -455,36 +482,56 @@ class ExecutorPresenter:
             return
         self._apply_form_to_profile()
         try:
-            self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
-            self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
+            self._svc_profiles.update_profile_launch(
+                self._current_scenario.id_file, self._current_profile
+            )
+            self._current_profiles_model = self._svc_profiles.read_profiles(
+                self._current_scenario.id_file
+            )
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde du profil")
             return
         self._push_profiles(self._current_profiles_model.launch_profiles)
-        self._view.set_saved_date(self._format_saved_date(self._current_profiles_model))
+        self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
         self._set_dirty(False)
 
     def _apply_form_to_profile(self) -> None:
-        """Read typed view getters and write values back onto _current_profile."""
+        """Read ViewModel Vars and write values back onto _current_profile."""
         if not self._current_profile:
             return
-        self._current_profile.export_folder = self._view.get_export_folder()
-        self._current_profile.url_source_type = self._view.get_url_source_type()
-        self._current_profile.url_source_value = self._view.get_url_source_value()
-        self._current_profile.url_sort_order = self._view.get_url_sort_order()
-        self._current_profile.emergency_stop_step_id = self._view.get_emergency_stop_step_id()
+        self._current_profile.export_folder = self._vm.export_folder_var.get()
+        self._current_profile.url_source_type = self._vm.url_source_type_var.get()
+        self._current_profile.url_source_value = self._read_url_source_value_from_vm()
+        self._current_profile.url_sort_order = self._vm.url_sort_order_var.get()
+        self._current_profile.emergency_stop_step_id = self._vm.step_id_selected_var.get()
         self._apply_threshold_fields()
 
+    def _read_url_source_value_from_vm(self) -> list[str] | str | None:
+        """Package the URL source value from the live ViewModel state.
+
+        Returns:
+            A list of URL strings for manual mode, or a path string for others.
+        """
+        stype = self._vm.url_source_type_var.get()
+        if stype == UrlSourceTypeEnum.E_MANUAL.value:
+            raw = self._vm.manual_urls_var.get().strip()
+            return [u.strip() for u in raw.splitlines() if u.strip()]
+        return self._vm.url_source_path_var.get().strip() or None
+
     def _apply_threshold_fields(self) -> None:
-        """Parse and apply threshold integer fields from the typed view getters."""
+        """Parse and apply threshold integer fields from the ViewModel Vars."""
         if not self._current_profile:
             return
         try:
-            self._current_profile.emergency_stop_threshold = max(1, int(self._view.get_global_threshold_raw()))
+            self._current_profile.emergency_stop_threshold = max(
+                1, int(self._vm.global_threshold_var.get())
+            )
         except ValueError, TypeError:
             self._current_profile.emergency_stop_threshold = 1
         try:
-            self._current_profile.emergency_stop_step_threshold = max(0, int(self._view.get_step_threshold_raw()))
+            self._current_profile.emergency_stop_step_threshold = max(
+                0, int(self._vm.step_threshold_var.get())
+            )
         except ValueError, TypeError:
             self._current_profile.emergency_stop_step_threshold = 0
 
@@ -495,7 +542,9 @@ class ExecutorPresenter:
     def _set_dirty(self, value: bool) -> None:
         self._is_dirty = value
         has_profile = self._current_profile is not None
-        self._view.set_profile_buttons_state(selected=has_profile, dirty=value)
+        self._vm.is_rename_btn_enabled_var.set(has_profile)
+        self._vm.is_delete_btn_enabled_var.set(has_profile)
+        self._vm.is_save_btn_enabled_var.set(value)
 
     # ------------------------------------------------------------------
     # Launch
@@ -504,19 +553,19 @@ class ExecutorPresenter:
     def _on_launch_clicked(self) -> None:
         """Validate the profile and trigger the scraping hand-off."""
         error: str | None = self._validate_launch()
-        self._view.set_verification_message(error or "")
+        self._vm.verification_message_var.set(error or "")
         if error:
             return
         self._save_before_launch()
-        if self.on_request_launch_scraping and self._current_scenario and self._current_profile:
+        if (
+            self.on_request_launch_scraping
+            and self._current_scenario
+            and self._current_profile
+        ):
             self.on_request_launch_scraping(self._current_scenario, self._current_profile)
 
     def _validate_launch(self) -> str | None:
         """Run all pre-launch checks: guard conditions then domain validation.
-
-        Guard conditions (scenario / profile presence) are coordinator logic
-        that stays here. Domain field validation is fully delegated to
-        ScrapingLaunchValidator.
 
         Returns:
             The first French error message, or None when valid.
@@ -534,19 +583,23 @@ class ExecutorPresenter:
             return
         self._current_profile.increment_launch_count()
         try:
-            self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
+            self._svc_profiles.update_profile_launch(
+                self._current_scenario.id_file, self._current_profile
+            )
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde pré-lancement")
 
     def _on_open_export_folder(self) -> None:
-        """Open the export folder from the live form state via the service."""
-        folder = self._view.get_export_folder()
+        """Open the export folder from the live VM state via the service."""
+        folder = self._vm.export_folder_var.get()
         if not folder:
             return
         try:
             self._svc_profiles.open_export_folder(folder)
         except (AspirabotBaseError, OSError) as e:
-            self._view.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
+            self._vm.show_error(
+                "Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}"
+            )
 
 
 # EOF

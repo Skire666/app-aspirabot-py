@@ -14,7 +14,7 @@ from shared.constants import (
     C_SPLASHSCREEN_STEP_LABELS,
 )
 from shared.exception_util import AspirabotBaseError
-from views.splashscreen_view import SplashscreenView
+from view_models.splashscreen_view_model import SplashscreenViewModel
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -41,20 +41,20 @@ class SplashscreenPresenter:
 
     def __init__(
         self,
-        view: SplashscreenView,
+        vm: SplashscreenViewModel,
         service: StartupService,
         on_success: Callable[[], None],
         on_failure: Callable[[], None],
     ) -> None:
-        """Initialize the presenter with its view, service, and outcome callbacks.
+        """Initialize the presenter with its ViewModel, service, and outcome callbacks.
 
         Args:
-            view: The splash screen view to update during startup.
+            vm: The splash screen ViewModel.
             service: The startup service exposing the three init step methods.
             on_success: Called after all three steps succeed and the splash closes.
             on_failure: Called after any step fails and the splash closes.
         """
-        self._view = view
+        self._vm = vm
         self._service = service
         self._on_success = on_success
         self._on_failure = on_failure
@@ -70,7 +70,7 @@ class SplashscreenPresenter:
         """
         # after(0) defers execution to the next event-loop cycle so the
         # splash window is fully painted before the first step runs.
-        self._view.after(0, self._run_step_1)
+        self._vm.after(0, self._run_step_1)
 
     # -----------------------------------------------------------------------------
     # Startup steps
@@ -78,43 +78,39 @@ class SplashscreenPresenter:
 
     def _run_step_1(self) -> None:
         """Execute step 1: load configuration from persistent storage."""
-        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[0])
+        self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[0])
         try:
             self._service.load_configuration()
-            # Show icon and wait before moving on to keep it readable.
-            self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
+            self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
         except AspirabotBaseError as exc:
             self._handle_error(str(exc))
 
     def _run_step_2(self) -> None:
         """Execute step 2: create required application directories."""
-        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[1])
+        self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[1])
         try:
             self._service.create_required_directories()
-            # Show icon and wait before moving on to keep it readable.
-            self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_3)
+            self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_3)
         except AspirabotBaseError as exc:
             traceback.print_stack()
             self._handle_error(str(exc))
 
     def _run_step_3(self) -> None:
         """Execute step 3: initialize the rotating-file logging system."""
-        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[2])
+        self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[2])
         try:
             self._service.initialize_logging()
-            # Show icon, then wait one last second before launching the app.
-            self._view.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_4)
+            self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_4)
         except AspirabotBaseError as exc:
             self._handle_error(str(exc))
 
     def _run_step_4(self) -> None:
         """Final step: ensure minimum display time, then trigger the success callback."""
-        self._view.set_status(C_SPLASHSCREEN_STEP_LABELS[3])
+        self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[3])
         try:
-            # Wait any remaining time needed to reach the minimum display duration.
             elapsed_ms = self._service.get_time_elapsed_when_booting()
             remaining_ms = max(0, C_SPLASHSCREEN_DISPLAY_MS_TOTAL - elapsed_ms)
-            self._view.after(int(remaining_ms), self._on_startup_complete)
+            self._vm.after(int(remaining_ms), self._on_startup_complete)
         except AspirabotBaseError as exc:
             self._handle_error(str(exc))
 
@@ -124,8 +120,7 @@ class SplashscreenPresenter:
 
     def _on_startup_complete(self) -> None:
         """Destroy the splash screen and trigger the success callback."""
-        # Close the splash overlay before the main window appears.
-        self._view.destroy()
+        self._vm.destroy()
         self._on_success()
 
     def _handle_error(self, message: str) -> None:
@@ -134,9 +129,8 @@ class SplashscreenPresenter:
         Args:
             message: Human-readable description of the failure cause.
         """
-        # Display the error while the splash is still visible.
-        self._view.show_error(message)
-        self._view.destroy()
+        self._vm.show_error(message)
+        self._vm.destroy()
         self._on_failure()
 
 
