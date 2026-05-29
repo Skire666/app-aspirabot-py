@@ -228,6 +228,7 @@ class StepsListCrudView(ttk.Frame):
         """
         # Always cache the latest step list for future refreshes.
         self._last_steps = list(steps)
+        self._step_renderer.set_steps_context(self._last_steps)
 
         # Skip the DragDropList update while it is mid-callback to prevent
         # re-entrant mutations (presenter calling render_steps via _refresh_view).

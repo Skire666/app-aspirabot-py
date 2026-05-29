@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.scroll_down_params import ScrollDownParams
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
@@ -92,8 +94,9 @@ class ScrollDownFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_PIXELS_DISTANCE].set(str(model.params.get(C_KEY_PIXELS_DISTANCE, 1000)))
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        p = cast(ScrollDownParams, model.params)
+        widgets[C_KEY_PIXELS_DISTANCE].set(str(p.pixels))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -111,7 +114,7 @@ class ScrollDownFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -121,7 +124,8 @@ class ScrollDownFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        return f"Défilement vers le bas\nLongueur: {model.params.get(C_KEY_PIXELS_DISTANCE, 0)} px"
+        p = cast(ScrollDownParams, model.params)
+        return f"Défilement vers le bas\nLongueur: {p.pixels} px"
 
 
 register_form(ScrollDownFormDef())

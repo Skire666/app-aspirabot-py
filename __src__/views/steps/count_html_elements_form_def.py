@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.count_html_elements_params import CountHtmlElementsParams
 from shared.constants import (
     C_MAXIMUM_QTY_COUNTER,
 )
@@ -144,16 +146,15 @@ class CountHtmlElementsFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, C_INPUT_DEFAULT_CSS_SELECTOR))
-        si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(
-            model.params.get(C_KEY_SUCCESS_IF, "success"), COUNT_SUCCESS_IF_DISPLAY[0],
-        )
+        p = cast(CountHtmlElementsParams, model.params)
+        widgets[C_KEY_SELECTOR].set(p.selector)
+        si_display = COUNT_SUCCESS_IF_MODEL_TO_VIEW.get(p.success_if, COUNT_SUCCESS_IF_DISPLAY[0])
         widgets[C_KEY_SUCCESS_IF].set(si_display)
 
-        op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get(C_KEY_OPERATOR, "equal"), COUNT_OP_DISPLAY[-1])
+        op_display = COUNT_OP_MODEL_TO_VIEW.get(p.operator, COUNT_OP_DISPLAY[-1])
         widgets[C_KEY_OPERATOR].set(op_display)
-        widgets[C_KEY_VALUE].set(str(model.params.get(C_KEY_VALUE, 0)))
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        widgets[C_KEY_VALUE].set(str(p.value))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -178,7 +179,7 @@ class CountHtmlElementsFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -188,6 +189,7 @@ class CountHtmlElementsFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
+        p = cast(CountHtmlElementsParams, model.params)
         op_labels = {
             "equal": "==",
             "not_equal": "!=",
@@ -196,9 +198,9 @@ class CountHtmlElementsFormDef(IStepFormDef):
             "greater_or_equal": ">=",
             "less_or_equal": "<=",
         }
-        op = op_labels.get(model.params.get(C_KEY_OPERATOR, "equal"), "?")
-        selector = model.params.get(C_KEY_SELECTOR, "<vide>")
-        val_str = str(model.params.get(C_KEY_VALUE, 0))
+        op = op_labels.get(p.operator, "?")
+        selector = p.selector or "<vide>"
+        val_str = str(p.value)
         return f"Compter les éléments  -  Doit être {op} {val_str}\nSél. : {selector}"
 
 

@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from typing import override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.extract_texts_params import ExtractTextsParams
 from playwright.sync_api import ElementHandle
 from services.steps._helpers import extract_from_element
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
@@ -32,15 +33,15 @@ class ExtractTextsExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Query the selector, apply the target filter, and extract text into the context.
 
-        Reads ExtractTextParams from context.step_params, queries all matching DOM
+        Reads ExtractTextsParams from context step params, queries all matching DOM
         elements, filters to first, last, or all per the target param, then extracts
         text using the configured mode. Writes a summary to context.last_message_step.
 
         Args:
             browser: Live browser service providing the current Playwright page.
-            context: Scraping context; step_params is read and last_message_step is written.
+            context: Scraping context; step params is read and last_message_step is written.
         """
-        p = ExtractTextsParams.from_dict(context.step_scraping_data.params)
+        p = cast(ExtractTextsParams, context.step_scraping_data.params)
         page = browser.get_current_page()
 
         elements: list[ElementHandle] = page.query_selector_all(p.selector)
@@ -60,17 +61,17 @@ class ExtractTextsExecutor(IStepExecutor):
         context.last_message_step = f"Extrait x{len(texts)} texte(s) | Debug='{debug_one_item}'."
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Check that selector, extract_mode, and target are all valid.
 
         Args:
-            model: The step model whose params dict is inspected.
+            model: The step model whose params are inspected.
             step_index: Zero-based index used to format error messages.
 
         Returns:
             List of user-facing error strings; empty when the model is valid.
         """
-        p = ExtractTextsParams.from_dict(model.params)
+        p = cast(ExtractTextsParams, model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_modes = {
             ExtractTextHtmlEnum.E_INNER_TEXT.value,

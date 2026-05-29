@@ -32,6 +32,7 @@ from services.workflow_service import WorkflowService
 from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum
 from shared.exception_util import AspirabotBaseError, ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
+from shared.step_registry import get_step_executor
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -464,7 +465,7 @@ class ScrapingService:
 
         assert self._browser_service is not None
         try:
-            executor: IStepExecutor = self._workflow_service.get_step_executor(step.step_type)
+            executor: IStepExecutor = get_step_executor(step.step_type)
             executor.execute_logical(self._browser_service, self._context)
         except AspirabotBaseError as exc:
             # Log the exception and set the step result to failure, but allow the run to continue.

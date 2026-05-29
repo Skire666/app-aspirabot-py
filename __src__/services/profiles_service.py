@@ -85,20 +85,13 @@ class ProfilesService:
         self._repository.create_profiles(profiles)
 
     def read_profiles(self, id_file: str) -> ProfilesModel:
-        """Load a single profile by its file identifier and wire step context.
-
-        After loading, each :class:`~models.step_scraping_model.StepScrapingModel`
-        in the profile's ``steps`` list has its ``parent_context`` attribute set
-        to the full sibling list. This allows individual steps to query their
-        neighbours (for example, to resolve relative indices) without holding a
-        direct reference to the parent model.
+        """Load a single profile by its file identifier.
 
         Args:
             id_file: Unique alphanumeric identifier of the profile file to load.
 
         Returns:
-            A fully populated :class:`~models.profiles_model.ProfilesModel` with
-            inter-step context injected.
+            A fully populated :class:`~models.profiles_model.ProfilesModel`.
 
         Raises:
             DatabaseUnavailableError: If the file exists but cannot be read or

@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.wait_user_action_params import WaitUserActionParams
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.enums import StepTypeEnum
@@ -133,16 +134,15 @@ class WaitUserActionFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
+        p = cast(WaitUserActionParams, model.params)
         widgets[C_KEY_CONDITION].set(
-            CONDITION_MODEL_TO_VIEW.get(model.params.get(C_KEY_CONDITION, "always"), C_INPUT_DEFAULT_CONDITION),
+            CONDITION_MODEL_TO_VIEW.get(p.condition, C_INPUT_DEFAULT_CONDITION),
         )
-        widgets[C_KEY_WAIT_DURATION].set(str(model.params.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION)))
+        widgets[C_KEY_WAIT_DURATION].set(str(p.wait_duration))
         widgets[C_KEY_WAIT_UNIT].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_WAIT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
-            ),
+            WAIT_UNIT_MODEL_TO_VIEW.get(p.wait_unit, C_UNITS_TIME_DEFAULT_VIEW),
         )
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -162,7 +162,7 @@ class WaitUserActionFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -172,10 +172,11 @@ class WaitUserActionFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
+        p = cast(WaitUserActionParams, model.params)
         cond_labels = {"success": "Si succès", "failure": "Si échec", "always": "Toujours"}
-        condition = cond_labels.get(model.params.get(C_KEY_CONDITION, "always"), "toujours")
-        wd = model.params.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION)
-        unit_time = model.params.get(C_KEY_WAIT_UNIT, "")
+        condition = cond_labels.get(p.condition, "toujours")
+        wd = p.wait_duration
+        unit_time = p.wait_unit
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
         delay_str = f"Si reprise demandée, patienter {wd} {unit_display}" if wd > 0 else ""

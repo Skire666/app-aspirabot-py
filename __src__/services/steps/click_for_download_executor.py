@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from typing import override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
-from models.steps.click_on_element_params import ClickOnElementParams
+from models.steps_context_model import StepsContext
+from models.steps.click_for_download_params import ClickForDownloadParams
 from playwright.sync_api import Error as PlaywrightError
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import DownloadNotDetectedError, ElementNotFoundForClickError
 from shared.i18n_fra import ERROR_TEMPLATES
@@ -48,17 +49,17 @@ class ClickForDownloadExecutor(IStepExecutor):
 
         Args:
             browser: Browser service owning the current page.
-            context: Execution context; step_params must be parseable as ClickOnElementParams.
+            context: Execution context; step params must be ClickForDownloadParams.
                 Sets context.last_message_step on success.
 
         Raises:
             ElementNotFoundForClickError: If the selector matches no element on the page.
             DownloadNotDetectedError: If no download was triggered after all click attempts.
         """
-        p = ClickOnElementParams.from_dict(context.step_scraping_data.params)
+        p = cast(ClickForDownloadParams, context.step_scraping_data.params)
         page = browser.get_current_page()
         if page.locator(p.selector).count() <= 0:
-            raise ElementNotFoundForClickError(p.selector, p.mode)
+            raise ElementNotFoundForClickError(p.selector, p.click_mode)
         download = self._do_click_for_download(browser, p.click_mode, p.selector, p.index_clicked)
         if not (download and download.value):
             raise DownloadNotDetectedError()
@@ -98,18 +99,17 @@ class ClickForDownloadExecutor(IStepExecutor):
         return ClickForDownloadExecutor._try_js_click(page, elements, index_clicked)
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Check that the step parameters are valid before execution.
 
         Args:
-            model: The step model whose params will be parsed as ClickOnElementParams.
-            step_index: Zero-based index of the step in the workflow, used to format error messages.
+            model: The step model whose params will be read as ClickForDownloadParams.
+            step_index: Zero-based index of the step in the workflow.
 
         Returns:
-            An empty list if all parameters are valid, or a list of French error messages
-            describing each violation.
+            An empty list if all parameters are valid, or a list of French error messages.
         """
-        p = ClickOnElementParams.from_dict(model.params)
+        p = cast(ClickForDownloadParams, model.params)
         index_display = str(step_index + 1).zfill(2)
         if p.index_clicked <= -1:
             return [ERROR_TEMPLATES["click_element_index_invalid"].format(step=index_display)]

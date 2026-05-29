@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.export_data_to_js_params import ExportDataToJsParams
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -90,8 +92,9 @@ class ExportDataToJsFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_PREFIX].set(model.params.get(C_KEY_PREFIX, ""))
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        p = cast(ExportDataToJsParams, model.params)
+        widgets[C_KEY_PREFIX].set(p.prefix_file)
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -109,7 +112,7 @@ class ExportDataToJsFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -119,7 +122,8 @@ class ExportDataToJsFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        prefix = model.params.get(C_KEY_PREFIX, "<vide>")
+        p = cast(ExportDataToJsParams, model.params)
+        prefix = p.prefix_file or "<vide>"
         return f"Exporter les données\nPréfixe : {prefix}"
 
 

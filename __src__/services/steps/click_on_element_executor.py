@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from typing import override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.click_on_element_params import ClickOnElementParams
 from playwright.sync_api import ElementHandle
 from playwright.sync_api import Error as PlaywrightError
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
 from shared.i18n_fra import ERROR_TEMPLATES
@@ -40,11 +41,11 @@ class ClickOnElementExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = ClickOnElementParams.from_dict(context.step_scraping_data.params)
+        p = cast(ClickOnElementParams, context.step_scraping_data.params)
 
         page = browser.get_current_page()  # can throw if page is closed
         if page.locator(p.selector).count() <= 0:
-            raise ElementNotFoundForClickError(p.selector, p.mode)
+            raise ElementNotFoundForClickError(p.selector, p.click_mode)
 
         result = self._do_click(browser, p.click_mode, p.selector, p.index_clicked)  # can throw
 
@@ -81,9 +82,9 @@ class ClickOnElementExecutor(IStepExecutor):
         return "JS Direct"
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate the step model."""
-        p = ClickOnElementParams.from_dict(model.params)
+        p = cast(ClickOnElementParams, model.params)
         index_display = str(step_index + 1).zfill(2)
 
         if p.index_clicked <= -1:

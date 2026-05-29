@@ -8,15 +8,18 @@ It includes the StepTypeEnum enumeration and default parameter values for each t
 # Imports
 # -----------------------------------------------------------------------------
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
 
-ParentContextType = TypeVar("ParentContextType")
+if TYPE_CHECKING:
+    from interfaces.i_step_params import IStepParams
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -29,114 +32,93 @@ class StepScrapingModel:
 
     Attributes:
         step_type: The type of action to perform.
-        params: Type-specific parameters for the action.
+        step_id: Unique identifier for this step instance.
+        is_active: Whether this step is enabled during execution.
+        modified_date: Timestamp of the last modification.
+        params: Typed parameters specific to this step type.
 
     Example:
-        >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_FIXED_TIME)
-        >>> step.params["duration"]
-        0
+        >>> step = StepScrapingModel(StepTypeEnum.E_SCROLL_DOWN, "abc", params=ScrollDownParams.default())
+        >>> step.params.pixels
+        1000
     """
 
     step_type: StepTypeEnum
     step_id: str
+    params: IStepParams
     is_active: bool = True
-    modified_date: datetime | None = None
-    params: dict[str, Any] = field(default_factory=dict)
-    parent_context: ParentContextType = field(default=None, repr=False, compare=False)
-
-    def __init__(
-        self,
-        step_type: StepTypeEnum,
-        step_id: str,
-        is_active: bool = True,
-        modified_date: datetime | None = None,
-        params: dict[str, Any] | None = None,
-        parent_context: ParentContextType = None,
-    ) -> None:
-        """Initializes a scraping step model.
-
-        Args:
-            step_type: The type of step.
-            step_id: The unique step identifier.
-            is_active: Whether the step is enabled.
-            modified_date: ISO string of the last modification date.
-            params: Step-specific parameters.
-            parent_context: The context of the parent step.
-        """
-        self.step_type = step_type
-        self.step_id = step_id
-        self.is_active = is_active
-        self.modified_date = modified_date or datetime.now()
-        self.params = params if params is not None else {}
-        self.parent_context = parent_context
+    modified_date: datetime = field(default_factory=datetime.now)
 
     @classmethod
     def import_from_data_json(cls, data: dict[str, Any]) -> StepScrapingModel:
-        """Deserializes a step from a raw dictionary.
+        """Deserialize a step from a raw dictionary using the registered params builder.
 
         Args:
-            data: A dict with 'step_type' (str) and 'params' (dict) keys.
+            data: A dict with 'step_type', 'step_id', 'is_active', and 'params' keys.
 
         Returns:
-            A new StepScrapingModel instance.
+            A new StepScrapingModel instance with fully typed params.
 
         Raises:
             ValueError: When the step_type value is unknown.
+            ParamsBuilderNotRegisteredError: When no builder is registered for the type.
 
         Example:
-            >>> raw = {"step_type": "SCROLL_DOWN", "params": {"pixels": 500}}
-            >>> StepScrapingModel.from_dict(raw).params["pixels"]
+            >>> raw = {"step_type": "SCROLL_DOWN", "step_id": "abc", "params": {"pixels": 500}}
+            >>> StepScrapingModel.import_from_data_json(raw).params.pixels
             500
         """
+        from shared.step_registry import build_params  # local import avoids circular import at module level
+
+        step_type = StepTypeEnum(data.get("step_type"))
+        raw_params: dict[str, Any] = data.get("params") or {}
+        raw_date = dict_with_key_to_optional_datetime(data, "modified_date")
         return cls(
-            step_type=StepTypeEnum(data.get("step_type")),
-            step_id=data.get("step_id"),
-            is_active=data.get("is_active"),
-            modified_date=dict_with_key_to_optional_datetime(data, "modified_date"),
-            params=data.get("params"),
-            parent_context=None,
+            step_type=step_type,
+            step_id=str(data.get("step_id", "")),
+            is_active=bool(data.get("is_active", True)),
+            modified_date=raw_date if raw_date is not None else datetime.now(),
+            params=build_params(step_type, raw_params),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
-        """Serializes the step to a JSON-compatible dictionary.
+        """Serialize the step to a JSON-compatible dictionary.
 
         Returns:
-            A dict with 'step_type' (str value) and 'params' keys.
+            A dict with 'step_type', 'step_id', 'is_active', 'modified_date', and 'params' keys.
 
         Raises:
             None.
 
         Example:
-            >>> step = StepScrapingModel.create_default(StepTypeEnum.WAIT_FIXED_TIME)
             >>> step.export_to_data_json()["step_type"]
-            'WAIT_FIXED_TIME'
+            'SCROLL_DOWN'
         """
         return {
             "step_type": self.step_type.value,
             "step_id": self.step_id,
             "is_active": self.is_active,
             "modified_date": self.modified_date,
-            "params": dict(self.params),
+            "params": self.params.to_dict(),
         }
 
     def copy_business(self) -> StepScrapingModel:
-        """Creates a duplicate of the given step with a new unique ID.
+        """Create a duplicate of this step with a new unique ID.
 
-        Args:
-            step: The StepScrapingModel instance to duplicate.
+        The typed params instance is shared (frozen dataclasses are immutable),
+        so no deep copy is needed.
 
         Returns:
-            A new StepScrapingModel instance with the same type and params but a new ID.
+            A new StepScrapingModel with identical type and params but a fresh step_id.
         """
         return StepScrapingModel(
             step_type=self.step_type,
-            step_id=generate_rng_id_step(),  # Ensure the duplicate has a unique ID.
+            step_id=generate_rng_id_step(),
             is_active=self.is_active,
-            params=dict(self.params),
-            parent_context=self.parent_context,
+            params=self.params,
             modified_date=datetime.now(),
         )
 
     def mark_as_modified(self) -> None:
-        """Updates the step's modified date to the current time."""
+        """Update the step's modified date to the current time."""
         self.modified_date = datetime.now()

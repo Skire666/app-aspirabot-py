@@ -10,7 +10,6 @@ No business logic, no Model or Service imports.
 
 from dataclasses import dataclass
 
-
 # -----------------------------------------------------------------------------
 # Item-level states (list entries)
 # -----------------------------------------------------------------------------

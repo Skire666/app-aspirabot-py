@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.close_tabs_params import CloseTabsParams
 from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
@@ -167,10 +169,11 @@ class CloseTabsFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_FILTER_MODE].set(model.params.get(C_KEY_FILTER_MODE, OpenUrlModeEnum.E_SOURCE.value))
-        widgets[C_KEY_FILTER_CUSTOM].set(model.params.get(C_KEY_FILTER_CUSTOM, ""))
-        widgets[C_KEY_MAX_TABS].set(str(model.params.get(C_KEY_MAX_TABS, C_INPUT_DEFAULT_MAX_TABS)))
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        p = cast(CloseTabsParams, model.params)
+        widgets[C_KEY_FILTER_MODE].set(p.filter_mode)
+        widgets[C_KEY_FILTER_CUSTOM].set(p.filter_custom)
+        widgets[C_KEY_MAX_TABS].set(str(p.max_tabs))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -190,7 +193,7 @@ class CloseTabsFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -200,11 +203,12 @@ class CloseTabsFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        max_tabs = model.params.get(C_KEY_MAX_TABS, C_INPUT_DEFAULT_MAX_TABS)
+        p = cast(CloseTabsParams, model.params)
+        max_tabs = p.max_tabs
 
         # Custom filter mode includes the filter pattern in the label
-        if model.params.get(C_KEY_FILTER_MODE) == C_INPUT_IS_FILTER_CUSTOM:
-            filter_custom = model.params.get(C_KEY_FILTER_CUSTOM, "")
+        if p.filter_mode == C_INPUT_IS_FILTER_CUSTOM:
+            filter_custom = p.filter_custom
             return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre URL : *{filter_custom}*"
         return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre : Garde l'URL de départ."
 

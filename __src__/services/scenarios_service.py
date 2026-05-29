@@ -38,8 +38,7 @@ class ScenariosService:
       via :meth:`ScenarioModel.mark_as_created` before it is persisted.
     * Every update refreshes the modification timestamp via
       :meth:`ScenarioModel.mark_as_modified`.
-    * After loading a scenario, each step's ``parent_context`` is wired to the
-      sibling list so that steps can inspect neighbouring steps at runtime.
+    * Steps are loaded with fully typed params via the registered params builders.
 
     The service never deals with raw file paths or serialisation formats; all
     persistence details are encapsulated by the injected repository.
@@ -152,20 +151,13 @@ class ScenariosService:
         self._repository.create_default_profile_for_scenario(scenario)
 
     def read_scenario(self, id_file: str) -> ScenarioModel:
-        """Load a single scenario by its file identifier and wire step context.
-
-        After loading, each :class:`~models.step_scraping_model.StepScrapingModel`
-        in the scenario's ``steps`` list has its ``parent_context`` attribute set
-        to the full sibling list. This allows individual steps to query their
-        neighbours (for example, to resolve relative indices) without holding a
-        direct reference to the parent model.
+        """Load a single scenario by its file identifier.
 
         Args:
             id_file: Unique alphanumeric identifier of the scenario file to load.
 
         Returns:
-            A fully populated :class:`~models.scenario_model.ScenarioModel` with
-            inter-step context injected.
+            A fully populated :class:`~models.scenario_model.ScenarioModel`.
 
         Raises:
             ScenarioNotFoundError: If no file matches *id_file*.
@@ -174,17 +166,10 @@ class ScenariosService:
 
         Example:
             >>> scenario = service.read_scenario("abc123")
-            >>> scenario.steps[0].parent_context is scenario.steps
+            >>> len(scenario.steps) >= 0
             True
         """
-        # Load the raw model from persistent storage.
-        model = self._repository.read_scenario(id_file)
-
-        # Inject sibling context so each step can inspect its neighbours.
-        for step in model.steps:
-            step.parent_context = model.steps
-
-        return model
+        return self._repository.read_scenario(id_file)
 
     def update_scenario(self, scenario: ScenarioModel) -> None:
         """Refresh the modification timestamp on *scenario* and overwrite it on disk.

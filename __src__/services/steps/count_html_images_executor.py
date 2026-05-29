@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any, override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.count_html_images_params import CountHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition, get_filtered_images
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
 from shared.i18n_fra import ERROR_TEMPLATES
@@ -27,8 +28,8 @@ class CountHtmlImagesExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = CountHtmlImagesParams.from_dict(context.step_scraping_data.params)
-        all_images = get_filtered_images(browser, context.step_scraping_data.params)
+        p = cast(CountHtmlImagesParams, context.step_scraping_data.params)
+        all_images = get_filtered_images(browser, p.to_dict())
         condition_met = evaluate_count_condition(len(all_images), p.operator, p.value)
         step_success = condition_met if p.success_if == "success" else not condition_met
         if not step_success:
@@ -38,11 +39,11 @@ class CountHtmlImagesExecutor(IStepExecutor):
         context.last_message_step = f"Trouvé {len(all_images)} image(s), condition vérifiée."
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate the step model parameters."""
-        p = CountHtmlImagesParams.from_dict(model.params)
+        p = cast(CountHtmlImagesParams, model.params)
         step_label = str(step_index + 1).zfill(2)
-        bounds, errors = self._parse_bounds(model.params, step_label)
+        bounds, errors = self._parse_bounds(p, step_label)
         errors.extend(self._validate_ranges(bounds, step_label))
 
         # Validate count comparison parameters.
@@ -60,15 +61,28 @@ class CountHtmlImagesExecutor(IStepExecutor):
         return errors
 
     @staticmethod
-    def _parse_bounds(params: dict[str, Any], step_label: str) -> tuple[dict[str, int], list[str]]:
-        """Parse dimension params as integers; return (bounds, errors)."""
+    def _parse_bounds(p: CountHtmlImagesParams, step_label: str) -> tuple[dict[str, int], list[str]]:
+        """Parse dimension properties as integers; return (bounds, errors).
+
+        Args:
+            p: Typed params instance with image dimension properties.
+            step_label: Zero-padded step number for error messages.
+
+        Returns:
+            A tuple of (successfully parsed bounds dict, parse error list).
+        """
         errors: list[str] = []
         bounds: dict[str, int] = {}
 
-        # Attempt integer conversion for each dimension key.
-        for key in ("height_min", "height_max", "width_min", "width_max"):
+        # Attempt integer conversion for each dimension property.
+        for key, val in (
+            ("height_min", p.height_min),
+            ("height_max", p.height_max),
+            ("width_min", p.width_min),
+            ("width_max", p.width_max),
+        ):
             try:
-                bounds[key] = int(params.get(key, -1))
+                bounds[key] = int(val)
             except ValueError, TypeError:
                 errors.append(ERROR_TEMPLATES["image_dim_not_int"].format(step=step_label, key=key))
         return bounds, errors

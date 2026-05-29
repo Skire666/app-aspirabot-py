@@ -27,6 +27,7 @@ from collections import OrderedDict
 from collections.abc import Callable
 
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_BLUE_HIGHLIGHT_LIGHT
 from shared.enums import StepTypeEnum
 from shared.step_registry import get_form
@@ -71,6 +72,7 @@ class StepItemRenderer:
                 selected item index, or None if nothing is selected.
         """
         self._get_selected_index = get_selected_index
+        self._steps_context: StepsContext = StepsContext.from_list([])
 
         # Color palettes built once at init — resolved per-render via _resolve_colors.
         self._colors_normal: dict[str, str] = {
@@ -96,6 +98,17 @@ class StepItemRenderer:
 
         # Bounded LRU label cache — oldest entry evicted when _LABEL_CACHE_MAX is reached.
         self._cached_labels: OrderedDict[str, str] = OrderedDict()
+
+    def set_steps_context(self, steps: list[StepScrapingModel]) -> None:
+        """Update the steps snapshot used by format_label for cross-step rendering.
+
+        Called by the view before each render pass so that format_label
+        implementations (e.g. JUMP_TO_STEP) can resolve sibling positions.
+
+        Args:
+            steps: The current ordered workflow step list.
+        """
+        self._steps_context = StepsContext.from_list(steps)
 
     # -----------------------------------------------------------------------
     # Color resolution
@@ -243,7 +256,7 @@ class StepItemRenderer:
         """
         # Jump steps reference global positions — bypass the cache.
         if item.step_type == StepTypeEnum.E_JUMP_TO_STEP:
-            return get_form(item.step_type).format_label(item, idx)
+            return get_form(item.step_type).format_label(item, idx, self._steps_context)
 
         # Return cached label, promoting the entry to "most recently used".
         key = f"{item.step_id}|{item.modified_date}"
@@ -252,7 +265,7 @@ class StepItemRenderer:
             self._cached_labels.move_to_end(key)
             return cached
 
-        label = get_form(item.step_type).format_label(item, idx)
+        label = get_form(item.step_type).format_label(item, idx, self._steps_context)
         return self._store_in_cache(key, label)
 
     def _store_in_cache(self, key: str, value: str) -> str:

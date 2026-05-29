@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.click_for_download_params import ClickForDownloadParams
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -129,10 +131,11 @@ class ClickForDownloadFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, C_INPUT_DEFAULT_CSS_SELECTOR))
-        widgets[C_KEY_CLICK_MODE].set(model.params.get(C_KEY_CLICK_MODE, "Normal"))
-        widgets[C_KEY_INDEX_CLICKED].set(model.params.get(C_KEY_INDEX_CLICKED, 0))
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        p = cast(ClickForDownloadParams, model.params)
+        widgets[C_KEY_SELECTOR].set(p.selector)
+        widgets[C_KEY_CLICK_MODE].set(p.click_mode)
+        widgets[C_KEY_INDEX_CLICKED].set(p.index_clicked)
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -152,7 +155,7 @@ class ClickForDownloadFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -162,8 +165,9 @@ class ClickForDownloadFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        selector = model.params.get(C_KEY_SELECTOR, "<vide>")
-        index_clicked = model.params.get(C_KEY_INDEX_CLICKED, 0)
+        p = cast(ClickForDownloadParams, model.params)
+        selector = p.selector or "<vide>"
+        index_clicked = p.index_clicked
         return f"Cliquer pour télécharger  -  Index {index_clicked}\nSél. : {selector}"
 
 

@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.scroll_down_params import ScrollDownParams
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
 from shared.enums import StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
@@ -27,7 +28,7 @@ class ScrollDownExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = ScrollDownParams.from_dict(context.step_scraping_data.params)
+        p = cast(ScrollDownParams, context.step_scraping_data.params)
 
         is_success, _ = browser.evaluate_script_with_safe_retry(
             f"window.scrollBy(0, {p.pixels})", C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
@@ -36,9 +37,9 @@ class ScrollDownExecutor(IStepExecutor):
             raise ScriptExecutionFailedError("scroll_down")
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate the step model parameters."""
-        p = ScrollDownParams.from_dict(model.params)
+        p = cast(ScrollDownParams, model.params)
         step_label = str(step_index + 1).zfill(2)
         if p.pixels < 1:
             return [ERROR_TEMPLATES["scroll_down_pixels_invalid"].format(step=step_label)]

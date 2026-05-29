@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.download_image_params import DownloadImageParams
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
@@ -155,13 +157,14 @@ class DownloadImageFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_MODE].set(model.params.get(C_KEY_MODE, "all"))
-        widgets[C_KEY_UNIQUE_ONLY].set(bool(model.params.get(C_KEY_UNIQUE_ONLY, False)))
-        widgets[C_KEY_HEIGHT_MIN].set(str(model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets[C_KEY_HEIGHT_MAX].set(str(model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)))
-        widgets[C_KEY_WIDTH_MIN].set(str(model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
-        widgets[C_KEY_WIDTH_MAX].set(str(model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)))
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        p = cast(DownloadImageParams, model.params)
+        widgets[C_KEY_MODE].set(p.mode)
+        widgets[C_KEY_UNIQUE_ONLY].set(p.unique_only)
+        widgets[C_KEY_HEIGHT_MIN].set(str(p.height_min))
+        widgets[C_KEY_HEIGHT_MAX].set(str(p.height_max))
+        widgets[C_KEY_WIDTH_MIN].set(str(p.width_min))
+        widgets[C_KEY_WIDTH_MAX].set(str(p.width_max))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -184,7 +187,7 @@ class DownloadImageFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -194,12 +197,13 @@ class DownloadImageFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        mode = model.params.get(C_KEY_MODE, "")
-        unique_only = model.params.get(C_KEY_UNIQUE_ONLY, False)
-        width_min = model.params.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
-        height_min = model.params.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)
-        width_max = model.params.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)
-        height_max = model.params.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)
+        p = cast(DownloadImageParams, model.params)
+        mode = p.mode
+        unique_only = p.unique_only
+        width_min = p.width_min
+        height_min = p.height_min
+        width_max = p.width_max
+        height_max = p.height_max
         dup_str = "(doublons refusés)" if unique_only else "(doublons autorisés)"
 
         return f"Télécharger images {dup_str}\n{mode}  -  Taille : {width_min}x{height_min} -> {width_max}x{height_max}"

@@ -61,16 +61,13 @@ class _Rule(Generic[T, V]):
     """A single validation predicate with an optional guard condition."""
 
     def __init__(
-        self,
-        predicate: Callable[[V], bool],
-        message: str,
-        condition: Callable[[T], bool] | None = None,
+        self, predicate: Callable[[V], bool], message: str, condition: Callable[[T], bool] | None = None
     ) -> None:
         self._predicate = predicate
         self._message = message
         self._condition = condition
 
-    def with_condition(self, condition: Callable[[T], bool]) -> "_Rule[T, V]":
+    def with_condition(self, condition: Callable[[T], bool]) -> _Rule[T, V]:
         """Return a copy of this rule bound to *condition*.
 
         Args:
@@ -128,7 +125,7 @@ class RuleBuilder(Generic[T, V]):
 
     # ── Rule factories ────────────────────────────────────────────────
 
-    def not_empty(self, message: str = "La valeur ne peut pas être vide.") -> "RuleBuilder[T, V]":
+    def not_empty(self, message: str = "La valeur ne peut pas être vide.") -> RuleBuilder[T, V]:
         """Fail when the value is None, empty string, or whitespace only.
 
         Args:
@@ -137,6 +134,7 @@ class RuleBuilder(Generic[T, V]):
         Returns:
             This builder, for further chaining.
         """
+
         def _check(v: object) -> bool:
             if isinstance(v, str):
                 return bool(v.strip())
@@ -144,7 +142,7 @@ class RuleBuilder(Generic[T, V]):
 
         return self._add(_check, message)
 
-    def not_equal(self, other: V, message: str = "La valeur n'est pas autorisée.") -> "RuleBuilder[T, V]":
+    def not_equal(self, other: V, message: str = "La valeur n'est pas autorisée.") -> RuleBuilder[T, V]:
         """Fail when the value equals *other*.
 
         Args:
@@ -156,11 +154,7 @@ class RuleBuilder(Generic[T, V]):
         """
         return self._add(lambda v: v != other, message)
 
-    def must(
-        self,
-        predicate: Callable[[V], bool],
-        message: str = "La valeur est invalide.",
-    ) -> "RuleBuilder[T, V]":
+    def must(self, predicate: Callable[[V], bool], message: str = "La valeur est invalide.") -> RuleBuilder[T, V]:
         """Fail when *predicate(value)* returns False.
 
         Args:
@@ -174,7 +168,7 @@ class RuleBuilder(Generic[T, V]):
 
     # ── Modifiers ─────────────────────────────────────────────────────
 
-    def when(self, condition: Callable[[T], bool]) -> "RuleBuilder[T, V]":
+    def when(self, condition: Callable[[T], bool]) -> RuleBuilder[T, V]:
         """Guard the last registered rule with *condition*.
 
         When *condition(instance)* returns False the rule is skipped entirely
@@ -191,7 +185,7 @@ class RuleBuilder(Generic[T, V]):
             self._rules[-1] = self._rules[-1].with_condition(condition)
         return self
 
-    def with_message(self, message: str) -> "RuleBuilder[T, V]":
+    def with_message(self, message: str) -> RuleBuilder[T, V]:
         """Override the message on the last registered rule.
 
         Args:
@@ -207,7 +201,7 @@ class RuleBuilder(Generic[T, V]):
 
     # ── Internal ──────────────────────────────────────────────────────
 
-    def _add(self, predicate: Callable[[V], bool], message: str) -> "RuleBuilder[T, V]":
+    def _add(self, predicate: Callable[[V], bool], message: str) -> RuleBuilder[T, V]:
         self._rules.append(_Rule(predicate, message))
         return self
 
@@ -221,11 +215,7 @@ class RuleBuilder(Generic[T, V]):
             List of error message strings (may be empty).
         """
         value = self._accessor(instance)
-        return [
-            msg
-            for rule in self._rules
-            if (msg := rule.evaluate(instance, value)) is not None
-        ]
+        return [msg for rule in self._rules if (msg := rule.evaluate(instance, value)) is not None]
 
 
 # -----------------------------------------------------------------------------
@@ -246,9 +236,10 @@ class AbstractValidator(Generic[T]):
     """
 
     def __init__(self) -> None:
+        """Initialize the validator with an empty rule set."""
         self._builders: list[RuleBuilder] = []
 
-    def rule_for(self, accessor: Callable[[T], V], field_name: str = "") -> "RuleBuilder[T, V]":
+    def rule_for(self, accessor: Callable[[T], V], field_name: str = "") -> RuleBuilder[T, V]:
         """Register a rule chain for the field returned by *accessor*.
 
         Args:

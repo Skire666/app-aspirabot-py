@@ -19,6 +19,7 @@ from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
 from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
+from shared.step_registry import build_params
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -44,7 +45,7 @@ class StepsListPresenter:
         view: IStepsListCrudView,
         service_scenario: ScenariosService,
         workflow_service: WorkflowService,
-        gestion_view: IStepsListGestionView | None = None,
+        gestion_view: IStepsListGestionView,
     ) -> None:
         """Initializes the presenter and binds view callbacks.
 
@@ -57,7 +58,7 @@ class StepsListPresenter:
         """
         self._logger = logging.getLogger(__name__)
         self._view = view
-        self._gestion_view: IStepsListGestionView | None = gestion_view
+        self._gestion_view: IStepsListGestionView = gestion_view
         self._service_scenario: ScenariosService = service_scenario
         self._workflow_service: WorkflowService = workflow_service
 
@@ -166,10 +167,7 @@ class StepsListPresenter:
             True when the step is accepted; False when it fails validation.
         """
         step = StepScrapingModel(
-            step_type=step_type,
-            step_id=generate_rng_id_step(),
-            is_active=True,
-            params=params,
+            step_type=step_type, step_id=generate_rng_id_step(), is_active=True, params=build_params(step_type, params)
         )
         # Validate in context of the full list with the new step appended.
         candidate_steps = list(self._steps)
@@ -209,7 +207,7 @@ class StepsListPresenter:
             step_type=step_type,
             step_id=existing.step_id,
             is_active=existing.is_active,
-            params=params,
+            params=build_params(step_type, params),
         )
         # Validate in context of the full list with the updated step in place.
         candidate_steps = list(self._steps)
@@ -256,8 +254,8 @@ class StepsListPresenter:
         if 0 <= index < len(self._steps):
             del self._steps[index]
             self._refresh_view()
-            first_error, _ = self._validate_all_steps(self._steps, index)
-            self._notify_validation_feedback(first_error)
+            errors = self.validate_steps()
+            self._notify_validation_feedback(errors[0] if errors else None)
 
     def _on_clear_all_steps(self) -> None:
         """Clears all steps and persists the empty workflow."""
@@ -285,10 +283,7 @@ class StepsListPresenter:
         """
         new_index = index + direction
         if 0 <= new_index < len(self._steps):
-            self._steps[index], self._steps[new_index] = (
-                self._steps[new_index],
-                self._steps[index],
-            )
+            self._steps[index], self._steps[new_index] = (self._steps[new_index], self._steps[index])
             self._refresh_view()
 
     @staticmethod
@@ -328,56 +323,17 @@ class StepsListPresenter:
         else:
             self._view.set_validation_status("Workflow valide.", False)
 
-    def _validate_all_steps(
-        self,
-        steps: list[StepScrapingModel],
-        candidate_index: int,
-    ) -> tuple[str | None, list[str]]:
-        """Validates a full step list and collects candidate step errors.
+    def _validate_solo_step(self, steps: list[StepScrapingModel], candidate_index: int) -> list[str]:
+        """Return validation errors for the candidate step within the full workflow context.
 
         Args:
-            steps: Full ordered workflow step list to validate.
-            candidate_index: Index of the step being confirmed.
-
-        Returns:
-            A tuple of (first_error_in_workflow, candidate_step_errors).
-        """
-        first_error: str | None = None
-        candidate_errors: list[str] = []
-
-        # Validate every step; track the first error and the candidate's errors.
-        for index, current in enumerate(steps):
-            errors = self._workflow_service.validate_step(index, current, steps)
-            if errors:
-                if first_error is None:
-                    first_error = errors[0]
-                if index == candidate_index:
-                    candidate_errors = errors
-        return first_error, candidate_errors
-
-    def _validate_solo_step(
-        self,
-        steps: list[StepScrapingModel],
-        candidate_index: int,
-    ) -> list[str]:
-        """Validates a full step list and collects candidate step errors.
-
-        Args:
-            steps: Full ordered workflow step list to validate.
-            candidate_index: Index of the step being confirmed.
+            steps: Full ordered workflow step list providing cross-step context.
+            candidate_index: Index of the step to validate.
 
         Returns:
             A list of validation errors for the candidate step.
         """
-        candidate_errors: list[str] = []
-
-        # Validate every step; track the first error and the candidate's errors.
-        for index, current in enumerate(steps):
-            errors = self._workflow_service.validate_step(index, current, steps)
-            if errors and index == candidate_index:
-                candidate_errors = errors
-                break
-        return candidate_errors
+        return self._workflow_service.validate_step(candidate_index, steps[candidate_index], steps)
 
 
 # EOF

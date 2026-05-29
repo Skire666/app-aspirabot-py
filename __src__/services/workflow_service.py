@@ -5,7 +5,7 @@ step registry.  The presenter calls validate_step() before persisting changes.
 
 Example:
     >>> service = WorkflowService()
-    >>> errors = service.validate_step(0, step)
+    >>> errors = service.validate_step(0, step, steps=[step])
     >>> errors
     []
 """
@@ -14,35 +14,10 @@ Example:
 # Imports
 # -----------------------------------------------------------------------------
 
-from interfaces.i_step_executor import IStepExecutor
 from models.step_scraping_model import StepScrapingModel
-from shared.enums import StepTypeEnum
-from shared.exception_util import (
-    ExecutorNotRegisteredError,
-    NoExecutorsRegisteredError,
-    WorkflowStepsContextRequiredError,
-)
-
-# -----------------------------------------------------------------------------
-# Variables
-# -----------------------------------------------------------------------------
-
-_all_step_executors: dict[StepTypeEnum, IStepExecutor] = {}
-
-
-def register_step_executor(executor: IStepExecutor) -> None:
-    """Registers an executor instance in the service registry.
-
-    Args:
-        executor: Concrete IStepExecutor instance.
-
-    Returns:
-        None.
-
-    Raises:
-        None.
-    """
-    _all_step_executors[executor.step_type()] = executor
+from models.steps_context_model import StepsContext
+from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
+from shared.step_registry import get_step_executor
 
 
 class WorkflowService:
@@ -53,7 +28,7 @@ class WorkflowService:
 
     Example:
         >>> service = WorkflowService()
-        >>> errors = service.validate_step(2, jump_step)
+        >>> errors = service.validate_step(2, jump_step, steps=[jump_step])
         >>> isinstance(errors, list)
         True
     """
@@ -61,51 +36,29 @@ class WorkflowService:
     def __init__(self) -> None:
         """Initialize the workflow service."""
 
-    @staticmethod
-    def get_step_executor(step_type: StepTypeEnum) -> IStepExecutor:
-        """Returns the registered executor for the given step type.
-
-        Args:
-            step_type: The StepTypeEnum to look up.
-
-        Returns:
-            The IStepExecutor instance registered for that type.
-
-        Raises:
-            ValueError: When no executor has been registered for the type.
-        """
-        if not _all_step_executors:
-            raise NoExecutorsRegisteredError()
-        executor = _all_step_executors.get(step_type)
-        if executor is None:
-            raise ExecutorNotRegisteredError(step_type)
-        return executor
-
     def validate_step(
         self,
         step_index: int,
         step: StepScrapingModel,
-        steps: list[StepScrapingModel] | None = None,
+        steps: list[StepScrapingModel],
     ) -> list[str]:
-        """Validates the parameters of a single workflow step.
+        """Validate the parameters of a single workflow step.
+
+        Builds a StepsContext from the full step list and passes it to the
+        registered executor so cross-step checks (e.g. jump targets) have
+        access to their siblings without any mutable side-effects on the model.
 
         Args:
             step_index: Zero-based position of the step in the workflow.
             step: The step to validate.
-            steps: Optional ordered workflow list for context-aware checks.
+            steps: Ordered workflow list required for context-aware checks.
 
         Returns:
             A list of error messages; empty when the step is valid.
-
-        Raises:
-            None.
         """
-        if steps is None:
-            raise WorkflowStepsContextRequiredError()
-
         try:
-            executor: IStepExecutor = self.get_step_executor(step.step_type)
-            step.parent_context = steps  # type: ignore
-            return executor.validate_model(step, step_index)
+            executor = get_step_executor(step.step_type)
+            steps_context = StepsContext.from_list(steps)
+            return executor.validate_model(step, step_index, steps_context)
         except (NoExecutorsRegisteredError, ExecutorNotRegisteredError):
             return []

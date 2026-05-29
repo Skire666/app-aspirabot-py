@@ -19,6 +19,7 @@ from tkinter import ttk
 from typing import Any, Protocol
 
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from shared.enums import StepTypeEnum
 
 # -----------------------------------------------------------------------------
@@ -98,12 +99,14 @@ class IStepFormDef(Protocol):
         """
         ...
 
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return the renderer label for a step list item.
 
         Args:
             model: The step model instance.
             idx: Zero-based index of the step in the workflow.
+            steps_context: Read-only snapshot of the full workflow; used by
+                steps that reference siblings (e.g. JUMP_TO_STEP).
 
         Returns:
             A short multi-line string for display in the DragDropList.

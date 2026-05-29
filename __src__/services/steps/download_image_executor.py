@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, override
+from typing import Any, cast, override
 from urllib.parse import urljoin
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import get_filtered_images
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepTypeEnum
 from shared.exception_util import ImageDownloadFailedError, ImageNotDownloadedError
@@ -45,7 +46,7 @@ class DownloadImageExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p: DownloadImageParams = DownloadImageParams.from_dict(context.step_scraping_data.params)
+        p = cast(DownloadImageParams, context.step_scraping_data.params)
         page = browser.get_current_page()
         downloaded_urls = context.downloaded_urls
 
@@ -84,7 +85,7 @@ class DownloadImageExecutor(IStepExecutor):
             raise ImageNotDownloadedError(len(targets))
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate the step model parameters.
 
         Args:
@@ -94,17 +95,18 @@ class DownloadImageExecutor(IStepExecutor):
         Returns:
             A list of error strings; empty when the model is valid.
         """
+        p = cast(DownloadImageParams, model.params)
         step_label = str(step_index + 1).zfill(2)
-        bounds, errors = self._parse_bounds(model.params, step_label)
+        bounds, errors = self._parse_bounds(p, step_label)
         errors.extend(self._validate_ranges(bounds, step_label))
         return errors
 
     @staticmethod
-    def _parse_bounds(params: dict[str, Any], step_label: str) -> tuple[dict[str, int], list[str]]:
-        """Parse dimension params as integers; return (bounds, errors).
+    def _parse_bounds(p: DownloadImageParams, step_label: str) -> tuple[dict[str, int], list[str]]:
+        """Parse dimension properties as integers; return (bounds, errors).
 
         Args:
-            params: Raw step parameter dict.
+            p: Typed params instance with image dimension properties.
             step_label: Zero-padded step number for error messages.
 
         Returns:
@@ -113,10 +115,15 @@ class DownloadImageExecutor(IStepExecutor):
         errors: list[str] = []
         bounds: dict[str, int] = {}
 
-        # Attempt integer conversion for each dimension key.
-        for key in ("height_min", "height_max", "width_min", "width_max"):
+        # Attempt integer conversion for each dimension property.
+        for key, val in (
+            ("height_min", p.height_min),
+            ("height_max", p.height_max),
+            ("width_min", p.width_min),
+            ("width_max", p.width_max),
+        ):
             try:
-                bounds[key] = int(params.get(key, -1))
+                bounds[key] = int(val)
             except ValueError, TypeError:
                 errors.append(ERROR_TEMPLATES["image_dim_not_int"].format(step=step_label, key=key))
         return bounds, errors

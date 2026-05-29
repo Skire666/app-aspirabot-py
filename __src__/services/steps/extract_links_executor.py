@@ -2,22 +2,23 @@
 
 from __future__ import annotations
 
-from typing import override
+from typing import cast, override
 from urllib.parse import urljoin, urlparse
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.extract_links_params import ExtractLinksParams
 from playwright.sync_api import ElementHandle
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.enums import ExtractTargetEnum, StepTypeEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 
 class ExtractLinksExecutor(IStepExecutor):
-    """Executor for the extract text scraping step."""
+    """Executor for the extract links scraping step."""
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -32,15 +33,15 @@ class ExtractLinksExecutor(IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Query the selector, apply the target filter, and extract links into the context.
 
-        Reads ExtractTextParams from context.step_params, queries all matching DOM
+        Reads ExtractLinksParams from context step params, queries all matching DOM
         elements, filters to first, last, or all per the target param, then extracts
-        links using the configured mode. Writes a summary to context.last_message_step.
+        links. Writes a summary to context.last_message_step.
 
         Args:
             browser: Live browser service providing the current Playwright page.
-            context: Scraping context; step_params is read and last_message_step is written.
+            context: Scraping context; step params is read and last_message_step is written.
         """
-        p = ExtractLinksParams.from_dict(context.step_scraping_data.params)
+        p = cast(ExtractLinksParams, context.step_scraping_data.params)
         page = browser.get_current_page()
 
         elements: list[ElementHandle] = page.query_selector_all(p.selector)
@@ -83,17 +84,17 @@ class ExtractLinksExecutor(IStepExecutor):
         return links
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
-        """Check that selector, extract_mode, and target are all valid.
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
+        """Check that selector and target are valid.
 
         Args:
-            model: The step model whose params dict is inspected.
+            model: The step model whose params are inspected.
             step_index: Zero-based index used to format error messages.
 
         Returns:
             List of user-facing error strings; empty when the model is valid.
         """
-        p = ExtractLinksParams.from_dict(model.params)
+        p = cast(ExtractLinksParams, model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_targets = {
             ExtractTargetEnum.E_FIRST.value,

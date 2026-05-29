@@ -8,15 +8,16 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.open_url_params import OpenUrlParams
 from shared.constants import (
     C_KEY_URL_MODE,
     C_MAXIMUM_SIZE_IMAGE,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
@@ -208,25 +209,22 @@ class OpenUrlFormDef(IStepFormDef):
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters from the model into form widgets.
+        """Load step parameters from the typed model into form widgets.
 
         Args:
-            model: The step model containing stored parameters.
+            model: The step model containing stored typed parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_URL_MODE].set(model.params.get(C_KEY_URL_MODE, C_INPUT_DEFAULT_URL_MODE))
-        widgets[C_KEY_URL_CUSTOM].set(model.params.get(C_KEY_URL_CUSTOM, C_INPUT_DEFAULT_URL))
-        widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
-        widgets[C_KEY_WAIT_DNS_SOLVER].set(model.params.get(C_KEY_WAIT_DNS_SOLVER, 6))
-        widgets[C_KEY_TIMEOUT_DURATION].set(
-            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION)),
-        )
+        p = cast(OpenUrlParams, model.params)
+        widgets[C_KEY_URL_MODE].set(p.url_mode)
+        widgets[C_KEY_URL_CUSTOM].set(p.url_custom)
+        widgets[C_KEY_WAIT_STATE].set(p.wait_state)
+        widgets[C_KEY_WAIT_DNS_SOLVER].set(p.wait_dns_solver)
+        widgets[C_KEY_TIMEOUT_DURATION].set(str(p.timeout_duration))
         widgets[C_KEY_TIMEOUT_UNIT].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
-            ),
+            WAIT_UNIT_MODEL_TO_VIEW.get(p.timeout_unit, C_UNITS_TIME_DEFAULT_VIEW),
         )
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -249,7 +247,7 @@ class OpenUrlFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -259,18 +257,14 @@ class OpenUrlFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        timeout = model.params.get(C_KEY_TIMEOUT_DURATION, 0)
-        unit_time = model.params.get(C_KEY_TIMEOUT_UNIT, "")
-        unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        url_mode = model.params.get(C_KEY_URL_MODE)
-
+        p = cast(OpenUrlParams, model.params)
+        unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(p.timeout_unit, p.timeout_unit)
         url_used = (
             "Prochaine URL dans la source"
-            if url_mode == OpenUrlModeEnum.E_SOURCE.value
-            else f"Url : {model.params.get(C_KEY_URL_CUSTOM, '')}"
+            if p.url_mode == OpenUrlModeEnum.E_SOURCE.value
+            else f"Url : {p.url_custom}"
         )
-
-        return f"Ouvrir une URL  -  timeout : {timeout} {unit_display}\n{url_used}"
+        return f"Ouvrir une URL  -  timeout : {p.timeout_duration} {unit_display}\n{url_used}"
 
 
 register_form(OpenUrlFormDef())

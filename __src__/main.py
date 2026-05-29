@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import models.steps  # noqa: F401 - load registry entries
+import presenters.steps  # noqa: F401 - load registry entries (params builders)
 import services.steps  # noqa: F401 - load registry entries
 import views.steps  # noqa: F401 - load registry entries
 from models.app_configuration_model import AppConfigurationModel

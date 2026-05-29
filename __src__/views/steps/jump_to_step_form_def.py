@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.jump_to_step_params import JumpToStepParams
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -131,10 +133,10 @@ class JumpToStepFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        cond_model = model.params.get(C_KEY_CONDITION, "success")
-        widgets[C_KEY_CONDITION].set(CONDITION_MODEL_TO_VIEW.get(cond_model, CONDITION_DISPLAY[0]))
+        p = cast(JumpToStepParams, model.params)
+        widgets[C_KEY_CONDITION].set(CONDITION_MODEL_TO_VIEW.get(p.condition, CONDITION_DISPLAY[0]))
 
-        target_hexastring = model.params.get("target_hexastring", "")
+        target_hexastring = p.target_hexastring
         ccb: ColumnCombobox = widgets[C_KEY_CHOICE_FROM_LISTBOX]
         all_steps_id_to_index: list[str] = widgets.get(C_KEY_ALL_STEPS_ID_TO_INDEX, [])
         if target_hexastring and target_hexastring in all_steps_id_to_index:
@@ -142,7 +144,7 @@ class JumpToStepFormDef(IStepFormDef):
         elif ccb.size() > 0:
             ccb.current(0)
 
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -165,7 +167,7 @@ class JumpToStepFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -175,19 +177,17 @@ class JumpToStepFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        target_hexastring = model.params.get("target_hexastring", "????")
+        p = cast(JumpToStepParams, model.params)
+        target_hexastring = p.target_hexastring or "????"
 
-        target_index = ""
-        for index_target, step_item in enumerate(model.parent_context):
-            if step_item.step_id == target_hexastring:
-                target_index = f"{index_target + 1}".zfill(2)
-                break
-
-        if not target_index:
+        idx_found = steps_context.find_index_by_id(target_hexastring)
+        if idx_found is None:
             target_hexastring = "????"
             target_index = "??"
+        else:
+            target_index = str(idx_found + 1).zfill(2)
 
-        cond = model.params.get(C_KEY_CONDITION, "success")
+        cond = p.condition
         if cond == "success":
             return f"Si le résultat est un succès\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
         if cond == "failure":

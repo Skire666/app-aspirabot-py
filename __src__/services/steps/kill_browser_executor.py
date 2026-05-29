@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import time
-from typing import override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.kill_browser_params import KillBrowserParams
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import ERROR_TEMPLATES
@@ -28,7 +29,7 @@ class KillBrowserExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = KillBrowserParams.from_dict(context.step_scraping_data.params)
+        p = cast(KillBrowserParams, context.step_scraping_data.params)
         delay = convert_to_sec(p.wait_duration, p.wait_unit)
         if delay > 0:
             time.sleep(delay)
@@ -37,9 +38,9 @@ class KillBrowserExecutor(IStepExecutor):
         context.end_process = True
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate the step model."""
-        p = KillBrowserParams.from_dict(model.params)
+        p = cast(KillBrowserParams, model.params)
         index_display = str(step_index + 1).zfill(2)
         errors: list[str] = []
         if p.wait_duration < 0:

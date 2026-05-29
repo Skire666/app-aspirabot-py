@@ -547,14 +547,6 @@ class ExecutorNotRegisteredError(ValueError, AspirabotBaseError):
         super().__init__(f"Aucun exécuteur enregistré pour le type d'étape {step_type}.")
 
 
-class WorkflowStepsContextRequiredError(ValueError, AspirabotBaseError):
-    """Raised when workflow validation is missing the steps context."""
-
-    def __init__(self) -> None:
-        """Initialize the error message."""
-        super().__init__("Le contexte des étapes du workflow est requis pour la validation.")
-
-
 class FormNotRegisteredError(ValueError, AspirabotBaseError):
     """Raised when no form definition is registered for a step type."""
 
@@ -565,6 +557,18 @@ class FormNotRegisteredError(ValueError, AspirabotBaseError):
             step_type: The step type that was requested.
         """
         super().__init__(f"Aucun formulaire enregistré pour le type d'étape : {step_type}")
+
+
+class ParamsBuilderNotRegisteredError(ValueError, AspirabotBaseError):
+    """Raised when no params builder is registered for a step type."""
+
+    def __init__(self, step_type: object) -> None:
+        """Initialize the error message.
+
+        Args:
+            step_type: The step type that was requested.
+        """
+        super().__init__(f"Aucun constructeur de paramètres enregistré pour le type d'étape : {step_type}")
 
 
 class LazyAttributeNotFoundError(AttributeError, AspirabotBaseError):

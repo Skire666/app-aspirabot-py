@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from shared.constants import (
     C_MAXIMUM_QTY_COUNTER,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.enums import StepTypeEnum
@@ -172,19 +173,18 @@ class WaitHtmlElementsFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_SELECTOR].set(model.params.get(C_KEY_SELECTOR, C_INPUT_DEFAULT_CSS_SELECTOR))
+        p = cast(WaitHtmlElementsParams, model.params)
+        widgets[C_KEY_SELECTOR].set(p.selector)
 
-        op_display = COUNT_OP_MODEL_TO_VIEW.get(model.params.get(C_KEY_OPERATOR, "equal"), COUNT_OP_DISPLAY[-1])
+        op_display = COUNT_OP_MODEL_TO_VIEW.get(p.operator, COUNT_OP_DISPLAY[-1])
         widgets[C_KEY_OPERATOR].set(op_display)
-        widgets[C_KEY_QUANTITY_EXPECTED].set(str(model.params.get(C_KEY_QUANTITY_EXPECTED, 1)))
-        widgets[C_KEY_RETRY_DELAY].set(str(model.params.get(C_KEY_RETRY_DELAY, C_INPUT_DEFAULT_RETRY_DELAY)))
+        widgets[C_KEY_QUANTITY_EXPECTED].set(str(p.quantity))
+        widgets[C_KEY_RETRY_DELAY].set(str(p.retry_delay))
         widgets[C_KEY_RETRY_UNIT].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_RETRY_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+            WAIT_UNIT_MODEL_TO_VIEW.get(p.retry_unit, C_UNITS_TIME_DEFAULT_VIEW)
         )
-        widgets[C_KEY_RETRY_MAX].set(str(model.params.get(C_KEY_RETRY_MAX, 10)))
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        widgets[C_KEY_RETRY_MAX].set(str(p.retry_max))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -210,7 +210,7 @@ class WaitHtmlElementsFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -220,6 +220,7 @@ class WaitHtmlElementsFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
+        p = cast(WaitHtmlElementsParams, model.params)
         op_labels = {
             "equal": "==",
             "not_equal": "!=",
@@ -228,9 +229,9 @@ class WaitHtmlElementsFormDef(IStepFormDef):
             "greater_or_equal": ">=",
             "less_or_equal": "<=",
         }
-        op = op_labels.get(model.params.get(C_KEY_OPERATOR, "equal"), "?")
-        quantity = model.params.get(C_KEY_QUANTITY_EXPECTED)
-        selector = model.params.get(C_KEY_SELECTOR)
+        op = op_labels.get(p.operator, "?")
+        quantity = p.quantity
+        selector = p.selector
 
         return f"Attendre éléments  -  Attendu {op} {quantity}\nSél. : {selector}"
 

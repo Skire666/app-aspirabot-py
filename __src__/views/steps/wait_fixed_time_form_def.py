@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.wait_fixed_time_params import WaitFixedTimeParams
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.enums import StepTypeEnum
@@ -100,19 +101,18 @@ class WaitFixedTimeFormDef(IStepFormDef):
 
     @override
     def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters from the model into form widgets.
+        """Load step parameters from the typed model into form widgets.
 
         Args:
-            model: The step model containing stored parameters.
+            model: The step model containing stored typed parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_DURATION].set(str(model.params.get(C_KEY_DURATION, C_INPUT_DEFAULT_DURATION)))
+        p = cast(WaitFixedTimeParams, model.params)
+        widgets[C_KEY_DURATION].set(str(p.duration))
         widgets[C_KEY_UNIT_TIME].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_UNIT_TIME, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW,
-            ),
+            WAIT_UNIT_MODEL_TO_VIEW.get(p.unit, C_UNITS_TIME_DEFAULT_VIEW),
         )
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -131,7 +131,7 @@ class WaitFixedTimeFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -141,9 +141,9 @@ class WaitFixedTimeFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        unit_time = model.params.get(C_KEY_UNIT_TIME, "")
-        unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-        return f"Attendre une durée fixe\n{model.params.get(C_KEY_DURATION, C_INPUT_DEFAULT_DURATION)} {unit_display}"
+        p = cast(WaitFixedTimeParams, model.params)
+        unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(p.unit, p.unit)
+        return f"Attendre une durée fixe\n{p.duration} {unit_display}"
 
 
 register_form(WaitFixedTimeFormDef())

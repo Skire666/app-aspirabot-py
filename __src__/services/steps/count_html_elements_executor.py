@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import logging
-from typing import override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.count_html_elements_params import CountHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlElementsConditionNotMetError
 from shared.i18n_fra import ERROR_TEMPLATES
@@ -30,7 +31,7 @@ class CountHtmlElementsExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = CountHtmlElementsParams.from_dict(context.step_scraping_data.params)
+        p = cast(CountHtmlElementsParams, context.step_scraping_data.params)
         page = browser.get_current_page()
 
         count = page.locator(p.selector).count()
@@ -43,9 +44,9 @@ class CountHtmlElementsExecutor(IStepExecutor):
         context.last_message_step = f"Trouvé {count} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate the step model."""
-        p = CountHtmlElementsParams.from_dict(model.params)
+        p = cast(CountHtmlElementsParams, model.params)
         index_display = str(step_index + 1).zfill(2)
         allowed_operators = {"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"}
         errors: list[str] = []

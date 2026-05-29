@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
 from models.steps.open_url_params import OpenUrlParams
-from services.workflow_service import register_step_executor
+from shared.step_registry import register_step_executor
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.exception_util import EmptyCustomUrlError, UrlNavigationMismatchError, UrlSourceExhaustedError
@@ -38,7 +39,7 @@ class OpenUrlExecutor(IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
-        p = OpenUrlParams.from_dict(context.step_scraping_data.params)
+        p = cast(OpenUrlParams, context.step_scraping_data.params)
 
         # Resolve the target URL from the source scenario or the custom field.
         target_url = self._extract_next_url_used(context, p)
@@ -83,13 +84,13 @@ class OpenUrlExecutor(IStepExecutor):
         return target_url
 
     @override
-    def validate_model(self, model: StepScrapingModel, step_index: int) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate the step model."""
-        p = OpenUrlParams.from_dict(model.params)
+        p = cast(OpenUrlParams, model.params)
         index_display = str(step_index + 1).zfill(2)
 
         errors: list[str] = []
-        if p.url_mode is None or (p.url_mode == OpenUrlModeEnum.E_CUSTOM.value and not p.url_custom):
+        if p.url_mode == OpenUrlModeEnum.E_CUSTOM.value and not p.url_custom:
             errors.append(ERROR_TEMPLATES["open_url_url_required"].format(step=index_display))
         if p.wait_dns_solver <= 0 or p.wait_dns_solver > _DNS_SOLVER_WAIT_MAX:
             errors.append(ERROR_TEMPLATES["open_url_wait_dns_solver_invalid"].format(step=index_display))

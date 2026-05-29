@@ -14,6 +14,7 @@ from shared.i18n_fra import (
     C_EXEC_NO_URL_SOURCE,
     C_EXEC_STEP_THRESHOLD_WITHOUT_STEP,
 )
+
 from validators.abstract_validator import AbstractValidator
 
 # -----------------------------------------------------------------------------

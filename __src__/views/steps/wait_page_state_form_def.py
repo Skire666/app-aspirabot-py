@@ -8,14 +8,15 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, override
+from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
+from models.steps_context_model import StepsContext
+from models.steps.wait_page_state_params import WaitPageStateParams
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_MODEL,
     C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.enums import StepTypeEnum
@@ -141,16 +142,13 @@ class WaitPageStateFormDef(IStepFormDef):
             model: The step model containing stored parameters.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_WAIT_STATE].set(model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
-        widgets[C_KEY_TIMEOUT_DURATION].set(
-            str(model.params.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
-        )
+        p = cast(WaitPageStateParams, model.params)
+        widgets[C_KEY_WAIT_STATE].set(p.wait_state)
+        widgets[C_KEY_TIMEOUT_DURATION].set(str(p.timeout_duration))
         widgets[C_KEY_TIMEOUT_UNIT].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(
-                model.params.get(C_KEY_TIMEOUT_UNIT, C_UNITS_TIME_DEFAULT_MODEL), C_UNITS_TIME_DEFAULT_VIEW
-            )
+            WAIT_UNIT_MODEL_TO_VIEW.get(p.timeout_unit, C_UNITS_TIME_DEFAULT_VIEW)
         )
-        widgets[C_KEY_COMMENT].set(model.params.get(C_KEY_COMMENT, ""))
+        widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -170,7 +168,7 @@ class WaitPageStateFormDef(IStepFormDef):
         }
 
     @override
-    def format_label(self, model: StepScrapingModel, idx: int) -> str:
+    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
         """Return a compact human-readable label for this step instance.
 
         Args:
@@ -180,13 +178,14 @@ class WaitPageStateFormDef(IStepFormDef):
         Returns:
             A two-line string suitable for display in the steps list.
         """
-        timeout = model.params.get(C_KEY_TIMEOUT_DURATION, 0)
-        unit_time = model.params.get(C_KEY_TIMEOUT_UNIT, "")
+        p = cast(WaitPageStateParams, model.params)
+        timeout = p.timeout_duration
+        unit_time = p.timeout_unit
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
         return (
             f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\n"
-            f"Attendre : {model.params.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE)}"
+            f"Attendre : {p.wait_state}"
         )
 
 
