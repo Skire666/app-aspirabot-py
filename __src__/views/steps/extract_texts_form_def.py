@@ -8,8 +8,8 @@ from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.extract_texts_params import ExtractTextsParams
+from models.steps_context_model import StepsContext
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form

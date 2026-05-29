@@ -12,8 +12,8 @@ from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.close_tabs_params import CloseTabsParams
+from models.steps_context_model import StepsContext
 from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS

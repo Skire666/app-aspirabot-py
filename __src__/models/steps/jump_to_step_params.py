@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from pydantic import ValidationInfo, field_validator, model_validator
-
 from models.steps.base_step_params import BaseStepParams, step_label
+from pydantic import ValidationInfo, field_validator, model_validator
 from shared.i18n_fra import ERROR_TEMPLATES
 
 _ALLOWED_CONDITIONS = frozenset({"success", "failure", "always"})

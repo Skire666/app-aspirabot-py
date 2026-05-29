@@ -10,9 +10,9 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.count_html_images_params import CountHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition, get_filtered_images
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
+from shared.step_registry import register_step_executor
 
 
 class CountHtmlImagesExecutor(StepExecutorBase, IStepExecutor):

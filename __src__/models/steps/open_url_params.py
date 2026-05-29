@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import ValidationInfo, field_validator, model_validator
-
 from models.steps.base_step_params import BaseStepParams, step_label
+from pydantic import ValidationInfo, field_validator, model_validator
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.enums import OpenUrlModeEnum
 from shared.i18n_fra import ERROR_TEMPLATES

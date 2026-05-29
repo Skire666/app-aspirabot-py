@@ -11,9 +11,9 @@ from models.steps.click_on_element_params import ClickOnElementParams
 from playwright.sync_api import ElementHandle
 from playwright.sync_api import Error as PlaywrightError
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
+from shared.step_registry import register_step_executor
 
 # -----------------------------------------------------------------------------
 # Constants

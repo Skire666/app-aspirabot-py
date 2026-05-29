@@ -9,10 +9,10 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.scroll_down_params import ScrollDownParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
 from shared.enums import StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
+from shared.step_registry import register_step_executor
 
 
 class ScrollDownExecutor(StepExecutorBase, IStepExecutor):

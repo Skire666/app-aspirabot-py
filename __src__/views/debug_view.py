@@ -24,6 +24,7 @@ from shared.i18n_fra import (
     C_DEBUG_TIMEOUT_INVALID,
     C_DEBUG_URL_EMPTY,
 )
+from view_models.debug_page_view_model import DebugPageViewModel
 from view_models.debug_view_model import DebugViewModel
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
@@ -64,6 +65,8 @@ class DebugView(ttk.Frame):
         self._vm = vm
         self._create_widgets()
         self._bind_vm_vars()
+        # Register View as the factory for DebugPageView Toplevels.
+        vm.bind_open_debug_page(self._open_debug_page)
 
     def _create_widgets(self) -> None:
         """Builds the centered launcher card with URL, spinbox, and status rows."""
@@ -148,6 +151,18 @@ class DebugView(ttk.Frame):
         except ValueError:
             return None
         return value if min_val <= value <= max_val else None
+
+    def _open_debug_page(self, debug_page_vm: DebugPageViewModel) -> None:
+        """Instantiate a DebugPageView Toplevel bound to *debug_page_vm*.
+
+        Called by the Presenter (via DebugViewModel dispatch) so the Presenter
+        never needs to import the DebugPageView class.
+
+        Args:
+            debug_page_vm: ViewModel that the new Toplevel will bind to.
+        """
+        from views.workflow.debug_page_view import DebugPageView  # local import — View layer only
+        DebugPageView(parent=self, vm=debug_page_vm)
 
     def _fire_start(self) -> None:
         """Validates all inputs and dispatches to the ViewModel when valid.

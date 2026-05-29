@@ -11,9 +11,9 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
 from shared.exception_util import CountHtmlElementsConditionNotMetError
+from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
 
 

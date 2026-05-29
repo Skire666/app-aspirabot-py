@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from pydantic import ValidationError
-
 from models.step_scraping_model import StepScrapingModel
 from models.steps_context_model import StepsContext
+from pydantic import ValidationError
 
 
 class StepExecutorBase:

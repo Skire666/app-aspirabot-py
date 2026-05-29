@@ -12,8 +12,8 @@ from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.count_html_images_params import CountHtmlImagesParams
+from models.steps_context_model import StepsContext
 from shared.constants import C_MAXIMUM_QTY_COUNTER, C_MAXIMUM_SIZE_IMAGE
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS

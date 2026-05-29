@@ -8,8 +8,8 @@ from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
+from models.steps_context_model import StepsContext
 from shared.constants import (
     C_MAXIMUM_QTY_COUNTER,
     C_MAXIMUM_SIZE_IMAGE,

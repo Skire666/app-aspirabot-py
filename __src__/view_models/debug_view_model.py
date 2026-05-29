@@ -7,6 +7,8 @@
 import tkinter as tk
 from collections.abc import Callable
 
+from view_models.debug_page_view_model import DebugPageViewModel
+
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
@@ -38,8 +40,9 @@ class DebugViewModel:
         self.status_text_var = tk.StringVar(master=master, value="Aucune session active.")
         self.status_active_var = tk.BooleanVar(master=master, value=False)
 
-        # Registered Presenter callback
+        # Registered Presenter callbacks
         self._on_start: Callable[[str, int, int], None] | None = None
+        self._on_open_debug_page: Callable[[DebugPageViewModel], None] | None = None
 
     # ------------------------------------------------------------------
     # Master accessor — exposes the parent widget for child Toplevels
@@ -62,6 +65,17 @@ class DebugViewModel:
         """
         self._on_start = cb
 
+    def bind_open_debug_page(self, cb: Callable[[DebugPageViewModel], None]) -> None:
+        """Register the handler that opens a new DebugPageView for the given VM.
+
+        The View registers this so it can instantiate the Toplevel without the
+        Presenter ever importing a View class.
+
+        Args:
+            cb: Called with the fully-configured ``DebugPageViewModel`` instance.
+        """
+        self._on_open_debug_page = cb
+
     # ------------------------------------------------------------------
     # Action method — called by the View
     # ------------------------------------------------------------------
@@ -76,6 +90,15 @@ class DebugViewModel:
         """
         if self._on_start is not None:
             self._on_start(url, timeout, dns_delay)
+
+    def open_debug_page(self, debug_page_vm: DebugPageViewModel) -> None:
+        """Dispatch a request to the View to open a new DebugPageView Toplevel.
+
+        Args:
+            debug_page_vm: The ViewModel that the new Toplevel will bind to.
+        """
+        if self._on_open_debug_page is not None:
+            self._on_open_debug_page(debug_page_vm)
 
     # ------------------------------------------------------------------
     # Presenter helpers — update status Vars

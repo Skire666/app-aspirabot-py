@@ -2,11 +2,11 @@
 
 Owns the entire debug browser session lifecycle: launches a persistent
 BrowserPlaywrightService worker thread, routes all Playwright calls through
-a task queue so they stay in the same thread, and updates the DebugPageView
-window via after(0, callback).
+a task queue so they stay in the same thread, and updates the DebugPageViewModel
+Vars via after(0, callback).
 
 Example:
-    >>> presenter = DebugPresenter(view=debug_view)
+    >>> presenter = DebugPresenter(vm=debug_vm, debug_service=svc)
 """
 
 # -----------------------------------------------------------------------------
@@ -26,8 +26,8 @@ from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
 from shared.enums import ExtractTextHtmlEnum
 from shared.exception_util import AspirabotBaseError
+from view_models.debug_page_view_model import DebugPageViewModel
 from view_models.debug_view_model import DebugViewModel
-from views.workflow.debug_page_view import DebugPageView
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -38,13 +38,10 @@ class DebugPresenter:
     """Orchestrates the debug browser session from the Debug sidebar module.
 
     Responsibilities:
-    - Binds the DebugView launch callback.
+    - Binds the DebugViewModel start callback.
     - Manages a single persistent browser worker thread per session.
     - Routes all Playwright API calls through a queue to that thread.
-    - Updates DebugView status and DebugPageView content via Tkinter after().
-
-    Attributes:
-        _view: The Debug sidebar module view.
+    - Updates DebugPageViewModel Vars on the main thread via after().
     """
 
     def __init__(self, vm: DebugViewModel, debug_service: DebugBrowserService) -> None:
@@ -59,7 +56,7 @@ class DebugPresenter:
 
         # Debug session state — one active session at a time.
         self._debug_browser: BrowserPlaywrightService | None = None
-        self._debug_window: DebugPageView | None = None
+        self._debug_page_vm: DebugPageViewModel | None = None
         self._debug_service: DebugBrowserService = debug_service
         self._debug_queue: queue.Queue[Callable[[Page], None] | None] = queue.Queue()
         self._debug_thread: threading.Thread | None = None
@@ -73,9 +70,8 @@ class DebugPresenter:
     def _on_debug_start(self, url: str, timeout: int, dns_delay: int) -> None:
         """Opens a debug browser session for the given URL.
 
-        Closes any prior session, creates a fresh queue, and starts the
-        single persistent browser worker thread with the supplied timing
-        parameters.
+        Closes any prior session, creates a DebugPageViewModel and asks the
+        DebugView to open the inspection Toplevel, then starts the worker thread.
 
         Args:
             url: The URL to open in the debug browser.
@@ -86,22 +82,31 @@ class DebugPresenter:
         # Fresh queue — old worker reads None from its own (now unreferenced) queue.
         self._debug_queue = queue.Queue()
         self._debug_browser = BrowserPlaywrightService()
-        self._debug_window = DebugPageView(self._vm.master, url)
-        self._debug_window.on_refresh = self._on_debug_refresh
-        self._debug_window.on_analyze_texts = self._on_debug_analyze_texts
-        self._debug_window.on_analyze_images = self._on_debug_analyze_images
-        self._debug_window.on_close = self._on_debug_close
-        self._debug_window.set_html_content("Chargement en cours…")
+
+        # Create the page ViewModel; dispatch to the View to build the Toplevel.
+        debug_page_vm = DebugPageViewModel(master=self._vm.master, url=url)
+        debug_page_vm.bind_refresh(self._on_debug_refresh)
+        debug_page_vm.bind_analyze_texts(self._on_debug_analyze_texts)
+        debug_page_vm.bind_analyze_images(self._on_debug_analyze_images)
+        debug_page_vm.bind_close(self._on_debug_close)
+        debug_page_vm.html_content_var.set("Chargement en cours…")
+        self._debug_page_vm = debug_page_vm
+        self._vm.open_debug_page(debug_page_vm)
+
         self._vm.set_status_active(url)
-        self._debug_thread = threading.Thread(target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True)
+        self._debug_thread = threading.Thread(
+            target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True
+        )
         self._debug_thread.start()
 
     def _close_debug_session(self) -> None:
-        """Destroys the debug window and sends a stop signal to the worker."""
-        if self._debug_window is not None:
+        """Force-closes the inspection window and sends a stop signal to the worker."""
+        if self._debug_page_vm is not None:
+            # Setting is_alive_var to False triggers the View's trace, which calls
+            # self.destroy() directly — bypassing WM_DELETE_WINDOW and _on_debug_close.
             with contextlib.suppress(Exception):
-                self._debug_window.destroy()
-            self._debug_window = None
+                self._debug_page_vm.is_alive_var.set(False)
+            self._debug_page_vm = None
         # Sentinel None causes the worker loop to exit and close the browser.
         self._debug_queue.put(None)
         self._vm.set_status_idle()
@@ -129,15 +134,10 @@ class DebugPresenter:
             self._debug_browser.safe_goto_url(
                 url, wait_state="networkidle", timeout_ms=timeout * 1000, wait_dns_solver_sec=dns_delay
             )
-
             page = self._debug_browser.get_current_page()
-
-            # Push initial HTML to the view after successful navigation.
+            # Push initial HTML to the ViewModel after successful navigation.
             html = self._debug_service.get_html_content(page)
-            win = self._debug_window
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_html_content(html))
-
+            self._push_html(html)
             # Process tasks — all Playwright calls stay in this thread.
             while True:
                 task = self._debug_queue.get()
@@ -146,13 +146,44 @@ class DebugPresenter:
                 task(page)
         except AspirabotBaseError as exc:
             self._logger.exception("Échec du démarrage du worker navigateur")
-            win = self._debug_window
-            msg = f"Erreur lors du chargement :\n{exc}"
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_html_content(msg))
+            self._push_html(f"Erreur lors du chargement :\n{exc}")
         finally:
             with contextlib.suppress(Exception):
                 self._debug_browser.close_browser()
+
+    # -----------------------------------------------------------------------
+    # Thread-safe ViewModel update helpers
+    # -----------------------------------------------------------------------
+
+    def _push_html(self, html: str) -> None:
+        """Schedule an html_content_var update on the main thread.
+
+        Args:
+            html: Raw HTML string (or error message) to push to the ViewModel.
+        """
+        vm = self._debug_page_vm
+        if vm and vm.is_alive_var.get():
+            vm.after(0, lambda: vm.html_content_var.set(html))
+
+    def _push_text_results(self, text: str) -> None:
+        """Schedule a text_results_var update on the main thread.
+
+        Args:
+            text: Formatted text-analysis result string.
+        """
+        vm = self._debug_page_vm
+        if vm and vm.is_alive_var.get():
+            vm.after(0, lambda: vm.text_results_var.set(text))
+
+    def _push_image_results(self, text: str) -> None:
+        """Schedule an image_results_var update on the main thread.
+
+        Args:
+            text: Formatted image-analysis result string.
+        """
+        vm = self._debug_page_vm
+        if vm and vm.is_alive_var.get():
+            vm.after(0, lambda: vm.image_results_var.set(text))
 
     # -----------------------------------------------------------------------
     # Queued task dispatchers (main thread → worker thread)
@@ -179,8 +210,8 @@ class DebugPresenter:
         self._debug_queue.put(lambda page: self._task_analyze_images(page, selector))
 
     def _on_debug_close(self) -> None:
-        """Stops the browser worker when the DebugPageView window is closed."""
-        self._debug_window = None
+        """Handles a user-initiated window close: cleans up session state."""
+        self._debug_page_vm = None
         self._debug_queue.put(None)
         self._vm.set_status_idle()
 
@@ -189,25 +220,20 @@ class DebugPresenter:
     # -----------------------------------------------------------------------
 
     def _task_refresh(self, page: Page) -> None:
-        """Fetches current page HTML and pushes it to the debug window.
+        """Fetches current page HTML and pushes it to the ViewModel.
 
         Args:
             page: The live Playwright Page owned by the worker thread.
         """
         try:
             html = self._debug_service.get_html_content(page)
-            win = self._debug_window
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_html_content(html))
+            self._push_html(html)
         except AspirabotBaseError as exc:
             self._logger.exception("Échec du rafraîchissement debug")
-            win = self._debug_window
-            msg = f"Erreur lors du rafraîchissement : {exc}"
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_html_content(msg))
+            self._push_html(f"Erreur lors du rafraîchissement : {exc}")
 
     def _task_analyze_texts(self, page: Page, selector: str) -> None:
-        """Runs text analysis and pushes formatted results to the debug window.
+        """Runs text analysis and pushes formatted results to the ViewModel.
 
         Args:
             page: The live Playwright Page owned by the worker thread.
@@ -215,19 +241,13 @@ class DebugPresenter:
         """
         try:
             result = self._debug_service.analyze_texts(page, selector)
-            text = self._format_text_results(selector, result)
-            win = self._debug_window
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_text_results(text))
+            self._push_text_results(self._format_text_results(selector, result))
         except AspirabotBaseError as exc:
             self._logger.exception("Échec de l'analyse des textes")
-            win = self._debug_window
-            msg = f"Erreur : {exc}"
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_text_results(msg))
+            self._push_text_results(f"Erreur : {exc}")
 
     def _task_analyze_images(self, page: Page, selector: str) -> None:
-        """Runs image analysis and pushes formatted results to the debug window.
+        """Runs image analysis and pushes formatted results to the ViewModel.
 
         Args:
             page: The live Playwright Page owned by the worker thread.
@@ -235,16 +255,10 @@ class DebugPresenter:
         """
         try:
             results = self._debug_service.analyze_images(page, selector)
-            text = self._format_image_results(selector, results)
-            win = self._debug_window
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_image_results(text))
+            self._push_image_results(self._format_image_results(selector, results))
         except AspirabotBaseError as exc:
             self._logger.exception("Échec de l'analyse des images")
-            win = self._debug_window
-            msg = f"Erreur : {exc}"
-            if win and win.winfo_exists():
-                win.after(0, lambda: win.set_image_results(msg))
+            self._push_image_results(f"Erreur : {exc}")
 
     # -----------------------------------------------------------------------
     # Formatters (pure functions — no Playwright or UI calls)
@@ -266,7 +280,6 @@ class DebugPresenter:
 
         lines: list[str] = [f"Sélecteur : {selector!r}", f"Nombre total : {len(results)}", ""]
 
-        # Format each matched element with its index.
         for i, el in enumerate(results, 1):
             str_inner_txt = str(el.get(ExtractTextHtmlEnum.E_INNER_TEXT.value, "")).strip()
             str_txt_content = str(el.get(ExtractTextHtmlEnum.E_TEXT_CONTENT.value, "")).strip()

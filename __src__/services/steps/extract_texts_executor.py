@@ -11,8 +11,8 @@ from models.steps.extract_texts_params import ExtractTextsParams
 from playwright.sync_api import ElementHandle
 from services.steps._helpers import extract_from_element
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import ExtractTargetEnum, StepTypeEnum
+from shared.step_registry import register_step_executor
 
 
 class ExtractTextsExecutor(StepExecutorBase, IStepExecutor):

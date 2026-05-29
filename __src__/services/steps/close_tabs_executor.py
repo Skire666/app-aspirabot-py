@@ -9,9 +9,9 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.close_tabs_params import CloseTabsParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.exception_util import CurrentPageClosedUnexpectedlyError, MissingUrlFilterError
+from shared.step_registry import register_step_executor
 
 
 class CloseTabsExecutor(StepExecutorBase, IStepExecutor):

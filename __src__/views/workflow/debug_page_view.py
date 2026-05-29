@@ -1,14 +1,13 @@
 """Debug browser inspection window (Toplevel).
 
 Lets the user inspect a live Playwright-controlled page: raw HTML content,
-CSS selector text analysis, and image metadata extraction. The presenter
-sets callback attributes and calls display methods; the view never imports
-services or performs any Playwright calls directly.
+CSS selector text analysis, and image metadata extraction.  All display state
+is driven by ``DebugPageViewModel`` Vars; user actions are dispatched to VM
+action methods.
 
 Example:
-    >>> win = DebugPageView(root, "https://example.com")
-    >>> win.on_refresh = lambda: print("refresh clicked")
-    >>> win.set_html_content("<html>...</html>")
+    >>> vm = DebugPageViewModel(master=root, url="https://example.com")
+    >>> DebugPageView(parent=root, vm=vm)
 """
 
 # -----------------------------------------------------------------------------
@@ -19,8 +18,9 @@ from __future__ import annotations
 
 import re
 import tkinter as tk
-from collections.abc import Callable
 from tkinter import ttk
+
+from view_models.debug_page_view_model import DebugPageViewModel
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -36,50 +36,44 @@ _URL_TITLE_MAX_LEN: int = 80  # Truncate URL in the window title at this length.
 class DebugPageView(tk.Toplevel):
     """Top-level window for live DOM inspection of a Playwright-controlled page.
 
-    The presenter sets callback attributes and calls display methods.
-    The view never imports services or contains business logic.
-
-    Attributes:
-        on_refresh: Called when Rafraîchir is clicked.
-        on_analyze_texts: Called with the CSS selector when Analyser textes is clicked.
-        on_analyze_images: Called with the image selector when Analyser images is clicked.
-        on_close: Called when the window is closed by the user.
+    Bound to ``DebugPageViewModel``: display state is driven by ViewModel Vars
+    via ``trace_add``; user actions are dispatched to VM action methods.  The
+    window destroys itself when ``vm.is_alive_var`` is set to False by the
+    Presenter (force-close), or when the user clicks the system close button.
     """
 
-    def __init__(self, parent: tk.Widget, url: str) -> None:
-        """Builds the debug inspection window.
+    def __init__(self, parent: tk.Widget, vm: DebugPageViewModel) -> None:
+        """Builds the debug inspection window and binds to the ViewModel.
 
         Args:
-            parent: Parent Tkinter widget (typically the main window root).
-            url: The URL currently loaded in the browser (display only).
+            parent: Parent Tkinter widget (typically the DebugView frame).
+            vm: The DebugPageViewModel that owns all UI state for this popup.
         """
         super().__init__(parent)
-        # Keep the window always on top of the application.
-        short_url = url[:_URL_TITLE_MAX_LEN] if len(url) > _URL_TITLE_MAX_LEN else url
-        self.title(f"Debug — {short_url}")
+        self._vm = vm
+
+        short = vm.url[:_URL_TITLE_MAX_LEN] if len(vm.url) > _URL_TITLE_MAX_LEN else vm.url
+        self.title(f"Debug — {short}")
         self.geometry("960x720")
         self.resizable(True, True)
-        self._init_callbacks()
-        self._create_widgets()
 
-    def _init_callbacks(self) -> None:
-        """Initialises all callback attributes to None and hooks WM_DELETE_WINDOW."""
-        self.on_refresh: Callable[[], None] | None = None
-        self.on_analyze_texts: Callable[[str], None] | None = None
-        self.on_analyze_images: Callable[[str], None] | None = None
-        self.on_close: Callable[[], None] | None = None
+        self._create_widgets()
+        self._bind_vm_vars()
+        # Close the window cleanly when the user clicks the system X button.
         self.protocol("WM_DELETE_WINDOW", self._fire_close)
+
+    # -----------------------------------------------------------------------
+    # Widget construction
+    # -----------------------------------------------------------------------
 
     def _create_widgets(self) -> None:
         """Builds the Notebook with three tabs: HTML brut, Textes, Images."""
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        # Notebook holds the three analysis sections.
         notebook = ttk.Notebook(self)
         notebook.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
 
-        # Build each tab and register it.
         tab_html = self._build_html_tab(notebook)
         tab_texts = self._build_texts_tab(notebook)
         tab_images = self._build_images_tab(notebook)
@@ -105,14 +99,12 @@ class DebugPageView(tk.Toplevel):
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
 
-        # Toolbar with Rafraîchir button and a character-count label.
         toolbar = ttk.Frame(frame)
         toolbar.grid(row=0, column=0, sticky="ew", pady=(4, 2), padx=4)
-        ttk.Button(toolbar, text="Rafraîchir", command=self._fire_refresh).pack(side=tk.LEFT)
+        ttk.Button(toolbar, text="Rafraîchir", command=lambda: self._vm.refresh()).pack(side=tk.LEFT)
         self._lbl_html_status = ttk.Label(toolbar, text="")
         self._lbl_html_status.pack(side=tk.LEFT, padx=(8, 0))
 
-        # Scrollable raw HTML text area.
         self._txt_html, _ = self._make_text_area(frame, row=1)
         return frame
 
@@ -129,7 +121,6 @@ class DebugPageView(tk.Toplevel):
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(2, weight=1)
 
-        # CSS selector input row.
         input_row = ttk.Frame(frame)
         input_row.grid(row=0, column=0, sticky="ew", pady=(4, 2), padx=4)
         input_row.columnconfigure(1, weight=1)
@@ -140,12 +131,10 @@ class DebugPageView(tk.Toplevel):
             row=0, column=2, padx=(4, 0)
         )
 
-        # Effacer button for the result zone.
         btn_row = ttk.Frame(frame)
         btn_row.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 2))
         ttk.Button(btn_row, text="Effacer", command=lambda: self._clear_text_area(self._txt_texts)).pack(side=tk.LEFT)
 
-        # Scrollable result text area.
         self._txt_texts, _ = self._make_text_area(frame, row=2)
         return frame
 
@@ -162,7 +151,6 @@ class DebugPageView(tk.Toplevel):
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(2, weight=1)
 
-        # Image CSS selector input row.
         input_row = ttk.Frame(frame)
         input_row.grid(row=0, column=0, sticky="ew", pady=(4, 2), padx=4)
         input_row.columnconfigure(1, weight=1)
@@ -174,12 +162,10 @@ class DebugPageView(tk.Toplevel):
             row=0, column=2, padx=(4, 0)
         )
 
-        # Effacer button for the result zone.
         btn_row = ttk.Frame(frame)
         btn_row.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 2))
         ttk.Button(btn_row, text="Effacer", command=lambda: self._clear_text_area(self._txt_images)).pack(side=tk.LEFT)
 
-        # Scrollable result text area.
         self._txt_images, _ = self._make_text_area(frame, row=2)
         return frame
 
@@ -199,7 +185,6 @@ class DebugPageView(tk.Toplevel):
         container.columnconfigure(0, weight=1)
         container.rowconfigure(0, weight=1)
 
-        # Vertical and horizontal scrollbars for wide / tall content.
         vsb = ttk.Scrollbar(container, orient="vertical")
         hsb = ttk.Scrollbar(container, orient="horizontal")
         txt = tk.Text(
@@ -218,71 +203,66 @@ class DebugPageView(tk.Toplevel):
         return txt, vsb
 
     # -----------------------------------------------------------------------
-    # Public display methods (called by presenter via after(0, ...))
+    # ViewModel bindings
     # -----------------------------------------------------------------------
 
-    def set_html_content(self, html: str) -> None:
-        """Replaces the HTML text area content.
+    def _bind_vm_vars(self) -> None:
+        """Register trace_add listeners on all ViewModel Vars."""
+        self._vm.html_content_var.trace_add("write", self._sync_html_content)
+        self._vm.text_results_var.trace_add("write", self._sync_text_results)
+        self._vm.image_results_var.trace_add("write", self._sync_image_results)
+        self._vm.is_alive_var.trace_add("write", self._sync_alive)
 
-        Args:
-            html: Raw HTML string to display.
-        """
-        self._write_text_area(self._txt_html, self.format_html_simple(html))
-        # Update the character count label next to the Rafraîchir button.
-        self._lbl_html_status.configure(text=f"{len(html):,} caractères")
+    def _sync_html_content(self, *_: object) -> None:
+        """Re-render the HTML tab from html_content_var."""
+        raw = self._vm.html_content_var.get()
+        self._write_text_area(self._txt_html, self._format_html_simple(raw))
+        self._lbl_html_status.configure(text=f"{len(raw):,} caractères")
 
-    @staticmethod
-    def format_html_simple(html: str) -> str:
-        """Applies simple formatting to raw HTML for better readability.
+    def _sync_text_results(self, *_: object) -> None:
+        """Re-render the texts tab from text_results_var."""
+        self._write_text_area(self._txt_texts, self._vm.text_results_var.get())
 
-        This is a very basic formatter that adds newlines between tags and indents nested elements.
-        NO BeautifulSoup or external libraries are used to keep it simple and dependency-free.
+    def _sync_image_results(self, *_: object) -> None:
+        """Re-render the images tab from image_results_var."""
+        self._write_text_area(self._txt_images, self._vm.image_results_var.get())
 
-        Args:
-            html: The raw HTML string to format.
-
-        Returns:
-            A formatted HTML string with newlines and indentation.
-        """
-        html = re.sub(r">\s*<", ">\r\n<", html)
-
-        lines = []
-        indent = 0
-        for line in html.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            if re.match(r"</\w", line):  # balise fermante
-                indent = max(0, indent - 1)
-            lines.append("  " * indent + line)
-            if re.match(r"<\w[^/]*[^/]>$", line):  # balise ouvrante (pas auto-fermante)
-                indent += 1
-
-        return "\n".join(lines)
-
-    def set_text_results(self, text: str) -> None:
-        """Replaces the text analysis result area content.
-
-        Args:
-            text: Formatted analysis result string.
-        """
-        self._write_text_area(self._txt_texts, text)
-
-    def set_image_results(self, text: str) -> None:
-        """Replaces the image analysis result area content.
-
-        Args:
-            text: Formatted image metadata result string.
-        """
-        self._write_text_area(self._txt_images, text)
+    def _sync_alive(self, *_: object) -> None:
+        """Destroy this window when the Presenter signals is_alive_var = False."""
+        if not self._vm.is_alive_var.get():
+            self.destroy()
 
     # -----------------------------------------------------------------------
     # Private helpers
     # -----------------------------------------------------------------------
 
     @staticmethod
+    def _format_html_simple(html: str) -> str:
+        """Apply minimal tag-based formatting to raw HTML for readability.
+
+        Args:
+            html: The raw HTML string to format.
+
+        Returns:
+            A formatted HTML string with newlines and basic indentation.
+        """
+        html = re.sub(r">\s*<", ">\r\n<", html)
+        lines: list[str] = []
+        indent = 0
+        for line in html.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if re.match(r"</\w", line):
+                indent = max(0, indent - 1)
+            lines.append("  " * indent + line)
+            if re.match(r"<\w[^/]*[^/]>$", line):
+                indent += 1
+        return "\n".join(lines)
+
+    @staticmethod
     def _write_text_area(txt: tk.Text, content: str) -> None:
-        """Replaces the full content of a read-only Text widget.
+        """Replace the full content of a read-only Text widget.
 
         Args:
             txt: The Text widget to update.
@@ -294,7 +274,7 @@ class DebugPageView(tk.Toplevel):
         txt.configure(state="disabled")
 
     def _clear_text_area(self, txt: tk.Text) -> None:
-        """Clears all content from a read-only Text widget.
+        """Clear all content from a read-only Text widget.
 
         Args:
             txt: The Text widget to clear.
@@ -305,27 +285,21 @@ class DebugPageView(tk.Toplevel):
     # Callback fires
     # -----------------------------------------------------------------------
 
-    def _fire_refresh(self) -> None:
-        """Calls on_refresh if set."""
-        if self.on_refresh:
-            self.on_refresh()
-
     def _fire_analyze_texts(self) -> None:
-        """Reads the CSS selector and calls on_analyze_texts if set."""
+        """Reads the CSS selector and dispatches to the ViewModel."""
         selector = self._entry_text_selector.get().strip()
-        if selector and self.on_analyze_texts:
-            self.on_analyze_texts(selector)
+        if selector:
+            self._vm.analyze_texts(selector)
 
     def _fire_analyze_images(self) -> None:
-        """Reads the image CSS selector and calls on_analyze_images if set."""
+        """Reads the image CSS selector and dispatches to the ViewModel."""
         selector = self._entry_image_selector.get().strip()
-        if selector and self.on_analyze_images:
-            self.on_analyze_images(selector)
+        if selector:
+            self._vm.analyze_images(selector)
 
     def _fire_close(self) -> None:
-        """Notifies the presenter via on_close then destroys this window."""
-        if self.on_close:
-            self.on_close()
+        """Notify the Presenter via vm.close() then destroy this window."""
+        self._vm.close()
         self.destroy()
 
 

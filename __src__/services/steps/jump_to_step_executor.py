@@ -9,8 +9,8 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.jump_to_step_params import JumpToStepParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
+from shared.step_registry import register_step_executor
 
 
 class JumpToStepExecutor(StepExecutorBase, IStepExecutor):

@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from pydantic import ValidationInfo, model_validator
-
 from models.steps.base_step_params import BaseStepParams, step_label
+from pydantic import ValidationInfo, model_validator
 from shared.i18n_fra import ERROR_TEMPLATES
 
 

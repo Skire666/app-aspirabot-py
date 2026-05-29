@@ -8,8 +8,8 @@ from typing import Any, cast, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from models.steps.wait_rng_pause_params import WaitRngPauseParams
+from models.steps_context_model import StepsContext
 from shared.constants import (
     C_MAXIMUM_WAIT_TIME,
     C_UNITS_TIME_ALLOWED_FOR_VIEW,

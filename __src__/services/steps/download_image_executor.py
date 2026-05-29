@@ -12,11 +12,11 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import get_filtered_images
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepTypeEnum
 from shared.exception_util import ImageDownloadFailedError, ImageNotDownloadedError
 from shared.path_util import make_all_folders_if_not_exists
+from shared.step_registry import register_step_executor
 
 _MAX_FILENAME_STEM_LENGTH = 100  # Truncate URL stem at this length to avoid filesystem limits.
 

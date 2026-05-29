@@ -9,9 +9,9 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.open_url_params import OpenUrlParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.exception_util import EmptyCustomUrlError, UrlNavigationMismatchError, UrlSourceExhaustedError
+from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_ms
 
 # -----------------------------------------------------------------------------

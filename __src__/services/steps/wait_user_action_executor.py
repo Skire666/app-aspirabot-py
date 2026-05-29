@@ -10,8 +10,8 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.wait_user_action_params import WaitUserActionParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.step_registry import register_step_executor
 from shared.enums import StepTypeEnum
+from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
 
 

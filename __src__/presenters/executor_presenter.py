@@ -12,7 +12,6 @@ injectable navigation hooks from main.py.
 
 import logging
 from collections.abc import Callable
-from datetime import datetime
 
 from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
