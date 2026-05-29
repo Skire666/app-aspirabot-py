@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ValidationError, field_validator, model_validator
 from typing import Any, Self
 
 from models.launcher_model import LaunchModel
+from pydantic import BaseModel, ValidationError, field_validator, model_validator
 from shared.enums import UrlSourceTypeEnum
 from shared.i18n_fra import (
     C_EXEC_FOLDER_URL_SOURCE_EMPTY,
@@ -22,10 +22,7 @@ from shared.i18n_fra import (
 
 _MAX_THRESHOLD = 9_999_999
 
-_NON_MANUAL_SOURCE_TYPES = {
-    UrlSourceTypeEnum.E_FOLDER.value,
-    UrlSourceTypeEnum.E_JSON.value,
-}
+_NON_MANUAL_SOURCE_TYPES = {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
 
 
 # -----------------------------------------------------------------------------
@@ -115,8 +112,9 @@ def validate_launch_profile(profile: LaunchModel) -> list[str]:
         )
         return []
     except ValidationError as exc:
-        return [str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
-                for err in exc.errors()]
+        return [
+            str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"] for err in exc.errors()
+        ]
 
 
 def validate_launch_profile_first_error(profile: LaunchModel) -> str | None:

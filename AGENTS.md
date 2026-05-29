@@ -23,7 +23,7 @@ __src__/
 ├── repositories/   # Data read/write layer (files, JSON…)
 ├── services/       # Business logic and domain rules
 ├── interfaces/     # Protocol-based contracts
-├── validators/     # FluentValidation-style domain validators
+├── validators/     # Pydantic-based domain validators (launch profile)
 ├── shared/         # Cross-cutting utilities (enums, i18n, helpers)
 └── main.py         # Application entry point and composition root
 ```
@@ -62,7 +62,7 @@ __src__/
 | `Presenter`     | `ViewModel`, `Service`, `Model`, `interfaces/`, `shared/`, `validators/` | `View`, `Repository`, `tkinter`              |
 | `Service`       | `Repository`, `Model`, `interfaces/`, `shared/`, `validators/` | `View`, `ViewModel`, `Presenter`, `tkinter`            |
 | `Repository`    | `Model`, `shared/`                                           | `View`, `ViewModel`, `Presenter`, `Service`, `tkinter`   |
-| `Model`         | `shared/`                                                    | Everything else                                          |
+| `Model`         | `shared/`, `pydantic` (infrastructure only)                  | `View`, `ViewModel`, `Presenter`, `Service`, `Repository` |
 | `ViewModel` (Vars only) | `tkinter`                                            | `Service`, `Repository`, `Model`                         |
 
 > If adding an import creates a cycle or runs against an arrow above, the design is wrong — refactor.
@@ -85,7 +85,7 @@ Every Python file in an MVP layer is suffixed with its layer name. This makes la
 | `presenters/`   | `_presenter.py`     | `executor_presenter.py`                |
 | `view_models/`  | `_view_model.py`    | `scenario_edit_view_model.py`          |
 | `views/`        | `_view.py`          | `scenario_edit_view.py`                |
-| `validators/`   | `_validator.py`     | `scraping_validator.py`                |
+| `validators/`   | `_validator.py`     | `launch_validator.py`                  |
 | `interfaces/`   | `i_*.py`            | `i_scraping_view.py`                   |
 
 The class inside a file is always the PascalCase counterpart of the file name (e.g. `provider_model.py` → `ProviderModel`, `scenario_edit_view_model.py` → `ScenarioEditViewModel`).
@@ -928,115 +928,413 @@ self._vm.error_message_var.set("\n".join(messages))
 
 ---
 
-## Validators — FluentValidation Pattern
+## Validators — Pydantic V2
 
-All domain-level field validation is centralised in `__src__/validators/`. **No validation logic
-is allowed inline in Presenters, Services, ViewModels, or Views.**
+All domain-level validation is handled by **Pydantic V2**. No validation logic is
+allowed inline in Presenters, Services, ViewModels, or Views.
 
-### Location and naming
+Pydantic validation will grow to cover all domain objects. This section is the authoritative
+reference for how to write, place, and consume validators in this project regardless of context.
 
-- Folder: `__src__/validators/`
-- Base class: `abstract_validator.py` — `AbstractValidator[T]`
-- Concrete validators: `<domain>_validator.py` (e.g. `scraping_validator.py`)
-- Class name: `<Domain>Validator` in PascalCase
+---
+
+### Decision framework — where to place validators
+
+The placement depends on whether the domain object is a Pydantic model or a plain dataclass:
+
+| Object type | Validator placement | Trigger |
+|---|---|---|
+| `BaseModel` subclass (frozen, value object) | Directly inside the class via `@field_validator` / `@model_validator` | `model_validate(data, context=ctx)` |
+| `@dataclass` (mutable, owns business methods) | Standalone `_<Domain>ValidationSchema` in `validators/<domain>_validator.py` | Public `validate_<domain>(obj)` function |
+
+**Rule of thumb:** if the object will ever be mutated after construction, or has factory
+classmethods (`get_default`, `import_from_json`, …), keep it as a dataclass and create a
+standalone schema. If the object is immutable and purely structural, make it a `BaseModel`.
+
+---
+
+### Pattern A — Validators embedded in the model
+
+Use this pattern when the domain object **is** a Pydantic `BaseModel`.
+
+#### A1 — Always-on structural validation (no context guard)
+
+For constraints that are always true regardless of external state and safe to check at
+construction time (e.g., a field that must always be a positive integer):
+
+```python
+from pydantic import BaseModel, ConfigDict, field_validator
+from shared.i18n_fra import C_SOME_FIELD_INVALID
+
+class MyModel(BaseModel):
+    """My domain value object."""
+
+    model_config = ConfigDict(frozen=True)
+
+    count: int
+
+    @field_validator("count")
+    @classmethod
+    def check_count(cls, v: int) -> int:
+        """Reject non-positive counts."""
+        if v < 1:
+            raise ValueError(C_SOME_FIELD_INVALID)
+        return v
+```
+
+#### A2 — Context-aware validation (explicit-only, with context guard)
+
+Use this when the rule requires external state (workflow position, database lookup, user
+permissions) or when the object is loaded from JSON (potentially stale data) and
+construction must never fail:
+
+```python
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
+from shared.i18n_fra import ERROR_TEMPLATES
+
+class MyParamsModel(BaseModel):
+    """Frozen params model with context-aware validators."""
+
+    model_config = ConfigDict(frozen=True)
+
+    pixels: int
+
+    @field_validator("pixels")
+    @classmethod
+    def check_pixels(cls, v: int, info: ValidationInfo) -> int:
+        """Reject pixel counts below 1 — only when context is provided."""
+        if not info.context:
+            return v  # no validation at construction / JSON deserialization
+        if v < 1:
+            raise ValueError(ERROR_TEMPLATES["scroll_down_pixels_invalid"].format(...))
+        return v
+```
+
+The guard `if not info.context: return v` is the key invariant: validators only fire when
+the caller explicitly passes a context dict via `model_validate(..., context=ctx)`.
+
+#### A3 — Cross-field / cross-object validator
+
+Use `@model_validator(mode="before")` to check conditions that span multiple fields or
+require data not yet assigned to `self`. Receive raw dict input and always guard:
+
+```python
+from pydantic import ValidationInfo, model_validator
+
+class MyModel(BaseModel):
+    """Model with a cross-field constraint."""
+
+    min_val: int
+    max_val: int
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_range(cls, data: object, info: ValidationInfo) -> object:
+        """Reject min_val > max_val."""
+        if not isinstance(data, dict) or not info.context:
+            return data
+        mn, mx = data.get("min_val"), data.get("max_val")
+        if isinstance(mn, int) and isinstance(mx, int) and mn > mx:
+            raise ValueError(C_RANGE_INVALID)
+        return data
+```
+
+Use `@model_validator(mode="after")` when the check is easier to express against the
+already-constructed model instance (all fields validated and typed):
+
+```python
+    @model_validator(mode="after")
+    def check_conditional(self) -> "MyModel":
+        """Require path only when source type demands it."""
+        if self.source_type in _TYPES_REQUIRING_PATH and not self.path:
+            raise ValueError(C_PATH_REQUIRED)
+        return self
+```
+
+`mode="after"` runs only if all field validators passed, so it is appropriate for
+constraints that depend on valid field values rather than raw input.
+
+---
+
+### Pattern B — Standalone validation schema (for dataclasses)
+
+Use this pattern when the domain object **is** a `@dataclass`. The schema is a private
+Pydantic model that mirrors the fields of the dataclass and is only instantiated transiently.
+
+#### File structure
+
+```
+validators/
+└── <domain>_validator.py      # one file per validated dataclass (or logical group)
+```
+
+#### Internal schema + public API
+
+```python
+# validators/profile_validator.py
+from __future__ import annotations
+
+from pydantic import BaseModel, ValidationError, field_validator, model_validator
+from typing import Self
+
+from models.profile_model import ProfileModel
+from shared.i18n_fra import C_EXPORT_FOLDER_REQUIRED, C_THRESHOLD_INVALID
+
+_MAX_THRESHOLD = 9_999_999
+
+
+class _ProfileValidationSchema(BaseModel):
+    """Internal validation schema — never import this class directly."""
+
+    export_folder: str
+    threshold: int
+    ...
+
+    @field_validator("export_folder")
+    @classmethod
+    def check_export_folder(cls, v: str) -> str:
+        """Reject empty or whitespace-only export paths."""
+        if not v or not v.strip():
+            raise ValueError(C_EXPORT_FOLDER_REQUIRED)
+        return v
+
+    @field_validator("threshold")
+    @classmethod
+    def check_threshold(cls, v: int) -> int:
+        """Reject thresholds outside the accepted range."""
+        if not (isinstance(v, int) and 1 <= v <= _MAX_THRESHOLD):
+            raise ValueError(C_THRESHOLD_INVALID)
+        return v
+
+    @model_validator(mode="after")
+    def check_cross_fields(self) -> Self:
+        """Cross-field rule on the validated instance."""
+        ...
+        return self
+
+
+def _extract_errors(exc: ValidationError) -> list[str]:
+    return [
+        str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
+        for err in exc.errors()
+    ]
+
+
+# ── Public API ──────────────────────────────────────────────────────────────
+
+def validate_profile(profile: ProfileModel) -> list[str]:
+    """Validate *profile* and return all French error messages.
+
+    Args:
+        profile: The profile to validate.
+
+    Returns:
+        Ordered list of error strings; empty when valid.
+    """
+    try:
+        _ProfileValidationSchema(
+            export_folder=profile.export_folder or "",
+            threshold=profile.threshold,
+            ...
+        )
+        return []
+    except ValidationError as exc:
+        return _extract_errors(exc)
+
+
+def validate_profile_first_error(profile: ProfileModel) -> str | None:
+    """Return the first error message, or ``None`` when valid.
+
+    Args:
+        profile: The profile to validate.
+
+    Returns:
+        First French error string, or None when valid.
+    """
+    errors = validate_profile(profile)
+    return errors[0] if errors else None
+```
+
+The two public functions (`validate_<domain>` and `validate_<domain>_first_error`) are
+the **only** exported symbols. The schema class is always private (underscore prefix).
+
+#### Usage in a Presenter
+
+```python
+from validators.profile_validator import validate_profile_first_error
+
+def _validate_before_save(self) -> str | None:
+    self._apply_form_to_model()
+    return validate_profile_first_error(self._current_profile)
+```
+
+---
+
+### Validator type reference
+
+| Decorator | Mode | Receives | Use when |
+|---|---|---|---|
+| `@field_validator("f")` | — | `v: FieldType, info: ValidationInfo` | Single-field constraint; structural or context-aware |
+| `@model_validator` | `"before"` | `data: object, info: ValidationInfo` | Cross-field check on raw dict; condition spans multiple fields; external context needed |
+| `@model_validator` | `"after"` | `self: Model` | Cross-field check on the validated instance; condition depends on valid field values |
+
+**Execution order:** `mode="before"` → field validators → `mode="after"`.
+Errors from earlier phases prevent later phases from running.
+
+---
+
+### Context pattern (external state injection)
+
+When a validator needs state only available at call time (workflow position, service result,
+user session), pass it via the `context` parameter of `model_validate`:
+
+```python
+# 1. Define the context shape (document it at the call site or in the class docstring)
+ctx: dict[str, object] = {
+    "step_index": step_index,      # int — zero-based position in the workflow
+    "steps_context": steps_ctx,    # StepsContext — full workflow snapshot
+    "step_id": model.step_id,      # str — own step ID for self-reference checks
+}
+
+# 2. Trigger validation
+try:
+    MyParamsModel.model_validate(obj.to_dict(), context=ctx)
+except ValidationError as exc:
+    errors = _extract_errors(exc)
+```
+
+Inside the validator, always guard against absent context before using it:
+
+```python
+@field_validator("target")
+@classmethod
+def check_target(cls, v: str, info: ValidationInfo) -> str:
+    """Validate target — requires workflow context."""
+    if not info.context:          # absent → skip (construction / deserialization)
+        return v
+    steps_ctx = info.context.get("steps_context")
+    if steps_ctx is not None and steps_ctx.find_by_id(v) is None:
+        raise ValueError(C_TARGET_NOT_FOUND)
+    return v
+```
+
+---
+
+### Error message extraction
+
+Pydantic wraps every `raise ValueError(msg)` into `"Value error, <msg>"` in `err["msg"]`.
+Always extract the original message via `err["ctx"]["error"]`:
+
+```python
+def _extract_errors(exc: ValidationError) -> list[str]:
+    """Extract French error strings from a Pydantic ValidationError."""
+    return [
+        str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
+        for err in exc.errors()
+    ]
+```
+
+This helper must be defined locally in every `validators/<domain>_validator.py` and in
+every service/base that wraps a `model_validate` call.
+
+---
+
+### Error messages — always from `shared/i18n_fra.py`
+
+Every `raise ValueError(...)` inside a validator must reference a constant from
+`shared/i18n_fra.py`. User-facing strings are never written inline:
+
+```python
+# BAD — string inline in the validator
+raise ValueError("Le champ est requis.")
+
+# GOOD — constant from i18n
+from shared.i18n_fra import C_FIELD_REQUIRED
+raise ValueError(C_FIELD_REQUIRED)
+
+# GOOD — template with context
+from shared.i18n_fra import ERROR_TEMPLATES
+raise ValueError(ERROR_TEMPLATES["my_error_key"].format(step=step_label(info.context)))
+```
+
+---
+
+### Real-time UI validation (is_dirty pattern)
+
+Because context-aware validators only activate via `model_validate(..., context=ctx)`,
+they are safe to call at any frequency. A typical Presenter wires validation to the
+`is_dirty` flag:
+
+```python
+# Presenter — re-validate on every form change
+def _on_form_changed(self) -> None:
+    self._is_dirty = True
+    self._refresh_validation_message()
+
+def _refresh_validation_message(self) -> None:
+    error = validate_profile_first_error(self._build_model_from_form())
+    self._view.set_verification_message(error or "")
+```
+
+For objects using the context pattern, build the context dict from available state:
+
+```python
+def _refresh_step_validation(self, step_index: int) -> None:
+    ctx = {"step_index": step_index, "steps_context": self._steps_context, "step_id": self._current_id}
+    try:
+        type(self._current_params).model_validate(self._current_params.to_dict(), context=ctx)
+        self._view.set_error("")
+    except ValidationError as exc:
+        self._view.set_error(_extract_errors(exc)[0])
+```
+
+---
+
+### File and naming conventions
+
+| Artifact | Location | Naming rule |
+|---|---|---|
+| Embedded validator method | Inside the `BaseModel` subclass | `check_<field_or_rule>` |
+| Standalone schema (internal) | `validators/<domain>_validator.py` | `_<Domain>ValidationSchema` (private) |
+| Public validation functions | `validators/<domain>_validator.py` | `validate_<domain>`, `validate_<domain>_first_error` |
+| Error extraction helper | Local to each validator file or base class | `_extract_errors(exc)` |
+
+---
 
 ### Dependency rules
 
-| Layer                 | May import from                                                  |
-|-----------------------|------------------------------------------------------------------|
-| `AbstractValidator`   | `shared/` only                                                   |
-| Concrete Validator    | `models/`, `shared/`, `AbstractValidator`                        |
-| `Presenter`           | Concrete validator — runs it on a Model built from VM Vars       |
-| `Service`             | Concrete validator — used as a domain validation gate            |
+| Layer | May import from |
+|---|---|
+| `BaseModel` subclass (in `models/`) | `pydantic`, `shared/` |
+| Standalone validator schema (in `validators/`) | `pydantic`, `models/`, `shared/` |
+| `Presenter` | `validators/` (public functions only) |
+| `Service` | `validators/` (public functions only) |
 
-A concrete validator validates a **domain Model** (`AbstractValidator[MyModel]`). The Presenter is
-responsible for assembling a Model from the ViewModel's Vars before passing it to the validator.
-Validators **must never** import from `View`, `Presenter`, `Repository`, or `ViewModel`.
+Validators must **never** import from `View`, `Presenter`, `ViewModel`, or `Repository`.
 
-### Definition pattern
-
-```python
-# validators/scraping_validator.py
-from models.launcher_model import LauncherModel
-from shared.enums import UrlSourceTypeEnum
-from shared.i18n_fra import C_EXEC_FOLDER_URL_SOURCE_EMPTY, C_EXEC_NO_EXPORT_FOLDER
-from validators.abstract_validator import AbstractValidator
-
-class ScrapingLaunchValidator(AbstractValidator[LauncherModel]):
-    """Validates a LauncherModel before triggering a scraping session."""
-
-    def __init__(self) -> None:
-        """Define all validation rules for a scraping launch profile."""
-        super().__init__()
-
-        self.rule_for(lambda p: p.export_folder, "export_folder").must(
-            lambda v: bool(v and v.strip()), C_EXEC_NO_EXPORT_FOLDER,
-        )
-        self.rule_for(lambda p: p.url_source_value, "url_source_value").must(
-            bool, C_EXEC_FOLDER_URL_SOURCE_EMPTY,
-        ).when(lambda p: p.url_source_type != UrlSourceTypeEnum.E_MANUAL.value)
-```
-
-### Usage in Presenter
-
-```python
-from validators.scraping_validator import ScrapingLaunchValidator
-
-def _on_launch(self) -> None:
-    # Build a domain model from VM Vars
-    model = LauncherModel(
-        export_folder=self._vm.export_folder_var.get(),
-        url_source_value=self._vm.url_source_value_var.get(),
-        url_source_type=self._vm.url_source_type_var.get(),
-    )
-    result = ScrapingLaunchValidator().validate(model)
-    if not result.is_valid:
-        self._vm.error_message_var.set(result.first_error or "")
-        return
-    self._vm.error_message_var.set("")
-    self._service.start_scraping(model)
-```
-
-### API — `AbstractValidator[T]`
-
-| Method                              | Description                                   |
-|-------------------------------------|-----------------------------------------------|
-| `rule_for(accessor, field_name="")` | Opens a rule chain; returns `RuleBuilder`.    |
-| `validate(instance)`                | Runs all rules; returns `ValidationResult`.   |
-
-### API — `RuleBuilder[T, V]` (chainable)
-
-| Method                       | Description                                          |
-|------------------------------|------------------------------------------------------|
-| `.not_empty(message)`        | Fails when value is `None`, `""`, or whitespace.     |
-| `.not_equal(other, message)` | Fails when `value == other`.                         |
-| `.must(predicate, message)`  | Fails when `predicate(value)` returns `False`.       |
-| `.when(condition)`           | Guards the **last** rule; condition receives the whole instance. |
-| `.with_message(message)`     | Replaces the message on the last rule.               |
-
-### API — `ValidationResult`
-
-| Property      | Type                | Description                                        |
-|---------------|---------------------|----------------------------------------------------|
-| `is_valid`    | `bool`              | `True` when `errors` is empty.                     |
-| `errors`      | `tuple[str, ...]`   | All French error messages, display-ready.          |
-| `first_error` | `str \| None`       | First error, or `None` when valid.                 |
-
-Validators run **all rules** (not fail-fast). Use `first_error` when the UI shows one message at a
-time; iterate `errors` to list all failures.
+---
 
 ### Anti-patterns — Validators
 
+❌ Never use `AbstractValidator`, `RuleBuilder`, or `ValidationResult` — these no longer exist
 ❌ Never write validation predicates inline in a Presenter, Service, or ViewModel
-❌ Never import View, Presenter, ViewModel, or Repository from a Validator
-❌ Never place business logic inside a Validator beyond predicates and messages
-❌ Never use `.when()` before `.must()` — `.when()` guards the rule above it
+❌ Never expose a `_<Domain>ValidationSchema` class — only the public `validate_*` functions
+❌ Never omit the `if not info.context: return v` guard in a context-aware `@field_validator`
+   (missing guard runs validation at JSON deserialization time, breaking loading of old data)
+❌ Never use `err["msg"]` directly when extracting Pydantic errors — always use `_extract_errors()`
+   to strip the `"Value error, "` prefix
+❌ Never write user-facing strings inline in a validator — always use `shared/i18n_fra.py` constants
+❌ Never override `validate_model()` in a concrete executor — it is generic in `StepExecutorBase`
+❌ Never call `model_validate(data)` without a context dict when context-aware validators are defined
 ```python
-# BAD
-self.rule_for(...).when(condition).must(predicate, msg)
-# GOOD
-self.rule_for(...).must(predicate, msg).when(condition)
+# BAD — context missing, all context-aware validators silently skip
+MyParams.model_validate(data)
+
+# GOOD — provide the context that validators depend on
+MyParams.model_validate(data, context={"step_index": idx, "steps_context": ctx, "step_id": sid})
 ```
+❌ Never place `@model_validator(mode="after")` when the rule depends on raw input data — use `"before"` instead
+❌ Never import `View`, `Presenter`, `ViewModel`, or `Repository` from a validator file
 
 ---
 
