@@ -102,6 +102,7 @@ class ScrapingView(ttk.Frame):
         rows = [
             ("Processus :", self._vm.process_status_var),
             ("Dernière URL ouverte :", self._vm.stat_last_url_opended_var),
+            ("Onglets / URL Page[0] :", self._vm.stat_browser_tabs_var),
             ("Statistiques globales :", self._vm.stat_global_var),
             ("Statistiques OpenURL :", self._vm.stat_open_url_var),
             ("Statistiques ClickOn :", self._vm.stat_click_var),

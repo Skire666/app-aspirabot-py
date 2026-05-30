@@ -121,6 +121,7 @@ class ScrapingContextModel:
     last_time_elapsed: float = field(default=0.0)
     pending_jump: str | int | None = field(default=None)
     end_process: bool = field(default=False)
+    browser_stats: tuple[int, str] = field(default=(0, "—"))
 
     # ------------------------------------------------------------------
     # Public methods
@@ -141,6 +142,7 @@ class ScrapingContextModel:
         self.downloaded_urls = set()
         self.extracted_data = ExtractedData()
         self.last_message_step = ""
+        self.browser_stats = (0, "—")
 
         # Build fast-lookup maps used by JUMP_TO_STEP resolution.
         self.step_id_by_index = [step.step_id for step in steps]

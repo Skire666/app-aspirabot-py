@@ -347,6 +347,9 @@ class ScrapingService:
 
         is_success = self._execute_step(step)
 
+        if self._browser_service is not None:
+            self._context.browser_stats = self._browser_service.get_stats()
+
         # Update run-level statistics based on the outcome.
         self._update_step_stats(step, is_success)
 

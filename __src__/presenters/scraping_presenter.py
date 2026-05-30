@@ -417,6 +417,8 @@ class ScrapingPresenter:
         if tid:
             parts.append(f"Seuil étape [{tid}] : {self._current_step_threshold}")
         self._vm.stat_last_url_opended_var.set(f"{ctx.last_url_opened or '—'}")
+        num_tabs, page0_url = ctx.browser_stats
+        self._vm.stat_browser_tabs_var.set(f"{num_tabs} onglet(s) | {page0_url}")
         self._vm.stat_global_var.set(
             f"Total exec : {stats.steps_executed} | OK : {stats.steps_success} | KO : {stats.steps_failed}"
         )

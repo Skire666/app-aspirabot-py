@@ -189,6 +189,14 @@ class BrowserPlaywrightService(IWebBrowserService):
         Returns:
             A snapshot list of all open Page objects.
         """
+        print("get_all_pages called. Current contexts and pages:")
+        if self._browser and self._browser.contexts:
+            for i, context in enumerate(self._browser.contexts):
+                print(f" Context {i}: {len(context.pages)} page(s)")
+                print(f"  Pages: {[page.url for page in context.pages]}")
+        else:
+            print(" No browser or contexts available.")
+
         if self._browser.contexts:
             return [page for context in self._browser.contexts for page in context.pages]
         return []

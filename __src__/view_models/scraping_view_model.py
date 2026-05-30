@@ -6,6 +6,7 @@
 
 import tkinter as tk
 from collections.abc import Callable
+from tkinter import messagebox
 
 # -----------------------------------------------------------------------------
 # Class
@@ -67,6 +68,7 @@ class ScrapingViewModel:
         """
         # Statistics Vars — Presenter formats and writes on every poll cycle.
         self.stat_last_url_opended_var = tk.StringVar(master=master, value="—")
+        self.stat_browser_tabs_var = tk.StringVar(master=master, value="—")
         self.stat_global_var = tk.StringVar(master=master, value="—")
         self.stat_open_url_var = tk.StringVar(master=master, value="—")
         self.stat_click_var = tk.StringVar(master=master, value="—")
@@ -173,7 +175,10 @@ class ScrapingViewModel:
 
     def cancel(self) -> None:
         """Dispatch a cancel request."""
-        if self._on_cancel is not None:
+        confirmed = messagebox.askyesno(
+            "Confirmer l'annulation", "Êtes-vous sûr de vouloir annuler le processus en cours ?"
+        )
+        if confirmed and self._on_cancel is not None:
             self._on_cancel()
 
     def pause(self) -> None:
