@@ -1,5 +1,9 @@
 """Per-step presenter for CLOSE_TABS — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -27,3 +31,6 @@ def _build(data: dict[str, Any]) -> CloseTabsParams:
 
 
 register_params_builder(StepTypeEnum.E_CLOSE_TABS, _build)
+
+
+# EOF

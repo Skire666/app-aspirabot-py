@@ -1,5 +1,9 @@
 """IStepExecutor for OPEN_URL."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -82,3 +86,6 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(OpenUrlExecutor())
+
+
+# EOF

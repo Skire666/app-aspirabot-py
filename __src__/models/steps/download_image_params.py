@@ -1,5 +1,9 @@
 """Typed parameter model for the DOWNLOAD_IMAGE step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -82,3 +86,6 @@ class DownloadImageParams(BaseStepParams):
                 )
             )
         return data
+
+
+# EOF

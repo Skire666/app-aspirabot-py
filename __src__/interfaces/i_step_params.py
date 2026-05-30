@@ -34,3 +34,6 @@ class IStepParams(Protocol):
             A plain dict mirroring the JSON storage format.
         """
         ...
+
+
+# EOF

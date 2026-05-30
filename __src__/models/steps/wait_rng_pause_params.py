@@ -1,5 +1,9 @@
 """Typed parameter model for the WAIT_RANDOM_PAUSE step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -61,3 +65,6 @@ class WaitRngPauseParams(BaseStepParams):
                 ERROR_TEMPLATES["wait_rng_pause_range_invalid"].format(step=step_label(info.context))
             )
         return data
+
+
+# EOF

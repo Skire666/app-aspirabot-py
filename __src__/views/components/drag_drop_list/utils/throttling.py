@@ -1,5 +1,9 @@
 """Reusable debouncer and throttler utilities for UI rate-limiting."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -107,3 +111,6 @@ class Throttler:
     def reset(self) -> None:
         """Resets the throttle window, allowing the next call immediately."""
         self._last_ts = 0.0
+
+
+# EOF

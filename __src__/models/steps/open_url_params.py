@@ -1,5 +1,9 @@
 """Typed parameter model for the OPEN_URL step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -61,3 +65,6 @@ class OpenUrlParams(BaseStepParams):
         if data.get("url_mode") == OpenUrlModeEnum.E_CUSTOM.value and not data.get("url_custom"):
             raise ValueError(ERROR_TEMPLATES["open_url_url_required"].format(step=step_label(info.context)))
         return data
+
+
+# EOF

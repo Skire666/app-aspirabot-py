@@ -122,3 +122,6 @@ class StepScrapingModel:
     def mark_as_modified(self) -> None:
         """Update the step's modified date to the current time."""
         self.modified_date = datetime.now()
+
+
+# EOF

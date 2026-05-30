@@ -1,5 +1,9 @@
 """Per-step presenter for COUNT_HTML_ELEMENTS — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -28,3 +32,6 @@ def _build(data: dict[str, Any]) -> CountHtmlElementsParams:
 
 
 register_params_builder(StepTypeEnum.E_COUNT_HTML_ELEMENTS, _build)
+
+
+# EOF

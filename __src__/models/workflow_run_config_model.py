@@ -50,3 +50,6 @@ class WorkflowRunConfigModel:
     export_folder: str = ""
     # Sort order for folder/json sources — matches UrlSortOrderEnum.value strings.
     url_sort_order: str = ""
+
+
+# EOF

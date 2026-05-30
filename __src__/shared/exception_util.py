@@ -6,6 +6,10 @@ Do not retrieve the contents of variables or display the contents of strings;
 -> Ensure that error reports and the application log are anonymized.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from pathlib import Path
 
 

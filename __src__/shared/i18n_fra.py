@@ -1,5 +1,9 @@
 # Main view sidebar width in pixels
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from shared.enums import StepTypeEnum, TitleModuleEnum
 from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_CONFIG,

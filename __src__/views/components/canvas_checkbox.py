@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import font as tkfont
@@ -125,3 +129,6 @@ class CanvasCheckbox(tk.Frame):
             font=self._font,
             fill=C_COLOR_BLACK_FONT,
         )
+
+
+# EOF

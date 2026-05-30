@@ -1,5 +1,9 @@
 """IStepFormDef for WAIT_FIXED_TIME."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -147,3 +151,6 @@ class WaitFixedTimeFormDef(IStepFormDef):
 
 
 register_form(WaitFixedTimeFormDef())
+
+
+# EOF

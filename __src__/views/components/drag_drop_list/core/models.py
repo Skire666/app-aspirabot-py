@@ -4,6 +4,10 @@ All public dataclasses are frozen; transitions produce new instances
 via dataclasses.replace() so callers can diff state snapshots cheaply.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -132,3 +136,6 @@ class DirtyRegion:
     def is_empty(self) -> bool:
         """True when no items are marked as dirty."""
         return not self.all_items and not self.items
+
+
+# EOF

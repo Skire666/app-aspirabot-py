@@ -1,5 +1,9 @@
 """IStepExecutor for REFRESH_PAGE."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -38,3 +42,6 @@ class RefreshPageExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(RefreshPageExecutor())
+
+
+# EOF

@@ -1,5 +1,9 @@
 """IStepExecutor for RANDOM_PAUSE."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import random
@@ -37,3 +41,6 @@ class WaitRngPauseExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(WaitRngPauseExecutor())
+
+
+# EOF

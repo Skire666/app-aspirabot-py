@@ -54,3 +54,6 @@ class IStepsListGestionView(Protocol):
             message: Text of the warning to show.
         """
         ...
+
+
+# EOF

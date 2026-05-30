@@ -1,5 +1,9 @@
 """Typed parameter model for the JUMP_TO_STEP step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -61,3 +65,6 @@ class JumpToStepParams(BaseStepParams):
                 ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step, value=target)
             )
         return data
+
+
+# EOF

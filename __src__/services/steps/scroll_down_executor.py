@@ -1,5 +1,9 @@
 """IStepExecutor for SCROLL_DOWN."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -36,3 +40,6 @@ class ScrollDownExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(ScrollDownExecutor())
+
+
+# EOF

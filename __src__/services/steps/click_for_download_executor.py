@@ -1,5 +1,9 @@
 """IStepExecutor for CLICK_FOR_DOWNLOAD."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -98,3 +102,6 @@ class ClickForDownloadExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(ClickForDownloadExecutor())
+
+
+# EOF

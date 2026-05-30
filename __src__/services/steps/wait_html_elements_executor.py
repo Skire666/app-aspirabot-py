@@ -1,5 +1,9 @@
 """IStepExecutor for WAIT_HTML_ELEMENTS."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -48,3 +52,6 @@ class WaitHtmlElementsExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(WaitHtmlElementsExecutor())
+
+
+# EOF

@@ -181,3 +181,6 @@ class WorkflowPresenter:
         self._current_scenario = None
         if self._on_done:
             self._on_done()
+
+
+# EOF

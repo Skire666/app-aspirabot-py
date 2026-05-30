@@ -1,5 +1,9 @@
 """Per-step presenter modules. Import this package to register all params builders."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from presenters.steps.click_for_download_step_presenter import _build as _b_click_for_dl  # noqa: F401
 from presenters.steps.click_on_element_step_presenter import _build as _b_click_on_el  # noqa: F401
 from presenters.steps.close_tabs_step_presenter import _build as _b_close_tabs  # noqa: F401
@@ -20,3 +24,6 @@ from presenters.steps.wait_html_images_step_presenter import _build as _b_wait_h
 from presenters.steps.wait_page_state_step_presenter import _build as _b_wait_page_state  # noqa: F401
 from presenters.steps.wait_rng_pause_step_presenter import _build as _b_wait_rng  # noqa: F401
 from presenters.steps.wait_user_action_step_presenter import _build as _b_wait_user  # noqa: F401
+
+
+# EOF

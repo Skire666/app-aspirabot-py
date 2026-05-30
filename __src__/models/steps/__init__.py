@@ -1,5 +1,9 @@
 """Domain params models for all step types. Import this package to register all params classes."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from models.steps.click_for_download_params import ClickForDownloadParams
 from models.steps.click_on_element_params import ClickOnElementParams
 from models.steps.close_tabs_params import CloseTabsParams
@@ -43,3 +47,6 @@ __all__ = [
     "WaitRngPauseParams",
     "WaitUserActionParams",
 ]
+
+
+# EOF

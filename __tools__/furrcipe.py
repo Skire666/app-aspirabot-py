@@ -2,7 +2,7 @@
 
 Rules:
   - EPI101: Functions with >25 effective lines (code only, no blanks/comments/docstring)
-  - EPI201: Functions with high complexity/effective-lines ratio
+  - EPI201: Functions with high complexity/effective-lines score
   - EPI301: Files must end with '# EOF'
   - EPI302: Files must have import section marker before imports
 
@@ -39,9 +39,9 @@ EXIT_PATH_MISSING: Final[int] = 3
 FIXABLE_RULES: Final[frozenset[str]] = frozenset({"EPI301", "EPI302"})
 
 C_THRESHOLD_LINES: Final[int] = 26
-C_MAX_RATIO: Final[float] = 0.50
-C_MIN_COMPLEXITY: Final[int] = 7
-C_MIN_LINES: Final[int] = 15
+C_MAX_SCORE: Final[float] = 100
+C_MIN_COMPLEXITY: Final[int] = 5
+C_MIN_LINES: Final[int] = 12
 
 
 class RuleConfig(TypedDict, total=False):
@@ -49,7 +49,7 @@ class RuleConfig(TypedDict, total=False):
 
     enabled: bool
     threshold_lines: int
-    max_ratio: float
+    max_score: float
     min_complexity: int
     min_lines: int
 
@@ -107,7 +107,7 @@ DEFAULT_CONFIG: Final[Config] = {
         "EPI101": {"enabled": True, "threshold_lines": C_THRESHOLD_LINES},
         "EPI201": {
             "enabled": True,
-            "max_ratio": C_MAX_RATIO,
+            "max_score": C_MAX_SCORE,
             "min_complexity": C_MIN_COMPLEXITY,
             "min_lines": C_MIN_LINES,
         },
@@ -300,20 +300,20 @@ def check_epi201(
     func: ast.FunctionDef | ast.AsyncFunctionDef,
     source_lines: list[str],
     filename: str,
-    max_ratio: float,
+    max_score: float,
     min_complexity: int,
     min_lines: int,
 ) -> Error | None:
-    """EPI201: High complexity/effective-lines ratio."""
+    """EPI201: High complexity/effective-lines score."""
     eff_lines = effective_lines(func, source_lines)
     complexity = calculate_complexity(func)
 
     if eff_lines >= min_lines and complexity >= min_complexity:
-        ratio = complexity / eff_lines
-        if ratio > max_ratio:
+        score = complexity * eff_lines
+        if score > max_score:
             return {
                 "code": "EPI201",
-                "message": f"Complexity ratio too high (mccabe/lines) : {complexity}/{eff_lines} = {ratio:.3f} > {max_ratio}",
+                "message": f"Score complexity too high (mccabe*lines) : {complexity * eff_lines} = {score:.3f} > {max_score}",
                 "filename": filename,
                 "line": func.lineno,
                 "column": func.col_offset + 1,
@@ -528,12 +528,12 @@ def _build_function_checks(rules: RulesConfig, source_lines: list[str], filename
 
     if _rule_enabled(rules, "EPI201"):
         rule_201 = _get_rule(rules, "EPI201")
-        max_ratio = _get_rule_float(rule_201, "max_ratio", C_MAX_RATIO)
+        max_score = _get_rule_float(rule_201, "max_score", C_MAX_SCORE)
         min_complexity = _get_rule_int(rule_201, "min_complexity", C_MIN_COMPLEXITY)
         min_lines = _get_rule_int(rule_201, "min_lines", C_MIN_LINES)
 
         def _check_201(func: FunctionNode) -> Error | None:
-            return check_epi201(func, source_lines, filename, max_ratio, min_complexity, min_lines)
+            return check_epi201(func, source_lines, filename, max_score, min_complexity, min_lines)
 
         checks.append(_check_201)
 
@@ -739,8 +739,8 @@ def emit_statistics_json(errors: list[Error]) -> None:
 def get_rule_name(code: str) -> str:
     """Get the human-readable name for a rule code."""
     rule_names = {
-        "EPI101": "function-too-long",
-        "EPI201": "complexity-ratio-too-high",
+        "EPI101": "function-too-long-25",
+        "EPI201": "score-complexity-too-high",
         "EPI301": "missing-eof-marker",
         "EPI302": "missing-import-marker",
     }

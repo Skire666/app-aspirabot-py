@@ -208,3 +208,6 @@ class ScenariosPresenter:
         self._current_sort_ascending = ascending
         self._sort_scenarios(column, ascending)
         self._update_view()
+
+
+# EOF

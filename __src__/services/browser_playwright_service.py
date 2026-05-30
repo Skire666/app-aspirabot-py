@@ -281,3 +281,6 @@ class BrowserPlaywrightService(IWebBrowserService):
         # This line should never be reached due to the re-raise in the except block
         # but is required for type checking.
         return False, C_STR_ERROR_JS_EVALUATION
+
+
+# EOF

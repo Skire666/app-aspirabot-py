@@ -207,3 +207,6 @@ class RefreshPageFormDef(IStepFormDef):
 
 
 register_form(RefreshPageFormDef())
+
+
+# EOF

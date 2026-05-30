@@ -1,5 +1,9 @@
 """IStepExecutor for CLICK_ON_ELEMENT."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -81,3 +85,6 @@ class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(ClickOnElementExecutor())
+
+
+# EOF

@@ -7,9 +7,9 @@
     },
     "EPI201": {
       "enabled": true,
-      "max_ratio": 0.5,
-      "min_complexity": 7,
-      "min_lines": 15
+      "max_score": 100,
+      "min_complexity": 5,
+      "min_lines": 12
     },
     "EPI301": {
       "enabled": true

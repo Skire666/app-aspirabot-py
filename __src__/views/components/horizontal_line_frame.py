@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import tkinter as tk
 from typing import Any
 
@@ -40,3 +44,6 @@ class HorizontalLineFrame(tk.Frame):
         width = self.winfo_width()
         if width > 0:
             self.line_canvas.create_line(5, 1, width - 5, 1, fill=C_COLOR_GRAY_SEPARATOR, width=1)
+
+
+# EOF

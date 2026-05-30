@@ -1,5 +1,9 @@
 """Typed parameter model for the SCROLL_DOWN step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -22,3 +26,6 @@ class ScrollDownParams(BaseStepParams):
         if v < 1:
             raise ValueError(ERROR_TEMPLATES["scroll_down_pixels_invalid"].format(step=step_label(info.context)))
         return v
+
+
+# EOF

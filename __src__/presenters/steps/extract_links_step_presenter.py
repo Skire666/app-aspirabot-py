@@ -1,5 +1,9 @@
 """Per-step presenter for EXTRACT_LINKS — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -27,3 +31,6 @@ def _build(data: dict[str, Any]) -> ExtractLinksParams:
 
 
 register_params_builder(StepTypeEnum.E_EXTRACT_LINKS, _build)
+
+
+# EOF

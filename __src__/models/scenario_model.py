@@ -207,3 +207,6 @@ class ScenarioModel:
             "version": self.version,
             "steps": [step.export_to_data_json() for step in self.steps],
         }
+
+
+# EOF

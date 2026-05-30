@@ -1,5 +1,9 @@
 """IStepFormDef for DOWNLOAD_IMAGE."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -210,3 +214,6 @@ class DownloadImageFormDef(IStepFormDef):
 
 
 register_form(DownloadImageFormDef())
+
+
+# EOF

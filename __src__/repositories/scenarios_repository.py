@@ -277,3 +277,6 @@ class ScenariosRepository:
             The full Path to the provider's JSON file.
         """
         return self._folder_path / (id_file + suffix)
+
+
+# EOF

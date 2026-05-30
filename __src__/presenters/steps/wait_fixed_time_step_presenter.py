@@ -1,5 +1,9 @@
 """Per-step presenter for WAIT_FIXED_TIME — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -27,3 +31,6 @@ def _build(data: dict[str, Any]) -> WaitFixedTimeParams:
 
 
 register_params_builder(StepTypeEnum.E_WAIT_FIXED_TIME, _build)
+
+
+# EOF

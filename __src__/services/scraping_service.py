@@ -481,3 +481,6 @@ class ScrapingService:
         # end success path — the executor should have set the result and message on the context.
         self._context.set_result_execution(True, "OK")
         return True
+
+
+# EOF

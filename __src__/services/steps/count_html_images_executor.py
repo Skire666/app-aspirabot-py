@@ -1,5 +1,9 @@
 """IStepExecutor for COUNT_HTML_IMAGES."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -38,3 +42,6 @@ class CountHtmlImagesExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(CountHtmlImagesExecutor())
+
+
+# EOF

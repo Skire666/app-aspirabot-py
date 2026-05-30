@@ -1,5 +1,9 @@
 """Per-step presenter for EXPORT_DATA_TO_JS — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -25,3 +29,6 @@ def _build(data: dict[str, Any]) -> ExportDataToJsParams:
 
 
 register_params_builder(StepTypeEnum.E_EXPORT_DATA_TO_JS, _build)
+
+
+# EOF

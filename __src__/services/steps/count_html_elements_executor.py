@@ -1,5 +1,9 @@
 """IStepExecutor for COUNT_HTML_ELEMENTS."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import logging
@@ -43,3 +47,6 @@ class CountHtmlElementsExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(CountHtmlElementsExecutor())
+
+
+# EOF

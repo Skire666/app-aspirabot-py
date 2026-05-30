@@ -285,3 +285,6 @@ class LoggingService:
             OSError: If the OS command fails to open the folder.
         """
         self._log_repository.open_logs_folder()
+
+
+# EOF

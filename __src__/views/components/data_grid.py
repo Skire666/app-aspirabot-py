@@ -750,3 +750,6 @@ class DataGrid(ttk.Frame):
             self.after_cancel(self._redraw_job)
             self._redraw_job = None
         super().destroy()
+
+
+# EOF

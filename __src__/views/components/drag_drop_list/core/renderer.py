@@ -4,6 +4,10 @@ RenderEngine wraps all tkinter canvas calls behind a semantic interface,
 decoupling drawing logic from state management. It owns no list state.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -241,3 +245,6 @@ class RenderEngine:
             4,
             self._theme["drag_bg"],
         )
+
+
+# EOF

@@ -1,5 +1,9 @@
 """Shared helper functions for step executors."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import logging
@@ -63,3 +67,6 @@ def get_filtered_images(browser: IWebBrowserService, bounds: dict[str, int]) -> 
     h_min, h_max = bounds["height_min"], bounds["height_max"]
     w_min, w_max = bounds["width_min"], bounds["width_max"]
     return [img for img in all_imgs if w_min <= img["width"] <= w_max and h_min <= img["height"] <= h_max]
+
+
+# EOF

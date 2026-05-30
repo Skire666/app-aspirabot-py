@@ -1,5 +1,9 @@
 """Typed parameter model for the WAIT_HTML_IMAGES step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -125,3 +129,6 @@ class WaitHtmlImagesParams(BaseStepParams):
                 )
             )
         return data
+
+
+# EOF

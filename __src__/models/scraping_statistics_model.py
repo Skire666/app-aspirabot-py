@@ -94,3 +94,6 @@ class ScrapingStatisticsModel:
                 self.open_urls_success += 1
             else:
                 self.open_urls_failed += 1
+
+
+# EOF

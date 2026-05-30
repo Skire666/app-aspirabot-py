@@ -1,5 +1,9 @@
 """IStepFormDef for WAIT_USER_ACTION."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -184,3 +188,6 @@ class WaitUserActionFormDef(IStepFormDef):
 
 
 register_form(WaitUserActionFormDef())
+
+
+# EOF

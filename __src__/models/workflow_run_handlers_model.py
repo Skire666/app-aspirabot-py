@@ -78,3 +78,6 @@ class WorkflowRunHandlers:
     # Per-step emergency stop — triggers pause when a specific step fails too often.
     emergency_stop_step_id: str = ""
     emergency_stop_step_threshold: int = 0
+
+
+# EOF

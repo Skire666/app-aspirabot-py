@@ -74,3 +74,6 @@ class LogRepository:
 
         self._logger.debug("Ouverture du dossier de logs : %s", self._folder_path)
         open_folder(self._folder_path)
+
+
+# EOF

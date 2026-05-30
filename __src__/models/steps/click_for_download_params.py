@@ -1,5 +1,9 @@
 """Typed parameter model for the CLICK_FOR_DOWNLOAD step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -32,3 +36,6 @@ class ClickForDownloadParams(BaseStepParams):
         if not v.strip():
             raise ValueError(ERROR_TEMPLATES["click_element_selector_required"].format(step=step_label(info.context)))
         return v
+
+
+# EOF

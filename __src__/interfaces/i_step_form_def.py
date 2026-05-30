@@ -112,3 +112,6 @@ class IStepFormDef(Protocol):
             A short multi-line string for display in the DragDropList.
         """
         ...
+
+
+# EOF

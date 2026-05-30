@@ -520,3 +520,6 @@ class StepItemRenderer:
                 )
         else:
             canvas.delete(msk_tag)
+
+
+# EOF

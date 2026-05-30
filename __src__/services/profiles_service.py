@@ -257,3 +257,6 @@ class ProfilesService:
             The path of the folder containing scenario files.
         """
         return self._repository.get_path_profiles_folder()
+
+
+# EOF

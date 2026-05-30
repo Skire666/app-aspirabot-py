@@ -1,5 +1,9 @@
 """Pydantic base class shared by all step parameter models."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -34,3 +38,6 @@ class BaseStepParams(BaseModel):
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict (delegates to ``model_dump()``)."""
         return self.model_dump()
+
+
+# EOF

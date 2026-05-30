@@ -1,5 +1,9 @@
 """Typed parameter model for the EXTRACT_TEXTS step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -63,3 +67,6 @@ class ExtractTextsParams(BaseStepParams):
                 ERROR_TEMPLATES["extract_texts_mapping_required"].format(step=step_label(info.context))
             )
         return v
+
+
+# EOF

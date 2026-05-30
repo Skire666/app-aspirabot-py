@@ -1,5 +1,9 @@
 """View-layer step form definitions. Import this package to register all forms."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from views.steps.click_for_download_form_def import ClickForDownloadFormDef
 from views.steps.click_on_element_form_def import ClickOnElementFormDef
 from views.steps.close_tabs_form_def import CloseTabsFormDef
@@ -43,3 +47,6 @@ __all__ = [
     "WaitRngPauseFormDef",
     "WaitUserActionFormDef",
 ]
+
+
+# EOF

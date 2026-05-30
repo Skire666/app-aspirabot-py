@@ -1,5 +1,9 @@
 """Typed parameter model for the WAIT_HTML_ELEMENTS step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -92,3 +96,6 @@ class WaitHtmlElementsParams(BaseStepParams):
                 ERROR_TEMPLATES["wait_html_elements_retry_max_invalid"].format(step=step_label(info.context))
             )
         return v
+
+
+# EOF

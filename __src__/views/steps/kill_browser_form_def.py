@@ -1,5 +1,9 @@
 """IStepFormDef for END_PROCESS."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -169,3 +173,6 @@ class KillBrowserFormDef(IStepFormDef):
 
 
 register_form(KillBrowserFormDef())
+
+
+# EOF

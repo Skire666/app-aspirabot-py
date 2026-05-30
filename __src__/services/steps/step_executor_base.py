@@ -1,5 +1,9 @@
 """Generic validate_model() base implementation for all step executors."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.step_scraping_model import StepScrapingModel
@@ -48,3 +52,6 @@ class StepExecutorBase:
         except ValidationError as exc:
             return [str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
                     for err in exc.errors()]
+
+
+# EOF

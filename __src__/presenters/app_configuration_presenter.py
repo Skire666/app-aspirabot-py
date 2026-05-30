@@ -148,3 +148,6 @@ class AppConfigurationPresenter:
         if not last_write:
             return "#N/A"
         return last_write.strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS)
+
+
+# EOF

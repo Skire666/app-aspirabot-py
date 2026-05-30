@@ -1,5 +1,9 @@
 """IStepExecutor for WAIT_PAGE_STATE."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -33,3 +37,6 @@ class WaitPageStateExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(WaitPageStateExecutor())
+
+
+# EOF

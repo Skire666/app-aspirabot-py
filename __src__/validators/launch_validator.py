@@ -1,5 +1,9 @@
 """Pydantic-based validator for the scraping launch profile (LaunchModel)."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any, Self
@@ -127,3 +131,6 @@ def validate_launch_profile_first_error(profile: LaunchModel) -> str | None:
     """
     errors = validate_launch_profile(profile)
     return errors[0] if errors else None
+
+
+# EOF

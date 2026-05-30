@@ -23,3 +23,6 @@ class LogEntryModel:
     level: str
     origin: str
     message: str
+
+
+# EOF

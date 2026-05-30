@@ -1,5 +1,9 @@
 """Typed parameter model for the EXPORT_DATA_TO_JS step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -23,3 +27,6 @@ class ExportDataToJsParams(BaseStepParams):
                 ERROR_TEMPLATES["export_data_to_js_prefix_file_required"].format(step=step_label(info.context))
             )
         return v
+
+
+# EOF

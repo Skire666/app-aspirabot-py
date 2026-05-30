@@ -1,5 +1,9 @@
 """IStepFormDef for CLICK_FOR_DOWNLOAD."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk

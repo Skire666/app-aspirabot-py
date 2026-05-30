@@ -11,6 +11,10 @@ Public surface:
     - _BtnDef / C_MINI_BUTTONS_CRUD: Button definitions.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -59,3 +63,6 @@ def __getattr__(name: str) -> object:
     from views.components.drag_drop_list.widgets import drag_drop_list as _w
 
     return getattr(_w, name)
+
+
+# EOF

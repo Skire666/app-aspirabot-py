@@ -61,3 +61,6 @@ class IStepsListCrudView(Protocol):
             is_error: True for error styling (red); False for success (green).
         """
         ...
+
+
+# EOF

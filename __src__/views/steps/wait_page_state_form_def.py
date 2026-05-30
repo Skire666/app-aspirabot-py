@@ -190,3 +190,6 @@ class WaitPageStateFormDef(IStepFormDef):
 
 
 register_form(WaitPageStateFormDef())
+
+
+# EOF

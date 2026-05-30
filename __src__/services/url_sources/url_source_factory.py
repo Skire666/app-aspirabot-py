@@ -108,3 +108,6 @@ def _build_json(source_value: list[str] | str, sort_order: UrlSortOrderEnum) -> 
     if not isinstance(source_value, str):
         raise InvalidUrlSourceValueTypeError("json", "str", type(source_value).__name__)
     return JsonUrlSourceProvider(source_value, sort_order)
+
+
+# EOF

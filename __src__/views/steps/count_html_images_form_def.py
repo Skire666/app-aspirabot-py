@@ -234,3 +234,6 @@ class CountHtmlImagesFormDef(IStepFormDef):
 
 
 register_form(CountHtmlImagesFormDef())
+
+
+# EOF

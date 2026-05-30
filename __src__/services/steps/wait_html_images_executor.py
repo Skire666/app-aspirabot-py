@@ -1,5 +1,9 @@
 """IStepExecutor for WAIT_HTML_IMAGES."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -46,3 +50,6 @@ class WaitHtmlImagesExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(WaitHtmlImagesExecutor())
+
+
+# EOF

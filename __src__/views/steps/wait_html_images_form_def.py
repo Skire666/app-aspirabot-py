@@ -1,5 +1,9 @@
 """IStepFormDef for WAIT_HTML_IMAGES."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -265,3 +269,6 @@ class WaitHtmlImagesFormDef(IStepFormDef):
 
 
 register_form(WaitHtmlImagesFormDef())
+
+
+# EOF

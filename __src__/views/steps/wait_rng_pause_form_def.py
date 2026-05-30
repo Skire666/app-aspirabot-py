@@ -1,5 +1,9 @@
 """IStepFormDef for RANDOM_PAUSE."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -164,3 +168,6 @@ class WaitRngPauseFormDef(IStepFormDef):
 
 
 register_form(WaitRngPauseFormDef())
+
+
+# EOF

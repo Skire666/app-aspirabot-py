@@ -1,5 +1,9 @@
 """Per-step presenter for CLICK_FOR_DOWNLOAD — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -27,3 +31,6 @@ def _build(data: dict[str, Any]) -> ClickForDownloadParams:
 
 
 register_params_builder(StepTypeEnum.E_CLICK_FOR_DOWNLOAD, _build)
+
+
+# EOF

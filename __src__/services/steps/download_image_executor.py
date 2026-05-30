@@ -1,5 +1,9 @@
 """IStepExecutor for DOWNLOAD_IMAGE."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -98,3 +102,6 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(DownloadImageExecutor())
+
+
+# EOF

@@ -48,3 +48,6 @@ class JournalRepository:
             self._logger.error("Impossible d'écrire le journal : %s", path, exc_info=True)
             raise
         return path
+
+
+# EOF

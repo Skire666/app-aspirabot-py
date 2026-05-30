@@ -5,6 +5,10 @@ C_MINI_BUTTONS_CRUD for backward compatibility with callers that
 import them directly from views.components.drag_drop_list.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -784,3 +788,6 @@ class DragDropList[T](tk.Frame):
         """Fires the on_reorder callback with the current item list."""
         if self._on_reorder:
             self._on_reorder(self.items)
+
+
+# EOF

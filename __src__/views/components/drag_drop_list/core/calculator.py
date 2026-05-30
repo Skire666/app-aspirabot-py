@@ -9,6 +9,10 @@ Invariants enforced by this module:
     - All returned coordinates are non-negative integers.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 
@@ -228,3 +232,6 @@ class LayoutCalculator:
             True if any part of the region overlaps the viewport.
         """
         return (y + h) >= (top - self._pad) and y <= (bottom + self._pad)
+
+
+# EOF

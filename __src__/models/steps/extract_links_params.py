@@ -1,5 +1,9 @@
 """Typed parameter model for the EXTRACT_LINKS step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -50,3 +54,6 @@ class ExtractLinksParams(BaseStepParams):
                 ERROR_TEMPLATES["extract_links_mapping_required"].format(step=step_label(info.context))
             )
         return v
+
+
+# EOF

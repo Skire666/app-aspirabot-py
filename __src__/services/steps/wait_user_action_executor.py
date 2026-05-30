@@ -1,5 +1,9 @@
 """IStepExecutor for WAIT_USER_ACTION."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -49,3 +53,6 @@ class WaitUserActionExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(WaitUserActionExecutor())
+
+
+# EOF

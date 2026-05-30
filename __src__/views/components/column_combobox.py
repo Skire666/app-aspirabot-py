@@ -1,5 +1,9 @@
 """Reusable combobox with Canvas-rendered multi-column dropdown and Python object binding."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import contextlib
@@ -767,3 +771,6 @@ class ColumnCombobox(tk.Frame):
                 fill=_FG,
             )
             x += w
+
+
+# EOF

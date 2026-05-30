@@ -1,5 +1,9 @@
 """Per-step presenter for WAIT_RANDOM_PAUSE — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -30,3 +34,6 @@ def _build(data: dict[str, Any]) -> WaitRngPauseParams:
 
 
 register_params_builder(StepTypeEnum.E_WAIT_RANDOM_PAUSE, _build)
+
+
+# EOF

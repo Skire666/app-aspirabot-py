@@ -82,12 +82,7 @@ class IStepExecutor(Protocol):
         """
         ...
 
-    def validate_model(
-        self,
-        model: StepScrapingModel,
-        step_index: int,
-        steps_context: StepsContext,
-    ) -> list[str]:
+    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
         """Validate step parameters and return human-readable error messages.
 
         Args:
@@ -100,3 +95,6 @@ class IStepExecutor(Protocol):
             A list of French error strings; empty when the params are valid.
         """
         ...
+
+
+# EOF

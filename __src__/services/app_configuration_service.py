@@ -63,3 +63,6 @@ class ConfigService:
         """Returns the last modification time of the configuration file."""
         self.ensure_configuration_exists()
         return self._repository.get_last_write_time()
+
+
+# EOF

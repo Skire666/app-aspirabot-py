@@ -1,5 +1,9 @@
 """Typed parameter model for the COUNT_HTML_IMAGES step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -111,3 +115,6 @@ class CountHtmlImagesParams(BaseStepParams):
                 )
             )
         return data
+
+
+# EOF

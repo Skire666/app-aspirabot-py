@@ -1,5 +1,9 @@
 """IStepFormDef for EXTRACT_TEXT."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -167,3 +171,6 @@ class ExtractLinksFormDef(IStepFormDef):
 
 
 register_form(ExtractLinksFormDef())
+
+
+# EOF

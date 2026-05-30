@@ -135,3 +135,6 @@ class IWebBrowserService(Protocol):
             Exception: The last exception raised if all retries are exhausted.
         """
         ...
+
+
+# EOF

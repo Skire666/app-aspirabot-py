@@ -1,5 +1,9 @@
 """Typed parameter model for the WAIT_FIXED_TIME step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -25,3 +29,6 @@ class WaitFixedTimeParams(BaseStepParams):
                 ERROR_TEMPLATES["wait_fixed_time_duration_invalid"].format(step=step_label(info.context))
             )
         return v
+
+
+# EOF

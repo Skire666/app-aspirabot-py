@@ -1,5 +1,9 @@
 """Typed parameter model for the CLOSE_TABS step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -38,3 +42,6 @@ class CloseTabsParams(BaseStepParams):
                     ERROR_TEMPLATES["close_tabs_filter_required"].format(step=step_label(info.context))
                 )
         return data
+
+
+# EOF

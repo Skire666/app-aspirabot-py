@@ -1,5 +1,9 @@
 """Per-step presenter for REFRESH_PAGE — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -29,3 +33,6 @@ def _build(data: dict[str, Any]) -> RefreshPageParams:
 
 
 register_params_builder(StepTypeEnum.E_REFRESH_PAGE, _build)
+
+
+# EOF

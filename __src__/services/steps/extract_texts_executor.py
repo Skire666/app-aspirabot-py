@@ -1,5 +1,9 @@
 """IStepExecutor for EXTRACT_TEXTS."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -60,3 +64,6 @@ class ExtractTextsExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(ExtractTextsExecutor())
+
+
+# EOF

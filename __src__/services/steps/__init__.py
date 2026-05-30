@@ -1,5 +1,9 @@
 """Service-layer step executors. Import this package to register all executors."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from services.steps.click_for_download_executor import ClickForDownloadExecutor
 from services.steps.click_on_element_executor import ClickOnElementExecutor
 from services.steps.close_tabs_executor import CloseTabsExecutor
@@ -43,3 +47,6 @@ __all__ = [
     "WaitRngPauseExecutor",
     "WaitUserActionExecutor",
 ]
+
+
+# EOF

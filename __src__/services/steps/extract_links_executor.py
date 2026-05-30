@@ -1,5 +1,9 @@
 """IStepExecutor for EXTRACT_LINKS."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -83,3 +87,6 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(ExtractLinksExecutor())
+
+
+# EOF

@@ -230,3 +230,6 @@ class ProfilesModel:
         # no profile was updated, which means no matching id_profile was found
         if not is_updated:
             self.launch_profiles.append(updated_profile)
+
+
+# EOF

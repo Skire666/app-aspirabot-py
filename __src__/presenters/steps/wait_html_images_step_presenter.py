@@ -1,5 +1,9 @@
 """Per-step presenter for WAIT_HTML_IMAGES — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -34,3 +38,6 @@ def _build(data: dict[str, Any]) -> WaitHtmlImagesParams:
 
 
 register_params_builder(StepTypeEnum.E_WAIT_HTML_IMAGES, _build)
+
+
+# EOF

@@ -1,5 +1,9 @@
 """LRU cache and computed-property helpers."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -78,3 +82,6 @@ class LRUCache[K, V]:
     def __len__(self) -> int:
         """Return the number of cached entries."""
         return len(self._cache)
+
+
+# EOF

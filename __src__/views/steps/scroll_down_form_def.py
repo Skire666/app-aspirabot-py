@@ -1,5 +1,9 @@
 """IStepFormDef for SCROLL_DOWN."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -129,3 +133,6 @@ class ScrollDownFormDef(IStepFormDef):
 
 
 register_form(ScrollDownFormDef())
+
+
+# EOF

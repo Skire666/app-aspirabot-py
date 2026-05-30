@@ -1,5 +1,9 @@
 """Per-step presenter for WAIT_USER_ACTION — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -28,3 +32,6 @@ def _build(data: dict[str, Any]) -> WaitUserActionParams:
 
 
 register_params_builder(StepTypeEnum.E_WAIT_USER_ACTION, _build)
+
+
+# EOF

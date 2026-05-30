@@ -207,3 +207,6 @@ class LaunchModel:
         """
         self.launch_count += 1
         self.used_date_profile = datetime.now()
+
+
+# EOF

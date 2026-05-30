@@ -1,5 +1,9 @@
 """Per-step presenter for OPEN_URL — builds typed params from raw dict."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Any
@@ -31,3 +35,6 @@ def _build(data: dict[str, Any]) -> OpenUrlParams:
 
 
 register_params_builder(StepTypeEnum.E_OPEN_URL, _build)
+
+
+# EOF

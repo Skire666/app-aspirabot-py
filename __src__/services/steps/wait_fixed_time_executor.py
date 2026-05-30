@@ -1,5 +1,9 @@
 """IStepExecutor for WAIT_FIXED_TIME."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -35,3 +39,6 @@ class WaitFixedTimeExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(WaitFixedTimeExecutor())
+
+
+# EOF

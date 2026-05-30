@@ -4,6 +4,10 @@ This module is fully testable without a display. All public methods
 operate on plain Python objects and DragState dataclasses.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -170,3 +174,6 @@ class DragDropController:
             blocks.append(abs(fy - state.last_y) < self._delta_px)
 
         return bool(blocks) and all(blocks)
+
+
+# EOF

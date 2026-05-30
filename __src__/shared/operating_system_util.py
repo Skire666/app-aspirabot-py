@@ -62,3 +62,6 @@ def open_folder(path: str | Path) -> None:
         subprocess.Popen(["xdg-open", path])
     else:
         raise UnsupportedOperatingSystemError(enum_os)
+
+
+# EOF

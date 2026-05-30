@@ -1,5 +1,9 @@
 """Typed parameter model for the END_PROCESS step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from models.steps.base_step_params import BaseStepParams, step_label
@@ -37,3 +41,6 @@ class KillBrowserParams(BaseStepParams):
                 ERROR_TEMPLATES["end_process_wait_unit_invalid"].format(step=step_label(info.context), value=v)
             )
         return v
+
+
+# EOF

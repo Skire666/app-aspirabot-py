@@ -256,3 +256,6 @@ class ScenariosService:
             >>> service.open_scenarios_folder()  # Opens Finder / Explorer
         """
         self._repository.open_scenarios_folder()
+
+
+# EOF

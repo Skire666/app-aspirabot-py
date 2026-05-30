@@ -1,5 +1,9 @@
 """IStepExecutor for CLOSE_TABS."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import cast, override
@@ -60,3 +64,6 @@ class CloseTabsExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(CloseTabsExecutor())
+
+
+# EOF

@@ -55,3 +55,6 @@ class LogPresenter:
                 logs_data.append((formatted_date, log.level, log.origin, log.message))
 
         self._vm.set_logs(logs_data)
+
+
+# EOF

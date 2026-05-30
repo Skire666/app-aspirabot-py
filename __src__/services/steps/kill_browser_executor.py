@@ -1,5 +1,9 @@
 """IStepExecutor for END_PROCESS."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import time
@@ -36,3 +40,6 @@ class KillBrowserExecutor(StepExecutorBase, IStepExecutor):
 
 
 register_step_executor(KillBrowserExecutor())
+
+
+# EOF

@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import tkinter as tk
 from pathlib import Path
 
@@ -75,3 +79,6 @@ class FolderLinkWidget(tk.Frame):
         self._path = path
         self._link.config(text=str(path) if path else "(no path)")
         self._apply_style()
+
+
+# EOF

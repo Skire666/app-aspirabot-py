@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from tkinter import messagebox
 
 
@@ -19,3 +23,6 @@ def ask_delete_scenario_confirmation() -> bool:
         True if user confirmed the deletion, False otherwise.
     """
     return messagebox.askyesno("Confirmer", "Voulez-vous vraiment supprimer ce scénario ?")
+
+
+# EOF
