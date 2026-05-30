@@ -11,15 +11,11 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from shared.constants import (
-    C_MAXIMUM_WAIT_TIME,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_VIEW,
-)
+from shared.constants import C_MAXIMUM_WAIT_TIME, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
-from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
+from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_from_dict
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -74,13 +70,13 @@ class WaitFixedTimeFormDef(IStepFormDef):
         ttk.Label(line1, text="Attendre une durée de :").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_DURATION))
         ttk.Spinbox(line1, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_KEY_DURATION] = dur_var
 
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12,
+            line1, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_UNIT_TIME] = unit_var
 
@@ -110,7 +106,7 @@ class WaitFixedTimeFormDef(IStepFormDef):
         """
         widgets[C_KEY_DURATION].set(str(params_dict.get(C_KEY_DURATION, C_INPUT_DEFAULT_DURATION)))
         widgets[C_KEY_UNIT_TIME].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(params_dict.get(C_KEY_UNIT_TIME, ""), C_UNITS_TIME_DEFAULT_VIEW),
+            WAIT_UNIT_MODEL_TO_VIEW.get(params_dict.get(C_KEY_UNIT_TIME, ""), C_UNITS_TIME_DEFAULT_VIEW)
         )
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
@@ -125,7 +121,7 @@ class WaitFixedTimeFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         return {
-            C_KEY_DURATION: safe_int_widget(widgets, C_KEY_DURATION, -1),
+            C_KEY_DURATION: safe_int_from_dict(widgets, C_KEY_DURATION, -1),
             C_KEY_UNIT_TIME: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_UNIT_TIME].get()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }

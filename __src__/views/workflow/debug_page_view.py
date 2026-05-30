@@ -103,7 +103,7 @@ class DebugPageView(tk.Toplevel):
         toolbar.grid(row=0, column=0, sticky="ew", pady=(4, 2), padx=4)
         ttk.Button(toolbar, text="Rafraîchir", command=lambda: self._vm.refresh()).pack(side=tk.LEFT)
         self._lbl_html_status = ttk.Label(toolbar, text="")
-        self._lbl_html_status.pack(side=tk.LEFT, padx=(8, 0))
+        self._lbl_html_status.pack(side=tk.LEFT, padx=(10, 0))
 
         self._txt_html, _ = self._make_text_area(frame, row=1)
         return frame

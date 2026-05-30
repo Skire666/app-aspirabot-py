@@ -31,12 +31,8 @@ from shared.i18n_fra import (
     C_EXEC_USED_DATE_FMT,
 )
 from validators.launch_validator import validate_launch_profile_first_error
-from view_models.executor_view_model import (
-    ExecutorViewModel,
-    ProfileItem,
-    ScenarioItem,
-    StepItem,
-)
+from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
+from views.steps._constants import safe_int_from_str
 
 # -----------------------------------------------------------------------------
 # Module-level constant
@@ -58,10 +54,7 @@ class ExecutorPresenter:
     """
 
     def __init__(
-        self,
-        vm: ExecutorViewModel,
-        scenarios_service: ScenariosService,
-        profiles_service: ProfilesService,
+        self, vm: ExecutorViewModel, scenarios_service: ScenariosService, profiles_service: ProfilesService
     ) -> None:
         """Register ViewModel callbacks and initialise internal state.
 
@@ -156,9 +149,7 @@ class ExecutorPresenter:
             An immutable ScenarioItem for the combobox.
         """
         return ScenarioItem(
-            id_file=scenario.id_file,
-            scenario_name=scenario.scenario_name,
-            scenario_desc=scenario.scenario_desc,
+            id_file=scenario.id_file, scenario_name=scenario.scenario_name, scenario_desc=scenario.scenario_desc
         )
 
     def _on_scenario_changed(self, id_scenario: str) -> None:
@@ -189,7 +180,9 @@ class ExecutorPresenter:
             self._vm.set_profiles([])
             self._vm.is_profiles_list_enabled_var.set(False)
             self._vm.is_profile_section_enabled_var.set(False)
+            self._vm.is_profile_cfg_accessible_var.set(False)
             return
+        self._vm.is_profile_cfg_accessible_var.set(True)
         self._vm.is_profiles_list_enabled_var.set(True)
         id_scenario = self._current_scenario.id_file
         profiles = self._fetch_or_create_profiles(id_scenario)
@@ -247,9 +240,7 @@ class ExecutorPresenter:
         try:
             return self._svc_profiles.read_profiles(id_scenario)
         except AspirabotBaseError:
-            self._logger.exception(
-                "Rechargement des profils impossible après création du profil par défaut"
-            )
+            self._logger.exception("Rechargement des profils impossible après création du profil par défaut")
             return None
 
     def _push_profiles(self, profiles: list[LaunchModel]) -> None:
@@ -297,9 +288,7 @@ class ExecutorPresenter:
         self._refresh_url_preview(profile)
         self._vm.is_profile_section_enabled_var.set(True)
 
-    def _push_profile_vars(
-        self, profile: LaunchModel, steps: list[StepScrapingModel]
-    ) -> None:
+    def _push_profile_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write profile scalar fields and step list into the ViewModel Vars.
 
         Args:
@@ -376,9 +365,7 @@ class ExecutorPresenter:
         """
         if not profiles_model or not profiles_model.modified_date_profile:
             return C_EXEC_SAVED_DATE_EMPTY
-        return C_EXEC_SAVED_DATE_FMT.format(
-            date=profiles_model.modified_date_profile.strftime(_DATE_FMT)
-        )
+        return C_EXEC_SAVED_DATE_FMT.format(date=profiles_model.modified_date_profile.strftime(_DATE_FMT))
 
     def _clear_profile_form(self) -> None:
         """Reset form and disable the profile section."""
@@ -390,22 +377,14 @@ class ExecutorPresenter:
 
     def _refresh_url_preview(self, profile: LaunchModel) -> None:
         """Build a URL preview from the profile source and push it to the VM."""
-        self._update_url_preview(
-            profile.url_source_type, profile.url_source_value, profile.url_sort_order
-        )
+        self._update_url_preview(profile.url_source_type, profile.url_source_value, profile.url_sort_order)
 
     def _refresh_url_preview_from_form(self) -> None:
         """Build a URL preview from the live VM state and push it to the VM."""
         source_value = self._read_url_source_value_from_vm()
-        self._update_url_preview(
-            self._vm.url_source_type_var.get(),
-            source_value,
-            self._vm.url_sort_order_var.get(),
-        )
+        self._update_url_preview(self._vm.url_source_type_var.get(), source_value, self._vm.url_sort_order_var.get())
 
-    def _update_url_preview(
-        self, source_type: str, source_value: list[str] | str | None, sort_str: str
-    ) -> None:
+    def _update_url_preview(self, source_type: str, source_value: list[str] | str | None, sort_str: str) -> None:
         """Fetch preview URLs from the provider and push them to the VM.
 
         Args:
@@ -452,12 +431,8 @@ class ExecutorPresenter:
         if not self._current_scenario:
             return
         try:
-            new = self._svc_profiles.create_profile_launch(
-                self._current_scenario.id_file, name
-            )
-            self._current_profiles_model = self._svc_profiles.read_profiles(
-                self._current_scenario.id_file
-            )
+            new = self._svc_profiles.create_profile_launch(self._current_scenario.id_file, name)
+            self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la création du profil")
             return
@@ -479,12 +454,8 @@ class ExecutorPresenter:
         if not self._current_profile or not self._current_scenario:
             return
         try:
-            self._svc_profiles.delete_profile_launch(
-                self._current_scenario.id_file, self._current_profile.id_profile
-            )
-            self._current_profiles_model = self._svc_profiles.read_profiles(
-                self._current_scenario.id_file
-            )
+            self._svc_profiles.delete_profile_launch(self._current_scenario.id_file, self._current_profile.id_profile)
+            self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la suppression du profil")
             return
@@ -497,12 +468,8 @@ class ExecutorPresenter:
             return
         self._apply_form_to_profile()
         try:
-            self._svc_profiles.update_profile_launch(
-                self._current_scenario.id_file, self._current_profile
-            )
-            self._current_profiles_model = self._svc_profiles.read_profiles(
-                self._current_scenario.id_file
-            )
+            self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
+            self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde du profil")
             return
@@ -519,7 +486,8 @@ class ExecutorPresenter:
         self._current_profile.url_source_value = self._read_url_source_value_from_vm()
         self._current_profile.url_sort_order = self._vm.url_sort_order_var.get()
         self._current_profile.emergency_stop_step_id = self._vm.step_id_selected_var.get()
-        self._apply_threshold_fields()
+        self._current_profile.emergency_stop_threshold = safe_int_from_str(self._vm.global_threshold_var.get(), 0)
+        self._current_profile.emergency_stop_step_threshold = safe_int_from_str(self._vm.step_threshold_var.get(), 0)
 
     def _read_url_source_value_from_vm(self) -> list[str] | str | None:
         """Package the URL source value from the live ViewModel state.
@@ -532,23 +500,6 @@ class ExecutorPresenter:
             raw = self._vm.manual_urls_var.get().strip()
             return [u.strip() for u in raw.splitlines() if u.strip()]
         return self._vm.url_source_path_var.get().strip() or None
-
-    def _apply_threshold_fields(self) -> None:
-        """Parse and apply threshold integer fields from the ViewModel Vars."""
-        if not self._current_profile:
-            return
-        try:
-            self._current_profile.emergency_stop_threshold = max(
-                1, int(self._vm.global_threshold_var.get())
-            )
-        except ValueError, TypeError:
-            self._current_profile.emergency_stop_threshold = 1
-        try:
-            self._current_profile.emergency_stop_step_threshold = max(
-                0, int(self._vm.step_threshold_var.get())
-            )
-        except ValueError, TypeError:
-            self._current_profile.emergency_stop_step_threshold = 0
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)
@@ -572,11 +523,7 @@ class ExecutorPresenter:
         if error:
             return
         self._save_before_launch()
-        if (
-            self.on_request_launch_scraping
-            and self._current_scenario
-            and self._current_profile
-        ):
+        if self.on_request_launch_scraping and self._current_scenario and self._current_profile:
             self.on_request_launch_scraping(self._current_scenario, self._current_profile)
 
     def _validate_launch(self) -> str | None:
@@ -598,11 +545,10 @@ class ExecutorPresenter:
             return
         self._current_profile.increment_launch_count()
         try:
-            self._svc_profiles.update_profile_launch(
-                self._current_scenario.id_file, self._current_profile
-            )
+            self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde pré-lancement")
+        self._push_stats_vars(self._current_profile)
 
     def _on_open_export_folder(self) -> None:
         """Open the export folder from the live VM state via the service."""
@@ -612,9 +558,7 @@ class ExecutorPresenter:
         try:
             self._svc_profiles.open_export_folder(folder)
         except (AspirabotBaseError, OSError) as e:
-            self._vm.show_error(
-                "Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}"
-            )
+            self._vm.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
 
 
 # EOF

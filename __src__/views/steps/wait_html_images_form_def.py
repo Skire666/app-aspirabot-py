@@ -26,7 +26,7 @@ from views.steps._constants import (
     COUNT_OP_VIEW_TO_MODEL,
     WAIT_UNIT_MODEL_TO_VIEW,
     WAIT_UNIT_VIEW_TO_MODEL,
-    safe_int_widget,
+    safe_int_from_dict,
 )
 from views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
 
@@ -224,15 +224,15 @@ class WaitHtmlImagesFormDef(IStepFormDef):
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
 
         return {
-            C_KEY_HEIGHT_MIN: safe_int_widget(widgets, C_KEY_HEIGHT_MIN, -1),
-            C_KEY_HEIGHT_MAX: safe_int_widget(widgets, C_KEY_HEIGHT_MAX, -1),
-            C_KEY_WIDTH_MIN: safe_int_widget(widgets, C_KEY_WIDTH_MIN, -1),
-            C_KEY_WIDTH_MAX: safe_int_widget(widgets, C_KEY_WIDTH_MAX, -1),
+            C_KEY_HEIGHT_MIN: safe_int_from_dict(widgets, C_KEY_HEIGHT_MIN, -1),
+            C_KEY_HEIGHT_MAX: safe_int_from_dict(widgets, C_KEY_HEIGHT_MAX, -1),
+            C_KEY_WIDTH_MIN: safe_int_from_dict(widgets, C_KEY_WIDTH_MIN, -1),
+            C_KEY_WIDTH_MAX: safe_int_from_dict(widgets, C_KEY_WIDTH_MAX, -1),
             C_KEY_OPERATOR: op_value,
-            C_KEY_QUANTITY_EXPECTED: safe_int_widget(widgets, C_KEY_QUANTITY_EXPECTED, -1),
-            C_KEY_RETRY_DELAY: safe_int_widget(widgets, C_KEY_RETRY_DELAY, -1),
+            C_KEY_QUANTITY_EXPECTED: safe_int_from_dict(widgets, C_KEY_QUANTITY_EXPECTED, -1),
+            C_KEY_RETRY_DELAY: safe_int_from_dict(widgets, C_KEY_RETRY_DELAY, -1),
             C_KEY_RETRY_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_RETRY_UNIT].get()),
-            C_KEY_RETRY_MAX: safe_int_widget(widgets, C_KEY_RETRY_MAX, -1),
+            C_KEY_RETRY_MAX: safe_int_from_dict(widgets, C_KEY_RETRY_MAX, -1),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

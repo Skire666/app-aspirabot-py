@@ -15,7 +15,7 @@ from shared.constants import C_MAXIMUM_NBR_TABS_BROWSER
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
-from views.steps._constants import safe_int_widget
+from views.steps._constants import safe_int_from_dict
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -94,17 +94,11 @@ class CloseTabsFormDef(IStepFormDef):
             filter_mode_var: StringVar that receives the selected mode value.
         """
         tk.Radiobutton(
-            line1,
-            text="Garder l'URL d'origine",
-            variable=filter_mode_var,
-            value=OpenUrlModeEnum.E_SOURCE.value,
+            line1, text="Garder l'URL d'origine", variable=filter_mode_var, value=OpenUrlModeEnum.E_SOURCE.value
         ).pack(side=tk.LEFT, padx=(0, 20))
 
         tk.Radiobutton(
-            line1,
-            text="Filtre contenant",
-            variable=filter_mode_var,
-            value=OpenUrlModeEnum.E_CUSTOM.value,
+            line1, text="Filtre contenant", variable=filter_mode_var, value=OpenUrlModeEnum.E_CUSTOM.value
         ).pack(side=tk.LEFT, padx=(0, 5))
 
     @staticmethod
@@ -138,7 +132,7 @@ class CloseTabsFormDef(IStepFormDef):
         ttk.Label(row1, text="Max. onglets ouverts:").pack(side="left", padx=(0, 5))
         max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_MAX_TABS))
         ttk.Spinbox(row1, from_=1, to=C_MAXIMUM_NBR_TABS_BROWSER, textvariable=max_var, width=7).pack(
-            side="left", padx=(0, 5),
+            side="left", padx=(0, 5)
         )
         widgets[C_KEY_MAX_TABS] = max_var
 
@@ -184,7 +178,7 @@ class CloseTabsFormDef(IStepFormDef):
         return {
             C_KEY_FILTER_MODE: widgets[C_KEY_FILTER_MODE].get(),
             C_KEY_FILTER_CUSTOM: widgets[C_KEY_FILTER_CUSTOM].get().strip(),
-            C_KEY_MAX_TABS: safe_int_widget(widgets, C_KEY_MAX_TABS, -1),
+            C_KEY_MAX_TABS: safe_int_from_dict(widgets, C_KEY_MAX_TABS, -1),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

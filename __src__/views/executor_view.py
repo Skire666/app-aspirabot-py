@@ -65,7 +65,7 @@ class ExecutorView(ttk.Frame):
     def _create_widgets(self) -> None:
         """Build all four sections in order."""
         outer = ttk.Frame(self)
-        outer.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        outer.pack(fill=tk.BOTH, expand=True, padx=5)
         self._create_scenario_section(outer)
         self._create_profiles_section(outer)
         self._create_profile_config_section(outer)
@@ -77,7 +77,7 @@ class ExecutorView(ttk.Frame):
         frame.pack(fill=tk.X)
 
         self._btn_edit = ttk.Button(frame, text="Modifier", command=self._on_edit_clicked)
-        self._btn_edit.pack(side=tk.RIGHT, padx=(4, 5), pady=(0, 5))
+        self._btn_edit.pack(side=tk.RIGHT, padx=(0, 5), pady=(0, 5))
 
         self._btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._on_refresh_clicked)
         self._btn_refresh.pack(side=tk.RIGHT, padx=(0, 5), pady=(0, 5))
@@ -88,7 +88,7 @@ class ExecutorView(ttk.Frame):
         self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=60)
         self._combo_scenarios.set_display_column("scenario_name")
         self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
-        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=(0, 5))
 
     def _create_profiles_section(self, parent: tk.Widget) -> None:
         """Build the available-profiles section."""
@@ -100,7 +100,7 @@ class ExecutorView(ttk.Frame):
         self._listbox_profiles.bind("<<ListboxSelect>>", self._on_listbox_profile_selected)
 
         btn_row = ttk.Frame(frame)
-        btn_row.pack(fill=tk.X, padx=5, pady=(0, 5))
+        btn_row.pack(fill=tk.X, pady=(0, 5))
 
         self._btn_new = ttk.Button(btn_row, text="Nouveau", command=self._on_new_clicked)
         self._btn_new.pack(side=tk.LEFT, padx=(0, 5))
@@ -115,7 +115,7 @@ class ExecutorView(ttk.Frame):
         self._btn_save.pack(side=tk.LEFT, padx=(0, 5))
 
         self._lbl_saved = ttk.Label(btn_row, textvariable=self._vm.saved_date_var)
-        self._lbl_saved.pack(side=tk.LEFT)
+        self._lbl_saved.pack(side=tk.RIGHT, padx=(5, 0))
 
     def _create_profile_config_section(self, parent: tk.Widget) -> None:
         """Build the launch-profile configuration section."""
@@ -179,7 +179,8 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
 
-        ttk.Label(row, text="Chemin (si requis) : ").pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
+        self._lbl_source_path = ttk.Label(row, text="Chemin (si requis) : ")
+        self._lbl_source_path.pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
         self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed())
         self._entry_source_path = ttk.Entry(row, textvariable=self._vm.url_source_path_var)
         self._entry_source_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5))
@@ -205,7 +206,8 @@ class ExecutorView(ttk.Frame):
         """Row 4 — sort-order radio buttons (active for folder/json only)."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Ordre de lecture :").pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
+        self._lbl_sort_order = ttk.Label(row, text="Ordre de lecture :")
+        self._lbl_sort_order.pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
         self._rb_recent = ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -250,7 +252,7 @@ class ExecutorView(ttk.Frame):
     def _create_launch_section(self, parent: tk.Widget) -> None:
         """Build the launch-trigger section."""
         frame = HorizontalLineFrame(parent, text="Lancer le scraping")
-        frame.pack(fill=tk.X, pady=(0, 5))
+        frame.pack(fill=tk.X)
 
         row = ttk.Frame(frame)
         row.pack(fill=tk.X, padx=5, pady=(0, 5))
@@ -261,7 +263,7 @@ class ExecutorView(ttk.Frame):
         )
 
         self._btn_launch = ttk.Button(row, text="Lancer le scraping", command=lambda: self._vm.launch())
-        self._btn_launch.pack(side=tk.RIGHT, padx=(8, 0), pady=(0, 5))
+        self._btn_launch.pack(side=tk.RIGHT, padx=(10, 0), pady=(0, 5))
 
     # ------------------------------------------------------------------
     # ViewModel bindings (trace_add for non-Var widgets)
@@ -278,7 +280,7 @@ class ExecutorView(ttk.Frame):
         self._vm.url_preview_version_var.trace_add("write", self._sync_url_preview)
         self._vm.url_source_type_var.trace_add("write", self._sync_url_source_type)
         self._vm.is_profiles_list_enabled_var.trace_add("write", self._sync_profiles_list_enabled)
-        self._vm.is_profile_section_enabled_var.trace_add("write", self._sync_profile_section_enabled)
+        self._vm.is_profile_section_active_var.trace_add("write", self._sync_profile_section_enabled)
         self._vm.is_edit_btn_enabled_var.trace_add("write", self._sync_edit_btn)
         self._vm.is_rename_btn_enabled_var.trace_add("write", self._sync_rename_btn)
         self._vm.is_delete_btn_enabled_var.trace_add("write", self._sync_delete_btn)
@@ -286,6 +288,15 @@ class ExecutorView(ttk.Frame):
         self._vm.is_path_entry_enabled_var.trace_add("write", self._sync_path_entry)
         self._vm.is_sort_order_enabled_var.trace_add("write", self._sync_sort_order)
         self._vm.is_preview_editable_var.trace_add("write", self._sync_preview_editable)
+        self._apply_initial_state()
+
+    def _apply_initial_state(self) -> None:
+        self._sync_profiles_list_enabled()
+        self._sync_profile_section_enabled()
+        self._sync_edit_btn()
+        self._sync_rename_btn()
+        self._sync_delete_btn()
+        self._sync_save_btn()
 
     # ------------------------------------------------------------------
     # Sync methods (called by trace_add)
@@ -360,7 +371,7 @@ class ExecutorView(ttk.Frame):
         """Enable or disable the entire profile-config section."""
         import contextlib
 
-        enabled = self._vm.is_profile_section_enabled_var.get()
+        enabled = self._vm.is_profile_section_active_var.get()
 
         def _apply(widget: tk.Widget) -> None:
             for child in widget.winfo_children():  # type: ignore[arg-type]
@@ -403,29 +414,37 @@ class ExecutorView(ttk.Frame):
         state = tk.NORMAL if self._vm.is_save_btn_enabled_var.get() else tk.DISABLED
         self._btn_save.configure(state=state)
 
+    def _is_profile_section_active(self) -> bool:
+        return self._vm.is_profile_section_active_var.get()
+
     def _sync_path_entry(self, *_: object) -> None:
-        """Enable or disable the path entry and its browse button."""
-        if not self._vm.is_profile_section_enabled_var.get():
+        """Enable or disable the path label, entry and its browse button."""
+        if not self._is_profile_section_active():
+            self._lbl_source_path.configure(state=tk.DISABLED)
             self._entry_source_path.configure(state=tk.DISABLED)
             self._btn_browse_source.configure(state=tk.DISABLED)
             return
         state = tk.NORMAL if self._vm.is_path_entry_enabled_var.get() else tk.DISABLED
+        self._lbl_source_path.configure(state=state)
         self._entry_source_path.configure(state=state)
         self._btn_browse_source.configure(state=state)
 
     def _sync_sort_order(self, *_: object) -> None:
-        """Enable or disable the sort-order radio buttons."""
-        if not self._vm.is_profile_section_enabled_var.get():
+        """Enable or disable the sort-order label and radio buttons."""
+        if not self._is_profile_section_active():
+            self._lbl_sort_order.configure(state=tk.DISABLED)
             self._rb_recent.state(["disabled"])
             self._rb_oldest.state(["disabled"])
             return
-        rb_state = ["!disabled"] if self._vm.is_sort_order_enabled_var.get() else ["disabled"]
+        enabled = self._vm.is_sort_order_enabled_var.get()
+        self._lbl_sort_order.configure(state=tk.NORMAL if enabled else tk.DISABLED)
+        rb_state = ["!disabled"] if enabled else ["disabled"]
         self._rb_recent.state(rb_state)
         self._rb_oldest.state(rb_state)
 
     def _sync_preview_editable(self, *_: object) -> None:
         """Switch the URL preview Text widget between editable and read-only."""
-        if not self._vm.is_profile_section_enabled_var.get():
+        if not self._is_profile_section_active():
             self._txt_url_preview.configure(state=tk.DISABLED)
             return
         editable = self._vm.is_preview_editable_var.get()

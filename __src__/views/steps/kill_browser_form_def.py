@@ -11,16 +11,12 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from shared.constants import (
-    C_MAXIMUM_WAIT_TIME,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_VIEW,
-)
+from shared.constants import C_MAXIMUM_WAIT_TIME, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
-from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_widget
+from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_from_dict
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -77,13 +73,13 @@ class KillBrowserFormDef(IStepFormDef):
         ttk.Label(row0, text="Attendre avant de fermer:").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_DEFAULT_WAIT_DURATION))
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_KEY_WAIT_DURATION] = dur_var
 
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12,
+            row0, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=12
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_WAIT_UNIT] = unit_var
 
@@ -100,7 +96,7 @@ class KillBrowserFormDef(IStepFormDef):
 
         export_var = tk.BooleanVar(value=False)
         CanvasCheckbox(row1, text="Exporter enregistrements textuels", variable=export_var).pack(
-            side="left", padx=(0, 5),
+            side="left", padx=(0, 5)
         )
         widgets[C_KEY_EXPORT_DATA] = export_var
 
@@ -130,7 +126,7 @@ class KillBrowserFormDef(IStepFormDef):
         """
         widgets[C_KEY_WAIT_DURATION].set(str(params_dict.get(C_KEY_WAIT_DURATION, C_DEFAULT_WAIT_DURATION)))
         widgets[C_KEY_WAIT_UNIT].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(params_dict.get(C_KEY_WAIT_UNIT, ""), C_UNITS_TIME_DEFAULT_VIEW),
+            WAIT_UNIT_MODEL_TO_VIEW.get(params_dict.get(C_KEY_WAIT_UNIT, ""), C_UNITS_TIME_DEFAULT_VIEW)
         )
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
@@ -145,7 +141,7 @@ class KillBrowserFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         return {
-            C_KEY_WAIT_DURATION: safe_int_widget(widgets, C_KEY_WAIT_DURATION, -1),
+            C_KEY_WAIT_DURATION: safe_int_from_dict(widgets, C_KEY_WAIT_DURATION, -1),
             C_KEY_WAIT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_WAIT_UNIT].get()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }

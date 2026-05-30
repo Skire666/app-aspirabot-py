@@ -104,7 +104,6 @@ def validate_launch_profile(profile: LaunchModel) -> list[str]:
         An ordered list of error strings; empty when the profile is valid.
     """
     try:
-        print("Validating profile with data:", profile)
         _LaunchValidationSchema(
             export_folder=profile.export_folder or "",
             url_source_type=profile.url_source_type or "",

@@ -24,7 +24,7 @@ from views.steps._constants import (
     C_CHOICES_WAIT_PAGE_STATE,
     WAIT_UNIT_MODEL_TO_VIEW,
     WAIT_UNIT_VIEW_TO_MODEL,
-    safe_int_widget,
+    safe_int_from_dict,
 )
 
 # -----------------------------------------------------------------------------
@@ -230,8 +230,8 @@ class OpenUrlFormDef(IStepFormDef):
             C_KEY_URL_MODE: widgets[C_KEY_URL_MODE].get(),
             C_KEY_URL_CUSTOM: widgets[C_KEY_URL_CUSTOM].get().strip(),
             C_KEY_WAIT_STATE: widgets[C_KEY_WAIT_STATE].get(),
-            C_KEY_WAIT_DNS_SOLVER: safe_int_widget(widgets, C_KEY_WAIT_DNS_SOLVER, -1),
-            C_KEY_TIMEOUT_DURATION: safe_int_widget(widgets, C_KEY_TIMEOUT_DURATION, -1),
+            C_KEY_WAIT_DNS_SOLVER: safe_int_from_dict(widgets, C_KEY_WAIT_DNS_SOLVER, -1),
+            C_KEY_TIMEOUT_DURATION: safe_int_from_dict(widgets, C_KEY_TIMEOUT_DURATION, -1),
             C_KEY_TIMEOUT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_TIMEOUT_UNIT].get()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }

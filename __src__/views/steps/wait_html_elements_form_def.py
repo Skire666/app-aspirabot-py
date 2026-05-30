@@ -11,11 +11,7 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from shared.constants import (
-    C_MAXIMUM_QTY_COUNTER,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_VIEW,
-)
+from shared.constants import C_MAXIMUM_QTY_COUNTER, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -25,7 +21,7 @@ from views.steps._constants import (
     COUNT_OP_VIEW_TO_MODEL,
     WAIT_UNIT_MODEL_TO_VIEW,
     WAIT_UNIT_VIEW_TO_MODEL,
-    safe_int_widget,
+    safe_int_from_dict,
 )
 
 # -----------------------------------------------------------------------------
@@ -201,10 +197,10 @@ class WaitHtmlElementsFormDef(IStepFormDef):
         return {
             C_KEY_SELECTOR: widgets[C_KEY_SELECTOR].get().strip(),
             C_KEY_OPERATOR: op_value,
-            C_KEY_QUANTITY_EXPECTED: safe_int_widget(widgets, C_KEY_QUANTITY_EXPECTED, -1),
-            C_KEY_RETRY_DELAY: safe_int_widget(widgets, C_KEY_RETRY_DELAY, -1),
+            C_KEY_QUANTITY_EXPECTED: safe_int_from_dict(widgets, C_KEY_QUANTITY_EXPECTED, -1),
+            C_KEY_RETRY_DELAY: safe_int_from_dict(widgets, C_KEY_RETRY_DELAY, -1),
             C_KEY_RETRY_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_RETRY_UNIT].get()),
-            C_KEY_RETRY_MAX: safe_int_widget(widgets, C_KEY_RETRY_MAX, -1),
+            C_KEY_RETRY_MAX: safe_int_from_dict(widgets, C_KEY_RETRY_MAX, -1),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

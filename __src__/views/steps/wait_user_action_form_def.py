@@ -11,11 +11,7 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from shared.constants import (
-    C_MAXIMUM_WAIT_TIME,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_VIEW,
-)
+from shared.constants import C_MAXIMUM_WAIT_TIME, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -25,7 +21,7 @@ from views.steps._constants import (
     CONDITION_VIEW_TO_MODEL,
     WAIT_UNIT_MODEL_TO_VIEW,
     WAIT_UNIT_VIEW_TO_MODEL,
-    safe_int_widget,
+    safe_int_from_dict,
 )
 
 # -----------------------------------------------------------------------------
@@ -84,7 +80,7 @@ class WaitUserActionFormDef(IStepFormDef):
         ttk.Label(line1, text="Déclenche l'attente lorsque :").pack(side=tk.LEFT, padx=(0, 5))
         cond_var = tk.StringVar(value=C_INPUT_DEFAULT_CONDITION)
         ttk.Combobox(line1, textvariable=cond_var, values=CONDITION_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_KEY_CONDITION] = cond_var
 
@@ -102,11 +98,11 @@ class WaitUserActionFormDef(IStepFormDef):
         ttk.Label(line2, text="Délai post-reprise :").pack(side=tk.LEFT, padx=(0, 5))
         dur_var = tk.StringVar(value=str(C_INPUT_DEFAULT_POST_WAIT_DURATION))
         ttk.Spinbox(line2, from_=1, to=C_MAXIMUM_WAIT_TIME, textvariable=dur_var, width=7).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         unit_var = tk.StringVar(value=C_UNITS_TIME_DEFAULT_VIEW)
         ttk.Combobox(
-            line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10,
+            line2, textvariable=unit_var, values=C_UNITS_TIME_ALLOWED_FOR_VIEW, state="readonly", width=10
         ).pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_WAIT_DURATION] = dur_var
         widgets[C_KEY_WAIT_UNIT] = unit_var
@@ -136,12 +132,10 @@ class WaitUserActionFormDef(IStepFormDef):
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
         condition = params_dict.get(C_KEY_CONDITION, "")
-        widgets[C_KEY_CONDITION].set(
-            CONDITION_MODEL_TO_VIEW.get(condition, C_INPUT_DEFAULT_CONDITION),
-        )
+        widgets[C_KEY_CONDITION].set(CONDITION_MODEL_TO_VIEW.get(condition, C_INPUT_DEFAULT_CONDITION))
         widgets[C_KEY_WAIT_DURATION].set(str(params_dict.get(C_KEY_WAIT_DURATION, C_INPUT_DEFAULT_POST_WAIT_DURATION)))
         widgets[C_KEY_WAIT_UNIT].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(params_dict.get(C_KEY_WAIT_UNIT, ""), C_UNITS_TIME_DEFAULT_VIEW),
+            WAIT_UNIT_MODEL_TO_VIEW.get(params_dict.get(C_KEY_WAIT_UNIT, ""), C_UNITS_TIME_DEFAULT_VIEW)
         )
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
@@ -157,7 +151,7 @@ class WaitUserActionFormDef(IStepFormDef):
         """
         return {
             C_KEY_CONDITION: CONDITION_VIEW_TO_MODEL.get(widgets[C_KEY_CONDITION].get()),
-            C_KEY_WAIT_DURATION: safe_int_widget(widgets, C_KEY_WAIT_DURATION, -1),
+            C_KEY_WAIT_DURATION: safe_int_from_dict(widgets, C_KEY_WAIT_DURATION, -1),
             C_KEY_WAIT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_WAIT_UNIT].get()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }

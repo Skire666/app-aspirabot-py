@@ -91,6 +91,10 @@ class ExecutorViewModel:
         # Wire derived state from url_source_type_var.
         self.url_source_type_var.trace_add("write", self._recompute_url_source_state)
         self._recompute_url_source_state()
+        # Wire derived section-active state.
+        for var in (self.is_profile_cfg_accessible_var, self.is_profile_section_enabled_var):
+            var.trace_add("write", self._recompute_profile_section_active)
+        self._recompute_profile_section_active()
 
     def _init_form_vars(self, master: tk.Misc) -> None:
         """Initialise source, display, state, and derived Vars.
@@ -127,6 +131,10 @@ class ExecutorViewModel:
         self.is_path_entry_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_sort_order_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_preview_editable_var = tk.BooleanVar(master=master, value=False)
+        # Scenario-level gate — True iff a scenario is currently selected.
+        self.is_profile_cfg_accessible_var = tk.BooleanVar(master=master, value=False)
+        # Derived section-active Var — AND of is_profile_cfg_accessible_var and is_profile_section_enabled_var.
+        self.is_profile_section_active_var = tk.BooleanVar(master=master, value=False)
         self._updating_derived: bool = False
 
     def _init_list_vars(self, master: tk.Misc) -> None:
@@ -241,6 +249,18 @@ class ExecutorViewModel:
     # ------------------------------------------------------------------
     # Derived state
     # ------------------------------------------------------------------
+
+    def _recompute_profile_section_active(self, *_: object) -> None:
+        """Recompute is_profile_section_active_var from its two source Vars."""
+        if self._updating_derived:
+            return
+        self._updating_derived = True
+        try:
+            active = self.is_profile_cfg_accessible_var.get() and self.is_profile_section_enabled_var.get()
+            if self.is_profile_section_active_var.get() != active:
+                self.is_profile_section_active_var.set(active)
+        finally:
+            self._updating_derived = False
 
     def _recompute_url_source_state(self, *_: object) -> None:
         """Recompute URL-source widget enable flags from url_source_type_var."""

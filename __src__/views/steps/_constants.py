@@ -11,10 +11,7 @@ across the 15 form-def files.
 
 from typing import Any
 
-from shared.constants import (
-    C_UNITS_TIME_ALLOWED_FOR_MODEL,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-)
+from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_ALLOWED_FOR_VIEW
 from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum
 
 # -----------------------------------------------------------------------------
@@ -78,11 +75,7 @@ EXTRACT_MODE_VALUES: list[str] = [
 EXTRACT_MODE_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXTRACT_MODE_DISPLAY, EXTRACT_MODE_VALUES, strict=True))
 EXTRACT_MODE_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXTRACT_MODE_VALUES, EXTRACT_MODE_DISPLAY, strict=True))
 
-EXTRACT_TARGET_DISPLAY: list[str] = [
-    "Premier élément",
-    "Dernier élément",
-    "Tous les éléments",
-]
+EXTRACT_TARGET_DISPLAY: list[str] = ["Premier élément", "Dernier élément", "Tous les éléments"]
 EXTRACT_TARGET_VALUES: list[str] = [
     ExtractTargetEnum.E_FIRST.value,
     ExtractTargetEnum.E_LAST.value,
@@ -103,24 +96,17 @@ COUNT_OP_DISPLAY: list[str] = [
     "inférieur ou égal à",
     "supérieur ou égal à",
 ]
-COUNT_OP_VALUES: list[str] = [
-    "equal",
-    "not_equal",
-    "less_than",
-    "greater_than",
-    "less_or_equal",
-    "greater_or_equal",
-]
+COUNT_OP_VALUES: list[str] = ["equal", "not_equal", "less_than", "greater_than", "less_or_equal", "greater_or_equal"]
 COUNT_OP_VIEW_TO_MODEL: dict[str, str] = dict(zip(COUNT_OP_DISPLAY, COUNT_OP_VALUES, strict=True))
 COUNT_OP_MODEL_TO_VIEW: dict[str, str] = dict(zip(COUNT_OP_VALUES, COUNT_OP_DISPLAY, strict=True))
 
 COUNT_SUCCESS_IF_DISPLAY: list[str] = ["succès", "échec"]
 COUNT_SUCCESS_IF_VALUES: list[str] = ["success", "failure"]
 COUNT_SUCCESS_IF_VIEW_TO_MODEL: dict[str, str] = dict(
-    zip(COUNT_SUCCESS_IF_DISPLAY, COUNT_SUCCESS_IF_VALUES, strict=True),
+    zip(COUNT_SUCCESS_IF_DISPLAY, COUNT_SUCCESS_IF_VALUES, strict=True)
 )
 COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(
-    zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY, strict=True),
+    zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY, strict=True)
 )
 
 # -----------------------------------------------------------------------------
@@ -128,7 +114,7 @@ COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(
 # -----------------------------------------------------------------------------
 
 
-def safe_int_widget(widgets: dict[str, Any], key: str, default: int) -> int:
+def safe_int_from_dict(widgets: dict[str, Any], key: str, default: int) -> int:
     """Reads an integer from a StringVar widget, falling back to ``default``.
 
     Args:
@@ -147,6 +133,22 @@ def safe_int_widget(widgets: dict[str, Any], key: str, default: int) -> int:
         return default
     try:
         return int(var.get())
+    except ValueError, TypeError:
+        return default
+
+
+def safe_int_from_str(value: str, default: int) -> int:
+    """Converts a string to an integer, falling back to ``default``.
+
+    Args:
+        value: The string to convert.
+        default: Value returned when the string is non-numeric.
+
+    Returns:
+        Integer value or ``default``.
+    """
+    try:
+        return int(value)
     except ValueError, TypeError:
         return default
 

@@ -50,22 +50,13 @@ class FaqView(ttk.Frame):
     def _build_left_panel(self, parent: ttk.Frame) -> None:
 
         # Title for TOC
-        title_label = ttk.Label(
-            parent,
-            text="Sommaire",
-            font=(None, 10, "bold"),
-        )
-        title_label.pack(anchor=tk.W, padx=5, pady=(5, 0))
+        title_label = ttk.Label(parent, text="Sommaire", font=(None, 10, "bold"))
+        title_label.pack(anchor=tk.W, pady=(5, 0))
 
         # Treeview listing the FAQ categories and items
-        self._tree = ttk.Treeview(
-            parent,
-            show="tree",
-            selectmode="browse",
-            height=18,
-        )
+        self._tree = ttk.Treeview(parent, show="tree", selectmode="browse", height=18)
         self._tree.column("#0", width=180, minwidth=180, stretch=False)
-        self._tree.pack(fill=tk.BOTH, expand=True, padx=0, pady=5)
+        self._tree.pack(fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
         self._tree.bind("<<TreeviewSelect>>", self._on_select)
 
     def _build_right_panel(self) -> None:

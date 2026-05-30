@@ -30,33 +30,6 @@ from shared.resources_icons_util import (
 # Views
 # -----------------------------------------------------------------------------
 
-# Scraping panel — status labels
-C_SCRAPING_STATUS_INACTIVE = "Est inactif"
-C_SCRAPING_JOURNAL_PENDING_STATUS = "Scraping en cours"
-C_SCRAPING_JOURNAL_PENDING_VALUE = "..."
-C_SCRAPING_JOURNAL_RESULT_OK = "OK"
-C_SCRAPING_JOURNAL_RESULT_ERROR = "ERREUR"
-
-# Scraping panel — profile date label
-C_SCRAPING_SAVED_DATE_FMT = "Sauvegardé le : {date}"
-C_SCRAPING_SAVED_DATE_EMPTY = "Sauvegardé le : --"
-
-# Scraping panel — emergency stop threshold validation warning
-C_SCRAPING_EMERGENCY_STOP_INVALID_MSG = (
-    "La condition d'arrêt d'urgence doit être un nombre entier entre 1 et 9 999 999."
-)
-
-# Scraping panel — workflow guard warnings
-C_SCRAPING_NO_PROVIDER_LOADED = "Veuillez charger un scénario avant de lancer le scraping."
-C_SCRAPING_WORKFLOW_ACTIVE_PROVIDER = (
-    "Un Workflow est déjà en cours de modification.\n"
-    "Veuillez terminer ou annuler la modification avant de changer de scénario."
-)
-C_SCRAPING_WORKFLOW_ACTIVE_LAUNCH = (
-    "Un Workflow est déjà en cours de modification.\n"
-    "Veuillez terminer ou annuler la modification avant de lancer le scraping."
-)
-
 # Scraping panel — journal lifecycle event messages
 C_SCRAPING_EVENT_BROWSER_INIT = "Initialisation du navigateur..."
 C_SCRAPING_EVENT_CONTEXT_INIT = "Création du contexte de navigation..."

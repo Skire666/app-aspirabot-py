@@ -22,7 +22,7 @@ from views.steps._constants import (
     COUNT_SUCCESS_IF_DISPLAY,
     COUNT_SUCCESS_IF_MODEL_TO_VIEW,
     COUNT_SUCCESS_IF_VIEW_TO_MODEL,
-    safe_int_widget,
+    safe_int_from_dict,
 )
 
 # -----------------------------------------------------------------------------
@@ -118,14 +118,14 @@ class CountHtmlImagesFormDef(IStepFormDef):
         ttk.Label(row2, text="Est un").pack(side=tk.LEFT, padx=(0, 5))
         si_var = tk.StringVar(value=COUNT_SUCCESS_IF_DISPLAY[0])
         ttk.Combobox(row2, textvariable=si_var, values=COUNT_SUCCESS_IF_DISPLAY, state="readonly", width=8).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(row2, text="si compte").pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_SUCCESS_IF] = si_var
 
         op_var = tk.StringVar(value=COUNT_OP_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=op_var, values=COUNT_OP_DISPLAY, state="readonly", width=18).pack(
-            side=tk.LEFT, padx=(0, 5),
+            side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_KEY_OPERATOR] = op_var
 
@@ -185,13 +185,13 @@ class CountHtmlImagesFormDef(IStepFormDef):
         op_value = COUNT_OP_VIEW_TO_MODEL.get(op_display, "equal")
 
         return {
-            C_KEY_HEIGHT_MIN: safe_int_widget(widgets, C_KEY_HEIGHT_MIN, -1),
-            C_KEY_HEIGHT_MAX: safe_int_widget(widgets, C_KEY_HEIGHT_MAX, -1),
-            C_KEY_WIDTH_MIN: safe_int_widget(widgets, C_KEY_WIDTH_MIN, -1),
-            C_KEY_WIDTH_MAX: safe_int_widget(widgets, C_KEY_WIDTH_MAX, -1),
+            C_KEY_HEIGHT_MIN: safe_int_from_dict(widgets, C_KEY_HEIGHT_MIN, -1),
+            C_KEY_HEIGHT_MAX: safe_int_from_dict(widgets, C_KEY_HEIGHT_MAX, -1),
+            C_KEY_WIDTH_MIN: safe_int_from_dict(widgets, C_KEY_WIDTH_MIN, -1),
+            C_KEY_WIDTH_MAX: safe_int_from_dict(widgets, C_KEY_WIDTH_MAX, -1),
             C_KEY_SUCCESS_IF: COUNT_SUCCESS_IF_VIEW_TO_MODEL.get(si_display),
             C_KEY_OPERATOR: op_value,
-            C_KEY_VALUE: safe_int_widget(widgets, C_KEY_VALUE, -1),
+            C_KEY_VALUE: safe_int_from_dict(widgets, C_KEY_VALUE, -1),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

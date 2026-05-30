@@ -66,7 +66,7 @@ class ScrapingView(ttk.Frame):
     def _create_widgets(self) -> None:
         """Build all four sections."""
         outer = ttk.Frame(self)
-        outer.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        outer.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
         self._create_info_section(outer)
         self._create_stats_section(outer)
         self._create_piloting_section(outer)
@@ -79,18 +79,18 @@ class ScrapingView(ttk.Frame):
         grid = ttk.Frame(frame)
         grid.pack(fill=tk.X, padx=5, pady=(0, 5))
 
-        ttk.Label(grid, text="Scénario :").grid(row=0, column=0, sticky=tk.W, padx=(0, 5), pady=2)
-        ttk.Label(grid, textvariable=self._vm.scenario_name_var).grid(row=0, column=1, sticky=tk.W, pady=2)
+        ttk.Label(grid, text="Scénario :").grid(row=0, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
+        ttk.Label(grid, textvariable=self._vm.scenario_name_var).grid(row=0, column=1, sticky=tk.W, pady=(0, 5))
 
-        ttk.Label(grid, text="Profil :").grid(row=1, column=0, sticky=tk.W, padx=(0, 5), pady=2)
-        ttk.Label(grid, textvariable=self._vm.profile_name_var).grid(row=1, column=1, sticky=tk.W, pady=2)
+        ttk.Label(grid, text="Profil :").grid(row=1, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
+        ttk.Label(grid, textvariable=self._vm.profile_name_var).grid(row=1, column=1, sticky=tk.W, pady=(0, 5))
 
-        ttk.Label(grid, text="Dossier d'export :").grid(row=2, column=0, sticky=tk.W, padx=(0, 5), pady=2)
-        ttk.Label(grid, textvariable=self._vm.folder_var).grid(row=2, column=1, sticky=tk.W, pady=2)
+        ttk.Label(grid, text="Dossier d'export :").grid(row=2, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
+        ttk.Label(grid, textvariable=self._vm.folder_var).grid(row=2, column=1, sticky=tk.W, pady=(0, 5))
         self._btn_open_folder = ttk.Button(
             grid, text="Ouvrir dossier", command=lambda: self._vm.open_folder(), state=tk.DISABLED
         )
-        self._btn_open_folder.grid(row=2, column=2, padx=(8, 0), pady=2)
+        self._btn_open_folder.grid(row=2, column=2, padx=(10, 0), pady=(0, 5))
 
     def _create_stats_section(self, parent: tk.Widget) -> None:
         """Section 2 — real-time scraping statistics, bound to ViewModel Vars."""
@@ -109,8 +109,8 @@ class ScrapingView(ttk.Frame):
             ("Étape en cours :", self._vm.stat_step_var),
         ]
         for i, (label, var) in enumerate(rows):
-            ttk.Label(grid, text=label).grid(row=i, column=0, sticky=tk.W, padx=(0, 5), pady=1)
-            ttk.Label(grid, textvariable=var).grid(row=i, column=1, sticky=tk.W, pady=1)
+            ttk.Label(grid, text=label).grid(row=i, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
+            ttk.Label(grid, textvariable=var).grid(row=i, column=1, sticky=tk.W, pady=(0, 5))
 
     def _create_piloting_section(self, parent: tk.Widget) -> None:
         """Section 3 — launch / cancel / pause / resume control buttons."""
@@ -164,9 +164,9 @@ class ScrapingView(ttk.Frame):
     def _bind_vm_vars(self) -> None:
         """Register trace_add listeners on all relevant ViewModel Vars."""
         # Piloting button states.
-        self._vm.is_running_var.trace_add("write", self._sync_button_states)
-        self._vm.has_context_var.trace_add("write", self._sync_button_states)
-        self._vm.has_folder_var.trace_add("write", self._sync_button_states)
+        self._vm.is_launch_btn_enabled_var.trace_add("write", self._sync_launch_btn)
+        self._vm.is_cancel_btn_enabled_var.trace_add("write", self._sync_cancel_btn)
+        self._vm.is_open_folder_btn_enabled_var.trace_add("write", self._sync_open_folder_btn)
         self._vm.is_pause_enabled_var.trace_add("write", self._sync_pause_btn)
         self._vm.is_resume_active_var.trace_add("write", self._sync_resume_active)
 
@@ -178,19 +178,20 @@ class ScrapingView(ttk.Frame):
     # Sync methods (called by trace_add)
     # ------------------------------------------------------------------
 
-    def _sync_button_states(self, *_: object) -> None:
-        """Recompute launch/cancel/open-folder button states from ViewModel Vars."""
-        is_running = self._vm.is_running_var.get()
-        has_context = self._vm.has_context_var.get()
-        has_folder = self._vm.has_folder_var.get()
+    def _sync_launch_btn(self, *_: object) -> None:
+        """Mirror is_launch_btn_enabled_var onto the launch button."""
+        state = tk.NORMAL if self._vm.is_launch_btn_enabled_var.get() else tk.DISABLED
+        self._btn_launch.configure(state=state)
 
-        if is_running:
-            self._btn_launch.configure(state=tk.DISABLED)
-            self._btn_open_folder.configure(state=tk.DISABLED)
-        else:
-            self._btn_launch.configure(state=tk.NORMAL if has_context else tk.DISABLED)
-            self._btn_open_folder.configure(state=tk.NORMAL if has_folder else tk.DISABLED)
-        self._btn_cancel.configure(state=tk.NORMAL if is_running else tk.DISABLED)
+    def _sync_cancel_btn(self, *_: object) -> None:
+        """Mirror is_cancel_btn_enabled_var onto the cancel button."""
+        state = tk.NORMAL if self._vm.is_cancel_btn_enabled_var.get() else tk.DISABLED
+        self._btn_cancel.configure(state=state)
+
+    def _sync_open_folder_btn(self, *_: object) -> None:
+        """Mirror is_open_folder_btn_enabled_var onto the open-folder button."""
+        state = tk.NORMAL if self._vm.is_open_folder_btn_enabled_var.get() else tk.DISABLED
+        self._btn_open_folder.configure(state=state)
 
     def _sync_pause_btn(self, *_: object) -> None:
         """Mirror is_pause_enabled_var onto the pause button."""

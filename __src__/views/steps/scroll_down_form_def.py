@@ -15,7 +15,7 @@ from shared.constants import C_MAXIMUM_SIZE_IMAGE
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
-from views.steps._constants import safe_int_widget
+from views.steps._constants import safe_int_from_dict
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -67,7 +67,7 @@ class ScrollDownFormDef(IStepFormDef):
         ttk.Label(row0, text="Pixels:").pack(side="left", padx=(0, 5))
         pixels_var = tk.StringVar(value="1000")
         ttk.Spinbox(row0, from_=0, to=C_MAXIMUM_SIZE_IMAGE, textvariable=pixels_var, width=10).pack(
-            side="left", padx=(0, 5),
+            side="left", padx=(0, 5)
         )
         widgets[C_KEY_PIXELS_DISTANCE] = pixels_var
 
@@ -109,7 +109,7 @@ class ScrollDownFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         return {
-            C_KEY_PIXELS_DISTANCE: safe_int_widget(widgets, C_KEY_PIXELS_DISTANCE, -1),
+            C_KEY_PIXELS_DISTANCE: safe_int_from_dict(widgets, C_KEY_PIXELS_DISTANCE, -1),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
