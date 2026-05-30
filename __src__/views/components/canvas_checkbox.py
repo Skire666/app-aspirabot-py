@@ -88,26 +88,26 @@ class CanvasCheckbox(tk.Frame):
 
     def _draw(self) -> None:
         self.canvas.delete("all")
-
         checked = self.get()
+        width, height, x0, y0, x1, y1 = self._compute_geometry()
+        self.canvas.config(width=width, height=height)
+        self._draw_box(x0, y0, x1, y1, checked)
+        self._draw_text_label(x1, height)
 
-        # calcul largeur texte
+    def _compute_geometry(self) -> tuple[int, int, int, int, int, int]:
+        """Compute canvas size and checkbox bounding coordinates."""
         text_width = self._font.measure(self._text)
         width = self.BOX_SIZE + self.TEXT_MARGIN + text_width + self.PADDING * 2
-
         height = max(self.BOX_SIZE, self._font.metrics("linespace")) + self.PADDING * 2
-
-        self.canvas.config(width=width, height=height)
-
         x0 = self.PADDING
         y0 = (height - self.BOX_SIZE) // 2
         x1 = x0 + self.BOX_SIZE
         y1 = y0 + self.BOX_SIZE
+        return width, height, x0, y0, x1, y1
 
-        # carré
+    def _draw_box(self, x0: int, y0: int, x1: int, y1: int, checked: bool) -> None:
+        """Draw the checkbox square and optional checkmark."""
         self._box_id = self.canvas.create_rectangle(x0, y0, x1, y1, outline="#9B9B9B", fill="white")
-
-        # coche
         if checked:
             self._check_id = self.canvas.create_line(
                 x0 + 3,
@@ -120,7 +120,8 @@ class CanvasCheckbox(tk.Frame):
                 fill=C_COLOR_BLACK_FONT,
             )
 
-        # texte
+    def _draw_text_label(self, x1: int, height: int) -> None:
+        """Draw the text label to the right of the checkbox."""
         self._text_id = self.canvas.create_text(
             x1 + self.TEXT_MARGIN,
             (height // 2) - 1,

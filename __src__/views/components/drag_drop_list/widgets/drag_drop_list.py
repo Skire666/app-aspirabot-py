@@ -184,48 +184,61 @@ class DragDropList[T](tk.Frame):
         """
         self._theme: dict[str, str] = {**DEFAULT_THEME, **(theme or {})}
         super().__init__(parent, bg=self._theme["bg"])
-
-        # ── Public list (mutated in-place) ────────────────────────────
         self.items: list[T] = items
         self._render_item: ItemRenderer[T] = render_item
+        self._init_subsystems(
+            item_height, pad, gap_expand, btn_size, drag_redraw_min_interval_ms, drag_redraw_min_delta_px,
+        )
+        self._init_resize_state(resize_debounce_ms, resize_finalize_ms, resize_min_delta_px)
+        self._init_virtualize_state(virtualize, viewport_provider, virtualize_buffer)
+        self._init_callbacks(on_move_up, on_move_down, on_duplicate, on_edit, on_delete, on_toggle_active, on_reorder)
+        self._drag_state: DragState | None = None
+        self._hovered_btn: tuple[int, str] | None = None
+        self._build_canvas()
 
-        # ── Sub-system initialization ─────────────────────────────────
+    def _init_subsystems(
+        self, item_height: int, pad: int, gap_expand: int, btn_size: int, drag_ms: int, drag_px: int,
+    ) -> None:
+        """Instantiate layout, drag-drop controller, and dirty-region tracker."""
         self._calc = LayoutCalculator(item_height, pad, gap_expand, btn_size)
-        self._ctrl = DragDropController(drag_redraw_min_interval_ms, drag_redraw_min_delta_px)
+        self._ctrl = DragDropController(drag_ms, drag_px)
         self._dirty = DirtyRegion()
 
-        # ── Resize handling ───────────────────────────────────────────
-        self._resize_debouncer = Debouncer(resize_debounce_ms)
-        self._resize_finalize_debouncer = Debouncer(max(resize_finalize_ms, 0))
-        self._resize_min_delta_px: int = max(resize_min_delta_px, 0)
+    def _init_resize_state(self, debounce_ms: int, finalize_ms: int, min_delta_px: int) -> None:
+        """Initialise resize-debounce and last-redraw-width state."""
+        self._resize_debouncer = Debouncer(debounce_ms)
+        self._resize_finalize_debouncer = Debouncer(max(finalize_ms, 0))
+        self._resize_min_delta_px: int = max(min_delta_px, 0)
         self._last_redraw_w: int | None = None
 
-        # ── Virtualization ────────────────────────────────────────────
+    def _init_virtualize_state(
+        self, virtualize: bool, viewport_provider: Callable[[], tuple[int, int]] | None, buffer: int
+    ) -> None:
+        """Initialise virtualisation flags and visible-range tracking."""
         self._virtualize: bool = virtualize and viewport_provider is not None
         self._viewport_provider = viewport_provider
-        self._virtualize_buffer: int = max(virtualize_buffer, 0)
+        self._virtualize_buffer: int = max(buffer, 0)
         self._last_visible_range: tuple[int, int] | None = None
         self._last_buttons_range: tuple[int, int] | None = None
 
-        # ── Callbacks ─────────────────────────────────────────────────
+    def _init_callbacks(
+        self,
+        on_move_up: Callable[[T, int], None] | None,
+        on_move_down: Callable[[T, int], None] | None,
+        on_duplicate: Callable[[T, int], T] | None,
+        on_edit: Callable[[T, int], None] | None,
+        on_delete: Callable[[T, int], bool] | None,
+        on_toggle_active: Callable[[T, int], None] | None,
+        on_reorder: Callable[[list[T]], None] | None,
+    ) -> None:
+        """Store action callbacks and derive the list of visible buttons."""
         self._cbs: dict[str, Callable[..., Any] | None] = {
-            "move_up": on_move_up,
-            "move_down": on_move_down,
-            "duplicate": on_duplicate,
-            "edit": on_edit,
-            "delete": on_delete,
-            "toggle_active": on_toggle_active,
+            "move_up": on_move_up, "move_down": on_move_down, "duplicate": on_duplicate,
+            "edit": on_edit, "delete": on_delete, "toggle_active": on_toggle_active,
         }
         self._on_reorder = on_reorder
-
         # Only show buttons with registered callbacks.
         self._visible_btns: list[_BtnDef] = [b for b in C_MINI_BUTTONS_CRUD if self._cbs.get(b.key) is not None]
-
-        # ── Drag state ────────────────────────────────────────────────
-        self._drag_state: DragState | None = None
-        self._hovered_btn: tuple[int, str] | None = None
-
-        self._build_canvas()
 
     # ─── Canvas lifecycle ─────────────────────────────────────────────────────
 

@@ -460,7 +460,14 @@ class ColumnCombobox(tk.Frame):
             **kwargs: Remaining options forwarded to the outer tk.Frame.
         """
         super().__init__(master, **kwargs)
+        self._init_state(state)
+        self._resolve_font(font)
+        self._create_display_canvas(width)
+        self._create_toggle_button()
+        self._dropdown = _DropdownWindow(self)
 
+    def _init_state(self, state: str) -> None:
+        """Initialise internal data and state attributes."""
         self._columns: list[_ColumnDef] = []
         self._objects: list[Any] = []
         self._row_cache: list[dict[str, Any]] = []
@@ -469,6 +476,8 @@ class ColumnCombobox(tk.Frame):
         self._state = state
         self._disabled: bool = False
 
+    def _resolve_font(self, font: Any) -> None:  # noqa: ANN401
+        """Resolve the font argument into a tkfont.Font instance."""
         if font is None:
             self._font: tkfont.Font = tkfont.nametofont("TkDefaultFont").copy()
         elif isinstance(font, tkfont.Font):
@@ -476,26 +485,23 @@ class ColumnCombobox(tk.Frame):
         else:
             self._font = tkfont.Font(font=font)
 
+    def _create_display_canvas(self, width: int) -> None:
+        """Build and bind the canvas that renders the selected row."""
         # Display canvas — renders the selected row with all visible columns
         char_w = self._font.measure("0") * width
         self._canvas = tk.Canvas(
-            self,
-            height=_ROW_H,
-            width=char_w,
-            bg=_BG,
-            highlightthickness=1,
-            highlightbackground=_BORDER,
-            cursor="arrow",
+            self, height=_ROW_H, width=char_w, bg=_BG,
+            highlightthickness=1, highlightbackground=_BORDER, cursor="arrow",
         )
         self._canvas.pack(side="left", fill="x", expand=True)
         self._canvas.bind("<ButtonPress-1>", lambda _: self._toggle())
         self._canvas.bind("<Configure>", lambda _: self._paint_selected())
 
+    def _create_toggle_button(self) -> None:
+        """Build and pack the dropdown toggle button."""
         ttk.Style().configure("Dropdown.TButton", padding=(0, 2, 0, 1), width=3, relief="flat")
         self._btn = ttk.Button(self, text=_CHAR_BUTTON, command=self._toggle, style="Dropdown.TButton")
         self._btn.pack(side="right")
-
-        self._dropdown = _DropdownWindow(self)
 
     # ── Column API ────────────────────────────────────────────────────────────
 
@@ -749,7 +755,6 @@ class ColumnCombobox(tk.Frame):
         canvas_w = canvas.winfo_width()
         if canvas_w <= 1:
             return
-
         cache = self._row_cache[self._selected_index]
         font = self._font
         widths = _eff_widths(self._columns, canvas_w)
@@ -757,20 +762,28 @@ class ColumnCombobox(tk.Frame):
         for col in self._columns:
             if not col.visible:
                 continue
-            w = widths.get(col.key, col.width)
-            raw = cache.get(col.key, "")
-            text = str(raw) if raw is not None else ""
-            if x > 0:
-                canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
-            canvas.create_text(
-                x + _CELL_PAD,
-                _ROW_H // 2,
-                text=_truncate(text, w - _CELL_PAD * 2, font),
-                anchor="w",
-                font=font,
-                fill=_FG,
-            )
-            x += w
+            x = self._paint_column(canvas, x, col, cache, widths, font)
+
+    @staticmethod
+    def _paint_column(
+        canvas: tk.Canvas,
+        x: int,
+        col: _ColumnDef,
+        cache: dict[str, Any],
+        widths: dict[str, int],
+        font: tkfont.Font,
+    ) -> int:
+        """Render one column cell on the display canvas and return the next x offset."""
+        w = widths.get(col.key, col.width)
+        raw = cache.get(col.key, "")
+        text = str(raw) if raw is not None else ""
+        if x > 0:
+            canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
+        canvas.create_text(
+            x + _CELL_PAD, _ROW_H // 2,
+            text=_truncate(text, w - _CELL_PAD * 2, font), anchor="w", font=font, fill=_FG,
+        )
+        return x + w
 
 
 # EOF

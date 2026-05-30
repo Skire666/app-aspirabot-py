@@ -22,6 +22,7 @@ class ClickForDownloadParams(BaseStepParams):
     @field_validator("index_clicked")
     @classmethod
     def check_index(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that index_clicked is non-negative."""
         if not info.context:
             return v
         if v < 0:
@@ -31,6 +32,7 @@ class ClickForDownloadParams(BaseStepParams):
     @field_validator("selector")
     @classmethod
     def check_selector(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that selector is non-empty."""
         if not info.context:
             return v
         if not v.strip():

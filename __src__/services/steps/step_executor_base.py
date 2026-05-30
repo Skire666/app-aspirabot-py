@@ -25,8 +25,8 @@ class StepExecutorBase:
     this context dict is present, so normal construction is unaffected.
     """
 
+    @staticmethod
     def validate_model(
-        self,
         model: StepScrapingModel,
         step_index: int,
         steps_context: StepsContext,
@@ -48,10 +48,11 @@ class StepExecutorBase:
         }
         try:
             type(model.params).model_validate(model.params.to_dict(), context=ctx)
-            return []
         except ValidationError as exc:
             return [str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
                     for err in exc.errors()]
+        else:
+            return []
 
 
 # EOF

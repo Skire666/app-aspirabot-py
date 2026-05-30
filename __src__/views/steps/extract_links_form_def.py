@@ -159,6 +159,7 @@ class ExtractLinksFormDef(IStepFormDef):
         Args:
             model: The step model containing current parameters.
             idx: Zero-based index of this step in the workflow.
+            steps_context: Step execution context.
 
         Returns:
             A two-line string suitable for display in the steps list.

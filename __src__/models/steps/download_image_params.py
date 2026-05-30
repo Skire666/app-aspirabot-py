@@ -39,6 +39,7 @@ class DownloadImageParams(BaseStepParams):
     @field_validator("height_min", "width_min")
     @classmethod
     def check_min_non_negative(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that the minimum dimension is non-negative."""
         if not info.context:
             return v
         if v < 0:
@@ -50,6 +51,7 @@ class DownloadImageParams(BaseStepParams):
     @field_validator("height_max", "width_max")
     @classmethod
     def check_max_bounds(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that the maximum dimension is positive."""
         if not info.context:
             return v
         step = step_label(info.context)
@@ -61,7 +63,8 @@ class DownloadImageParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_height_range(cls, data: Any, info: ValidationInfo) -> Any:
+    def check_height_range(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+        """Validate that height_min does not exceed height_max."""
         if not isinstance(data, dict) or not info.context:
             return data
         h_min, h_max = data.get("height_min"), data.get("height_max")
@@ -75,7 +78,8 @@ class DownloadImageParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_width_range(cls, data: Any, info: ValidationInfo) -> Any:
+    def check_width_range(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+        """Validate that width_min does not exceed width_max."""
         if not isinstance(data, dict) or not info.context:
             return data
         w_min, w_max = data.get("width_min"), data.get("width_max")

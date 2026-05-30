@@ -187,7 +187,8 @@ class AppConfigurationView(ttk.Frame):
     # Dialog providers — registered on ViewModel
     # ------------------------------------------------------------------
 
-    def _ask_reset_confirmation(self) -> bool:
+    @staticmethod
+    def _ask_reset_confirmation() -> bool:
         """Show a reset-confirmation dialog synchronously.
 
         Returns:
@@ -195,7 +196,8 @@ class AppConfigurationView(ttk.Frame):
         """
         return messagebox.askyesno("Confirmation", "Réinitialiser la configuration ?")
 
-    def _show_error(self, message: str) -> None:
+    @staticmethod
+    def _show_error(message: str) -> None:
         """Display a modal error dialog.
 
         Args:

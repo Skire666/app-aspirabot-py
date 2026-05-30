@@ -26,6 +26,7 @@ class CountHtmlElementsParams(BaseStepParams):
     @field_validator("selector")
     @classmethod
     def check_selector(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that selector is non-empty."""
         if not info.context:
             return v
         if not v.strip():
@@ -37,6 +38,7 @@ class CountHtmlElementsParams(BaseStepParams):
     @field_validator("value")
     @classmethod
     def check_value(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that comparison value is non-negative."""
         if not info.context:
             return v
         if v < 0:
@@ -48,6 +50,7 @@ class CountHtmlElementsParams(BaseStepParams):
     @field_validator("success_if")
     @classmethod
     def check_success_if(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that success_if is a recognised outcome."""
         if not info.context:
             return v
         if v not in _ALLOWED_SUCCESS_IF:
@@ -61,6 +64,7 @@ class CountHtmlElementsParams(BaseStepParams):
     @field_validator("operator")
     @classmethod
     def check_operator(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that operator is a recognised comparison."""
         if not info.context:
             return v
         if v not in _ALLOWED_OPERATORS:

@@ -205,37 +205,45 @@ class StepItemRenderer:
         offset_w = 80 if item.step_type == StepTypeEnum.E_JUMP_TO_STEP else 58
         start_w = x + 8
         pos_h = y + h // 2
+        self._draw_step_prefix(canvas, idx, start_w, pos_h, y, h, txt_prefix, colors)
+        self._draw_step_text(canvas, idx, start_w + offset_w, pos_h, txt_item, colors)
+        self._draw_overflow_mask(canvas, x, y, w, h, idx, canvas_w)
 
-        # Draw the number / step-id prefix and the vertical separator.
+    def _draw_step_prefix(
+        self,
+        canvas: tk.Canvas,
+        idx: int,
+        start_w: int,
+        pos_h: int,
+        y: int,
+        h: int,
+        txt_prefix: str,
+        colors: dict[str, str],
+    ) -> None:
+        """Draw the step number / id prefix text and vertical separator line."""
         canvas.create_text(
-            start_w,
-            pos_h,
-            text=txt_prefix,
-            anchor="w",
-            fill=colors["fg"],
-            font=self._C_FONT,
-            tags=(f"_txt_num{idx}",),
+            start_w, pos_h, text=txt_prefix, anchor="w",
+            fill=colors["fg"], font=self._C_FONT, tags=(f"_txt_num{idx}",),
         )
         canvas.create_line(
-            start_w + 50,
-            y,
-            start_w + 50,
-            y + h,
-            fill=colors["border"],
-            tags=(f"_sep{idx}",),
+            start_w + 50, y, start_w + 50, y + h,
+            fill=colors["border"], tags=(f"_sep{idx}",),
         )
 
-        # Draw the label text and overflow mask.
+    def _draw_step_text(
+        self,
+        canvas: tk.Canvas,
+        idx: int,
+        x_start: int,
+        pos_h: int,
+        txt_item: str,
+        colors: dict[str, str],
+    ) -> None:
+        """Draw the step label text."""
         canvas.create_text(
-            start_w + offset_w,
-            pos_h,
-            text=txt_item,
-            anchor="w",
-            fill=colors["fg"],
-            font=self._C_FONT,
-            tags=(f"_txt_lbl{idx}",),
+            x_start, pos_h, text=txt_item, anchor="w",
+            fill=colors["fg"], font=self._C_FONT, tags=(f"_txt_lbl{idx}",),
         )
-        self._draw_overflow_mask(canvas, x, y, w, h, idx, canvas_w)
 
     # -----------------------------------------------------------------------
     # Label cache

@@ -158,33 +158,38 @@ class DataGrid(ttk.Frame):
         """Creates canvases and scrollbars."""
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
+        self._create_header_canvas()
+        self._create_body_canvas()
+        self._create_scrollbars()
+        self._bind_layout_events()
 
+    def _create_header_canvas(self) -> None:
+        """Build and grid the header canvas."""
         self.header_canvas = tk.Canvas(
-            self,
-            height=self._header_height,
-            bg=self._bg_header,
-            highlightthickness=0,
+            self, height=self._header_height, bg=self._bg_header, highlightthickness=0,
         )
         self.header_canvas.grid(row=0, column=0, sticky="nsew")
 
+    def _create_body_canvas(self) -> None:
+        """Build and grid the scrollable body canvas."""
         self.body_canvas = tk.Canvas(
-            self,
-            bg="white",
-            highlightthickness=0,
+            self, bg="white", highlightthickness=0,
             xscrollcommand=self._on_body_xscroll,
             yscrollcommand=self._on_body_yscroll,
         )
         self.body_canvas.grid(row=1, column=0, sticky="nsew")
 
+    def _create_scrollbars(self) -> None:
+        """Build and grid the vertical and horizontal scrollbars."""
         self.v_scroll = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self._on_vertical_scroll)
         self.v_scroll.grid(row=1, column=1, sticky="ns")
-
         self.h_scroll = ttk.Scrollbar(self, orient=tk.HORIZONTAL, command=self._on_horizontal_scroll)
         self.h_scroll.grid(row=2, column=0, sticky="ew")
 
+    def _bind_layout_events(self) -> None:
+        """Attach mouse and resize event bindings to header and body canvases."""
         self.header_canvas.bind("<Button-1>", self._on_header_click)
         self.header_canvas.bind("<Configure>", self._on_resize)
-
         self.body_canvas.bind("<Configure>", self._on_resize)
         self.body_canvas.bind("<Motion>", self._on_mouse_move)
         self.body_canvas.bind("<Leave>", self._on_mouse_leave)
@@ -478,29 +483,26 @@ class DataGrid(ttk.Frame):
             return
         col_start, col_end = self._visible_column_range()
         for col_index in range(col_start, col_end):
-            x0 = self._column_offsets[col_index]
-            x1 = self._column_offsets[col_index + 1]
-            col = vis[col_index]
-            self.header_canvas.create_rectangle(
-                x0, 0, x1, self._header_height,
-                fill=self._bg_header,
-                outline=self._grid_line,
-                tags=("header",),
-            )
-            title = col.title
-            if col.col_type != "button" and self._sorted_column == col.id:
-                arrow = "▲" if self._sort_ascending else "▼"
-                title = f"{title} {arrow}"
-            self.header_canvas.create_text(
-                x0 + 8,
-                self._header_height / 2,
-                text=title,
-                anchor="w",
-                fill=self._text_color,
-                width=max(1, (x1 - x0) - 14),
-                font=("Segoe UI", 10, "bold"),
-                tags=("header",),
-            )
+            self._draw_header_cell(col_index, vis)
+
+    def _draw_header_cell(self, col_index: int, vis: list) -> None:
+        """Draw the background rectangle and title text for one header cell."""
+        x0 = self._column_offsets[col_index]
+        x1 = self._column_offsets[col_index + 1]
+        col = vis[col_index]
+        self.header_canvas.create_rectangle(
+            x0, 0, x1, self._header_height,
+            fill=self._bg_header, outline=self._grid_line, tags=("header",),
+        )
+        title = col.title
+        if col.col_type != "button" and self._sorted_column == col.id:
+            arrow = "▲" if self._sort_ascending else "▼"
+            title = f"{title} {arrow}"
+        self.header_canvas.create_text(
+            x0 + 8, self._header_height / 2, text=title, anchor="w",
+            fill=self._text_color, width=max(1, (x1 - x0) - 14),
+            font=("Segoe UI", 10, "bold"), tags=("header",),
+        )
 
     # ------------------------------------------------------------------
     # Drawing — rows (incremental)
@@ -598,17 +600,23 @@ class DataGrid(ttk.Frame):
         bound: object = raw_bound if raw_bound is not None else row_data.get("id", row_index)
         row_tag = f"row-{row_index}"
         col_start, col_end = col_range
+        self._draw_row_bg(y0, y1, row_bg, row_index, row_tag)
+        self._draw_row_cells(col_start, col_end, vis, row_index, y0, y1, bound, row_data, row_tag)
 
+    def _draw_row_bg(self, y0: int, y1: int, row_bg: str, row_index: int, row_tag: str) -> None:
+        """Draw the background rectangle for one data row."""
         self.body_canvas.create_rectangle(
-            0,
-            y0,
-            self._total_width * 2,  # TODO PCO ne remplit pas le reste, j'ai mis x2 pour compenser
-            y1,
-            fill=row_bg,
-            outline=self._grid_line,
+            0, y0, self._total_width * 2, y1,  # TODO PCO ne remplit pas le reste, j'ai mis x2 pour compenser
+            fill=row_bg, outline=self._grid_line,
             tags=("cell", f"row-bg-{row_index}", row_tag),
         )
 
+    def _draw_row_cells(
+        self, col_start: int, col_end: int, vis: list[GridColumn],
+        row_index: int, y0: int, y1: int, bound: object,
+        row_data: dict, row_tag: str,
+    ) -> None:
+        """Draw all visible cell widgets for one data row."""
         for col_index in range(col_start, col_end):
             x0 = self._column_offsets[col_index]
             x1 = self._column_offsets[col_index + 1]
@@ -628,33 +636,30 @@ class DataGrid(ttk.Frame):
         row_tag: str,
     ) -> None:
         value = row_data.get(col.id)
-        fmt = col.format
-        if fmt:
-            if hasattr(value, "strftime"):
-                text = value.strftime(fmt)
-            elif isinstance(value, str):
-                try:
-                    text = datetime.fromisoformat(value).strftime(fmt)
-                except ValueError:
-                    text = value
-            elif value is None:
-                text = ""
-            else:
-                text = str(value)
-        elif value is None:
-            text = ""
-        else:
-            text = str(value)
+        text = self._format_cell_value(value, col.format)
         self.body_canvas.create_text(
-            x0 + 8,
-            y0 + (self._row_height / 2),
-            text=text,
-            anchor="w",
+            x0 + 8, y0 + (self._row_height / 2),
+            text=text, anchor="w",
             width=max(1, (x1 - x0) - 14),
-            fill=self._text_color,
-            font=("Segoe UI", 9),
+            fill=self._text_color, font=("Segoe UI", 9),
             tags=("cell", row_tag),
         )
+
+    @staticmethod
+    def _format_cell_value(value: object, fmt: str | None) -> str:
+        """Format a cell value for display, applying an optional strftime format."""
+        if not fmt:
+            return "" if value is None else str(value)
+        if hasattr(value, "strftime"):
+            return value.strftime(fmt)  # type: ignore[union-attr]
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value).strftime(fmt)
+            except ValueError:
+                return value
+        if value is None:
+            return ""
+        return str(value)
 
     def _draw_button_in_cell(
         self,

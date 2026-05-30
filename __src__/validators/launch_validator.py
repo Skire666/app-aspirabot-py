@@ -113,11 +113,12 @@ def validate_launch_profile(profile: LaunchModel) -> list[str]:
             emergency_stop_step_id=profile.emergency_stop_step_id or "",
             emergency_stop_step_threshold=profile.emergency_stop_step_threshold,
         )
-        return []
     except ValidationError as exc:
         return [
             str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"] for err in exc.errors()
         ]
+    else:
+        return []
 
 
 def validate_launch_profile_first_error(profile: LaunchModel) -> str | None:

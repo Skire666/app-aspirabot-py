@@ -25,6 +25,7 @@ class ExtractLinksParams(BaseStepParams):
     @field_validator("selector")
     @classmethod
     def check_selector(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that selector is non-empty."""
         if not info.context:
             return v
         if not v.strip():
@@ -36,6 +37,7 @@ class ExtractLinksParams(BaseStepParams):
     @field_validator("target")
     @classmethod
     def check_target(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that target is a recognised value."""
         if not info.context:
             return v
         if v not in _ALLOWED_TARGETS:
@@ -47,6 +49,7 @@ class ExtractLinksParams(BaseStepParams):
     @field_validator("mapping")
     @classmethod
     def check_mapping(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that mapping is non-empty."""
         if not info.context:
             return v
         if not v.strip():

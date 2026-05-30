@@ -159,7 +159,7 @@ allow-star-arg-any = true
 # Alert if cyclomatic complexity exceeds this threshold.
 # 10 is the widely accepted standard (McCabe's own recommendation).
 # 1-5: simple | 6-10: acceptable | 11-15: refactor | 15+: high bug risk
-max-complexity = 8
+max-complexity = 8 # 8 recommanded
 
 [tool.ruff.lint.pydocstyle]
 

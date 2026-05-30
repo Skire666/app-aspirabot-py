@@ -20,6 +20,7 @@ class ExportDataToJsParams(BaseStepParams):
     @field_validator("prefix_file")
     @classmethod
     def check_prefix_file(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that prefix_file is non-empty."""
         if not info.context:
             return v
         if not v.strip():

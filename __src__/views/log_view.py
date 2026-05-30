@@ -118,7 +118,8 @@ class LogView(ttk.Frame):
             self.tree.focus(last_item_id)
             self.tree.see(last_item_id)
 
-    def _show_error(self, title: str, message: str) -> None:
+    @staticmethod
+    def _show_error(title: str, message: str) -> None:
         """Display a modal error dialog.
 
         Args:

@@ -36,8 +36,8 @@ class WorkflowService:
     def __init__(self) -> None:
         """Initialize the workflow service."""
 
+    @staticmethod
     def validate_step(
-        self,
         step_index: int,
         step: StepScrapingModel,
         steps: list[StepScrapingModel],

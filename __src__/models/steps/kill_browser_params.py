@@ -23,6 +23,7 @@ class KillBrowserParams(BaseStepParams):
     @field_validator("wait_duration")
     @classmethod
     def check_wait_duration(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that wait_duration is non-negative."""
         if not info.context:
             return v
         if v < 0:
@@ -34,6 +35,7 @@ class KillBrowserParams(BaseStepParams):
     @field_validator("wait_unit")
     @classmethod
     def check_wait_unit(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that wait_unit is an allowed time unit."""
         if not info.context:
             return v
         if v not in C_UNITS_TIME_ALLOWED_FOR_MODEL:

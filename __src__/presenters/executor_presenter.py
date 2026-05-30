@@ -190,39 +190,42 @@ class ExecutorPresenter:
             self._vm.is_profiles_list_enabled_var.set(False)
             self._vm.is_profile_section_enabled_var.set(False)
             return
-
         self._vm.is_profiles_list_enabled_var.set(True)
         id_scenario = self._current_scenario.id_file
+        profiles = self._fetch_or_create_profiles(id_scenario)
+        if profiles:
+            self._select_best_profile(profiles)
 
+    def _fetch_or_create_profiles(self, id_scenario: str) -> list[LaunchModel]:
+        """Load profiles from disk, creating a default when none exist or list is empty.
+
+        Args:
+            id_scenario: Identifier of the scenario whose profiles to load.
+
+        Returns:
+            The list of available profiles, or an empty list after a default was created.
+        """
         try:
             self._current_profiles_model = self._svc_profiles.read_profiles(id_scenario)
         except AspirabotBaseError:
-            self._logger.info(
-                "Aucun profil trouvé pour %s — création d'un profil par défaut.",
-                id_scenario,
-            )
+            self._logger.info("Aucun profil trouvé pour %s — création d'un profil par défaut.", id_scenario)
             self._current_profiles_model = self._ensure_default_profile(id_scenario)
-            return
-
-        profiles = (
-            self._current_profiles_model.launch_profiles
-            if self._current_profiles_model
-            else []
-        )
-
+            return []
+        profiles = self._current_profiles_model.launch_profiles if self._current_profiles_model else []
         if not profiles:
-            self._logger.info(
-                "Liste vide pour %s — création d'un profil par défaut.", id_scenario
-            )
+            self._logger.info("Liste vide pour %s — création d'un profil par défaut.", id_scenario)
             self._current_profiles_model = self._ensure_default_profile(id_scenario)
-            return
+            return []
+        return profiles
 
+    def _select_best_profile(self, profiles: list[LaunchModel]) -> None:
+        """Push profiles to the VM and select the most recently used one.
+
+        Args:
+            profiles: Non-empty ordered list of profiles to display.
+        """
         self._push_profiles(profiles)
-        best = (
-            self._current_profiles_model.get_most_recently_used_profile()
-            if self._current_profiles_model
-            else None
-        )
+        best = self._current_profiles_model.get_most_recently_used_profile() if self._current_profiles_model else None
         if best:
             self._vm.selected_profile_id_var.set(best.id_profile)
             self._on_profile_selected(best.id_profile)
@@ -303,6 +306,16 @@ class ExecutorPresenter:
             profile: The launch profile to render.
             steps: The ordered steps of the current scenario.
         """
+        self._push_stats_vars(profile)
+        self._push_url_source_vars(profile)
+        self._push_step_vars(profile, steps)
+
+    def _push_stats_vars(self, profile: LaunchModel) -> None:
+        """Write usage statistics, name, and export folder into VM Vars.
+
+        Args:
+            profile: The launch profile providing the values.
+        """
         # Usage statistics
         used_date = (
             C_EXEC_USED_DATE_FMT.format(date=profile.used_date_profile.strftime(_DATE_FMT))
@@ -312,37 +325,40 @@ class ExecutorPresenter:
         self._vm.used_date_var.set(used_date)
         self._vm.launch_count_var.set(str(profile.launch_count))
         self._vm.current_profile_name_var.set(profile.profile_name)
-
         # Export folder
         self._vm.export_folder_var.set(profile.export_folder or "")
 
+    def _push_url_source_vars(self, profile: LaunchModel) -> None:
+        """Write URL source type, value, and sort order into VM Vars.
+
+        Args:
+            profile: The launch profile providing the values.
+        """
         # URL source
         source_type = profile.url_source_type or ""
         self._vm.url_source_type_var.set(source_type)
-        is_manual = source_type == UrlSourceTypeEnum.E_MANUAL.value
-        if is_manual:
+        if source_type == UrlSourceTypeEnum.E_MANUAL.value:
             manual = profile.url_source_value
-            text = "\n".join(manual) if isinstance(manual, list) else ""
-            self._vm.manual_urls_var.set(text)
+            self._vm.manual_urls_var.set("\n".join(manual) if isinstance(manual, list) else "")
         else:
             path = profile.url_source_value if isinstance(profile.url_source_value, str) else ""
             self._vm.url_source_path_var.set(path)
-
         # Sort order
-        self._vm.url_sort_order_var.set(
-            profile.url_sort_order or UrlSortOrderEnum.E_MTIME_ASC.value
-        )
+        self._vm.url_sort_order_var.set(profile.url_sort_order or UrlSortOrderEnum.E_MTIME_ASC.value)
 
+    def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
+        """Write thresholds and emergency-stop step list into VM Vars.
+
+        Args:
+            profile: The launch profile providing threshold and step-id values.
+            steps: Ordered steps of the current scenario.
+        """
         # Thresholds
         self._vm.global_threshold_var.set(str(profile.emergency_stop_threshold))
         self._vm.step_threshold_var.set(str(profile.emergency_stop_step_threshold))
-
         # Steps for the emergency-stop combobox
         step_items = [
-            StepItem(
-                step_id=s.step_id,
-                label=f"{i + 1}. {s.step_type.value} — {s.step_id}",
-            )
+            StepItem(step_id=s.step_id, label=f"{i + 1}. {s.step_type.value} — {s.step_id}")
             for i, s in enumerate(steps)
         ]
         self._vm.set_steps(step_items)

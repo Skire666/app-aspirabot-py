@@ -1,12 +1,12 @@
 """epi_stats — Measure code quality with Ruff-style output.
 
 Rules:
-  - EPI101: Functions with >25 effective lines (code only, no blanks/comments/docstring)
-  - EPI201: Functions with high complexity/effective-lines score
+  - EPI025: Functions with >25 effective lines (code only, no blanks/comments/docstring)
+  - SCR250: Functions with high complexity/effective-lines score
   - EPI301: Files must end with '# EOF'
   - EPI302: Files must have import section marker before imports
 
-Config is read from `furrcipe_stats.json` in the current directory.
+Config is read from `furripe-config.json` in the current directory.
 """
 
 from __future__ import annotations
@@ -27,10 +27,10 @@ import mccabe  # You'll need: pip install mccabe
 # --------------------------------------------------------------------------- #
 
 
-TOOL_NAME: Final[str] = "furrcipe_stats"
+TOOL_NAME: Final[str] = "furripe"
 TOOL_VERSION: Final[str] = "1.0"
 
-CONFIG_FILE: Final[Path] = Path("furrcipe_stats.json")
+CONFIG_FILE: Final[Path] = Path("furripe-config.json")
 FILE_ENCODING: Final[str] = "utf-8"
 
 EXIT_CONFIG_INVALID: Final[int] = 2
@@ -39,9 +39,9 @@ EXIT_PATH_MISSING: Final[int] = 3
 FIXABLE_RULES: Final[frozenset[str]] = frozenset({"EPI301", "EPI302"})
 
 C_THRESHOLD_LINES: Final[int] = 26
-C_MAX_SCORE: Final[float] = 100
-C_MIN_COMPLEXITY: Final[int] = 5
-C_MIN_LINES: Final[int] = 12
+C_MAX_SCORE: Final[int] = 250
+C_MIN_COMPLEXITY: Final[int] = 6
+C_MIN_LINES: Final[int] = 14
 
 
 class RuleConfig(TypedDict, total=False):
@@ -49,7 +49,7 @@ class RuleConfig(TypedDict, total=False):
 
     enabled: bool
     threshold_lines: int
-    max_score: float
+    max_score: int
     min_complexity: int
     min_lines: int
 
@@ -57,8 +57,8 @@ class RuleConfig(TypedDict, total=False):
 class RulesConfig(TypedDict, total=False):
     """Mapping of rule codes to their configuration."""
 
-    EPI101: RuleConfig
-    EPI201: RuleConfig
+    EPI025: RuleConfig
+    SCR250: RuleConfig
     EPI301: RuleConfig
     EPI302: RuleConfig
 
@@ -104,8 +104,8 @@ class StatisticsPayload(TypedDict):
 DEFAULT_CONFIG: Final[Config] = {
     "path": "./__src__/",
     "rules": {
-        "EPI101": {"enabled": True, "threshold_lines": C_THRESHOLD_LINES},
-        "EPI201": {
+        "EPI025": {"enabled": True, "threshold_lines": C_THRESHOLD_LINES},
+        "SCR250": {
             "enabled": True,
             "max_score": C_MAX_SCORE,
             "min_complexity": C_MIN_COMPLEXITY,
@@ -155,7 +155,6 @@ def _read_config_payload() -> object:
     """Read the raw config payload, creating defaults if needed."""
     if not CONFIG_FILE.exists():
         _write_default_config()
-        print(f"Config file created: {CONFIG_FILE}", file=sys.stderr)
 
     try:
         return json.loads(CONFIG_FILE.read_text(encoding=FILE_ENCODING))
@@ -278,14 +277,14 @@ def get_function_source_lines(source_lines: list[str], func: FunctionNode) -> li
 # --------------------------------------------------------------------------- #
 # Rule implementations
 # --------------------------------------------------------------------------- #
-def check_epi101(
+def check_epi025(
     func: ast.FunctionDef | ast.AsyncFunctionDef, source_lines: list[str], filename: str, threshold: int
 ) -> Error | None:
-    """EPI101: Function with > threshold effective lines."""
+    """EPI025: Function with > threshold effective lines."""
     eff_lines = effective_lines(func, source_lines)
     if eff_lines > threshold:
         return {
-            "code": "EPI101",
+            "code": "EPI025",
             "message": f"Function has {eff_lines} effective lines (max: {threshold})",
             "filename": filename,
             "line": func.lineno,
@@ -296,24 +295,25 @@ def check_epi101(
     return None
 
 
-def check_epi201(
+def check_scr250(
     func: ast.FunctionDef | ast.AsyncFunctionDef,
     source_lines: list[str],
     filename: str,
-    max_score: float,
+    max_score: int,
     min_complexity: int,
     min_lines: int,
 ) -> Error | None:
-    """EPI201: High complexity/effective-lines score."""
+    """SCR250: High complexity/effective-lines score."""
     eff_lines = effective_lines(func, source_lines)
     complexity = calculate_complexity(func)
 
     if eff_lines >= min_lines and complexity >= min_complexity:
-        score = complexity * eff_lines
+        score: int = complexity * eff_lines
         if score > max_score:
+            str_fm = f"Score complexity too high (mccabe * lines) : {complexity} * {eff_lines} = {score} > {max_score}"
             return {
-                "code": "EPI201",
-                "message": f"Score complexity too high (mccabe*lines) : {complexity * eff_lines} = {score:.3f} > {max_score}",
+                "code": "SCR250",
+                "message": str_fm,
                 "filename": filename,
                 "line": func.lineno,
                 "column": func.col_offset + 1,
@@ -517,25 +517,25 @@ def _build_function_checks(rules: RulesConfig, source_lines: list[str], filename
     """Build the list of function-level checks to run."""
     checks: list[FunctionCheck] = []
 
-    if _rule_enabled(rules, "EPI101"):
-        rule_101 = _get_rule(rules, "EPI101")
-        threshold = _get_rule_int(rule_101, "threshold_lines", C_THRESHOLD_LINES)
+    if _rule_enabled(rules, "EPI025"):
+        rule_025 = _get_rule(rules, "EPI025")
+        threshold = _get_rule_int(rule_025, "threshold_lines", C_THRESHOLD_LINES)
 
-        def _check_101(func: FunctionNode) -> Error | None:
-            return check_epi101(func, source_lines, filename, threshold)
+        def _check_025(func: FunctionNode) -> Error | None:
+            return check_epi025(func, source_lines, filename, threshold)
 
-        checks.append(_check_101)
+        checks.append(_check_025)
 
-    if _rule_enabled(rules, "EPI201"):
-        rule_201 = _get_rule(rules, "EPI201")
-        max_score = _get_rule_float(rule_201, "max_score", C_MAX_SCORE)
-        min_complexity = _get_rule_int(rule_201, "min_complexity", C_MIN_COMPLEXITY)
-        min_lines = _get_rule_int(rule_201, "min_lines", C_MIN_LINES)
+    if _rule_enabled(rules, "SCR250"):
+        rule_250 = _get_rule(rules, "SCR250")
+        max_score = _get_rule_int(rule_250, "max_score", C_MAX_SCORE)
+        min_complexity = _get_rule_int(rule_250, "min_complexity", C_MIN_COMPLEXITY)
+        min_lines = _get_rule_int(rule_250, "min_lines", C_MIN_LINES)
 
-        def _check_201(func: FunctionNode) -> Error | None:
-            return check_epi201(func, source_lines, filename, max_score, min_complexity, min_lines)
+        def _check_250(func: FunctionNode) -> Error | None:
+            return check_scr250(func, source_lines, filename, max_score, min_complexity, min_lines)
 
-        checks.append(_check_201)
+        checks.append(_check_250)
 
     return checks
 
@@ -597,7 +597,7 @@ def _group_errors_by_file(errors: list[Error]) -> dict[str, list[Error]]:
     return errors_by_file
 
 
-def _build_context_lines(error: Error, source_lines: list[str]) -> list[str]:
+def _build_context_lines(error: Error, source_lines: list[str], num_width: int) -> list[str]:
     """Build source context lines for a single error."""
     if not source_lines or error["line"] > len(source_lines):
         return []
@@ -605,32 +605,42 @@ def _build_context_lines(error: Error, source_lines: list[str]) -> list[str]:
     start_line = max(0, error["line"] - 3)
     end_line = min(error["line"] + 2, len(source_lines))
     context_lines: list[str] = []
+    sep = f"{' ' * (num_width + 1)}|"
 
     for line_num in range(start_line, end_line):
-        if line_num + 1 == error["line"]:
-            line_content = source_lines[line_num].rstrip()
-            context_lines.append(f"{error['line']: >4} | {line_content}")
-            indent = " " * (error["column"] + 5)
-            context_lines.append(f"{indent}^{'^' * (len(line_content) - error['column'] + 1)}")
+        display_num = line_num + 1
+        line_content = source_lines[line_num].rstrip()
+        if display_num == error["line"]:
+            context_lines.append(f"{display_num:{num_width}} | {line_content}")
+            col_offset = error["column"] - 1
+            span = len(error["name"]) if error["name"] else 1
+            context_lines.append(f"{sep} {' ' * col_offset}{'^' * span}")
         else:
-            context_lines.append(f"{line_num + 1: >4} | {source_lines[line_num].rstrip()}")
+            context_lines.append(f"{display_num:{num_width}} | {line_content}")
 
     return context_lines
 
 
 def _format_error_block(error: Error, source_lines: list[str]) -> list[str]:
     """Format a single error block with optional source context."""
-    fixable_marker = "[*]" if error["code"] in FIXABLE_RULES else "[ ]"
+    end_line = min(error["line"] + 2, len(source_lines)) if source_lines else error["line"]
+    num_width = len(str(end_line))
+    sep = f"{' ' * (num_width + 1)}|"
+
     lines = [
-        f"error[{error['code']}]: {error['message']} {fixable_marker}",
-        f"  --> {error['filename']}:{error['line']}:{error['column']}",
-        "    |",
+        f"error[{error['code']}]: {error['message']}",
+        f"{' ' * num_width}--> {error['filename']}:{error['line']}:{error['column']}",
+        sep,
     ]
 
-    context_lines = _build_context_lines(error, source_lines)
+    context_lines = _build_context_lines(error, source_lines, num_width)
     if context_lines:
         lines.extend(context_lines)
-        lines.append("    |")
+        lines.append(sep)
+
+    help_msg = get_rule_help(error["code"])
+    if help_msg:
+        lines.append(f"help: {help_msg}")
 
     return lines
 
@@ -640,10 +650,9 @@ def _format_file_errors(filename: str, file_errors: list[Error], source_cache: d
     output_lines: list[str] = []
     source_lines = source_cache.get(filename, [])
 
-    for index, error in enumerate(file_errors):
+    for error in file_errors:
         output_lines.extend(_format_error_block(error, source_lines))
-        if index < len(file_errors) - 1:
-            output_lines.append("")
+        output_lines.append("")
 
     return output_lines
 
@@ -653,16 +662,18 @@ def _format_summary(errors: list[Error]) -> list[str]:
     if not errors:
         return []
     fixable_count = sum(1 for e in errors if e["code"] in FIXABLE_RULES)
-    lines = ["", f"Found {len(errors)} error(s)."]
+    lines = [f"Found {len(errors)} error(s)."]
     if fixable_count:
         lines.append(f"[*] {fixable_count} fixable with the `--fix` option.")
+    else:
+        lines.append("No fixes available.")
     return lines
 
 
 def format_ruff_output(errors: list[Error], source_cache: dict[str, list[str]]) -> str:
     """Format errors in Ruff's multi-line style with context."""
     if not errors:
-        return ""
+        return "All checks passed!"
 
     output_lines: list[str] = []
     errors_by_file = _group_errors_by_file(errors)
@@ -694,24 +705,34 @@ def emit_statistics_text(errors: list[Error]) -> None:
     """Print statistics summary per rule (like ruff --statistics)."""
     from collections import Counter
 
-    # Count errors by rule code
     rule_counts = Counter(error["code"] for error in errors)
-
-    # Sort by count (descending)
     sorted_rules = sorted(rule_counts.items(), key=lambda x: (-x[1], x[0]))
 
-    # Get max width for alignment
-    max_code_width = max(len(code) for code, _ in sorted_rules) if sorted_rules else 0
-    max_count_width = max(len(str(count)) for _, count in sorted_rules) if sorted_rules else 0
+    if not sorted_rules:
+        print("All checks passed!")
+        return
 
-    print()
+    max_code_width = max(len(code) for code, _ in sorted_rules)
+    max_count_width = max(len(str(count)) for _, count in sorted_rules)
+    show_markers = any(code in FIXABLE_RULES for code, _ in sorted_rules)
+
     for code, count in sorted_rules:
         rule_name = get_rule_name(code)
-        marker = "[*]" if code in FIXABLE_RULES else "[ ]"
-        print(f"{count:>{max_count_width}}      {code:<{max_code_width}}  {marker}  {rule_name}")
+        if show_markers:
+            marker = "[*]" if code in FIXABLE_RULES else "[ ]"
+            print(f"{count:>{max_count_width}}      {code:<{max_code_width + 1}}{marker}  {rule_name}")
+        else:
+            print(f"{count:>{max_count_width}}      {code:<{max_code_width + 1}}{rule_name}")
 
-    if not errors:
-        print("All checks passed!")
+    total = len(errors)
+    noun = "error" if total == 1 else "errors"
+    print(f"Found {total} {noun}.")
+
+    fixable_count = sum(1 for e in errors if e["code"] in FIXABLE_RULES)
+    if fixable_count:
+        print(f"[*] {fixable_count} fixable with the `--fix` option.")
+    else:
+        print("No fixes available")
 
 
 def emit_statistics_json(errors: list[Error]) -> None:
@@ -739,12 +760,23 @@ def emit_statistics_json(errors: list[Error]) -> None:
 def get_rule_name(code: str) -> str:
     """Get the human-readable name for a rule code."""
     rule_names = {
-        "EPI101": "function-too-long-25",
-        "EPI201": "score-complexity-too-high",
+        "EPI025": "function-too-long",
+        "SCR250": "high-cyclomatic-complexity",
         "EPI301": "missing-eof-marker",
         "EPI302": "missing-import-marker",
     }
     return rule_names.get(code, "unknown-rule")
+
+
+def get_rule_help(code: str) -> str:
+    """Get the help message for a rule code."""
+    rule_help = {
+        "EPI025": "Consider splitting this function into smaller, focused functions",
+        "SCR250": "Consider simplifying the logic or extracting helper functions to reduce branching",
+        "EPI301": "Add `# EOF` at the end of the file",
+        "EPI302": "Add the import section marker before the first import statement",
+    }
+    return rule_help.get(code, "")
 
 
 def _resolve_output_format(args: argparse.Namespace, config: Config) -> str:

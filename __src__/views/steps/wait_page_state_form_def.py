@@ -14,11 +14,7 @@ from interfaces.i_step_form_def import IStepFormDef
 from models.step_scraping_model import StepScrapingModel
 from models.steps.wait_page_state_params import WaitPageStateParams
 from models.steps_context_model import StepsContext
-from shared.constants import (
-    C_MAXIMUM_WAIT_TIME,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_VIEW,
-)
+from shared.constants import C_MAXIMUM_WAIT_TIME, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -145,9 +141,7 @@ class WaitPageStateFormDef(IStepFormDef):
         p = cast(WaitPageStateParams, model.params)
         widgets[C_KEY_WAIT_STATE].set(p.wait_state)
         widgets[C_KEY_TIMEOUT_DURATION].set(str(p.timeout_duration))
-        widgets[C_KEY_TIMEOUT_UNIT].set(
-            WAIT_UNIT_MODEL_TO_VIEW.get(p.timeout_unit, C_UNITS_TIME_DEFAULT_VIEW)
-        )
+        widgets[C_KEY_TIMEOUT_UNIT].set(WAIT_UNIT_MODEL_TO_VIEW.get(p.timeout_unit, C_UNITS_TIME_DEFAULT_VIEW))
         widgets[C_KEY_COMMENT].set(p.comment)
 
     @override
@@ -174,6 +168,7 @@ class WaitPageStateFormDef(IStepFormDef):
         Args:
             model: The step model containing current parameters.
             idx: Zero-based index of this step in the workflow.
+            steps_context: Step execution context.
 
         Returns:
             A two-line string suitable for display in the steps list.
@@ -183,10 +178,7 @@ class WaitPageStateFormDef(IStepFormDef):
         unit_time = p.timeout_unit
         unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
 
-        return (
-            f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\n"
-            f"Attendre : {p.wait_state}"
-        )
+        return f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\nAttendre : {p.wait_state}"
 
 
 register_form(WaitPageStateFormDef())

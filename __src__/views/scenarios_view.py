@@ -150,7 +150,8 @@ class ScenariosView(ttk.Frame):
         elif action_id == "action_delete":
             self._vm.delete(id_file)
 
-    def _show_warning(self, message: str) -> None:
+    @staticmethod
+    def _show_warning(message: str) -> None:
         """Display a modal warning dialog.
 
         Args:
@@ -158,7 +159,8 @@ class ScenariosView(ttk.Frame):
         """
         messagebox.showwarning("Avertissement", message)
 
-    def _show_error(self, message: str) -> None:
+    @staticmethod
+    def _show_error(message: str) -> None:
         """Display a modal error dialog.
 
         Args:

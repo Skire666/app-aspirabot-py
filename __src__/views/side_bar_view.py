@@ -101,11 +101,24 @@ class SideBarView(ttk.Frame):
             icon_b: Resource key for the black (inactive) icon variant.
             icon_w: Resource key for the white (active) icon variant.
         """
-        img_black = get_resource_icon_32px(icon_b)
-        img_white = get_resource_icon_32px(icon_w)
-        img_disabled = get_resource_icon_32px_disabled(icon_b)
-        self._image_refs[module] = (img_black, img_white, img_disabled)
+        imgs = self._load_button_images(icon_b, icon_w)
+        self._image_refs[module] = imgs
+        canvas = self._make_sidebar_canvas()
+        self._draw_sidebar_items(canvas, display, imgs[0])
+        self._canvases[module] = canvas
+        self._bind_canvas_events(canvas, module)
 
+    @staticmethod
+    def _load_button_images(icon_b: str, icon_w: str) -> tuple:
+        """Load the three icon variants (normal, active, disabled) for a button."""
+        return (
+            get_resource_icon_32px(icon_b),
+            get_resource_icon_32px(icon_w),
+            get_resource_icon_32px_disabled(icon_b),
+        )
+
+    def _make_sidebar_canvas(self) -> tk.Canvas:
+        """Create and pack a blank canvas sized for a sidebar button."""
         canvas = tk.Canvas(
             self,
             width=C_VIEW_SIDEBAR_LEFT_WIDTH,
@@ -115,30 +128,22 @@ class SideBarView(ttk.Frame):
             bg=C_COLOR_SIDEBAR_NORMAL_BG,
         )
         canvas.pack(fill=tk.X)
+        return canvas
 
+    @staticmethod
+    def _draw_sidebar_items(canvas: tk.Canvas, display: str, img_black: object) -> None:
+        """Draw the background rect, icon image, and label on a sidebar canvas."""
         # Three tagged items allow itemconfig() to repaint without deleting
         cx = C_VIEW_SIDEBAR_LEFT_WIDTH // 2
         canvas.create_rectangle(
-            0,
-            0,
-            C_VIEW_SIDEBAR_LEFT_WIDTH,
-            _C_CANVAS_HEIGHT,
-            fill=C_COLOR_SIDEBAR_NORMAL_BG,
-            outline="",
-            tags="bg_rect",
+            0, 0, C_VIEW_SIDEBAR_LEFT_WIDTH, _C_CANVAS_HEIGHT,
+            fill=C_COLOR_SIDEBAR_NORMAL_BG, outline="", tags="bg_rect",
         )
         canvas.create_image(cx, _C_CANVAS_ICON_CY, image=img_black, tags="icon")
         canvas.create_text(
-            cx,
-            _C_CANVAS_TEXT_CY,
-            text=display,
-            fill=C_COLOR_SIDEBAR_NORMAL_FG,
-            font=("Segoe UI", 9),
-            tags="label",
+            cx, _C_CANVAS_TEXT_CY, text=display,
+            fill=C_COLOR_SIDEBAR_NORMAL_FG, font=("Segoe UI", 9), tags="label",
         )
-
-        self._canvases[module] = canvas
-        self._bind_canvas_events(canvas, module)
 
     def _bind_canvas_events(self, canvas: tk.Canvas, module: TitleModuleEnum) -> None:
         """Attaches click and hover bindings to a canvas button.

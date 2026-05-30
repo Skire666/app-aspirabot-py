@@ -13,6 +13,7 @@ Discovery is lazy: the folder is scanned only on the first ``has_next()`` or
 from __future__ import annotations
 
 import json
+from itertools import islice
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -162,10 +163,8 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
 
         peek = self._file_index
         while len(result) < _PREVIEW_LIMIT and peek < len(self._file_paths):
-            for url in self._extract_urls_from_file(self._file_paths[peek]):
-                if len(result) >= _PREVIEW_LIMIT:
-                    break
-                result.append(url)
+            needed = _PREVIEW_LIMIT - len(result)
+            result.extend(islice(self._extract_urls_from_file(self._file_paths[peek]), needed))
             peek += 1
 
         return result

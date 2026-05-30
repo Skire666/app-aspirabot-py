@@ -31,6 +31,7 @@ class OpenUrlParams(BaseStepParams):
     @field_validator("wait_dns_solver")
     @classmethod
     def check_dns_solver(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that wait_dns_solver is within the allowed range."""
         if not info.context:
             return v
         if v <= 0 or v > _DNS_SOLVER_WAIT_MAX:
@@ -42,6 +43,7 @@ class OpenUrlParams(BaseStepParams):
     @field_validator("timeout_duration")
     @classmethod
     def check_timeout_duration(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that timeout_duration is positive."""
         if not info.context:
             return v
         if v <= 0:
@@ -51,6 +53,7 @@ class OpenUrlParams(BaseStepParams):
     @field_validator("timeout_unit")
     @classmethod
     def check_timeout_unit(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that timeout_unit is an allowed time unit."""
         if not info.context:
             return v
         if v not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
@@ -59,7 +62,8 @@ class OpenUrlParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_url_custom(cls, data: Any, info: ValidationInfo) -> Any:
+    def check_url_custom(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+        """Validate that url_custom is set when url_mode is custom."""
         if not isinstance(data, dict) or not info.context:
             return data
         if data.get("url_mode") == OpenUrlModeEnum.E_CUSTOM.value and not data.get("url_custom"):

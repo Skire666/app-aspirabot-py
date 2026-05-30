@@ -25,6 +25,7 @@ class CloseTabsParams(BaseStepParams):
     @field_validator("max_tabs")
     @classmethod
     def check_max_tabs(cls, v: int, info: ValidationInfo) -> int:
+        """Validate that max_tabs is positive."""
         if not info.context:
             return v
         if v < 1:
@@ -33,14 +34,17 @@ class CloseTabsParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_filter_custom(cls, data: Any, info: ValidationInfo) -> Any:
+    def check_filter_custom(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+        """Validate filter_custom is set when filter_mode is custom."""
         if not isinstance(data, dict) or not info.context:
             return data
-        if data.get("filter_mode") == OpenUrlModeEnum.E_CUSTOM.value:
-            if not str(data.get("filter_custom", "")).strip():
-                raise ValueError(
-                    ERROR_TEMPLATES["close_tabs_filter_required"].format(step=step_label(info.context))
-                )
+        if (
+            data.get("filter_mode") == OpenUrlModeEnum.E_CUSTOM.value
+            and not str(data.get("filter_custom", "")).strip()
+        ):
+            raise ValueError(
+                ERROR_TEMPLATES["close_tabs_filter_required"].format(step=step_label(info.context))
+            )
         return data
 
 

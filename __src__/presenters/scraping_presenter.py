@@ -408,8 +408,8 @@ class ScrapingPresenter:
         """Read the current scraping context and push formatted stats to the ViewModel."""
         ctx: ScrapingContextModel = self._service.current_context
         stats: ScrapingStatisticsModel = self._service.current_stats
-        _DATE_FMT = "%d/%m/%Y %H:%M:%S"
-        ts = stats.started_at.strftime(_DATE_FMT) if stats.started_at else "—"
+        date_fmt = "%d/%m/%Y %H:%M:%S"
+        ts = stats.started_at.strftime(date_fmt) if stats.started_at else "—"
         tid = self._profile.emergency_stop_step_id if self._profile else ""
         parts = [f"Démarré : {ts}", f"Seuil global : {self._current_global_threshold}"]
         if tid:

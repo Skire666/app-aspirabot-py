@@ -385,7 +385,8 @@ class WorkflowView(ttk.Frame):
         """
         self._inline_form.set_available_steps(steps)
 
-    def show_warning(self, message: str) -> None:
+    @staticmethod
+    def show_warning(message: str) -> None:
         """Display a warning popup with the given message.
 
         Args:
@@ -431,7 +432,8 @@ class WorkflowView(ttk.Frame):
     # Dialog providers — registered on ViewModel
     # ---------------------------------------------------------------
 
-    def _show_error(self, message: str) -> None:
+    @staticmethod
+    def _show_error(message: str) -> None:
         """Display an error popup with the given message.
 
         Args:
@@ -439,7 +441,8 @@ class WorkflowView(ttk.Frame):
         """
         messagebox.showerror("Erreur", message)
 
-    def _ask_overwrite_confirmation(self) -> bool:
+    @staticmethod
+    def _ask_overwrite_confirmation() -> bool:
         """Show a dialog asking whether to overwrite an existing Scenario file.
 
         Returns:

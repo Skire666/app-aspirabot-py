@@ -135,58 +135,55 @@ class StepsListCrudView(ttk.Frame):
 
         return toolbar
 
-    def _create_steps_section(self) -> ttk.LabelFrame:
-        """Creates the DragDropList step list inside a scrollable LabelFrame.
+    def _create_steps_section(self) -> ttk.Frame:
+        """Creates the DragDropList step list inside a scrollable frame.
 
         Returns:
             The section container frame.
         """
         section = ttk.Frame(self)
         self._steps_section = section
+        outer = self._create_scroll_canvas(section)
+        self._scroll_canvas = outer
+        self._scroll_fn = self._on_mousewheel_scroll
+        self._dnd_list = self._create_dnd_list(outer)
+        self._scroll_win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
+        self._bind_dnd_events(outer)
+        self._bind_dnd_canvas_scroll()
+        return section
 
+    def _create_scroll_canvas(self, section: ttk.Frame) -> tk.Canvas:
+        """Build and pack the vertical-scroll canvas inside the section frame."""
         # Vertical scroll wrapper keeps the list accessible with many steps.
         outer = tk.Canvas(section, highlightthickness=0)
         sb = ttk.Scrollbar(section, orient="vertical", command=self._on_scrollbar)
         outer.configure(yscrollcommand=sb.set)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         outer.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        return outer
 
-        # Save references needed by the scroll helpers.
-        self._scroll_canvas = outer
-        self._scroll_fn = self._on_mousewheel_scroll
-
+    def _create_dnd_list(self, outer: tk.Canvas) -> DragDropList[StepScrapingModel]:
+        """Instantiate the DragDropList embedded as a scrolled child of outer."""
         # DragDropList embedded as a scrolled child.
-        self._dnd_list: DragDropList[StepScrapingModel] = DragDropList(
-            outer,
-            items=[],
-            render_item=self._step_renderer,
-            on_move_up=self._on_dnd_move_up,
-            on_move_down=self._on_dnd_move_down,
-            on_duplicate=self._on_dnd_duplicate,
-            on_edit=self._on_dnd_edit,
-            on_delete=self._on_dnd_delete,
-            on_toggle_active=self._on_dnd_toggle_active,
-            on_reorder=self._on_dnd_reorder,
-            item_height=_DND_ITEM_H,
-            virtualize=_DND_VIRTUALIZE,
-            viewport_provider=self._get_dnd_viewport,
+        return DragDropList(
+            outer, items=[], render_item=self._step_renderer,
+            on_move_up=self._on_dnd_move_up, on_move_down=self._on_dnd_move_down,
+            on_duplicate=self._on_dnd_duplicate, on_edit=self._on_dnd_edit,
+            on_delete=self._on_dnd_delete, on_toggle_active=self._on_dnd_toggle_active,
+            on_reorder=self._on_dnd_reorder, item_height=_DND_ITEM_H,
+            virtualize=_DND_VIRTUALIZE, viewport_provider=self._get_dnd_viewport,
             virtualize_buffer=_DND_VIRTUALIZE_BUFFER,
         )
-        self._scroll_win = outer.create_window((0, 0), window=self._dnd_list, anchor="nw")
 
+    def _bind_dnd_events(self, outer: tk.Canvas) -> None:
+        """Wire Enter/Leave scroll bindings and Configure geometry events."""
         # Frame-level Enter/Leave guards the 16 px padding zone around the internal canvas.
         self._dnd_list.bind("<Enter>", lambda _: outer.bind_all("<MouseWheel>", self._scroll_fn))
         self._dnd_list.bind("<Leave>", lambda _: outer.unbind_all("<MouseWheel>"))
-
         # Both events must update the window geometry so the DragDropList always
         # fills the outer canvas height and the scrollregion stays accurate.
         self._dnd_list.bind("<Configure>", self._on_dnd_configure)
         outer.bind("<Configure>", self._on_scroll_canvas_configure)
-
-        # Initial canvas-level binding (complement to the frame-level binding above).
-        self._bind_dnd_canvas_scroll()
-
-        return section
 
     # ---------------------------------------------------------------
     # Public render interface (called by the presenter)

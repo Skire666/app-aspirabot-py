@@ -83,7 +83,7 @@ def main() -> None:
 
     # Build ViewModel before the View so both receive the same instance.
     splash_vm = SplashscreenViewModel(master=root)
-    splash_view = SplashscreenView(root, vm=splash_vm)
+    _splash_view = SplashscreenView(root, vm=splash_vm)
     SplashscreenPresenter(
         vm=splash_vm,
         service=startup_service,
@@ -170,23 +170,10 @@ def _build_and_wire_components(  # noqa: PLR0914
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
     dbg_view, dbg_p = _init_debug_component(main_view)
-
     _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr, scrap_pre)
-    _register_views(
-        main_view,
-        log_view,
-        profiles_view,
-        cfg_view,
-        scen_view,
-        edit_view,
-        exec_view,
-        scrap_view,
-        FaqView(main_view.content_area),
-        dbg_view,
-    )
-    _anchor_presenters(
-        root, [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, steps_pr, exec_pre, scrap_pre, dbg_p]
-    )
+    views = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
+    presenters = [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, steps_pr, exec_pre, scrap_pre, dbg_p]
+    _register_and_anchor(root, main_view, views, presenters)
 
 
 def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, startup_service: StartupService) -> None:
@@ -296,15 +283,36 @@ def _init_scenarios_components(
     """
     scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
     scenarios_service = ScenariosService(scenario_repo)
-
     scenarios_vm = ScenariosViewModel(master=main_view.content_area)
     scenario_view = ScenariosView(main_view.content_area, vm=scenarios_vm)
     scenario_presenter = ScenariosPresenter(vm=scenarios_vm, service=scenarios_service)
+    workflow_view, workflow_presenter, steps_list_presenter = _init_workflow_group(
+        main_view, scenarios_service, profiles_service
+    )
+    return (
+        scenario_view, scenario_presenter, workflow_view,
+        workflow_presenter, steps_list_presenter, scenarios_service,
+    )
 
+
+def _init_workflow_group(
+    main_view: MainView,
+    scenarios_service: ScenariosService,
+    profiles_service: ProfilesService,
+) -> tuple[WorkflowView, WorkflowPresenter, StepsListPresenter]:
+    """Instantiate the workflow view, presenter, and steps-list presenter.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+        scenarios_service: Shared scenarios service injected into workflow components.
+        profiles_service: Shared profiles service injected into the WorkflowPresenter.
+
+    Returns:
+        A (WorkflowView, WorkflowPresenter, StepsListPresenter) tuple.
+    """
     workflow_svc = WorkflowService()
     workflow_vm = WorkflowViewModel(master=main_view.content_area)
     workflow_view = WorkflowView(main_view.content_area, vm=workflow_vm)
-
     # StepsListPresenter instantiated here (composition root) and injected into
     # WorkflowPresenter — never created inside another presenter.
     steps_list_presenter = StepsListPresenter(
@@ -320,15 +328,7 @@ def _init_scenarios_components(
         workflow_service=workflow_svc,
         steps_list_presenter=steps_list_presenter,
     )
-
-    return (
-        scenario_view,
-        scenario_presenter,
-        workflow_view,
-        workflow_presenter,
-        steps_list_presenter,
-        scenarios_service,
-    )
+    return workflow_view, workflow_presenter, steps_list_presenter
 
 
 def _init_debug_component(main_view: MainView) -> tuple[DebugView, DebugPresenter]:
@@ -535,6 +535,26 @@ def _wire_profiles_launch(
 # -----------------------------------------------------------------------------
 # View registration
 # -----------------------------------------------------------------------------
+
+
+def _register_and_anchor(
+    root: tk.Tk,
+    main_view: MainView,
+    views: list[object],
+    presenters: list[object],
+) -> None:
+    """Unpack the ordered view list, register all views, and anchor presenters.
+
+    Args:
+        root: Root window used as GC anchor for all presenters.
+        main_view: Navigation shell that maps modules to view widgets.
+        views: Ordered list [log, profiles, cfg, scenarios, workflow, executor, scraping, debug].
+        presenters: All presenter instances to keep alive for the application lifetime.
+    """
+    log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, dbg_v = views  # type: ignore[misc]
+    faq_v = FaqView(main_view.content_area)
+    _register_views(main_view, log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, faq_v, dbg_v)  # type: ignore[arg-type]
+    _anchor_presenters(root, presenters)
 
 
 def _register_views(  # noqa: PLR0913, PLR0917

@@ -69,7 +69,7 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
 
     @staticmethod
     def _save_image(
-        page: Any,
+        page: Any,  # noqa: ANN401
         full_url: str,
         context: ScrapingContextModel,
         downloaded_urls: set[str],
