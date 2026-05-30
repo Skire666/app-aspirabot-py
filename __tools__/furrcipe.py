@@ -2,11 +2,11 @@
 
 Rules:
   - EPI101: Functions with >25 effective lines (code only, no blanks/comments/docstring)
-  - EPI201: Functions with high complexity/effective-lines ratio (>0.88)
+  - EPI201: Functions with high complexity/effective-lines ratio
   - EPI301: Files must end with '# EOF'
   - EPI302: Files must have import section marker before imports
 
-Config is read from `epi_stats.json` in the current directory.
+Config is read from `furrcipe_stats.json` in the current directory.
 """
 
 from __future__ import annotations
@@ -25,14 +25,23 @@ import mccabe  # You'll need: pip install mccabe
 # --------------------------------------------------------------------------- #
 # Constants
 # --------------------------------------------------------------------------- #
-TOOL_NAME: Final[str] = "epi_stats"
+
+
+TOOL_NAME: Final[str] = "furrcipe_stats"
 TOOL_VERSION: Final[str] = "1.0"
 
-CONFIG_FILE: Final[Path] = Path("epi_stats.json")
+CONFIG_FILE: Final[Path] = Path("furrcipe_stats.json")
 FILE_ENCODING: Final[str] = "utf-8"
 
 EXIT_CONFIG_INVALID: Final[int] = 2
 EXIT_PATH_MISSING: Final[int] = 3
+
+FIXABLE_RULES: Final[frozenset[str]] = frozenset({"EPI301", "EPI302"})
+
+C_THRESHOLD_LINES: Final[int] = 26
+C_MAX_RATIO: Final[float] = 0.50
+C_MIN_COMPLEXITY: Final[int] = 7
+C_MIN_LINES: Final[int] = 15
 
 
 class RuleConfig(TypedDict, total=False):
@@ -93,10 +102,15 @@ class StatisticsPayload(TypedDict):
 
 # Default configuration
 DEFAULT_CONFIG: Final[Config] = {
-    "path": "./src/",
+    "path": "./__src__/",
     "rules": {
-        "EPI101": {"enabled": True, "threshold_lines": 26},
-        "EPI201": {"enabled": True, "max_ratio": 0.88, "min_complexity": 7, "min_lines": 8},
+        "EPI101": {"enabled": True, "threshold_lines": C_THRESHOLD_LINES},
+        "EPI201": {
+            "enabled": True,
+            "max_ratio": C_MAX_RATIO,
+            "min_complexity": C_MIN_COMPLEXITY,
+            "min_lines": C_MIN_LINES,
+        },
         "EPI301": {"enabled": True},
         "EPI302": {"enabled": True},
     },
@@ -299,7 +313,7 @@ def check_epi201(
         if ratio > max_ratio:
             return {
                 "code": "EPI201",
-                "message": f"Complexity ratio too high: {complexity}/{eff_lines} = {ratio:.3f} > {max_ratio}",
+                "message": f"Complexity ratio too high (mccabe/lines) : {complexity}/{eff_lines} = {ratio:.3f} > {max_ratio}",
                 "filename": filename,
                 "line": func.lineno,
                 "column": func.col_offset + 1,
@@ -493,7 +507,7 @@ def _build_function_checks(rules: RulesConfig, source_lines: list[str], filename
 
     if _rule_enabled(rules, "EPI101"):
         rule_101 = _get_rule(rules, "EPI101")
-        threshold = _get_rule_int(rule_101, "threshold_lines", 26)
+        threshold = _get_rule_int(rule_101, "threshold_lines", C_THRESHOLD_LINES)
 
         def _check_101(func: FunctionNode) -> Error | None:
             return check_epi101(func, source_lines, filename, threshold)
@@ -502,9 +516,9 @@ def _build_function_checks(rules: RulesConfig, source_lines: list[str], filename
 
     if _rule_enabled(rules, "EPI201"):
         rule_201 = _get_rule(rules, "EPI201")
-        max_ratio = _get_rule_float(rule_201, "max_ratio", 0.88)
-        min_complexity = _get_rule_int(rule_201, "min_complexity", 7)
-        min_lines = _get_rule_int(rule_201, "min_lines", 8)
+        max_ratio = _get_rule_float(rule_201, "max_ratio", C_MAX_RATIO)
+        min_complexity = _get_rule_int(rule_201, "min_complexity", C_MIN_COMPLEXITY)
+        min_lines = _get_rule_int(rule_201, "min_lines", C_MIN_LINES)
 
         def _check_201(func: FunctionNode) -> Error | None:
             return check_epi201(func, source_lines, filename, max_ratio, min_complexity, min_lines)
@@ -594,8 +608,9 @@ def _build_context_lines(error: Error, source_lines: list[str]) -> list[str]:
 
 def _format_error_block(error: Error, source_lines: list[str]) -> list[str]:
     """Format a single error block with optional source context."""
+    fixable_marker = "[*]" if error["code"] in FIXABLE_RULES else "[ ]"
     lines = [
-        f"error[{error['code']}]: {error['message']}",
+        f"error[{error['code']}]: {error['message']} {fixable_marker}",
         f"  --> {error['filename']}:{error['line']}:{error['column']}",
         "    |",
     ]
@@ -625,7 +640,11 @@ def _format_summary(errors: list[Error]) -> list[str]:
     """Return the trailing summary lines."""
     if not errors:
         return []
-    return ["", f"Found {len(errors)} error(s)."]
+    fixable_count = sum(1 for e in errors if e["code"] in FIXABLE_RULES)
+    lines = ["", f"Found {len(errors)} error(s)."]
+    if fixable_count:
+        lines.append(f"[*] {fixable_count} fixable with the `--fix` option.")
+    return lines
 
 
 def format_ruff_output(errors: list[Error], source_cache: dict[str, list[str]]) -> str:
@@ -676,7 +695,8 @@ def emit_statistics_text(errors: list[Error]) -> None:
     print()
     for code, count in sorted_rules:
         rule_name = get_rule_name(code)
-        print(f"{count:>{max_count_width}}      {code:<{max_code_width}}     {rule_name}")
+        marker = "[*]" if code in FIXABLE_RULES else "[ ]"
+        print(f"{count:>{max_count_width}}      {code:<{max_code_width}}  {marker}  {rule_name}")
 
     if not errors:
         print("All checks passed!")
