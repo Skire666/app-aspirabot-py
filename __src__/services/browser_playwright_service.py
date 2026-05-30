@@ -59,9 +59,16 @@ class BrowserPlaywrightService(IWebBrowserService):
         >>> svc.close_browser()
     """
 
-    def __init__(self) -> None:
-        """Initialise the service without launching the browser yet."""
+    def __init__(self, chromium_persistant_dir: str, chromium_extensions_dir: str) -> None:
+        """Initialise the service without launching the browser yet.
+
+        Args:
+            chromium_persistant_dir: Path to the persistent Chromium user-data directory.
+            chromium_extensions_dir: Path to the uBlock extension directory.
+        """
         self._logger = logging.getLogger(__name__)
+        self._chromium_persistant_dir = chromium_persistant_dir
+        self._chromium_extensions_dir = chromium_extensions_dir
 
         # Lifecycle state — populated by launch(), cleared by close_browser().
         self._pw: Playwright | None = None
@@ -81,8 +88,8 @@ class BrowserPlaywrightService(IWebBrowserService):
         if self._pw is not None:
             raise BrowserAlreadyLaunchedError()
 
-        # attentiion, le cwd de chromium, est le temps (c'est l'exe, apas python, donc éviter chemin relatif)
-        ext_path = str(Path("E:/app-aspirabot-py/extensions/uBlock0_chromium").resolve())
+        # Resolve to absolute path — Chromium executable is not Python, so relative paths are unsafe.
+        ext_path = str(Path(self._chromium_extensions_dir).resolve())
 
         args = [
             "--disable-blink-features=AutomationControlled",
@@ -95,7 +102,7 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         # launch_persistent_context remplace launch() + new_context()
         self._context = self._pw.chromium.launch_persistent_context(
-            user_data_dir="E:/app-aspirabot-py/chromium_tmp",
+            user_data_dir=str(Path(self._chromium_persistant_dir).resolve()),
             headless=False,
             args=args,
             no_viewport=True,
@@ -185,6 +192,17 @@ class BrowserPlaywrightService(IWebBrowserService):
         if self._browser.contexts:
             return [page for context in self._browser.contexts for page in context.pages]
         return []
+
+    def get_stats(self) -> tuple[int, str]:
+        """Return the current number of open pages and the URL from page[0].
+
+        Returns:
+            A tuple of (number_of_open_pages, current_url_string).
+        """
+        pages = self.get_all_pages()
+        num_pages = len(pages)
+        current_url = pages[0].url if num_pages > 0 else "<auucun onglet ouvert>"
+        return num_pages, current_url
 
     def close_browser(self) -> None:
         """Close all pages, the context, the browser, and Playwright runtime.

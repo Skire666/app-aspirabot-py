@@ -74,6 +74,10 @@ C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID: int = 8  # must be even (aka % 2 == 0)
 C_BROWSER_ENGINE_PLAYWRIGHT: str = "Playwright"
 C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
+# Default paths for the persistent Chromium profile and the uBlock extension.
+C_CHROMIUM_PROFILE_DIR: str = "chromium_tmp"
+C_CHROMIUM_EXTENSIONS_DIR: str = "extensions/uBlock0_chromium"
+
 # -----------------------------------------------------------------------------
 
 # File extensions and naming conventions for scenarios and profiles.
@@ -129,7 +133,7 @@ C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 1
 # default color background
 C_COLOR_GRAY_BACKGROUND: str = "#F0F0F0"
 C_COLOR_GRAY_SEPARATOR: str = "#C0C0C0"
-C_COLOR_ORANGE_BLINKING: str = "#C46F00"
+C_COLOR_ORANGE_BLINKING: str = "#FF9000"
 C_COLOR_BLUE_HIGHLIGHT_DARK: str = "#0C5B9C"
 C_COLOR_BLUE_HIGHLIGHT_LIGHT: str = "#deeefa"
 C_COLOR_BLACK_FONT: str = "#000000"

@@ -18,7 +18,7 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from shared.parse_util import safe_int_from_dict
 from shared.step_registry import register_form
 from views.steps._constants import (
     COUNT_OP_DISPLAY,
@@ -26,7 +26,6 @@ from views.steps._constants import (
     COUNT_OP_VIEW_TO_MODEL,
     WAIT_UNIT_MODEL_TO_VIEW,
     WAIT_UNIT_VIEW_TO_MODEL,
-    safe_int_from_dict,
 )
 from views.steps.wait_html_elements_form_def import C_INPUT_DEFAULT_RETRY_DELAY
 
@@ -64,11 +63,6 @@ class WaitHtmlImagesFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the StepTypeEnum handled by this form definition."""
         return StepTypeEnum.E_WAIT_HTML_IMAGES
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_WAIT_HTML_IMAGES)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

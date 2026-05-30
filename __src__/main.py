@@ -161,11 +161,11 @@ def _build_and_wire_components(  # noqa: PLR0914
     """Instantiate all MVP groups, wire navigation, register views, and anchor presenters."""
     log_view, log_pr = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_pr = _init_config_component(main_view, config_repo)
-    profiles_view, prof_pr, prof_svc = _init_profiles_components(
+    profiles_view, prof_pr, prof_svc, prof_repo = _init_profiles_components(
         main_view, startup_service.config_model, JsonFileRepository()
     )
     scen_view, scen_pre, edit_view, edit_p, steps_pr, scen_svc = _init_scenarios_components(
-        main_view, prof_svc, startup_service.config_model, JsonFileRepository()
+        main_view, prof_svc, prof_repo, startup_service.config_model, JsonFileRepository()
     )
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
@@ -242,7 +242,7 @@ def _init_config_component(
 
 def _init_profiles_components(
     main_view: MainView, config_model: AppConfigurationModel, json_repo: JsonFileRepository
-) -> tuple[ProfilesView, ProfilesPresenter, ProfilesService]:
+) -> tuple[ProfilesView, ProfilesPresenter, ProfilesService, ProfilesRepository]:
     """Create and wire the historic component.
 
     Args:
@@ -251,19 +251,21 @@ def _init_profiles_components(
         json_repo: Shared JSON repository injected into the scenarios repository.
 
     Returns:
-        A (ProfilesView, ProfilesPresenter, ProfilesService) tuple.
+        A (ProfilesView, ProfilesPresenter, ProfilesService, ProfilesRepository) tuple.
+        The repository is returned so callers can inject it into other services directly.
     """
     repo = ProfilesRepository(config_model.folder_scenarios, json_repo)
     service = ProfilesService(repo)
     profiles_vm = ProfilesViewModel(master=main_view.content_area)
     view = ProfilesView(main_view.content_area, vm=profiles_vm)
     presenter = ProfilesPresenter(vm=profiles_vm, service=service)
-    return view, presenter, service
+    return view, presenter, service, repo
 
 
 def _init_scenarios_components(
     main_view: MainView,
     profiles_service: ProfilesService,
+    profiles_repo: ProfilesRepository,
     config_model: AppConfigurationModel,
     json_repo: JsonFileRepository,
 ) -> tuple[ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter, StepsListPresenter, ScenariosService]:
@@ -272,6 +274,8 @@ def _init_scenarios_components(
     Args:
         main_view: Main container providing the content area as parent.
         profiles_service: Service for managing profile data.
+        profiles_repo: Repository for profile data, injected directly to avoid
+            accessing private attributes of ProfilesService.
         config_model: Configuration model supplying the scenarios folder path.
         json_repo: Shared JSON repository injected into the scenarios repository.
 
@@ -280,7 +284,7 @@ def _init_scenarios_components(
         StepsListPresenter, ScenariosService) tuple.
     """
     scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
-    scenarios_service = ScenariosService(scenario_repo, profiles_service._repository)
+    scenarios_service = ScenariosService(scenario_repo, profiles_repo)
     scenarios_vm = ScenariosViewModel(master=main_view.content_area)
     scenario_view = ScenariosView(main_view.content_area, vm=scenarios_vm)
     scenario_presenter = ScenariosPresenter(vm=scenarios_vm, service=scenarios_service)
@@ -387,7 +391,10 @@ def _init_scraping_component(
         model_config=config_model,
         workflow_service=WorkflowService(),
         extracted_data_repository=JsonFileRepository(),
-        browser_service_factory=BrowserPlaywrightService,
+        browser_service_factory=lambda: BrowserPlaywrightService(
+            chromium_persistant_dir=config_model.chromium_persistant_dir,
+            chromium_extensions_dir=config_model.chromium_extensions_dir,
+        ),
         journal_repository=JournalRepository(),
     )
     scraping_presenter = ScrapingPresenter(vm=scraping_vm, service=scraping_service)

@@ -18,14 +18,9 @@ from shared.constants import (
     C_UNITS_TIME_DEFAULT_VIEW,
 )
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from shared.parse_util import safe_int_from_dict
 from shared.step_registry import register_form
-from views.steps._constants import (
-    C_CHOICES_WAIT_PAGE_STATE,
-    WAIT_UNIT_MODEL_TO_VIEW,
-    WAIT_UNIT_VIEW_TO_MODEL,
-    safe_int_from_dict,
-)
+from views.steps._constants import C_CHOICES_WAIT_PAGE_STATE, WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -56,11 +51,6 @@ class OpenUrlFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the workflow step handled by this form definition."""
         return StepTypeEnum.E_OPEN_URL
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the label shown in the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_OPEN_URL)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

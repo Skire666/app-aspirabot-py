@@ -295,6 +295,14 @@ class ScenarioNotFoundError(FileNotFoundError, AspirabotBaseError):
         super().__init__(message)
 
 
+class EmptyScenarioIdError(AspirabotBaseError):
+    """Raised when a scenario identifier is empty or blank."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("L'identifiant du scénario ne peut pas être vide.")
+
+
 class ScenarioDataMissingError(ValueError, AspirabotBaseError):
     """Raised when a scenario JSON file has no usable payload."""
 
@@ -794,6 +802,14 @@ class ScriptExecutionFailedError(RuntimeError, AspirabotBaseError):
 # -----------------------------------------------------------------------------
 # Repository errors
 # -----------------------------------------------------------------------------
+
+
+class RepositoryWriteError(AspirabotBaseError):
+    """Raised when a file write or delete operation in a repository fails."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Erreur lors de l'opération de persistance.")
 
 
 class JsonFileRepositoryError(AspirabotBaseError):

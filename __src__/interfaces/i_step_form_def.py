@@ -57,15 +57,6 @@ class IStepFormDef(Protocol):
         """
         ...
 
-    @classmethod
-    def label(cls) -> str:
-        """Return the French display label shown in the step type selector.
-
-        Returns:
-            A short French label string.
-        """
-        ...
-
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Populate ``frame`` with the step-specific form widgets.
 

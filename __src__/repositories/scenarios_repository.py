@@ -18,6 +18,7 @@ from shared.constants import C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
 from shared.exception_util import (
     AspirabotBaseError,
     InvalidScenariosFolderPathError,
+    RepositoryWriteError,
     ScenarioDataMissingError,
     ScenarioNotFoundError,
 )
@@ -163,9 +164,9 @@ class ScenariosRepository:
             scenario_dict = scenario.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, scenario_dict)
             self._logger.debug("Scénario sauvegardé : %s", full_filepath)
-        except OSError:
+        except OSError as exc:
             self._logger.error("Erreur lors de la création du scénario.", exc_info=True)
-            raise
+            raise RepositoryWriteError() from exc
 
     def update_scenario(self, scenario: ScenarioModel) -> None:
         """Overwrites an existing scenario file with updated data.
@@ -183,9 +184,9 @@ class ScenariosRepository:
             scenario_dict = scenario.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, scenario_dict)
             self._logger.debug("Scénario sauvegardé : %s", full_filepath)
-        except OSError:
+        except OSError as exc:
             self._logger.error("Erreur lors de la MAJ du scénario.", exc_info=True)
-            raise
+            raise RepositoryWriteError() from exc
 
     def create_folder_if_missing(self) -> None:
         """Creates the scenarios folder if it does not already exist."""
@@ -215,9 +216,9 @@ class ScenariosRepository:
         try:
             Path(full_pathfile_scenario).unlink()
             self._logger.debug("Scénario supprimé : %s", full_pathfile_scenario)
-        except OSError:
+        except OSError as exc:
             self._logger.error("Erreur lors de la suppression du scénario.", exc_info=True)
-            raise
+            raise RepositoryWriteError() from exc
 
     def open_scenarios_folder(self) -> None:
         """Opens the scenarios folder in the OS file explorer.

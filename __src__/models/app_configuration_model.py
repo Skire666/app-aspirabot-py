@@ -21,6 +21,8 @@ from shared.constants import (
     C_APP_DEFAULT_SIZE_GUI,
     C_BROWSER_ENGINE_DEFAULT,
     C_BROWSER_ENGINE_PLAYWRIGHT,
+    C_CHROMIUM_EXTENSIONS_DIR,
+    C_CHROMIUM_PROFILE_DIR,
     C_DATA_DEFAULT_FOLDER_SCENARIO,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
     C_LOGS_DEFAULT_FOLDER,
@@ -74,6 +76,8 @@ class AppConfigurationModel:
     _gui_booting_size: str
     _gui_booting_fullscreen: bool
     _browser_engine: str
+    chromium_persistant_dir: str
+    chromium_extensions_dir: str
 
     # -----------------------------------------------------------------------------
     # Methods
@@ -88,6 +92,8 @@ class AppConfigurationModel:
         gui_booting_size: str = C_APP_DEFAULT_SIZE_GUI,
         gui_booting_fullscreen: bool = False,
         browser_engine: str = C_BROWSER_ENGINE_DEFAULT,
+        chromium_persistant_dir: str = C_CHROMIUM_PROFILE_DIR,
+        chromium_extensions_dir: str = C_CHROMIUM_EXTENSIONS_DIR,
     ) -> None:
         """Initializes the configuration model with optional parameters."""
         self.log_level_enum = log_level_enum
@@ -97,6 +103,8 @@ class AppConfigurationModel:
         self.gui_booting_size = gui_booting_size
         self.gui_booting_fullscreen = gui_booting_fullscreen
         self.browser_engine = browser_engine
+        self.chromium_persistant_dir = chromium_persistant_dir
+        self.chromium_extensions_dir = chromium_extensions_dir
 
     def to_dict(self) -> dict:
         """Converts the configuration model to a dictionary for serialization."""
@@ -108,6 +116,8 @@ class AppConfigurationModel:
             "gui_booting_size": self.gui_booting_size,
             "gui_booting_fullscreen": self.gui_booting_fullscreen,
             "browser_engine": self.browser_engine,
+            "chromium_persistant_dir": self.chromium_persistant_dir,
+            "chromium_extensions_dir": self.chromium_extensions_dir,
         }
 
     # -----------------------------------------------------------------------------

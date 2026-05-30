@@ -17,6 +17,11 @@ from models.scenario_model import ScenarioModel
 from services.scenarios_service import ScenariosService
 from shared.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
 from shared.exception_util import AspirabotBaseError
+from shared.i18n_fra import (
+    C_DELETE_SCENARIO_FAILED,
+    C_DUPLICATE_SCENARIO_FAILED,
+    C_WORKFLOW_ALREADY_ACTIVE_WARNING,
+)
 from view_models.scenarios_view_model import ScenariosViewModel
 
 
@@ -138,10 +143,7 @@ class ScenariosPresenter:
     def _on_create_scenario(self) -> None:
         # Block creation when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
-            self._vm.show_warning(
-                "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification en cours avant de continuer."
-            )
+            self._vm.show_warning(C_WORKFLOW_ALREADY_ACTIVE_WARNING)
             return
         if self.on_request_create_scenario:
             self.on_request_create_scenario()
@@ -149,10 +151,7 @@ class ScenariosPresenter:
     def _on_edit_scenario(self, id_file: str) -> None:
         # Block edit when a Workflow edit session is already open.
         if self.is_workflow_active and self.is_workflow_active():
-            self._vm.show_warning(
-                "Un Workflow est déjà en cours de modification.\n"
-                "Veuillez terminer ou annuler la modification en cours avant de continuer."
-            )
+            self._vm.show_warning(C_WORKFLOW_ALREADY_ACTIVE_WARNING)
             return
         if self.on_request_edit_scenario:
             self.on_request_edit_scenario(id_file)
@@ -175,7 +174,7 @@ class ScenariosPresenter:
             self._load_scenarios()
         except AspirabotBaseError as exc:
             self._logger.error("Erreur lors de la duplication du scénario", exc_info=True)
-            self._vm.show_error(f"La duplication a échoué : {exc}")
+            self._vm.show_error(C_DUPLICATE_SCENARIO_FAILED.format(exc=exc))
 
     def _on_delete_scenario(self, id_file: str) -> None:
         if not ask_delete_scenario_confirmation():
@@ -185,7 +184,7 @@ class ScenariosPresenter:
             self._load_scenarios()
         except AspirabotBaseError as exc:
             self._logger.error("Erreur lors de la suppression du scénario", exc_info=True)
-            self._vm.show_error(f"La suppression a échoué : {exc}")
+            self._vm.show_error(C_DELETE_SCENARIO_FAILED.format(exc=exc))
 
     def _on_open_folder(self) -> None:
         self._service.open_scenarios_folder()

@@ -9,8 +9,6 @@ across the 15 form-def files.
 # Imports
 # -----------------------------------------------------------------------------
 
-from typing import Any
-
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_ALLOWED_FOR_VIEW
 from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum
 
@@ -108,49 +106,6 @@ COUNT_SUCCESS_IF_VIEW_TO_MODEL: dict[str, str] = dict(
 COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(
     zip(COUNT_SUCCESS_IF_VALUES, COUNT_SUCCESS_IF_DISPLAY, strict=True)
 )
-
-# -----------------------------------------------------------------------------
-# Shared widget helper
-# -----------------------------------------------------------------------------
-
-
-def safe_int_from_dict(widgets: dict[str, Any], key: str, default: int) -> int:
-    """Reads an integer from a StringVar widget, falling back to ``default``.
-
-    Args:
-        widgets: Dict of widget variables populated by ``build_form``.
-        key: The parameter key to read.
-        default: Value returned when the widget is absent or non-numeric.
-
-    Returns:
-        Integer value or ``default``.
-
-    Raises:
-        None.
-    """
-    var = widgets.get(key)
-    if var is None:
-        return default
-    try:
-        return int(var.get())
-    except ValueError, TypeError:
-        return default
-
-
-def safe_int_from_str(value: str, default: int) -> int:
-    """Converts a string to an integer, falling back to ``default``.
-
-    Args:
-        value: The string to convert.
-        default: Value returned when the string is non-numeric.
-
-    Returns:
-        Integer value or ``default``.
-    """
-    try:
-        return int(value)
-    except ValueError, TypeError:
-        return default
 
 
 # EOF

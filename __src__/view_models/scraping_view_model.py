@@ -66,7 +66,7 @@ class ScrapingViewModel:
             master: Tkinter parent used to scope all Var lifetimes.
         """
         # Statistics Vars — Presenter formats and writes on every poll cycle.
-        self.stat_url_var = tk.StringVar(master=master, value="—")
+        self.stat_last_url_opended_var = tk.StringVar(master=master, value="—")
         self.stat_global_var = tk.StringVar(master=master, value="—")
         self.stat_open_url_var = tk.StringVar(master=master, value="—")
         self.stat_click_var = tk.StringVar(master=master, value="—")

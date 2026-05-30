@@ -101,7 +101,7 @@ class ScrapingView(ttk.Frame):
 
         rows = [
             ("Processus :", self._vm.process_status_var),
-            ("URL en cours :", self._vm.stat_url_var),
+            ("Dernière URL ouverte :", self._vm.stat_last_url_opended_var),
             ("Statistiques globales :", self._vm.stat_global_var),
             ("Statistiques OpenURL :", self._vm.stat_open_url_var),
             ("Statistiques ClickOn :", self._vm.stat_click_var),
@@ -130,12 +130,8 @@ class ScrapingView(ttk.Frame):
         self._btn_pause = ttk.Button(row, text="Mettre en pause", command=lambda: self._vm.pause(), state=tk.DISABLED)
         self._btn_pause.pack(side=tk.LEFT, padx=(0, 5))
 
-        style = ttk.Style()
-        style.configure("Resume.TButton")
-        style.configure("ResumeBlink.TButton", background=C_COLOR_ORANGE_BLINKING, foreground="white")
-        self._btn_resume = ttk.Button(
-            row, text="Reprendre", command=lambda: self._vm.resume(), style="Resume.TButton", state=tk.DISABLED
-        )
+        self._btn_resume = tk.Button(row, text="Reprendre", command=lambda: self._vm.resume(), state=tk.DISABLED)
+        self._btn_resume_default_bg: str = self._btn_resume.cget("background")
         self._btn_resume.pack(side=tk.LEFT)
 
     def _create_journal_section(self, parent: tk.Widget) -> None:
@@ -207,15 +203,15 @@ class ScrapingView(ttk.Frame):
             self._blink_resume()
         elif not active:
             self._blink_active = False
-            self._btn_resume.configure(style="Resume.TButton")
+            self._btn_resume.configure(bg=self._btn_resume_default_bg)
 
     def _blink_resume(self) -> None:
         """Toggle the resume button colour every 500 ms while active."""
         if not self._blink_active:
             return
         self._blink_phase = not self._blink_phase
-        style = "ResumeBlink.TButton" if self._blink_phase else "Resume.TButton"
-        self._btn_resume.configure(style=style)
+        bg = C_COLOR_ORANGE_BLINKING if self._blink_phase else self._btn_resume_default_bg
+        self._btn_resume.configure(bg=bg)
         self.after(_BLINK_INTERVAL_MS, self._blink_resume)
 
     def _sync_journal_append(self, *_: object) -> None:

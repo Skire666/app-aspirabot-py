@@ -12,7 +12,6 @@ from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 
 # -----------------------------------------------------------------------------
@@ -36,11 +35,6 @@ class ExportDataToJsFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_EXPORT_DATA_TO_JS
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_EXPORT_DATA_TO_JS)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -106,10 +100,7 @@ class ExportDataToJsFormDef(IStepFormDef):
         Returns:
             Dictionary of step parameters ready for persistence in the model.
         """
-        return {
-            C_KEY_PREFIX: widgets[C_KEY_PREFIX].get().strip(),
-            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
-        }
+        return {C_KEY_PREFIX: widgets[C_KEY_PREFIX].get().strip(), C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip()}
 
 
 register_form(ExportDataToJsFormDef())

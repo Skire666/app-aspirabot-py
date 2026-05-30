@@ -12,7 +12,6 @@ from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import (
     EXTRACT_MODE_DISPLAY,
@@ -47,11 +46,6 @@ class ExtractTextsFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_EXTRACT_TEXTS
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_EXTRACT_TEXTS)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -96,7 +90,7 @@ class ExtractTextsFormDef(IStepFormDef):
         ttk.Label(row1, text="Mode d'extraction :").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value=EXTRACT_MODE_DISPLAY[0])
         ttk.Combobox(row1, textvariable=mode_var, values=EXTRACT_MODE_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5),
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets[C_KEY_EXTRACT_MODE] = mode_var
 
@@ -114,7 +108,7 @@ class ExtractTextsFormDef(IStepFormDef):
         ttk.Label(row2, text="Cible :").pack(side=tk.LEFT, padx=(0, 5))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 30),
+            side=tk.LEFT, padx=(0, 30)
         )
         widgets[C_KEY_TARGET_EXTRACTED] = target_var
 
@@ -149,10 +143,10 @@ class ExtractTextsFormDef(IStepFormDef):
         """
         widgets[C_KEY_SELECTOR].set(params_dict.get(C_KEY_SELECTOR, ""))
         widgets[C_KEY_EXTRACT_MODE].set(
-            EXTRACT_MODE_MODEL_TO_VIEW.get(params_dict.get(C_KEY_EXTRACT_MODE, ""), EXTRACT_MODE_DISPLAY[0]),
+            EXTRACT_MODE_MODEL_TO_VIEW.get(params_dict.get(C_KEY_EXTRACT_MODE, ""), EXTRACT_MODE_DISPLAY[0])
         )
         widgets[C_KEY_TARGET_EXTRACTED].set(
-            EXTRACT_TARGET_MODEL_TO_VIEW.get(params_dict.get(C_KEY_TARGET_EXTRACTED, ""), EXTRACT_TARGET_DISPLAY[-1]),
+            EXTRACT_TARGET_MODEL_TO_VIEW.get(params_dict.get(C_KEY_TARGET_EXTRACTED, ""), EXTRACT_TARGET_DISPLAY[-1])
         )
         widgets[C_KEY_MAPPING].set(params_dict.get(C_KEY_MAPPING, ""))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))

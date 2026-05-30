@@ -58,19 +58,12 @@ class LogView(ttk.Frame):
             ("DEBUG", self._vm.filter_debug_var),
         ]
         for level, var in filter_defs:
-            cb = CanvasCheckbox(
-                filter_frame,
-                text=level,
-                variable=var,
-                command=lambda: self._vm.filter_changed(),
-            )
+            cb = CanvasCheckbox(filter_frame, text=level, variable=var, command=lambda: self._vm.filter_changed())
             cb.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(
-            filter_frame,
-            text="Ouvrir dossier des logs",
-            command=lambda: self._vm.open_logs_folder(),
-        ).pack(side=tk.LEFT, padx=(20, 5))
+        ttk.Button(filter_frame, text="Ouvrir dossier des logs", command=lambda: self._vm.open_logs_folder()).pack(
+            side=tk.LEFT, padx=(20, 5)
+        )
 
     def _create_log_tree(self) -> None:
         """Build the Treeview with scrollbar and level-colour tags."""
@@ -88,7 +81,7 @@ class LogView(ttk.Frame):
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)  # type: ignore[no-untyped-call]
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -108,9 +101,7 @@ class LogView(ttk.Frame):
 
         last_item_id = None
         for date, level, origin, message in self._vm.get_logs():
-            last_item_id = self.tree.insert(
-                "", tk.END, values=(date, level, origin, message), tags=(level,)
-            )
+            last_item_id = self.tree.insert("", tk.END, values=(date, level, origin, message), tags=(level,))
 
         if last_item_id:
             self.tree.focus_set()

@@ -13,7 +13,7 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from shared.constants import C_MAXIMUM_QTY_COUNTER, C_MAXIMUM_SIZE_IMAGE
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from shared.parse_util import safe_int_from_dict
 from shared.step_registry import register_form
 from views.steps._constants import (
     COUNT_OP_DISPLAY,
@@ -22,7 +22,6 @@ from views.steps._constants import (
     COUNT_SUCCESS_IF_DISPLAY,
     COUNT_SUCCESS_IF_MODEL_TO_VIEW,
     COUNT_SUCCESS_IF_VIEW_TO_MODEL,
-    safe_int_from_dict,
 )
 
 # -----------------------------------------------------------------------------
@@ -55,11 +54,6 @@ class CountHtmlImagesFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_COUNT_HTML_IMAGES
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_COUNT_HTML_IMAGES)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

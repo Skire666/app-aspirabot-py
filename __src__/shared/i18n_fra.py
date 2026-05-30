@@ -69,6 +69,33 @@ C_DEBUG_DNS_DELAY_INVALID = "Le délai d'attente DNS doit être un entier entre 
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
 
 # -----------------------------------------------------------------------------
+# Common dialog / presenter messages
+# -----------------------------------------------------------------------------
+
+# Generic error dialog title used in all show_error(title, …) calls.
+C_ERROR_DIALOG_TITLE = "Erreur"
+
+# Open-folder error messages ({exc} is the caught exception).
+C_LOG_OPEN_FOLDER_ERROR = "Impossible d'ouvrir le dossier des logs :\n{exc}"
+C_OPEN_EXPORT_FOLDER_ERROR = "Impossible d'ouvrir le dossier d'export :\n{exc}"
+
+# Workflow session guard — shown when a second edit session is attempted.
+C_WORKFLOW_ALREADY_ACTIVE_WARNING = (
+    "Un Workflow est déjà en cours de modification.\n"
+    "Veuillez terminer ou annuler la modification en cours avant de continuer."
+)
+
+# Scenario/profile operation errors ({exc} is the caught exception).
+C_DUPLICATE_SCENARIO_FAILED = "La duplication a échoué : {exc}"
+C_DELETE_SCENARIO_FAILED = "La suppression a échoué : {exc}"
+
+# Step-not-found warning in StepsListPresenter.
+C_STEP_NOT_FOUND_FOR_UPDATE = "L'étape n'existe plus. Impossible de mettre à jour."
+
+# Scenario-not-found error in WorkflowPresenter ({id_file} is the missing ID).
+C_SCENARIO_NOT_FOUND_BY_ID = "Le scénario avec l'ID '{id_file}' n'existe pas."
+
+# -----------------------------------------------------------------------------
 # Labels
 # -----------------------------------------------------------------------------
 

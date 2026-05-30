@@ -38,6 +38,10 @@ class WorkflowViewModel:
         # Guard Var — View checks this in _mark_dirty() to suppress during load
         self.is_loading_var = tk.BooleanVar(master=master, value=False)
 
+        # Dirty-state Var — True when the form has unsaved changes.
+        # The View traces this to enable/disable the Save button.
+        self.is_dirty_var = tk.BooleanVar(master=master, value=False)
+
         # Registered Presenter callbacks
         self._on_save: Callable[[], None] | None = None
         self._on_cancel: Callable[[], None] | None = None
@@ -63,6 +67,7 @@ class WorkflowViewModel:
             self.name_var.set(str(data.get("scenario_name", "")))
             self.desc_var.set(str(data.get("scenario_desc", "")))
             self.version_var.set(str(data.get("version", "")))
+            self.is_dirty_var.set(False)
         finally:
             self.is_loading_var.set(False)
 
@@ -74,6 +79,7 @@ class WorkflowViewModel:
             self.name_var.set("")
             self.desc_var.set("")
             self.version_var.set("")
+            self.is_dirty_var.set(False)
         finally:
             self.is_loading_var.set(False)
 

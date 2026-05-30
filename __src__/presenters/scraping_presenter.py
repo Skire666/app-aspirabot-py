@@ -27,6 +27,8 @@ from services.scraping_service import ScrapingService
 from shared.enums import EventScrapingEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
+    C_ERROR_DIALOG_TITLE,
+    C_OPEN_EXPORT_FOLDER_ERROR,
     C_SCRAPING_EVENT_BROWSER_INIT,
     C_SCRAPING_EVENT_CONTEXT_INIT,
     C_SCRAPING_EVENT_WORKFLOW_INIT,
@@ -205,7 +207,7 @@ class ScrapingPresenter:
         try:
             self._service.open_export_folder(self._profile.export_folder)
         except (AspirabotBaseError, OSError) as e:
-            self._vm.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
+            self._vm.show_error(C_ERROR_DIALOG_TITLE, C_OPEN_EXPORT_FOLDER_ERROR.format(exc=e))
 
     # ------------------------------------------------------------------
     # Worker thread
@@ -414,18 +416,15 @@ class ScrapingPresenter:
         parts = [f"Démarré : {ts}", f"Seuil global : {self._current_global_threshold}"]
         if tid:
             parts.append(f"Seuil étape [{tid}] : {self._current_step_threshold}")
-        self._vm.stat_url_var.set(f"URL en cours : {ctx.last_url_opened or '—'}")
+        self._vm.stat_last_url_opended_var.set(f"{ctx.last_url_opened or '—'}")
         self._vm.stat_global_var.set(
-            f"Total exec : {stats.steps_executed}"
-            f" | OK : {stats.steps_success} | KO : {stats.steps_failed}"
+            f"Total exec : {stats.steps_executed} | OK : {stats.steps_success} | KO : {stats.steps_failed}"
         )
         self._vm.stat_open_url_var.set(
-            f"Open URL : {stats.open_urls_executed}"
-            f" | OK : {stats.open_urls_success} | KO : {stats.open_urls_failed}"
+            f"Open URL : {stats.open_urls_executed} | OK : {stats.open_urls_success} | KO : {stats.open_urls_failed}"
         )
         self._vm.stat_click_var.set(
-            f"Clicks : {stats.clicks_executed}"
-            f" | OK : {stats.clicks_success} | KO : {stats.clicks_failed}"
+            f"Clicks : {stats.clicks_executed} | OK : {stats.clicks_success} | KO : {stats.clicks_failed}"
         )
         self._vm.stat_started_var.set("  |  ".join(parts))
         self._vm.stat_step_var.set(self._describe_current_step(ctx) or "—")

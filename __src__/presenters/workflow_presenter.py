@@ -19,6 +19,7 @@ from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
 from shared.exception_util import AspirabotBaseError
+from shared.i18n_fra import C_SCENARIO_NOT_FOUND_BY_ID
 from shared.random_util import merge_unique_list_id_step
 from view_models.workflow_view_model import WorkflowViewModel
 
@@ -89,7 +90,7 @@ class WorkflowPresenter:
         self._is_creation_mode = False
 
         if not self._service.exists_scenario(id_file):
-            self._vm.show_error(f"Le scénario avec l'ID '{id_file}' n'existe pas.")
+            self._vm.show_error(C_SCENARIO_NOT_FOUND_BY_ID.format(id_file=id_file))
             return False
 
         self._current_scenario = self._service.read_scenario(id_file)

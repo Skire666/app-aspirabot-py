@@ -23,16 +23,18 @@ from services.url_sources.url_source_factory import build_url_source_scenario
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
+    C_ERROR_DIALOG_TITLE,
     C_EXEC_NO_PROFILE,
     C_EXEC_NO_SCENARIO,
     C_EXEC_SAVED_DATE_EMPTY,
     C_EXEC_SAVED_DATE_FMT,
     C_EXEC_USED_DATE_EMPTY,
     C_EXEC_USED_DATE_FMT,
+    C_OPEN_EXPORT_FOLDER_ERROR,
 )
+from shared.parse_util import safe_int_from_str
 from validators.launch_validator import validate_launch_profile_first_error
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
-from views.steps._constants import safe_int_from_str
 
 # -----------------------------------------------------------------------------
 # Module-level constant
@@ -558,7 +560,7 @@ class ExecutorPresenter:
         try:
             self._svc_profiles.open_export_folder(folder)
         except (AspirabotBaseError, OSError) as e:
-            self._vm.show_error("Erreur", f"Impossible d'ouvrir le dossier d'export :\n{e}")
+            self._vm.show_error(C_ERROR_DIALOG_TITLE, C_OPEN_EXPORT_FOLDER_ERROR.format(exc=e))
 
 
 # EOF

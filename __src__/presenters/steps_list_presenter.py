@@ -20,6 +20,7 @@ from presenters.step_label_formatters import format_step_label
 from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
 from shared.enums import StepTypeEnum
+from shared.i18n_fra import C_STEP_NOT_FOUND_FOR_UPDATE
 from shared.random_util import generate_rng_id_step
 from shared.step_registry import build_params
 from shared.step_view_item import StepViewItem
@@ -203,7 +204,7 @@ class StepsListPresenter:
         """
         if self._edit_index is None or self._edit_index >= len(self._steps):
             if self._gestion_view:
-                self._gestion_view.show_warning("L'étape n'existe plus. Impossible de mettre à jour.")
+                self._gestion_view.show_warning(C_STEP_NOT_FOUND_FOR_UPDATE)
             return True
 
         existing = self._steps[self._edit_index]

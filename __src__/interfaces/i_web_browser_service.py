@@ -73,6 +73,14 @@ class IWebBrowserService(Protocol):
         """
         ...
 
+    def get_stats(self) -> tuple[int, str]:
+        """Return the current number of open pages and the URL from page[0].
+
+        Returns:
+            A tuple of (number_of_open_pages, current_url_string).
+        """
+        ...
+
     def close_browser(self) -> None:
         """Close all pages, the browser context, and the underlying browser.
 

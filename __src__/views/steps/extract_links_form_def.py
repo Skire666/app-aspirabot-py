@@ -12,13 +12,8 @@ from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
-from views.steps._constants import (
-    EXTRACT_TARGET_DISPLAY,
-    EXTRACT_TARGET_MODEL_TO_VIEW,
-    EXTRACT_TARGET_VIEW_TO_MODEL,
-)
+from views.steps._constants import EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_MODEL_TO_VIEW, EXTRACT_TARGET_VIEW_TO_MODEL
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -43,11 +38,6 @@ class ExtractLinksFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_EXTRACT_LINKS
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_EXTRACT_LINKS)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -91,7 +81,7 @@ class ExtractLinksFormDef(IStepFormDef):
         ttk.Label(row2, text="Cible :").pack(side=tk.LEFT, padx=(0, 5))
         target_var = tk.StringVar(value=EXTRACT_TARGET_DISPLAY[-1])
         ttk.Combobox(row2, textvariable=target_var, values=EXTRACT_TARGET_DISPLAY, state="readonly").pack(
-            side=tk.LEFT, padx=(0, 30),
+            side=tk.LEFT, padx=(0, 30)
         )
         widgets[C_KEY_TARGET_EXTRACTED] = target_var
 
@@ -126,7 +116,7 @@ class ExtractLinksFormDef(IStepFormDef):
         """
         widgets[C_KEY_SELECTOR].set(params_dict.get(C_KEY_SELECTOR, ""))
         widgets[C_KEY_TARGET_EXTRACTED].set(
-            EXTRACT_TARGET_MODEL_TO_VIEW.get(params_dict.get(C_KEY_TARGET_EXTRACTED, ""), EXTRACT_TARGET_DISPLAY[-1]),
+            EXTRACT_TARGET_MODEL_TO_VIEW.get(params_dict.get(C_KEY_TARGET_EXTRACTED, ""), EXTRACT_TARGET_DISPLAY[-1])
         )
         widgets[C_KEY_MAPPING].set(params_dict.get(C_KEY_MAPPING, ""))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))

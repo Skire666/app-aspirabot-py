@@ -13,10 +13,10 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from shared.constants import C_MAXIMUM_WAIT_TIME, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from shared.parse_util import safe_int_from_dict
 from shared.step_registry import register_form
 from views.components.canvas_checkbox import CanvasCheckbox
-from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL, safe_int_from_dict
+from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -41,11 +41,6 @@ class KillBrowserFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_KILL_BROWSER
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_KILL_BROWSER)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

@@ -42,11 +42,6 @@ class JumpToStepFormDef(IStepFormDef):
         """Return the step type."""
         return StepTypeEnum.E_JUMP_TO_STEP
 
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_JUMP_TO_STEP)
-
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build all form widgets into the given frame.

@@ -7,6 +7,7 @@
 from models.log_entry_model import LogEntryModel
 from services.logging_service import LoggingService
 from shared.exception_util import AspirabotBaseError
+from shared.i18n_fra import C_ERROR_DIALOG_TITLE, C_LOG_OPEN_FOLDER_ERROR
 from view_models.log_view_model import LogViewModel
 
 
@@ -41,7 +42,7 @@ class LogPresenter:
         try:
             self._service.open_logs_folder()
         except (AspirabotBaseError, OSError) as e:
-            self._vm.show_error("Erreur", f"Impossible d'ouvrir le dossier des logs :\n{e}")
+            self._vm.show_error(C_ERROR_DIALOG_TITLE, C_LOG_OPEN_FOLDER_ERROR.format(exc=e))
 
     def _update_view(self) -> None:
         """Fetches all log entries from the service, applies active filters, and pushes to the ViewModel."""

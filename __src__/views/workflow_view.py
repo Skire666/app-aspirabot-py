@@ -49,8 +49,6 @@ class WorkflowView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
-        self._is_edit_mode: bool = False
-        self._is_dirty: bool = False
 
         self._create_widgets()
         self._bind_vm_vars()
@@ -175,7 +173,7 @@ class WorkflowView(ttk.Frame):
             labels: Human-readable step type labels to populate.
         """
         self._type_listbox = tk.Listbox(parent, selectmode=tk.SINGLE, exportselection=False, activestyle="none")
-        sb = ttk.Scrollbar(parent, orient="vertical", command=self._type_listbox.yview)
+        sb = ttk.Scrollbar(parent, orient="vertical", command=self._type_listbox.yview)  # type: ignore[no-untyped-call]
         self._type_listbox.configure(yscrollcommand=sb.set)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         self._type_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -223,7 +221,6 @@ class WorkflowView(ttk.Frame):
             return False
 
         self._mark_dirty()
-        self._is_edit_mode = False
         self._inline_form.set_creation_mode()
         self._inline_form.reset(self._get_current_listbox_type())
         self._workflow_builder_view.scroll_to_bottom()
@@ -246,7 +243,6 @@ class WorkflowView(ttk.Frame):
             return False
 
         self._mark_dirty()
-        self._is_edit_mode = False
         self._inline_form.set_creation_mode()
         self._inline_form.reset(self._get_current_listbox_type())
         return True
@@ -257,7 +253,6 @@ class WorkflowView(ttk.Frame):
         if cb:
             cb()
 
-        self._is_edit_mode = False
         self._inline_form.set_creation_mode()
         self._inline_form.reset(self._get_current_listbox_type())
 
@@ -348,7 +343,9 @@ class WorkflowView(ttk.Frame):
     # ---------------------------------------------------------------
 
     def _bind_vm_vars(self) -> None:
-        """No additional Var traces needed — is_loading_var is read inline in _mark_dirty."""
+        """Wire is_dirty_var trace to keep Save button state in sync."""
+        self._vm.is_dirty_var.trace_add("write", self._sync_save_btn_state)
+        self._sync_save_btn_state()
 
     # ---------------------------------------------------------------
     # Public interface — IStepsListGestionView (used by StepsListPresenter)
@@ -360,7 +357,6 @@ class WorkflowView(ttk.Frame):
         Args:
             item: View-safe snapshot to pre-fill for editing, or None for a blank form.
         """
-        self._is_edit_mode = item is not None
         self._inline_form.load(item)
         if item is not None:
             self._inline_form.set_edit_mode()
@@ -396,20 +392,23 @@ class WorkflowView(ttk.Frame):
     # Dirty state management
     # ---------------------------------------------------------------
 
+    def _sync_save_btn_state(self, *_: object) -> None:
+        """Mirror vm.is_dirty_var onto the Save button's enabled state."""
+        state = "normal" if self._vm.is_dirty_var.get() else "disabled"
+        self._btn_save.configure(state=state)
+
     def _mark_dirty(self) -> None:
-        """Set the dirty flag and enable the Save button.
+        """Set is_dirty_var to True, enabling the Save button.
 
         No-op while vm.is_loading_var is True (suppresses traces during load_form).
         """
         if self._vm.is_loading_var.get():
             return
-        self._is_dirty = True
-        self._btn_save.configure(state="normal")
+        self._vm.is_dirty_var.set(True)
 
     def _reset_dirty(self) -> None:
-        """Clear the dirty flag and disable the Save button."""
-        self._is_dirty = False
-        self._btn_save.configure(state="disabled")
+        """Clear is_dirty_var, disabling the Save button."""
+        self._vm.is_dirty_var.set(False)
 
     # ---------------------------------------------------------------
     # Internal button handlers

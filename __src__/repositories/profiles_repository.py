@@ -22,10 +22,12 @@ from repositories.json_repository import JsonFileRepository
 from shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
 from shared.exception_util import (
     AspirabotBaseError,
+    EmptyScenarioIdError,
     ExportFolderNotADirectoryError,
     InvalidProfilesFolderPathError,
     ProfileDataMissingError,
     ProfileNotFoundError,
+    RepositoryWriteError,
     ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
@@ -182,9 +184,9 @@ class ProfilesRepository:
             scenario_dict = profiles.export_to_data_json()
             self._json_repo.write_from_dict(full_filepath, scenario_dict)
             self._logger.debug("Profil sauvegardé : %s", full_filepath)
-        except OSError:
+        except OSError as exc:
             self._logger.error("Erreur lors de la MAJ du profil.", exc_info=True)
-            raise
+            raise RepositoryWriteError() from exc
 
     def delete_profiles(self, id_scenario: str) -> None:
         """Deletes the JSON file for the given profile identifier.
@@ -207,9 +209,9 @@ class ProfilesRepository:
         try:
             Path(full_pathfile_to_delete).unlink()
             self._logger.debug("Profil supprimé : %s", full_pathfile_to_delete)
-        except OSError:
+        except OSError as exc:
             self._logger.error("Erreur lors de la suppression du profil.", exc_info=True)
-            raise
+            raise RepositoryWriteError() from exc
 
     def read_scenario(self, id_scenario: str) -> ScenarioModel:
         """Loads a scenario file by ID and returns it as a ProfilesModel.
@@ -291,7 +293,7 @@ class ProfilesRepository:
             The full Path to the scenario's JSON file.
         """
         if not id_file:
-            raise ValueError("L'identifiant du scénario ne peut pas être vide.")  # noqa: TRY003
+            raise EmptyScenarioIdError()
 
         return self._folder_path / (id_file + suffix)
 

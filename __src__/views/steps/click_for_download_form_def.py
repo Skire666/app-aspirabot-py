@@ -12,7 +12,6 @@ from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
-from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from views.steps._constants import CLICK_MODES
 
@@ -39,11 +38,6 @@ class ClickForDownloadFormDef(IStepFormDef):
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
         return StepTypeEnum.E_CLICK_FOR_DOWNLOAD
-
-    @classmethod
-    def label(cls) -> str:
-        """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_CLICK_FOR_DOWNLOAD)
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -88,7 +82,7 @@ class ClickForDownloadFormDef(IStepFormDef):
         ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) :").pack(side=tk.LEFT, padx=(0, 5))
         mode_var = tk.StringVar(value="Normal")
         ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
-            side=tk.LEFT, fill="x", expand=True, padx=(0, 5),
+            side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
         widgets[C_KEY_CLICK_MODE] = mode_var
 
