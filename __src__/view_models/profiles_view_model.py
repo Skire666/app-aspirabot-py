@@ -36,6 +36,7 @@ class ProfilesViewModel:
         # Registered Presenter callbacks
         self._on_refresh: Callable[[], None] | None = None
         self._on_launch: Callable[[str, str], None] | None = None
+        self._on_delete: Callable[[str, str], None] | None = None
         self._on_open_folder: Callable[[], None] | None = None
         self._on_sort: Callable[[str, bool], None] | None = None
 
@@ -90,6 +91,14 @@ class ProfilesViewModel:
         """
         self._on_launch = cb
 
+    def bind_delete(self, cb: Callable[[str, str], None]) -> None:
+        """Register the handler invoked when the user clicks Supp.
+
+        Args:
+            cb: Called with (id_scenario, id_profile).
+        """
+        self._on_delete = cb
+
     def bind_open_folder(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when the user clicks Ouvrir dossier.
 
@@ -124,6 +133,16 @@ class ProfilesViewModel:
         """
         if self._on_launch is not None:
             self._on_launch(id_scenario, id_profile)
+
+    def delete_profile(self, id_scenario: str, id_profile: str) -> None:
+        """Dispatch a delete request to the Presenter.
+
+        Args:
+            id_scenario: ID of the owning scenario.
+            id_profile: ID of the profile to delete.
+        """
+        if self._on_delete is not None:
+            self._on_delete(id_scenario, id_profile)
 
     def open_folder(self) -> None:
         """Dispatch an open-folder request to the Presenter."""

@@ -124,7 +124,7 @@ class DebugPageView(tk.Toplevel):
         input_row = ttk.Frame(frame)
         input_row.grid(row=0, column=0, sticky="ew", pady=(4, 2), padx=4)
         input_row.columnconfigure(1, weight=1)
-        ttk.Label(input_row, text="Sélecteur CSS :").grid(row=0, column=0, padx=(0, 4))
+        ttk.Label(input_row, text="Sélecteur CSS :").grid(row=0, column=0, padx=(0, 5))
         self._entry_text_selector = ttk.Entry(input_row)
         self._entry_text_selector.grid(row=0, column=1, sticky="ew")
         ttk.Button(input_row, text="Analyser textes", command=self._fire_analyze_texts).grid(
@@ -154,7 +154,7 @@ class DebugPageView(tk.Toplevel):
         input_row = ttk.Frame(frame)
         input_row.grid(row=0, column=0, sticky="ew", pady=(4, 2), padx=4)
         input_row.columnconfigure(1, weight=1)
-        ttk.Label(input_row, text="Sélecteur CSS images :").grid(row=0, column=0, padx=(0, 4))
+        ttk.Label(input_row, text="Sélecteur CSS images :").grid(row=0, column=0, padx=(0, 5))
         self._entry_image_selector = ttk.Entry(input_row)
         self._entry_image_selector.insert(0, "img")
         self._entry_image_selector.grid(row=0, column=1, sticky="ew")
@@ -181,7 +181,7 @@ class DebugPageView(tk.Toplevel):
             A tuple of (Text widget, vertical Scrollbar widget).
         """
         container = ttk.Frame(parent)
-        container.grid(row=row, column=0, sticky="nsew", padx=4, pady=(0, 4))
+        container.grid(row=row, column=0, sticky="nsew", padx=4, pady=(0, 5))
         container.columnconfigure(0, weight=1)
         container.rowconfigure(0, weight=1)
 

@@ -64,14 +64,10 @@ class ScenariosView(ttk.Frame):
         top_frame = HorizontalLineFrame(self, text="Actions")
         top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_create = ttk.Button(
-            top_frame, text="Créer un scénario", command=lambda: self._vm.create()
-        )
+        self._btn_create = ttk.Button(top_frame, text="Créer un scénario", command=lambda: self._vm.create())
         self._btn_create.pack(side=tk.LEFT, padx=(5, 10))
 
-        self._btn_validate = ttk.Button(
-            top_frame, text="Valider les scénarios", command=lambda: self._vm.validate()
-        )
+        self._btn_validate = ttk.Button(top_frame, text="Valider les scénarios", command=lambda: self._vm.validate())
         self._btn_validate.pack(side=tk.LEFT, padx=(0, 10))
 
     def _create_grid_widgets(self) -> None:
@@ -79,27 +75,19 @@ class ScenariosView(ttk.Frame):
         top_frame = HorizontalLineFrame(self, text="Liste des scénarios")
         top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_refresh = ttk.Button(
-            top_frame, text="Actualiser", command=lambda: self._vm.refresh()
-        )
+        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=lambda: self._vm.refresh())
         self._btn_refresh.pack(side=tk.LEFT, padx=(5, 40), pady=(0, 5))
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun scénario")
         self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
 
         self._btn_open_folder = FolderLinkWidget(
-            top_frame,
-            title="Dossier des scénarios :",
-            path="",
-            callback=lambda: self._vm.open_folder(),
+            top_frame, title="Dossier des scénarios :", path="", callback=lambda: self._vm.open_folder()
         )
         self._btn_open_folder.pack(side=tk.RIGHT, padx=(10), pady=(0, 5))
 
         self.grid = DataGrid(
-            self,
-            columns=DATA_GRID_COLUMNS,
-            on_sort=lambda col, asc: self._vm.sort(col, asc),
-            on_action=self._on_action,
+            self, columns=DATA_GRID_COLUMNS, on_sort=lambda col, asc: self._vm.sort(col, asc), on_action=self._on_action
         )
         self.grid.set_sort_state("scenario_name", True)
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)

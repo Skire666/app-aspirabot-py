@@ -75,17 +75,17 @@ class ScrapingView(ttk.Frame):
     def _create_info_section(self, parent: tk.Widget) -> None:
         """Section 1 — launch context (scenario, profile, folder)."""
         frame = HorizontalLineFrame(parent, text="Informations sur le lancement")
-        frame.pack(fill=tk.X, pady=(0, 4))
+        frame.pack(fill=tk.X)
         grid = ttk.Frame(frame)
-        grid.pack(fill=tk.X, padx=5, pady=(0, 6))
+        grid.pack(fill=tk.X, padx=5, pady=(0, 5))
 
-        ttk.Label(grid, text="Scénario :").grid(row=0, column=0, sticky=tk.W, padx=(0, 4), pady=2)
+        ttk.Label(grid, text="Scénario :").grid(row=0, column=0, sticky=tk.W, padx=(0, 5), pady=2)
         ttk.Label(grid, textvariable=self._vm.scenario_name_var).grid(row=0, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(grid, text="Profil :").grid(row=1, column=0, sticky=tk.W, padx=(0, 4), pady=2)
+        ttk.Label(grid, text="Profil :").grid(row=1, column=0, sticky=tk.W, padx=(0, 5), pady=2)
         ttk.Label(grid, textvariable=self._vm.profile_name_var).grid(row=1, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(grid, text="Dossier d'export :").grid(row=2, column=0, sticky=tk.W, padx=(0, 4), pady=2)
+        ttk.Label(grid, text="Dossier d'export :").grid(row=2, column=0, sticky=tk.W, padx=(0, 5), pady=2)
         ttk.Label(grid, textvariable=self._vm.folder_var).grid(row=2, column=1, sticky=tk.W, pady=2)
         self._btn_open_folder = ttk.Button(
             grid, text="Ouvrir dossier", command=lambda: self._vm.open_folder(), state=tk.DISABLED
@@ -95,9 +95,9 @@ class ScrapingView(ttk.Frame):
     def _create_stats_section(self, parent: tk.Widget) -> None:
         """Section 2 — real-time scraping statistics, bound to ViewModel Vars."""
         frame = HorizontalLineFrame(parent, text="Informations sur le scraping")
-        frame.pack(fill=tk.X, pady=(0, 4))
+        frame.pack(fill=tk.X)
         grid = ttk.Frame(frame)
-        grid.pack(fill=tk.X, padx=5, pady=(0, 6))
+        grid.pack(fill=tk.X, padx=5, pady=(0, 5))
 
         rows = [
             ("Processus :", self._vm.process_status_var),
@@ -109,30 +109,26 @@ class ScrapingView(ttk.Frame):
             ("Étape en cours :", self._vm.stat_step_var),
         ]
         for i, (label, var) in enumerate(rows):
-            ttk.Label(grid, text=label).grid(row=i, column=0, sticky=tk.W, padx=(0, 4), pady=1)
+            ttk.Label(grid, text=label).grid(row=i, column=0, sticky=tk.W, padx=(0, 5), pady=1)
             ttk.Label(grid, textvariable=var).grid(row=i, column=1, sticky=tk.W, pady=1)
 
     def _create_piloting_section(self, parent: tk.Widget) -> None:
         """Section 3 — launch / cancel / pause / resume control buttons."""
         frame = HorizontalLineFrame(parent, text="Pilotage")
-        frame.pack(fill=tk.X, pady=(0, 4))
+        frame.pack(fill=tk.X)
         row = ttk.Frame(frame)
-        row.pack(padx=5, pady=(0, 6), anchor=tk.W)
+        row.pack(padx=5, pady=(0, 5), anchor=tk.W)
 
         self._btn_launch = ttk.Button(
             row, text="Lancer le scraping", command=lambda: self._vm.launch(), state=tk.DISABLED
         )
-        self._btn_launch.pack(side=tk.LEFT, padx=(0, 6))
+        self._btn_launch.pack(side=tk.LEFT, padx=(0, 5))
 
-        self._btn_cancel = ttk.Button(
-            row, text="Annuler (kill)", command=lambda: self._vm.cancel(), state=tk.DISABLED
-        )
-        self._btn_cancel.pack(side=tk.LEFT, padx=(0, 6))
+        self._btn_cancel = ttk.Button(row, text="Annuler (kill)", command=lambda: self._vm.cancel(), state=tk.DISABLED)
+        self._btn_cancel.pack(side=tk.LEFT, padx=(0, 5))
 
-        self._btn_pause = ttk.Button(
-            row, text="Mettre en pause", command=lambda: self._vm.pause(), state=tk.DISABLED
-        )
-        self._btn_pause.pack(side=tk.LEFT, padx=(0, 6))
+        self._btn_pause = ttk.Button(row, text="Mettre en pause", command=lambda: self._vm.pause(), state=tk.DISABLED)
+        self._btn_pause.pack(side=tk.LEFT, padx=(0, 5))
 
         style = ttk.Style()
         style.configure("Resume.TButton")
@@ -145,10 +141,10 @@ class ScrapingView(ttk.Frame):
     def _create_journal_section(self, parent: tk.Widget) -> None:
         """Section 4 — scrollable read-only journal."""
         frame = HorizontalLineFrame(parent, text="Journal")
-        frame.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
+        frame.pack(fill=tk.BOTH, expand=True)
 
         txt_frame = ttk.Frame(frame)
-        txt_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0, 4))
+        txt_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
 
         self._txt_journal = tk.Text(txt_frame, state=tk.DISABLED, wrap=tk.NONE, height=12)
         sb_y = ttk.Scrollbar(txt_frame, orient=tk.VERTICAL, command=self._txt_journal.yview)
@@ -159,7 +155,7 @@ class ScrapingView(ttk.Frame):
         self._txt_journal.pack(fill=tk.BOTH, expand=True)
 
         self._lbl_journal_path = ttk.Label(frame, textvariable=self._vm.journal_path_var)
-        self._lbl_journal_path.pack(padx=5, pady=(0, 6), anchor=tk.W)
+        self._lbl_journal_path.pack(padx=5, pady=(0, 5), anchor=tk.W)
 
     # ------------------------------------------------------------------
     # ViewModel bindings

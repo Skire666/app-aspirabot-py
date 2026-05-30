@@ -11,6 +11,7 @@ action methods.  No business logic, no service calls.
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
+from typing import Any
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from view_models.executor_view_model import ExecutorViewModel, ScenarioItem
@@ -64,7 +65,7 @@ class ExecutorView(ttk.Frame):
     def _create_widgets(self) -> None:
         """Build all four sections in order."""
         outer = ttk.Frame(self)
-        outer.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        outer.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self._create_scenario_section(outer)
         self._create_profiles_section(outer)
         self._create_profile_config_section(outer)
@@ -73,45 +74,45 @@ class ExecutorView(ttk.Frame):
     def _create_scenario_section(self, parent: tk.Widget) -> None:
         """Build the scenario selection section."""
         frame = HorizontalLineFrame(parent, text="Liste des scénarios")
-        frame.pack(fill=tk.X, pady=(0, 4))
-
-        self._combo_scenarios = ColumnCombobox(frame, width=60)
-        self._combo_scenarios.add_column("scenario_name", lambda m: m.scenario_name, width=220)
-        self._combo_scenarios.add_column("scenario_desc", lambda m: m.scenario_desc, width=260)
-        self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=90)
-        self._combo_scenarios.set_display_column("scenario_name")
-        self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
-        self._combo_scenarios.pack(side=tk.LEFT, padx=(5, 8), pady=(0, 6))
+        frame.pack(fill=tk.X)
 
         self._btn_edit = ttk.Button(frame, text="Modifier", command=self._on_edit_clicked)
-        self._btn_edit.pack(side=tk.RIGHT, padx=(4, 5), pady=(0, 6))
+        self._btn_edit.pack(side=tk.RIGHT, padx=(4, 5), pady=(0, 5))
 
         self._btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._on_refresh_clicked)
-        self._btn_refresh.pack(side=tk.RIGHT, padx=(0, 4), pady=(0, 6))
+        self._btn_refresh.pack(side=tk.RIGHT, padx=(0, 5), pady=(0, 5))
+
+        self._combo_scenarios = ColumnCombobox(frame)
+        self._combo_scenarios.add_column("scenario_name", lambda m: m.scenario_name, width=140)
+        self._combo_scenarios.add_column("scenario_desc", lambda m: m.scenario_desc, width=200)
+        self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=60)
+        self._combo_scenarios.set_display_column("scenario_name")
+        self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
+        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
     def _create_profiles_section(self, parent: tk.Widget) -> None:
         """Build the available-profiles section."""
         frame = HorizontalLineFrame(parent, text="Profils disponibles")
-        frame.pack(fill=tk.X, pady=(0, 4))
+        frame.pack(fill=tk.X)
 
         self._listbox_profiles = tk.Listbox(frame, height=5, selectmode=tk.SINGLE, exportselection=False)
-        self._listbox_profiles.pack(fill=tk.X, padx=5, pady=(0, 4))
+        self._listbox_profiles.pack(fill=tk.X, pady=(0, 5))
         self._listbox_profiles.bind("<<ListboxSelect>>", self._on_listbox_profile_selected)
 
         btn_row = ttk.Frame(frame)
-        btn_row.pack(fill=tk.X, padx=5, pady=(0, 6))
+        btn_row.pack(fill=tk.X, padx=5, pady=(0, 5))
 
         self._btn_new = ttk.Button(btn_row, text="Nouveau", command=self._on_new_clicked)
-        self._btn_new.pack(side=tk.LEFT, padx=(0, 4))
+        self._btn_new.pack(side=tk.LEFT, padx=(0, 5))
 
         self._btn_rename = ttk.Button(btn_row, text="Renommer", command=self._on_rename_clicked)
-        self._btn_rename.pack(side=tk.LEFT, padx=(0, 4))
+        self._btn_rename.pack(side=tk.LEFT, padx=(0, 5))
 
         self._btn_delete = ttk.Button(btn_row, text="Supprimer", command=self._on_delete_clicked)
-        self._btn_delete.pack(side=tk.LEFT, padx=(0, 4))
+        self._btn_delete.pack(side=tk.LEFT, padx=(0, 5))
 
         self._btn_save = ttk.Button(btn_row, text="Sauvegarder", command=lambda: self._vm.save_profile())
-        self._btn_save.pack(side=tk.LEFT, padx=(0, 8))
+        self._btn_save.pack(side=tk.LEFT, padx=(0, 5))
 
         self._lbl_saved = ttk.Label(btn_row, textvariable=self._vm.saved_date_var)
         self._lbl_saved.pack(side=tk.LEFT)
@@ -119,41 +120,49 @@ class ExecutorView(ttk.Frame):
     def _create_profile_config_section(self, parent: tk.Widget) -> None:
         """Build the launch-profile configuration section."""
         self._frame_profile_cfg = HorizontalLineFrame(parent, text="Profil de lancement")
-        self._frame_profile_cfg.pack(fill=tk.X, pady=(0, 4))
-        grid = ttk.Frame(self._frame_profile_cfg)
-        grid.pack(fill=tk.X, padx=5, pady=(0, 6))
-        self._cfg_grid = grid
-        self._create_cfg_row0(grid)
-        self._create_cfg_row1(grid)
-        self._create_cfg_row2(grid)
-        self._create_cfg_row3(grid)
-        self._create_cfg_row4(grid)
-        self._create_cfg_row5(grid)
-        self._create_cfg_row6(grid)
+        self._frame_profile_cfg.pack(fill=tk.X)
+        container = ttk.Frame(self._frame_profile_cfg)
+        container.pack(fill=tk.X)
+        self._cfg_grid = container
+        self._create_cfg_row0(container)
+        self._create_cfg_row1(container)
+        self._create_cfg_row2(container)
+        self._create_cfg_row2_bis(container)
+        self._create_cfg_row3(container)
+        self._create_cfg_row4(container)
+        self._create_cfg_row5(container)
+        self._create_cfg_row6(container)
 
-    def _create_cfg_row0(self, grid: tk.Widget) -> None:
+    def _create_cfg_row0(self, parent: tk.Widget) -> None:
         """Row 0 — usage statistics (last used date, launch count)."""
-        ttk.Label(grid, text="Dernière utilisation :").grid(row=0, column=0, sticky=tk.W, padx=(0, 4), pady=2)
-        ttk.Label(grid, textvariable=self._vm.used_date_var).grid(row=0, column=1, sticky=tk.W, padx=(0, 20), pady=2)
-        ttk.Label(grid, text="Lancements :").grid(row=0, column=2, sticky=tk.W, padx=(0, 4), pady=2)
-        ttk.Label(grid, textvariable=self._vm.launch_count_var).grid(row=0, column=3, sticky=tk.W, pady=2)
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Dernier usage :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, textvariable=self._vm.used_date_var).pack(side=tk.LEFT, padx=(0, 30), pady=(0, 5))
+        ttk.Label(row, text="Lancements :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, textvariable=self._vm.launch_count_var).pack(side=tk.LEFT, pady=(0, 5))
 
-    def _create_cfg_row1(self, grid: tk.Widget) -> None:
+    def _create_cfg_row1(self, parent: tk.Widget) -> None:
         """Row 1 — export folder path, browse button, open-folder button."""
-        ttk.Label(grid, text="Dossier d'export :").grid(row=1, column=0, sticky=tk.W, padx=(0, 4), pady=2)
-        self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed())
-        entry = ttk.Entry(grid, textvariable=self._vm.export_folder_var, width=50)
-        entry.grid(row=1, column=1, columnspan=2, sticky=tk.EW, padx=(0, 4), pady=2)
-        ttk.Button(grid, text="Parcourir", command=self._browse_export_folder).grid(
-            row=1, column=3, padx=(0, 4), pady=2
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Button(row, text="Ouvrir dossier", command=lambda: self._vm.open_export_folder()).pack(
+            side=tk.RIGHT, pady=(0, 5)
         )
-        ttk.Button(grid, text="Ouvrir dossier", command=lambda: self._vm.open_export_folder()).grid(
-            row=1, column=4, pady=2
+        ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(
+            side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
+        )
+        self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed())
+        ttk.Entry(row, textvariable=self._vm.export_folder_var).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
         )
 
-    def _create_cfg_row2(self, grid: tk.Widget) -> None:
+    def _create_cfg_row2(self, parent: tk.Widget) -> None:
         """Row 2 — URL source type combobox and folder/json path entry."""
-        ttk.Label(grid, text="Source d'URL :").grid(row=2, column=0, sticky=tk.W, padx=(0, 4), pady=2)
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Source d'URL :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         source_choices = [
             ("Liste manuelle", UrlSourceTypeEnum.E_MANUAL.value),
             ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER.value),
@@ -161,87 +170,98 @@ class ExecutorView(ttk.Frame):
         ]
         self._source_choices = source_choices
         display_values = [label for label, _ in source_choices]
-        self._combo_source = ttk.Combobox(grid, values=display_values, state="readonly", width=22)
-        self._combo_source.grid(row=2, column=1, sticky=tk.W, pady=2)
+        self._combo_source = ttk.Combobox(row, values=display_values, state="readonly", width=18)
+        self._combo_source.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_source.bind("<<ComboboxSelected>>", self._on_source_type_changed)
 
-        self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed())
-        self._entry_source_path = ttk.Entry(grid, textvariable=self._vm.url_source_path_var, width=40)
-        self._entry_source_path.grid(row=2, column=2, columnspan=2, sticky=tk.EW, padx=(8, 4), pady=2)
-        self._btn_browse_source = ttk.Button(grid, text="Parcourir", command=self._browse_source_folder)
-        self._btn_browse_source.grid(row=2, column=4, pady=2)
+    def _create_cfg_row2_bis(self, parent: tk.Widget) -> None:
+        """Row 2 — URL source type combobox and folder/json path entry."""
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
 
-    def _create_cfg_row3(self, grid: tk.Widget) -> None:
+        ttk.Label(row, text="Chemin (si requis) : ").pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
+        self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed())
+        self._entry_source_path = ttk.Entry(row, textvariable=self._vm.url_source_path_var)
+        self._entry_source_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5))
+
+        self._btn_browse_source = ttk.Button(row, text="Parcourir", command=self._browse_source_folder)
+        self._btn_browse_source.pack(side=tk.RIGHT, pady=(0, 5))
+
+    def _create_cfg_row3(self, parent: tk.Widget) -> None:
         """Row 3 — URL preview (scrollable, editable only in manual mode)."""
-        ttk.Label(grid, text="Aperçu URLs :").grid(row=3, column=0, sticky=tk.NW, padx=(0, 4), pady=2)
-        preview_frame = ttk.Frame(grid)
-        preview_frame.grid(row=3, column=1, columnspan=4, sticky=tk.EW, pady=2)
-        self._txt_url_preview = tk.Text(preview_frame, height=7, width=70, wrap=tk.NONE)
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Aperçu URLs :").pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 5), pady=(0, 5))
+        preview_frame = ttk.Frame(row)
+        preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._txt_url_preview = tk.Text(preview_frame, height=7, wrap=tk.NONE)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_preview.yview)
         self._txt_url_preview.configure(yscrollcommand=scrollbar.set)
-        self._txt_url_preview.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._txt_url_preview.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self._txt_url_preview.bind("<<Modified>>", self._on_url_text_modified)
 
-    def _create_cfg_row4(self, grid: tk.Widget) -> None:
+    def _create_cfg_row4(self, parent: tk.Widget) -> None:
         """Row 4 — sort-order radio buttons (active for folder/json only)."""
-        ttk.Label(grid, text="Ordre de lecture :").grid(row=4, column=0, sticky=tk.W, padx=(0, 4), pady=2)
-        rb_frame = ttk.Frame(grid)
-        rb_frame.grid(row=4, column=1, columnspan=3, sticky=tk.W, pady=2)
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Ordre de lecture :").pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
         self._rb_recent = ttk.Radiobutton(
-            rb_frame,
+            row,
             text="Lire récemment modifié",
             variable=self._vm.url_sort_order_var,
             value=UrlSortOrderEnum.E_MTIME_DESC.value,
             command=lambda: self._vm.form_changed(),
         )
-        self._rb_recent.pack(side=tk.LEFT, padx=(0, 12))
+        self._rb_recent.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
         self._rb_oldest = ttk.Radiobutton(
-            rb_frame,
+            row,
             text="Lire les plus anciens",
             variable=self._vm.url_sort_order_var,
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
         )
-        self._rb_oldest.pack(side=tk.LEFT)
+        self._rb_oldest.pack(side=tk.LEFT, pady=(0, 5))
         self._rb_recent.state(["disabled"])
         self._rb_oldest.state(["disabled"])
 
-    def _create_cfg_row5(self, grid: tk.Widget) -> None:
+    def _create_cfg_row5(self, parent: tk.Widget) -> None:
         """Row 5 — global error threshold."""
-        ttk.Label(grid, text="Erreurs globales max. avant mise en pause d'urgence :").grid(
-            row=5, column=0, columnspan=2, sticky=tk.W, padx=(0, 4), pady=2
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Erreurs globales max. avant mise en pause d'urgence :").pack(
+            side=tk.LEFT, padx=(0, 5), pady=(0, 5)
         )
         self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed())
-        ttk.Entry(grid, textvariable=self._vm.global_threshold_var, width=12).grid(row=5, column=2, sticky=tk.W, pady=2)
+        ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=12).pack(side=tk.LEFT, pady=(0, 5))
 
-    def _create_cfg_row6(self, grid: tk.Widget) -> None:
+    def _create_cfg_row6(self, parent: tk.Widget) -> None:
         """Row 6 — per-step error threshold with step selector."""
-        ttk.Label(grid, text="Mise en pause d'urgence sur :").grid(row=6, column=0, sticky=tk.W, padx=(0, 4), pady=2)
-        self._combo_steps = ttk.Combobox(grid, state="readonly", width=38)
-        self._combo_steps.grid(row=6, column=1, columnspan=2, sticky=tk.EW, padx=(0, 4), pady=2)
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Mise en pause :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self._combo_steps = ttk.Combobox(row, state="readonly", width=38)
+        self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
         self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed())
-        ttk.Entry(grid, textvariable=self._vm.step_threshold_var, width=12).grid(
-            row=6, column=3, sticky=tk.W, padx=(0, 4), pady=2
-        )
-        ttk.Label(grid, text="erreurs").grid(row=6, column=4, sticky=tk.W, pady=2)
+        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=12).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="erreurs").pack(side=tk.LEFT)
 
     def _create_launch_section(self, parent: tk.Widget) -> None:
         """Build the launch-trigger section."""
         frame = HorizontalLineFrame(parent, text="Lancer le scraping")
-        frame.pack(fill=tk.X, pady=(0, 4))
+        frame.pack(fill=tk.X, pady=(0, 5))
 
         row = ttk.Frame(frame)
-        row.pack(fill=tk.X, padx=5, pady=(0, 6))
+        row.pack(fill=tk.X, padx=5, pady=(0, 5))
 
-        ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         ttk.Label(row, textvariable=self._vm.verification_message_var, foreground="red").pack(
-            side=tk.LEFT, fill=tk.X, expand=True
+            side=tk.LEFT, fill=tk.X, expand=True, pady=(0, 5)
         )
 
         self._btn_launch = ttk.Button(row, text="Lancer le scraping", command=lambda: self._vm.launch())
-        self._btn_launch.pack(side=tk.RIGHT, padx=(8, 0))
+        self._btn_launch.pack(side=tk.RIGHT, padx=(8, 0), pady=(0, 5))
 
     # ------------------------------------------------------------------
     # ViewModel bindings (trace_add for non-Var widgets)
@@ -337,19 +357,24 @@ class ExecutorView(ttk.Frame):
         self._btn_new.configure(state=state)
 
     def _sync_profile_section_enabled(self, *_: object) -> None:
-        """Enable or disable the entire profile-config grid."""
+        """Enable or disable the entire profile-config section."""
         import contextlib
 
         enabled = self._vm.is_profile_section_enabled_var.get()
-        for child in self._cfg_grid.winfo_children():
-            with contextlib.suppress(tk.TclError):
-                if not enabled:
-                    child.configure(state=tk.DISABLED)
-                    continue
-                if isinstance(child, ttk.Combobox):
-                    child.configure(state="readonly")
-                else:
-                    child.configure(state=tk.NORMAL)
+
+        def _apply(widget: tk.Widget) -> None:
+            for child in widget.winfo_children():  # type: ignore[arg-type]
+                with contextlib.suppress(tk.TclError):
+                    w: Any = child
+                    if not enabled:
+                        w.configure(state=tk.DISABLED)
+                    elif isinstance(child, ttk.Combobox):
+                        w.configure(state="readonly")
+                    else:
+                        w.configure(state=tk.NORMAL)
+                _apply(child)  # type: ignore[arg-type]
+
+        _apply(self._cfg_grid)
         if enabled:
             self._sync_url_source_type()
             self._sync_path_entry()

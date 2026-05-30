@@ -113,7 +113,7 @@ class StepsListCrudView(ttk.Frame):
 
         # Toolbar — row 1.
         toolbar = self._create_toolbar()
-        toolbar.grid(row=1, column=0, sticky="ew", pady=(0, 4))
+        toolbar.grid(row=1, column=0, sticky="ew", pady=(0, 5))
 
         # DragDropList step list — row 2, fills all available height.
         steps_section = self._create_steps_section()
@@ -167,12 +167,19 @@ class StepsListCrudView(ttk.Frame):
         """Instantiate the DragDropList embedded as a scrolled child of outer."""
         # DragDropList embedded as a scrolled child.
         return DragDropList(
-            outer, items=[], render_item=self._step_renderer,
-            on_move_up=self._on_dnd_move_up, on_move_down=self._on_dnd_move_down,
-            on_duplicate=self._on_dnd_duplicate, on_edit=self._on_dnd_edit,
-            on_delete=self._on_dnd_delete, on_toggle_active=self._on_dnd_toggle_active,
-            on_reorder=self._on_dnd_reorder, item_height=_DND_ITEM_H,
-            virtualize=_DND_VIRTUALIZE, viewport_provider=self._get_dnd_viewport,
+            outer,
+            items=[],
+            render_item=self._step_renderer,
+            on_move_up=self._on_dnd_move_up,
+            on_move_down=self._on_dnd_move_down,
+            on_duplicate=self._on_dnd_duplicate,
+            on_edit=self._on_dnd_edit,
+            on_delete=self._on_dnd_delete,
+            on_toggle_active=self._on_dnd_toggle_active,
+            on_reorder=self._on_dnd_reorder,
+            item_height=_DND_ITEM_H,
+            virtualize=_DND_VIRTUALIZE,
+            viewport_provider=self._get_dnd_viewport,
             virtualize_buffer=_DND_VIRTUALIZE_BUFFER,
         )
 
@@ -448,10 +455,7 @@ class StepsListCrudView(ttk.Frame):
 
     def _fire_clear_all_steps(self) -> None:
         """Asks confirmation then notifies the presenter to clear all steps."""
-        confirmed = messagebox.askyesno(
-            "Effacer la liste",
-            "Voulez-vous vraiment supprimer toutes les étapes ?",
-        )
+        confirmed = messagebox.askyesno("Effacer la liste", "Voulez-vous vraiment supprimer toutes les étapes ?")
         if confirmed and self.on_clear_all_steps:
             self._fire_dirty()
             self._selected_index = None

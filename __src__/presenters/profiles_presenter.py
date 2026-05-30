@@ -48,12 +48,14 @@ class ProfilesPresenter:
         self._sort_column = "used_date_profile"
         self._sort_ascending = True
 
-        # Hook injected by main.py after construction.
+        # Hooks injected by main.py after construction.
         self.on_request_launch_profile: Callable[[str, str], None] | None = None
+        self.on_request_delete_profile: Callable[[str, str], None] | None = None
 
         # Register callbacks on the ViewModel.
         self._vm.bind_refresh(self._on_refresh)
         self._vm.bind_launch(self._on_launch)
+        self._vm.bind_delete(self._on_delete)
         self._vm.bind_open_folder(self._on_open_folder)
         self._vm.bind_sort(self._on_sort)
 
@@ -166,6 +168,16 @@ class ProfilesPresenter:
         """
         if self.on_request_launch_profile:
             self.on_request_launch_profile(id_scenario, id_profile)
+
+    def _on_delete(self, id_scenario: str, id_profile: str) -> None:
+        """Delete a profile via the service then reload the list.
+
+        Args:
+            id_scenario: ID of the scenario owning the selected profile.
+            id_profile: ID of the profile to delete.
+        """
+        self._service_profile.delete_profile_launch(id_scenario, id_profile)
+        self._load_profiles()
 
 
 # EOF

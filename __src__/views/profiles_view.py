@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 from view_models.profiles_view_model import ProfilesViewModel
 from views.components.data_grid import DataGrid, GridColumn
@@ -18,6 +18,7 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 
 DATA_GRID_COLUMNS: list[GridColumn] = [
     GridColumn(id="action_launch", title="Lancer", width=62, col_type="button", button_text="Lancer"),
+    GridColumn(id="action_delete", title="Supp.", width=55, col_type="button", button_text="Supp."),
     GridColumn(id="profile_name", title="Nom du profil", width=160),
     GridColumn(id="scenario_name", title="Scénario", width=150),
     GridColumn(id="url_source_type", title="Source", width=100),
@@ -100,6 +101,10 @@ class ProfilesView(ttk.Frame):
         """
         if action_id == "action_launch":
             self._vm.launch_profile(str(getattr(bound, "id_scenario", "")), str(getattr(bound, "id_profile", "")))
+        elif action_id == "action_delete":
+            profile_name = str(getattr(bound, "profile_name", "ce profil"))
+            if messagebox.askyesno("Confirmation", f"Supprimer le profil « {profile_name} » ?"):
+                self._vm.delete_profile(str(getattr(bound, "id_scenario", "")), str(getattr(bound, "id_profile", "")))
 
 
 # EOF
