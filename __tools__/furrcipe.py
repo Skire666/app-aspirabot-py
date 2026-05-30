@@ -430,7 +430,7 @@ def _parse_source(path: Path) -> tuple[str, list[str], ast.Module] | None:
     try:
         source = path.read_text(encoding=FILE_ENCODING)
         tree = ast.parse(source, filename=str(path))
-    except (UnicodeDecodeError, OSError, SyntaxError):
+    except UnicodeDecodeError, OSError, SyntaxError:
         return None
     return source, source.splitlines(), tree
 
@@ -448,7 +448,6 @@ def _apply_fix_epi301(lines: list[str]) -> list[str]:
         trimmed.append("")
         trimmed.append("")
         trimmed.append("# EOF")
-        trimmed.append("")
     return trimmed
 
 
@@ -475,7 +474,7 @@ def _fix_file(path: Path, rules: RulesConfig) -> bool:
     """Apply EPI301/EPI302 fixes when possible; return True if changed."""
     try:
         source = path.read_text(encoding=FILE_ENCODING)
-    except (OSError, UnicodeDecodeError):
+    except OSError, UnicodeDecodeError:
         return False
 
     lines = source.splitlines()
