@@ -1,0 +1,29 @@
+{
+  "path": "./__src__/",
+  "rules": {
+    "EPI101": {
+      "enabled": true,
+      "threshold_lines": 26
+    },
+    "EPI201": {
+      "enabled": true,
+      "max_ratio": 0.5,
+      "min_complexity": 7,
+      "min_lines": 15
+    },
+    "EPI301": {
+      "enabled": true
+    },
+    "EPI302": {
+      "enabled": true
+    }
+  },
+  "exclude_dirs": [
+    "__pycache__",
+    ".venv",
+    ".git",
+    "node_modules",
+    "tests"
+  ],
+  "output_format": "text"
+}

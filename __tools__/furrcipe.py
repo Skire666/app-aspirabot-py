@@ -353,25 +353,27 @@ def _import_marker_text() -> str:
     return "\n".join(IMPORT_MARKER_LINES)
 
 
-def _find_first_import_line(lines: list[str]) -> int | None:
-    """Return the index of the first import statement, if any."""
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if stripped.startswith(("import ", "from ")):
-            return i
+def _find_first_real_import_line(source: str) -> int | None:
+    """Return the 0-based index of the first module-level import, using AST."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            return node.lineno - 1
     return None
 
 
 def _has_import_marker(lines: list[str], first_import_line: int) -> bool:
-    """Return True if the import marker is already present."""
-    start = max(0, first_import_line - 10)
-    return _import_marker_text() in "\n".join(lines[start:first_import_line])
+    """Return True if the import marker is already present before the first import."""
+    return _import_marker_text() in "\n".join(lines[:first_import_line])
 
 
 def check_epi302(source: str, filename: str) -> Error | None:
     """EPI302: File must have import section marker before imports."""
     lines = source.splitlines()
-    first_import_line = _find_first_import_line(lines)
+    first_import_line = _find_first_real_import_line(source)
 
     if first_import_line is None:
         return None  # No imports found, skip check
@@ -428,7 +430,7 @@ def _parse_source(path: Path) -> tuple[str, list[str], ast.Module] | None:
     try:
         source = path.read_text(encoding=FILE_ENCODING)
         tree = ast.parse(source, filename=str(path))
-    except UnicodeDecodeError, OSError, SyntaxError:
+    except (UnicodeDecodeError, OSError, SyntaxError):
         return None
     return source, source.splitlines(), tree
 
@@ -443,26 +445,37 @@ def _apply_fix_epi301(lines: list[str]) -> list[str]:
     if not trimmed:
         return lines
     if trimmed[-1] != "# EOF":
+        trimmed.append("")
+        trimmed.append("")
         trimmed.append("# EOF")
+        trimmed.append("")
     return trimmed
 
 
 def _apply_fix_epi302(lines: list[str]) -> list[str]:
     """Ensure the import marker exists before the first import."""
-    first_import_line = _find_first_import_line(lines)
+    first_import_line = _find_first_real_import_line("\n".join(lines))
     if first_import_line is None:
         return lines
     if _has_import_marker(lines, first_import_line):
         return lines
-    marker_lines = list(IMPORT_MARKER_LINES)
-    return lines[:first_import_line] + marker_lines + lines[first_import_line:]
+
+    before = lines[:first_import_line]
+    after = lines[first_import_line:]
+
+    if before and before[-1].strip():
+        before = [*before, ""]
+    if after and after[0].strip():
+        after = ["", *after]
+
+    return [*before, *IMPORT_MARKER_LINES, *after]
 
 
 def _fix_file(path: Path, rules: RulesConfig) -> bool:
     """Apply EPI301/EPI302 fixes when possible; return True if changed."""
     try:
         source = path.read_text(encoding=FILE_ENCODING)
-    except OSError, UnicodeDecodeError:
+    except (OSError, UnicodeDecodeError):
         return False
 
     lines = source.splitlines()
