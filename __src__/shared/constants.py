@@ -76,6 +76,9 @@ C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
 
 # -----------------------------------------------------------------------------
 
+# File extensions and naming conventions for scenarios and profiles.
+C_SCENARIO_EXTENSION = ".json"
+
 # Supported URL modes for the OPEN_URL step (mirrors view layer allowed modes).
 C_SCENARIO_FILE_SUFFIX = "_scenario.json"
 

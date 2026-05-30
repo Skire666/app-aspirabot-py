@@ -22,7 +22,6 @@ from views.steps.wait_fixed_time_form_def import WaitFixedTimeFormDef
 from views.steps.wait_html_elements_form_def import WaitHtmlElementsFormDef
 from views.steps.wait_html_images_form_def import WaitHtmlImagesFormDef
 from views.steps.wait_page_state_form_def import WaitPageStateFormDef
-from views.steps.wait_rng_pause_form_def import WaitRngPauseFormDef
 from views.steps.wait_user_action_form_def import WaitUserActionFormDef
 
 __all__ = [
@@ -44,7 +43,6 @@ __all__ = [
     "WaitHtmlElementsFormDef",
     "WaitHtmlImagesFormDef",
     "WaitPageStateFormDef",
-    "WaitRngPauseFormDef",
     "WaitUserActionFormDef",
 ]
 

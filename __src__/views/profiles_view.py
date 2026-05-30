@@ -56,27 +56,19 @@ class ProfilesView(ttk.Frame):
         top_frame = HorizontalLineFrame(self, text="Liste des profils de lancement")
         top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_refresh = ttk.Button(
-            top_frame, text="Actualiser", command=lambda: self._vm.refresh()
-        )
+        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=lambda: self._vm.refresh())
         self._btn_refresh.pack(side=tk.LEFT, padx=(5, 40), pady=(0, 5))
 
         self._lbl_counter = ttk.Label(top_frame, text="Aucun profil")
         self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
 
         self._btn_open_folder = FolderLinkWidget(
-            top_frame,
-            title="Dossier des profiles :",
-            path="",
-            callback=lambda: self._vm.open_folder(),
+            top_frame, title="Dossier des profiles :", path="", callback=lambda: self._vm.open_folder()
         )
         self._btn_open_folder.pack(side=tk.RIGHT, padx=(0, 10), pady=(0, 5))
 
         self._grid = DataGrid(
-            self,
-            columns=DATA_GRID_COLUMNS,
-            on_sort=lambda col, asc: self._vm.sort(col, asc),
-            on_action=self._on_action,
+            self, columns=DATA_GRID_COLUMNS, on_sort=lambda col, asc: self._vm.sort(col, asc), on_action=self._on_action
         )
         self._grid.set_sort_state("used_date_profile", True)
         self._grid.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -106,12 +98,8 @@ class ProfilesView(ttk.Frame):
             action_id: Column id of the button that was clicked.
             bound: The ``__bound__`` object set by the Presenter (LaunchModel).
         """
-        if action_id != "action_launch":
-            return
-        self._vm.launch(
-            str(getattr(bound, "id_scenario", "")),
-            str(getattr(bound, "id_profile", "")),
-        )
+        if action_id == "action_launch":
+            self._vm.launch_profile(str(getattr(bound, "id_scenario", "")), str(getattr(bound, "id_profile", "")))
 
 
 # EOF

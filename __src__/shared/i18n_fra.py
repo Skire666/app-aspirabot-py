@@ -122,7 +122,6 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_REFRESH_PAGE: "Rafraîchir la page",
     StepTypeEnum.E_WAIT_PAGE_STATE: "Attendre un état de page",
     StepTypeEnum.E_WAIT_FIXED_TIME: "Attendre une durée fixe",
-    StepTypeEnum.E_WAIT_RANDOM_PAUSE: "Attendre aléatoirement",
     StepTypeEnum.E_WAIT_USER_ACTION: "Attendre action manuelle",
     StepTypeEnum.E_COUNT_HTML_ELEMENTS: "Compter les éléments",
     StepTypeEnum.E_COUNT_HTML_IMAGES: "Compter les images",
@@ -215,10 +214,6 @@ ERROR_TEMPLATES: dict[str, str] = {
     # --- wait_page_state ---
     "wait_page_state_timeout_invalid": "Étape {step} : le timeout doit être >= 1.",
     "wait_page_state_timeout_unit_invalid": "Étape {step} : l'unité de timeout est invalide.",
-    # --- wait_rng_pause ---
-    "wait_rng_pause_min_invalid": "Étape {step} : la valeur min. doit être >= 1.",
-    "wait_rng_pause_max_invalid": "Étape {step} : la valeur max. doit être >= 1.",
-    "wait_rng_pause_range_invalid": "Étape {step} : la valeur min. doit être <= la valeur max.",
     # --- wait_user_action ---
     "wait_user_action_condition_invalid": "Étape {step} : condition invalide — {value!r}.",
     "wait_user_action_wait_duration_invalid": "Étape {step} : le délai post-reprise doit être >= 1.",

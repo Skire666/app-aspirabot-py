@@ -22,7 +22,6 @@ from models.steps.wait_fixed_time_params import WaitFixedTimeParams
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
 from models.steps.wait_page_state_params import WaitPageStateParams
-from models.steps.wait_rng_pause_params import WaitRngPauseParams
 from models.steps.wait_user_action_params import WaitUserActionParams
 
 __all__ = [
@@ -44,7 +43,6 @@ __all__ = [
     "WaitHtmlElementsParams",
     "WaitHtmlImagesParams",
     "WaitPageStateParams",
-    "WaitRngPauseParams",
     "WaitUserActionParams",
 ]
 

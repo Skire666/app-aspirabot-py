@@ -9,17 +9,20 @@ view, and persists changes via the repository.
 # -----------------------------------------------------------------------------
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from interfaces.i_steps_list_crud_view import IStepsListCrudView
 from interfaces.i_steps_list_gestion_view import IStepsListGestionView
 from models.scenario_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
+from presenters.step_label_formatters import format_step_label
 from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
 from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
 from shared.step_registry import build_params
+from shared.step_view_item import StepViewItem
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -32,7 +35,8 @@ class StepsListPresenter:
     Responsibilities:
     - Loads and caches workflow steps from the repository.
     - Mediates add / edit / delete / move operations via the inline form.
-    - Schedules all view updates on the UI thread via view.after().
+    - Converts StepScrapingModel → StepViewItem before every view call so
+      no domain model ever crosses the view boundary.
 
     Attributes:
         _view: The embedded workflow list widget.
@@ -54,7 +58,6 @@ class StepsListPresenter:
             service_scenario: ScenariosService for provider-related operations.
             workflow_service: WorkflowService used to validate each step on confirm.
             gestion_view: View that owns show_inline_form / set_available_steps.
-                          Defaults to None when not provided.
         """
         self._logger = logging.getLogger(__name__)
         self._view = view
@@ -152,9 +155,10 @@ class StepsListPresenter:
             return
         # Track the index so confirm knows which slot to update.
         self._edit_index = index
-        # Provide the current step list for JUMP_TO_STEP target population.
-        self._gestion_view.set_available_steps(self._steps)
-        self._gestion_view.show_inline_form(self._steps[index])
+        # Build view items so set_available_steps and show_inline_form receive no domain models.
+        items = self._build_view_items()
+        self._gestion_view.set_available_steps(items)
+        self._gestion_view.show_inline_form(items[index])
 
     def _on_confirm_create_step(self, step_type: StepTypeEnum, params: dict[str, Any]) -> bool:
         """Validates and appends a new step from the inline creation form.
@@ -263,16 +267,18 @@ class StepsListPresenter:
         self._edit_index = None
         self._refresh_view()
 
-    def _on_reorder_steps(self, steps: list[StepScrapingModel]) -> None:
+    def _on_reorder_steps(self, step_ids: list[str]) -> None:
         """Syncs the in-memory step list after a DragDropList reorder.
 
-        Called after every DragDropList mutation (drag, move, delete, duplicate).
+        Receives an ordered list of step IDs (no domain models) and rebuilds
+        self._steps in matching order.  Called after every DragDropList mutation.
         Does NOT call _refresh_view — the view has already applied the change.
 
         Args:
-            steps: The new complete step list as reordered by the widget.
+            step_ids: The new complete step ID ordering produced by the widget.
         """
-        self._steps = list(steps)
+        steps_by_id = {s.step_id: s for s in self._steps}
+        self._steps = [steps_by_id[sid] for sid in step_ids if sid in steps_by_id]
 
     def _on_move_step(self, index: int, direction: int) -> None:
         """Swaps a step with its neighbour in the given direction.
@@ -286,18 +292,28 @@ class StepsListPresenter:
             self._steps[index], self._steps[new_index] = (self._steps[new_index], self._steps[index])
             self._refresh_view()
 
-    @staticmethod
-    def _on_duplicate_step(step: StepScrapingModel, _: int) -> StepScrapingModel:
-        """Returns an independent copy of the given step.
+    def _on_duplicate_step(self, item: StepViewItem, idx: int) -> StepViewItem:
+        """Returns a view-safe copy of the given step for DragDropList insertion.
+
+        Pre-registers the new StepScrapingModel in self._steps so that the
+        subsequent _on_reorder_steps call (fired by the DragDropList after
+        inserting the duplicate) can locate it by step_id.
 
         Args:
-            step: The step to duplicate.
-            _: Index of the step (unused — duplication is index-independent).
+            item: View-safe snapshot of the step to duplicate.
+            idx: Index of the original step in the list.
 
         Returns:
-            A new StepScrapingModel independent of the original.
+            A StepViewItem for the new copy.
         """
-        return step.copy_business()
+        original = next((s for s in self._steps if s.step_id == item.step_id), None)
+        if original is None:
+            return item
+        new_step = original.copy_business()
+        # Pre-register before the DragDropList fires on_reorder.
+        self._steps.insert(idx + 1, new_step)
+        context_ids = {s.step_id: i for i, s in enumerate(self._steps)}
+        return self._to_view_item(new_step, idx + 1, context_ids)
 
     def _on_toggle_active_step(self, index: int) -> None:
         """Toggles the is_active state of a step.
@@ -313,9 +329,10 @@ class StepsListPresenter:
     # ---------------------------------------------------------------
 
     def _refresh_view(self) -> None:
-        """Updates the view step list."""
-        self._view.render_steps(self._steps)
-        self._gestion_view.set_available_steps(self._steps)
+        """Converts self._steps to StepViewItems and updates the view."""
+        items = self._build_view_items()
+        self._view.render_steps(items)
+        self._gestion_view.set_available_steps(items)
 
     def _notify_validation_feedback(self, first_error: str | None) -> None:
         if first_error:
@@ -334,6 +351,49 @@ class StepsListPresenter:
             A list of validation errors for the candidate step.
         """
         return self._workflow_service.validate_step(candidate_index, steps[candidate_index], steps)
+
+    # ---------------------------------------------------------------
+    # StepViewItem factory helpers
+    # ---------------------------------------------------------------
+
+    def _build_view_items(self) -> list[StepViewItem]:
+        """Convert the full domain step list to a list of StepViewItems.
+
+        Builds the {step_id: index} context map once so that cross-step
+        formatters (e.g. JUMP_TO_STEP) can resolve sibling positions.
+
+        Returns:
+            Ordered list of view-safe snapshots matching self._steps.
+        """
+        context_ids = {s.step_id: i for i, s in enumerate(self._steps)}
+        return [self._to_view_item(s, i, context_ids) for i, s in enumerate(self._steps)]
+
+    @staticmethod
+    def _to_view_item(step: StepScrapingModel, idx: int, context_ids: dict[str, int]) -> StepViewItem:
+        """Convert a single StepScrapingModel to a StepViewItem snapshot.
+
+        Computes the display label eagerly so the View reads it without
+        any formatting logic.
+
+        Args:
+            step: Domain model to convert.
+            idx: Zero-based position of this step in the workflow.
+            context_ids: Full {step_id: zero_based_index} mapping for
+                cross-step label resolution.
+
+        Returns:
+            An immutable StepViewItem containing only view-safe data.
+        """
+        params_dict = step.params.to_dict()
+        label = format_step_label(step.step_type, params_dict, idx, context_ids)
+        return StepViewItem(
+            step_id=step.step_id,
+            step_type=step.step_type,
+            is_active=step.is_active,
+            modified_date=step.modified_date if isinstance(step.modified_date, datetime) else datetime.now(),
+            params_dict=params_dict,
+            label=label,
+        )
 
 
 # EOF

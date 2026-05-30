@@ -11,8 +11,8 @@ the Presenter remains testable without a display.
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
+from shared.step_view_item import StepViewItem
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -24,6 +24,13 @@ class IStepsListCrudView(Protocol):
 
     The Presenter sets the callback attributes and calls the render methods.
     The view never imports services or repositories.
+
+    Domain models (StepScrapingModel) never cross this boundary:
+    - ``render_steps`` receives ``list[StepViewItem]`` snapshots.
+    - ``on_reorder_steps`` returns a ``list[str]`` of step IDs in new order so
+      the Presenter can rebuild its internal list without passing models back.
+    - ``on_duplicate_step`` receives and returns ``StepViewItem`` so the
+      DragDropList can insert the copy without touching domain models.
     """
 
     # -- Callback slots set by the Presenter --------------------------------
@@ -32,20 +39,20 @@ class IStepsListCrudView(Protocol):
     on_delete_step: Callable[[int], None] | None
     on_move_step: Callable[[int, int], None] | None
     on_toggle_active_step: Callable[[int], None] | None
-    on_reorder_steps: Callable[[list[StepScrapingModel]], None] | None
+    on_reorder_steps: Callable[[list[str]], None] | None
     on_confirm_create_step: Callable[[StepTypeEnum, dict[str, Any]], bool] | None
     on_confirm_update_step: Callable[[StepTypeEnum, dict[str, Any]], bool] | None
     on_cancel_inline_step: Callable[[], None] | None
     on_clear_all_steps: Callable[[], None] | None
-    on_duplicate_step: Callable[[StepScrapingModel, int], StepScrapingModel] | None
+    on_duplicate_step: Callable[[StepViewItem, int], StepViewItem] | None
 
     # -- Render methods called by the Presenter -----------------------------
 
-    def render_steps(self, steps: list[StepScrapingModel]) -> None:
+    def render_steps(self, items: list[StepViewItem]) -> None:
         """Redraw the entire step list.
 
         Args:
-            steps: Current ordered list of steps to display.
+            items: Current ordered list of view-safe step snapshots to display.
         """
         ...
 

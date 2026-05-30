@@ -12,10 +12,9 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from models.launcher_model import LaunchModel
 from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
-from shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
+from shared.constants import C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
 from shared.exception_util import (
     AspirabotBaseError,
     InvalidScenariosFolderPathError,
@@ -207,33 +206,17 @@ class ScenariosRepository:
         self._logger.debug("Suppression du scénario id=%s", id_file)
         self.create_folder_if_missing()
 
-        full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_file)
+        # delete scenario AND profile files to avoid orphaned
+        full_pathfile_scenario = self._compute_fullpath_from_id_file(id_file, C_SCENARIO_FILE_SUFFIX)
 
-        if not full_pathfile_to_delete.exists():
+        if not full_pathfile_scenario.exists():
             raise ScenarioNotFoundError(id_file, context="suppression")
 
         try:
-            Path(full_pathfile_to_delete).unlink()
-            self._logger.debug("Scénario supprimé : %s", full_pathfile_to_delete)
+            Path(full_pathfile_scenario).unlink()
+            self._logger.debug("Scénario supprimé : %s", full_pathfile_scenario)
         except OSError:
             self._logger.error("Erreur lors de la suppression du scénario.", exc_info=True)
-            raise
-
-    def create_default_profile_for_scenario(self, id_scenario: str) -> None:
-        """Creates a default profile for the given scenario identifier.
-
-        Args:
-            id_scenario: Unique identifier of the scenario to create a profile for.
-        """
-        full_filepath = self._compute_fullpath_from_id_file(id_scenario, suffix=C_PROFILE_FILE_SUFFIX)
-        tmp: LaunchModel = LaunchModel.get_default(id_scenario)
-
-        try:
-            dicts = tmp.export_to_data_json()
-            self._json_repo.write_from_dict(full_filepath, dicts)
-            self._logger.debug("Profil de lancement sauvegardé : %s", full_filepath)
-        except OSError:
-            self._logger.error("Erreur lors de la création du profil de lancement.", exc_info=True)
             raise
 
     def open_scenarios_folder(self) -> None:

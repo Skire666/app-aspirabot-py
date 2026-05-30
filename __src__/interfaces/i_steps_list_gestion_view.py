@@ -10,7 +10,7 @@ the Presenter remains testable without a display.
 
 from typing import Protocol
 
-from models.step_scraping_model import StepScrapingModel
+from shared.step_view_item import StepViewItem
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -21,21 +21,24 @@ class IStepsListGestionView(Protocol):
     """Subset of WorkflowView consumed by StepsListPresenter.
 
     Covers inline-form management and step-list population only.
+    Domain models (StepScrapingModel) never cross this boundary:
+    ``set_available_steps`` and ``show_inline_form`` both work with
+    ``StepViewItem`` snapshots.
     """
 
-    def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
+    def set_available_steps(self, items: list[StepViewItem]) -> None:
         """Forward the step list to the inline form for JUMP_TO_STEP population.
 
         Args:
-            steps: Current ordered workflow step list.
+            items: Current ordered workflow step snapshots.
         """
         ...
 
-    def show_inline_form(self, step: StepScrapingModel | None) -> None:
+    def show_inline_form(self, item: StepViewItem | None) -> None:
         """Load a step into the inline form and switch to edit mode.
 
         Args:
-            step: Existing step to pre-fill, or None for a blank creation form.
+            item: View-safe snapshot to pre-fill, or None for a blank creation form.
         """
         ...
 

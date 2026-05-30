@@ -23,8 +23,8 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
-from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
+from shared.step_view_item import StepViewItem
 from views.components.drag_drop_list import DragDropList
 from views.workflow.step_item_renderer import StepItemRenderer
 
@@ -50,18 +50,19 @@ class StepsListCrudView(ttk.Frame):
     """Drag-and-drop step list with toolbar and inline form, embedded in a parent frame.
 
     The presenter sets callback attributes and calls render methods.
-    The view never imports services or repositories.
+    The view never imports services, repositories, or domain models.
 
     Attributes:
         on_edit_step: Called with the step index when Edit is clicked.
         on_delete_step: Called with the step index when Delete is confirmed.
         on_move_step: Called with (index, direction) where direction is -1 or +1.
         on_toggle_active_step: Called with the step index when Toggle is clicked.
-        on_reorder_steps: Called with the full reordered list after any list mutation.
+        on_reorder_steps: Called with the ordered list of step IDs after any mutation.
         on_confirm_create_step: Called with (StepTypeEnum, params) on creation; returns True if accepted.
         on_confirm_update_step: Called with (StepTypeEnum, params) on update; returns True if accepted.
         on_cancel_inline_step: Called when the inline form is cancelled.
         on_clear_all_steps: Called when the user clears the full step list.
+        on_duplicate_step: Called with (StepViewItem, index); returns the new StepViewItem copy.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -74,10 +75,10 @@ class StepsListCrudView(ttk.Frame):
         self._logger = logging.getLogger(__name__)
         self._init_callbacks()
         self._selected_index: int | None = None
-        # Object reference for the currently selected step — updated on edit,
-        # cleared on deselect. Used to track the step across list mutations.
-        self._selected_step: StepScrapingModel | None = None
-        self._last_steps: list[StepScrapingModel] = []
+        # Identity reference to the currently selected view item — used to
+        # relocate the selection highlight after list mutations.
+        self._selected_step: StepViewItem | None = None
+        self._last_steps: list[StepViewItem] = []
         # Guard: True while a DragDropList callback is executing, so that
         # re-entrant render_steps calls from the presenter are deferred.
         self._dnd_busy: bool = False
@@ -91,12 +92,12 @@ class StepsListCrudView(ttk.Frame):
         self.on_delete_step: Callable[[int], None] | None = None
         self.on_move_step: Callable[[int, int], None] | None = None
         self.on_toggle_active_step: Callable[[int], None] | None = None
-        self.on_reorder_steps: Callable[[list[StepScrapingModel]], None] | None = None
+        self.on_reorder_steps: Callable[[list[str]], None] | None = None
         self.on_confirm_create_step: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
         self.on_confirm_update_step: Callable[[StepTypeEnum, dict[str, Any]], bool] | None = None
         self.on_cancel_inline_step: Callable[[], None] | None = None
         self.on_clear_all_steps: Callable[[], None] | None = None
-        self.on_duplicate_step: Callable[[StepScrapingModel, int], StepScrapingModel] | None = None
+        self.on_duplicate_step: Callable[[StepViewItem, int], StepViewItem] | None = None
         # Fired by any list mutation so the parent view can enable the Save button.
         self.on_dirty: Callable[[], None] | None = None
 
@@ -162,7 +163,7 @@ class StepsListCrudView(ttk.Frame):
         outer.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         return outer
 
-    def _create_dnd_list(self, outer: tk.Canvas) -> DragDropList[StepScrapingModel]:
+    def _create_dnd_list(self, outer: tk.Canvas) -> DragDropList[StepViewItem]:
         """Instantiate the DragDropList embedded as a scrolled child of outer."""
         # DragDropList embedded as a scrolled child.
         return DragDropList(
@@ -217,15 +218,14 @@ class StepsListCrudView(ttk.Frame):
         if prev is not None:
             self._dnd_list.redraw_item(prev)
 
-    def render_steps(self, steps: list[StepScrapingModel]) -> None:
+    def render_steps(self, items: list[StepViewItem]) -> None:
         """Redraws the entire step list.
 
         Args:
-            steps: Current ordered list of steps to display.
+            items: Current ordered list of view-safe step snapshots to display.
         """
-        # Always cache the latest step list for future refreshes.
-        self._last_steps = list(steps)
-        self._step_renderer.set_steps_context(self._last_steps)
+        # Always cache the latest item list for future refreshes.
+        self._last_steps = list(items)
 
         # Skip the DragDropList update while it is mid-callback to prevent
         # re-entrant mutations (presenter calling render_steps via _refresh_view).
@@ -243,7 +243,7 @@ class StepsListCrudView(ttk.Frame):
     # DragDropList action callbacks
     # ---------------------------------------------------------------
 
-    def _on_dnd_move_up(self, _: StepScrapingModel, idx: int) -> None:
+    def _on_dnd_move_up(self, _: StepViewItem, idx: int) -> None:
         # Selection re-sync is handled by _sync_selection_after_mutation
         # called from _on_dnd_reorder, which fires after the list mutation.
         self._dnd_busy = True
@@ -254,7 +254,7 @@ class StepsListCrudView(ttk.Frame):
             self._dnd_busy = False
         self._fire_dirty()
 
-    def _on_dnd_move_down(self, _: StepScrapingModel, idx: int) -> None:
+    def _on_dnd_move_down(self, _: StepViewItem, idx: int) -> None:
         # Selection re-sync is handled by _sync_selection_after_mutation
         # called from _on_dnd_reorder, which fires after the list mutation.
         self._dnd_busy = True
@@ -265,7 +265,7 @@ class StepsListCrudView(ttk.Frame):
             self._dnd_busy = False
         self._fire_dirty()
 
-    def _on_dnd_edit(self, item: StepScrapingModel, idx: int) -> None:
+    def _on_dnd_edit(self, item: StepViewItem, idx: int) -> None:
         prev = self._selected_index
         self._selected_index = idx
         # Track by object identity so mutations can relocate the selection.
@@ -277,8 +277,8 @@ class StepsListCrudView(ttk.Frame):
             self.on_edit_step(idx)
         self._fire_dirty()
 
-    def _on_dnd_delete(self, step: StepScrapingModel, idx: int) -> bool:
-        # Include the step label in the prompt for clarity.
+    def _on_dnd_delete(self, item: StepViewItem, idx: int) -> bool:
+        # Include the step number in the prompt for clarity.
         confirmed = messagebox.askyesno("Supprimer", f"Supprimer l'étape : {str(idx + 1).zfill(2)} ?")
         if not confirmed:
             return False
@@ -300,13 +300,13 @@ class StepsListCrudView(ttk.Frame):
         self._fire_dirty()
         return True
 
-    def _on_dnd_duplicate(self, step: StepScrapingModel, idx: int) -> StepScrapingModel:
+    def _on_dnd_duplicate(self, item: StepViewItem, idx: int) -> StepViewItem:
         assert self.on_duplicate_step is not None
-        result = self.on_duplicate_step(step, idx)
+        result = self.on_duplicate_step(item, idx)
         self._fire_dirty()
         return result
 
-    def _on_dnd_toggle_active(self, _: StepScrapingModel, idx: int) -> None:
+    def _on_dnd_toggle_active(self, _: StepViewItem, idx: int) -> None:
         """Forwards the toggle action to the presenter.
 
         Args:
@@ -321,22 +321,23 @@ class StepsListCrudView(ttk.Frame):
             self._dnd_busy = False
         self._fire_dirty()
 
-    def _on_dnd_reorder(self, steps: list[StepScrapingModel]) -> None:
+    def _on_dnd_reorder(self, items: list[StepViewItem]) -> None:
         """Fires after every DragDropList mutation (move, delete, duplicate, drag).
 
         Gives the presenter a chance to sync its own step list without refreshing.
         Also relocates the selection highlight to follow the edited step.
 
         Args:
-            steps: Complete mutated step list, in its new order.
+            items: Complete mutated item list, in its new order.
         """
         if self.on_reorder_steps:
-            self.on_reorder_steps(list(steps))
+            # Pass only step IDs — the Presenter rebuilds domain order from them.
+            self.on_reorder_steps([item.step_id for item in items])
         self._fire_dirty()
 
         # Relocate the selection highlight to the edited step's new position.
         old_idx = self._selected_index
-        self._sync_selection_after_mutation(steps)
+        self._sync_selection_after_mutation(items)
         new_idx = self._selected_index
 
         # Redraw only the two affected slots when the selected item shifted.
@@ -352,7 +353,7 @@ class StepsListCrudView(ttk.Frame):
         # Double-deferred geometry update — see _defer_geometry_update docstring.
         self.after_idle(self._defer_geometry_update)
 
-    def _sync_selection_after_mutation(self, steps: list[StepScrapingModel]) -> None:
+    def _sync_selection_after_mutation(self, items: list[StepViewItem]) -> None:
         """Relocates _selected_index by finding _selected_step in the mutated list.
 
         Searches by object identity so any reorder, move, delete, or duplicate
@@ -360,14 +361,14 @@ class StepsListCrudView(ttk.Frame):
         step is no longer present (deleted), both selection fields are cleared.
 
         Args:
-            steps: The new step list produced by the DragDropList mutation.
+            items: The new item list produced by the DragDropList mutation.
         """
         if self._selected_step is None:
             return
 
         # Search by identity — O(n) but list is short in practice.
-        for i, step in enumerate(steps):
-            if step is self._selected_step:
+        for i, item in enumerate(items):
+            if item is self._selected_step:
                 self._selected_index = i
                 return
 

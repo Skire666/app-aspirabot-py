@@ -8,12 +8,9 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, cast, override
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel
-from models.steps.download_image_params import DownloadImageParams
-from models.steps_context_model import StepsContext
 from shared.constants import C_MAXIMUM_SIZE_IMAGE
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
@@ -154,21 +151,20 @@ class DownloadImageFormDef(IStepFormDef):
         widgets[C_KEY_COMMENT] = comm_var
 
     @override
-    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters from the model into form widgets.
+    def load_params_step_to_widget(self, params_dict: dict[str, Any], widgets: dict[str, Any]) -> None:
+        """Pre-fill form widgets from a serialised params snapshot.
 
         Args:
-            model: The step model containing stored parameters.
+            params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        p = cast(DownloadImageParams, model.params)
-        widgets[C_KEY_MODE].set(p.mode)
-        widgets[C_KEY_UNIQUE_ONLY].set(p.unique_only)
-        widgets[C_KEY_HEIGHT_MIN].set(str(p.height_min))
-        widgets[C_KEY_HEIGHT_MAX].set(str(p.height_max))
-        widgets[C_KEY_WIDTH_MIN].set(str(p.width_min))
-        widgets[C_KEY_WIDTH_MAX].set(str(p.width_max))
-        widgets[C_KEY_COMMENT].set(p.comment)
+        widgets[C_KEY_MODE].set(params_dict.get(C_KEY_MODE, C_INPUT_DEFAULT_MODE_DDL))
+        widgets[C_KEY_UNIQUE_ONLY].set(bool(params_dict.get(C_KEY_UNIQUE_ONLY, True)))
+        widgets[C_KEY_HEIGHT_MIN].set(str(params_dict.get(C_KEY_HEIGHT_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_HEIGHT_MAX].set(str(params_dict.get(C_KEY_HEIGHT_MAX, C_MAXIMUM_SIZE_IMAGE)))
+        widgets[C_KEY_WIDTH_MIN].set(str(params_dict.get(C_KEY_WIDTH_MIN, C_INPUT_DEFAULT_MINIMUM_SIZE)))
+        widgets[C_KEY_WIDTH_MAX].set(str(params_dict.get(C_KEY_WIDTH_MAX, C_MAXIMUM_SIZE_IMAGE)))
+        widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -189,29 +185,6 @@ class DownloadImageFormDef(IStepFormDef):
             C_KEY_WIDTH_MAX: safe_int_widget(widgets, C_KEY_WIDTH_MAX, -1),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
-
-    @override
-    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
-        """Return a compact human-readable label for this step instance.
-
-        Args:
-            model: The step model containing current parameters.
-            idx: Zero-based index of this step in the workflow.
-            steps_context: Step execution context.
-
-        Returns:
-            A two-line string suitable for display in the steps list.
-        """
-        p = cast(DownloadImageParams, model.params)
-        mode = p.mode
-        unique_only = p.unique_only
-        width_min = p.width_min
-        height_min = p.height_min
-        width_max = p.width_max
-        height_max = p.height_max
-        dup_str = "(doublons refusés)" if unique_only else "(doublons autorisés)"
-
-        return f"Télécharger images {dup_str}\n{mode}  -  Taille : {width_min}x{height_min} -> {width_max}x{height_max}"
 
 
 register_form(DownloadImageFormDef())

@@ -8,12 +8,9 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, cast, override
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel
-from models.steps.wait_page_state_params import WaitPageStateParams
-from models.steps_context_model import StepsContext
 from shared.constants import C_MAXIMUM_WAIT_TIME, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
@@ -29,7 +26,6 @@ from views.steps._constants import (
 # Constants
 # -----------------------------------------------------------------------------
 
-C_INPUT_DEFAULT_MINIMUM_SIZE = 250
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 C_INPUT_DEFAULT_WAIT_STATE = C_CHOICES_WAIT_PAGE_STATE[-1]
@@ -58,7 +54,7 @@ class WaitPageStateFormDef(IStepFormDef):
     @classmethod
     def label(cls) -> str:
         """Return the human-readable label for the step picker."""
-        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_WAIT_PAGE_STATE)
+        return C_STEP_TYPE_TO_LABELS.get(StepTypeEnum.E_WAIT_PAGE_STATE, "")
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -131,18 +127,20 @@ class WaitPageStateFormDef(IStepFormDef):
         widgets[C_KEY_COMMENT] = comm_var
 
     @override
-    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters from the model into form widgets.
+    def load_params_step_to_widget(self, params_dict: dict[str, Any], widgets: dict[str, Any]) -> None:
+        """Pre-fill form widgets from a serialised params snapshot.
 
         Args:
-            model: The step model containing stored parameters.
+            params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        p = cast(WaitPageStateParams, model.params)
-        widgets[C_KEY_WAIT_STATE].set(p.wait_state)
-        widgets[C_KEY_TIMEOUT_DURATION].set(str(p.timeout_duration))
-        widgets[C_KEY_TIMEOUT_UNIT].set(WAIT_UNIT_MODEL_TO_VIEW.get(p.timeout_unit, C_UNITS_TIME_DEFAULT_VIEW))
-        widgets[C_KEY_COMMENT].set(p.comment)
+        widgets[C_KEY_WAIT_STATE].set(params_dict.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
+        td = str(params_dict.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
+        widgets[C_KEY_TIMEOUT_DURATION].set(td)
+        widgets[C_KEY_TIMEOUT_UNIT].set(
+            WAIT_UNIT_MODEL_TO_VIEW.get(params_dict.get(C_KEY_TIMEOUT_UNIT, ""), C_UNITS_TIME_DEFAULT_VIEW)
+        )
+        widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -160,25 +158,6 @@ class WaitPageStateFormDef(IStepFormDef):
             C_KEY_TIMEOUT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_TIMEOUT_UNIT].get()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
-
-    @override
-    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
-        """Return a compact human-readable label for this step instance.
-
-        Args:
-            model: The step model containing current parameters.
-            idx: Zero-based index of this step in the workflow.
-            steps_context: Step execution context.
-
-        Returns:
-            A two-line string suitable for display in the steps list.
-        """
-        p = cast(WaitPageStateParams, model.params)
-        timeout = p.timeout_duration
-        unit_time = p.timeout_unit
-        unit_display = WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-
-        return f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\nAttendre : {p.wait_state}"
 
 
 register_form(WaitPageStateFormDef())

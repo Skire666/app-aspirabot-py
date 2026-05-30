@@ -115,7 +115,7 @@ class ProfilesViewModel:
         if self._on_refresh is not None:
             self._on_refresh()
 
-    def launch(self, id_scenario: str, id_profile: str) -> None:
+    def launch_profile(self, id_scenario: str, id_profile: str) -> None:
         """Dispatch a launch request to the Presenter.
 
         Args:

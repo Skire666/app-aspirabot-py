@@ -22,7 +22,6 @@ from services.steps.wait_fixed_time_executor import WaitFixedTimeExecutor
 from services.steps.wait_html_elements_executor import WaitHtmlElementsExecutor
 from services.steps.wait_html_images_executor import WaitHtmlImagesExecutor
 from services.steps.wait_page_state_executor import WaitPageStateExecutor
-from services.steps.wait_rng_pause_executor import WaitRngPauseExecutor
 from services.steps.wait_user_action_executor import WaitUserActionExecutor
 
 __all__ = [
@@ -44,7 +43,6 @@ __all__ = [
     "WaitHtmlElementsExecutor",
     "WaitHtmlImagesExecutor",
     "WaitPageStateExecutor",
-    "WaitRngPauseExecutor",
     "WaitUserActionExecutor",
 ]
 

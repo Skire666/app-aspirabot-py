@@ -8,12 +8,9 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, cast, override
+from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from models.step_scraping_model import StepScrapingModel
-from models.steps.click_for_download_params import ClickForDownloadParams
-from models.steps_context_model import StepsContext
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
@@ -128,18 +125,17 @@ class ClickForDownloadFormDef(IStepFormDef):
         widgets[C_KEY_COMMENT] = comm_var
 
     @override
-    def load_params_step_to_widget(self, model: StepScrapingModel, widgets: dict[str, Any]) -> None:
-        """Load step parameters from the model into form widgets.
+    def load_params_step_to_widget(self, params_dict: dict[str, Any], widgets: dict[str, Any]) -> None:
+        """Pre-fill form widgets from a serialised params snapshot.
 
         Args:
-            model: The step model containing stored parameters.
+            params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        p = cast(ClickForDownloadParams, model.params)
-        widgets[C_KEY_SELECTOR].set(p.selector)
-        widgets[C_KEY_CLICK_MODE].set(p.click_mode)
-        widgets[C_KEY_INDEX_CLICKED].set(p.index_clicked)
-        widgets[C_KEY_COMMENT].set(p.comment)
+        widgets[C_KEY_SELECTOR].set(params_dict.get(C_KEY_SELECTOR, ""))
+        widgets[C_KEY_CLICK_MODE].set(params_dict.get(C_KEY_CLICK_MODE, "Normal"))
+        widgets[C_KEY_INDEX_CLICKED].set(params_dict.get(C_KEY_INDEX_CLICKED, 0))
+        widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -157,23 +153,6 @@ class ClickForDownloadFormDef(IStepFormDef):
             C_KEY_INDEX_CLICKED: widgets[C_KEY_INDEX_CLICKED].get(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
-
-    @override
-    def format_label(self, model: StepScrapingModel, idx: int, steps_context: StepsContext) -> str:
-        """Return a compact human-readable label for this step instance.
-
-        Args:
-            model: The step model containing current parameters.
-            idx: Zero-based index of this step in the workflow.
-            steps_context: Step execution context.
-
-        Returns:
-            A two-line string suitable for display in the steps list.
-        """
-        p = cast(ClickForDownloadParams, model.params)
-        selector = p.selector or "<vide>"
-        index_clicked = p.index_clicked
-        return f"Cliquer pour télécharger  -  Index {index_clicked}\nSél. : {selector}"
 
 
 register_form(ClickForDownloadFormDef())

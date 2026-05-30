@@ -21,7 +21,9 @@ Example:
 import logging
 from pathlib import Path
 
+from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
+from repositories.profiles_repository import ProfilesRepository
 from repositories.scenarios_repository import ScenariosRepository
 
 # -----------------------------------------------------------------------------
@@ -54,21 +56,22 @@ class ScenariosService:
         True
     """
 
-    def __init__(self, repository: ScenariosRepository) -> None:
+    def __init__(self, repository_scen: ScenariosRepository, repository_prof: ProfilesRepository) -> None:
         """Initialise the service with its required repository dependency.
 
         Args:
-            repository: Any object that satisfies the
+            repository_scen: Any object that satisfies the
                 :class:`ScenariosRepository`
                 protocol. Typically injected by the application's composition root.
-            profiles_service: The service for managing profile data.
+            repository_prof: The repository for managing profile data.
 
         Example:
             >>> service = ScenariosService(ScenariosRepository())
         """
         # Configure a named logger so log records are traceable to this module.
         self._logger = logging.getLogger(__name__)
-        self._repository: ScenariosRepository = repository
+        self._repository_scenarios: ScenariosRepository = repository_scen
+        self._repository_profiles: ProfilesRepository = repository_prof
 
     # -------------------------------------------------------------------------
     # Read operations
@@ -93,7 +96,7 @@ class ScenariosService:
             >>> all(isinstance(s, ScenarioModel) for s in scenarios)
             True
         """
-        return self._repository.read_all_scenarios()
+        return self._repository_scenarios.read_all_scenarios()
 
     def exists_scenario(self, id_file: str) -> bool:
         """Check whether a scenario with the given identifier exists on disk.
@@ -108,7 +111,7 @@ class ScenariosService:
             >>> service.exists_scenario("nonexistent")
             False
         """
-        return self._repository.exists_scenario(id_file)
+        return self._repository_scenarios.exists_scenario(id_file)
 
     def get_folder_path_scenarios(self) -> Path:
         """Return the absolute path of the scenarios storage folder as a string.
@@ -122,7 +125,7 @@ class ScenariosService:
             >>> path.endswith("scenarios")
             True
         """
-        return self._repository.get_path_scenarios_folder()
+        return self._repository_scenarios.get_path_scenarios_folder()
 
     # -------------------------------------------------------------------------
     # CRUS operations
@@ -147,8 +150,10 @@ class ScenariosService:
         # Stamp creation/modification timestamps before writing.
 
         scenario.mark_as_created()
-        self._repository.create_scenario(scenario)
-        self._repository.create_default_profile_for_scenario(scenario)
+        self._repository_scenarios.create_scenario(scenario)
+
+        new_profiles: ProfilesModel = ProfilesModel.get_default(id_scenario=scenario.id_file)
+        self._repository_profiles.create_profiles(new_profiles)
 
     def read_scenario(self, id_file: str) -> ScenarioModel:
         """Load a single scenario by its file identifier.
@@ -169,7 +174,7 @@ class ScenariosService:
             >>> len(scenario.steps) >= 0
             True
         """
-        return self._repository.read_scenario(id_file)
+        return self._repository_scenarios.read_scenario(id_file)
 
     def update_scenario(self, scenario: ScenarioModel) -> None:
         """Refresh the modification timestamp on *scenario* and overwrite it on disk.
@@ -189,7 +194,7 @@ class ScenariosService:
         """
         # Refresh modification date to reflect the current save time.
         scenario.mark_as_modified()
-        self._repository.update_scenario(scenario)
+        self._repository_scenarios.update_scenario(scenario)
 
     def duplicate_scenario(self, id_file: str) -> str:
         """Create an independent copy of an existing scenario and return its new ID.
@@ -217,7 +222,7 @@ class ScenariosService:
             True
         """
         # Load the original before building the copy.
-        original = self._repository.read_scenario(id_file)
+        original = self._repository_scenarios.read_scenario(id_file)
 
         # Deep-copy with a new ID and a "Copie de" name prefix.
         copy = ScenarioModel.copy_business(original)
@@ -240,7 +245,8 @@ class ScenariosService:
             >>> service.exists_scenario("abc123")
             False
         """
-        self._repository.delete_scenario(id_file)
+        self._repository_scenarios.delete_scenario(id_file)
+        self._repository_profiles.delete_profiles(id_file)  # delete associated profiles to avoid orphaned data
 
     # -------------------------------------------------------------------------
     # Utility operations
@@ -255,7 +261,7 @@ class ScenariosService:
         Example:
             >>> service.open_scenarios_folder()  # Opens Finder / Explorer
         """
-        self._repository.open_scenarios_folder()
+        self._repository_scenarios.open_scenarios_folder()
 
 
 # EOF

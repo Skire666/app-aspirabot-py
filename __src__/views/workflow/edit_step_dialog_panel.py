@@ -9,7 +9,7 @@ Example:
     >>> panel = EditStepDialogPanel(parent_frame)
     >>> panel.on_confirm = lambda step: print(step)
     >>> panel.on_cancel = lambda: print("cancelled")
-    >>> panel.load(existing_step)
+    >>> panel.load(existing_item)
 """
 
 # -----------------------------------------------------------------------------
@@ -21,10 +21,10 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
-from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import get_form
+from shared.step_view_item import StepViewItem
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -46,6 +46,8 @@ class EditStepDialogPanel(ttk.Frame):
     delegated to the IStepFormDef registered for the active StepType.  The
     panel owns only the container frame and the shared widget dict.
 
+    Receives StepViewItem snapshots — no domain models ever cross this boundary.
+
     Attributes:
         on_confirm_create: Callback(StepTypeEnum, params) fired on creation confirm.
         on_confirm_update: Callback(StepTypeEnum, params) fired on update confirm.
@@ -66,9 +68,9 @@ class EditStepDialogPanel(ttk.Frame):
         self.on_type_changed: Callable[[str], None] | None = None
         self._type_var = tk.StringVar()
         self._form_widgets: dict[str, Any] = {}
-        self._step_selected: StepScrapingModel | None = None
+        self._item_selected: StepViewItem | None = None
         # Available steps for JUMP_TO_STEP target population.
-        self._available_steps: list[StepScrapingModel] = []
+        self._available_items: list[StepViewItem] = []
         self._create_widgets()
 
     # ---------------------------------------------------------------
@@ -124,37 +126,37 @@ class EditStepDialogPanel(ttk.Frame):
         self._btn_cancel.configure(state="normal")
         self._btn_cancel.pack(side=tk.LEFT, padx=(5))  # Show Edit button in edit mode
 
-    def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
+    def set_available_steps(self, items: list[StepViewItem]) -> None:
         """Stores the workflow step list for JUMP_TO_STEP target population.
 
         Args:
-            steps: Current ordered workflow step list.
+            items: Current ordered workflow step snapshots.
         """
-        self._available_steps = list(steps)
-        self._form_widgets["_all_steps_available"] = self._available_steps
+        self._available_items = list(items)
+        self._form_widgets["_all_steps_available"] = self._available_items
 
     def reset(self, step_type: StepTypeEnum) -> None:
         """Resets to a blank form for the given step type without firing on_type_changed."""
         label = C_STEP_TYPE_TO_LABELS[step_type]
         self._type_var.set(label)
         self._rebuild_form(step_type)
-        self._step_selected = None
+        self._item_selected = None
 
-    def load(self, step: StepScrapingModel | None = None) -> None:
-        """Prepares the form for a new step or pre-fills it from an existing one.
+    def load(self, item: StepViewItem | None = None) -> None:
+        """Prepares the form for a new step or pre-fills it from an existing snapshot.
 
         Args:
-            step: Existing step to pre-fill, or None to show a blank form.
+            item: View-safe snapshot to pre-fill, or None to show a blank form.
         """
-        initial_type = step.step_type if step else StepTypeEnum.E_OPEN_URL
+        initial_type = item.step_type if item else StepTypeEnum.E_OPEN_URL
 
         label = C_STEP_TYPE_TO_LABELS[initial_type]
         self._type_var.set(label)
         self._rebuild_form(initial_type)
 
-        self._step_selected = step
-        if step:
-            self._load_step(step)
+        self._item_selected = item
+        if item:
+            self._load_item(item)
 
         if self.on_type_changed:
             self.on_type_changed(label)
@@ -181,7 +183,7 @@ class EditStepDialogPanel(ttk.Frame):
 
         # Inject JUMP_TO_STEP context before building so the form def can
         # populate the target combobox from the available steps list.
-        self._form_widgets["_all_steps_available"] = self._available_steps
+        self._form_widgets["_all_steps_available"] = self._available_items
 
         if step_type is not None and step_type != StepTypeEnum.E_UNSET:
             get_form(step_type).build_form(self._form_frame, self._form_widgets)
@@ -190,9 +192,9 @@ class EditStepDialogPanel(ttk.Frame):
     # Pre-fill and read-back — fully delegated to form defs
     # ---------------------------------------------------------------
 
-    def _load_step(self, step: StepScrapingModel) -> None:
-        """Pre-fills form widgets from an existing step's params."""
-        get_form(step.step_type).load_params_step_to_widget(step, self._form_widgets)
+    def _load_item(self, item: StepViewItem) -> None:
+        """Pre-fills form widgets from a view-safe step snapshot."""
+        get_form(item.step_type).load_params_step_to_widget(item.params_dict, self._form_widgets)
 
     def _get_params(self, step_type: StepTypeEnum) -> dict[str, Any]:
         """Reads current widget values and returns the params dict."""

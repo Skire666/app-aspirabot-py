@@ -2,7 +2,6 @@
 
 Rules:
   - EPI025: Functions with >25 effective lines (code only, no blanks/comments/docstring)
-  - SCR250: Functions with high complexity/effective-lines score
   - EPI301: Files must end with '# EOF'
   - EPI302: Files must have import section marker before imports
 
@@ -39,9 +38,6 @@ EXIT_PATH_MISSING: Final[int] = 3
 FIXABLE_RULES: Final[frozenset[str]] = frozenset({"EPI301", "EPI302"})
 
 C_THRESHOLD_LINES: Final[int] = 26
-C_MAX_SCORE: Final[int] = 250
-C_MIN_COMPLEXITY: Final[int] = 6
-C_MIN_LINES: Final[int] = 14
 
 
 class RuleConfig(TypedDict, total=False):
@@ -58,7 +54,6 @@ class RulesConfig(TypedDict, total=False):
     """Mapping of rule codes to their configuration."""
 
     EPI025: RuleConfig
-    SCR250: RuleConfig
     EPI301: RuleConfig
     EPI302: RuleConfig
 
@@ -105,12 +100,6 @@ DEFAULT_CONFIG: Final[Config] = {
     "path": "./__src__/",
     "rules": {
         "EPI025": {"enabled": True, "threshold_lines": C_THRESHOLD_LINES},
-        "SCR250": {
-            "enabled": True,
-            "max_score": C_MAX_SCORE,
-            "min_complexity": C_MIN_COMPLEXITY,
-            "min_lines": C_MIN_LINES,
-        },
         "EPI301": {"enabled": True},
         "EPI302": {"enabled": True},
     },
@@ -292,33 +281,6 @@ def check_epi025(
             "name": func.name,
         }
 
-    return None
-
-
-def check_scr250(
-    func: ast.FunctionDef | ast.AsyncFunctionDef,
-    source_lines: list[str],
-    filename: str,
-    max_score: int,
-    min_complexity: int,
-    min_lines: int,
-) -> Error | None:
-    """SCR250: High complexity/effective-lines score."""
-    eff_lines = effective_lines(func, source_lines)
-    complexity = calculate_complexity(func)
-
-    if eff_lines >= min_lines and complexity >= min_complexity:
-        score: int = complexity * eff_lines
-        if score > max_score:
-            str_fm = f"Score complexity too high (mccabe * lines) : {complexity} * {eff_lines} = {score} > {max_score}"
-            return {
-                "code": "SCR250",
-                "message": str_fm,
-                "filename": filename,
-                "line": func.lineno,
-                "column": func.col_offset + 1,
-                "name": func.name,
-            }
     return None
 
 
@@ -525,17 +487,6 @@ def _build_function_checks(rules: RulesConfig, source_lines: list[str], filename
             return check_epi025(func, source_lines, filename, threshold)
 
         checks.append(_check_025)
-
-    if _rule_enabled(rules, "SCR250"):
-        rule_250 = _get_rule(rules, "SCR250")
-        max_score = _get_rule_int(rule_250, "max_score", C_MAX_SCORE)
-        min_complexity = _get_rule_int(rule_250, "min_complexity", C_MIN_COMPLEXITY)
-        min_lines = _get_rule_int(rule_250, "min_lines", C_MIN_LINES)
-
-        def _check_250(func: FunctionNode) -> Error | None:
-            return check_scr250(func, source_lines, filename, max_score, min_complexity, min_lines)
-
-        checks.append(_check_250)
 
     return checks
 
@@ -759,20 +710,14 @@ def emit_statistics_json(errors: list[Error]) -> None:
 
 def get_rule_name(code: str) -> str:
     """Get the human-readable name for a rule code."""
-    rule_names = {
-        "EPI025": "function-too-long",
-        "SCR250": "high-cyclomatic-complexity",
-        "EPI301": "missing-eof-marker",
-        "EPI302": "missing-import-marker",
-    }
+    rule_names = {"EPI025": "function-too-long", "EPI301": "missing-eof-marker", "EPI302": "missing-import-marker"}
     return rule_names.get(code, "unknown-rule")
 
 
 def get_rule_help(code: str) -> str:
     """Get the help message for a rule code."""
     rule_help = {
-        "EPI025": "Consider splitting this function into smaller, focused functions",
-        "SCR250": "Consider simplifying the logic or extracting helper functions to reduce branching",
+        "EPI025": "Long functions hide multiple responsibilities; consider splitting them for readability and tests.",
         "EPI301": "Add `# EOF` at the end of the file",
         "EPI302": "Add the import section marker before the first import statement",
     }

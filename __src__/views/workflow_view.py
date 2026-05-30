@@ -8,9 +8,9 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any
 
-from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
+from shared.step_view_item import StepViewItem
 from view_models.workflow_view_model import WorkflowViewModel
 from views.components.horizontal_line_frame import HorizontalLineFrame
 from views.workflow.edit_step_dialog_panel import _LABEL_TO_TYPE, EditStepDialogPanel
@@ -337,9 +337,7 @@ class WorkflowView(ttk.Frame):
         Args:
             parent: The footer frame to pack widgets into.
         """
-        self._btn_save = ttk.Button(
-            parent, text="Sauvegarder le scénario", command=self._notify_save, state="disabled"
-        )
+        self._btn_save = ttk.Button(parent, text="Sauvegarder le scénario", command=self._notify_save, state="disabled")
         self._btn_save.pack(side=tk.RIGHT, padx=5)
 
         self._btn_cancel = ttk.Button(parent, text="Annuler", command=self._notify_cancel)
@@ -356,15 +354,15 @@ class WorkflowView(ttk.Frame):
     # Public interface — IStepsListGestionView (used by StepsListPresenter)
     # ---------------------------------------------------------------
 
-    def show_inline_form(self, step: StepScrapingModel | None = None) -> None:
+    def show_inline_form(self, item: StepViewItem | None = None) -> None:
         """Loads a step into the inline form and switches its mode.
 
         Args:
-            step: Existing step to pre-fill for editing, or None for a blank form.
+            item: View-safe snapshot to pre-fill for editing, or None for a blank form.
         """
-        self._is_edit_mode = step is not None
-        self._inline_form.load(step)
-        if step is not None:
+        self._is_edit_mode = item is not None
+        self._inline_form.load(item)
+        if item is not None:
             self._inline_form.set_edit_mode()
         else:
             self._inline_form.set_creation_mode()
@@ -377,13 +375,13 @@ class WorkflowView(ttk.Frame):
         """
         self._inline_form.show_errors_of_edited_step(errors)
 
-    def set_available_steps(self, steps: list[StepScrapingModel]) -> None:
+    def set_available_steps(self, items: list[StepViewItem]) -> None:
         """Forwards the step list to the inline form for JUMP_TO_STEP population.
 
         Args:
-            steps: Current ordered workflow step list.
+            items: Current ordered workflow step snapshots.
         """
-        self._inline_form.set_available_steps(steps)
+        self._inline_form.set_available_steps(items)
 
     @staticmethod
     def show_warning(message: str) -> None:
@@ -448,10 +446,7 @@ class WorkflowView(ttk.Frame):
         Returns:
             True if the user confirmed the overwrite; False otherwise.
         """
-        return messagebox.askyesno(
-            "Écraser?",
-            "Un scénario avec cette ID existe déjà. Voulez-vous l'écraser ?",
-        )
+        return messagebox.askyesno("Écraser?", "Un scénario avec cette ID existe déjà. Voulez-vous l'écraser ?")
 
 
 # EOF

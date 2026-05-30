@@ -171,8 +171,8 @@ def _build_and_wire_components(  # noqa: PLR0914
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
     dbg_view, dbg_p = _init_debug_component(main_view)
     _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr, scrap_pre)
-    views = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
-    presenters = [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, steps_pr, exec_pre, scrap_pre, dbg_p]
+    views: list[tk.Widget] = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
+    presenters: list[object] = [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, steps_pr, exec_pre, scrap_pre, dbg_p]
     _register_and_anchor(root, main_view, views, presenters)
 
 
@@ -266,9 +266,7 @@ def _init_scenarios_components(
     profiles_service: ProfilesService,
     config_model: AppConfigurationModel,
     json_repo: JsonFileRepository,
-) -> tuple[
-    ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter, StepsListPresenter, ScenariosService
-]:
+) -> tuple[ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter, StepsListPresenter, ScenariosService]:
     """Create and wire the scenario list and edit components.
 
     Args:
@@ -282,7 +280,7 @@ def _init_scenarios_components(
         StepsListPresenter, ScenariosService) tuple.
     """
     scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
-    scenarios_service = ScenariosService(scenario_repo)
+    scenarios_service = ScenariosService(scenario_repo, profiles_service._repository)
     scenarios_vm = ScenariosViewModel(master=main_view.content_area)
     scenario_view = ScenariosView(main_view.content_area, vm=scenarios_vm)
     scenario_presenter = ScenariosPresenter(vm=scenarios_vm, service=scenarios_service)
@@ -290,15 +288,17 @@ def _init_scenarios_components(
         main_view, scenarios_service, profiles_service
     )
     return (
-        scenario_view, scenario_presenter, workflow_view,
-        workflow_presenter, steps_list_presenter, scenarios_service,
+        scenario_view,
+        scenario_presenter,
+        workflow_view,
+        workflow_presenter,
+        steps_list_presenter,
+        scenarios_service,
     )
 
 
 def _init_workflow_group(
-    main_view: MainView,
-    scenarios_service: ScenariosService,
-    profiles_service: ProfilesService,
+    main_view: MainView, scenarios_service: ScenariosService, profiles_service: ProfilesService
 ) -> tuple[WorkflowView, WorkflowPresenter, StepsListPresenter]:
     """Instantiate the workflow view, presenter, and steps-list presenter.
 
@@ -365,11 +365,7 @@ def _init_executor_component(
     """
     vm = ExecutorViewModel(master=main_view.content_area)
     executor_view = ExecutorView(main_view.content_area, vm=vm)
-    executor_presenter = ExecutorPresenter(
-        vm=vm,
-        scenarios_service=scenario_service,
-        profiles_service=profiles_service,
-    )
+    executor_presenter = ExecutorPresenter(vm=vm, scenarios_service=scenario_service, profiles_service=profiles_service)
     return executor_view, executor_presenter
 
 
@@ -439,8 +435,12 @@ def _open_workflow_tab(main_view: MainView) -> None:
         main_view: Navigation shell managing tab visibility.
     """
     main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-    for mod in (TitleModuleEnum.E_SCENARIOS, TitleModuleEnum.E_PROFILES,
-                TitleModuleEnum.E_EXECUTOR, TitleModuleEnum.E_SCRAPING):
+    for mod in (
+        TitleModuleEnum.E_SCENARIOS,
+        TitleModuleEnum.E_PROFILES,
+        TitleModuleEnum.E_EXECUTOR,
+        TitleModuleEnum.E_SCRAPING,
+    ):
         main_view.set_tab_state(mod, tk.DISABLED)
     main_view.show_view(TitleModuleEnum.E_WORKFLOW)
 
@@ -452,8 +452,12 @@ def _close_workflow_tab(main_view: MainView) -> None:
         main_view: Navigation shell managing tab visibility.
     """
     main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
-    for mod in (TitleModuleEnum.E_SCENARIOS, TitleModuleEnum.E_PROFILES,
-                TitleModuleEnum.E_EXECUTOR, TitleModuleEnum.E_SCRAPING):
+    for mod in (
+        TitleModuleEnum.E_SCENARIOS,
+        TitleModuleEnum.E_PROFILES,
+        TitleModuleEnum.E_EXECUTOR,
+        TitleModuleEnum.E_SCRAPING,
+    ):
         main_view.set_tab_state(mod, tk.NORMAL)
     main_view.show_view(TitleModuleEnum.E_SCENARIOS)
 
@@ -537,12 +541,7 @@ def _wire_profiles_launch(
 # -----------------------------------------------------------------------------
 
 
-def _register_and_anchor(
-    root: tk.Tk,
-    main_view: MainView,
-    views: list[object],
-    presenters: list[object],
-) -> None:
+def _register_and_anchor(root: tk.Tk, main_view: MainView, views: list[object], presenters: list[object]) -> None:
     """Unpack the ordered view list, register all views, and anchor presenters.
 
     Args:

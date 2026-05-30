@@ -1,8 +1,9 @@
 """Renderer for a single workflow step item inside DragDropList.
 
-Implements ItemRenderer[StepScrapingModel] as a callable class so that
+Implements ItemRenderer[StepViewItem] as a callable class so that
 WorkflowBuilderView remains free of canvas calls and label-formatting logic.
-Step labels are delegated to the registered IStepFormDef instances.
+Step labels are pre-computed by StepsListPresenter and stored in StepViewItem;
+this renderer reads them directly without any conditional logic.
 
 Canvas tags emitted per slot (used by resize_update and update_colors):
     _bg{idx}      — background rectangle
@@ -13,7 +14,7 @@ Canvas tags emitted per slot (used by resize_update and update_colors):
 
 Example:
     >>> renderer = StepItemRenderer(get_selected_index=lambda: None)
-    >>> renderer(canvas, step, 0, 0, 0, 300, 50, "normal")
+    >>> renderer(canvas, item, 0, 0, 0, 300, 50, "normal")
 """
 
 # -----------------------------------------------------------------------------
@@ -23,20 +24,11 @@ Example:
 from __future__ import annotations
 
 import tkinter as tk
-from collections import OrderedDict
 from collections.abc import Callable
 
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from shared.constants import C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_BLUE_HIGHLIGHT_LIGHT
 from shared.enums import StepTypeEnum
-from shared.step_registry import get_form
-
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-_LABEL_CACHE_MAX: int = 256
+from shared.step_view_item import StepViewItem
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -44,10 +36,15 @@ _LABEL_CACHE_MAX: int = 256
 
 
 class StepItemRenderer:
-    """ItemRenderer[StepScrapingModel] for DragDropList.
+    """ItemRenderer[StepViewItem] for DragDropList.
 
-    Encapsulates all visual and label logic for a workflow step item.
+    Encapsulates all visual logic for a workflow step item.
     WorkflowBuilderView owns an instance and passes it as render_item.
+    Receives StepViewItem snapshots — no domain models ever reach this class.
+
+    The display label is read directly from ``StepViewItem.label``, which is
+    pre-computed by StepsListPresenter.  No label formatting or caching is
+    done here.
 
     Color constants are defined at class level so that subclasses can override
     the palette without touching drawing logic.
@@ -72,7 +69,6 @@ class StepItemRenderer:
                 selected item index, or None if nothing is selected.
         """
         self._get_selected_index = get_selected_index
-        self._steps_context: StepsContext = StepsContext.from_list([])
 
         # Color palettes built once at init — resolved per-render via _resolve_colors.
         self._colors_normal: dict[str, str] = {
@@ -95,20 +91,6 @@ class StepItemRenderer:
             "border": self._C_BORDER_NORMAL,
             "fg": self._C_FG_DEACTIVATE,
         }
-
-        # Bounded LRU label cache — oldest entry evicted when _LABEL_CACHE_MAX is reached.
-        self._cached_labels: OrderedDict[str, str] = OrderedDict()
-
-    def set_steps_context(self, steps: list[StepScrapingModel]) -> None:
-        """Update the steps snapshot used by format_label for cross-step rendering.
-
-        Called by the view before each render pass so that format_label
-        implementations (e.g. JUMP_TO_STEP) can resolve sibling positions.
-
-        Args:
-            steps: The current ordered workflow step list.
-        """
-        self._steps_context = StepsContext.from_list(steps)
 
     # -----------------------------------------------------------------------
     # Color resolution
@@ -175,7 +157,7 @@ class StepItemRenderer:
     def _draw_label(
         self,
         canvas: tk.Canvas,
-        item: StepScrapingModel,
+        item: StepViewItem,
         idx: int,
         x: int,
         y: int,
@@ -191,7 +173,7 @@ class StepItemRenderer:
 
         Args:
             canvas: The target canvas widget.
-            item: Step model providing type, id, and label data.
+            item: View-safe step snapshot providing type, id, and label data.
             idx: Slot index used for canvas tags.
             x: Left edge of the item area.
             y: Top edge of the item area.
@@ -201,12 +183,11 @@ class StepItemRenderer:
             canvas_w: Pre-computed canvas pixel width (avoids per-item winfo_width calls).
         """
         txt_prefix = f"{str(idx + 1).zfill(2)}.\n#{item.step_id}"
-        txt_item = self.get_label_from_store(item, idx)
         offset_w = 80 if item.step_type == StepTypeEnum.E_JUMP_TO_STEP else 58
         start_w = x + 8
         pos_h = y + h // 2
         self._draw_step_prefix(canvas, idx, start_w, pos_h, y, h, txt_prefix, colors)
-        self._draw_step_text(canvas, idx, start_w + offset_w, pos_h, txt_item, colors)
+        self._draw_step_text(canvas, idx, start_w + offset_w, pos_h, item.label, colors)
         self._draw_overflow_mask(canvas, x, y, w, h, idx, canvas_w)
 
     def _draw_step_prefix(
@@ -244,73 +225,6 @@ class StepItemRenderer:
             x_start, pos_h, text=txt_item, anchor="w",
             fill=colors["fg"], font=self._C_FONT, tags=(f"_txt_lbl{idx}",),
         )
-
-    # -----------------------------------------------------------------------
-    # Label cache
-    # -----------------------------------------------------------------------
-
-    def get_label_from_store(self, item: StepScrapingModel, idx: int) -> str:
-        """Returns the display label for a step item, using a bounded LRU cache.
-
-        E_JUMP_TO_STEP labels are always recomputed because they reference
-        other steps by position — a detail not captured in the item's own data.
-
-        Args:
-            item: The step model to format a label for.
-            idx: Zero-based index of the step in the workflow.
-
-        Returns:
-            A formatted display label string.
-        """
-        # Jump steps reference global positions — bypass the cache.
-        if item.step_type == StepTypeEnum.E_JUMP_TO_STEP:
-            return get_form(item.step_type).format_label(item, idx, self._steps_context)
-
-        # Return cached label, promoting the entry to "most recently used".
-        key = f"{item.step_id}|{item.modified_date}"
-        cached = self._cached_labels.get(key)
-        if cached is not None:
-            self._cached_labels.move_to_end(key)
-            return cached
-
-        label = get_form(item.step_type).format_label(item, idx, self._steps_context)
-        return self._store_in_cache(key, label)
-
-    def _store_in_cache(self, key: str, value: str) -> str:
-        """Inserts a label into the cache, evicting the oldest entry if full.
-
-        Args:
-            key: Cache key built from step_id and modified_date.
-            value: Formatted label string to store.
-
-        Returns:
-            The stored value (pass-through for convenience).
-        """
-        if len(self._cached_labels) >= _LABEL_CACHE_MAX:
-            self._cached_labels.popitem(last=False)
-        self._cached_labels[key] = value
-        return value
-
-    def clear_label_cache(self) -> None:
-        """Clears the entire label cache.
-
-        Call after bulk step mutations (e.g. full workflow replace) to prevent
-        stale entries from being served for reused step IDs.
-        """
-        self._cached_labels.clear()
-
-    def invalidate_label(self, step_id: str) -> None:
-        """Removes all cached entries for the given step after it is mutated.
-
-        Args:
-            step_id: Unique identifier of the step whose cache entries to drop.
-        """
-        prefix = f"{step_id}|"
-
-        # Collect keys first to avoid mutating the dict while iterating.
-        stale = [k for k in self._cached_labels if k.startswith(prefix)]
-        for k in stale:
-            del self._cached_labels[k]
 
     # -----------------------------------------------------------------------
     # Overflow mask
@@ -361,7 +275,7 @@ class StepItemRenderer:
     def __call__(
         self,
         canvas: tk.Canvas,
-        item: StepScrapingModel,
+        item: StepViewItem,
         idx: int,
         x: int,
         y: int,
@@ -377,7 +291,7 @@ class StepItemRenderer:
 
         Args:
             canvas: The target canvas widget.
-            item: The step model to render.
+            item: The view-safe step snapshot to render.
             idx: Zero-based index of the item in the list.
             x: Left edge of the item area.
             y: Top edge of the item area.
@@ -398,7 +312,7 @@ class StepItemRenderer:
     def update_colors(
         self,
         canvas: tk.Canvas,
-        item: StepScrapingModel,
+        item: StepViewItem,
         idx: int,
         state: str,
     ) -> bool:
@@ -410,7 +324,7 @@ class StepItemRenderer:
 
         Args:
             canvas: The target canvas widget.
-            item: The step model providing is_active and type data.
+            item: The view-safe step snapshot providing is_active and type data.
             idx: Zero-based index of the item in the list.
             state: Rendering state; only "normal" is handled.
 
@@ -436,7 +350,7 @@ class StepItemRenderer:
     def resize_update(
         self,
         canvas: tk.Canvas,
-        item: StepScrapingModel,
+        item: StepViewItem,
         idx: int,
         x: int,
         y: int,
@@ -454,7 +368,7 @@ class StepItemRenderer:
 
         Args:
             canvas: The target canvas widget.
-            item: The step model providing is_active state.
+            item: The view-safe step snapshot providing is_active state.
             idx: Zero-based index of the item in the list.
             x: Left edge of the item area.
             y: Top edge of the item area.
