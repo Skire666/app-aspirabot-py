@@ -4,12 +4,6 @@ This ttk.LabelFrame is embedded inside WorkflowBuilderView. It displays
 a type selector and a dynamic form area rebuilt whenever the step type changes.
 Form building, loading, reading and validation are fully delegated to the
 registered IStepFormDef instance for the active step type.
-
-Example:
-    >>> panel = EditStepDialogPanel(parent_frame)
-    >>> panel.on_confirm = lambda step: print(step)
-    >>> panel.on_cancel = lambda: print("cancelled")
-    >>> panel.load(existing_item)
 """
 
 # -----------------------------------------------------------------------------
@@ -185,7 +179,7 @@ class EditStepDialogPanel(ttk.Frame):
         # populate the target combobox from the available steps list.
         self._form_widgets["_all_steps_available"] = self._available_items
 
-        if step_type is not None and step_type != StepTypeEnum.E_UNSET:
+        if step_type != StepTypeEnum.E_UNSET:
             get_form(step_type).build_form(self._form_frame, self._form_widgets)
 
     # ---------------------------------------------------------------

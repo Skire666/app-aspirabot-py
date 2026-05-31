@@ -1,4 +1,11 @@
-"""ViewModel for the debug browser session panel."""
+"""ViewModel for the debug browser module — launcher panel and inspection Toplevel.
+
+Holds launcher state (user inputs, validation errors) and page inspection state
+(HTML content, text/image analysis results, session lifecycle).
+
+The Presenter binds all callbacks once at composition time.  ``reset_page()``
+clears page Vars and marks the session alive before each new browser session.
+"""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -7,25 +14,18 @@
 import tkinter as tk
 from collections.abc import Callable
 
-from view_models.debug_page_view_model import DebugPageViewModel
-
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-_URL_DISPLAY_MAX_LEN: int = 70
-
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
 
 class DebugViewModel:
-    """UI state and action hooks for the debug session panel.
+    """Merged ViewModel for the Debug tab panel and the inspection Toplevel.
 
-    Holds the session status as ``tk.*Var`` instances.  The Presenter calls
-    ``bind_start`` once at composition time; the View calls ``start`` when the
-    user clicks Lancer (after client-side input validation).
+    Launcher Vars (``error_message_var``) are persistent for the app lifetime.
+    Page Vars (``html_content_var``, ``text_results_var``, ``image_results_var``,
+    ``is_alive_var``, ``url_var``) are reset by ``reset_page()`` at the start
+    of each new session.
     """
 
     def __init__(self, master: tk.Misc) -> None:
@@ -36,16 +36,28 @@ class DebugViewModel:
         """
         self._master = master
 
-        # Status Vars — Presenter writes, View traces
-        self.status_text_var = tk.StringVar(master=master, value="Aucune session active.")
-        self.status_active_var = tk.BooleanVar(master=master, value=False)
+        # Launcher Var — Presenter writes on invalid input, View binds via textvariable=
+        self.error_message_var = tk.StringVar(master=master, value="")
+
+        # Page Vars — reset by reset_page() before every new browser session
+        self.url_var = tk.StringVar(master=master, value="")
+        self.html_content_var = tk.StringVar(master=master, value="")
+        self.text_results_var = tk.StringVar(master=master, value="")
+        self.image_results_var = tk.StringVar(master=master, value="")
+
+        # Lifecycle Var — True while a session Toplevel is open; View traces to auto-destroy
+        self.is_alive_var = tk.BooleanVar(master=master, value=False)
 
         # Registered Presenter callbacks
-        self._on_start: Callable[[str, int, int], None] | None = None
-        self._on_open_debug_page: Callable[[DebugPageViewModel], None] | None = None
+        self._on_start: Callable[[str, str, str], None] | None = None
+        self._on_open_debug_page: Callable[[], None] | None = None
+        self._on_refresh: Callable[[], None] | None = None
+        self._on_analyze_texts: Callable[[str], None] | None = None
+        self._on_analyze_images: Callable[[str], None] | None = None
+        self._on_close: Callable[[], None] | None = None
 
     # ------------------------------------------------------------------
-    # Master accessor — exposes the parent widget for child Toplevels
+    # Read-only accessors
     # ------------------------------------------------------------------
 
     @property
@@ -53,71 +65,129 @@ class DebugViewModel:
         """Tkinter master widget, usable as parent for child Toplevels."""
         return self._master
 
+    @property
+    def url(self) -> str:
+        """URL of the active session (for the Toplevel title)."""
+        return self.url_var.get()
+
     # ------------------------------------------------------------------
-    # Presenter binding hook
+    # Threading proxy
     # ------------------------------------------------------------------
 
-    def bind_start(self, cb: Callable[[str, int, int], None]) -> None:
-        """Register the handler invoked when the user starts a debug session.
+    def after(self, delay_ms: int, callback: Callable[[], None]) -> None:
+        """Schedule a callback on the main Tkinter thread.
 
         Args:
-            cb: Called with (url, timeout_sec, dns_delay_sec) after validation.
+            delay_ms: Delay in milliseconds before the callback fires.
+            callback: Zero-argument callable to schedule.
+        """
+        self._master.after(delay_ms, callback)
+
+    # ------------------------------------------------------------------
+    # Session reset
+    # ------------------------------------------------------------------
+
+    def reset_page(self, url: str) -> None:
+        """Prepare the VM for a new session by resetting all page Vars.
+
+        Call this before ``open_debug_page()`` to clear stale content and mark
+        the session as alive so the Toplevel's lifecycle trace fires correctly.
+
+        Args:
+            url: URL being opened in the new browser session.
+        """
+        self.url_var.set(url)
+        self.html_content_var.set("")
+        self.text_results_var.set("")
+        self.image_results_var.set("")
+        self.is_alive_var.set(True)
+
+    # ------------------------------------------------------------------
+    # Presenter binding hooks
+    # ------------------------------------------------------------------
+
+    def bind_start(self, cb: Callable[[str, str, str], None]) -> None:
+        """Register the handler invoked when the user clicks Lancer.
+
+        Args:
+            cb: Called with (url, timeout_raw, dns_delay_raw) as raw widget strings.
         """
         self._on_start = cb
 
-    def bind_open_debug_page(self, cb: Callable[[DebugPageViewModel], None]) -> None:
-        """Register the handler that opens a new DebugPageView for the given VM.
+    def bind_open_debug_page(self, cb: Callable[[], None]) -> None:
+        """Register the View factory that opens the inspection Toplevel.
 
-        The View registers this so it can instantiate the Toplevel without the
-        Presenter ever importing a View class.
+        The View registers this so it can instantiate DebugPageView bound to
+        this VM without the Presenter ever importing a View class.
 
         Args:
-            cb: Called with the fully-configured ``DebugPageViewModel`` instance.
+            cb: Zero-argument callable that creates and shows the Toplevel.
         """
         self._on_open_debug_page = cb
 
+    def bind_refresh(self, cb: Callable[[], None]) -> None:
+        """Register the handler invoked when the user clicks Rafraîchir."""
+        self._on_refresh = cb
+
+    def bind_analyze_texts(self, cb: Callable[[str], None]) -> None:
+        """Register the handler invoked when the user requests text analysis."""
+        self._on_analyze_texts = cb
+
+    def bind_analyze_images(self, cb: Callable[[str], None]) -> None:
+        """Register the handler invoked when the user requests image analysis."""
+        self._on_analyze_images = cb
+
+    def bind_close(self, cb: Callable[[], None]) -> None:
+        """Register the handler invoked when the user closes the inspection window."""
+        self._on_close = cb
+
     # ------------------------------------------------------------------
-    # Action method — called by the View
+    # Action methods — called by the View
     # ------------------------------------------------------------------
 
-    def start(self, url: str, timeout: int, dns_delay: int) -> None:
-        """Dispatch a start-session request with the validated user inputs.
+    def start(self, url: str, timeout_raw: str, dns_delay_raw: str) -> None:
+        """Dispatch a start-session request with raw widget values for the Presenter.
 
         Args:
-            url: The validated URL to navigate to.
-            timeout: Navigation timeout in seconds.
-            dns_delay: DNS-resolution wait in seconds.
+            url: The URL string from the entry widget.
+            timeout_raw: Raw spinbox string for the navigation timeout.
+            dns_delay_raw: Raw spinbox string for the DNS-resolution wait.
         """
         if self._on_start is not None:
-            self._on_start(url, timeout, dns_delay)
+            self._on_start(url, timeout_raw, dns_delay_raw)
 
-    def open_debug_page(self, debug_page_vm: DebugPageViewModel) -> None:
-        """Dispatch a request to the View to open a new DebugPageView Toplevel.
-
-        Args:
-            debug_page_vm: The ViewModel that the new Toplevel will bind to.
-        """
+    def open_debug_page(self) -> None:
+        """Ask the View to open the inspection Toplevel bound to this VM."""
         if self._on_open_debug_page is not None:
-            self._on_open_debug_page(debug_page_vm)
+            self._on_open_debug_page()
 
-    # ------------------------------------------------------------------
-    # Presenter helpers — update status Vars
-    # ------------------------------------------------------------------
+    def refresh(self) -> None:
+        """Dispatch a page-refresh request to the Presenter."""
+        if self._on_refresh is not None:
+            self._on_refresh()
 
-    def set_status_active(self, url: str) -> None:
-        """Update the status Vars to reflect a running session.
+    def analyze_texts(self, selector: str) -> None:
+        """Dispatch a text-analysis request with the given CSS selector.
 
         Args:
-            url: The URL of the active session (truncated if too long).
+            selector: CSS selector entered by the user.
         """
-        short = url[:_URL_DISPLAY_MAX_LEN] if len(url) > _URL_DISPLAY_MAX_LEN else url
-        self.status_text_var.set(f"Session active : {short}")
-        self.status_active_var.set(True)
+        if self._on_analyze_texts is not None:
+            self._on_analyze_texts(selector)
 
-    def set_status_idle(self) -> None:
-        """Update the status Vars to reflect no active session."""
-        self.status_text_var.set("Aucune session active.")
-        self.status_active_var.set(False)
+    def analyze_images(self, selector: str) -> None:
+        """Dispatch an image-analysis request with the given CSS selector.
+
+        Args:
+            selector: CSS selector targeting image elements.
+        """
+        if self._on_analyze_images is not None:
+            self._on_analyze_images(selector)
+
+    def close(self) -> None:
+        """Dispatch a user-initiated window-close request to the Presenter."""
+        if self._on_close is not None:
+            self._on_close()
 
 
 # EOF

@@ -1,9 +1,8 @@
 """Debug module view — URL launcher for a live browser inspection session.
 
-The user enters a URL, a timeout in seconds, and a DNS-wait delay in
-seconds, then clicks Lancer. The view fires ``vm.start(url, timeout, dns_delay)``
-only when all inputs are valid; otherwise it shows an inline error message.
-The ViewModel Vars drive the status label display.
+The user enters a URL, a timeout, and a DNS-wait delay, then clicks Lancer.
+The View forwards raw widget values to ``vm.start()``; the Presenter validates.
+Errors are shown via ``vm.error_message_var`` bound directly to the label.
 
 Example:
     >>> view = DebugView(parent, vm)
@@ -19,12 +18,6 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
-from shared.i18n_fra import (
-    C_DEBUG_DNS_DELAY_INVALID,
-    C_DEBUG_TIMEOUT_INVALID,
-    C_DEBUG_URL_EMPTY,
-)
-from view_models.debug_page_view_model import DebugPageViewModel
 from view_models.debug_view_model import DebugViewModel
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
@@ -45,13 +38,8 @@ _DEFAULT_DNS_DELAY: int = 5
 class DebugView(ttk.Frame):
     """Module view for the Debug sidebar entry.
 
-    Provides a URL entry, a timeout spinbox, a DNS-delay spinbox, and a
-    launch button. Status display is driven by ViewModel Vars. Input
-    validation runs on click; errors are shown in an inline label without
-    touching the Presenter.
-
-    The View registers itself as the status observer on the ViewModel Vars
-    via ``trace_add``; the Presenter never touches a widget.
+    Passive widget tree bound to DebugViewModel.  User actions are forwarded to
+    VM action methods; the Presenter never touches a widget.
     """
 
     def __init__(self, parent: tk.Widget, vm: DebugViewModel) -> None:
@@ -64,12 +52,11 @@ class DebugView(ttk.Frame):
         super().__init__(parent)
         self._vm = vm
         self._create_widgets()
-        self._bind_vm_vars()
-        # Register View as the factory for DebugPageView Toplevels.
+        # Register this View as the factory that opens the inspection Toplevel.
         vm.bind_open_debug_page(self._open_debug_page)
 
     def _create_widgets(self) -> None:
-        """Builds the centered launcher card with URL, spinbox, and status rows."""
+        """Builds the launcher card with URL entry, spinboxes, and error label."""
         card = HorizontalLineFrame(self, text="Session de débogage")
         card.pack(padx=20, pady=20, anchor="nw")
         self._build_url_row(card)
@@ -78,10 +65,10 @@ class DebugView(ttk.Frame):
         ttk.Button(card, text="Lancer une session Debug", command=self._fire_start).pack(
             fill="x", padx=10, pady=(8, 4)
         )
-        self._lbl_status = ttk.Label(card, text="", foreground="gray")
-        self._lbl_status.pack(padx=10, pady=(5, 0), anchor="w")
-        self._lbl_error = ttk.Label(card, text="", foreground="red")
-        self._lbl_error.pack(padx=10, pady=(0, 5), anchor="w")
+        # Error label bound to vm.error_message_var — the Presenter writes it.
+        ttk.Label(card, textvariable=self._vm.error_message_var, foreground="red").pack(
+            padx=10, pady=(0, 5), anchor="w"
+        )
 
     def _build_url_row(self, card: ttk.Frame) -> None:
         """Build the URL entry row inside *card*.
@@ -117,77 +104,25 @@ class DebugView(ttk.Frame):
         ttk.Label(row, text="secondes").pack(side="left", padx=(4, 0))
         return spin
 
-    def _bind_vm_vars(self) -> None:
-        """Register trace_add listeners on ViewModel Vars for status display."""
-        self._vm.status_text_var.trace_add("write", self._sync_status)
-        self._vm.status_active_var.trace_add("write", self._sync_status)
-        # Reflect initial state.
-        self._sync_status()
-
-    def _sync_status(self, *_: object) -> None:
-        """Mirror ViewModel status Vars onto the status label."""
-        text = self._vm.status_text_var.get()
-        color = "green" if self._vm.status_active_var.get() else "gray"
-        self._lbl_status.configure(text=text, foreground=color)
-
     # -----------------------------------------------------------------------
     # Private helpers
     # -----------------------------------------------------------------------
 
-    @staticmethod
-    def _parse_spin_int(spinbox: ttk.Spinbox, min_val: int, max_val: int) -> int | None:
-        """Parses a Spinbox value as a bounded integer.
+    def _open_debug_page(self) -> None:
+        """Open a DebugPageView Toplevel bound to this View's ViewModel.
 
-        Args:
-            spinbox: The Spinbox widget to read.
-            min_val: Inclusive lower bound.
-            max_val: Inclusive upper bound.
-
-        Returns:
-            The parsed integer if valid and in [min_val, max_val], else None.
+        Registered on the VM so the Presenter never imports a View class.
         """
-        try:
-            value = int(spinbox.get())
-        except ValueError:
-            return None
-        return value if min_val <= value <= max_val else None
-
-    def _open_debug_page(self, debug_page_vm: DebugPageViewModel) -> None:
-        """Instantiate a DebugPageView Toplevel bound to *debug_page_vm*.
-
-        Called by the Presenter (via DebugViewModel dispatch) so the Presenter
-        never needs to import the DebugPageView class.
-
-        Args:
-            debug_page_vm: ViewModel that the new Toplevel will bind to.
-        """
-        from views.workflow.debug_page_view import DebugPageView  # local import — View layer only
-        DebugPageView(parent=self, vm=debug_page_vm)
+        from views.workflow.debug_page_view import DebugPageView  # local — View layer only
+        DebugPageView(parent=self, vm=self._vm)
 
     def _fire_start(self) -> None:
-        """Validates all inputs and dispatches to the ViewModel when valid.
-
-        Collects errors for each invalid field and shows them in the error
-        label. Calls vm.start(url, timeout, dns_delay) only when no errors.
-        """
-        url = self._entry_url.get().strip()
-        timeout = self._parse_spin_int(self._spin_timeout, _SPIN_MIN, _SPIN_MAX)
-        dns_delay = self._parse_spin_int(self._spin_dns, _SPIN_MIN, _SPIN_MAX)
-
-        errors: list[str] = []
-        if not url or url == "https://":
-            errors.append(C_DEBUG_URL_EMPTY)
-        if timeout is None:
-            errors.append(C_DEBUG_TIMEOUT_INVALID)
-        if dns_delay is None:
-            errors.append(C_DEBUG_DNS_DELAY_INVALID)
-
-        if errors:
-            self._lbl_error.configure(text="  |  ".join(errors))
-            return
-
-        self._lbl_error.configure(text="")
-        self._vm.start(url, timeout, dns_delay)
+        """Forward raw widget values to the ViewModel; the Presenter validates."""
+        self._vm.start(
+            self._entry_url.get().strip(),
+            self._spin_timeout.get(),
+            self._spin_dns.get(),
+        )
 
 
 # EOF

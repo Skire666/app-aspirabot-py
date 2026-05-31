@@ -40,6 +40,9 @@ C_SCRAPING_STATUS_CANCELLED = "Scraping annulé"
 C_SCRAPING_STATUS_FINISHED = "Scraping terminé"
 C_SCRAPING_STATUS_ERROR = "erreur"
 C_SCRAPING_STATUS_EMERGENCY_STOP = "Processus mise en pause : seuil d'erreurs dépassé"
+C_SCRAPING_STATUS_STARTING = "Démarrage..."
+C_SCRAPING_STATUS_PAUSED = "En pause"
+C_SCRAPING_STATUS_RUNNING = "Scraping en cours"
 
 # Scraping panel — export error message ({exc} is the caught exception)
 C_SCRAPING_EXPORT_WRITE_ERROR = "Impossible d'écrire le fichier :\n{exc}"

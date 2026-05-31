@@ -13,6 +13,7 @@ from tkinter import messagebox, ttk
 
 from shared.constants import C_COLOR_ORANGE_BLINKING
 from view_models.scraping_view_model import ScrapingViewModel
+from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # -----------------------------------------------------------------------------
@@ -87,10 +88,10 @@ class ScrapingView(ttk.Frame):
 
         ttk.Label(grid, text="Dossier d'export :").grid(row=2, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
         ttk.Label(grid, textvariable=self._vm.folder_var).grid(row=2, column=1, sticky=tk.W, pady=(0, 5))
-        self._btn_open_folder = ttk.Button(
-            grid, text="Ouvrir dossier", command=lambda: self._vm.open_folder(), state=tk.DISABLED
-        )
-        self._btn_open_folder.grid(row=2, column=2, padx=(10, 0), pady=(0, 5))
+
+        FolderLinkWidget(
+            grid, title="Dossier", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder()
+        ).grid(row=2, column=2, padx=(10, 0), pady=(0, 5))
 
     def _create_stats_section(self, parent: tk.Widget) -> None:
         """Section 2 — real-time scraping statistics, bound to ViewModel Vars."""
@@ -163,7 +164,6 @@ class ScrapingView(ttk.Frame):
         # Piloting button states.
         self._vm.is_launch_btn_enabled_var.trace_add("write", self._sync_launch_btn)
         self._vm.is_cancel_btn_enabled_var.trace_add("write", self._sync_cancel_btn)
-        self._vm.is_open_folder_btn_enabled_var.trace_add("write", self._sync_open_folder_btn)
         self._vm.is_pause_enabled_var.trace_add("write", self._sync_pause_btn)
         self._vm.is_resume_active_var.trace_add("write", self._sync_resume_active)
 
@@ -184,11 +184,6 @@ class ScrapingView(ttk.Frame):
         """Mirror is_cancel_btn_enabled_var onto the cancel button."""
         state = tk.NORMAL if self._vm.is_cancel_btn_enabled_var.get() else tk.DISABLED
         self._btn_cancel.configure(state=state)
-
-    def _sync_open_folder_btn(self, *_: object) -> None:
-        """Mirror is_open_folder_btn_enabled_var onto the open-folder button."""
-        state = tk.NORMAL if self._vm.is_open_folder_btn_enabled_var.get() else tk.DISABLED
-        self._btn_open_folder.configure(state=state)
 
     def _sync_pause_btn(self, *_: object) -> None:
         """Mirror is_pause_enabled_var onto the pause button."""

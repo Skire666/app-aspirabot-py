@@ -2,8 +2,11 @@
 
 Owns the entire debug browser session lifecycle: launches a persistent
 BrowserPlaywrightService worker thread, routes all Playwright calls through
-a task queue so they stay in the same thread, and updates the DebugPageViewModel
+a task queue so they stay in the same thread, and updates DebugViewModel
 Vars via after(0, callback).
+
+All page-inspection callbacks (refresh, analyze, close) are bound once at
+construction time; no per-session ViewModel is created.
 
 Example:
     >>> presenter = DebugPresenter(vm=debug_vm, debug_service=svc)
@@ -21,13 +24,38 @@ import queue
 import threading
 from collections.abc import Callable
 
+from models.app_configuration_model import AppConfigurationModel
 from playwright.sync_api import Page
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
 from shared.enums import ExtractTextHtmlEnum
 from shared.exception_util import AspirabotBaseError
-from view_models.debug_page_view_model import DebugPageViewModel
+from shared.i18n_fra import C_DEBUG_DNS_DELAY_INVALID, C_DEBUG_TIMEOUT_INVALID, C_DEBUG_URL_EMPTY
 from view_models.debug_view_model import DebugViewModel
+
+# -----------------------------------------------------------------------------
+# Module-level helpers
+# -----------------------------------------------------------------------------
+
+_DEBUG_SPIN_MIN: int = 1
+_DEBUG_SPIN_MAX: int = 30
+
+
+def _is_valid_spin_int(value: str) -> bool:
+    """Return True when *value* parses as an integer within the spinbox range.
+
+    Args:
+        value: Raw string from a debug-session spinbox widget.
+
+    Returns:
+        True if the value is a valid bounded integer, False otherwise.
+    """
+    try:
+        n = int(value)
+        return _DEBUG_SPIN_MIN <= n <= _DEBUG_SPIN_MAX
+    except ValueError:
+        return False
+
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -38,78 +66,107 @@ class DebugPresenter:
     """Orchestrates the debug browser session from the Debug sidebar module.
 
     Responsibilities:
-    - Binds the DebugViewModel start callback.
+    - Binds all DebugViewModel callbacks once at construction time.
     - Manages a single persistent browser worker thread per session.
     - Routes all Playwright API calls through a queue to that thread.
-    - Updates DebugPageViewModel Vars on the main thread via after().
+    - Updates DebugViewModel Vars on the main thread via after().
     """
 
-    def __init__(self, vm: DebugViewModel, debug_service: DebugBrowserService) -> None:
-        """Initialises the presenter and binds the ViewModel callback.
+    def __init__(
+        self, vm: DebugViewModel, debug_service: DebugBrowserService, config_model: AppConfigurationModel
+    ) -> None:
+        """Initialises the presenter and binds all ViewModel callbacks.
 
         Args:
-            vm: The DebugViewModel for the debug session panel.
-            debug_service: Service providing DOM inspection utilities for the debug browser.
+            vm: The merged DebugViewModel for the debug module.
+            debug_service: Service providing DOM inspection utilities.
+            config_model: Application configuration supplying Chromium paths.
         """
         self._logger = logging.getLogger(__name__)
         self._vm = vm
-
-        # Debug session state — one active session at a time.
+        self._config_model = config_model
         self._debug_browser: BrowserPlaywrightService | None = None
-        self._debug_page_vm: DebugPageViewModel | None = None
         self._debug_service: DebugBrowserService = debug_service
         self._debug_queue: queue.Queue[Callable[[Page], None] | None] = queue.Queue()
         self._debug_thread: threading.Thread | None = None
 
-        self._vm.bind_start(self._on_debug_start)
+        # Bind all callbacks once — no per-session rebinding needed.
+        vm.bind_start(self._on_debug_start)
+        vm.bind_refresh(self._on_debug_refresh)
+        vm.bind_analyze_texts(self._on_debug_analyze_texts)
+        vm.bind_analyze_images(self._on_debug_analyze_images)
+        vm.bind_close(self._on_debug_close)
 
     # -----------------------------------------------------------------------
-    # Debug session — public entry point
+    # Input validation
     # -----------------------------------------------------------------------
 
-    def _on_debug_start(self, url: str, timeout: int, dns_delay: int) -> None:
-        """Opens a debug browser session for the given URL.
+    def _validate_debug_inputs(self, url: str, timeout_raw: str, dns_delay_raw: str) -> list[str]:
+        """Collect validation errors for the debug session inputs.
 
-        Closes any prior session, creates a DebugPageViewModel and asks the
-        DebugView to open the inspection Toplevel, then starts the worker thread.
+        Args:
+            url: URL string entered by the user.
+            timeout_raw: Raw spinbox string for the navigation timeout.
+            dns_delay_raw: Raw spinbox string for the DNS-resolution wait.
+
+        Returns:
+            Ordered list of French error strings; empty when all inputs are valid.
+        """
+        errors: list[str] = []
+        if not url or url == "https://":
+            errors.append(C_DEBUG_URL_EMPTY)
+        if not _is_valid_spin_int(timeout_raw):
+            errors.append(C_DEBUG_TIMEOUT_INVALID)
+        if not _is_valid_spin_int(dns_delay_raw):
+            errors.append(C_DEBUG_DNS_DELAY_INVALID)
+        return errors
+
+    # -----------------------------------------------------------------------
+    # Debug session — entry point
+    # -----------------------------------------------------------------------
+
+    def _on_debug_start(self, url: str, timeout_raw: str, dns_delay_raw: str) -> None:
+        """Validates inputs then opens a debug browser session.
+
+        Sets vm.error_message_var and returns early on invalid inputs.
+        Resets page Vars, opens the inspection Toplevel, and starts the worker.
 
         Args:
             url: The URL to open in the debug browser.
-            timeout: Navigation timeout in seconds (1-30).
-            dns_delay: DNS resolution wait in seconds (1-30).
+            timeout_raw: Raw spinbox string for the navigation timeout (1-30 s).
+            dns_delay_raw: Raw spinbox string for the DNS-resolution wait (1-30 s).
         """
+        errors = self._validate_debug_inputs(url, timeout_raw, dns_delay_raw)
+        if errors:
+            self._vm.error_message_var.set("  |  ".join(errors))
+            return
+        self._vm.error_message_var.set("")
+        timeout = int(timeout_raw)
+        dns_delay = int(dns_delay_raw)
+
         self._close_debug_session()
         # Fresh queue — old worker reads None from its own (now unreferenced) queue.
         self._debug_queue = queue.Queue()
-        self._debug_browser = BrowserPlaywrightService()
-
-        # Create the page ViewModel; dispatch to the View to build the Toplevel.
-        debug_page_vm = DebugPageViewModel(master=self._vm.master, url=url)
-        debug_page_vm.bind_refresh(self._on_debug_refresh)
-        debug_page_vm.bind_analyze_texts(self._on_debug_analyze_texts)
-        debug_page_vm.bind_analyze_images(self._on_debug_analyze_images)
-        debug_page_vm.bind_close(self._on_debug_close)
-        debug_page_vm.html_content_var.set("Chargement en cours…")
-        self._debug_page_vm = debug_page_vm
-        self._vm.open_debug_page(debug_page_vm)
-
-        self._vm.set_status_active(url)
-        self._debug_thread = threading.Thread(
-            target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True
+        self._debug_browser = BrowserPlaywrightService(
+            chromium_persistant_dir=self._config_model.chromium_persistant_dir,
+            chromium_extensions_dir=self._config_model.chromium_extensions_dir,
         )
+
+        # Reset page Vars and open the inspection.
+        self._vm.reset_page(url)
+        self._vm.html_content_var.set("Chargement en cours…")
+        self._vm.open_debug_page()
+
+        self._debug_thread = threading.Thread(target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True)
         self._debug_thread.start()
 
     def _close_debug_session(self) -> None:
-        """Force-closes the inspection window and sends a stop signal to the worker."""
-        if self._debug_page_vm is not None:
-            # Setting is_alive_var to False triggers the View's trace, which calls
-            # self.destroy() directly — bypassing WM_DELETE_WINDOW and _on_debug_close.
-            with contextlib.suppress(Exception):
-                self._debug_page_vm.is_alive_var.set(False)
-            self._debug_page_vm = None
+        """Force-closes the inspection window and stops the browser worker."""
+        # Setting is_alive_var to False triggers DebugPageView._sync_alive → destroy().
+        with contextlib.suppress(Exception):
+            self._vm.is_alive_var.set(False)
         # Sentinel None causes the worker loop to exit and close the browser.
         self._debug_queue.put(None)
-        self._vm.set_status_idle()
 
     # -----------------------------------------------------------------------
     # Browser worker (long-lived thread)
@@ -118,10 +175,9 @@ class DebugPresenter:
     def _browser_worker(self, url: str, timeout: int, dns_delay: int) -> None:
         """Long-lived browser thread — the only thread that calls Playwright.
 
-        Launches the browser, navigates to url using the supplied timing
-        parameters, pushes the initial HTML, then processes Callable tasks
-        from _debug_queue until a None sentinel arrives. The browser is
-        always closed in the finally block.
+        Launches the browser, navigates to url, pushes the initial HTML, then
+        processes Callable tasks from _debug_queue until a None sentinel arrives.
+        The browser is always closed in the finally block.
 
         Args:
             url: The URL to navigate to on startup.
@@ -135,10 +191,8 @@ class DebugPresenter:
                 url, wait_state="networkidle", timeout_ms=timeout * 1000, wait_dns_solver_sec=dns_delay
             )
             page = self._debug_browser.get_current_page()
-            # Push initial HTML to the ViewModel after successful navigation.
             html = self._debug_service.get_html_content(page)
             self._push_html(html)
-            # Process tasks — all Playwright calls stay in this thread.
             while True:
                 task = self._debug_queue.get()
                 if task is None:
@@ -161,9 +215,8 @@ class DebugPresenter:
         Args:
             html: Raw HTML string (or error message) to push to the ViewModel.
         """
-        vm = self._debug_page_vm
-        if vm and vm.is_alive_var.get():
-            vm.after(0, lambda: vm.html_content_var.set(html))
+        if self._vm.is_alive_var.get():
+            self._vm.after(0, lambda: self._vm.html_content_var.set(html))
 
     def _push_text_results(self, text: str) -> None:
         """Schedule a text_results_var update on the main thread.
@@ -171,9 +224,8 @@ class DebugPresenter:
         Args:
             text: Formatted text-analysis result string.
         """
-        vm = self._debug_page_vm
-        if vm and vm.is_alive_var.get():
-            vm.after(0, lambda: vm.text_results_var.set(text))
+        if self._vm.is_alive_var.get():
+            self._vm.after(0, lambda: self._vm.text_results_var.set(text))
 
     def _push_image_results(self, text: str) -> None:
         """Schedule an image_results_var update on the main thread.
@@ -181,9 +233,8 @@ class DebugPresenter:
         Args:
             text: Formatted image-analysis result string.
         """
-        vm = self._debug_page_vm
-        if vm and vm.is_alive_var.get():
-            vm.after(0, lambda: vm.image_results_var.set(text))
+        if self._vm.is_alive_var.get():
+            self._vm.after(0, lambda: self._vm.image_results_var.set(text))
 
     # -----------------------------------------------------------------------
     # Queued task dispatchers (main thread → worker thread)
@@ -210,10 +261,10 @@ class DebugPresenter:
         self._debug_queue.put(lambda page: self._task_analyze_images(page, selector))
 
     def _on_debug_close(self) -> None:
-        """Handles a user-initiated window close: cleans up session state."""
-        self._debug_page_vm = None
+        """Handles a user-initiated window close: stops the browser worker."""
         self._debug_queue.put(None)
-        self._vm.set_status_idle()
+        with contextlib.suppress(Exception):
+            self._vm.is_alive_var.set(False)
 
     # -----------------------------------------------------------------------
     # Task implementations (run inside the browser worker thread)

@@ -4,11 +4,6 @@ This ttk.Frame is placed inside the 'Liste des étapes' LabelFrame
 of WorkflowView. It renders a drag-and-drop step list, a toolbar,
 and an inline 'Brique logique' form panel for adding and editing steps.
 All user actions fire callbacks set by the presenter.
-
-Example:
-    >>> widget = StepsListCrudView(parent_frame)
-    >>> widget.on_add_step = lambda: print("add clicked")
-    >>> widget.render_steps([])
 """
 
 # -----------------------------------------------------------------------------
@@ -17,7 +12,6 @@ Example:
 
 from __future__ import annotations
 
-import logging
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
@@ -72,7 +66,6 @@ class StepsListCrudView(ttk.Frame):
             parent: The parent Tkinter widget to embed into.
         """
         super().__init__(parent)
-        self._logger = logging.getLogger(__name__)
         self._init_callbacks()
         self._selected_index: int | None = None
         # Identity reference to the currently selected view item — used to

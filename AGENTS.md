@@ -848,29 +848,9 @@ def _on_load(self) -> None:
 
 | What                          | Where                                    |
 |-------------------------------|------------------------------------------|
-| Raw errors (code + context)   | `models/field_validation_error_model.py` |
 | Message templates             | `shared/i18n_fra.py`                     |
-| Formatting logic              | `shared/error_formatter.py` — `format_error()` |
 | Storage of formatted message  | `ViewModel` (`error_message_var`)        |
 | Display                       | `View` — bound to `vm.error_message_var` |
-
-### `FieldValidationErrorModel`
-
-```python
-# models/field_validation_error_model.py
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class FieldValidationErrorModel:
-    """Represents a business field validation error.
-
-    Attributes:
-        code: Key of the template in ERROR_TEMPLATES.
-        context: Data used to format the message.
-    """
-    code: str
-    context: dict[str, str | int]
-```
 
 ### Message templates — `shared/i18n_fra.py`
 
@@ -884,37 +864,9 @@ ERROR_TEMPLATES: dict[str, str] = {
     "empty_field": "Étape {step} : le champ '{field}' ne peut pas être vide.",
 }
 ```
-
-### `format_error()` helper — `shared/error_formatter.py`
-
-```python
-from models.field_validation_error_model import FieldValidationErrorModel
-from shared.i18n_fra import ERROR_TEMPLATES
-
-def format_error(error: FieldValidationErrorModel) -> str:
-    """Format a FieldValidationErrorModel into a ready-to-display French string.
-
-    Args:
-        error: The validation error to format.
-
-    Returns:
-        A ready-to-display user message in French.
-    """
-    template = ERROR_TEMPLATES.get(
-        error.code,
-        "Erreur inconnue (code : {code})",
-    )
-    try:
-        return template.format(code=error.code, **error.context)
-    except KeyError as e:
-        return f"Erreur de formatage pour le code '{error.code}' : clé manquante {e}"
-```
-
 ### Presenter — formats and writes to a VM Var
 
 ```python
-from shared.error_formatter import format_error
-
 messages = [format_error(e) for e in raw_errors]
 self._vm.error_message_var.set("\n".join(messages))
 ```

@@ -12,6 +12,7 @@ from typing import Any
 
 from models.launcher_model import LaunchModel
 from services.profiles_service import ProfilesService
+from shared.dialog_util import ask_delete_profile_confirmation
 from shared.exception_util import AspirabotBaseError
 from view_models.profiles_view_model import ProfilesViewModel
 
@@ -169,13 +170,16 @@ class ProfilesPresenter:
         if self.on_request_launch_profile:
             self.on_request_launch_profile(id_scenario, id_profile)
 
-    def _on_delete(self, id_scenario: str, id_profile: str) -> None:
-        """Delete a profile via the service then reload the list.
+    def _on_delete(self, id_scenario: str, id_profile: str, profile_name: str) -> None:
+        """Ask for confirmation then delete a profile and reload the list.
 
         Args:
             id_scenario: ID of the scenario owning the selected profile.
             id_profile: ID of the profile to delete.
+            profile_name: Display name shown in the confirmation dialog.
         """
+        if not ask_delete_profile_confirmation(profile_name):
+            return
         self._service_profile.delete_profile_launch(id_scenario, id_profile)
         self._load_profiles()
 

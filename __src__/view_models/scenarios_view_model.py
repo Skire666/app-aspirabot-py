@@ -217,5 +217,25 @@ class ScenariosViewModel:
         if self._on_show_error is not None:
             self._on_show_error(message)
 
+    def grid_action(self, action_id: str, id_file: str) -> None:
+        """Route a DataGrid action to the appropriate action method.
+
+        Keeps the View passive: the View calls this single entry-point and
+        the ViewModel handles routing to the right action method.
+
+        Args:
+            action_id: Column identifier of the clicked button.
+            id_file: File ID of the scenario bound to the row.
+        """
+        dispatch: dict[str, Callable[[str], None]] = {
+            "action_launch": self.launch,
+            "action_edit": self.edit,
+            "action_duplicate": self.duplicate,
+            "action_delete": self.delete,
+        }
+        action = dispatch.get(action_id)
+        if action is not None:
+            action(id_file)
+
 
 # EOF

@@ -138,8 +138,7 @@ class AppConfigurationRepository:
         # Check if the configuration file already exists.
         if not Path(self._full_pathfile).exists():
             self._logger.info(
-                "Fichier de configuration introuvable, création du fichier par défaut : %s",
-                self._full_pathfile,
+                "Fichier de configuration introuvable, création du fichier par défaut : %s", self._full_pathfile
             )
             default_data = AppConfigurationModel()
             self._write_json(default_data)
@@ -160,15 +159,6 @@ class AppConfigurationRepository:
         Raises:
             TypeError: If the merged data cannot be used to instantiate the model
                 (e.g., missing required constructor parameters).
-
-        Example:
-            Loading and inspecting configuration:
-
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> config = repo.read_configuration()
-            >>> assert isinstance(config, AppConfigurationModel)
-            >>> print(config.window_title)
-            'Aspirabot'
         """
         self.ensure_file_exists()
 
@@ -217,8 +207,7 @@ class AppConfigurationRepository:
             return datetime.fromtimestamp(self._full_pathfile.stat().st_mtime)
         except OSError:
             self._logger.exception(
-                "Erreur lors de la lecture de l'horodatage du fichier de configuration '%s'",
-                self._full_pathfile,
+                "Erreur lors de la lecture de l'horodatage du fichier de configuration '%s'", self._full_pathfile
             )
             return None
 
@@ -289,10 +278,7 @@ class AppConfigurationRepository:
             self._logger.debug("Fichier de configuration sauvegardé avec succès.")
         except OSError:
             # Log write errors for troubleshooting.
-            self._logger.exception(
-                "Erreur lors de l'écriture du fichier de configuration '%s'",
-                self._full_pathfile,
-            )
+            self._logger.exception("Erreur lors de l'écriture du fichier de configuration '%s'", self._full_pathfile)
 
 
 # EOF

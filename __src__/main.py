@@ -169,7 +169,7 @@ def _build_and_wire_components(  # noqa: PLR0914
     )
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
-    dbg_view, dbg_p = _init_debug_component(main_view)
+    dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
     _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr, scrap_pre)
     views: list[tk.Widget] = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
     presenters: list[object] = [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, steps_pr, exec_pre, scrap_pre, dbg_p]
@@ -335,18 +335,19 @@ def _init_workflow_group(
     return workflow_view, workflow_presenter, steps_list_presenter
 
 
-def _init_debug_component(main_view: MainView) -> tuple[DebugView, DebugPresenter]:
+def _init_debug_component(main_view: MainView, config_model: AppConfigurationModel) -> tuple[DebugView, DebugPresenter]:
     """Create and wire the debug browser component.
 
     Args:
         main_view: Main container providing the content area as parent.
+        config_model: Application configuration supplying Chromium paths.
 
     Returns:
         A (DebugView, DebugPresenter) tuple.
     """
     debug_vm = DebugViewModel(master=main_view.content_area)
     debug_view = DebugView(main_view.content_area, vm=debug_vm)
-    debug_presenter = DebugPresenter(vm=debug_vm, debug_service=DebugBrowserService())
+    debug_presenter = DebugPresenter(vm=debug_vm, debug_service=DebugBrowserService(), config_model=config_model)
     return debug_view, debug_presenter
 
 
@@ -493,6 +494,7 @@ def _wire_scraping_navigation(
     def on_scraping_stopped() -> None:
         for mod in blocked_mods:
             main_view.set_tab_state(mod, tk.NORMAL)
+        main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
 
     def on_request_launch_scraping(scenario: object, profile: object) -> None:
         scraping_presenter.set_launch_context(scenario, profile)  # type: ignore[arg-type]

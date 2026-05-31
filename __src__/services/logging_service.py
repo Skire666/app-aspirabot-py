@@ -9,21 +9,6 @@ Key Features:
     - Custom observable handler for real-time log event broadcasting
     - Centralized logger configuration with consistent formatting
     - Support for dynamic handler attachment and detachment
-
-Example:
-    Basic usage with file and UI logging:
-
-    >>> from logging_service import LoggingService
-    >>>
-    >>> def on_log_event(log_entry):
-    ...     print(f"[{log_entry.level}] {log_entry.message}")
-    >>>
-    >>> service = LoggingService(log_file="app.log", log_level="INFO")
-    >>> service.attach_ui_callback(on_log_event)
-    >>>
-    >>> import logging
-    >>> logger = logging.getLogger("my_module")
-    >>> logger.info("Application started successfully")
 """
 
 # -----------------------------------------------------------------------------
@@ -55,12 +40,6 @@ class ObservableLogHandler(logging.Handler):
 
     Attributes:
         _callback: The function to invoke when a log record is emitted.
-
-    Example:
-        >>> def log_callback(entry):
-        ...     print(f"{entry.date} | {entry.level} | {entry.message}")
-        >>> handler = ObservableLogHandler(log_callback)
-        >>> logger.addHandler(handler)
     """
 
     def __init__(self, callback: Callable[[LogEntryModel], None]) -> None:
@@ -73,11 +52,6 @@ class ObservableLogHandler(logging.Handler):
 
         Raises:
             TypeError: If callback is not callable.
-
-        Example:
-            >>> def handle_log(entry: LogEntryModel) -> None:
-            ...     print(f"Log: {entry.message}")
-            >>> handler = ObservableLogHandler(handle_log)
         """
         super().__init__()
         # Store the callback function for dispatching log events.

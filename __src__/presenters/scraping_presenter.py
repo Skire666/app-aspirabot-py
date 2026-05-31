@@ -35,6 +35,9 @@ from shared.i18n_fra import (
     C_SCRAPING_STATUS_CANCELLED,
     C_SCRAPING_STATUS_EMERGENCY_STOP,
     C_SCRAPING_STATUS_FINISHED,
+    C_SCRAPING_STATUS_PAUSED,
+    C_SCRAPING_STATUS_RUNNING,
+    C_SCRAPING_STATUS_STARTING,
 )
 from view_models.scraping_view_model import ScrapingViewModel
 
@@ -162,7 +165,7 @@ class ScrapingPresenter:
         self._init_thresholds()
         self._vm.is_running_var.set(True)
         self._vm.is_pause_enabled_var.set(True)
-        self._vm.process_status_var.set("Démarrage...")
+        self._vm.process_status_var.set(C_SCRAPING_STATUS_STARTING)
         if callable(self.on_scraping_started):
             self.on_scraping_started()
 
@@ -188,17 +191,18 @@ class ScrapingPresenter:
         self._pause_event.clear()
         self._vm.is_pause_enabled_var.set(False)
         self._vm.is_resume_active_var.set(True)
-        self._vm.process_status_var.set("En pause")
+        self._vm.process_status_var.set(C_SCRAPING_STATUS_PAUSED)
 
     def _on_resume(self) -> None:
         """Resume execution after a pause (manual or emergency)."""
         if not self._is_running:
             return
         self._is_paused = False
+        self._service.update_emergency_thresholds(self._current_global_threshold, self._current_step_threshold)
         self._pause_event.set()
         self._vm.is_resume_active_var.set(False)
         self._vm.is_pause_enabled_var.set(True)
-        self._vm.process_status_var.set("Scraping en cours")
+        self._vm.process_status_var.set(C_SCRAPING_STATUS_RUNNING)
 
     def _on_open_folder(self) -> None:
         """Open the export folder of the current profile via the service."""

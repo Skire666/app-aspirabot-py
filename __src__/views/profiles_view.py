@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 
 from view_models.profiles_view_model import ProfilesViewModel
 from views.components.data_grid import DataGrid, GridColumn
@@ -93,18 +93,13 @@ class ProfilesView(ttk.Frame):
         self._grid.render_data(profiles)
 
     def _on_action(self, action_id: str, bound: object) -> None:
-        """Forward DataGrid action events to the ViewModel launch action.
+        """Forward DataGrid action events to the ViewModel via grid_action.
 
         Args:
             action_id: Column id of the button that was clicked.
             bound: The ``__bound__`` object set by the Presenter (LaunchModel).
         """
-        if action_id == "action_launch":
-            self._vm.launch_profile(str(getattr(bound, "id_scenario", "")), str(getattr(bound, "id_profile", "")))
-        elif action_id == "action_delete":
-            profile_name = str(getattr(bound, "profile_name", "ce profil"))
-            if messagebox.askyesno("Confirmation", f"Supprimer le profil « {profile_name} » ?"):
-                self._vm.delete_profile(str(getattr(bound, "id_scenario", "")), str(getattr(bound, "id_profile", "")))
+        self._vm.grid_action(action_id, bound)
 
 
 # EOF

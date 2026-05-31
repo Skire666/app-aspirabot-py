@@ -10,20 +10,11 @@ def get_current_working_directory() -> Path:
 
     Returns:
         Path: The current working directory as a Path object.
-
-    Example:
-        ## python ./_src_/main.py
-        cwd = get_current_working_directory()
-        print(cwd)  # Output: Path('./')
     """
     return Path.cwd()
 
 
-def make_all_folders_if_not_exists(
-    path: Path | str,
-    *,
-    is_file_path: bool | None = None,
-) -> None:
+def make_all_folders_if_not_exists(path: Path | str, *, is_file_path: bool | None = None) -> None:
     """Create all folders for a directory path or a file path's parent.
 
     Args:

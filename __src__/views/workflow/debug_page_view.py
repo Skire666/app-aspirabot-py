@@ -2,11 +2,11 @@
 
 Lets the user inspect a live Playwright-controlled page: raw HTML content,
 CSS selector text analysis, and image metadata extraction.  All display state
-is driven by ``DebugPageViewModel`` Vars; user actions are dispatched to VM
+is driven by ``DebugViewModel`` Vars; user actions are dispatched to VM
 action methods.
 
 Example:
-    >>> vm = DebugPageViewModel(master=root, url="https://example.com")
+    >>> vm = DebugViewModel(master=root, url="https://example.com")
     >>> DebugPageView(parent=root, vm=vm)
 """
 
@@ -20,7 +20,7 @@ import re
 import tkinter as tk
 from tkinter import ttk
 
-from view_models.debug_page_view_model import DebugPageViewModel
+from view_models.debug_view_model import DebugViewModel
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -36,18 +36,18 @@ _URL_TITLE_MAX_LEN: int = 80  # Truncate URL in the window title at this length.
 class DebugPageView(tk.Toplevel):
     """Top-level window for live DOM inspection of a Playwright-controlled page.
 
-    Bound to ``DebugPageViewModel``: display state is driven by ViewModel Vars
+    Bound to ``DebugViewModel``: display state is driven by ViewModel Vars
     via ``trace_add``; user actions are dispatched to VM action methods.  The
     window destroys itself when ``vm.is_alive_var`` is set to False by the
     Presenter (force-close), or when the user clicks the system close button.
     """
 
-    def __init__(self, parent: tk.Widget, vm: DebugPageViewModel) -> None:
+    def __init__(self, parent: tk.Widget, vm: DebugViewModel) -> None:
         """Builds the debug inspection window and binds to the ViewModel.
 
         Args:
             parent: Parent Tkinter widget (typically the DebugView frame).
-            vm: The DebugPageViewModel that owns all UI state for this popup.
+            vm: The DebugViewModel that owns all UI state for this popup.
         """
         super().__init__(parent)
         self._vm = vm

@@ -57,7 +57,6 @@ class ScrapingViewModel:
         # Derived button-state Vars — recomputed from is_running_var, has_context_var, has_folder_var.
         self.is_launch_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_cancel_btn_enabled_var = tk.BooleanVar(master=master, value=False)
-        self.is_open_folder_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self._updating_derived: bool = False
 
     def _init_stats_and_journal_vars(self, master: tk.Misc) -> None:
@@ -102,7 +101,6 @@ class ScrapingViewModel:
             running = self.is_running_var.get()
             self.is_launch_btn_enabled_var.set(not running and self.has_context_var.get())
             self.is_cancel_btn_enabled_var.set(running)
-            self.is_open_folder_btn_enabled_var.set(not running and self.has_folder_var.get())
         finally:
             self._updating_derived = False
 

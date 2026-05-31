@@ -36,7 +36,7 @@ class ProfilesViewModel:
         # Registered Presenter callbacks
         self._on_refresh: Callable[[], None] | None = None
         self._on_launch: Callable[[str, str], None] | None = None
-        self._on_delete: Callable[[str, str], None] | None = None
+        self._on_delete: Callable[[str, str, str], None] | None = None
         self._on_open_folder: Callable[[], None] | None = None
         self._on_sort: Callable[[str, bool], None] | None = None
 
@@ -91,11 +91,11 @@ class ProfilesViewModel:
         """
         self._on_launch = cb
 
-    def bind_delete(self, cb: Callable[[str, str], None]) -> None:
+    def bind_delete(self, cb: Callable[[str, str, str], None]) -> None:
         """Register the handler invoked when the user clicks Supp.
 
         Args:
-            cb: Called with (id_scenario, id_profile).
+            cb: Called with (id_scenario, id_profile, profile_name).
         """
         self._on_delete = cb
 
@@ -134,15 +134,16 @@ class ProfilesViewModel:
         if self._on_launch is not None:
             self._on_launch(id_scenario, id_profile)
 
-    def delete_profile(self, id_scenario: str, id_profile: str) -> None:
+    def delete_profile(self, id_scenario: str, id_profile: str, profile_name: str = "") -> None:
         """Dispatch a delete request to the Presenter.
 
         Args:
             id_scenario: ID of the owning scenario.
             id_profile: ID of the profile to delete.
+            profile_name: Display name forwarded to the Presenter for confirmation dialogs.
         """
         if self._on_delete is not None:
-            self._on_delete(id_scenario, id_profile)
+            self._on_delete(id_scenario, id_profile, profile_name)
 
     def open_folder(self) -> None:
         """Dispatch an open-folder request to the Presenter."""
@@ -158,6 +159,27 @@ class ProfilesViewModel:
         """
         if self._on_sort is not None:
             self._on_sort(column, ascending)
+
+    def grid_action(self, action_id: str, bound: object) -> None:
+        """Route a DataGrid action to the appropriate action method.
+
+        Keeps the View passive: the View calls this single entry-point and
+        the ViewModel handles routing to the right action method.
+
+        Args:
+            action_id: Column identifier of the clicked button.
+            bound: The bound object attached to the DataGrid row (LaunchModel).
+        """
+        id_scenario = str(getattr(bound, "id_scenario", ""))
+        id_profile = str(getattr(bound, "id_profile", ""))
+        profile_name = str(getattr(bound, "profile_name", ""))
+        dispatch: dict[str, Callable[[], None]] = {
+            "action_launch": lambda: self.launch_profile(id_scenario, id_profile),
+            "action_delete": lambda: self.delete_profile(id_scenario, id_profile, profile_name),
+        }
+        action = dispatch.get(action_id)
+        if action is not None:
+            action()
 
 
 # EOF

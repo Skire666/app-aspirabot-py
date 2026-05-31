@@ -16,6 +16,7 @@ from typing import Any
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from view_models.executor_view_model import ExecutorViewModel, ScenarioItem
 from views.components.column_combobox import ColumnCombobox
+from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
 # -----------------------------------------------------------------------------
@@ -147,9 +148,10 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        ttk.Button(row, text="Ouvrir dossier", command=lambda: self._vm.open_export_folder()).pack(
-            side=tk.RIGHT, pady=(0, 5)
-        )
+
+        FolderLinkWidget(
+            row, title="Dossier", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_export_folder()
+        ).pack(side=tk.RIGHT, pady=(0, 5))
         ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
         )
@@ -162,7 +164,7 @@ class ExecutorView(ttk.Frame):
         """Row 2 — URL source type combobox and folder/json path entry."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Source d'URL :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Source d'URL :", width=15).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         source_choices = [
             ("Liste manuelle", UrlSourceTypeEnum.E_MANUAL.value),
             ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER.value),
@@ -180,7 +182,7 @@ class ExecutorView(ttk.Frame):
         row.pack(fill=tk.X)
 
         self._lbl_source_path = ttk.Label(row, text="Chemin (si requis) : ")
-        self._lbl_source_path.pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
+        self._lbl_source_path.pack(side=tk.LEFT, padx=(98, 5), pady=(0, 5))
         self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed())
         self._entry_source_path = ttk.Entry(row, textvariable=self._vm.url_source_path_var)
         self._entry_source_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5))
@@ -192,7 +194,7 @@ class ExecutorView(ttk.Frame):
         """Row 3 — URL preview (scrollable, editable only in manual mode)."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Aperçu URLs :").pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Aperçu URLs :", width=15).pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 5), pady=(0, 5))
         preview_frame = ttk.Frame(row)
         preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self._txt_url_preview = tk.Text(preview_frame, height=7, wrap=tk.NONE)
@@ -207,7 +209,7 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         self._lbl_sort_order = ttk.Label(row, text="Ordre de lecture :")
-        self._lbl_sort_order.pack(side=tk.LEFT, padx=(80, 5), pady=(0, 5))
+        self._lbl_sort_order.pack(side=tk.LEFT, padx=(98, 5), pady=(0, 5))
         self._rb_recent = ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -241,11 +243,12 @@ class ExecutorView(ttk.Frame):
         """Row 6 — per-step error threshold with step selector."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Mise en pause :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Mettre en pause l'étape :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_steps = ttk.Combobox(row, state="readonly", width=38)
         self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
         self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed())
+        ttk.Label(row, text=" après  ").pack(side=tk.LEFT)
         ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=12).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         ttk.Label(row, text="erreurs").pack(side=tk.LEFT)
 

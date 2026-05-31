@@ -196,6 +196,16 @@ class ScrapingService:
         self._logger.debug("Ouverture du dossier d'export : %s", folder)
         open_folder(folder)
 
+    def update_emergency_thresholds(self, global_threshold: int, step_threshold: int) -> None:
+        """Update the emergency-stop thresholds in place during a running workflow.
+
+        Args:
+            global_threshold: New global failure ceiling.
+            step_threshold: New per-step failure ceiling.
+        """
+        self._emergency_stop_threshold = global_threshold
+        self._emergency_stop_step_threshold = step_threshold
+
     def export_journal(self, lines: list[str], folder: Path) -> Path | None:
         """Persist run journal lines to disk via the journal repository.
 

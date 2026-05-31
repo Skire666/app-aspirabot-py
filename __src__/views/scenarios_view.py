@@ -122,21 +122,13 @@ class ScenariosView(ttk.Frame):
             self._btn_validate.config(state=tk.NORMAL)
 
     def _on_action(self, action_id: str, bound: object) -> None:
-        """Dispatch DataGrid action events to the appropriate ViewModel action.
+        """Forward DataGrid action events to the ViewModel via grid_action.
 
         Args:
             action_id: Column id of the button that was clicked.
             bound: The ``__bound__`` object set by the Presenter (ScenarioModel).
         """
-        id_file = str(getattr(bound, "id_file", ""))
-        if action_id == "action_launch":
-            self._vm.launch(id_file)
-        elif action_id == "action_edit":
-            self._vm.edit(id_file)
-        elif action_id == "action_duplicate":
-            self._vm.duplicate(id_file)
-        elif action_id == "action_delete":
-            self._vm.delete(id_file)
+        self._vm.grid_action(action_id, str(getattr(bound, "id_file", "")))
 
     @staticmethod
     def _show_warning(message: str) -> None:

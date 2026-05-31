@@ -4,14 +4,6 @@ This module exposes :class:`ScenariosService`, the single entry point for all
 scenario-related operations in the application core. It sits between the
 presentation layer and the persistence layer, enforcing business rules such as
 automatic timestamp stamping and step context injection.
-
-Example:
-    >>> from repositories.scenarios_repository import ScenariosRepository
-    >>> repo = ScenariosRepository()
-    >>> service = ScenariosService(repo)
-    >>> scenarios = service.list_all_scenarios()
-    >>> print(len(scenarios))  # number of persisted scenarios
-    3
 """
 
 # -----------------------------------------------------------------------------
