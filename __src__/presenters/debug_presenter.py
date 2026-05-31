@@ -190,7 +190,7 @@ class DebugPresenter:
             self._debug_browser.safe_goto_url(
                 url, wait_state="networkidle", timeout_ms=timeout * 1000, wait_dns_solver_sec=dns_delay
             )
-            page = self._debug_browser.get_current_page()
+            page = self._debug_browser.get_workflow_page()
             html = self._debug_service.get_html_content(page)
             self._push_html(html)
             while True:
@@ -279,7 +279,7 @@ class DebugPresenter:
         try:
             html = self._debug_service.get_html_content(page)
             self._push_html(html)
-        except AspirabotBaseError as exc:
+        except Exception as exc:
             self._logger.exception("Échec du rafraîchissement debug")
             self._push_html(f"Erreur lors du rafraîchissement : {exc}")
 
@@ -293,7 +293,7 @@ class DebugPresenter:
         try:
             result = self._debug_service.analyze_texts(page, selector)
             self._push_text_results(self._format_text_results(selector, result))
-        except AspirabotBaseError as exc:
+        except Exception as exc:
             self._logger.exception("Échec de l'analyse des textes")
             self._push_text_results(f"Erreur : {exc}")
 

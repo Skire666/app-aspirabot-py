@@ -59,7 +59,7 @@ class ClickForDownloadExecutor(StepExecutorBase, IStepExecutor):
             DownloadNotDetectedError: If no download was triggered after all click attempts.
         """
         p = cast(ClickForDownloadParams, context.step_scraping_data.params)
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
         if page.locator(p.selector).count() <= 0:
             raise ElementNotFoundForClickError(p.selector, p.click_mode)
         download = self._do_click_for_download(browser, p.click_mode, p.selector, p.index_clicked)
@@ -94,7 +94,7 @@ class ClickForDownloadExecutor(StepExecutorBase, IStepExecutor):
     def _do_click_for_download(
         browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int
     ) -> object:
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
         elements = page.query_selector_all(selector)
         if not elements:
             raise ElementNotFoundForClickError(selector, mode_click)

@@ -52,7 +52,7 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
 
         browser.safe_goto_url(target_url, p.wait_state, timeout_ms, p.wait_dns_solver)
 
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
         if page.url != target_url:
             raise UrlNavigationMismatchError(page.url, target_url)
 

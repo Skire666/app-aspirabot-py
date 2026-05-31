@@ -34,7 +34,7 @@ class CountHtmlElementsExecutor(StepExecutorBase, IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = cast(CountHtmlElementsParams, context.step_scraping_data.params)
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
 
         count = page.locator(p.selector).count()
         condition_met = evaluate_count_condition(count, p.operator, p.value)

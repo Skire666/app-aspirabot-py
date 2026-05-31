@@ -17,7 +17,6 @@ class KillBrowserParams(BaseStepParams):
 
     wait_duration: int
     wait_unit: str
-    export_data: bool
     comment: str = ""
 
     @field_validator("wait_duration")
@@ -27,9 +26,7 @@ class KillBrowserParams(BaseStepParams):
         if not info.context:
             return v
         if v < 0:
-            raise ValueError(
-                ERROR_TEMPLATES["end_process_wait_duration_invalid"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["end_process_wait_duration_invalid"].format(step=step_label(info.context)))
         return v
 
     @field_validator("wait_unit")

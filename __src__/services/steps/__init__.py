@@ -11,6 +11,7 @@ from services.steps.count_html_elements_executor import CountHtmlElementsExecuto
 from services.steps.count_html_images_executor import CountHtmlImagesExecutor
 from services.steps.download_image_executor import DownloadImageExecutor
 from services.steps.export_data_to_js_executor import ExportDataToJsExecutor
+from services.steps.export_variable_executor import ExportVariableExecutor
 from services.steps.extract_links_executor import ExtractLinksExecutor
 from services.steps.extract_texts_executor import ExtractTextsExecutor
 from services.steps.jump_to_step_executor import JumpToStepExecutor
@@ -18,11 +19,13 @@ from services.steps.kill_browser_executor import KillBrowserExecutor
 from services.steps.open_url_executor import OpenUrlExecutor
 from services.steps.refresh_page_executor import RefreshPageExecutor
 from services.steps.scroll_down_executor import ScrollDownExecutor
+from services.steps.section_executor import SectionExecutor
 from services.steps.wait_fixed_time_executor import WaitFixedTimeExecutor
 from services.steps.wait_html_elements_executor import WaitHtmlElementsExecutor
 from services.steps.wait_html_images_executor import WaitHtmlImagesExecutor
 from services.steps.wait_page_state_executor import WaitPageStateExecutor
 from services.steps.wait_user_action_executor import WaitUserActionExecutor
+from services.steps.youtube_transcripts_executor import YoutubeTranscriptsExecutor
 
 __all__ = [
     "ClickForDownloadExecutor",
@@ -32,6 +35,7 @@ __all__ = [
     "CountHtmlImagesExecutor",
     "DownloadImageExecutor",
     "ExportDataToJsExecutor",
+    "ExportVariableExecutor",
     "ExtractLinksExecutor",
     "ExtractTextsExecutor",
     "JumpToStepExecutor",
@@ -39,11 +43,13 @@ __all__ = [
     "OpenUrlExecutor",
     "RefreshPageExecutor",
     "ScrollDownExecutor",
+    "SectionExecutor",
     "WaitFixedTimeExecutor",
     "WaitHtmlElementsExecutor",
     "WaitHtmlImagesExecutor",
     "WaitPageStateExecutor",
     "WaitUserActionExecutor",
+    "YoutubeTranscriptsExecutor",
 ]
 
 

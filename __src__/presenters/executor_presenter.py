@@ -330,7 +330,9 @@ class ExecutorPresenter:
         self._vm.url_source_type_var.set(source_type)
         if source_type == UrlSourceTypeEnum.E_MANUAL.value:
             manual = profile.url_source_value
-            self._vm.manual_urls_var.set("\n".join(manual) if isinstance(manual, list) else "")
+            manual_list = manual if isinstance(manual, list) else []
+            self._vm.manual_urls_var.set("\n".join(manual_list))
+            self._vm.set_url_preview(manual_list)
         else:
             path = profile.url_source_value if isinstance(profile.url_source_value, str) else ""
             self._vm.url_source_path_var.set(path)

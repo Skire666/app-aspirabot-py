@@ -8,12 +8,6 @@ by StepType without depending on any concrete step class.
 Bootstrap: import ``models.steps``, ``presenters.steps``, ``services.steps``,
 and ``views.steps`` before querying the registry.  Each package
 ``__init__.py`` imports all concrete classes, which triggers registration.
-
-Example:
-    >>> from shared.step_registry import get_step_executor
-    >>> executor = get_step_executor(StepTypeEnum.E_OPEN_URL)
-    >>> executor.step_type()
-    <StepTypeEnum.E_OPEN_URL: 'OPEN_URL'>
 """
 
 # -----------------------------------------------------------------------------
@@ -86,10 +80,7 @@ def register_form(form: IStepFormDef) -> None:
     _forms[form.step_type()] = form
 
 
-def register_params_builder(
-    step_type: StepTypeEnum,
-    builder: Callable[[dict[str, Any]], IStepParams],
-) -> None:
+def register_params_builder(step_type: StepTypeEnum, builder: Callable[[dict[str, Any]], IStepParams]) -> None:
     """Register a params-builder callable for the given step type.
 
     The builder receives the raw ``dict[str, Any]`` stored in JSON and

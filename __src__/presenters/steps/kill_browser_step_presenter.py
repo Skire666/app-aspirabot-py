@@ -26,7 +26,6 @@ def _build(data: dict[str, Any]) -> KillBrowserParams:
     return KillBrowserParams(
         wait_duration=int(data.get("wait_duration", 1)),
         wait_unit=data.get("wait_unit", C_UNITS_TIME_DEFAULT_MODEL),
-        export_data=bool(data.get("export_data")),
         comment=data.get("comment", ""),
     )
 

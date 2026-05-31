@@ -53,10 +53,10 @@ LANG3 = {"fr": "FRA", "en": "ENG"}
 KIND_NAMES = {"man": "manual", "auto": "autogen", "orig": "original"}
 
 # Réessais : durées d'attente FIXES (en s) avant chaque nouvel essai
-RETRY_DELAYS = [5, 10, 15, 20]
+RETRY_DELAYS = [5, 9, 13]
 INNER_RETRIES = 3  # réessais internes yt_dlp
-REQUEST_SLEEP = 1.5  # pause entre requêtes d'extraction (s)
-DOWNLOAD_SLEEP_MIN = 2  # pause min avant un téléchargement (s)
+REQUEST_SLEEP = 2  # pause entre requêtes d'extraction (s)
+DOWNLOAD_SLEEP_MIN = 3  # pause min avant un téléchargement (s)
 DOWNLOAD_SLEEP_MAX = 6  # pause max avant un téléchargement (s)
 PAUSE_BETWEEN_PHASES = 8  # pause entre phase manuelle et phase auto (s)
 

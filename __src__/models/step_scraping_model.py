@@ -36,11 +36,6 @@ class StepScrapingModel:
         is_active: Whether this step is enabled during execution.
         modified_date: Timestamp of the last modification.
         params: Typed parameters specific to this step type.
-
-    Example:
-        >>> step = StepScrapingModel(StepTypeEnum.E_SCROLL_DOWN, "abc", params=ScrollDownParams.default())
-        >>> step.params.pixels
-        1000
     """
 
     step_type: StepTypeEnum

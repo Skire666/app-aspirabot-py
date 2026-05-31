@@ -30,7 +30,7 @@ class RefreshPageExecutor(StepExecutorBase, IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = cast(RefreshPageParams, context.step_scraping_data.params)
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
 
         # Clear session cookies before reload when requested.

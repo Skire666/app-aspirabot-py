@@ -202,7 +202,7 @@ class WorkflowView(ttk.Frame):
             step_type = _LABEL_TO_TYPE.get(label)
             if step_type:
                 return step_type
-        return StepTypeEnum.E_OPEN_URL
+        return StepTypeEnum.E_SECTION_STEPS
 
     def _on_inline_confirm_create(self, step_type: StepTypeEnum, params: dict[str, Any]) -> bool:
         """Delegates a creation confirm to the step list; resets the form when accepted.

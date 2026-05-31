@@ -50,7 +50,7 @@ class IWebBrowserService(Protocol):
         """
         ...
 
-    def get_current_page(self) -> Page:
+    def get_workflow_page(self) -> Page:
         """Return the primary browser page (the first one opened).
 
         Returns:

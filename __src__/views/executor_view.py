@@ -354,6 +354,7 @@ class ExecutorView(ttk.Frame):
         """Update the URL preview Text widget from the ViewModel list."""
         text = "\n".join(self._vm.get_url_preview())
         self._set_url_preview_text(text, editable=False)
+        self._sync_preview_editable()
 
     def _sync_url_source_type(self, *_: object) -> None:
         """Select the URL-source combobox entry matching url_source_type_var."""

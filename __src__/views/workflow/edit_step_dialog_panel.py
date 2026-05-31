@@ -142,7 +142,7 @@ class EditStepDialogPanel(ttk.Frame):
         Args:
             item: View-safe snapshot to pre-fill, or None to show a blank form.
         """
-        initial_type = item.step_type if item else StepTypeEnum.E_OPEN_URL
+        initial_type = item.step_type if item else StepTypeEnum.E_SECTION_STEPS
 
         label = C_STEP_TYPE_TO_LABELS[initial_type]
         self._type_var.set(label)

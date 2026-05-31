@@ -45,7 +45,7 @@ class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
         """Execute the step."""
         p = cast(ClickOnElementParams, context.step_scraping_data.params)
 
-        page = browser.get_current_page()  # can throw if page is closed
+        page = browser.get_workflow_page()  # can throw if page is closed
         if page.locator(p.selector).count() <= 0:
             raise ElementNotFoundForClickError(p.selector, p.click_mode)
 
@@ -73,7 +73,7 @@ class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
 
     @staticmethod
     def _do_click(browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int) -> str:
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
         elements = page.query_selector_all(selector)
         if not elements:
             raise ElementNotFoundForClickError(selector, mode_click)

@@ -49,7 +49,7 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the download-image step for all targeted images."""
         p = cast(DownloadImageParams, context.step_scraping_data.params)
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
         downloaded_urls = context.downloaded_urls
 
         images = get_filtered_images(browser, p.to_dict())
@@ -84,8 +84,7 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
         """
         # Download via the page context request to preserve session cookies.
         response = page.context.request.get(
-            full_url,
-            headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")},
+            full_url, headers={"Referer": page.url, "User-Agent": page.evaluate("() => navigator.userAgent")}
         )
         if not response.ok:
             raise ImageDownloadFailedError(response.status)

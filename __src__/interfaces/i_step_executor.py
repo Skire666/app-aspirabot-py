@@ -44,12 +44,6 @@ class IStepExecutor(Protocol):
     Executors receive a ``IWebBrowserService`` instance instead of a raw page.
     When page access is needed, call ``browser.get_current_page()``. When
     multi-tab management is needed, call ``browser.get_all_pages()``.
-
-    Example:
-        >>> executor = ConcreteExecutor()
-        >>> errors = executor.validate_model(model, 0, StepsContext.from_list([]))
-        >>> bool(errors)
-        True
     """
 
     @classmethod

@@ -44,7 +44,7 @@ class ExtractTextsExecutor(StepExecutorBase, IStepExecutor):
             context: Scraping context; step params is read and last_message_step is written.
         """
         p = cast(ExtractTextsParams, context.step_scraping_data.params)
-        page = browser.get_current_page()
+        page = browser.get_workflow_page()
 
         elements: list[ElementHandle] = page.query_selector_all(p.selector)
         if not elements:

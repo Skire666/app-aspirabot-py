@@ -167,10 +167,10 @@ def _fmt_jump_to_step(params: dict[str, Any], _idx: int, ctx: dict[str, int]) ->
         target_index = str(idx_found + 1).zfill(2)
     cond = params.get("condition", "")
     if cond == "success":
-        return f"Si le résultat est un succès\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
+        return f"Sauter vers l'étape - si avant est un succès\nSe rendre à {target_index}.  #{target_hexastring}"
     if cond == "failure":
-        return f"Si le résultat est un échec\nSe rendre à l'étape {target_index}.  #{target_hexastring}"
-    return f"Si le résultat est un succès/échec\nToujours aller à l'étape {target_index}.  #{target_hexastring}"
+        return f"Sauter vers l'étape - si avant est un échec\nSe rendre à {target_index}.  #{target_hexastring}"
+    return f"Sauter vers l'étape - [TOUJOURS]\nToujours aller à {target_index}.  #{target_hexastring}"
 
 
 def _fmt_kill_browser(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -209,6 +209,24 @@ def _fmt_scroll_down(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) ->
     """Format label for SCROLL_DOWN."""
     pixels = params.get("pixels", 1000)
     return f"Défilement vers le bas\nLongueur: {pixels} px"
+
+
+def _fmt_section(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
+    """Format label for SECTION_STEPS."""
+    title = params.get("title", "")
+    return f" - - -  Section  :  {title}  - - -"
+
+
+def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
+    """Format label for YOUTUBE_TRANSCRIPTS."""
+    title = params.get("title", "")
+    return f"YouTube Transcripts\nInfo : {title}"
+
+
+def _fmt_export_variable(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
+    """Format label for EXPORT_VARIABLE."""
+    variable = params.get("variable", "")
+    return f"Exporter une variable\n{variable}"
 
 
 def _fmt_wait_fixed_time(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -283,6 +301,9 @@ _REGISTRY: dict[StepTypeEnum, _FormatterFn] = {
     StepTypeEnum.E_OPEN_URL: _fmt_open_url,
     StepTypeEnum.E_REFRESH_PAGE: _fmt_refresh_page,
     StepTypeEnum.E_SCROLL_DOWN: _fmt_scroll_down,
+    StepTypeEnum.E_SECTION_STEPS: _fmt_section,
+    StepTypeEnum.E_YOUTUBE_TRANSCRIPTS: _fmt_youtube_transcripts,
+    StepTypeEnum.E_EXPORT_VARIABLE: _fmt_export_variable,
     StepTypeEnum.E_WAIT_FIXED_TIME: _fmt_wait_fixed_time,
     StepTypeEnum.E_WAIT_HTML_ELEMENTS: _fmt_wait_html_elements,
     StepTypeEnum.E_WAIT_HTML_IMAGES: _fmt_wait_html_images,

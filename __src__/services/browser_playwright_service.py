@@ -4,13 +4,6 @@ Uses Playwright Chromium with custom args. Tracks all open pages internally —
 including those opened by JavaScript — via context-level events. When a page
 is closed (by an executor or by the browser), it is removed automatically from
 the internal list.
-
-Example:
-    >>> svc = BrowserService(folder)
-    >>> svc.launch()
-    >>> svc.append_new_page()
-    >>> page = svc.get_current_page()
-    >>> svc.close_browser()
 """
 
 # -----------------------------------------------------------------------------
@@ -50,13 +43,6 @@ class BrowserPlaywrightService(IWebBrowserService):
     ``append_new_page()`` and pages opened by JavaScript (target="_blank")
     are both tracked. Closed pages are removed automatically via Playwright
     page-close events.
-
-    Example:
-        >>> svc = BrowserPlaywrightService(Path("."))
-        >>> svc.launch()
-        >>> svc.append_new_page()
-        >>> page = svc.get_current_page()
-        >>> svc.close_browser()
     """
 
     def __init__(self, chromium_persistant_dir: str, chromium_extensions_dir: str) -> None:
@@ -74,6 +60,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._pw: Playwright | None = None
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
+        self._workflow_page: Page | None = None
 
     # ------------------------------------------------------------------
     # IWebBrowserService — public API
@@ -123,6 +110,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._pw = sync_playwright().start()
         self._browser = self._pw.chromium.launch(headless=False, args=args)
         self._context = self._browser.new_context(no_viewport=True)
+        self._workflow_page = None
 
     def append_new_page(self) -> None:
         """Open a new browser page and register it via the context page event.
@@ -142,10 +130,10 @@ class BrowserPlaywrightService(IWebBrowserService):
             raise BrowserNotLaunchedError()
 
         context = self._browser.contexts[0]
-
         if len(context.pages) == 0:
-            context.new_page()
-        # DO NOT append to self._pages here; the context event will handle it.
+            self._workflow_page = context.new_page()
+        else:
+            self._workflow_page = context.pages[0]  # Track the first page as the workflow page.
 
     def close_all_tabs(self) -> None:
         """Close all open pages/tabs in the browser.
@@ -165,8 +153,9 @@ class BrowserPlaywrightService(IWebBrowserService):
         for context in self._browser.contexts:
             for page in context.pages:
                 page.close()
+        self._workflow_page = None
 
-    def get_current_page(self) -> Page:
+    def get_workflow_page(self) -> Page:
         """Return the primary browser page (the first one opened).
 
         Returns:
@@ -175,13 +164,12 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             PageNotAvailableOrClosedError: If no page is available or the current page is closed.
         """
-        if not self._browser.contexts or len(self._browser.contexts) == 0:
+        if not self._workflow_page:
             raise PageNotAvailableOrClosedError()
-        if not self._browser.contexts[0].pages or len(self._browser.contexts[0].pages) == 0:
+        if self._workflow_page.is_closed():
             raise PageNotAvailableOrClosedError()
 
-        # First page in the list is always the primary workflow page.
-        return self._browser.contexts[0].pages[0]
+        return self._workflow_page
 
     def get_all_pages(self) -> list[Page]:
         """Return all currently open pages tracked by this service.
@@ -254,17 +242,24 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             Exception: If navigation fails after retrying on DNS errors.
         """
-        page = self.get_current_page()
         try:
+            page = self.get_workflow_page()
             page.goto(url, wait_until="commit")
             page.wait_for_load_state(wait_state, timeout=timeout_ms)
         except Exception as exc:
-            if "ERR_NAME_NOT_RESOLVED" not in str(exc):
-                raise
-            if wait_dns_solver_sec >= _DNS_SOLVER_MAX_WAIT_SEC:
-                raise DnsSolverTimeoutExceededError() from exc
-            page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
-            page.reload(wait_until=wait_state, timeout=timeout_ms)
+            if "Target page, context or browser has been closed" in str(exc):
+                self._workflow_page = self._browser.contexts[0].new_page()  # Attempt to recover by opening a new page.
+                self._workflow_page.goto(url, wait_until="commit")
+                self._workflow_page.wait_for_load_state(wait_state, timeout=timeout_ms)
+                return
+            if "ERR_NAME_NOT_RESOLVED" in str(exc):
+                if wait_dns_solver_sec >= _DNS_SOLVER_MAX_WAIT_SEC:
+                    raise DnsSolverTimeoutExceededError() from exc
+                page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
+                page.reload(wait_until=wait_state, timeout=timeout_ms)
+                page.wait_for_load_state(wait_state, timeout=timeout_ms)
+                return
+            raise PageNotAvailableOrClosedError()  # noqa: B904
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
@@ -281,7 +276,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             Exception: The last exception raised if all retries are exhausted.
         """
-        page = self.get_current_page()
+        page = self.get_workflow_page()
 
         # Retry loop — re-raises on the final failed attempt.
         for attempt in range(1, retries + 1):

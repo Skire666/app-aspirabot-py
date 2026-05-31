@@ -36,7 +36,7 @@ class CloseTabsExecutor(StepExecutorBase, IStepExecutor):
         if not filter_used:
             raise MissingUrlFilterError()
 
-        current_page = browser.get_current_page()
+        current_page = browser.get_workflow_page()
         counter_closed = 0
         # Close tabs that do not match the URL filter.
         for p_tab in list(browser.get_all_pages()):

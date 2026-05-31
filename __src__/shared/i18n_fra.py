@@ -120,6 +120,7 @@ C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
 
 # French display labels for each step type (Combobox values).
 C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
+    StepTypeEnum.E_SECTION_STEPS: "Section",
     StepTypeEnum.E_OPEN_URL: "Ouvrir une URL",
     StepTypeEnum.E_CLOSE_TABS: "Fermer des onglets",
     StepTypeEnum.E_REFRESH_PAGE: "Rafraîchir la page",
@@ -133,8 +134,10 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_CLICK_ON_ELEMENT: "Cliquer sur un élément",
     StepTypeEnum.E_CLICK_FOR_DOWNLOAD: "Cliquer pour télécharger",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
+    StepTypeEnum.E_YOUTUBE_TRANSCRIPTS: "YouTube Transcripts",
     StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes",
     StepTypeEnum.E_EXTRACT_LINKS: "Extraire liens",
+    StepTypeEnum.E_EXPORT_VARIABLE: "Exporter une variable",
     StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (json)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
@@ -195,6 +198,12 @@ ERROR_TEMPLATES: dict[str, str] = {
     "refresh_page_timeout_unit_invalid": "Étape {step} : l'unité de timeout est invalide — {value!r}.",
     # --- scroll_down ---
     "scroll_down_pixels_invalid": "Étape {step} : le nombre de pixels doit être >= 1.",
+    # --- section ---
+    "section_title_required": "Étape {step} : le titre de la section est obligatoire.",
+    # --- youtube_transcripts ---
+    "youtube_transcripts_title_required": "Étape {step} : le titre YouTube Transcripts est obligatoire.",
+    # --- export_variable ---
+    "export_variable_invalid": "Étape {step} : variable invalide — {value!r}.",
     # --- wait_html_elements ---
     "wait_html_elements_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
     "wait_html_elements_operator_invalid": (
