@@ -204,6 +204,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "youtube_transcripts_title_required": "Étape {step} : le titre YouTube Transcripts est obligatoire.",
     # --- export_variable ---
     "export_variable_invalid": "Étape {step} : variable invalide — {value!r}.",
+    "export_variable_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
     # --- wait_html_elements ---
     "wait_html_elements_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
     "wait_html_elements_operator_invalid": (

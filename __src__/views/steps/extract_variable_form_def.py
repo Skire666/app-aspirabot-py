@@ -20,6 +20,7 @@ from views.steps._constants import EXPORT_VAR_DISPLAY, EXPORT_VAR_MODEL_TO_VIEW,
 # -----------------------------------------------------------------------------
 
 C_KEY_VARIABLE = "variable"
+C_KEY_MAPPING = "mapping"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -27,7 +28,7 @@ C_KEY_COMMENT = "comment"
 # -----------------------------------------------------------------------------
 
 
-class ExportVariableFormDef(IStepFormDef):
+class ExtractVariableFormDef(IStepFormDef):
     """Form definition for the export variable step."""
 
     @classmethod
@@ -44,6 +45,7 @@ class ExportVariableFormDef(IStepFormDef):
             widgets: Mutable mapping populated with tk.Variable references keyed by C_KEY_* constants.
         """
         self._build_subform_variable(frame, widgets)
+        self._build_subform_mapping(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
@@ -65,6 +67,22 @@ class ExportVariableFormDef(IStepFormDef):
         widgets[C_KEY_VARIABLE] = var_var
 
     @staticmethod
+    def _build_subform_mapping(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the mapping key input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_MAPPING tk.Variable.
+        """
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row1, text="Clé/Mapping :").pack(side=tk.LEFT, padx=(0, 5))
+        mapping_var = tk.StringVar(value="")
+        ttk.Entry(row1, textvariable=mapping_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_MAPPING] = mapping_var
+
+    @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the comment input row.
 
@@ -72,12 +90,12 @@ class ExportVariableFormDef(IStepFormDef):
             frame: Parent frame to pack the row into.
             widgets: Mutable mapping; populated with the C_KEY_COMMENT tk.Variable.
         """
-        row1 = ttk.Frame(frame)
-        row1.pack(fill="x", pady=(0, 8))
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
-        ttk.Entry(row1, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        ttk.Entry(row2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_COMMENT] = comm_var
 
     @override
@@ -91,6 +109,7 @@ class ExportVariableFormDef(IStepFormDef):
         widgets[C_KEY_VARIABLE].set(
             EXPORT_VAR_MODEL_TO_VIEW.get(params_dict.get(C_KEY_VARIABLE, ""), EXPORT_VAR_DISPLAY[0])
         )
+        widgets[C_KEY_MAPPING].set(params_dict.get(C_KEY_MAPPING, ""))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
@@ -105,11 +124,12 @@ class ExportVariableFormDef(IStepFormDef):
         """
         return {
             C_KEY_VARIABLE: EXPORT_VAR_VIEW_TO_MODEL.get(widgets[C_KEY_VARIABLE].get(), "date_time_now"),
+            C_KEY_MAPPING: widgets[C_KEY_MAPPING].get().strip(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 
 
-register_form(ExportVariableFormDef())
+register_form(ExtractVariableFormDef())
 
 
 # EOF

@@ -79,8 +79,8 @@ class ClickOnElementFormDef(IStepFormDef):
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) :").pack(side=tk.LEFT, padx=(0, 5))
-        mode_var = tk.StringVar(value="Normal")
+        ttk.Label(row1, text="Type de clic (Note PCO = JS Direct...) :").pack(side=tk.LEFT, padx=(0, 5))
+        mode_var = tk.StringVar(value="JS Direct")
         ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )
@@ -127,7 +127,7 @@ class ClickOnElementFormDef(IStepFormDef):
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
         widgets[C_KEY_SELECTOR].set(params_dict.get(C_KEY_SELECTOR, ""))
-        widgets[C_KEY_CLICK_MODE].set(params_dict.get(C_KEY_CLICK_MODE, "Normal"))
+        widgets[C_KEY_CLICK_MODE].set(params_dict.get(C_KEY_CLICK_MODE, "JS Direct"))
         widgets[C_KEY_INDEX_CLICKED].set(params_dict.get(C_KEY_INDEX_CLICKED, 0))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 

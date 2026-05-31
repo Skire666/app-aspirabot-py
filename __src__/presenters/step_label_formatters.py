@@ -167,10 +167,10 @@ def _fmt_jump_to_step(params: dict[str, Any], _idx: int, ctx: dict[str, int]) ->
         target_index = str(idx_found + 1).zfill(2)
     cond = params.get("condition", "")
     if cond == "success":
-        return f"Sauter vers l'étape - si avant est un succès\nSe rendre à {target_index}.  #{target_hexastring}"
+        return f"Sauter vers l'étape - si était un succès\nSe rendre à {target_index}.  #{target_hexastring}"
     if cond == "failure":
-        return f"Sauter vers l'étape - si avant est un échec\nSe rendre à {target_index}.  #{target_hexastring}"
-    return f"Sauter vers l'étape - [TOUJOURS]\nToujours aller à {target_index}.  #{target_hexastring}"
+        return f"Sauter vers l'étape - si était un échec\nSe rendre à {target_index}.  #{target_hexastring}"
+    return f"Sauter vers l'étape - [TOUJOURS]\nAller à {target_index}.  #{target_hexastring}"
 
 
 def _fmt_kill_browser(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -226,7 +226,7 @@ def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, 
 def _fmt_export_variable(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXPORT_VARIABLE."""
     variable = params.get("variable", "")
-    return f"Exporter une variable\n{variable}"
+    return f"Extraire une variable locale\n{variable}"
 
 
 def _fmt_wait_fixed_time(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:

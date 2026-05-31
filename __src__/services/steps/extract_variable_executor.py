@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.steps.export_variable_params import ExportVariableParams
+from models.steps.extract_variable_params import ExtractVariableParams
 from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_step_executor
@@ -38,7 +38,7 @@ def _resolve_variable(variable: str, context: ScrapingContextModel) -> str:
     return ""
 
 
-class ExportVariableExecutor(StepExecutorBase, IStepExecutor):
+class ExtractVariableExecutor(StepExecutorBase, IStepExecutor):
     """Executor for the export variable step — reads from context and pushes to extracted data."""
 
     @classmethod
@@ -54,14 +54,14 @@ class ExportVariableExecutor(StepExecutorBase, IStepExecutor):
             browser: Unused — values are read from context, not the browser.
             context: Live scraping context; extracted_data is written with the resolved value.
         """
-        p = cast(ExportVariableParams, context.step_scraping_data.params)
+        p = cast(ExtractVariableParams, context.step_scraping_data.params)
 
         value = _resolve_variable(p.variable, context)
-        context.push_extracted_values(p.variable, "", p.comment, [value])
-        context.last_message_step = f"Variable exportée '{p.variable}' = '{value}'."
+        context.push_extracted_values(p.mapping, p.variable, p.comment, [value])
+        context.last_message_step = f"Variable extraite '{p.variable}' = '{value}'."
 
 
-register_step_executor(ExportVariableExecutor())
+register_step_executor(ExtractVariableExecutor())
 
 
 # EOF

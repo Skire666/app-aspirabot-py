@@ -11,9 +11,9 @@ from services.steps.count_html_elements_executor import CountHtmlElementsExecuto
 from services.steps.count_html_images_executor import CountHtmlImagesExecutor
 from services.steps.download_image_executor import DownloadImageExecutor
 from services.steps.export_data_to_js_executor import ExportDataToJsExecutor
-from services.steps.export_variable_executor import ExportVariableExecutor
 from services.steps.extract_links_executor import ExtractLinksExecutor
 from services.steps.extract_texts_executor import ExtractTextsExecutor
+from services.steps.extract_variable_executor import ExtractVariableExecutor
 from services.steps.jump_to_step_executor import JumpToStepExecutor
 from services.steps.kill_browser_executor import KillBrowserExecutor
 from services.steps.open_url_executor import OpenUrlExecutor
@@ -35,9 +35,9 @@ __all__ = [
     "CountHtmlImagesExecutor",
     "DownloadImageExecutor",
     "ExportDataToJsExecutor",
-    "ExportVariableExecutor",
     "ExtractLinksExecutor",
     "ExtractTextsExecutor",
+    "ExtractVariableExecutor",
     "JumpToStepExecutor",
     "KillBrowserExecutor",
     "OpenUrlExecutor",

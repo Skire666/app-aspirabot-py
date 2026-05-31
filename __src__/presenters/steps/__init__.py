@@ -11,9 +11,9 @@ from presenters.steps.count_html_elements_step_presenter import _build as _b_cou
 from presenters.steps.count_html_images_step_presenter import _build as _b_count_html_img  # noqa: F401
 from presenters.steps.download_image_step_presenter import _build as _b_dl_image  # noqa: F401
 from presenters.steps.export_data_to_js_step_presenter import _build as _b_export_js  # noqa: F401
-from presenters.steps.export_variable_step_presenter import _build as _b_export_var  # noqa: F401
 from presenters.steps.extract_links_step_presenter import _build as _b_extract_links  # noqa: F401
 from presenters.steps.extract_texts_step_presenter import _build as _b_extract_texts  # noqa: F401
+from presenters.steps.extract_variable_step_presenter import _build as _b_export_var  # noqa: F401
 from presenters.steps.jump_to_step_step_presenter import _build as _b_jump_to_step  # noqa: F401
 from presenters.steps.kill_browser_step_presenter import _build as _b_kill_browser  # noqa: F401
 from presenters.steps.open_url_step_presenter import _build as _b_open_url  # noqa: F401

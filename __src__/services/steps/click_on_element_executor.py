@@ -12,8 +12,6 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.click_on_element_params import ClickOnElementParams
-from playwright.sync_api import ElementHandle
-from playwright.sync_api import Error as PlaywrightError
 from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
@@ -52,24 +50,6 @@ class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
         result = self._do_click(browser, p.click_mode, p.selector, p.index_clicked)  # can throw
 
         context.last_message_step = f"Clique OK avec sélecteur {p.selector!r} avec le mode {result!r}."
-
-    @staticmethod
-    def _try_normal_click(element: ElementHandle) -> bool:
-        try:
-            element.click(timeout=C_LIMIT_TIMEOUT_CLICK_MS)
-        except PlaywrightError:
-            return False
-        else:
-            return True
-
-    @staticmethod
-    def _try_forced_click(element: ElementHandle) -> bool:
-        try:
-            element.click(force=True, timeout=C_LIMIT_TIMEOUT_CLICK_MS)
-        except PlaywrightError:
-            return False
-        else:
-            return True
 
     @staticmethod
     def _do_click(browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int) -> str:

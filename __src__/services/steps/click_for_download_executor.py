@@ -12,7 +12,6 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.click_for_download_params import ClickForDownloadParams
-from playwright.sync_api import Error as PlaywrightError
 from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepTypeEnum
 from shared.exception_util import DownloadNotDetectedError, ElementNotFoundForClickError
@@ -74,15 +73,6 @@ class ClickForDownloadExecutor(StepExecutorBase, IStepExecutor):
         download_value.path()  # Blocks until the download file is fully written to disk
         new_path = str(context.folder_export) + "/" + filename
         download_value.save_as(new_path)
-
-    @staticmethod
-    def _try_playwright_click(page: object, elements: list, index: int, **click_kwargs: object) -> object | None:
-        try:
-            with page.expect_download() as download_info:
-                elements[index].click(timeout=C_LIMIT_TIMEOUT_CLICK_MS, **click_kwargs)
-                return download_info
-        except PlaywrightError:
-            return None
 
     @staticmethod
     def _try_js_click(page: object, elements: list, index: int) -> object:

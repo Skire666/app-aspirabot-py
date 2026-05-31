@@ -24,7 +24,7 @@ def _build(data: dict[str, Any]) -> ClickOnElementParams:
     """
     return ClickOnElementParams(
         selector=data.get("selector", ""),
-        click_mode=data.get("click_mode", "Normal"),
+        click_mode=data.get("click_mode", "JS Direct"),
         index_clicked=int(data.get("index_clicked", 0)),
         comment=data.get("comment", ""),
     )

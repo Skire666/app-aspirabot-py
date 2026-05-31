@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 class KeyData:
     """CSS selector, comment, and extracted string values for one mapping key."""
 
-    css_selector: str
+    input: str
     comment: str
     values: list[str] = field(default_factory=list)
 
@@ -60,7 +60,7 @@ class ExtractedData:
         """Serialize to a plain dict for JSON export."""
         return {
             url: {
-                key: {"css_selector": val_kd.css_selector, "comment": val_kd.comment, "values": val_kd.values}
+                key: {"input": val_kd.input, "comment": val_kd.comment, "values": val_kd.values}
                 for key, val_kd in val_ud.keys.items()
             }
             for url, val_ud in self.urls.items()
@@ -84,15 +84,6 @@ class ScrapingContextModel:
         last_message_step: Output — human-readable result set by the executor.
         pending_jump: Output — jump target (index or step_id) set by the executor.
         end_process: Output — set to True by the executor to stop the workflow.
-
-    Example:
-        >>> import threading
-        >>> from pathlib import Path
-        >>> ctx = ScrapingContextModel(...)
-        >>> ctx.url_source is None
-        True
-        >>> ctx.end_process
-        False
     """
 
     # Inputs from the orchestrator.
@@ -173,12 +164,12 @@ class ScrapingContextModel:
             self.last_message_step = message
         self.last_time_elapsed = time.time() - self._time_started
 
-    def push_extracted_values(self, mapping_key: str, sel: str, com: str, vals: list[str]) -> None:
+    def push_extracted_values(self, mapping_key: str, inp: str, com: str, vals: list[str]) -> None:
         """Push extracted values into the context's extracted_data dict.
 
         Args:
             mapping_key: The key under which to store the extracted values.
-            sel: The CSS selector used to find the elements.
+            inp: The input value used to find the elements.
             com: A user-provided comment for the extracted values.
             vals: The list of extracted string values to store.
         """
@@ -187,7 +178,7 @@ class ScrapingContextModel:
         if url not in self.extracted_data.urls:
             self.extracted_data.urls[url] = UrlData()
 
-        self.extracted_data.urls[url].keys[mapping_key] = KeyData(css_selector=sel, comment=com, values=vals)
+        self.extracted_data.urls[url].keys[mapping_key] = KeyData(input=inp, comment=com, values=vals)
         # TODO PCO : je réacrase tout, et en vrai, c'est pas plus mal
         # a voir si je dois merge les values en cas d'existant
 

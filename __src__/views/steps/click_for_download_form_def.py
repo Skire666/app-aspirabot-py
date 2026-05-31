@@ -79,8 +79,8 @@ class ClickForDownloadFormDef(IStepFormDef):
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Type de clic à utiliser (est cumulatif) :").pack(side=tk.LEFT, padx=(0, 5))
-        mode_var = tk.StringVar(value="Normal")
+        ttk.Label(row1, text="Type de clic (Note PCO = JS Direct...) :").pack(side=tk.LEFT, padx=(0, 5))
+        mode_var = tk.StringVar(value="JS Direct")
         ttk.Combobox(row1, textvariable=mode_var, values=CLICK_MODES, state="readonly").pack(
             side=tk.LEFT, fill="x", expand=True, padx=(0, 5)
         )

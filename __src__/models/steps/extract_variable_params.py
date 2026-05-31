@@ -13,10 +13,11 @@ from shared.i18n_fra import ERROR_TEMPLATES
 _ALLOWED_VARIABLES: frozenset[str] = frozenset({"date_time_now", "last_url", "last_domain"})
 
 
-class ExportVariableParams(BaseStepParams):
+class ExtractVariableParams(BaseStepParams):
     """Parameters for the export variable step."""
 
     variable: str
+    mapping: str
     comment: str = ""
 
     @field_validator("variable")
@@ -27,6 +28,16 @@ class ExportVariableParams(BaseStepParams):
             return v
         if v not in _ALLOWED_VARIABLES:
             raise ValueError(ERROR_TEMPLATES["export_variable_invalid"].format(step=step_label(info.context), value=v))
+        return v
+
+    @field_validator("mapping")
+    @classmethod
+    def check_mapping(cls, v: str, info: ValidationInfo) -> str:
+        """Reject empty or whitespace-only mapping keys."""
+        if not info.context:
+            return v
+        if not v or not v.strip():
+            raise ValueError(ERROR_TEMPLATES["export_variable_mapping_required"].format(step=step_label(info.context)))
         return v
 
 
