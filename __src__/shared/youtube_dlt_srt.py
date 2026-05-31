@@ -1,4 +1,5 @@
 """Télécharge les transcripts (sous-titres) FR et EN d'une vidéo YouTube.
+
 Stratégie : on télécharge D'ABORD les sous-titres manuels disponibles,
 PUIS on teste les sous-titres auto-générés EN et FR (incl. '* (Original)').
 Gère le rate-limiting (HTTP 429) avec des délais fixes (5, 10, 15, 20 s).
@@ -13,13 +14,16 @@ Installation : pip install yt-dlp
 Utilisation  : python transcript.py "<URL>" [--list] [--out DOSSIER]
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import glob
 import json
 import logging
 import os
 import pathlib
 import re
-import sys
 import time
 from datetime import datetime
 
@@ -53,14 +57,10 @@ LANG3 = {"fr": "FRA", "en": "ENG"}
 KIND_NAMES = {"man": "manual", "auto": "autogen", "orig": "original"}
 
 # Réessais : durées d'attente FIXES (en s) avant chaque nouvel essai
-RETRY_DELAYS = [5, 9, 13]
-INNER_RETRIES = 3  # réessais internes yt_dlp
-REQUEST_SLEEP = 2  # pause entre requêtes d'extraction (s)
-DOWNLOAD_SLEEP_MIN = 3  # pause min avant un téléchargement (s)
-DOWNLOAD_SLEEP_MAX = 6  # pause max avant un téléchargement (s)
-PAUSE_BETWEEN_PHASES = 8  # pause entre phase manuelle et phase auto (s)
+RETRY_DELAYS = [3, 6]  # old = [5, 10, 15, 20] --- IGNORE ---
+PAUSE_BETWEEN_PHASES = 3  # pause entre phase manuelle et phase auto (s)
 
-logger = logging.getLogger("transcript")
+logger = logging.getLogger("youtube_transcript")
 
 
 # ============================================================
@@ -70,7 +70,7 @@ logger = logging.getLogger("transcript")
 
 def build_list_opts() -> dict:
     """Options pour une simple extraction de métadonnées."""
-    return {"skip_download": True, "quiet": True, "no_warnings": True, "sleep_interval_requests": REQUEST_SLEEP}
+    return {"skip_download": True, "quiet": True, "no_warnings": True}
 
 
 def build_download_opts(langs: list[str], output_dir: str, manual: bool, auto: bool) -> dict:
@@ -83,10 +83,6 @@ def build_download_opts(langs: list[str], output_dir: str, manual: bool, auto: b
             "subtitleslangs": langs,
             "subtitlesformat": SUB_FORMAT_PREF,
             "outtmpl": os.path.join(output_dir, "%(id)s.%(ext)s"),
-            "retries": INNER_RETRIES,
-            "extractor_retries": INNER_RETRIES,
-            "sleep_interval": DOWNLOAD_SLEEP_MIN,
-            "max_sleep_interval": DOWNLOAD_SLEEP_MAX,
         }
     )
     return opts
@@ -172,7 +168,7 @@ def output_path(out_dir: str, stem: str, variant: str, stamp: str, ext: str) -> 
 # ============================================================
 
 
-def is_rate_limited(error: Exception) -> bool:
+def is_https_rate_limited(error: Exception) -> bool:
     """Détecte un HTTP 429 dans le message d'erreur."""
     msg = str(error).lower()
     return "429" in msg or "too many requests" in msg
@@ -204,23 +200,23 @@ def download_subtitles(
     récupérer les langues manquantes (yt_dlp saute celles déjà présentes).
     """
     opts = build_download_opts(langs, output_dir, manual, auto)
-    for attempt in range(1, len(RETRY_DELAYS) + 2):
+    max_loop = len(RETRY_DELAYS) + 1
+    for attempt in range(max_loop):
         try:
+            print(f"Tentative de téléchargement (essai {attempt + 1}/{max_loop})...")
             with YoutubeDL(opts) as ydl:
                 ydl.extract_info(url, download=True)
             return find_subtitle_files(output_dir, video_id)
-        except DownloadError as e:
+        except DownloadError as exp:
             got = find_subtitle_files(output_dir, video_id)
-            if is_rate_limited(e) and attempt <= len(RETRY_DELAYS):
-                delay = RETRY_DELAYS[attempt - 1]
-                logger.warning(
-                    "HTTP 429 (essai %d) : %d fichier(s) obtenu(s), réessai dans %ds.", attempt, len(got), delay
-                )
+            if is_https_rate_limited(exp) and attempt < len(RETRY_DELAYS):
+                delay = RETRY_DELAYS[attempt]
+                print(f"HTTP 429 (essai {attempt + 1}) : {len(got)} téléchargment. Retry dans {delay}s.")
                 time.sleep(delay)
                 continue
-            return report_partial(e, got)
-        except Exception as e:
-            logger.error("Erreur inattendue : %s", e)
+            return report_partial(exp, got)
+        except Exception as exp:
+            logger.error("Erreur inattendue : %s", exp)
             return find_subtitle_files(output_dir, video_id)
     return find_subtitle_files(output_dir, video_id)
 
@@ -348,11 +344,6 @@ def save_transcript(path: str, video_id: str, names: dict, source: str, stamp: s
 # ============================================================
 
 
-def setup_logging() -> None:
-    """Configure des logs lisibles, horodatés, avec niveau."""
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
-
-
 def show_tracks(subs: dict | None) -> None:
     """Affiche les pistes d'une source en marquant celles retenues."""
     tracks = collect_tracks(subs)
@@ -362,16 +353,6 @@ def show_tracks(subs: dict | None) -> None:
     for code, name in sorted(tracks):
         mark = "x" if is_accepted_name(name) else " "
         print(f"  [{mark}] {code:<8} {name}")
-
-
-def print_available_languages(url: str) -> None:
-    """Liste les langues disponibles (mode --list)."""
-    logger.info("Récupération des langues disponibles...")
-    info = fetch_info(url)
-    print("== Sous-titres manuels ==")
-    show_tracks(info.get("subtitles"))
-    print("== Sous-titres auto-générés ==")
-    show_tracks(info.get("automatic_captions"))
 
 
 def process_phase(url: str, names: dict, source: str, video_id: str, stamp: str, output_dir: str) -> int:
@@ -385,52 +366,42 @@ def process_phase(url: str, names: dict, source: str, video_id: str, stamp: str,
     return sum(save_transcript(p, video_id, names, source, stamp) for p in sorted(set(files)))
 
 
-def run(url: str, output_dir: str) -> None:
+def download_youtube_srt(urlyoutube: str, output_dir: str) -> int:
     """Phase 1 (manuel) PUIS phase 2 (auto EN/FR), avec conversion/renommage."""
     pathlib.Path(output_dir).mkdir(exist_ok=True, parents=True)
     logger.info("Dossier de sortie : %s", os.path.abspath(output_dir))
     logger.info("Récupération des métadonnées de la vidéo...")
-    info = fetch_info(url)
+    info = fetch_info(urlyoutube)
     video_id = info.get("id", "video")
     manual, auto = manual_selection(info), auto_selection(info)
     if not manual and not auto:
         logger.warning("Aucune piste FR/EN ni '* (Original)' disponible.")
-        return
+        return 0
     stamp = datetime.now().strftime(STAMP_FORMAT)
-    total = process_phase(url, manual, "manual", video_id, stamp, output_dir)
+
+    # do original
+    total = process_phase(urlyoutube, manual, "manual", video_id, stamp, output_dir)
+
+    # do autogen
     if auto:
         if manual:
+            # if manual already done, pause before auto to reduce risk de error code 429 before next ddl
             logger.info("Pause de %ds avant les pistes auto-générées...", PAUSE_BETWEEN_PHASES)
             time.sleep(PAUSE_BETWEEN_PHASES)
-        total += process_phase(url, auto, "auto", video_id, stamp, output_dir)
+        total += process_phase(urlyoutube, auto, "auto", video_id, stamp, output_dir)
+
     logger.info("Terminé : %d transcript(s) écrit(s).", total)
+    return total
 
 
-def parse_args() -> tuple[str | None, str, bool]:
-    """Lit URL, dossier (--out/-o) et le mode --list."""
-    url, out_dir, list_only = None, OUTPUT_DIR, False
-    it = iter(sys.argv[1:])
-    for arg in it:
-        if arg == "--list":
-            list_only = True
-        elif arg in ("--out", "-o"):
-            out_dir = next(it, out_dir)
-        elif not arg.startswith("-") and url is None:
-            url = arg
-    return url, out_dir, list_only
+def print_and_debug_available_languages(url: str) -> None:
+    """Liste les langues disponibles (mode --list)."""
+    logger.info("Récupération des langues disponibles...")
+    info = fetch_info(url)
+    print("== Sous-titres manuels ==")
+    show_tracks(info.get("subtitles"))
+    print("== Sous-titres auto-générés ==")
+    show_tracks(info.get("automatic_captions"))
 
 
-def main() -> None:
-    setup_logging()
-    url, output_dir, list_only = parse_args()
-    if url is None:
-        print("Usage : python transcript.py <URL> [--list] [--out DOSSIER]")
-        return
-    if list_only:
-        print_available_languages(url)
-    else:
-        run(url, output_dir)
-
-
-if __name__ == "__main__":
-    main()
+# EOF

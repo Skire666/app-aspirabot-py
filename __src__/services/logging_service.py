@@ -74,13 +74,6 @@ class ObservableLogHandler(logging.Handler):
         Note:
             This method should not raise exceptions. Any errors in the callback
             will propagate to the logging system's error handling.
-
-        Example:
-            >>> record = logging.LogRecord(
-            ...     name="test", level=logging.INFO, pathname="", lineno=0,
-            ...     msg="Test message", args=(), exc_info=None
-            ... )
-            >>> handler.emit(record)
         """
         # Create a structured log entry from the raw log record.
         log_entry = LogEntryModel(
@@ -111,25 +104,6 @@ class LoggingService:
         _handler (Optional[ObservableLogHandler]): The currently active UI callback
             handler, if any.
 
-    Example:
-        Setting up file logging with UI callback:
-
-        >>> repo = LogRepository(Path("./logs"))
-        >>> service = LoggingService(
-        ...     log_file="logs/app.log",
-        ...     log_level="INFO",
-        ...     log_repository=repo,
-        ... )
-        >>>
-        >>> def update_ui(entry: LogEntryModel):
-        ...     ui.display_log(entry)
-        >>>
-        >>> service.attach_ui_callback(update_ui)
-        >>>
-        >>> # Now logs automatically appear in the UI
-        >>> logger = logging.getLogger(__name__)
-        >>> logger.info("Feature enabled successfully")
-
     Note:
         - The service replaces all existing handlers when initialized.
         - Log files are rotated after reaching 8 MB with up to 5 backups retained.
@@ -153,10 +127,6 @@ class LoggingService:
 
         Raises:
             IOError: If the log file cannot be created (e.g., permission denied).
-
-        Example:
-            >>> repo = LogRepository(Path("./logs"))
-            >>> service = LoggingService("app.log", "debug", repo)
         """
         # Normalize and validate the log level.
         self.log_level = log_level.upper()
@@ -203,19 +173,6 @@ class LoggingService:
 
         Raises:
             TypeError: If callback is not callable.
-
-        Example:
-            Attaching a callback to display logs in a text widget:
-
-            >>> def display_in_widget(entry: LogEntryModel):
-            ...     widget.insert("end", f"{entry.level}: {entry.message}")
-            >>>
-            >>> repo = LogRepository(Path("./logs"))
-            >>> service = LoggingService("app.log", "INFO", repo)
-            >>> service.attach_ui_callback(display_in_widget)
-            >>>
-            >>> # Subsequent logs will appear in the widget
-            >>> logging.info("Feature loaded")
 
         Note:
             If this method is called multiple times, only the most recent callback

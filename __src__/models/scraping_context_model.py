@@ -3,11 +3,6 @@
 Replaces the opaque ``dict[str, Any]`` previously forwarded via
 ``_build_runtime_params``.  All cross-step state is referenced by name
 instead of by string key.
-
-Example:
-    >>> import threading
-    >>> from pathlib import Path
-    >>> ctx = ScrapingContextModel(...)
 """
 
 # -----------------------------------------------------------------------------

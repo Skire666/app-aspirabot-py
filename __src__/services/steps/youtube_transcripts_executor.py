@@ -16,6 +16,7 @@ from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
 from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_step_executor
+from shared.youtube_dlt_srt import download_youtube_srt
 
 _logger = logging.getLogger(__name__)
 
@@ -32,7 +33,9 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = cast(YoutubeTranscriptsParams, context.step_scraping_data.params)
-        _logger.info("YouTube Transcripts : %s", p.title)
+
+        total_ddl = download_youtube_srt(context.last_url_opened, str(context.folder_export))
+        context.last_message_step = f"Transcripts téléchargés : {total_ddl} fichier(s)"
 
 
 register_step_executor(YoutubeTranscriptsExecutor())

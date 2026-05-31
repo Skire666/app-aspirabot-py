@@ -1,4 +1,4 @@
-"""IStepFormDef for EXPORT_VARIABLE."""
+"""IStepFormDef for EXTRACT_VARIABLE."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -34,7 +34,7 @@ class ExtractVariableFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_EXPORT_VARIABLE
+        return StepTypeEnum.E_EXTRACT_VARIABLE
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

@@ -18,11 +18,7 @@ from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from shared.enums import UrlSortOrderEnum
-from shared.exception_util import (
-    UrlSourceExhaustedError,
-    UrlSourceFileNotFoundError,
-    UrlSourceFilesNotDiscoveredError,
-)
+from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFoundError, UrlSourceFilesNotDiscoveredError
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -56,18 +52,9 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
     Files are sorted by modification time (oldest first).  Within each file,
     all strings starting with ``http`` are extracted in traversal order.
     A one-URL look-ahead buffer makes ``has_next()`` accurate.
-
-    Example:
-        >>> p = JsonUrlSourceProvider("/tmp/json-urls")
-        >>> p.has_next()
-        True
     """
 
-    def __init__(
-        self,
-        folder_path: str,
-        sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC,
-    ) -> None:
+    def __init__(self, folder_path: str, sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC) -> None:
         """Store the folder path without scanning it yet.
 
         Args:
@@ -252,7 +239,7 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
         try:
             with file_path.open(encoding="utf-8") as f:
                 data = json.load(f)
-        except (json.JSONDecodeError, OSError):
+        except json.JSONDecodeError, OSError:
             return []
 
         urls: list[str] = []

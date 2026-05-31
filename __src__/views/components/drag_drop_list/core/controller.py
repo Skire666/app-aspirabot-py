@@ -23,20 +23,9 @@ class DragDropController:
 
     All public methods are pure with respect to tkinter — they only
     manipulate DragState dataclasses and plain Python lists.
-
-    Example:
-        >>> ctrl = DragDropController(redraw_min_interval_ms=16, redraw_min_delta_px=3)
-        >>> state = ctrl.begin_drag(idx=2, offset_y=10)
-        >>> state = ctrl.update(state, fy=120, insert_pos=3)
-        >>> ctrl.should_skip_redraw(state, fy=121, insert_pos=3)
-        True
     """
 
-    def __init__(
-        self,
-        redraw_min_interval_ms: int,
-        redraw_min_delta_px: int,
-    ) -> None:
+    def __init__(self, redraw_min_interval_ms: int, redraw_min_delta_px: int) -> None:
         """Initializes the controller with throttle thresholds.
 
         Args:
@@ -59,19 +48,10 @@ class DragDropController:
         Returns:
             Fresh DragState with no insert indicator.
         """
-        return DragState(
-            drag_idx=idx,
-            offset_y=offset_y,
-            insert_pos=None,
-            expand_gap=None,
-        )
+        return DragState(drag_idx=idx, offset_y=offset_y, insert_pos=None, expand_gap=None)
 
     @staticmethod
-    def update(
-        state: DragState,
-        fy: int,
-        insert_pos: int | None,
-    ) -> DragState:
+    def update(state: DragState, fy: int, insert_pos: int | None) -> DragState:
         """Advances drag state to a new pointer Y position.
 
         Args:
@@ -84,12 +64,7 @@ class DragDropController:
         """
         return state.with_position(insert_pos)
 
-    def should_skip_redraw(
-        self,
-        state: DragState,
-        fy: int,
-        insert_pos: int | None,
-    ) -> bool:
+    def should_skip_redraw(self, state: DragState, fy: int, insert_pos: int | None) -> bool:
         """Returns True when the drag redraw should be skipped this frame.
 
         A skip is allowed only when:
@@ -138,11 +113,7 @@ class DragDropController:
     # ── List mutation ────────────────────────────────────────────────
 
     @staticmethod
-    def apply_reorder(
-        items: list[T],
-        origin: int,
-        new_pos: int,
-    ) -> int:
+    def apply_reorder(items: list[T], origin: int, new_pos: int) -> int:
         """Reorders items in-place and returns the final insertion index.
 
         Args:

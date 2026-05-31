@@ -3,15 +3,6 @@
 Groups the three caller-supplied values that define *what* to scrape and
 *where* to write results.  Separates source/export concerns from the
 threading signals and callbacks defined in ``WorkflowRunHandlers``.
-
-Example:
-    >>> cfg = WorkflowRunConfig(
-    ...     url_source_type="manual",
-    ...     url_source_value=["https://example.com"],
-    ...     export_folder="/tmp/results",
-    ... )
-    >>> cfg.url_source_type
-    'manual'
 """
 
 # -----------------------------------------------------------------------------

@@ -31,11 +31,6 @@ class StepsContext:
     Attributes:
         steps: Ordered tuple of all steps in the workflow at the time the
             context was created.
-
-    Example:
-        >>> ctx = StepsContext.from_list([step_a, step_b])
-        >>> ctx.find_by_id(step_a.step_id) is step_a
-        True
     """
 
     steps: tuple[StepScrapingModel, ...]

@@ -11,10 +11,6 @@ Canvas tags emitted per slot (used by resize_update and update_colors):
     _sep{idx}     — vertical separator line
     _txt_lbl{idx} — step label text
     _msk{idx}     — right-edge overflow mask rectangle
-
-Example:
-    >>> renderer = StepItemRenderer(get_selected_index=lambda: None)
-    >>> renderer(canvas, item, 0, 0, 0, 300, 50, "normal")
 """
 
 # -----------------------------------------------------------------------------
@@ -121,14 +117,7 @@ class StepItemRenderer:
 
     @staticmethod
     def _draw_background(
-        canvas: tk.Canvas,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        colors: dict[str, str],
-        state: str,
-        idx: int,
+        canvas: tk.Canvas, x: int, y: int, w: int, h: int, colors: dict[str, str], state: str, idx: int
     ) -> None:
         """Draws the card background rectangle, tagged for resize reuse.
 
@@ -145,13 +134,7 @@ class StepItemRenderer:
         if state != "normal":
             return
         canvas.create_rectangle(
-            x,
-            y + 1,
-            x + w,
-            y + h - 1,
-            fill=colors["bg"],
-            outline=colors["border"],
-            tags=(f"_bg{idx}",),
+            x, y + 1, x + w, y + h - 1, fill=colors["bg"], outline=colors["border"], tags=(f"_bg{idx}",)
         )
 
     def _draw_label(
@@ -203,27 +186,16 @@ class StepItemRenderer:
     ) -> None:
         """Draw the step number / id prefix text and vertical separator line."""
         canvas.create_text(
-            start_w, pos_h, text=txt_prefix, anchor="w",
-            fill=colors["fg"], font=self._C_FONT, tags=(f"_txt_num{idx}",),
+            start_w, pos_h, text=txt_prefix, anchor="w", fill=colors["fg"], font=self._C_FONT, tags=(f"_txt_num{idx}",)
         )
-        canvas.create_line(
-            start_w + 50, y, start_w + 50, y + h,
-            fill=colors["border"], tags=(f"_sep{idx}",),
-        )
+        canvas.create_line(start_w + 50, y, start_w + 50, y + h, fill=colors["border"], tags=(f"_sep{idx}",))
 
     def _draw_step_text(
-        self,
-        canvas: tk.Canvas,
-        idx: int,
-        x_start: int,
-        pos_h: int,
-        txt_item: str,
-        colors: dict[str, str],
+        self, canvas: tk.Canvas, idx: int, x_start: int, pos_h: int, txt_item: str, colors: dict[str, str]
     ) -> None:
         """Draw the step label text."""
         canvas.create_text(
-            x_start, pos_h, text=txt_item, anchor="w",
-            fill=colors["fg"], font=self._C_FONT, tags=(f"_txt_lbl{idx}",),
+            x_start, pos_h, text=txt_item, anchor="w", fill=colors["fg"], font=self._C_FONT, tags=(f"_txt_lbl{idx}",)
         )
 
     # -----------------------------------------------------------------------
@@ -231,15 +203,7 @@ class StepItemRenderer:
     # -----------------------------------------------------------------------
 
     @staticmethod
-    def _draw_overflow_mask(
-        canvas: tk.Canvas,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        idx: int,
-        canvas_w: int,
-    ) -> None:
+    def _draw_overflow_mask(canvas: tk.Canvas, x: int, y: int, w: int, h: int, idx: int, canvas_w: int) -> None:
         """Draws a right-edge mask rectangle to clip text that overflows the item.
 
         The mask uses the canvas background color to paint over any text that
@@ -258,30 +222,14 @@ class StepItemRenderer:
         if canvas_w <= clip_x:
             return
         bg = canvas.cget("bg")
-        canvas.create_rectangle(
-            clip_x,
-            y + 1,
-            canvas_w,
-            y + h - 1,
-            fill=bg,
-            outline=bg,
-            tags=(f"_msk{idx}",),
-        )
+        canvas.create_rectangle(clip_x, y + 1, canvas_w, y + h - 1, fill=bg, outline=bg, tags=(f"_msk{idx}",))
 
     # -----------------------------------------------------------------------
     # Public render entry points
     # -----------------------------------------------------------------------
 
     def __call__(
-        self,
-        canvas: tk.Canvas,
-        item: StepViewItem,
-        idx: int,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        state: str,
+        self, canvas: tk.Canvas, item: StepViewItem, idx: int, x: int, y: int, w: int, h: int, state: str
     ) -> None:
         """Renders one step item into the canvas area (x, y, x+w, y+h).
 
@@ -309,13 +257,7 @@ class StepItemRenderer:
         self._draw_background(canvas, x, y, w, h, colors, state, idx)
         self._draw_label(canvas, item, idx, x, y, w, h, colors, canvas_w)
 
-    def update_colors(
-        self,
-        canvas: tk.Canvas,
-        item: StepViewItem,
-        idx: int,
-        state: str,
-    ) -> bool:
+    def update_colors(self, canvas: tk.Canvas, item: StepViewItem, idx: int, state: str) -> bool:
         """Updates item colors in-place via itemconfig without delete/create.
 
         Resolves the color palette for the current state, then reconfigures
@@ -348,15 +290,7 @@ class StepItemRenderer:
         return True
 
     def resize_update(
-        self,
-        canvas: tk.Canvas,
-        item: StepViewItem,
-        idx: int,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        state: str,
+        self, canvas: tk.Canvas, item: StepViewItem, idx: int, x: int, y: int, w: int, h: int, state: str
     ) -> bool:
         """Repositions cached canvas items on a width-only resize.
 
@@ -403,14 +337,7 @@ class StepItemRenderer:
         return True
 
     @staticmethod
-    def _resize_update_mask(
-        canvas: tk.Canvas,
-        idx: int,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-    ) -> None:
+    def _resize_update_mask(canvas: tk.Canvas, idx: int, x: int, y: int, w: int, h: int) -> None:
         """Repositions or recreates the overflow mask after a width change.
 
         Args:
@@ -431,15 +358,7 @@ class StepItemRenderer:
             if canvas.find_withtag(msk_tag):
                 canvas.coords(msk_tag, clip_x, y + 1, canvas_w, y + h - 1)
             else:
-                canvas.create_rectangle(
-                    clip_x,
-                    y + 1,
-                    canvas_w,
-                    y + h - 1,
-                    fill=bg,
-                    outline=bg,
-                    tags=(msk_tag,),
-                )
+                canvas.create_rectangle(clip_x, y + 1, canvas_w, y + h - 1, fill=bg, outline=bg, tags=(msk_tag,))
         else:
             canvas.delete(msk_tag)
 

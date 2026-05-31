@@ -3,17 +3,6 @@
 Groups the controllable and observable concerns that the Presenter injects
 into the ScrapingService.  Separates these operational handles from the
 source/export configuration defined in ``WorkflowRunConfig``.
-
-Example:
-    >>> import threading
-    >>> pause = threading.Event()
-    >>> pause.set()
-    >>> h = WorkflowRunHandlers(
-    ...     cancel_event=threading.Event(),
-    ...     pause_event=pause,
-    ... )
-    >>> h.emergency_stop_threshold
-    0
 """
 
 # -----------------------------------------------------------------------------

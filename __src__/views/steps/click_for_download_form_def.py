@@ -127,7 +127,7 @@ class ClickForDownloadFormDef(IStepFormDef):
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
         widgets[C_KEY_SELECTOR].set(params_dict.get(C_KEY_SELECTOR, ""))
-        widgets[C_KEY_CLICK_MODE].set(params_dict.get(C_KEY_CLICK_MODE, "Normal"))
+        widgets[C_KEY_CLICK_MODE].set(params_dict.get(C_KEY_CLICK_MODE, "JS Direct"))
         widgets[C_KEY_INDEX_CLICKED].set(params_dict.get(C_KEY_INDEX_CLICKED, 0))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 

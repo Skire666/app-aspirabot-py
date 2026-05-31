@@ -24,10 +24,6 @@ def get_time_now_hh_mm_ss() -> str:
 
     Returns:
         A string representing the current date and time.
-
-    Example:
-        >>> get_time_now_hh_mm_ss()
-        '14:30:45'
     """
     return datetime.now().strftime(C_DATETIME_FORMAT_HH_MM_SS)
 
@@ -41,14 +37,6 @@ def dict_with_key_to_optional_datetime(dict_with_datetime: dict[str, any], key: 
 
     Returns:
         A datetime object if the key exists and can be parsed, otherwise None.
-
-    Example:
-        >>> convert_any_to_optional_datetime({"created": "2024-06-01T14:30:45"}, "created")
-        datetime.datetime(2024, 6, 1, 14, 30, 45)
-        >>> convert_any_to_optional_datetime({}, "created")
-        None
-        >>> convert_any_to_optional_datetime({"created": "invalid"}, "created")
-        None
     """
     value = dict_with_datetime.get(key)
     if isinstance(value, datetime):
@@ -71,10 +59,6 @@ def get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
 
     Returns:
         A string representing the current date and time.
-
-    Example:
-        >>> get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
-        '2024-06-01_14h30m45s654321'
     """
     return datetime.now().strftime(C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF)
 

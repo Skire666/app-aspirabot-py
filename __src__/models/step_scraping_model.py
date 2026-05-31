@@ -57,11 +57,6 @@ class StepScrapingModel:
         Raises:
             ValueError: When the step_type value is unknown.
             ParamsBuilderNotRegisteredError: When no builder is registered for the type.
-
-        Example:
-            >>> raw = {"step_type": "SCROLL_DOWN", "step_id": "abc", "params": {"pixels": 500}}
-            >>> StepScrapingModel.import_from_data_json(raw).params.pixels
-            500
         """
         from shared.step_registry import build_params  # local import avoids circular import at module level
 
@@ -84,10 +79,6 @@ class StepScrapingModel:
 
         Raises:
             None.
-
-        Example:
-            >>> step.export_to_data_json()["step_type"]
-            'SCROLL_DOWN'
         """
         return {
             "step_type": self.step_type.value,

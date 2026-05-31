@@ -58,11 +58,6 @@ class ProfilesModel:
 
         Raises:
             None.
-
-        Example:
-            >>> raw = LaunchProfilesModel.get_default_data("scenario_1").export_to_data_json()
-            >>> LaunchProfilesModel.import_from_data_json(raw).scenario_id
-            'scenario_1'
         """
         profiles = cls._deserialize_profiles(data.get("launch_profiles", []))
         return cls(
@@ -201,12 +196,6 @@ class ProfilesModel:
 
         Raises:
             None.
-
-        Example:
-            >>> profile = ProfileLaunchModel.get_default()
-            >>> profile.mark_profile_as_modified()
-            >>> profile.modified_date_profile is not None
-            True
         """
         self.modified_date_profile = datetime.now()
 

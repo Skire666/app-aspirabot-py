@@ -25,16 +25,6 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
 
     Empty strings are filtered out at construction. Iteration is index-based
     so ``reset()`` simply rewinds the index to zero without re-parsing.
-
-    Example:
-        >>> p = ManualUrlSourceProvider(["https://x.com", "https://y.com"])
-        >>> p.has_next()
-        True
-        >>> p.next_url()
-        'https://x.com'
-        >>> p.reset()
-        >>> p.next_url()
-        'https://x.com'
     """
 
     def __init__(self, urls: list[str]) -> None:

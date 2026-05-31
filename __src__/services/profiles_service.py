@@ -56,10 +56,6 @@ class ProfilesService:
 
         Returns:
             ``True`` if a matching scenario file is found, ``False`` otherwise.
-
-        Example:
-            >>> service.exists_scenarios("nonexistent")
-            False
         """
         return self._repository.exists_scenarios(id_scenario)
 
@@ -76,10 +72,6 @@ class ProfilesService:
 
         Raises:
             DatabaseUnavailableError: If the file cannot be written to disk.
-
-        Example:
-            >>> profile = ProfilesModel.get_default_data()
-            >>> service.create_profiles(profile)
         """
         profiles.mark_as_created()
         self._repository.create_profiles(profiles)
@@ -113,10 +105,6 @@ class ProfilesService:
         Raises:
             ScenarioNotFoundError: If no existing file matches ``profile.id_file``.
             DatabaseUnavailableError: If the file cannot be overwritten.
-
-        Example:
-            >>> profile.scenario_name = "Renamed"
-            >>> service.update_profiles(profile)
         """
         # Refresh modification date to reflect the current save time.
         profile.mark_as_modified()
@@ -130,11 +118,6 @@ class ProfilesService:
 
         Raises:
             ScenarioNotFoundError: If no file matches *id_file*.
-
-        Example:
-            >>> service.delete_profiles("abc123")
-            >>> service.exists_scenarios("abc123")
-            False
         """
         self._repository.delete_profiles(id_file)
 

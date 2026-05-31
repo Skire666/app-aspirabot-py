@@ -33,10 +33,6 @@ class SplashscreenView(tk.Toplevel):
 
     Attributes:
         _status_label: Label bound to ``vm.status_var``.
-
-    Example:
-        >>> vm = SplashscreenViewModel(master=root)
-        >>> view = SplashscreenView(root, vm)
     """
 
     def __init__(self, parent: tk.Widget, vm: SplashscreenViewModel) -> None:
@@ -85,13 +81,9 @@ class SplashscreenView(tk.Toplevel):
         Args:
             parent: The inner content frame.
         """
-        tk.Label(
-            parent,
-            text="Aspirabot",
-            font=("Segoe UI", 20, "bold"),
-            bg=_BG_COLOR,
-            fg=_TITLE_COLOR,
-        ).pack(expand=True)
+        tk.Label(parent, text="Aspirabot", font=("Segoe UI", 20, "bold"), bg=_BG_COLOR, fg=_TITLE_COLOR).pack(
+            expand=True
+        )
 
     def _build_status_label(self, parent: tk.Frame) -> None:
         """Create the live status text label bound to the ViewModel.
@@ -99,13 +91,7 @@ class SplashscreenView(tk.Toplevel):
         Args:
             parent: The inner content frame.
         """
-        self._status_label = tk.Label(
-            parent,
-            text="",
-            font=("Segoe UI", 12),
-            bg=_BG_COLOR,
-            fg=_STATUS_COLOR,
-        )
+        self._status_label = tk.Label(parent, text="", font=("Segoe UI", 12), bg=_BG_COLOR, fg=_STATUS_COLOR)
         self._status_label.pack(expand=True, pady=(0, 10))
 
     # -----------------------------------------------------------------------------
@@ -144,11 +130,7 @@ class SplashscreenView(tk.Toplevel):
         Args:
             message: Error description shown to the user before startup aborts.
         """
-        messagebox.showerror(
-            title="Aspirabot — Startup Error",
-            message=message,
-            parent=self,
-        )
+        messagebox.showerror(title="Aspirabot — Startup Error", message=message, parent=self)
 
 
 # EOF

@@ -2,12 +2,6 @@
 
 Validation is delegated to registered IStepExecutor instances via the central
 step registry.  The presenter calls validate_step() before persisting changes.
-
-Example:
-    >>> service = WorkflowService()
-    >>> errors = service.validate_step(0, step, steps=[step])
-    >>> errors
-    []
 """
 
 # -----------------------------------------------------------------------------
@@ -25,23 +19,13 @@ class WorkflowService:
 
     Each IStepExecutor is responsible for its own validation logic.
     validate_step() is the single public entry point.
-
-    Example:
-        >>> service = WorkflowService()
-        >>> errors = service.validate_step(2, jump_step, steps=[jump_step])
-        >>> isinstance(errors, list)
-        True
     """
 
     def __init__(self) -> None:
         """Initialize the workflow service."""
 
     @staticmethod
-    def validate_step(
-        step_index: int,
-        step: StepScrapingModel,
-        steps: list[StepScrapingModel],
-    ) -> list[str]:
+    def validate_step(step_index: int, step: StepScrapingModel, steps: list[StepScrapingModel]) -> list[str]:
         """Validate the parameters of a single workflow step.
 
         Builds a StepsContext from the full step list and passes it to the
@@ -60,7 +44,7 @@ class WorkflowService:
             executor = get_step_executor(step.step_type)
             steps_context = StepsContext.from_list(steps)
             return executor.validate_model(step, step_index, steps_context)
-        except (NoExecutorsRegisteredError, ExecutorNotRegisteredError):
+        except NoExecutorsRegisteredError, ExecutorNotRegisteredError:
             return []
 
 

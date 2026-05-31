@@ -7,9 +7,6 @@ Vars via after(0, callback).
 
 All page-inspection callbacks (refresh, analyze, close) are bound once at
 construction time; no per-session ViewModel is created.
-
-Example:
-    >>> presenter = DebugPresenter(vm=debug_vm, debug_service=svc)
 """
 
 # -----------------------------------------------------------------------------

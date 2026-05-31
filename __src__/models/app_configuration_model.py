@@ -3,11 +3,6 @@
 This module centralizes configuration keys, default values, and the runtime
 representation used by the application. It follows Google Python Style and is
 designed to keep configuration access explicit and predictable.
-
-Example:
-    >>> model = AppConfigurationModel()
-    >>> model.log_level
-    'INFO'
 """
 
 # -----------------------------------------------------------------------------
@@ -58,11 +53,6 @@ class AppConfigurationModel:
         folder_logs: Directory where log files are stored.
         folder_scenarios: Directory containing scenario definitions.
         folder_scraping: Directory for scraping data exports.
-
-    Example:
-        >>> model = AppConfigurationModel(log_level_enum="DEBUG")
-        >>> model.to_ui()[0]["value"]
-        'DEBUG'
     """
 
     # -----------------------------------------------------------------------------

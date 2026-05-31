@@ -15,26 +15,6 @@ Error Handling:
     All I/O and JSON errors are caught, logged, and handled gracefully. Failed
     reads fall back to default configuration; failed writes are logged but do
     not raise exceptions.
-
-Example:
-    Complete workflow from initialization to persistence:
-
-    >>> from repositories.json_config_repository import JsonConfigRepository
-    >>> from models.config_aspirabot_model import ConfigAspirabotModel
-    >>>
-    >>> # Initialize the repository
-    >>> repo = JsonConfigRepository("config-aspirabot.json")
-    >>> repo.ensure_file_exists()
-    >>>
-    >>> # Read current configuration
-    >>> config = repo.read_config()
-    >>>
-    >>> # Modify configuration
-    >>> config.window_title = "Aspirabot - Enhanced"
-    >>> config.theme = "dark"
-    >>>
-    >>> # Persist changes
-    >>> repo.save_config(config)
 """
 
 # -----------------------------------------------------------------------------
@@ -71,15 +51,6 @@ class AppConfigurationRepository:
         - Implements lazy file creation (created only when ensure_file_exists called).
         - Gracefully handles corrupted JSON by falling back to defaults.
         - Maintains schema compatibility through merge-based loading.
-
-    Example:
-        Initialize and manage configuration:
-
-        >>> repo = JsonConfigRepository("config-aspirabot.json")
-        >>> repo.ensure_file_exists()
-        >>> current_config = repo.read_config()
-        >>> current_config.log_level = "DEBUG"
-        >>> repo.save_config(current_config)
     """
 
     # -----------------------------------------------------------------------------
@@ -103,10 +74,6 @@ class AppConfigurationRepository:
 
         Raises:
             None: No exceptions are raised during initialization.
-
-        Example:
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> repo2 = JsonConfigRepository("./data/config.json")
         """
         self._logger = logging.getLogger(__name__)
         # Store the file path for all subsequent I/O operations.
@@ -127,13 +94,6 @@ class AppConfigurationRepository:
 
         Raises:
             None: All I/O errors are caught and logged internally.
-
-        Example:
-            First run initialization:
-
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> repo.ensure_file_exists()
-            >>> # File is created with defaults if it didn't exist
         """
         # Check if the configuration file already exists.
         if not Path(self._full_pathfile).exists():
@@ -181,15 +141,6 @@ class AppConfigurationRepository:
         Raises:
             None: All errors are handled internally by _write_json. Errors are
                 logged but do not raise exceptions.
-
-        Example:
-            Modifying and saving configuration:
-
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> current = repo.read_configuration()
-            >>> current.debug_mode = True
-            >>> repo.write_configuration(current)
-            >>> # Changes are now persisted to disk
         """
         # Extract dictionary representation from the model.
         # Delegate serialization and file writing to the helper method.
@@ -225,11 +176,6 @@ class AppConfigurationRepository:
         Raises:
             None: All exceptions are caught and logged internally. The method
                 never raises exceptions, always returning a valid dict.
-
-        Example:
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> raw_data = repo._read_json()
-            >>> assert isinstance(raw_data, dict)
         """
         # Attempt to load persisted data from disk.
         try:
@@ -260,10 +206,6 @@ class AppConfigurationRepository:
         Raises:
             None: All I/O errors are caught and logged. The method never raises
                 exceptions to the caller.
-
-        Example:
-            >>> repo = JsonConfigRepository("config-aspirabot.json")
-            >>> repo._write_json(ConfigAspirabotModel.get_default_data())
         """
         # Ensure the parent directory exists before attempting to write.
         try:

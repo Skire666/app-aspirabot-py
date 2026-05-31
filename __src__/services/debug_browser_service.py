@@ -3,11 +3,6 @@
 Provides stateless utilities to extract HTML content, text metrics, and
 image metadata from a caller-supplied Page object, without coupling to
 the scraping workflow lifecycle.
-
-Example:
-    >>> svc = DebugBrowserService()
-    >>> html = svc.get_html_content(page)
-    >>> result = svc.analyze_texts(page, "h1")
 """
 
 # -----------------------------------------------------------------------------
@@ -32,10 +27,6 @@ class DebugBrowserService:
 
     All methods are stateless — they operate on a caller-supplied Page
     object and are safe to call from any thread that owns the sync context.
-
-    Example:
-        >>> svc = DebugBrowserService()
-        >>> html = svc.get_html_content(page)
     """
 
     def __init__(self) -> None:
@@ -79,7 +70,7 @@ class DebugBrowserService:
                     ExtractTextHtmlEnum.E_INNER_HTML.value: el.evaluate("el => el.innerHTML") or "",
                     ExtractTextHtmlEnum.E_OUTER_HTML.value: el.evaluate("el => el.outerHTML") or "",
                     ExtractTextHtmlEnum.E_INPUT_VALUE.value: el.evaluate("el => el.value") or "",
-                },
+                }
             )
 
         return results
@@ -109,7 +100,7 @@ class DebugBrowserService:
                 "    naturalHeight: el.naturalHeight || 0,"
                 "    clientWidth: el.clientWidth || 0,"
                 "    clientHeight: el.clientHeight || 0,"
-                "})",
+                "})"
             )
             data["ext"] = self._extract_extension(str(data.get("src", "")))
             results.append(data)

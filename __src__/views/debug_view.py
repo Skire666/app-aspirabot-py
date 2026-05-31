@@ -3,10 +3,6 @@
 The user enters a URL, a timeout, and a DNS-wait delay, then clicks Lancer.
 The View forwards raw widget values to ``vm.start()``; the Presenter validates.
 Errors are shown via ``vm.error_message_var`` bound directly to the label.
-
-Example:
-    >>> view = DebugView(parent, vm)
-    >>> # Presenter calls vm.bind_start(handler) separately
 """
 
 # -----------------------------------------------------------------------------
@@ -62,9 +58,7 @@ class DebugView(ttk.Frame):
         self._build_url_row(card)
         self._spin_timeout = self._build_spin_row(card, "Timeout :", _DEFAULT_TIMEOUT)
         self._spin_dns = self._build_spin_row(card, "Délai d'attente DNS :", _DEFAULT_DNS_DELAY)
-        ttk.Button(card, text="Lancer une session Debug", command=self._fire_start).pack(
-            fill="x", padx=10, pady=(8, 4)
-        )
+        ttk.Button(card, text="Lancer une session Debug", command=self._fire_start).pack(fill="x", padx=10, pady=(8, 4))
         # Error label bound to vm.error_message_var — the Presenter writes it.
         ttk.Label(card, textvariable=self._vm.error_message_var, foreground="red").pack(
             padx=10, pady=(0, 5), anchor="w"
@@ -114,15 +108,12 @@ class DebugView(ttk.Frame):
         Registered on the VM so the Presenter never imports a View class.
         """
         from views.workflow.debug_page_view import DebugPageView  # local — View layer only
+
         DebugPageView(parent=self, vm=self._vm)
 
     def _fire_start(self) -> None:
         """Forward raw widget values to the ViewModel; the Presenter validates."""
-        self._vm.start(
-            self._entry_url.get().strip(),
-            self._spin_timeout.get(),
-            self._spin_dns.get(),
-        )
+        self._vm.start(self._entry_url.get().strip(), self._spin_timeout.get(), self._spin_dns.get())
 
 
 # EOF

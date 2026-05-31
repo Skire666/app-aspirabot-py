@@ -1,4 +1,4 @@
-"""IStepExecutor for EXPORT_VARIABLE."""
+"""IStepExecutor for EXTRACT_VARIABLE."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -44,7 +44,7 @@ class ExtractVariableExecutor(StepExecutorBase, IStepExecutor):
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_EXPORT_VARIABLE
+        return StepTypeEnum.E_EXTRACT_VARIABLE
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:

@@ -4,10 +4,6 @@ Each concrete step type owns exactly one implementation of this interface,
 named ``<StepName>Executor``.  It registers itself in the step registry at
 import time.  The service orchestrators query the registry and invoke this
 contract without knowing any concrete step type by name.
-
-Example:
-    >>> executor = WaitElementExecutor()
-    >>> executor.step_type()
 """
 
 # -----------------------------------------------------------------------------

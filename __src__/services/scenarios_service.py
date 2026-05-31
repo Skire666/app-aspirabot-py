@@ -40,12 +40,6 @@ class ScenariosService:
     Attributes:
         _logger: Module-level logger for diagnostic messages.
         _repository: class:`ScenariosRepository`.
-
-    Example:
-        >>> service = ScenariosService(repo)
-        >>> new_id = service.duplicate_scenario("abc123")
-        >>> service.exists_scenario(new_id)
-        True
     """
 
     def __init__(self, repository_scen: ScenariosRepository, repository_prof: ProfilesRepository) -> None:
@@ -56,9 +50,6 @@ class ScenariosService:
                 :class:`ScenariosRepository`
                 protocol. Typically injected by the application's composition root.
             repository_prof: The repository for managing profile data.
-
-        Example:
-            >>> service = ScenariosService(ScenariosRepository())
         """
         # Configure a named logger so log records are traceable to this module.
         self._logger = logging.getLogger(__name__)
@@ -82,11 +73,6 @@ class ScenariosService:
         Raises:
             DatabaseUnavailableError: If the scenarios folder itself cannot be
                 accessed (propagated from the repository).
-
-        Example:
-            >>> scenarios = service.list_all_scenarios()
-            >>> all(isinstance(s, ScenarioModel) for s in scenarios)
-            True
         """
         return self._repository_scenarios.read_all_scenarios()
 
@@ -98,10 +84,6 @@ class ScenariosService:
 
         Returns:
             ``True`` if a matching scenario file is found, ``False`` otherwise.
-
-        Example:
-            >>> service.exists_scenario("nonexistent")
-            False
         """
         return self._repository_scenarios.exists_scenario(id_file)
 
@@ -111,11 +93,6 @@ class ScenariosService:
         Returns:
             The path returned by the repository, converted to ``str`` for
             callers that do not accept :class:`pathlib.Path` objects.
-
-        Example:
-            >>> path = service.get_folder_path_scenarios()
-            >>> path.endswith("scenarios")
-            True
         """
         return self._repository_scenarios.get_path_scenarios_folder()
 
@@ -132,12 +109,6 @@ class ScenariosService:
 
         Raises:
             DatabaseUnavailableError: If the file cannot be written to disk.
-
-        Example:
-            >>> scenario = ScenarioModel.get_default_data()
-            >>> service.create_scenario(scenario)
-            >>> service.exists_scenario(scenario.id_file)
-            True
         """
         # Stamp creation/modification timestamps before writing.
 
@@ -160,11 +131,6 @@ class ScenariosService:
             ScenarioNotFoundError: If no file matches *id_file*.
             DatabaseUnavailableError: If the file exists but cannot be read or
                 parsed.
-
-        Example:
-            >>> scenario = service.read_scenario("abc123")
-            >>> len(scenario.steps) >= 0
-            True
         """
         return self._repository_scenarios.read_scenario(id_file)
 
@@ -179,10 +145,6 @@ class ScenariosService:
         Raises:
             ScenarioNotFoundError: If no existing file matches ``scenario.id_file``.
             DatabaseUnavailableError: If the file cannot be overwritten.
-
-        Example:
-            >>> scenario.scenario_name = "Renamed"
-            >>> service.update_scenario(scenario)
         """
         # Refresh modification date to reflect the current save time.
         scenario.mark_as_modified()
@@ -205,13 +167,6 @@ class ScenariosService:
             ScenarioNotFoundError: If no scenario matches *id_file*.
             DatabaseUnavailableError: If the original cannot be read or the
                 duplicate cannot be written.
-
-        Example:
-            >>> new_id = service.duplicate_scenario("abc123")
-            >>> service.exists_scenario(new_id)
-            True
-            >>> service.read_scenario(new_id).scenario_name.startswith("Copie de")
-            True
         """
         # Load the original before building the copy.
         original = self._repository_scenarios.read_scenario(id_file)
@@ -231,11 +186,6 @@ class ScenariosService:
 
         Raises:
             ScenarioNotFoundError: If no file matches *id_file*.
-
-        Example:
-            >>> service.delete_scenario("abc123")
-            >>> service.exists_scenario("abc123")
-            False
         """
         self._repository_scenarios.delete_scenario(id_file)
         self._repository_profiles.delete_profiles(id_file)  # delete associated profiles to avoid orphaned data
@@ -250,8 +200,6 @@ class ScenariosService:
         Delegates to the repository, which handles the platform-specific call
         (``explorer``, ``open``, ``xdg-open``, …).
 
-        Example:
-            >>> service.open_scenarios_folder()  # Opens Finder / Explorer
         """
         self._repository_scenarios.open_scenarios_folder()
 

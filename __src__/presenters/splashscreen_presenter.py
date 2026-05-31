@@ -33,10 +33,6 @@ class SplashscreenPresenter:
         _service: Service executing the three initialization steps.
         _on_success: Callback invoked when all steps complete without error.
         _on_failure: Callback invoked when any step raises an exception.
-
-    Example:
-        >>> presenter = SplashscreenPresenter(view, service, launch_app, root.destroy)
-        >>> presenter.start()
     """
 
     def __init__(

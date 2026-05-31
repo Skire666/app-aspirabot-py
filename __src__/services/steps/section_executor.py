@@ -32,7 +32,8 @@ class SectionExecutor(StepExecutorBase, IStepExecutor):
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         p = cast(SectionParams, context.step_scraping_data.params)
-        _logger.info("Section : %s", p.title)
+
+        context.last_message_step = f"Section : {p.title}"
 
 
 register_step_executor(SectionExecutor())

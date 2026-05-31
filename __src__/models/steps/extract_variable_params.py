@@ -1,4 +1,4 @@
-"""Typed parameter model for the EXPORT_VARIABLE step."""
+"""Typed parameter model for the EXTRACT_VARIABLE step."""
 
 # -----------------------------------------------------------------------------
 # Imports

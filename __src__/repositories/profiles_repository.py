@@ -2,11 +2,6 @@
 
 Provides ScenariosRepository, which discovers, reads, writes, and deletes
 JSON provider configuration files stored in a local directory.
-
-Example:
-    >>> from repositories.profiles_repository import ProfilesRepository
-    >>> repo = ProfilesRepository("./profiles")
-    >>> profiles = repo.list_all_profiles_launch()
 """
 
 # -----------------------------------------------------------------------------

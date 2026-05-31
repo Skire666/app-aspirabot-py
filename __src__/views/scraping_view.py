@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from shared.constants import C_COLOR_ORANGE_BLINKING
+from shared.enums import StepTypeEnum
 from view_models.scraping_view_model import ScrapingViewModel
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
@@ -138,13 +139,16 @@ class ScrapingView(ttk.Frame):
 
     def _create_journal_section(self, parent: tk.Widget) -> None:
         """Section 4 — scrollable read-only journal."""
-        frame = HorizontalLineFrame(parent, text="Journal")
+        frame = HorizontalLineFrame(parent, text="Journal du scraping")
         frame.pack(fill=tk.BOTH, expand=True)
 
         txt_frame = ttk.Frame(frame)
         txt_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
 
         self._txt_journal = tk.Text(txt_frame, state=tk.DISABLED, wrap=tk.NONE, height=12)
+        self._txt_journal.tag_configure("ko", foreground="red")
+        self._txt_journal.tag_configure("jump", foreground="blue")
+        self._txt_journal.tag_configure("open_url_ok", foreground="green")
         sb_y = ttk.Scrollbar(txt_frame, orient=tk.VERTICAL, command=self._txt_journal.yview)
         sb_x = ttk.Scrollbar(txt_frame, orient=tk.HORIZONTAL, command=self._txt_journal.xview)
         self._txt_journal.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
@@ -210,12 +214,23 @@ class ScrapingView(ttk.Frame):
         self._btn_resume.configure(bg=bg)
         self.after(_BLINK_INTERVAL_MS, self._blink_resume)
 
+    @staticmethod
+    def _journal_tag(line: str) -> str:
+        if " KO " in line:
+            return "ko"
+        if f" {StepTypeEnum.E_JUMP_TO_STEP.value} " in line:
+            return "jump"
+        if f" {StepTypeEnum.E_OPEN_URL.value} " in line:
+            return "open_url_ok"
+        return ""
+
     def _sync_journal_append(self, *_: object) -> None:
         """Append the latest line from journal_append_var to the Text widget."""
         line = self._vm.journal_append_var.get()
         if line:
+            tag = self._journal_tag(line)
             self._txt_journal.configure(state=tk.NORMAL)
-            self._txt_journal.insert(tk.END, line + "\n")
+            self._txt_journal.insert(tk.END, line + "\n", tag or ())
             self._txt_journal.see(tk.END)
             self._txt_journal.configure(state=tk.DISABLED)
 

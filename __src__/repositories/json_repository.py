@@ -4,12 +4,6 @@ Provides JsonFileRepository for reading and writing JSON files.
 Already-loaded files are kept in a class-level cache keyed by resolved path;
 callers always receive a deep copy.  Serialisation transparently handles
 str, int, float, bool, None, date, datetime and time.
-
-Example:
-    >>> from repositories.json_repository import JsonFileRepository
-    >>> repo = JsonFileRepository()
-    >>> data = repo.read(Path("config.json"))
-    >>> repo.write(Path("config.json"), {"key": "value"})
 """
 
 # -----------------------------------------------------------------------------

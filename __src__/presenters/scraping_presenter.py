@@ -24,7 +24,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scraping_service import ScrapingService
-from shared.enums import EventScrapingEnum
+from shared.enums import EventScrapingEnum, StepTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
@@ -300,6 +300,41 @@ class ScrapingPresenter:
         if line:
             self._vm.after(0, lambda entry=line: self._append_journal(entry))
 
+    @staticmethod
+    def preformat_step_start(dt: str, step: StepScrapingModel) -> str:
+        """Pre-format the E_STEP_START journal line to include the step type."""
+        if step.step_type == StepTypeEnum.E_OPEN_URL:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_OPEN_URL.value} "
+        if step.step_type == StepTypeEnum.E_SECTION_STEPS:
+            title_str = step.params.title
+            return f"{dt} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title_str}"
+        if step.step_type == StepTypeEnum.E_JUMP_TO_STEP:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_JUMP_TO_STEP.value} "
+        if step.step_type == StepTypeEnum.E_CLOSE_TABS:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_CLOSE_TABS.value} "
+        if step.step_type == StepTypeEnum.E_KILL_BROWSER:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_KILL_BROWSER.value} "
+        if step.step_type == StepTypeEnum.E_WAIT_USER_ACTION:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_USER_ACTION.value} "
+        if step.step_type == StepTypeEnum.E_WAIT_FIXED_TIME:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_FIXED_TIME.value} "
+        if step.step_type == StepTypeEnum.E_WAIT_PAGE_STATE:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_PAGE_STATE.value} "
+        if step.step_type == StepTypeEnum.E_WAIT_HTML_ELEMENTS:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_HTML_ELEMENTS.value} "
+        if step.step_type == StepTypeEnum.E_WAIT_HTML_IMAGES:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_HTML_IMAGES.value} "
+        if step.step_type == StepTypeEnum.E_YOUTUBE_TRANSCRIPTS:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_YOUTUBE_TRANSCRIPTS.value} "
+        if step.step_type == StepTypeEnum.E_CLICK_FOR_DOWNLOAD:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_CLICK_FOR_DOWNLOAD.value} "
+        if step.step_type == StepTypeEnum.E_CLICK_ON_ELEMENT:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_CLICK_ON_ELEMENT.value} "
+        if step.step_type == StepTypeEnum.E_EXPORT_DATA_TO_JS:
+            return f"{dt} | {step.step_id} | {StepTypeEnum.E_EXPORT_DATA_TO_JS.value} "
+        # ignore other step types for the start line (will be visible in the done line)
+        return ""
+
     def _format_journal_line(
         self, event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
     ) -> str:
@@ -317,7 +352,7 @@ class ScrapingPresenter:
         if event in _LIFECYCLE_MESSAGES:
             return f"{ts} - {_LIFECYCLE_MESSAGES[event]}"
         if event == EventScrapingEnum.E_STEP_START and step:
-            return f"{ts} - Début étape | {step.step_id} | {step.step_type.value}"
+            return self.preformat_step_start(ts, step)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
             return self._format_step_done(ts, step, context)
         return ""
@@ -334,10 +369,12 @@ class ScrapingPresenter:
         Returns:
             A formatted journal line string.
         """
+        if step.step_type == StepTypeEnum.E_SECTION_STEPS:
+            return ""
         result = "OK" if context.last_result_step else "KO"
         duration = f"{context.last_time_elapsed:.2f}s"
         msg = context.last_message_step or ""
-        return f"{ts} - Fin étape | {step.step_id} | {step.step_type.value} | {result} | {duration} | {msg}"
+        return f"{ts} | {step.step_id} | {result} | {duration} | {msg}"
 
     def _append_journal(self, line: str) -> None:
         """Add a line to the ViewModel journal and the internal buffer.

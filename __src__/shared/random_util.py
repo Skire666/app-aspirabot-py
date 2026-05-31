@@ -41,10 +41,6 @@ def generate_rng_id_step() -> str:
     Returns:
         A random string of the specified length.
 
-    Example:
-        >>> generate_rng_id_step()
-        'g5k3'  # Example output, actual result will vary each time.
-
     Raises:
         ValueError: If nbr_char is not a positive integer.
     """
@@ -69,10 +65,6 @@ def generate_rng_hexastring(nbr_char: int) -> str:
 
     Returns:
         List of unique random strings.
-
-    Example:
-        >>> generate_rng_hexastring(8)
-        'a3f5c9b2'  # Example output, actual result will vary each time.
 
     Raises:
         ValueError: If nbr_char is not a positive even integer or if size_list is not a positive integer.

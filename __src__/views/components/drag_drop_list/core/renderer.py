@@ -47,10 +47,6 @@ class RenderEngine:
 
     This class owns no list state — it only wraps canvas primitives so
     the widget can unit-test rendering logic via a stub canvas.
-
-    Example:
-        >>> engine = RenderEngine(canvas, theme)
-        >>> engine.draw_floating_bg(x=4, y_top=52, w=300, h=46, btn_zone_w=80)
     """
 
     def __init__(self, canvas: tk.Canvas, theme: dict[str, str]) -> None:
@@ -92,15 +88,7 @@ class RenderEngine:
     # ── Primitive drawing ────────────────────────────────────────────
 
     def draw_rounded_rect(
-        self,
-        x1: int,
-        y1: int,
-        x2: int,
-        y2: int,
-        r: int,
-        fill: str,
-        outline: str = "",
-        tags: tuple[str, ...] = (),
+        self, x1: int, y1: int, x2: int, y2: int, r: int, fill: str, outline: str = "", tags: tuple[str, ...] = ()
     ) -> None:
         """Draws a filled rounded rectangle.
 
@@ -133,14 +121,7 @@ class RenderEngine:
     # ── Button drawing ───────────────────────────────────────────────
 
     def draw_button(
-        self,
-        btn: ButtonDef,
-        x1: int,
-        y1: int,
-        x2: int,
-        y2: int,
-        hovered: bool,
-        tag: str | None = None,
+        self, btn: ButtonDef, x1: int, y1: int, x2: int, y2: int, hovered: bool, tag: str | None = None
     ) -> None:
         """Draws a single action button.
 
@@ -157,11 +138,7 @@ class RenderEngine:
         color = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
         self.draw_rounded_rect(x1, y1, x2, y2, 5, color, tags=tags)
         self._canvas.create_image(
-            (x1 + x2) // 2,
-            (y1 + y2) // 2,
-            image=get_resource_icon_24px(btn.icon),
-            anchor="center",
-            tags=tags,
+            (x1 + x2) // 2, (y1 + y2) // 2, image=get_resource_icon_24px(btn.icon), anchor="center", tags=tags
         )
 
     def draw_toggle_button(
@@ -194,11 +171,7 @@ class RenderEngine:
         self.draw_rounded_rect(x1, y1, x2, y2, 5, bg, tags=tags)
         icon = icon_on if is_active else icon_off
         self._canvas.create_image(
-            (x1 + x2) // 2,
-            (y1 + y2) // 2,
-            image=get_resource_icon_24px(icon),
-            anchor="center",
-            tags=tags,
+            (x1 + x2) // 2, (y1 + y2) // 2, image=get_resource_icon_24px(icon), anchor="center", tags=tags
         )
 
     # ── Composite drawing ────────────────────────────────────────────
@@ -211,23 +184,9 @@ class RenderEngine:
             y: Vertical center of the line.
             w: Total width of the line.
         """
-        self._canvas.create_line(
-            x,
-            y,
-            x + w,
-            y,
-            fill=self._theme["insert"],
-            width=_HEIGHT_LINE_INSERT,
-        )
+        self._canvas.create_line(x, y, x + w, y, fill=self._theme["insert"], width=_HEIGHT_LINE_INSERT)
 
-    def draw_floating_bg(
-        self,
-        x: int,
-        y_top: int,
-        w: int,
-        h: int,
-        btn_zone_w: int,
-    ) -> None:
+    def draw_floating_bg(self, x: int, y_top: int, w: int, h: int, btn_zone_w: int) -> None:
         """Draws the colored background rectangle for the floating (dragged) item.
 
         Args:
@@ -238,12 +197,7 @@ class RenderEngine:
             btn_zone_w: Width of the button zone (excluded from bg).
         """
         self.draw_rounded_rect(
-            x,
-            y_top + _FLOATING_INSET,
-            x + w - btn_zone_w,
-            y_top + h - _FLOATING_INSET,
-            4,
-            self._theme["drag_bg"],
+            x, y_top + _FLOATING_INSET, x + w - btn_zone_w, y_top + h - _FLOATING_INSET, 4, self._theme["drag_bg"]
         )
 
 

@@ -2,12 +2,6 @@
 
 A URL source scenario supplies URLs one at a time to the workflow engine.
 Concrete implementations cover manual lists, and folder-based sources.
-
-Example:
-    >>> class MyProvider(IUrlSourceProvider):
-    ...     def has_next(self) -> bool: return False
-    ...     def next_url(self) -> str: raise StopIteration
-    ...     def reset(self) -> None: pass
 """
 
 # -----------------------------------------------------------------------------

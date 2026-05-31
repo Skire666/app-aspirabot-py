@@ -3,6 +3,10 @@
 Pure-Python utilities with no Tkinter dependency — safe to import from any layer.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from typing import Any
 
 

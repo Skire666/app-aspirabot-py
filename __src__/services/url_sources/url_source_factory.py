@@ -2,11 +2,6 @@
 
 Selects the correct concrete scenario based on the source type string returned
 by ``ExecutorView.get_url_source()``.
-
-Example:
-    >>> p = build_url_source_scenario("manual", ["https://example.com"])
-    >>> p.has_next()
-    True
 """
 
 # -----------------------------------------------------------------------------
@@ -28,9 +23,7 @@ from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSour
 
 
 def build_url_source_scenario(
-    source_type: str,
-    source_value: list[str] | str,
-    sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC,
+    source_type: str, source_value: list[str] | str, sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC
 ) -> IUrlSourceProvider:
     """Instantiate the appropriate URL source scenario for the given type.
 

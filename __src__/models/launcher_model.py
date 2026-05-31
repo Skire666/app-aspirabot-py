@@ -2,11 +2,6 @@
 
 A launch profile stores user-configured parameters for a single scraping
 session: export folder, URL source mode, and usage statistics.
-
-Example:
-    >>> profile = ProfileLaunchModel.get_default()
-    >>> profile.id_scenario
-    'Profil par défaut'
 """
 
 # -----------------------------------------------------------------------------
@@ -54,11 +49,6 @@ class LaunchModel:
         url_source_value: List of URLs for "manual"; path string for others.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
         launch_count: Number of times the profile was launched.
-
-    Example:
-        >>> profile = ProfileLaunchModel.get_default()
-        >>> profile.launch_count
-        0
     """
 
     id_profile: str
@@ -88,11 +78,6 @@ class LaunchModel:
 
         Raises:
             None.
-
-        Example:
-            >>> profile = ProfileLaunchModel.get_default()
-            >>> profile.export_folder  # CWD/data_scraping
-            ...
         """
         return cls(
             id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID),
@@ -121,11 +106,6 @@ class LaunchModel:
 
         Raises:
             None.
-
-        Example:
-            >>> raw = {"id_scenario": "P1", "launch_count": 2}
-            >>> ProfileLaunchModel.import_from_data_json(raw).id_scenario
-            'P1'
         """
         return cls(
             id_profile=data.get("id_profile"),
@@ -150,11 +130,6 @@ class LaunchModel:
 
         Raises:
             None.
-
-        Example:
-            >>> profile = ProfileLaunchModel.get_default()
-            >>> isinstance(profile.export_to_data_json(), dict)
-            True
         """
         return {
             "id_profile": self.id_profile,
@@ -198,12 +173,6 @@ class LaunchModel:
 
         Raises:
             None.
-
-        Example:
-            >>> profile = ProfileLaunchModel.get_default()
-            >>> profile.increment_launch_count()
-            >>> profile.launch_count
-            1
         """
         self.launch_count += 1
         self.used_date_profile = datetime.now()

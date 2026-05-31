@@ -95,10 +95,6 @@ class ResourcesIcons:
 
     This class provides a registry of singleton instances identified by a
     resource type key (e.g., "ICON"). Each instance maintains its own cache.
-
-    Example:
-        icon_manager = ResourcesIcons.get_instance("WHITE_THEME")
-        icon = icon_manager.get_icon("icon.png", (24, 24))
     """
 
     _instance: ResourcesIcons | None = None

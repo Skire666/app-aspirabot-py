@@ -51,12 +51,7 @@ class DragState:
         Returns:
             Updated DragState with incremented move_count.
         """
-        return _dc_replace(
-            self,
-            insert_pos=insert_pos,
-            expand_gap=insert_pos,
-            move_count=self.move_count + 1,
-        )
+        return _dc_replace(self, insert_pos=insert_pos, expand_gap=insert_pos, move_count=self.move_count + 1)
 
     def with_redraw(self, fy: int) -> DragState:
         """Returns a copy recording that a redraw occurred.
@@ -91,12 +86,6 @@ class DirtyRegion:
 
     Supports both per-item (index-level) and full-canvas invalidation.
     The all_items flag short-circuits individual item checks.
-
-    Example:
-        >>> region = DirtyRegion()
-        >>> region.mark_item(3)
-        >>> region.is_dirty(3)
-        True
     """
 
     all_items: bool = False

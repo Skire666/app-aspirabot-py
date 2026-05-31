@@ -16,12 +16,6 @@ class LRUCache[K, V]:
 
     Items are evicted in LRU order when capacity is exceeded.
     Not thread-safe.
-
-    Example:
-        >>> cache: LRUCache[str, int] = LRUCache(capacity=128)
-        >>> cache.put("x", 42)
-        >>> cache.get("x")
-        42
     """
 
     def __init__(self, capacity: int) -> None:

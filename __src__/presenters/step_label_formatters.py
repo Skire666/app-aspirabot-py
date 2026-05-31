@@ -224,7 +224,7 @@ def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, 
 
 
 def _fmt_export_variable(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
-    """Format label for EXPORT_VARIABLE."""
+    """Format label for EXTRACT_VARIABLE."""
     variable = params.get("variable", "")
     return f"Extraire une variable locale\n{variable}"
 
@@ -303,7 +303,7 @@ _REGISTRY: dict[StepTypeEnum, _FormatterFn] = {
     StepTypeEnum.E_SCROLL_DOWN: _fmt_scroll_down,
     StepTypeEnum.E_SECTION_STEPS: _fmt_section,
     StepTypeEnum.E_YOUTUBE_TRANSCRIPTS: _fmt_youtube_transcripts,
-    StepTypeEnum.E_EXPORT_VARIABLE: _fmt_export_variable,
+    StepTypeEnum.E_EXTRACT_VARIABLE: _fmt_export_variable,
     StepTypeEnum.E_WAIT_FIXED_TIME: _fmt_wait_fixed_time,
     StepTypeEnum.E_WAIT_HTML_ELEMENTS: _fmt_wait_html_elements,
     StepTypeEnum.E_WAIT_HTML_IMAGES: _fmt_wait_html_images,

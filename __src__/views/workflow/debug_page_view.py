@@ -4,10 +4,6 @@ Lets the user inspect a live Playwright-controlled page: raw HTML content,
 CSS selector text analysis, and image metadata extraction.  All display state
 is driven by ``DebugViewModel`` Vars; user actions are dispatched to VM
 action methods.
-
-Example:
-    >>> vm = DebugViewModel(master=root, url="https://example.com")
-    >>> DebugPageView(parent=root, vm=vm)
 """
 
 # -----------------------------------------------------------------------------

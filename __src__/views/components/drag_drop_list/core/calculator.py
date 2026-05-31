@@ -22,25 +22,9 @@ class LayoutCalculator:
     Positions are O(1) (simple arithmetic). The expand_gap and canvas_w
     fields must be updated before computing positions for a drag frame
     or after a resize so that callers see consistent geometry.
-
-    Example:
-        >>> calc = LayoutCalculator(item_height=48, pad=4, gap_expand=8, btn_size=36)
-        >>> calc.set_canvas_w(400)
-        True
-        >>> calc.set_n_items(10)
-        >>> calc.item_y(0)
-        4
-        >>> calc.item_y(1)
-        56
     """
 
-    def __init__(
-        self,
-        item_height: int,
-        pad: int,
-        gap_expand: int,
-        btn_size: int,
-    ) -> None:
+    def __init__(self, item_height: int, pad: int, gap_expand: int, btn_size: int) -> None:
         """Initializes the calculator with fixed layout parameters.
 
         Args:
@@ -187,12 +171,7 @@ class LayoutCalculator:
         raw = (fy + self._item_h / 2 - self._pad) / (self._item_h + self._pad)
         return max(0, min(self._n_items, round(raw)))
 
-    def visible_range(
-        self,
-        top: int,
-        bottom: int,
-        buffer: int = 2,
-    ) -> tuple[int, int]:
+    def visible_range(self, top: int, bottom: int, buffer: int = 2) -> tuple[int, int]:
         """Returns the [start, end) item index range visible in the viewport.
 
         Args:
@@ -213,13 +192,7 @@ class LayoutCalculator:
             end = min(self._n_items, end + 1)
         return (start, end)
 
-    def is_y_range_visible(
-        self,
-        y: int,
-        h: int,
-        top: int,
-        bottom: int,
-    ) -> bool:
+    def is_y_range_visible(self, y: int, h: int, top: int, bottom: int) -> bool:
         """Returns True when a y-range intersects the visible viewport.
 
         Args:

@@ -16,10 +16,6 @@ class Debouncer:
 
     Each schedule() call resets the timer. The callback fires only
     after `delay_ms` milliseconds of inactivity.
-
-    Example:
-        >>> d = Debouncer(delay_ms=200)
-        >>> d.schedule(widget, my_callback)
     """
 
     def __init__(self, delay_ms: int) -> None:
@@ -76,11 +72,6 @@ class Throttler:
 
     Unlike Debouncer, Throttler returns False from should_allow()
     within the cooldown window without queuing future calls.
-
-    Example:
-        >>> t = Throttler(interval_ms=16)
-        >>> if t.should_allow():
-        ...     redraw()
     """
 
     def __init__(self, interval_ms: int) -> None:

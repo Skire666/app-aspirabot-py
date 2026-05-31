@@ -1,4 +1,4 @@
-"""Per-step presenter for EXPORT_VARIABLE — builds typed params from raw dict."""
+"""Per-step presenter for EXTRACT_VARIABLE — builds typed params from raw dict."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -27,7 +27,7 @@ def _build(data: dict[str, Any]) -> ExtractVariableParams:
     )
 
 
-register_params_builder(StepTypeEnum.E_EXPORT_VARIABLE, _build)
+register_params_builder(StepTypeEnum.E_EXTRACT_VARIABLE, _build)
 
 
 # EOF

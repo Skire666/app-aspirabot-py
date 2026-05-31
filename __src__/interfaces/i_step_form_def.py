@@ -4,11 +4,6 @@ Each concrete step type owns exactly one implementation of this interface,
 named ``<StepName>FormDef``.  It registers itself in the step registry at
 import time.  The view orchestrators query the registry and invoke this
 contract without knowing any concrete step type by name.
-
-Example:
-    >>> form_def = WaitElementFormDef()
-    >>> form_def.label()
-    'Vérifier les éléments'
 """
 
 # -----------------------------------------------------------------------------
@@ -38,14 +33,6 @@ class IStepFormDef(Protocol):
     ``load_params_step_to_widget`` receives a plain ``params_dict``
     (from ``IStepParams.to_dict()``) so that no domain model ever crosses the
     view boundary.
-
-    Example:
-        >>> form_def = ConcreteFormDef()
-        >>> frame = ttk.Frame()
-        >>> widgets: dict[str, Any] = {}
-        >>> form_def.build_form(frame, widgets)
-        >>> "selector" in widgets
-        True
     """
 
     @classmethod

@@ -27,10 +27,6 @@ class ResourcesFonts:
 
     This class provides a singleton instance for managing cached resources
     like fonts.
-
-    Example:
-        font_manager = Resources.get_instance()
-        font = font_manager.get_font(family="Arial", size=12, weight="bold")
     """
 
     _instance: ResourcesFonts | None = None
@@ -77,10 +73,6 @@ class ResourcesFonts:
 
         Returns:
             tkfont.Font: Tkinter font instance.
-
-        Example:
-            font_manager = ResourcesFonts.get_instance()
-            font = font_manager.get_font(family="Segoe UI", size=14, weight="bold")
         """
         key = (family, size, weight, slant, underline, overstrike)
 

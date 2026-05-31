@@ -37,13 +37,6 @@ class StartupService:
         _config_repo: Repository used to load and ensure the config file exists.
         _config_model: Populated after load_configuration() succeeds.
         _logging_service: Populated after initialize_logging() succeeds.
-
-    Example:
-        >>> service = StartupService(config_repo)
-        >>> service.load_configuration()
-        >>> service.create_required_directories()
-        >>> service.initialize_logging()
-        >>> model = service.config_model
     """
 
     def __init__(self, config_repo: AppConfigurationRepository) -> None:

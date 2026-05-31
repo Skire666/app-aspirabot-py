@@ -37,18 +37,9 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
     Files are sorted by name. Each file is opened only when its turn arrives.
     Files whose first non-empty line is empty are silently skipped.
     A one-URL look-ahead buffer makes ``has_next()`` accurate.
-
-    Example:
-        >>> p = FolderUrlSourceProvider("/tmp/urls")
-        >>> p.has_next()
-        True
     """
 
-    def __init__(
-        self,
-        folder_path: str,
-        sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC,
-    ) -> None:
+    def __init__(self, folder_path: str, sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC) -> None:
         """Store the folder path without scanning it yet.
 
         Args:
