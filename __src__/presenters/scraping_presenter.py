@@ -54,6 +54,23 @@ _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
     EventScrapingEnum.E_EMERGENCY_STOP: C_SCRAPING_STATUS_EMERGENCY_STOP,
 }
 
+# Step types whose start line is simply "dt | step_id | step_type.value ".
+_SIMPLE_STEP_TYPES: frozenset[StepTypeEnum] = frozenset({
+    StepTypeEnum.E_OPEN_URL,
+    StepTypeEnum.E_JUMP_TO_STEP,
+    StepTypeEnum.E_CLOSE_TABS,
+    StepTypeEnum.E_KILL_BROWSER,
+    StepTypeEnum.E_WAIT_USER_ACTION,
+    StepTypeEnum.E_WAIT_FIXED_TIME,
+    StepTypeEnum.E_WAIT_PAGE_STATE,
+    StepTypeEnum.E_WAIT_HTML_ELEMENTS,
+    StepTypeEnum.E_WAIT_HTML_IMAGES,
+    StepTypeEnum.E_YOUTUBE_TRANSCRIPTS,
+    StepTypeEnum.E_CLICK_FOR_DOWNLOAD,
+    StepTypeEnum.E_CLICK_ON_ELEMENT,
+    StepTypeEnum.E_EXPORT_DATA_TO_JS,
+})
+
 
 # -----------------------------------------------------------------------------
 # Class
@@ -303,35 +320,11 @@ class ScrapingPresenter:
     @staticmethod
     def preformat_step_start(dt: str, step: StepScrapingModel) -> str:
         """Pre-format the E_STEP_START journal line to include the step type."""
-        if step.step_type == StepTypeEnum.E_OPEN_URL:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_OPEN_URL.value} "
         if step.step_type == StepTypeEnum.E_SECTION_STEPS:
-            title_str = step.params.title
-            return f"{dt} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title_str}"
-        if step.step_type == StepTypeEnum.E_JUMP_TO_STEP:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_JUMP_TO_STEP.value} "
-        if step.step_type == StepTypeEnum.E_CLOSE_TABS:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_CLOSE_TABS.value} "
-        if step.step_type == StepTypeEnum.E_KILL_BROWSER:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_KILL_BROWSER.value} "
-        if step.step_type == StepTypeEnum.E_WAIT_USER_ACTION:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_USER_ACTION.value} "
-        if step.step_type == StepTypeEnum.E_WAIT_FIXED_TIME:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_FIXED_TIME.value} "
-        if step.step_type == StepTypeEnum.E_WAIT_PAGE_STATE:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_PAGE_STATE.value} "
-        if step.step_type == StepTypeEnum.E_WAIT_HTML_ELEMENTS:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_HTML_ELEMENTS.value} "
-        if step.step_type == StepTypeEnum.E_WAIT_HTML_IMAGES:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_WAIT_HTML_IMAGES.value} "
-        if step.step_type == StepTypeEnum.E_YOUTUBE_TRANSCRIPTS:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_YOUTUBE_TRANSCRIPTS.value} "
-        if step.step_type == StepTypeEnum.E_CLICK_FOR_DOWNLOAD:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_CLICK_FOR_DOWNLOAD.value} "
-        if step.step_type == StepTypeEnum.E_CLICK_ON_ELEMENT:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_CLICK_ON_ELEMENT.value} "
-        if step.step_type == StepTypeEnum.E_EXPORT_DATA_TO_JS:
-            return f"{dt} | {step.step_id} | {StepTypeEnum.E_EXPORT_DATA_TO_JS.value} "
+            title = getattr(step.params, "title", "")
+            return f"{dt} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title}"
+        if step.step_type in _SIMPLE_STEP_TYPES:
+            return f"{dt} | {step.step_id} | {step.step_type.value} "
         # ignore other step types for the start line (will be visible in the done line)
         return ""
 

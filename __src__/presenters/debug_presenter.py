@@ -49,9 +49,10 @@ def _is_valid_spin_int(value: str) -> bool:
     """
     try:
         n = int(value)
-        return _DEBUG_SPIN_MIN <= n <= _DEBUG_SPIN_MAX
     except ValueError:
         return False
+    else:
+        return _DEBUG_SPIN_MIN <= n <= _DEBUG_SPIN_MAX
 
 
 # -----------------------------------------------------------------------------
@@ -98,7 +99,8 @@ class DebugPresenter:
     # Input validation
     # -----------------------------------------------------------------------
 
-    def _validate_debug_inputs(self, url: str, timeout_raw: str, dns_delay_raw: str) -> list[str]:
+    @staticmethod
+    def _validate_debug_inputs(url: str, timeout_raw: str, dns_delay_raw: str) -> list[str]:
         """Collect validation errors for the debug session inputs.
 
         Args:
