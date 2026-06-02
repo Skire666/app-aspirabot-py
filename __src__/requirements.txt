@@ -3,3 +3,5 @@ pillow
 requests
 pydantic>=2.0
 yt-dlp
+pytest
+pytest-cov

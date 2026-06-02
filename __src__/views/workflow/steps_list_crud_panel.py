@@ -313,12 +313,15 @@ class StepsListCrudView(ttk.Frame):
             idx: The index of the step in the list.
         """
         # Guard against re-entrant render_steps while on_toggle_active fires.
+        # _refresh_view() inside the callback updates _last_steps but blocks rebuild.
         self._dnd_busy = True
         try:
             if self.on_toggle_active_step:
                 self.on_toggle_active_step(idx)
         finally:
             self._dnd_busy = False
+        # Sync the DND items list so _apply_toggle reads the updated is_active value.
+        self._dnd_list.items = self._last_steps
         self._fire_dirty()
 
     def _on_dnd_reorder(self, items: list[StepViewItem]) -> None:

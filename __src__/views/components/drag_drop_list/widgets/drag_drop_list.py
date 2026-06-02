@@ -187,7 +187,7 @@ class DragDropList[T](tk.Frame):
         self.items: list[T] = items
         self._render_item: ItemRenderer[T] = render_item
         self._init_subsystems(
-            item_height, pad, gap_expand, btn_size, drag_redraw_min_interval_ms, drag_redraw_min_delta_px,
+            item_height, pad, gap_expand, btn_size, drag_redraw_min_interval_ms, drag_redraw_min_delta_px
         )
         self._init_resize_state(resize_debounce_ms, resize_finalize_ms, resize_min_delta_px)
         self._init_virtualize_state(virtualize, viewport_provider, virtualize_buffer)
@@ -197,7 +197,7 @@ class DragDropList[T](tk.Frame):
         self._build_canvas()
 
     def _init_subsystems(
-        self, item_height: int, pad: int, gap_expand: int, btn_size: int, drag_ms: int, drag_px: int,
+        self, item_height: int, pad: int, gap_expand: int, btn_size: int, drag_ms: int, drag_px: int
     ) -> None:
         """Instantiate layout, drag-drop controller, and dirty-region tracker."""
         self._calc = LayoutCalculator(item_height, pad, gap_expand, btn_size)
@@ -233,8 +233,12 @@ class DragDropList[T](tk.Frame):
     ) -> None:
         """Store action callbacks and derive the list of visible buttons."""
         self._cbs: dict[str, Callable[..., Any] | None] = {
-            "move_up": on_move_up, "move_down": on_move_down, "duplicate": on_duplicate,
-            "edit": on_edit, "delete": on_delete, "toggle_active": on_toggle_active,
+            "move_up": on_move_up,
+            "move_down": on_move_down,
+            "duplicate": on_duplicate,
+            "edit": on_edit,
+            "delete": on_delete,
+            "toggle_active": on_toggle_active,
         }
         self._on_reorder = on_reorder
         # Only show buttons with registered callbacks.

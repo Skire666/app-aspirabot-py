@@ -324,6 +324,7 @@ class StepsListPresenter:
         """
         if 0 <= index < len(self._steps):
             self._steps[index].is_active = not self._steps[index].is_active
+            self._refresh_view()
 
     # ---------------------------------------------------------------
     # Persist and refresh helpers
