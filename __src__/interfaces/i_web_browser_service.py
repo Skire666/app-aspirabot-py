@@ -22,7 +22,7 @@ class IWebBrowserService(Protocol):
     """Contract for browser lifecycle management in the scraping service layer.
 
     A single instance covers one scraping run. The expected call order is:
-    ``launch()`` → ``append_new_page()`` → ``get_current_page()`` (in executors)
+    ``launch()`` → ``get_workflow_page()`` → ``get_current_page()`` (in executors)
     → ``close_browser()``. Reusing an instance across runs is not supported.
 
     All open pages are tracked internally. Pages opened by JavaScript (e.g.
@@ -38,27 +38,18 @@ class IWebBrowserService(Protocol):
         """
         ...
 
-    def append_new_page(self) -> None:
+    def get_workflow_page(self, forced_new_page: bool = False) -> Page:
         """Open a new browser page and register it in the internal page list.
 
-        The created page is tracked automatically. Pages subsequently opened
-        by JavaScript (e.g. target="_blank" clicks) are also tracked.
-        Use ``get_current_page()`` or ``get_all_pages()`` to access pages.
+            By default, if no page is currently open, this method opens a new page.
+            If a page is already open, it does nothing and keeps the existing page as the current page.
+            If forced_new_page is True, it always opens a new page regardless of the current state
+
+        Args:
+            forced_new_page: If True, forces opening a new page even if one is already open.
 
         Raises:
             RuntimeError: If ``launch()`` has not been called yet.
-        """
-        ...
-
-    def get_workflow_page(self) -> Page:
-        """Return the primary browser page (the first one opened).
-
-        Returns:
-            The main workflow Page object.
-
-        Raises:
-            RuntimeError: If no page is available (browser not launched or
-                no page has been opened yet via ``append_new_page()``).
         """
         ...
 

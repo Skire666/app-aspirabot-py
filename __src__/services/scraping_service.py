@@ -30,11 +30,7 @@ from repositories.json_repository import JsonFileRepository
 from services.url_sources.url_source_factory import build_url_source_scenario
 from services.workflow_service import WorkflowService
 from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum
-from shared.exception_util import (
-    AspirabotBaseError,
-    BrowserNotLaunchedError,
-    ExportFolderNotADirectoryError,
-)
+from shared.exception_util import BrowserNotLaunchedError, ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 from shared.step_registry import get_step_executor
 
@@ -270,7 +266,7 @@ class ScrapingService:
         self._browser_service.launch()
         try:
             self._on_event_logging(EventScrapingEnum.E_CONTEXT_INIT, None, None)
-            self._browser_service.append_new_page()
+            self._browser_service.get_workflow_page()
             self._on_event_logging(EventScrapingEnum.E_WORKFLOW_INIT, None, None)
             self._run_all_steps(scenario.steps)
         finally:
@@ -485,7 +481,7 @@ class ScrapingService:
         try:
             executor: IStepExecutor = get_step_executor(step.step_type)
             executor.execute_logical(self._browser_service, self._context)
-        except AspirabotBaseError as exc:
+        except Exception as exc:
             # Log the exception and set the step result to failure, but allow the run to continue.
             self._context.set_result_execution(False, f"Excep : <<{exc}>>")
             self._logger.exception("Erreur lors de l'exécution de l'étape %s", step.step_id)

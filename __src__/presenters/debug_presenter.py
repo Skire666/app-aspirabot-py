@@ -183,9 +183,12 @@ class DebugPresenter:
             timeout: Navigation timeout in seconds (converted to ms internally).
             dns_delay: DNS resolution wait passed to safe_goto_url.
         """
+        if not self._debug_browser:
+            self._logger.error("Worker démarré sans instance de navigateur.")
+            return
+
         try:
             self._debug_browser.launch()
-            self._debug_browser.append_new_page()
             self._debug_browser.safe_goto_url(
                 url, wait_state="networkidle", timeout_ms=timeout * 1000, wait_dns_solver_sec=dns_delay
             )

@@ -20,6 +20,8 @@ from typing import Any
 
 from shared.exception_util import JsonFileRepositoryError
 
+from __src__.shared.path_util import make_all_folders_if_not_exists
+
 # -----------------------------------------------------------------------------
 # JSON codec helpers
 # -----------------------------------------------------------------------------
@@ -75,7 +77,7 @@ def _decode_hook(raw: dict[str, Any]) -> dict[str, Any] | date | datetime | time
 # Module-level cache shared by all JsonFileRepository instances/subclasses
 # -----------------------------------------------------------------------------
 
-_cache: dict[Path, dict[str, Any]] = {}
+_cache: dict[str, dict[str, Any]] = {}
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -121,19 +123,21 @@ class JsonFileRepository:
         """
         resolved = path.resolve()
 
-        # Return a deep copy from cache on hit.
-        if resolved in _cache:
-            self._logger.debug("Déjà chargé. Lecture du cache '%s'.", resolved)
-            return copy.deepcopy(_cache[resolved])
-
         # File absent: nothing to cache, return empty dict.
         if not resolved.exists():
             self._logger.warning("Fichier JSON absent : '%s'.", resolved)
             return {}
 
+        key_cached = str(resolved) + str(Path(resolved).stat().st_mtime)
+
+        # Return a deep copy from cache on hit.
+        if key_cached in _cache:
+            self._logger.debug("Déjà chargé. Lecture du cache '%s'.", resolved)
+            return copy.deepcopy(_cache[key_cached])
+
         # Load from disk, populate cache, return a deep copy.
         data = self._load_from_disk(resolved)
-        _cache[resolved] = data
+        _cache[key_cached] = data
         return copy.deepcopy(data)
 
     def write_from_dict(self, path: Path, data: dict[str, Any]) -> None:
@@ -155,29 +159,12 @@ class JsonFileRepository:
         self._logger.debug("Écriture du fichier JSON : '%s'.", resolved)
 
         try:
-            resolved.parent.mkdir(parents=True, exist_ok=True)
+            make_all_folders_if_not_exists(resolved, is_file_path=True)
             with resolved.open("w", encoding="utf-8") as fh:
                 json.dump(data, fh, indent=4, ensure_ascii=False, cls=_JsonEncoder)
         except OSError as exc:
             self._logger.error("Impossible d'écrire '%s'.", resolved, exc_info=True)
             raise JsonFileRepositoryError(resolved, str(exc)) from exc
-
-        # Invalidate stale cache entry after a successful write.
-        _cache.pop(resolved, None)
-        self._logger.debug("Cache invalidé pour '%s'.", resolved)
-
-    def invalidate(self, path: Path) -> None:
-        """Remove the cache entry for *path* without touching the file on disk.
-
-        Safe to call even when the path has no current cache entry.
-
-        Args:
-            path: Path whose cache entry should be evicted.
-        """
-        resolved = path.resolve()
-        removed = _cache.pop(resolved, None)
-        if removed is not None:
-            self._logger.debug("Entrée cache supprimée manuellement pour '%s'.", resolved)
 
     # ------------------------------------------------------------------
     # Private helpers

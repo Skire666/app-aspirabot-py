@@ -10,6 +10,7 @@ the internal list.
 # Imports
 # -----------------------------------------------------------------------------
 
+import contextlib
 import logging
 import time
 from pathlib import Path
@@ -17,12 +18,7 @@ from pathlib import Path
 from interfaces.i_web_browser_service import IWebBrowserService
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 from shared.constants import C_STR_ERROR_JS_EVALUATION
-from shared.exception_util import (
-    BrowserAlreadyLaunchedError,
-    BrowserNotLaunchedError,
-    OpenUrlTooManyRetriesError,
-    PageNotAvailableOrClosedError,
-)
+from shared.exception_util import BrowserAlreadyLaunchedError, BrowserNotLaunchedError, OpenUrlTooManyRetriesError
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -40,7 +36,7 @@ class BrowserPlaywrightService(IWebBrowserService):
 
     Handles Chromium launch with anti-detection hardening and manages all
     open pages in an internal list. Pages opened programmatically via
-    ``append_new_page()`` and pages opened by JavaScript (target="_blank")
+    ``get_workflow_page()`` and pages opened by JavaScript (target="_blank")
     are both tracked. Closed pages are removed automatically via Playwright
     page-close events.
     """
@@ -112,14 +108,14 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._context = self._browser.new_context(no_viewport=True)
         self._workflow_page = None
 
-    def append_new_page(self) -> None:
+    def get_workflow_page(self, forced_new_page: bool = False) -> Page:
         """Open a new browser page and register it via the context page event.
 
         The page is not returned — use ``get_current_page()`` or
         ``get_all_pages()`` to access it after this call.
 
         Returns:
-            None.
+            The workflow Page object.
 
         Raises:
             BrowserNotLaunchedError: If ``launch()`` has not been called yet.
@@ -127,13 +123,21 @@ class BrowserPlaywrightService(IWebBrowserService):
         if self._browser is None:
             raise BrowserNotLaunchedError()
         if len(self._browser.contexts) <= 0:
-            raise BrowserNotLaunchedError()
+            context = self._browser.new_context(no_viewport=True)
 
         context = self._browser.contexts[0]
         if len(context.pages) == 0:
             self._workflow_page = context.new_page()
+        elif forced_new_page:
+            new_pg = context.new_page()
+            if self._workflow_page:
+                with contextlib.suppress(Exception):
+                    self._workflow_page.close()
+            self._workflow_page = new_pg
         else:
             self._workflow_page = context.pages[0]  # Track the first page as the workflow page.
+
+        return self._workflow_page
 
     def close_all_tabs(self) -> None:
         """Close all open pages/tabs in the browser.
@@ -155,30 +159,15 @@ class BrowserPlaywrightService(IWebBrowserService):
                 page.close()
         self._workflow_page = None
 
-    def get_workflow_page(self) -> Page:
-        """Return the primary browser page (the first one opened).
-
-        Returns:
-            The main workflow Page object.
-
-        Raises:
-            PageNotAvailableOrClosedError: If no page is available or the current page is closed.
-        """
-        if not self._workflow_page:
-            raise PageNotAvailableOrClosedError()
-        if self._workflow_page.is_closed():
-            raise PageNotAvailableOrClosedError()
-
-        return self._workflow_page
-
     def get_all_pages(self) -> list[Page]:
         """Return all currently open pages tracked by this service.
 
         Returns:
             A snapshot list of all open Page objects.
         """
-        if self._browser.contexts:
-            return [page for context in self._browser.contexts for page in context.pages]
+        if len(self._browser.contexts) >= 1:  # pyright: ignore[reportOptionalMemberAccess]
+            all_ctx = self._browser.contexts  # pyright: ignore[reportOptionalMemberAccess]
+            return [page for context in all_ctx for page in context.pages]
         return []
 
     def get_stats(self) -> tuple[int, str]:
@@ -250,16 +239,14 @@ class BrowserPlaywrightService(IWebBrowserService):
             except Exception as exp:
                 msg = str(exp)
                 if "interrupted by another navigation" in msg and nav_retries < _NAV_MAX_RETRIES:
-                    new_pg = self._browser.contexts[0].new_page()
-                    self._workflow_page.close()
-                    self._workflow_page = new_pg
+                    self.get_workflow_page(forced_new_page=True)  # Force a new page to recover from the navigation
                     nav_retries += 1
                     continue  # la redirection a pris le dessus : on relance goto vers l'URL voulue
                 if "has been closed" in msg and not from_recovered:
-                    self._workflow_page = self._browser.contexts[0].new_page()
+                    self._workflow_page = self.get_workflow_page(forced_new_page=True)
                     from_recovered = True
                     continue
-                if "ERR_NAME_NOT_RESOLVED" in msg:
+                if "ERR_NAME_NOT_RESOLVED" in msg:  # redirection ? DNS ?
                     page.wait_for_timeout(1000 * wait_dns_solver_sec)
                     page.reload(wait_until=wait_state, timeout=timeout_ms)
                     do_loop = False  # le reload est la dernière tentative après délai DNS

@@ -114,111 +114,230 @@ class FaqTextTextHint:
                 "      - Valeur qui contient un fragment :\n"
                 '      - Ex: <a href="/api/user/123"> → a[href*="user"]\n'
                 '            (Le href contient "user")'
-            ),
+            )
         },
-        "Brique logique": {
+        "Type d'étape": {
+            "Section": (
+                "Étape organisationnelle sans interaction navigateur.\n"
+                "Sert à regrouper des étapes sous un titre visible dans le journal.\n"
+                "Toujours succès — aucun effet sur l'état du navigateur.\n\n"
+                "• Titre : obligatoire, ne peut pas être vide ou uniquement des espaces\n"
+                "• Commentaire : optionnel"
+            ),
             "Ouvrir une URL": (
-                "Navigue vers l'URL indiquée et attend que la page soit dans "
-                "l'état choisi.\n\n"
-                "• URL : adresse complète incluant https://\n"
-                "• État d'attente :\n"
-                "  -domcontentloaded : attend le DOM (plus rapide)\n"
-                "  -load : attend page chargée (l'événement window.load)\n"
-                "  -networkidle : attend la fin des requêtes réseau (500 ms idle)"
+                "Navigue vers une URL et attend que la page soit dans l'état choisi.\n\n"
+                "• Mode URL :\n"
+                "  - Source : consomme la prochaine URL de la source scénario\n"
+                "  - Personnalisé : utilise l'URL saisie (doit inclure https://)\n"
+                "• État d'attente : domcontentloaded / load / networkidle (idle 500 ms)\n"
+                "• Timeout : durée > 0 + unité valide\n"
+                "• Délai DNS : entre 1 et 30 secondes\n"
+                "  Délai d'attente avant retry si ERR_NAME_NOT_RESOLVED\n\n"
+                "Erreurs runtime :\n"
+                "  - URL personnalisée vide (mode personnalisé sans URL saisie)\n"
+                "  - Source épuisée (mode source, plus d'URL disponible)\n"
+                "  - Mismatch navigation : URL résultante ≠ URL cible\n"
+                "    (ex. redirection de domaine détectée après navigation)"
             ),
-            "Pause fixe": (
-                "Attend un délai fixe avant de passer à l'étape suivante.\n\n"
-                "• Durée : valeur numérique (entier ou décimal)\n"
-                "• Unité : millisecond, second, minute"
-            ),
-            "Pause aléatoire": (
-                "Attend un délai aléatoire compris entre Min et Max.\n"
-                "Utile pour simuler un comportement humain.\n\n"
-                "• Min : borne inférieure (strictement < Max)\n"
-                "• Max : borne supérieure\n"
-                "• Unité : millisecond, second, minute"
+            "Fermer des onglets": (
+                "Ferme les onglets dont l'URL contient le filtre,\n"
+                "en conservant au plus max_tabs onglets ouverts.\n\n"
+                "• Mode filtre :\n"
+                "  - Source : utilise la dernière URL ouverte par OpenURL\n"
+                "    (le refresh ne met pas à jour cette dernière URL)\n"
+                "  - Personnalisé : filtre saisi manuellement\n"
+                "• Filtre : substring, insensible à la casse, pas de regexp\n"
+                "  (le '.' n'est pas interprété, éviter le préfixe https://)\n"
+                "• Max tabs : >= 1\n\n"
+                "Erreurs runtime :\n"
+                "  - Filtre manquant (mode source sans URL précédemment ouverte)\n"
+                "  - L'onglet de travail a été fermé par l'opération"
             ),
             "Rafraîchir la page": (
                 "Recharge la page courante du navigateur.\n\n"
-                "• Vider le cache : si coché, force un rechargement complet\n"
-                "  sans utiliser le cache du navigateur."
+                "• Vider le cache : si coché, force Ctrl+F5\n"
+                "  (rechargement complet sans cache navigateur)\n"
+                "• État d'attente : domcontentloaded / load / networkidle\n"
+                "• Timeout : > 0 + unité valide\n\n"
+                "Ne met pas à jour la dernière URL ouverte dans le contexte."
             ),
-            "Cliquer sur un élément": (
-                "Localise un élément via son sélecteur CSS et le clique.\n\n"
-                "• Sélecteur CSS : ex. #submit-btn, .card:first-child\n"
-                "• Mode de clic :\n"
-                "  -Normal : clic standard Playwright\n"
-                "  -Forced : clic même si l'élément est masqué\n"
-                "  -JS Direct : exécute element.click() via JavaScript"
+            "Attendre un état de page": (
+                "Attend que la page courante atteigne un état de chargement précis.\n"
+                "N'effectue aucune navigation — attend uniquement l'état.\n\n"
+                "• État : domcontentloaded / load / networkidle (idle 500 ms)\n"
+                "• Timeout : > 0 + unité valide\n\n"
+                "Utile après un clic ou une action qui modifie la page\n"
+                "sans navigation explicite."
             ),
-            "Attendre un élément": (
-                "Attend explicitement qu'un élément CSS soit présent dans le DOM avant de "
-                "continuer.\n\n"
-                "• Sélecteur CSS : ex. .results-loaded, #content\n"
-                "Retry plusieurs jusqu'a que ce que l'élément soit visible."
+            "Attendre une durée fixe": (
+                "Pause inconditionnelle avant de passer à l'étape suivante.\n\n"
+                "• Durée : >= 0  (0 = pas d'attente réelle)\n"
+                "• Unité : valeur de temps valide\n\n"
+                "Valide pour toute durée nulle ou positive.\n"
+                "Aucune erreur runtime possible sur cette étape."
+            ),
+            "Attendre action manuelle": (
+                "Suspend l'exécution jusqu'à ce que l'opérateur clique 'Reprendre'.\n\n"
+                "• Condition de déclenchement :\n"
+                "  - always : pause systématique\n"
+                "  - success : pause si l'étape précédente a réussi\n"
+                "  - failure : pause si l'étape précédente a échoué\n"
+                "• Délai post-reprise : durée > 0 attendue après le clic 'Reprendre'\n"
+                "  avant de continuer l'exécution\n"
+                "• Unité : valide\n\n"
+                "Erreur de config : durée post-reprise doit être > 0."
             ),
             "Compter les éléments": (
-                "Compte les éléments du DOM correspondant à un sélecteur CSS,"
-                " puis évalue une condition sur ce nombre.\n"
-                "L'attente n'est pas bloqué (retourne instantanément)\n"
-                "• Sélecteur CSS : ex. .card, #results li, div.item\n"
-                "• Pré-attente : délai appliqué avant le comptage (0 = immédiat)\n\n"
-                "• Condition : lecture naturelle\n"
-                "  ex. 'C'est un succès si COUNT est supérieur à 3'\n\n"
-                "Le nombre brut d'éléments et le résultat final\n"
-                "sont tous deux consignés dans le journal d'exécution."
+                "Compte les éléments DOM correspondant à un sélecteur CSS,\n"
+                "puis évalue une condition sur ce nombre.\n"
+                "Retour instantané — aucun retry, aucune attente.\n\n"
+                "• Sélecteur CSS : obligatoire, non vide\n"
+                "• Opérateur : equal / not_equal / greater_than / less_than\n"
+                "              greater_or_equal / less_or_equal\n"
+                "• Valeur de comparaison : >= 0\n"
+                "• Résultat attendu (success_if) : 'success' ou 'failure'\n"
+                "  Lecture : 'C'est un succès si COUNT est <opérateur> <valeur>'\n\n"
+                "Le nombre brut trouvé et le résultat de la condition\n"
+                "sont consignés dans le journal d'exécution."
             ),
-            "Défiler vers le bas": (
-                "Fait défiler la page vers le bas d'un nombre de pixels donné.\n"
-                "Utile pour déclencher le chargement en infinite scroll.\n\n"
-                "• Pixels : distance de défilement en pixels (ex. 1000)"
+            "Compter les images": (
+                "Compte les images de la page filtrées par dimensions,\n"
+                "puis évalue une condition sur ce nombre.\n"
+                "Retour instantané — aucun retry.\n\n"
+                "• Largeur min/max et hauteur min/max : filtres en pixels\n"
+                "  - min >= 0, max >= 1\n"
+                "  - min doit être <= max (hauteur et largeur indépendamment)\n"
+                "• Opérateur / valeur / success_if : mêmes règles que 'Compter les éléments'"
             ),
-            "Fermer des onglets": ("Cf. comportement, Il est spécial celui-la.\n\n"),
-            "Sauter à une étape": (
-                "Redirige l'exécution vers une autre étape selon le résultat de l'étape précédente.\n\n"
-                "• Condition :\n"
-                "  - Si succès : saut si l'étape précédente a réussi\n"
-                "  - Si échec : saut si l'étape précédente a échoué\n"
-                "  - Toujours : saut inconditionnel\n"
-                "• Étape cible : étape vers laquelle rediriger l'exécution\n\n"
-                "Une étape ne peut pas pointer vers elle-même\n"
-                "(boucle infinie interdite)."
+            "Attendre X éléments": (
+                "Attend avec retries répétés que le nombre d'éléments CSS\n"
+                "corresponde à la condition définie.\n\n"
+                "• Sélecteur CSS : obligatoire\n"
+                "• Opérateur + quantité (>= 0) : condition à atteindre\n"
+                "• Délai entre retries : > 0 + unité valide\n"
+                "• Nombre max de retries : > 0\n\n"
+                "Erreur runtime si la condition n'est pas atteinte\n"
+                "après avoir épuisé tous les retries."
             ),
-            "Quitter navigateur": (
-                "Marque la fin du flux de scraping et attend un délai fixe\n"
-                "avant de libérer les ressources du navigateur.\n\n"
-                "• Durée d'attente : délai à respecter avant la fin\n"
-                "• Unité : milli-sec, seconde, minute\n\n"
-                "Utile pour laisser les actions asynchrones se terminer\n"
-                "avant la fermeture du navigateur."
+            "Attendre X images": (
+                "Attend avec retries que le nombre d'images filtrées par dimensions\n"
+                "corresponde à la condition.\n\n"
+                "• Filtres dimensions : mêmes règles que 'Compter les images'\n"
+                "  (min >= 0, max >= 1, min <= max)\n"
+                "• Opérateur + quantité (>= 0) + retries : mêmes règles que 'Attendre X éléments'\n\n"
+                "Utile pour les images chargées en progressive ou lazy-load."
             ),
-            "Télécharger une image": (
-                "Capture et sauvegarde une image présente sur la page.\n\n"
-                "• Mode :\n"
-                "  -first / last : première ou dernière image du DOM\n"
-                "  -all : toutes les images de la page\n"
-                "• Hauteur / Largeur : filtres optionnels sur les dimensions (px)"
+            "Cliquer sur un élément": (
+                "Localise un élément via sélecteur CSS et le clique.\n\n"
+                "• Sélecteur CSS : obligatoire\n"
+                "• Mode de clic :\n"
+                "  - Normal : clic standard Playwright\n"
+                "  - Forced : clic même si l'élément est masqué/désactivé\n"
+                "  - JS Direct : exécute element.click() via JavaScript\n"
+                "• Index : >= 0 (0 = premier élément trouvé par le sélecteur)\n\n"
+                "Erreur runtime : aucun élément trouvé pour le sélecteur."
             ),
-            "Attendre taille d'image": (
-                "Attend qu'une image atteigne les dimensions minimales indiquées.\n"
-                "Utile pour les images chargées en progressive ou lazy-load.\n\n"
-                "• Hauteur min / max : intervalle de hauteur attendue (px)\n"
-                "• Largeur min / max : intervalle de largeur attendue (px)"
+            "Cliquer pour télécharger": (
+                "Clique un élément pour déclencher un téléchargement fichier,\n"
+                "puis sauvegarde le fichier dans le dossier d'export.\n\n"
+                "• Mêmes paramètres que 'Cliquer sur un élément'\n"
+                "  (sélecteur CSS, mode de clic, index)\n"
+                "• Timeout de détection download : 10 secondes (non configurable)\n\n"
+                "Erreurs runtime :\n"
+                "  - Sélecteur CSS ne trouve aucun élément\n"
+                "  - Clic effectué mais aucun téléchargement détecté dans le délai\n\n"
+                "Note : utilise uniquement le mode JS Direct en interne\n"
+                "pour maximiser la compatibilité avec les liens de téléchargement."
             ),
-            "Extraire le texte (CSS)": (
-                "Extrait du contenu depuis des éléments DOM via un sélecteur CSS.\n\n"
-                "• Sélecteur CSS : ex. h1, .title, #price, div.card:first-child\n"
+            "Télécharger les images": (
+                "Télécharge des images présentes sur la page dans le dossier d'export.\n\n"
+                "• Mode : first / last / all\n"
+                "• Unique uniquement : filtre les doublons (déduplication)\n"
+                "• Filtres dimensions (optionnels) : width_min/max, height_min/max\n"
+                "  - min >= 0, max >= 1, min <= max\n\n"
+                "Erreur de config si les bornes de dimensions sont incohérentes."
+            ),
+            "YouTube Transcripts": (
+                "Extrait les données textuelles d'une vidéo YouTube via yt-dlp.\n"
+                "Utilise la dernière URL ouverte par un step 'Ouvrir une URL'.\n\n"
+                "• Titre : obligatoire, non vide (identifiant dans le journal)\n"
+                "• Infos de base : si coché, sauvegarde un fichier JSON\n"
+                "  avec les métadonnées de la vidéo (titre, durée, vues, etc.)\n"
+                "• Sous-titres SRT : si coché, télécharge les sous-titres FR et EN\n"
+                "  (manuels en premier, puis automatiques)\n"
+                "  - Retry automatique si HTTP 429 (rate-limit YouTube)\n"
+                "  - Si aucun sous-titre trouvé pour une langue,\n"
+                "    un placeholder .error est créé à la place\n\n"
+                "Erreurs runtime :\n"
+                "  - 'Infos de base' coché mais aucun fichier JSON produit\n"
+                "  - 'Sous-titres SRT' coché mais aucun fichier de sous-titres produit\n\n"
+                "Attention : l'étape échoue si aucune des deux options n'est cochée."
+            ),
+            "Extraire textes": (
+                "Extrait du contenu depuis des éléments DOM via sélecteur CSS.\n\n"
+                "• Sélecteur CSS : obligatoire\n"
                 "• Mode d'extraction :\n"
                 "  - innerText : texte visible selon le CSS (recommandé)\n"
                 "  - textContent : texte brut incluant les nœuds masqués\n"
                 "  - outerHTML : HTML complet incluant la balise elle-même\n"
                 "  - innerHTML : HTML interne à l'élément\n"
                 "  - value : valeur d'un <input> ou <textarea>\n"
-                "• Éléments ciblés :\n"
-                "  - Premier / Dernier : un seul résultat extrait\n"
-                "  - Tous : résultats joints par un saut de ligne\n\n"
+                "• Cible : first / last / all\n"
+                "  (all → résultats joints par un saut de ligne)\n"
+                "• Clé de mapping : obligatoire, non vide\n"
+                "  (nom de la clé dans les données extraites)\n\n"
                 "Si aucun élément ne correspond, un avertissement est consigné\n"
-                "sans interrompre l'exécution."
+                "sans interrompre l'exécution (pas d'erreur fatale)."
+            ),
+            "Extraire liens": (
+                "Extrait les attributs href depuis des éléments DOM via sélecteur CSS.\n\n"
+                "• Sélecteur CSS : obligatoire\n"
+                "• Cible : first / last / all\n"
+                "• Clé de mapping : obligatoire, non vide\n\n"
+                "Extrait uniquement l'attribut href — pas le texte du lien.\n"
+                "Si aucun élément ne correspond, avertissement sans erreur fatale."
+            ),
+            "Exporter une variable": (
+                "Capture une variable système dans les données extraites du scénario.\n\n"
+                "• Variable (valeurs autorisées) :\n"
+                "  - date_time_now : horodatage au moment de l'exécution\n"
+                "  - last_url : dernière URL ouverte par un step 'Ouvrir une URL'\n"
+                "  - last_domain : domaine extrait de la dernière URL ouverte\n"
+                "• Clé de mapping : obligatoire, non vide\n\n"
+                "Toute valeur de variable hors de ces trois identifiants génère une erreur."
+            ),
+            "Exporter données (json)": (
+                "Écrit toutes les données extraites jusqu'ici\n"
+                "dans un fichier JSON dans le dossier d'export.\n\n"
+                "• Préfixe fichier : obligatoire, non vide\n"
+                "  (préfixé au nom du fichier généré automatiquement)\n\n"
+                "Consigne le nombre de clés exportées dans le journal."
+            ),
+            "Sauter vers l'étape si...": (
+                "Redirige l'exécution vers une autre étape selon le résultat\n"
+                "de l'étape précédente.\n\n"
+                "• Condition :\n"
+                "  - success : saut si l'étape précédente a réussi\n"
+                "  - failure : saut si l'étape précédente a échoué\n"
+                "  - always : saut inconditionnel\n"
+                "• Étape cible : doit exister dans le workflow\n\n"
+                "Erreurs de config :\n"
+                "  - Auto-référence interdite (une étape ne peut pas pointer vers elle-même)\n"
+                "  - Étape cible introuvable dans le workflow"
+            ),
+            "Défiler vers le bas": (
+                "Fait défiler la page vers le bas d'un nombre de pixels donné.\n"
+                "Utile pour déclencher le chargement en infinite scroll.\n\n"
+                "• Pixels : >= 1\n\n"
+                "Valeur 0 ou négative génère une erreur de config."
+            ),
+            "Quitter navigateur": (
+                "Termine le flux de scraping et ferme le navigateur\n"
+                "après un délai optionnel.\n\n"
+                "• Durée d'attente : >= 0  (0 = fermeture immédiate)\n"
+                "• Unité : valide\n\n"
+                "Utile pour laisser les téléchargements asynchrones\n"
+                "se terminer avant la fermeture du navigateur."
             ),
         },
     }
