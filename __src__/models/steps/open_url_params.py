@@ -35,9 +35,7 @@ class OpenUrlParams(BaseStepParams):
         if not info.context:
             return v
         if v <= 0 or v > _DNS_SOLVER_WAIT_MAX:
-            raise ValueError(
-                ERROR_TEMPLATES["open_url_wait_dns_solver_invalid"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["open_url_wait_dns_solver_invalid"].format(step=step_label(info.context)))
         return v
 
     @field_validator("timeout_duration")

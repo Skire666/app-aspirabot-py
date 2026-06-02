@@ -16,6 +16,8 @@ class YoutubeTranscriptsParams(BaseStepParams):
 
     title: str
     comment: str = ""
+    basic_info: bool = True
+    ddl_srt: bool = True
 
     @field_validator("title")
     @classmethod

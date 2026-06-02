@@ -1,6 +1,7 @@
+Lit le fichier @AGENTS.md et respecte ses directives sans exception.
+
 Lance la commande 'ruff check ./__src__/' avec l'environnement 'venv' d'activé.
 Corrige toutes les erreurs.
-
 
 Lance la commande 'python .\__tools__\furripe.py' avec l'environnement 'venv' d'activé.
 Corrige toutes les erreurs.

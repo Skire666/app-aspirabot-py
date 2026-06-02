@@ -24,9 +24,9 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
     GridColumn(id="scenario_name", title="Nom", width=160),
     GridColumn(id="scenario_desc", title="Description", width=160),
     GridColumn(id="version", title="Version", width=82),
+    GridColumn(id="id_file", title="ID Fichier", width=100),
     GridColumn(id="created_date_scenario", title="Création", width=125, format="%d/%m/%Y %H:%M"),
     GridColumn(id="modified_date_scenario", title="Modification", width=125, format="%d/%m/%Y %H:%M"),
-    GridColumn(id="id_file", title="ID Fichier", width=100),
 ]
 
 # -----------------------------------------------------------------------------

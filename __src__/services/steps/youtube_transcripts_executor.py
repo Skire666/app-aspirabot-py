@@ -16,7 +16,7 @@ from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
 from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_step_executor
-from shared.youtube_dlt_srt import download_youtube_srt
+from shared.youtube_downloader import DownloadResult, download_youtube_data
 
 _logger = logging.getLogger(__name__)
 
@@ -34,8 +34,18 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
         """Execute the step."""
         p = cast(YoutubeTranscriptsParams, context.step_scraping_data.params)
 
-        total_ddl = download_youtube_srt(context.last_url_opened, str(context.folder_export))
-        context.last_message_step = f"Transcripts téléchargés : {total_ddl} fichier(s)"
+        rs: DownloadResult = download_youtube_data(
+            context.last_url_opened, str(context.folder_export), p.basic_info, p.ddl_srt
+        )
+
+        if p.basic_info and rs.nbr_base_success <= 0:
+            raise Exception("Aucun fichier de données de base téléchargé")
+        if p.ddl_srt and rs.nbr_srt_success <= 0:
+            raise Exception("Aucun fichier de sous-titres téléchargé")
+
+        context.last_message_step = (
+            f"Téléchargés : Basic info +{rs.nbr_base_success} | Sous-titres +{rs.nbr_srt_success}"
+        )
 
 
 register_step_executor(YoutubeTranscriptsExecutor())

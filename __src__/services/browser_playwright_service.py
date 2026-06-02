@@ -20,7 +20,7 @@ from shared.constants import C_STR_ERROR_JS_EVALUATION
 from shared.exception_util import (
     BrowserAlreadyLaunchedError,
     BrowserNotLaunchedError,
-    DnsSolverTimeoutExceededError,
+    OpenUrlTooManyRetriesError,
     PageNotAvailableOrClosedError,
 )
 
@@ -28,7 +28,7 @@ from shared.exception_util import (
 # Constants
 # -----------------------------------------------------------------------------
 
-_DNS_SOLVER_MAX_WAIT_SEC = 30  # Maximum seconds before DNS solver timeout is triggered.
+_NAV_MAX_RETRIES = 3  # Maximum retries for navigation interruptions before giving up.
 
 # -----------------------------------------------------------------------------
 # Class
@@ -230,36 +230,41 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         return self._pw is not None
 
-    def safe_goto_url(self, url: str, wait_state: str, timeout_ms: int, wait_dns_solver_sec: int) -> None:
-        """Navigate the current page to a URL with error handling and optional DNS solver wait.
+    def safe_goto_url(self, url, wait_state, timeout_ms, wait_dns_solver_sec) -> None:
+        """Navigate to url, retrying on redirect / closed-page / DNS errors.
 
         Args:
-            wait_state: Playwright load state to wait for (e.g. "load", "networkidle").
-            url: Target URL to navigate to.
-            timeout_ms: Maximum time to wait for the load state in milliseconds.
-            wait_dns_solver_sec: Seconds to wait before retrying if a DNS resolution error occurs.
+            url: URL to navigate to.
+            wait_state: Playwright wait state to wait for after navigation.
+            timeout_ms: Timeout in milliseconds for navigation and waiting.
+            wait_dns_solver_sec: Seconds to wait between retries if a DNS error is encountered.
 
-        Raises:
-            Exception: If navigation fails after retrying on DNS errors.
         """
-        try:
-            page = self.get_workflow_page()
-            page.goto(url, wait_until="commit")
-            page.wait_for_load_state(wait_state, timeout=timeout_ms)
-        except Exception as exc:
-            if "Target page, context or browser has been closed" in str(exc):
-                self._workflow_page = self._browser.contexts[0].new_page()  # Attempt to recover by opening a new page.
-                self._workflow_page.goto(url, wait_until="commit")
-                self._workflow_page.wait_for_load_state(wait_state, timeout=timeout_ms)
-                return
-            if "ERR_NAME_NOT_RESOLVED" in str(exc):
-                if wait_dns_solver_sec >= _DNS_SOLVER_MAX_WAIT_SEC:
-                    raise DnsSolverTimeoutExceededError() from exc
-                page.wait_for_timeout(1000 * wait_dns_solver_sec)  # wait a bit before retrying
-                page.reload(wait_until=wait_state, timeout=timeout_ms)
+        from_recovered, nav_retries, do_loop = False, 0, True
+        while do_loop:
+            try:
+                page = self.get_workflow_page()
+                page.goto(url, wait_until="commit", timeout=timeout_ms)
                 page.wait_for_load_state(wait_state, timeout=timeout_ms)
                 return
-            raise PageNotAvailableOrClosedError()  # noqa: B904
+            except Exception as exp:
+                msg = str(exp)
+                if "interrupted by another navigation" in msg and nav_retries < _NAV_MAX_RETRIES:
+                    new_pg = self._browser.contexts[0].new_page()
+                    self._workflow_page.close()
+                    self._workflow_page = new_pg
+                    nav_retries += 1
+                    continue  # la redirection a pris le dessus : on relance goto vers l'URL voulue
+                if "has been closed" in msg and not from_recovered:
+                    self._workflow_page = self._browser.contexts[0].new_page()
+                    from_recovered = True
+                    continue
+                if "ERR_NAME_NOT_RESOLVED" in msg:
+                    page.wait_for_timeout(1000 * wait_dns_solver_sec)
+                    page.reload(wait_until=wait_state, timeout=timeout_ms)
+                    do_loop = False  # le reload est la dernière tentative après délai DNS
+                    continue
+                raise OpenUrlTooManyRetriesError() from exp
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.

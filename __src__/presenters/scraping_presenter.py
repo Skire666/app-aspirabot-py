@@ -55,21 +55,22 @@ _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
 }
 
 # Step types whose start line is simply "dt | step_id | step_type.value ".
-_SIMPLE_STEP_TYPES: frozenset[StepTypeEnum] = frozenset({
-    StepTypeEnum.E_OPEN_URL,
-    StepTypeEnum.E_JUMP_TO_STEP,
-    StepTypeEnum.E_CLOSE_TABS,
-    StepTypeEnum.E_KILL_BROWSER,
-    StepTypeEnum.E_WAIT_USER_ACTION,
-    StepTypeEnum.E_WAIT_FIXED_TIME,
-    StepTypeEnum.E_WAIT_PAGE_STATE,
-    StepTypeEnum.E_WAIT_HTML_ELEMENTS,
-    StepTypeEnum.E_WAIT_HTML_IMAGES,
-    StepTypeEnum.E_YOUTUBE_TRANSCRIPTS,
-    StepTypeEnum.E_CLICK_FOR_DOWNLOAD,
-    StepTypeEnum.E_CLICK_ON_ELEMENT,
-    StepTypeEnum.E_EXPORT_DATA_TO_JS,
-})
+_SIMPLE_STEP_TYPES: frozenset[StepTypeEnum] = frozenset(
+    {
+        StepTypeEnum.E_OPEN_URL,
+        StepTypeEnum.E_JUMP_TO_STEP,
+        StepTypeEnum.E_CLOSE_TABS,
+        StepTypeEnum.E_KILL_BROWSER,
+        StepTypeEnum.E_WAIT_USER_ACTION,
+        StepTypeEnum.E_WAIT_FIXED_TIME,
+        StepTypeEnum.E_WAIT_PAGE_STATE,
+        StepTypeEnum.E_WAIT_HTML_ELEMENTS,
+        StepTypeEnum.E_WAIT_HTML_IMAGES,
+        StepTypeEnum.E_CLICK_FOR_DOWNLOAD,
+        StepTypeEnum.E_CLICK_ON_ELEMENT,
+        StepTypeEnum.E_EXPORT_DATA_TO_JS,
+    }
+)
 
 
 # -----------------------------------------------------------------------------
@@ -318,11 +319,14 @@ class ScrapingPresenter:
             self._vm.after(0, lambda entry=line: self._append_journal(entry))
 
     @staticmethod
-    def preformat_step_start(dt: str, step: StepScrapingModel) -> str:
+    def preformat_step_start(dt: str, step: StepScrapingModel, context: ScrapingContextModel | None) -> str:
         """Pre-format the E_STEP_START journal line to include the step type."""
         if step.step_type == StepTypeEnum.E_SECTION_STEPS:
             title = getattr(step.params, "title", "")
             return f"{dt} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title}"
+        if step.step_type == StepTypeEnum.E_YOUTUBE_TRANSCRIPTS:
+            last_will_be_used = context.last_url_opened if context else ""
+            return f"{dt} | {step.step_id} | {step.step_type.value} | {last_will_be_used}"
         if step.step_type in _SIMPLE_STEP_TYPES:
             return f"{dt} | {step.step_id} | {step.step_type.value} "
         # ignore other step types for the start line (will be visible in the done line)
@@ -345,7 +349,7 @@ class ScrapingPresenter:
         if event in _LIFECYCLE_MESSAGES:
             return f"{ts} - {_LIFECYCLE_MESSAGES[event]}"
         if event == EventScrapingEnum.E_STEP_START and step:
-            return self.preformat_step_start(ts, step)
+            return self.preformat_step_start(ts, step, context)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
             return self._format_step_done(ts, step, context)
         return ""

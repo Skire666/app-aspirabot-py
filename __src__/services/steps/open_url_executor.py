@@ -53,7 +53,8 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
         browser.safe_goto_url(target_url, p.wait_state, timeout_ms, p.wait_dns_solver)
 
         page = browser.get_workflow_page()
-        if page.url != target_url:
+        # si changement de domaine, plante, mais si petit redirection, plante pas
+        if page and not page.url.startswith(target_url):
             raise UrlNavigationMismatchError(page.url, target_url)
 
         context.last_message_step = f"Ouvert : {target_url}"

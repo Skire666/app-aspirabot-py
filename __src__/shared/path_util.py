@@ -2,7 +2,22 @@
 # Imports
 # -----------------------------------------------------------------------------
 
+import string
 from pathlib import Path
+
+ALLOWED = set(string.ascii_letters + string.digits + "-_. ()")
+
+
+def clean_filename_youtube(name: str) -> str:
+    """Clean a string to be safe for use as a filename by removing or replacing invalid characters.
+
+    Args:
+        name: The original filename string to clean.
+
+    Returns:
+        A cleaned version of the filename string containing only allowed characters.
+    """
+    return "".join(c for c in name if c in ALLOWED)
 
 
 def get_current_working_directory() -> Path:
