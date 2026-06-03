@@ -26,6 +26,7 @@ from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
     C_EXEC_NO_PROFILE,
     C_EXEC_NO_SCENARIO,
+    C_EXEC_SAVE_ERROR,
     C_EXEC_SAVED_DATE_EMPTY,
     C_EXEC_SAVED_DATE_FMT,
     C_EXEC_USED_DATE_EMPTY,
@@ -374,6 +375,8 @@ class ExecutorPresenter:
     def _clear_profile_form(self) -> None:
         """Reset form and disable the profile section."""
         self._current_profile = None
+        self._vm.current_profile_name_var.set("")
+        self._vm.export_folder_var.set("")
         self._vm.is_profile_section_enabled_var.set(False)
         self._vm.is_rename_btn_enabled_var.set(False)
         self._vm.is_delete_btn_enabled_var.set(False)
@@ -476,6 +479,7 @@ class ExecutorPresenter:
             self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde du profil")
+            self._vm.show_error(C_ERROR_DIALOG_TITLE, C_EXEC_SAVE_ERROR)
             return
         self._push_profiles(self._current_profiles_model.launch_profiles)
         self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))

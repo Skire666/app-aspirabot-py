@@ -3,7 +3,7 @@
   "rules": {
     "EPI025": {
       "enabled": true,
-      "threshold_lines": 26
+      "threshold_lines": 25
     },
     "EPI301": {
       "enabled": true

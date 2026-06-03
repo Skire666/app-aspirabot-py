@@ -120,30 +120,24 @@ class _DropdownWindow:
         cols_w = sum(col.width for col in owner._columns if col.visible)
         if cols_w == 0:
             return
-
         n_vis = min(n, _MAX_ROWS)
         self._total_h = n * _ROW_H
         self._scroll_top = 0
         self._hover = None
-
         owner.update_idletasks()
         x = owner.winfo_rootx()
         y = owner.winfo_rooty() + owner.winfo_height()
         owner_w = owner.winfo_width()
-
         self._build_dropdown_window(owner, x, y, owner_w, n_vis, cols_w)
         self._build_canvas_pool(n_vis)
         self._wire_open_events(owner)
-
         self._is_open = True
         self._render()
         self._sync_sb()
         if owner._selected_index is not None:
             self._scroll_to(owner._selected_index)
 
-    def _build_dropdown_window(
-        self, owner: tk.Widget, x: int, y: int, owner_w: int, n_vis: int, cols_w: int
-    ) -> None:
+    def _build_dropdown_window(self, owner: tk.Widget, x: int, y: int, owner_w: int, n_vis: int, cols_w: int) -> None:
         """Create the Toplevel window, scrollbar, and viewport frame.
 
         Args:
@@ -181,10 +175,7 @@ class _DropdownWindow:
         self._pool = []
         self._pool_row = []
         for _ in range(pool_sz):
-            c = tk.Canvas(
-                self._viewport, width=self._viewport_w, height=_ROW_H,
-                highlightthickness=0, bd=0, bg=_BG,
-            )
+            c = tk.Canvas(self._viewport, width=self._viewport_w, height=_ROW_H, highlightthickness=0, bd=0, bg=_BG)
             c.bind("<MouseWheel>", self._on_wheel)
             self._pool.append(c)
             self._pool_row.append(-1)
@@ -327,12 +318,7 @@ class _DropdownWindow:
         if x > 0:
             canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
         canvas.create_text(
-            x + _CELL_PAD,
-            _ROW_H // 2,
-            text=_truncate(text, w - _CELL_PAD * 2, font),
-            anchor="w",
-            font=font,
-            fill=fg,
+            x + _CELL_PAD, _ROW_H // 2, text=_truncate(text, w - _CELL_PAD * 2, font), anchor="w", font=font, fill=fg
         )
         return x + w
 
@@ -490,8 +476,7 @@ class ColumnCombobox(tk.Frame):
         # Display canvas — renders the selected row with all visible columns
         char_w = self._font.measure("0") * width
         self._canvas = tk.Canvas(
-            self, height=_ROW_H, width=char_w, bg=_BG,
-            highlightthickness=1, highlightbackground=_BORDER, cursor="arrow",
+            self, height=_ROW_H, width=char_w, bg=_BG, highlightthickness=1, highlightbackground=_BORDER, cursor="arrow"
         )
         self._canvas.pack(side="left", fill="x", expand=True)
         self._canvas.bind("<ButtonPress-1>", lambda _: self._toggle())
@@ -505,13 +490,7 @@ class ColumnCombobox(tk.Frame):
 
     # ── Column API ────────────────────────────────────────────────────────────
 
-    def add_column(
-        self,
-        key: str,
-        extractor: Callable[[Any], Any],
-        width: int,
-        visible: bool = True,
-    ) -> None:
+    def add_column(self, key: str, extractor: Callable[[Any], Any], width: int, visible: bool = True) -> None:
         """Register a new column definition.
 
         Args:
@@ -641,10 +620,7 @@ class ColumnCombobox(tk.Frame):
     # ── ttk.Combobox compatibility ────────────────────────────────────────────
 
     def bind(  # type: ignore[override]
-        self,
-        sequence: str = "",
-        func: Callable[..., Any] | None = None,
-        add: bool | str = False,
+        self, sequence: str = "", func: Callable[..., Any] | None = None, add: bool | str = False
     ) -> str:
         """Bind an event on this widget.
 
@@ -766,12 +742,7 @@ class ColumnCombobox(tk.Frame):
 
     @staticmethod
     def _paint_column(
-        canvas: tk.Canvas,
-        x: int,
-        col: _ColumnDef,
-        cache: dict[str, Any],
-        widths: dict[str, int],
-        font: tkfont.Font,
+        canvas: tk.Canvas, x: int, col: _ColumnDef, cache: dict[str, Any], widths: dict[str, int], font: tkfont.Font
     ) -> int:
         """Render one column cell on the display canvas and return the next x offset."""
         w = widths.get(col.key, col.width)
@@ -780,8 +751,7 @@ class ColumnCombobox(tk.Frame):
         if x > 0:
             canvas.create_line(x, 0, x, _ROW_H, fill=_BORDER)
         canvas.create_text(
-            x + _CELL_PAD, _ROW_H // 2,
-            text=_truncate(text, w - _CELL_PAD * 2, font), anchor="w", font=font, fill=_FG,
+            x + _CELL_PAD, _ROW_H // 2, text=_truncate(text, w - _CELL_PAD * 2, font), anchor="w", font=font, fill=_FG
         )
         return x + w
 

@@ -110,6 +110,21 @@ class ScrapingContextModel:
     browser_stats: tuple[int, str] = field(default=(0, "—"))
 
     # ------------------------------------------------------------------
+    # Methods
+    # ------------------------------------------------------------------
+
+    def __init__(self, model_config: AppConfigurationModel) -> None:
+        self.app_config = model_config
+        self.folder_export = Path()
+        self.downloaded_urls = set()
+        self.extracted_data = ExtractedData()
+        self.step_id_by_index = []
+        self.step_index_by_id = {}
+        self.pause_event = threading.Event()
+        self.cancel_event = threading.Event()
+        self.on_user_wait = None
+
+    # ------------------------------------------------------------------
     # Public methods
     # ------------------------------------------------------------------
 

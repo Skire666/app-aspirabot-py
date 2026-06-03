@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import threading
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -23,19 +21,8 @@ def _make_step(step_id: str) -> MagicMock:
     return s
 
 
-def _make_context(**kwargs: object) -> ScrapingContextModel:
-    defaults: dict[str, object] = {
-        "app_config": _make_config(),
-        "folder_export": Path("/tmp/export"),
-        "downloaded_urls": set(),
-        "step_id_by_index": [],
-        "step_index_by_id": {},
-        "pause_event": threading.Event(),
-        "cancel_event": threading.Event(),
-        "on_user_wait": None,
-    }
-    defaults.update(kwargs)
-    return ScrapingContextModel(**defaults)  # type: ignore[arg-type]
+def _make_context() -> ScrapingContextModel:
+    return ScrapingContextModel(model_config=_make_config())  # type: ignore[call-arg]
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +133,8 @@ class TestResetBeforeNewProcess:
         assert ctx.extracted_data.urls == {}
 
     def test_clears_downloaded_urls(self) -> None:
-        ctx = _make_context(downloaded_urls={"http://old.com"})
+        ctx = _make_context()
+        ctx.downloaded_urls = {"http://old.com"}
         ctx.reset_before_new_process([])
         assert ctx.downloaded_urls == set()
 

@@ -347,7 +347,7 @@ class ScrapingPresenter:
         """
         ts = datetime.now().strftime("%H:%M:%S")
         if event in _LIFECYCLE_MESSAGES:
-            return f"{ts} - {_LIFECYCLE_MESSAGES[event]}"
+            return f"{ts} | {_LIFECYCLE_MESSAGES[event]}"
         if event == EventScrapingEnum.E_STEP_START and step:
             return self.preformat_step_start(ts, step, context)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
@@ -414,7 +414,7 @@ class ScrapingPresenter:
             rp: The completed statistics model.
         """
         ts = datetime.now().strftime("%H:%M:%S")
-        self._append_journal(f"{ts} - === Résumé final ===")
+        self._append_journal(f"{ts} | === Résumé final ===")
         self._append_journal(
             f"{ts} | Étapes : total={rp.steps_executed} | OK={rp.steps_success} | KO={rp.steps_failed}"
         )

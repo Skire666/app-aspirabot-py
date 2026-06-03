@@ -261,7 +261,7 @@ reportUnknownMemberType = "error"
 testpaths = ["__tests__"]
 
 # Verbosity level (2 = detailed, displays each test individually).
-addopts = "-v"
+addopts = "-v --cov=__src__ --cov-report=term-missing"
 
 # Add __src__ to sys.path so tests can import from the source tree
 # without the __src__ prefix (mirrors how main.py is run).

@@ -73,3 +73,43 @@ class TestBindAndDispatch:
         vm.open_debug_page()
         vm.analyze_texts(".x")
         vm.analyze_images("img")
+
+
+class TestProperties:
+    def test_master_returns_root(self, vm: DebugViewModel, tk_root: tk.Tk) -> None:
+        assert vm.master is tk_root
+
+    def test_url_returns_current_url_var(self, vm: DebugViewModel) -> None:
+        vm.url_var.set("https://example.com")
+        assert vm.url == "https://example.com"
+
+
+class TestAfter:
+    def test_after_schedules_callback(self, vm: DebugViewModel) -> None:
+        called: list[bool] = []
+        vm.after(0, lambda: called.append(True))
+        vm.master.update()
+        assert called == [True]
+
+
+class TestResetPage:
+    def test_reset_page_sets_url(self, vm: DebugViewModel) -> None:
+        vm.reset_page("https://test.com")
+        assert vm.url_var.get() == "https://test.com"
+
+    def test_reset_page_clears_html_content(self, vm: DebugViewModel) -> None:
+        vm.html_content_var.set("old html")
+        vm.reset_page("https://test.com")
+        assert vm.html_content_var.get() == ""
+
+    def test_reset_page_clears_text_and_image_results(self, vm: DebugViewModel) -> None:
+        vm.text_results_var.set("old text")
+        vm.image_results_var.set("old images")
+        vm.reset_page("https://test.com")
+        assert vm.text_results_var.get() == ""
+        assert vm.image_results_var.get() == ""
+
+    def test_reset_page_sets_is_alive_true(self, vm: DebugViewModel) -> None:
+        vm.is_alive_var.set(False)
+        vm.reset_page("https://test.com")
+        assert vm.is_alive_var.get() is True

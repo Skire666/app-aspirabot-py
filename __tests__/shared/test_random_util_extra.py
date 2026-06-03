@@ -12,8 +12,10 @@ class TestMergeUniqueListIdStep:
         assert len(ru.g_unique_list_id_step) == before
 
     def test_non_empty_set_called(self) -> None:
-        # merge_unique_list_id_step calls .union() but doesn't reassign,
-        # so the global set is unchanged — just verify no crash.
-        ru.merge_unique_list_id_step({"fake_id_x", "fake_id_y"})
-        # Function body returns early on empty; non-empty calls .union()
-        # The test exercises the branch (lines 30-32)
+        # merge_unique_list_id_step uses .update() to merge IDs in-place.
+        ids = {"fake_id_x", "fake_id_y"}
+        for sid in ids:
+            ru.g_unique_list_id_step.discard(sid)
+        ru.merge_unique_list_id_step(ids)
+        for sid in ids:
+            assert sid in ru.g_unique_list_id_step, f"{sid!r} doit être dans le registre après merge"

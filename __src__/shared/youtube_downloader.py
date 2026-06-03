@@ -8,6 +8,10 @@ captured in the returned :class:`DownloadResult`. The caller is responsible for
 inspecting that summary and reacting to recorded errors.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import json
@@ -525,3 +529,6 @@ def _emit_na_placeholder(out_dir: Path, video_id: str, short: str, origin: str, 
         return
     result.files_written.append(target)
     result.warn(f"Aucun sous-titre pour {short}/{origin}, placeholder : {target.name}")
+
+
+# EOF

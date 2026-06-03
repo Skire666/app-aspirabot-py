@@ -18,7 +18,7 @@ _ALPHABET_PATTERN = "aAbBcCdDeEFgGHkNpPqtTxyZY23456789"
 # Classes & Functions
 # -----------------------------------------------------------------------------
 
-g_unique_list_id_step = set()
+g_unique_list_id_step: set[str] = set()
 
 
 def merge_unique_list_id_step(new_ids: set[str]) -> None:
@@ -27,9 +27,9 @@ def merge_unique_list_id_step(new_ids: set[str]) -> None:
     Args:
         new_ids: A set of new IDs to merge.
     """
-    if len(new_ids) <= 0:
+    if not new_ids:
         return
-    g_unique_list_id_step.union(new_ids)
+    g_unique_list_id_step.update(new_ids)
 
 
 def generate_rng_id_step() -> str:

@@ -106,9 +106,7 @@ class ExecutorViewModel:
         self.export_folder_var = tk.StringVar(master=master, value="")
         self.url_source_type_var = tk.StringVar(master=master, value="")
         self.url_source_path_var = tk.StringVar(master=master, value="")
-        self.url_sort_order_var = tk.StringVar(
-            master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value
-        )
+        self.url_sort_order_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         self.global_threshold_var = tk.StringVar(master=master, value="1")
         self.step_threshold_var = tk.StringVar(master=master, value="0")
         # Manual-mode URL text: updated by View's Text <<Modified>> handler.
@@ -269,10 +267,7 @@ class ExecutorViewModel:
         self._updating_derived = True
         try:
             stype = self.url_source_type_var.get()
-            is_folder_json = stype in {
-                UrlSourceTypeEnum.E_FOLDER.value,
-                UrlSourceTypeEnum.E_JSON.value,
-            }
+            is_folder_json = stype in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
             is_manual = stype == UrlSourceTypeEnum.E_MANUAL.value
             self.is_path_entry_enabled_var.set(is_folder_json)
             self.is_sort_order_enabled_var.set(is_folder_json)

@@ -11,7 +11,6 @@ delegated to the injected IWebBrowserService implementation.
 # -----------------------------------------------------------------------------
 
 import logging
-import threading
 from collections.abc import Callable
 from pathlib import Path
 
@@ -20,7 +19,7 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.app_configuration_model import AppConfigurationModel
 from models.scenario_model import ScenarioModel
-from models.scraping_context_model import ExtractedData, ScrapingContextModel
+from models.scraping_context_model import ScrapingContextModel
 from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfigModel
@@ -94,17 +93,7 @@ class ScrapingService:
         self._journal_repository = journal_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
-        self._context: ScrapingContextModel = ScrapingContextModel(
-            app_config=model_config,
-            folder_export=Path(),
-            downloaded_urls=set(),
-            extracted_data=ExtractedData(),
-            step_id_by_index=[],
-            step_index_by_id={},
-            pause_event=threading.Event(),
-            cancel_event=threading.Event(),
-            on_user_wait=None,
-        )
+        self._context: ScrapingContextModel = ScrapingContextModel(model_config)
 
         # Run-level statistics counters.
         self._statistics: ScrapingStatisticsModel = ScrapingStatisticsModel()
