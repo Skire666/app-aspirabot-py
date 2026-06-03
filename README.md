@@ -121,6 +121,7 @@ app-aspirabot/
 │   ├── interfaces/     # Abstract base classes — contract-based programming
 │   ├── models/         # Business entities and data structures (domain)
 │   ├── views/          # Tkinter GUI components (no business logic)
+│   ├── view_models/    # binding between views and presenters
 │   ├── presenters/     # Orchestration: connects views to services
 │   ├── repositories/   # Data read/write layer
 │   ├── services/       # Business logic and domain rules
@@ -172,7 +173,9 @@ basedpyright
 ### Test — Pytest
 
 ```bash
-pytest __tests__/ -v
+pytest
+pytest __tests__/unit_testing --cov=__src__ --cov-report=term-missing
+pytest __tests__/regression_testing --cov=__src__ --cov-report=term-missing
 ```
 
 ---

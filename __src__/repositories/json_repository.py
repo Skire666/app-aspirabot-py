@@ -166,6 +166,13 @@ class JsonFileRepository:
             self._logger.error("Impossible d'écrire '%s'.", resolved, exc_info=True)
             raise JsonFileRepositoryError(resolved, str(exc)) from exc
 
+        # Invalidate stale cache entries for this path (mtime-based keys may not
+        # change if write and prior read happen within the filesystem's time-resolution window).
+        path_prefix = str(resolved)
+        stale = [k for k in _cache if k.startswith(path_prefix)]
+        for k in stale:
+            del _cache[k]
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
