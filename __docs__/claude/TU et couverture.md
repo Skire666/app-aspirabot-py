@@ -26,7 +26,7 @@ pytest __tests__/unit_testing/ --cov=__src__ --cov-report=term-missing
 
 ## Règles d'écriture des tests
 
-- **Nommage** : fichiers `test_<module>.py`, fonctions `test_<comportement_attendu>`.
+- **Nommage** : fichiers `test_<module>.py`, fonctions `test_<comportement_attendu>`. et être placé dans `__tests__/unit_testing/`. Exemple : `__tests__/unit_testing/test_workflow.py`.
 - **Structure AAA** : Arrange / Act / Assert, un comportement testé par test, assertions explicites.
 - **Paramétrage** : utilise `@pytest.mark.parametrize` pour couvrir plusieurs cas d'un même comportement plutôt que de dupliquer.
 - **Fixtures** : factorise la mise en place commune dans des fixtures (`conftest.py` si partagé entre fichiers).

@@ -65,7 +65,8 @@ Les TNR sur une GUI sont piégeux. Applique ces principes :
 ## Garde-fous (non négociables)
 
 - **Ne modifie jamais le code de `__src__`.** Ta mission est de capturer le comportement existant, pas de le changer.
-- **Ne touche pas aux tests unitaires existants.**
+- **Ne touche pas aux tests unitaires existants.** - Les tests dans `__tests__/unit_testing/` sont la norme et les tests de non-régression dans 'regression_testing' sont leurs suites logiques.
+
 - **Si un comportement semble être un bug** : écris quand même le TNR qui fige le comportement *actuel*, marque-le clairement (commentaire `# COMPORTEMENT SUSPECT À CONFIRMER` et/ou `@pytest.mark.xfail(reason=...)` selon le cas), et remonte-le dans ton rapport final. Tu ne décides pas seul de ce qui est correct.
 - **Tests rapides et déterministes** : pas d'appels réseau, pas de fichiers temporaires non nettoyés, pas de dépendance horloge/aléatoire.
 
