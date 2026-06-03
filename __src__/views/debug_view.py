@@ -64,7 +64,7 @@ class DebugView(ttk.Frame):
             padx=10, pady=(0, 5), anchor="w"
         )
 
-    def _build_url_row(self, card: ttk.Frame) -> None:
+    def _build_url_row(self, card: ttk.Frame | HorizontalLineFrame) -> None:
         """Build the URL entry row inside *card*.
 
         Args:
@@ -78,7 +78,7 @@ class DebugView(ttk.Frame):
         self._entry_url.insert(0, "https://")
 
     @staticmethod
-    def _build_spin_row(card: ttk.Frame, label_text: str, default: int) -> ttk.Spinbox:
+    def _build_spin_row(card: ttk.Frame | HorizontalLineFrame, label_text: str, default: int) -> ttk.Spinbox:
         """Build a labelled spinbox row and return the Spinbox widget.
 
         Args:

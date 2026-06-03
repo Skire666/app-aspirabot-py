@@ -96,8 +96,10 @@ class ScenariosPresenter:
         self._last_loaded = datetime.now()
 
     @staticmethod
-    def _text_key(value: str) -> str:
+    def _text_key(value: str | datetime | None) -> str:
         """Normalizes text values for stable, case-insensitive sorting."""
+        if isinstance(value, datetime):
+            return value.isoformat().casefold()
         return (value or "").casefold()
 
     def _sort_scenarios(self, column: str, ascending: bool) -> None:
@@ -124,8 +126,9 @@ class ScenariosPresenter:
         self._vm.set_scenarios(self._service.get_folder_path_scenarios(), scenarios_data)
 
     @staticmethod
-    def _format_scenarios(scenarios: list[ScenarioModel]) -> list[dict[str, str]]:
-        formatted: list[dict[str, str]] = []
+    def _format_scenarios(scenarios: list[ScenarioModel]) -> list[dict[str, object]]:
+        """Format scenarios for display in the view."""
+        formatted: list[dict[str, object]] = []
         for p in scenarios:
             formatted.append(
                 {

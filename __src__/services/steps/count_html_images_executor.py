@@ -30,6 +30,7 @@ class CountHtmlImagesExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(CountHtmlImagesParams, context.step_scraping_data.params)
         all_images = get_filtered_images(browser, p.to_dict())
         condition_met = evaluate_count_condition(len(all_images), p.operator, p.value)

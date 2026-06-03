@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator, model_validator
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
@@ -102,33 +104,35 @@ class WaitHtmlImagesParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_height_range(cls, data: object, info: ValidationInfo) -> object:
+    def check_height_range(cls, data: object, info: ValidationInfo) -> dict[str, Any]:
         """Reject height_min > height_max."""
         if not isinstance(data, dict) or not info.context:
-            return data
-        h_min, h_max = data.get("height_min"), data.get("height_max")
+            return cast(dict[str, Any], data)
+        d = cast(dict[str, Any], data)
+        h_min, h_max = d.get("height_min"), d.get("height_max")
         if isinstance(h_min, int) and isinstance(h_max, int) and h_min > h_max:
             raise ValueError(
                 ERROR_TEMPLATES["image_dim_range_invalid"].format(
                     step=step_label(info.context), min_key="height_min", max_key="height_max"
                 )
             )
-        return data
+        return d
 
     @model_validator(mode="before")
     @classmethod
-    def check_width_range(cls, data: object, info: ValidationInfo) -> object:
+    def check_width_range(cls, data: object, info: ValidationInfo) -> dict[str, Any]:
         """Reject width_min > width_max."""
         if not isinstance(data, dict) or not info.context:
-            return data
-        w_min, w_max = data.get("width_min"), data.get("width_max")
+            return cast(dict[str, Any], data)
+        d = cast(dict[str, Any], data)
+        w_min, w_max = d.get("width_min"), d.get("width_max")
         if isinstance(w_min, int) and isinstance(w_max, int) and w_min > w_max:
             raise ValueError(
                 ERROR_TEMPLATES["image_dim_range_invalid"].format(
                     step=step_label(info.context), min_key="width_min", max_key="width_max"
                 )
             )
-        return data
+        return d
 
 
 # EOF

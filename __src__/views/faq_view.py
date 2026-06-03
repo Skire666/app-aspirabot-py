@@ -50,7 +50,7 @@ class FaqView(ttk.Frame):
     def _build_left_panel(self, parent: ttk.Frame) -> None:
 
         # Title for TOC
-        title_label = ttk.Label(parent, text="Sommaire", font=(None, 10, "bold"))
+        title_label = ttk.Label(parent, text="Sommaire", font=("TkDefaultFont", 10, "bold"))
         title_label.pack(anchor=tk.W, pady=(5, 0))
 
         # Treeview listing the FAQ categories and items
@@ -71,7 +71,7 @@ class FaqView(ttk.Frame):
         self._text.grid(row=0, column=0, sticky=tk.NSEW)
 
         # Scrollbar for the text area
-        scrollbar = ttk.Scrollbar(right_frame, command=self._text.yview)
+        scrollbar = ttk.Scrollbar(right_frame, command=self._text.yview)  # type: ignore[reportUnknownMemberType]
         scrollbar.grid(row=0, column=1, sticky=tk.NS)
         self._text.config(yscrollcommand=scrollbar.set)
 

@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from models.step_scraping_model import StepScrapingModel
 from models.steps_context_model import StepsContext
 from pydantic import ValidationError
@@ -41,7 +43,7 @@ class StepExecutorBase:
         Returns:
             A list of French error strings; empty when the params are valid.
         """
-        ctx = {
+        ctx: dict[str, Any] = {
             "step_index": step_index,
             "steps_context": steps_context,
             "step_id": model.step_id,

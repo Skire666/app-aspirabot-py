@@ -531,14 +531,6 @@ class BrowserNotLaunchedError(RuntimeError, AspirabotBaseError):
         super().__init__("Le navigateur n'est pas lancé. Appelez launch() en premier.")
 
 
-class DnsSolverTimeoutExceededError(RuntimeError, AspirabotBaseError):
-    """Raised when the DNS solver wait duration exceeds the maximum allowed."""
-
-    def __init__(self) -> None:
-        """Initialize the error message."""
-        super().__init__("Délai DNS solver atteint (>= 30 sec).")
-
-
 class PageNotAvailableOrClosedError(RuntimeError, AspirabotBaseError):
     """Raised when a browser operation requires a launched instance."""
 

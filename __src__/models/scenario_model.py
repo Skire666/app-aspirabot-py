@@ -156,12 +156,12 @@ class ScenarioModel:
         """
         steps = cls._deserialize_steps(data.get("steps", []))
         return cls(
-            id_file=data.get("id_file"),
-            scenario_name=data.get("scenario_name"),
-            scenario_desc=data.get("scenario_desc"),
+            id_file=str(data.get("id_file") or ""),
+            scenario_name=str(data.get("scenario_name") or ""),
+            scenario_desc=str(data.get("scenario_desc") or ""),
             created_date_scenario=dict_with_key_to_optional_datetime(data, "created_date_scenario"),
             modified_date_scenario=dict_with_key_to_optional_datetime(data, "modified_date_scenario"),
-            version=data.get("version"),
+            version=str(data.get("version") or ""),
             steps=steps,
         )
 
@@ -180,11 +180,11 @@ class ScenarioModel:
 
         # Map each raw dict to a StepScrapingModel, skipping invalid entries.
         result: list[StepScrapingModel] = []
-        for raw_step in steps_data:
+        for raw_step in cast(list[object], steps_data):
             if not isinstance(raw_step, dict):
                 continue
             try:
-                result.append(StepScrapingModel.import_from_data_json(raw_step))
+                result.append(StepScrapingModel.import_from_data_json(cast(dict[str, Any], raw_step)))
             except ValueError:
                 continue
         return result

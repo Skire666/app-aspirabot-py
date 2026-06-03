@@ -3,6 +3,7 @@
 # -----------------------------------------------------------------------------
 
 import tkinter.font as tkfont
+from typing import ClassVar, Literal, cast
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -29,7 +30,8 @@ class ResourcesFonts:
     like fonts.
     """
 
-    _instance: ResourcesFonts | None = None
+    _instance: ClassVar[ResourcesFonts | None] = None
+    _cache: dict[tuple[str, int, str, str, bool, bool], tkfont.Font]
 
     def __new__(cls) -> ResourcesFonts:
         """Initialize a resource manager.
@@ -84,8 +86,8 @@ class ResourcesFonts:
             font = tkfont.Font(
                 family=selected_family,
                 size=size,
-                weight=weight,
-                slant=slant,
+                weight=cast(Literal["normal", "bold"], weight),
+                slant=cast(Literal["roman", "italic"], slant),
                 underline=underline,
                 overstrike=overstrike,
             )

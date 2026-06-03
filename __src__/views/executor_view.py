@@ -11,10 +11,10 @@ action methods.  No business logic, no service calls.
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
-from typing import Any
+from typing import Any, cast
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
-from view_models.executor_view_model import ExecutorViewModel, ScenarioItem
+from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
 from views.components.column_combobox import ColumnCombobox
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
@@ -48,8 +48,9 @@ class ExecutorView(ttk.Frame):
         self._vm = vm
 
         # Local rendering caches — refreshed from VM list data on version changes.
-        self._profile_items: list = []
-        self._step_items: list = []
+        self._profile_items: list[ProfileItem] = []
+        self._step_items: list[StepItem] = []
+        self._source_choices: list[tuple[str, str]] = []
 
         # Cooldown guard for refresh button.
         self._refresh_cooldown: bool = False
@@ -198,7 +199,7 @@ class ExecutorView(ttk.Frame):
         preview_frame = ttk.Frame(row)
         preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self._txt_url_preview = tk.Text(preview_frame, height=7, wrap=tk.NONE)
-        scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_preview.yview)
+        scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_preview.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_preview.configure(yscrollcommand=scrollbar.set)
         self._txt_url_preview.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -359,7 +360,7 @@ class ExecutorView(ttk.Frame):
     def _sync_url_source_type(self, *_: object) -> None:
         """Select the URL-source combobox entry matching url_source_type_var."""
         target = self._vm.url_source_type_var.get()
-        for idx, (_, value) in enumerate(self._source_choices):
+        for idx, (_label, value) in enumerate(self._source_choices):
             if value == target:
                 self._combo_source.current(idx)
                 return
@@ -378,7 +379,7 @@ class ExecutorView(ttk.Frame):
         enabled = self._vm.is_profile_section_active_var.get()
 
         def _apply(widget: tk.Widget) -> None:
-            for child in widget.winfo_children():  # type: ignore[arg-type]
+            for child in widget.winfo_children():
                 with contextlib.suppress(tk.TclError):
                     w: Any = child
                     if not enabled:
@@ -495,10 +496,10 @@ class ExecutorView(ttk.Frame):
             self._vm.edit_scenario(obj.id_file)
 
     def _on_listbox_profile_selected(self, _event: tk.Event) -> None:
-        sel = self._listbox_profiles.curselection()
+        sel: tuple[int, ...] = self._listbox_profiles.curselection()  # type: ignore[reportUnknownMemberType]
         if not sel:
             return
-        idx = sel[0]
+        idx: int = cast(int, sel[0])
         if 0 <= idx < len(self._profile_items):
             self._vm.profile_selected(self._profile_items[idx].id_profile)
 

@@ -30,6 +30,7 @@ class KillBrowserExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(KillBrowserParams, context.step_scraping_data.params)
         delay = convert_to_sec(p.wait_duration, p.wait_unit)
         if delay > 0:

@@ -105,10 +105,10 @@ class RenderEngine:
         cv = self._canvas
 
         # Four corner arcs.
-        cv.create_arc(x1, y1, x1 + 2 * r, y1 + 2 * r, start=90, extent=90, fill=fill, outline=fill, tags=tags)
-        cv.create_arc(x2 - 2 * r, y1, x2, y1 + 2 * r, start=0, extent=90, fill=fill, outline=fill, tags=tags)
-        cv.create_arc(x1, y2 - 2 * r, x1 + 2 * r, y2, start=180, extent=90, fill=fill, outline=fill, tags=tags)
-        cv.create_arc(x2 - 2 * r, y2 - 2 * r, x2, y2, start=270, extent=90, fill=fill, outline=fill, tags=tags)
+        cv.create_arc(x1, y1, x1 + 2 * r, y1 + 2 * r, start=90, extent=90, fill=fill, outline=fill, tags=tags)  # type: ignore[reportUnknownMemberType]
+        cv.create_arc(x2 - 2 * r, y1, x2, y1 + 2 * r, start=0, extent=90, fill=fill, outline=fill, tags=tags)  # type: ignore[reportUnknownMemberType]
+        cv.create_arc(x1, y2 - 2 * r, x1 + 2 * r, y2, start=180, extent=90, fill=fill, outline=fill, tags=tags)  # type: ignore[reportUnknownMemberType]
+        cv.create_arc(x2 - 2 * r, y2 - 2 * r, x2, y2, start=270, extent=90, fill=fill, outline=fill, tags=tags)  # type: ignore[reportUnknownMemberType]
 
         # Central fill panels.
         cv.create_rectangle(x1 + r, y1, x2 - r, y2, fill=fill, outline=fill, tags=tags)
@@ -137,7 +137,7 @@ class RenderEngine:
         tags: tuple[str, ...] = (tag,) if tag else ()
         color = self._theme["btn_hover"] if hovered else self._theme[btn.color_key]
         self.draw_rounded_rect(x1, y1, x2, y2, 5, color, tags=tags)
-        self._canvas.create_image(
+        self._canvas.create_image(  # type: ignore[reportUnknownMemberType]
             (x1 + x2) // 2, (y1 + y2) // 2, image=get_resource_icon_24px(btn.icon), anchor="center", tags=tags
         )
 
@@ -170,7 +170,7 @@ class RenderEngine:
         bg = self._theme["btn_hover"] if hovered else self._theme["btn_toggle_on" if is_active else "btn_toggle_off"]
         self.draw_rounded_rect(x1, y1, x2, y2, 5, bg, tags=tags)
         icon = icon_on if is_active else icon_off
-        self._canvas.create_image(
+        self._canvas.create_image(  # type: ignore[reportUnknownMemberType]
             (x1 + x2) // 2, (y1 + y2) // 2, image=get_resource_icon_24px(icon), anchor="center", tags=tags
         )
 

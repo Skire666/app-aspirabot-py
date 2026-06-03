@@ -28,7 +28,7 @@ def get_time_now_hh_mm_ss() -> str:
     return datetime.now().strftime(C_DATETIME_FORMAT_HH_MM_SS)
 
 
-def dict_with_key_to_optional_datetime(dict_with_datetime: dict[str, any], key: str) -> datetime | None:
+def dict_with_key_to_optional_datetime(dict_with_datetime: dict[str, object], key: str) -> datetime | None:
     """Converts a value in a dict to a datetime object if possible, otherwise returns None.
 
     Args:

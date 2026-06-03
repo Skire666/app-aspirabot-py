@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import cast, override
+from typing import Literal, cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -29,11 +29,13 @@ class WaitPageStateExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(WaitPageStateParams, context.step_scraping_data.params)
         page = browser.get_workflow_page()
 
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
-        page.wait_for_load_state(p.wait_state, timeout=timeout_ms)
+        cast_wait_state = cast(Literal["domcontentloaded", "load", "networkidle"], p.wait_state)
+        page.wait_for_load_state(cast_wait_state, timeout=timeout_ms)
 
 
 register_step_executor(WaitPageStateExecutor())

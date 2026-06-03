@@ -17,6 +17,7 @@ from shared.i18n_fra import (
     C_LISTING_MODULES,
     TitleModuleEnum,
 )
+from PIL.ImageTk import PhotoImage
 from shared.resources_icons_util import (
     get_resource_icon_32px,
     get_resource_icon_32px_disabled,
@@ -72,7 +73,7 @@ class SideBarView(ttk.Frame):
         self._on_select = on_select
         self._canvases: dict[TitleModuleEnum, tk.Canvas] = {}
         self._button_states: dict[TitleModuleEnum, str] = {}
-        self._image_refs: dict[TitleModuleEnum, tuple] = {}
+        self._image_refs: dict[TitleModuleEnum, tuple[PhotoImage, PhotoImage, PhotoImage]] = {}
         self._active_module: TitleModuleEnum | None = None
         self._hover_module: TitleModuleEnum | None = None
         self._build_canvas_buttons()
@@ -109,7 +110,7 @@ class SideBarView(ttk.Frame):
         self._bind_canvas_events(canvas, module)
 
     @staticmethod
-    def _load_button_images(icon_b: str, icon_w: str) -> tuple:
+    def _load_button_images(icon_b: str, icon_w: str) -> tuple[PhotoImage, PhotoImage, PhotoImage]:
         """Load the three icon variants (normal, active, disabled) for a button."""
         return (
             get_resource_icon_32px(icon_b),
@@ -139,7 +140,7 @@ class SideBarView(ttk.Frame):
             0, 0, C_VIEW_SIDEBAR_LEFT_WIDTH, _C_CANVAS_HEIGHT,
             fill=C_COLOR_SIDEBAR_NORMAL_BG, outline="", tags="bg_rect",
         )
-        canvas.create_image(cx, _C_CANVAS_ICON_CY, image=img_black, tags="icon")
+        canvas.create_image(cx, _C_CANVAS_ICON_CY, image=img_black, tags="icon")  # type: ignore[reportUnknownMemberType]
         canvas.create_text(
             cx, _C_CANVAS_TEXT_CY, text=display,
             fill=C_COLOR_SIDEBAR_NORMAL_FG, font=("Segoe UI", 9), tags="label",

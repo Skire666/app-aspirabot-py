@@ -3,6 +3,7 @@
 # -----------------------------------------------------------------------------
 
 from pathlib import Path
+from typing import ClassVar
 
 from PIL import Image, ImageDraw, ImageTk
 
@@ -97,7 +98,8 @@ class ResourcesIcons:
     resource type key (e.g., "ICON"). Each instance maintains its own cache.
     """
 
-    _instance: ResourcesIcons | None = None
+    _instance: ClassVar[ResourcesIcons | None] = None
+    _cache: dict[object, ImageTk.PhotoImage]
 
     def __new__(cls) -> ResourcesIcons:
         """Initialize a resource manager.
@@ -133,7 +135,7 @@ class ResourcesIcons:
         if key not in self._cache:
             try:
                 img = Image.open(resolved_path)
-                img = img.resize(size, Image.BILINEAR)
+                img = img.resize(size, Image.Resampling.BILINEAR)
             except Exception:  # noqa: BLE001
                 img = self._create_fallback(size)
 
@@ -159,7 +161,7 @@ class ResourcesIcons:
 
         if key not in self._cache:
             try:
-                img = Image.open(resolved_path).resize(size, Image.BILINEAR)
+                img = Image.open(resolved_path).resize(size, Image.Resampling.BILINEAR)
             except Exception:  # noqa: BLE001
                 img = self._create_fallback(size)
             self._cache[key] = ImageTk.PhotoImage(self._apply_disabled_effect(img))

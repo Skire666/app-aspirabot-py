@@ -61,7 +61,7 @@ def convert_to_ms(duration: int, time_unit: str) -> int:
         raise InvalidDurationError(duration)
 
     # convert
-    return int(duration * C_UNITS_TIME_CONVERSION_TO_MS.get(time_unit))
+    return int(duration * C_UNITS_TIME_CONVERSION_TO_MS[time_unit])
 
 
 def convert_to_sec(duration: int, time_unit: str) -> float:
@@ -86,7 +86,7 @@ def convert_to_sec(duration: int, time_unit: str) -> float:
         raise InvalidDurationError(duration)
 
     # convert
-    return float(duration * C_UNITS_TIME_CONVERSION_TO_SEC.get(time_unit))
+    return float(duration * C_UNITS_TIME_CONVERSION_TO_SEC[time_unit])
 
 
 # EOF

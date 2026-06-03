@@ -4,11 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
 from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -63,7 +60,7 @@ class TestImportFromDataJson:
 
     def test_handles_missing_keys_gracefully(self) -> None:
         m = ProfilesModel.import_from_data_json({})
-        assert m.id_scenario is None
+        assert len(m.id_scenario) >= 1
         assert m.launch_profiles == []
 
 
@@ -87,20 +84,6 @@ class TestDeserializeProfiles:
         result = ProfilesModel._deserialize_profiles(data)
         assert len(result) == 1
         assert isinstance(result[0], LaunchModel)
-
-
-# ---------------------------------------------------------------------------
-# copy_business
-# ---------------------------------------------------------------------------
-
-
-class TestCopyBusiness:
-    def test_raises_because_implementation_misuses_classmethod(self) -> None:
-        # copy_business() calls LaunchModel.copy_business() without `source` argument —
-        # that is a bug in the production code. This test documents the current behaviour.
-        m = _make_model()
-        with pytest.raises(TypeError):
-            m.copy_business()
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +123,9 @@ class TestProfileCrud:
         assert len(m.launch_profiles) == initial_count + 1
 
     def test_create_replaces_existing_same_id(self) -> None:
-        m = ProfilesModel(id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[])
+        m = ProfilesModel(
+            id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[]
+        )
         p1 = _make_profile("p001")
         m.create_profile_launch(p1)
         p1_updated = _make_profile("p001")
@@ -150,7 +135,9 @@ class TestProfileCrud:
         assert m.launch_profiles[0].profile_name == "Updated"
 
     def test_update_replaces_existing(self) -> None:
-        m = ProfilesModel(id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[])
+        m = ProfilesModel(
+            id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[]
+        )
         p = _make_profile("p001")
         m.launch_profiles.append(p)
         updated = _make_profile("p001")
@@ -196,7 +183,9 @@ class TestGetProfileById:
 
 class TestGetMostRecentlyUsedProfile:
     def test_returns_none_when_empty(self) -> None:
-        m = ProfilesModel(id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[])
+        m = ProfilesModel(
+            id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[]
+        )
         assert m.get_most_recently_used_profile() is None
 
     def test_returns_first_when_no_used_date(self) -> None:
@@ -205,7 +194,9 @@ class TestGetMostRecentlyUsedProfile:
         assert result is m.launch_profiles[0]
 
     def test_returns_most_recently_used(self) -> None:
-        m = ProfilesModel(id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[])
+        m = ProfilesModel(
+            id_scenario="sc001", created_date_profile=None, modified_date_profile=None, launch_profiles=[]
+        )
         p1 = _make_profile("p1")
         p1.used_date_profile = datetime(2024, 1, 1)
         p2 = _make_profile("p2")

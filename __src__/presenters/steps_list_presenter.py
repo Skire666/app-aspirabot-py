@@ -393,7 +393,7 @@ class StepsListPresenter:
             step_id=step.step_id,
             step_type=step.step_type,
             is_active=step.is_active,
-            modified_date=step.modified_date if isinstance(step.modified_date, datetime) else datetime.now(),
+            modified_date=step.modified_date,
             params_dict=params_dict,
             label=label,
         )

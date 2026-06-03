@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator, model_validator
@@ -34,18 +34,19 @@ class CloseTabsParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_filter_custom(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+    def check_filter_custom(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
         """Validate filter_custom is set when filter_mode is custom."""
         if not isinstance(data, dict) or not info.context:
-            return data
+            return cast(dict[str, Any], data)
+        d = cast(dict[str, Any], data)
         if (
-            data.get("filter_mode") == OpenUrlModeEnum.E_CUSTOM.value
-            and not str(data.get("filter_custom", "")).strip()
+            d.get("filter_mode") == OpenUrlModeEnum.E_CUSTOM.value
+            and not str(d.get("filter_custom", "")).strip()
         ):
             raise ValueError(
                 ERROR_TEMPLATES["close_tabs_filter_required"].format(step=step_label(info.context))
             )
-        return data
+        return d
 
 
 # EOF

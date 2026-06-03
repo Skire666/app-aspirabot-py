@@ -86,14 +86,14 @@ class AppConfigurationView(ttk.Frame):
 
         return frame
 
-    def _add_enum_row_log(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
+    def _add_enum_row_log(self, frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar) -> None:
         """Add a log-level combobox row."""
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         combo = ttk.Combobox(frame, textvariable=var, state="readonly")
         combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
         self._log_level_combo = combo
 
-    def _add_enum_row_browser_engine(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
+    def _add_enum_row_browser_engine(self, frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar) -> None:
         """Add a browser-engine combobox row."""
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         combo = ttk.Combobox(frame, textvariable=var, state="readonly")
@@ -101,12 +101,12 @@ class AppConfigurationView(ttk.Frame):
         self._browser_engine_combo = combo
 
     @staticmethod
-    def _add_text_row(frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
+    def _add_text_row(frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar) -> None:
         """Add a plain text entry row."""
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         ttk.Entry(frame, textvariable=var).grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
 
-    def _add_path_row(self, frame: ttk.Frame, row: int, label: str, var: tk.StringVar) -> None:
+    def _add_path_row(self, frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar) -> None:
         """Add a path entry row with a Browse button."""
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         ttk.Entry(frame, textvariable=var).grid(row=row, column=1, sticky="ew", padx=5, pady=5)
@@ -115,7 +115,7 @@ class AppConfigurationView(ttk.Frame):
         )
 
     @staticmethod
-    def _add_bool_row(frame: ttk.Frame, row: int, label: str, var: tk.BooleanVar) -> None:
+    def _add_bool_row(frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.BooleanVar) -> None:
         """Add a boolean checkbox row."""
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         CanvasCheckbox(frame, variable=var).grid(row=row, column=1, sticky="w", padx=5, pady=5)

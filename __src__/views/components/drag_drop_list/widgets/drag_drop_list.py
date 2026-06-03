@@ -14,7 +14,7 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar, cast
 
 from shared.constants import C_COLOR_GRAY_BACKGROUND
 from shared.resources_icons_util import (
@@ -521,13 +521,14 @@ class DragDropList[T](tk.Frame):
         self._last_redraw_w = self._calc._canvas_w
         self._dirty.clear()
 
-    def _redraw_for_resize_visible_viewport(self, renderer: callable, has_resize_update: bool) -> None:
+    def _redraw_for_resize_visible_viewport(self, renderer: ItemRenderer[T], has_resize_update: bool) -> None:
         start, end = self._visible_range()
         btn_start, btn_end = self._buttons_range()
         if self._virtualize:
             self._last_visible_range = (start, end)
             self._last_buttons_range = (btn_start, btn_end)
 
+        r_any = cast(Any, renderer)
         for i in range(start, end):
             y = self._calc.item_y(i)
             x = self._calc._pad
@@ -536,9 +537,9 @@ class DragDropList[T](tk.Frame):
             bw = self._calc.btn_zone_width(len(self._visible_btns))
             draw_btns = btn_start <= i < btn_end
 
-            updated = has_resize_update and renderer.resize_update(
+            updated: bool = bool(has_resize_update and r_any.resize_update(
                 self.canvas, self.items[i], i, x, y, w - bw, h, "normal"
-            )
+            ))
             if updated:
                 if draw_btns and self._visible_btns:
                     self.canvas.delete(f"_btns{i}")
@@ -732,7 +733,7 @@ class DragDropList[T](tk.Frame):
             idx: Zero-based item index.
             result: Clone returned by the on_duplicate callback.
         """
-        self.items.insert(idx + 1, result)
+        self.items.insert(idx + 1, cast(T, result))
         self._notify_reorder()
         self._hovered_btn = None
         self._update_canvas_height()
@@ -795,7 +796,7 @@ class DragDropList[T](tk.Frame):
             return False
 
         # Color-only update — no geometry recalculation needed.
-        updated = renderer.update_colors(self.canvas, self.items[idx], idx, "normal")
+        updated: bool = bool(cast(Any, renderer).update_colors(self.canvas, self.items[idx], idx, "normal"))
         if updated:
             self.canvas.delete(f"_btns{idx}")
             self._draw_buttons_for(idx)

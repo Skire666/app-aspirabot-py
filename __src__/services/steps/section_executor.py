@@ -31,6 +31,7 @@ class SectionExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(SectionParams, context.step_scraping_data.params)
 
         context.last_message_step = f"Section : {p.title}"

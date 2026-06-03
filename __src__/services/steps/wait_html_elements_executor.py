@@ -32,6 +32,7 @@ class WaitHtmlElementsExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(WaitHtmlElementsParams, context.step_scraping_data.params)
         page = browser.get_workflow_page()
         nbr_delay_in_sec = convert_to_sec(p.retry_delay, p.retry_unit)

@@ -154,7 +154,8 @@ class JumpToStepFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         cond_display = widgets[C_KEY_CONDITION].get()
-        ccb: ColumnCombobox = widgets.get(C_KEY_CHOICE_FROM_LISTBOX)
+        ccb_raw = widgets.get(C_KEY_CHOICE_FROM_LISTBOX)
+        ccb: ColumnCombobox | None = ccb_raw if isinstance(ccb_raw, ColumnCombobox) else None
         selected_item: StepViewItem | None = ccb.get_selected_object() if ccb else None
         hexastring = selected_item.step_id if selected_item is not None else ""
         return {

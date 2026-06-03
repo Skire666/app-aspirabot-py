@@ -41,7 +41,7 @@ requires-python = ">=3.14"
 where = ["."]
 
 # Explicit list of packages to include (prevents bundling unrelated folders).
-include = ["__src__*", "interfaces*", "models*", "services*", "repositories*", "presenters*", "views*", "shared*"]
+include = ["__src__*", "interfaces*", "models*", "presenters*", "repositories*", "services*", "shared*", "validators*", "view_models*", "views*"]
 
 # -----------------------------------------------------------------------------
 # Ruff — Linter & Formatter
@@ -125,7 +125,7 @@ select = [
     "I",    # isort — import ordering and grouping
     "ISC",  # good usage string concatenation
     "ICN",  # good usage import (popular way)
-    "LOG",    # Checks for issues using the standard library logging module.
+    "LOG",  # Checks for issues using the standard library logging module.
     "N",    # pep8-naming — naming conventions (snake_case, PascalCase…)
     "NPY",  # numpy stuff
     "PIE",  # useless patterns

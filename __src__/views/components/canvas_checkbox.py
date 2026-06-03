@@ -41,7 +41,7 @@ class CanvasCheckbox(tk.Frame):
         self._text = text
         self._command = command
 
-        self._var = variable if variable else tk.BooleanVar(value=False)
+        self._var: tk.BooleanVar = variable if isinstance(variable, tk.BooleanVar) else tk.BooleanVar(value=False)
         self._var.trace_add("write", self._on_var_change)
 
         self._font = font or tkfont.Font(family="Segoe UI", size=9)
@@ -109,16 +109,12 @@ class CanvasCheckbox(tk.Frame):
         """Draw the checkbox square and optional checkmark."""
         self._box_id = self.canvas.create_rectangle(x0, y0, x1, y1, outline="#9B9B9B", fill="white")
         if checked:
-            self._check_id = self.canvas.create_line(
-                x0 + 3,
-                y0 + self.BOX_SIZE // 2,
-                (x0 + self.BOX_SIZE // 2) - 2,
-                y1 - 5,
-                x1 - 3,
-                y0 - 4 + self.BOX_SIZE // 2,
-                width=2,
-                fill=C_COLOR_BLACK_FONT,
-            )
+            coords = [
+                x0 + 3, y0 + self.BOX_SIZE // 2,
+                (x0 + self.BOX_SIZE // 2) - 2, y1 - 5,
+                x1 - 3, y0 - 4 + self.BOX_SIZE // 2,
+            ]
+            self._check_id = self.canvas.create_line(*coords, width=2, fill=C_COLOR_BLACK_FONT)
 
     def _draw_text_label(self, x1: int, height: int) -> None:
         """Draw the text label to the right of the checkbox."""

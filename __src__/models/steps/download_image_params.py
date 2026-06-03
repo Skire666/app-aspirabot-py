@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator, model_validator
@@ -24,7 +24,7 @@ class DownloadImageParams(BaseStepParams):
     height_max: int
     comment: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Preserve original key order for downstream helpers."""
         return {
             "mode": self.mode,
@@ -63,33 +63,35 @@ class DownloadImageParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_height_range(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+    def check_height_range(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
         """Validate that height_min does not exceed height_max."""
         if not isinstance(data, dict) or not info.context:
-            return data
-        h_min, h_max = data.get("height_min"), data.get("height_max")
+            return cast(dict[str, Any], data)
+        d = cast(dict[str, Any], data)
+        h_min, h_max = d.get("height_min"), d.get("height_max")
         if isinstance(h_min, int) and isinstance(h_max, int) and h_min > h_max:
             raise ValueError(
                 ERROR_TEMPLATES["image_dim_range_invalid"].format(
                     step=step_label(info.context), min_key="height_min", max_key="height_max"
                 )
             )
-        return data
+        return d
 
     @model_validator(mode="before")
     @classmethod
-    def check_width_range(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+    def check_width_range(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
         """Validate that width_min does not exceed width_max."""
         if not isinstance(data, dict) or not info.context:
-            return data
-        w_min, w_max = data.get("width_min"), data.get("width_max")
+            return cast(dict[str, Any], data)
+        d = cast(dict[str, Any], data)
+        w_min, w_max = d.get("width_min"), d.get("width_max")
         if isinstance(w_min, int) and isinstance(w_max, int) and w_min > w_max:
             raise ValueError(
                 ERROR_TEMPLATES["image_dim_range_invalid"].format(
                     step=step_label(info.context), min_key="width_min", max_key="width_max"
                 )
             )
-        return data
+        return d
 
 
 # EOF

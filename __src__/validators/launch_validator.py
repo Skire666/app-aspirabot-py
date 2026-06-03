@@ -64,7 +64,7 @@ class _LaunchValidationSchema(BaseModel):
     @field_validator("emergency_stop_threshold")
     @classmethod
     def check_global_threshold(cls, v: int) -> int:
-        if not (isinstance(v, int) and v >= 1):
+        if v < 1:
             raise ValueError(C_EXEC_INVALID_GLOBAL_THRESHOLD)
         return v
 
@@ -78,7 +78,7 @@ class _LaunchValidationSchema(BaseModel):
     @field_validator("emergency_stop_step_threshold")
     @classmethod
     def check_step_threshold(cls, v: int) -> int:
-        if not (isinstance(v, int) and v >= 1):
+        if v < 1:
             raise ValueError(C_EXEC_INVALID_STEP_THRESHOLD)
         return v
 

@@ -1,0 +1,117 @@
+{
+    "id_file": "50aae622",
+    "scenario_name": "Youtube srt",
+    "scenario_desc": "ddl tous les subtitle de yb",
+    "created_date_scenario": {
+        "__type__": "datetime",
+        "value": "2026-05-31T21:38:54.222627"
+    },
+    "modified_date_scenario": {
+        "__type__": "datetime",
+        "value": "2026-06-02T00:51:56.424838"
+    },
+    "version": "1.0.0",
+    "steps": [
+        {
+            "step_type": "SECTION_STEPS",
+            "step_id": "qDeH",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-31T21:31:20.632422"
+            },
+            "params": {
+                "title": "Début process",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "OPEN_URL",
+            "step_id": "2y88",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-31T21:31:57.756744"
+            },
+            "params": {
+                "url_mode": "<<SOURCE>>",
+                "url_custom": "https://example.com/",
+                "wait_state": "networkidle",
+                "wait_dns_solver": 6,
+                "timeout_duration": 10,
+                "timeout_unit": "s",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "JUMP_TO_STEP",
+            "step_id": "5FdC",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-06-01T18:35:43.611672"
+            },
+            "params": {
+                "condition": "failure",
+                "target_hexastring": "d4yF",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "YOUTUBE_TRANSCRIPTS",
+            "step_id": "bcZE",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-06-02T00:51:46.976815"
+            },
+            "params": {
+                "title": "Download automatique FRA/ENG",
+                "comment": "",
+                "basic_info": true,
+                "ddl_srt": true
+            }
+        },
+        {
+            "step_type": "JUMP_TO_STEP",
+            "step_id": "CF9x",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-06-01T18:35:31.422396"
+            },
+            "params": {
+                "condition": "always",
+                "target_hexastring": "qDeH",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "SECTION_STEPS",
+            "step_id": "d4yF",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-31T21:32:49.901698"
+            },
+            "params": {
+                "title": "Fin process",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "KILL_BROWSER",
+            "step_id": "87tG",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-05-31T21:32:41.576597"
+            },
+            "params": {
+                "wait_duration": 3,
+                "wait_unit": "s",
+                "comment": ""
+            }
+        }
+    ]
+}

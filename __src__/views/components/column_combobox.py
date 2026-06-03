@@ -150,7 +150,7 @@ class _DropdownWindow:
         """
         top = tk.Toplevel(owner, bg=_BORDER, border=1)
         top.wm_overrideredirect(True)
-        top.lift()
+        top.lift()  # type: ignore[reportUnknownMemberType]
         sb = tk.Scrollbar(top, orient="vertical", command=self._on_sb)
         sb.pack(side="right", fill="y")
         sb_w = sb.winfo_reqwidth()
@@ -619,7 +619,7 @@ class ColumnCombobox(tk.Frame):
 
     # ── ttk.Combobox compatibility ────────────────────────────────────────────
 
-    def bind(  # type: ignore[override]
+    def bind(
         self, sequence: str = "", func: Callable[..., Any] | None = None, add: bool | str = False
     ) -> str:
         """Bind an event on this widget.
@@ -633,7 +633,7 @@ class ColumnCombobox(tk.Frame):
         """
         return super().bind(sequence, func, add)  # type: ignore[arg-type]
 
-    def configure(self, **kwargs: Any) -> None:  # type: ignore[override]
+    def configure(self, **kwargs: Any) -> None:
         """Configure widget options.
 
         Handles ``state``, ``font``. Remaining options are forwarded to the Frame.

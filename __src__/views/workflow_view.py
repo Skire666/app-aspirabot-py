@@ -6,7 +6,7 @@
 
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Any
+from typing import Any, cast
 
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
@@ -196,9 +196,9 @@ class WorkflowView(ttk.Frame):
         Returns:
             Selected step type, or E_OPEN_URL when nothing is selected.
         """
-        sel = self._type_listbox.curselection()
+        sel: tuple[int, ...] = self._type_listbox.curselection()  # type: ignore[reportUnknownMemberType]
         if sel:
-            label = self._type_listbox.get(sel[0])
+            label: str = self._type_listbox.get(sel[0])  # type: ignore[reportUnknownMemberType]
             step_type = _LABEL_TO_TYPE.get(label)
             if step_type:
                 return step_type
@@ -271,28 +271,28 @@ class WorkflowView(ttk.Frame):
         except ValueError, tk.TclError:
             pass
 
-    def _on_type_list_select(self, _: tk.Event) -> None:  # type: ignore[type-arg]
+    def _on_type_list_select(self, _: tk.Event) -> None:
         """Syncs the inline form when the user picks a type in the listbox.
 
         Args:
             _: Tkinter <<ListboxSelect>> event (unused).
         """
-        sel = self._type_listbox.curselection()
-        if not sel:
+        sel2: tuple[int, ...] = self._type_listbox.curselection()  # type: ignore[reportUnknownMemberType]
+        if not sel2:
             return
-        idx = int(sel[0])
+        idx = cast(int, sel2[0])
         try:
-            label = self._type_listbox.get(idx)
+            label2: str = self._type_listbox.get(idx)  # type: ignore[reportUnknownMemberType]
         except tk.TclError:
             return
 
-        if label == self._inline_form._type_var.get():
+        if label2 == self._inline_form._type_var.get():
             return
-        self._inline_form._type_var.set(label)
+        self._inline_form._type_var.set(label2)
         try:
             self._inline_form._on_type_changed(None)  # type: ignore[arg-type]
         except AttributeError, KeyError, tk.TclError, ValueError:
-            step_type = _LABEL_TO_TYPE.get(label)
+            step_type = _LABEL_TO_TYPE.get(label2)
             if step_type is not None:
                 self._inline_form._rebuild_form(step_type)
 

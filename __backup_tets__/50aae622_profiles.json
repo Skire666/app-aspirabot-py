@@ -1,0 +1,59 @@
+{
+    "id_scenario": "50aae622",
+    "created_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-05-31T21:38:54.225929"
+    },
+    "modified_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-03T01:13:48.448762"
+    },
+    "launch_profiles": [
+        {
+            "id_profile": "78cf4ec4",
+            "id_scenario": "50aae622",
+            "profile_name": "Youtube - liste manuelle",
+            "export_folder": "E:\\app-aspirabot-py\\data_scraping",
+            "url_source_type": "MANUAL",
+            "url_source_value": [
+                "https://www.youtube.com/watch?v=oEjZUfpZ8dA",
+                "https://www.youtube.com/watch?v=Szoeo4HBJ4c",
+                "https://www.youtube.com/watch?v=huAwz_BR8WM",
+                "https://www.youtube.com/watch?v=YQHsXMglC9A",
+                "https://www.youtube.com/watch?v=5XPlYxjKQ6k",
+                "https://www.youtube.com/watch?v=JgHXD8211T4",
+                "https://www.youtube.com/watch?v=xXMUpqSyJJo",
+                "https://www.youtube.com/watch?v=aSOSYAk-o9Y",
+                "https://www.youtube.com/watch?v=BY3zuxMDSdM"
+            ],
+            "emergency_stop_threshold": 100,
+            "launch_count": 46,
+            "used_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-06-03T01:13:48.447069"
+            },
+            "url_sort_order": "mtime_asc",
+            "emergency_stop_step_id": "2y88",
+            "emergency_stop_step_threshold": 1
+        },
+        {
+            "id_profile": "df12dcc3",
+            "id_scenario": "50aae622",
+            "profile_name": "test",
+            "export_folder": "E:\\app-aspirabot-py\\data_scraping",
+            "url_source_type": "MANUAL",
+            "url_source_value": [
+                "https://www.wawacity.news"
+            ],
+            "emergency_stop_threshold": 1,
+            "launch_count": 2,
+            "used_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-06-02T17:49:27.312792"
+            },
+            "url_sort_order": "mtime_asc",
+            "emergency_stop_step_id": "qDeH",
+            "emergency_stop_step_threshold": 1
+        }
+    ]
+}

@@ -35,7 +35,7 @@ class SplashscreenView(tk.Toplevel):
         _status_label: Label bound to ``vm.status_var``.
     """
 
-    def __init__(self, parent: tk.Widget, vm: SplashscreenViewModel) -> None:
+    def __init__(self, parent: tk.Misc, vm: SplashscreenViewModel) -> None:
         """Build and center the splash screen on top of the parent window.
 
         Args:
@@ -48,7 +48,7 @@ class SplashscreenView(tk.Toplevel):
         # Remove OS window decorations for a clean overlay appearance.
         self.overrideredirect(True)
         self.configure(bg=_BG_COLOR)
-        self.lift()
+        self.lift()  # type: ignore[reportUnknownMemberType]
         self.focus_force()
 
         self._center_on_screen()

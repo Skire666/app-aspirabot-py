@@ -10,7 +10,7 @@ Deserialisation is handled by per-step builder functions registered in the step 
 # Imports
 # -----------------------------------------------------------------------------
 
-from typing import Any, Protocol
+from typing import Any, Protocol, Self
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -32,6 +32,19 @@ class IStepParams(Protocol):
 
         Returns:
             A plain dict mirroring the JSON storage format.
+        """
+        ...
+
+    @classmethod
+    def model_validate(cls, obj: Any, *, context: dict[str, object] | None = None) -> Self:
+        """Validate and construct the params model from a dict.
+
+        Args:
+            obj: Raw data to validate.
+            context: Optional validation context dict.
+
+        Returns:
+            A validated instance of the concrete params model.
         """
         ...
 

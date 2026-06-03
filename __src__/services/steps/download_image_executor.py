@@ -48,6 +48,7 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the download-image step for all targeted images."""
+        assert context.step_scraping_data is not None
         p = cast(DownloadImageParams, context.step_scraping_data.params)
         page = browser.get_workflow_page()
         downloaded_urls = context.downloaded_urls

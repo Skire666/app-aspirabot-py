@@ -32,6 +32,7 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(YoutubeTranscriptsParams, context.step_scraping_data.params)
 
         rs: DownloadResult = download_youtube_data(

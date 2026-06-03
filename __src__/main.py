@@ -113,7 +113,7 @@ def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) ->
         if sys.platform.startswith("win"):
             root.state("zoomed")
         else:
-            root.attributes("-zoomed", True)
+            root.attributes("-zoomed", True)  # type: ignore[reportUnknownMemberType]
 
     ttk.Style().configure("TButton", padding=(5, 5))
 
@@ -550,7 +550,7 @@ def _wire_profiles_launch(
 # -----------------------------------------------------------------------------
 
 
-def _register_and_anchor(root: tk.Tk, main_view: MainView, views: list[object], presenters: list[object]) -> None:
+def _register_and_anchor(root: tk.Tk, main_view: MainView, views: list[tk.Widget], presenters: list[object]) -> None:
     """Unpack the ordered view list, register all views, and anchor presenters.
 
     Args:
@@ -559,7 +559,7 @@ def _register_and_anchor(root: tk.Tk, main_view: MainView, views: list[object], 
         views: Ordered list [log, profiles, cfg, scenarios, workflow, executor, scraping, debug].
         presenters: All presenter instances to keep alive for the application lifetime.
     """
-    log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, dbg_v = views  # type: ignore[misc]
+    log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, dbg_v = views
     faq_v = FaqView(main_view.content_area)
     _register_views(main_view, log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, faq_v, dbg_v)  # type: ignore[arg-type]
     _anchor_presenters(root, presenters)
@@ -598,7 +598,7 @@ def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:
         root: The root Tk window that outlives all presenters.
         presenters: Presenter instances to keep alive for the application lifetime.
     """
-    root._app_presenters = presenters
+    setattr(root, "_app_presenters", presenters)
 
 
 # -----------------------------------------------------------------------------

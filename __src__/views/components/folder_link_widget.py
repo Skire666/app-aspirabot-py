@@ -3,7 +3,9 @@
 # -----------------------------------------------------------------------------
 
 import tkinter as tk
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 
 class FolderLinkWidget(tk.Frame):
@@ -22,8 +24,8 @@ class FolderLinkWidget(tk.Frame):
         parent: tk.Widget,
         title: str = "",
         path: str = "",
-        callback: callable | None = None,
-        **kwargs: object,
+        callback: Callable[[], None] | None = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize the folder link widget.
 

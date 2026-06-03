@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator, model_validator
@@ -60,13 +60,14 @@ class OpenUrlParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_url_custom(cls, data: Any, info: ValidationInfo) -> Any:  # noqa: ANN401
+    def check_url_custom(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
         """Validate that url_custom is set when url_mode is custom."""
         if not isinstance(data, dict) or not info.context:
-            return data
-        if data.get("url_mode") == OpenUrlModeEnum.E_CUSTOM.value and not data.get("url_custom"):
+            return cast(dict[str, Any], data)
+        d = cast(dict[str, Any], data)
+        if d.get("url_mode") == OpenUrlModeEnum.E_CUSTOM.value and not d.get("url_custom"):
             raise ValueError(ERROR_TEMPLATES["open_url_url_required"].format(step=step_label(info.context)))
-        return data
+        return d
 
 
 # EOF

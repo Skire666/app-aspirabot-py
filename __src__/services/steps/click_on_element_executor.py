@@ -41,6 +41,7 @@ class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(ClickOnElementParams, context.step_scraping_data.params)
 
         page = browser.get_workflow_page()  # can throw if page is closed
@@ -60,7 +61,7 @@ class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
         element = elements[index_clicked]
 
         # NOTE PCO : Aucune idée de si ça plante.... (pas moyen de vérifier, pas de timeout)
-        element.evaluate("element => element.click()", timeout=C_LIMIT_TIMEOUT_CLICK_MS)
+        element.evaluate("element => element.click()")
         return "JS Direct"
 
 

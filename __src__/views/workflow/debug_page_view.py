@@ -191,8 +191,8 @@ class DebugPageView(tk.Toplevel):
             xscrollcommand=hsb.set,
             font=("Courier New", 9),
         )
-        vsb.configure(command=txt.yview)
-        hsb.configure(command=txt.xview)
+        vsb.configure(command=txt.yview)  # type: ignore[reportUnknownMemberType]
+        hsb.configure(command=txt.xview)  # type: ignore[reportUnknownMemberType]
         txt.grid(row=0, column=0, sticky="nsew")
         vsb.grid(row=0, column=1, sticky="ns")
         hsb.grid(row=1, column=0, sticky="ew")

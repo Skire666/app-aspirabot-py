@@ -1,0 +1,41 @@
+{
+    "id_scenario": "8517d1ad",
+    "created_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-05-30T17:36:29.963748"
+    },
+    "modified_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-05-31T15:07:23.003984"
+    },
+    "launch_profiles": [
+        {
+            "id_profile": "a1b9f6f8",
+            "id_scenario": "8517d1ad",
+            "profile_name": "Profil par défaut",
+            "export_folder": "E:\\app-aspirabot-py\\data_scraping",
+            "url_source_type": "MANUAL",
+            "url_source_value": [
+                "https://e-hentai.org/uploader/%E9%98%BF%E6%93%A6%E6%93%A6",
+                "https://e-hentai.org/uploader/CeeRuata",
+                "https://e-hentai.org/?f_search=Artbook",
+                "https://e-hentai.org/tag/other:artbook",
+                "https://e-hentai.org/uploader/VANOakaZOMBIE",
+                "https://e-hentai.org/uploader/bobthebuilder815",
+                "https://e-hentai.org/?f_search=the+art+of",
+                "https://e-hentai.org/uploader/canon3e",
+                "https://e-hentai.org/uploader/XiTieShiZ",
+                "https://e-hentai.org/uploader/Lain+Iwakura"
+            ],
+            "emergency_stop_threshold": 5,
+            "launch_count": 67,
+            "used_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-05-31T15:07:23.002636"
+            },
+            "url_sort_order": "mtime_asc",
+            "emergency_stop_step_id": "Ye93",
+            "emergency_stop_step_threshold": 5
+        }
+    ]
+}

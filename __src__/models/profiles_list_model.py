@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from models.launcher_model import LaunchModel
 from shared.datetime_util import dict_with_key_to_optional_datetime
@@ -61,7 +61,7 @@ class ProfilesModel:
         """
         profiles = cls._deserialize_profiles(data.get("launch_profiles", []))
         return cls(
-            id_scenario=data.get("id_scenario"),
+            id_scenario=str(data.get("id_scenario") or "XXXXXXXX"),
             created_date_profile=dict_with_key_to_optional_datetime(data, "created_date_profile"),
             modified_date_profile=dict_with_key_to_optional_datetime(data, "modified_date_profile"),
             launch_profiles=profiles,
@@ -81,7 +81,11 @@ class ProfilesModel:
             return []
 
         # Skip non-dict entries silently for forward-compatibility.
-        return [LaunchModel.import_from_data_json(raw) for raw in profiles_data if isinstance(raw, dict)]
+        result: list[LaunchModel] = []
+        for item in cast(list[object], profiles_data):
+            if isinstance(item, dict):
+                result.append(LaunchModel.import_from_data_json(cast(dict[str, Any], item)))
+        return result
 
     def copy_business(self) -> ProfilesModel:
         """Create a deep copy of the model for use in business logic.
@@ -93,8 +97,13 @@ class ProfilesModel:
         Returns:
             A deep copy of the ProfilesModel instance.
         """
-        copied_profiles = [profile.copy_business() for profile in self.launch_profiles]
-        return ProfilesModel(launch_profiles=copied_profiles)
+        copied_profiles: list[LaunchModel] = [LaunchModel.copy_business(profile) for profile in self.launch_profiles]
+        return ProfilesModel(
+            id_scenario=self.id_scenario,
+            created_date_profile=self.created_date_profile,
+            modified_date_profile=self.modified_date_profile,
+            launch_profiles=copied_profiles,
+        )
 
     def export_to_data_json(self) -> dict[str, Any]:
         """Converts the launch profiles list model to a JSON-serializable dictionary.

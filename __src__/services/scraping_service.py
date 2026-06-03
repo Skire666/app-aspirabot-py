@@ -108,9 +108,9 @@ class ScrapingService:
         self._emergency_stop_step_failed: int = 0
 
         # Run-scoped callbacks.
-        self._on_event_logging: Callable[[EventScrapingEnum, StepScrapingModel, ScrapingContextModel], None] | None = (
-            None
-        )
+        self._on_event_logging: (
+            Callable[[EventScrapingEnum, StepScrapingModel | None, ScrapingContextModel | None], None] | None
+        ) = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -251,6 +251,8 @@ class ScrapingService:
         Returns:
             True if the run was aborted by the cancel signal.
         """
+        assert self._on_event_logging is not None
+        assert self._browser_service is not None
         self._on_event_logging(EventScrapingEnum.E_BROWSER_INIT, None, None)
         self._browser_service.launch()
         try:
@@ -273,6 +275,7 @@ class ScrapingService:
         Returns:
             A fully populated ScrapingReportModel.
         """
+        assert self._on_event_logging is not None
         self._on_event_logging(EventScrapingEnum.E_COMPLETED, None, None)
 
         self._statistics.finish_timer()
@@ -430,13 +433,12 @@ class ScrapingService:
             self._logger.warning("JUMP_TO_STEP : index invalide %s.", pending_jump)
             return current_index + 1
 
-        if isinstance(pending_jump, str):
-            # Look up the step_id in the pre-built map.
-            next_index = self._context.step_index_by_id.get(pending_jump)
-            if next_index is not None:
-                return next_index
-            self._logger.warning("JUMP_TO_STEP : step_id introuvable %s.", pending_jump)
-
+        # After the int branch above, pending_jump is narrowed to str.
+        # Look up the step_id in the pre-built map.
+        next_index = self._context.step_index_by_id.get(pending_jump)
+        if next_index is not None:
+            return next_index
+        self._logger.warning("JUMP_TO_STEP : step_id introuvable %s.", pending_jump)
         return current_index + 1
 
     # ------------------------------------------------------------------

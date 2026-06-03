@@ -185,6 +185,9 @@ class ScrapingContextModel:
         """
         url = self.last_url_opened or "no_url"
 
+        if self.extracted_data is None:
+            self.extracted_data = ExtractedData()
+
         if url not in self.extracted_data.urls:
             self.extracted_data.urls[url] = UrlData()
 

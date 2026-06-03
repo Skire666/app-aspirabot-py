@@ -43,6 +43,7 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
             browser: Live browser service providing the current Playwright page.
             context: Scraping context; step params is read and last_message_step is written.
         """
+        assert context.step_scraping_data is not None
         p = cast(ExtractLinksParams, context.step_scraping_data.params)
         page = browser.get_workflow_page()
 
@@ -79,9 +80,9 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
         links: list[str] = []
 
         for el in elements:
-            href = el.get_attribute("href")
-            if href.strip():
-                full_url = urljoin(base_url, href.strip())
+            href = (el.get_attribute("href") or "").strip()
+            if href:
+                full_url = urljoin(base_url, href)
                 links.append(full_url)
         return links
 

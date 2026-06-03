@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 from itertools import islice
 from pathlib import Path
+from typing import cast
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from shared.enums import UrlSortOrderEnum
@@ -34,10 +35,10 @@ def _collect_urls(obj: object, result: list[str]) -> None:
         if obj.startswith("http"):
             result.append(obj)
     elif isinstance(obj, dict):
-        for v in obj.values():
+        for v in cast(dict[str, object], obj).values():
             _collect_urls(v, result)
     elif isinstance(obj, list):
-        for item in obj:
+        for item in cast(list[object], obj):
             _collect_urls(item, result)
 
 

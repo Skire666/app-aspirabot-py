@@ -108,12 +108,12 @@ class LaunchModel:
             None.
         """
         return cls(
-            id_profile=data.get("id_profile"),
-            id_scenario=data.get("id_scenario"),
-            profile_name=data.get("profile_name"),
-            export_folder=data.get("export_folder"),
-            url_source_type=data.get("url_source_type"),
-            url_source_value=data.get("url_source_value"),
+            id_profile=str(data.get("id_profile") or ""),
+            id_scenario=str(data.get("id_scenario") or ""),
+            profile_name=str(data.get("profile_name") or ""),
+            export_folder=str(data.get("export_folder") or ""),
+            url_source_type=str(data.get("url_source_type") or ""),
+            url_source_value=str(data.get("url_source_value") or ""),
             emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
             launch_count=int(data.get("launch_count", 0)),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),

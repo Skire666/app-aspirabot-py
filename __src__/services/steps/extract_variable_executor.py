@@ -54,6 +54,7 @@ class ExtractVariableExecutor(StepExecutorBase, IStepExecutor):
             browser: Unused — values are read from context, not the browser.
             context: Live scraping context; extracted_data is written with the resolved value.
         """
+        assert context.step_scraping_data is not None
         p = cast(ExtractVariableParams, context.step_scraping_data.params)
 
         value = _resolve_variable(p.variable, context)

@@ -20,7 +20,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import yt_dlp
 from shared.path_util import clean_filename_youtube
@@ -249,14 +249,10 @@ def _safe_download_subtitles(
 
 def _validate_inputs(url_youtube: str, output_dir: str, get_basic_data: bool, get_srt: bool) -> None:
     """Validate the public entry point arguments, raising ValueError on issues."""
-    if not isinstance(url_youtube, str) or not url_youtube.strip():
+    if not url_youtube.strip():
         raise ValueError("Le paramètre 'url_youtube' doit être une chaîne non vide.")
-    if not isinstance(output_dir, str) or not output_dir.strip():
+    if not output_dir.strip():
         raise ValueError("Le paramètre 'output_dir' doit être une chaîne non vide.")
-    if not isinstance(get_basic_data, bool):
-        raise ValueError("Le paramètre 'get_basic_data' doit être un booléen.")
-    if not isinstance(get_srt, bool):
-        raise ValueError("Le paramètre 'get_srt' doit être un booléen.")
     if not (get_basic_data or get_srt):
         raise ValueError("Au moins une option ('get_basic_data' ou 'get_srt') doit être active.")
 
@@ -275,11 +271,9 @@ def _fetch_video_info(url_youtube: str) -> dict[str, Any]:
         "writesubtitles": False,
         "writeautomaticsub": False,
     }
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url_youtube, download=False)
-    if not isinstance(info, dict):
-        raise RuntimeError("yt-dlp n'a pas retourné de données exploitables.")
-    return info
+    with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[arg-type]
+        raw = ydl.extract_info(url_youtube, download=False)
+    return cast(dict[str, Any], raw)
 
 
 def _now_timestamp() -> str:
@@ -326,7 +320,8 @@ def _collect_fra_eng_labels(block: Any) -> list[str]:
     if not isinstance(block, dict):
         return []
     labels: list[str] = []
-    for code, tracks in block.items():
+    block_typed: dict[str, Any] = cast(dict[str, Any], block)
+    for code, tracks in block_typed.items():
         if not isinstance(tracks, list):
             continue
         name = _track_display_name(tracks)
@@ -334,7 +329,7 @@ def _collect_fra_eng_labels(block: Any) -> list[str]:
         if not _name_matches_targets_fra_or_eng(code, name):
             continue
         short = _short_lang_code(code, name)
-        display = name if name else code
+        display: str = name if name else code
         labels.append(f"code:='{short}', name:='{display}'")
     return labels
 
@@ -342,8 +337,10 @@ def _collect_fra_eng_labels(block: Any) -> list[str]:
 def _track_display_name(tracks: list[Any]) -> str:
     """Return the 'name' field from the first track entry, or an empty string."""
     for track in tracks:
-        if isinstance(track, dict) and track.get("name"):
-            return str(track["name"])
+        if isinstance(track, dict):
+            typed: dict[str, Any] = cast(dict[str, Any], track)
+            if typed.get("name"):
+                return str(typed["name"])
     return ""
 
 
@@ -387,8 +384,6 @@ def _download_subtitles(
 def _select_lang_codes(subs_block: dict[str, Any]) -> list[str]:
     """Return language codes whose display name matches the selection rules."""
     selected: list[str] = []
-    if not isinstance(subs_block, dict):
-        return selected
     for code, tracks in subs_block.items():
         if not isinstance(tracks, list):
             continue
@@ -452,7 +447,7 @@ def _execute_yt_dlp_subs(url: str, out_dir: Path, codes: list[str], *, automatic
         "outtmpl": template,
         "overwrites": False,  # yt-dlp skips already-downloaded files on retry.
     }
-    with yt_dlp.YoutubeDL(opts) as ydl:
+    with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[arg-type]
         ydl.download([url])
 
 
@@ -486,8 +481,8 @@ def _process_phase_rename(
 ) -> None:
     """For each requested code, rename downloaded files or emit a placeholder."""
     for code in codes:
-        tracks = block.get(code) or []
-        name = _track_display_name(tracks) if isinstance(tracks, list) else ""
+        tracks: list[Any] = block.get(code) or []
+        name = _track_display_name(tracks)
         short = _short_lang_code(code, name).lower()
         renamed_any = False
         for ext in SUBTITLE_EXTENSIONS_KEEP:

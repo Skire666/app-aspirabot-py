@@ -149,8 +149,8 @@ class ScrapingView(ttk.Frame):
         self._txt_journal.tag_configure("ko", foreground="red")
         self._txt_journal.tag_configure("jump", foreground="blue")
         self._txt_journal.tag_configure("open_url_ok", foreground="green")
-        sb_y = ttk.Scrollbar(txt_frame, orient=tk.VERTICAL, command=self._txt_journal.yview)
-        sb_x = ttk.Scrollbar(txt_frame, orient=tk.HORIZONTAL, command=self._txt_journal.xview)
+        sb_y = ttk.Scrollbar(txt_frame, orient=tk.VERTICAL, command=self._txt_journal.yview)  # type: ignore[reportUnknownMemberType]
+        sb_x = ttk.Scrollbar(txt_frame, orient=tk.HORIZONTAL, command=self._txt_journal.xview)  # type: ignore[reportUnknownMemberType]
         self._txt_journal.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
         sb_y.pack(side=tk.RIGHT, fill=tk.Y)
         sb_x.pack(side=tk.BOTTOM, fill=tk.X)

@@ -96,7 +96,7 @@ class AppConfigurationModel:
         self.chromium_persistant_dir = chromium_persistant_dir
         self.chromium_extensions_dir = chromium_extensions_dir
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         """Converts the configuration model to a dictionary for serialization."""
         return {
             "log_level_enum": self.log_level_enum,

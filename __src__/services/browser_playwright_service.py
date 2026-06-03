@@ -14,6 +14,7 @@ import contextlib
 import logging
 import time
 from pathlib import Path
+from typing import Literal, cast
 
 from interfaces.i_web_browser_service import IWebBrowserService
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
@@ -230,11 +231,12 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         """
         from_recovered, nav_retries, do_loop = False, 0, True
+        cast_wait_state = cast(Literal["domcontentloaded", "load", "networkidle"], wait_state)
         while do_loop:
             try:
                 page = self.get_workflow_page()
                 page.goto(url, wait_until="commit", timeout=timeout_ms)
-                page.wait_for_load_state(wait_state, timeout=timeout_ms)
+                page.wait_for_load_state(cast_wait_state, timeout=timeout_ms)
                 return
             except Exception as exp:
                 msg = str(exp)
@@ -248,7 +250,7 @@ class BrowserPlaywrightService(IWebBrowserService):
                     continue
                 if "ERR_NAME_NOT_RESOLVED" in msg:  # redirection ? DNS ?
                     page.wait_for_timeout(1000 * wait_dns_solver_sec)
-                    page.reload(wait_until=wait_state, timeout=timeout_ms)
+                    page.reload(wait_until=cast_wait_state, timeout=timeout_ms)
                     do_loop = False  # le reload est la dernière tentative après délai DNS
                     continue
                 raise OpenUrlTooManyRetriesError() from exp

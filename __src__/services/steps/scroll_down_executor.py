@@ -30,6 +30,7 @@ class ScrollDownExecutor(StepExecutorBase, IStepExecutor):
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
+        assert context.step_scraping_data is not None
         p = cast(ScrollDownParams, context.step_scraping_data.params)
 
         is_success, _ = browser.evaluate_script_with_safe_retry(

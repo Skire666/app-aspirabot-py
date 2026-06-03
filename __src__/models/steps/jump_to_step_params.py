@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator, model_validator
 from shared.i18n_fra import ERROR_TEMPLATES
@@ -48,13 +50,14 @@ class JumpToStepParams(BaseStepParams):
 
     @model_validator(mode="before")
     @classmethod
-    def check_cross_step(cls, data: object, info: ValidationInfo) -> object:
+    def check_cross_step(cls, data: object, info: ValidationInfo) -> dict[str, Any]:
         """Check self-reference then target existence (in that priority order)."""
         if not isinstance(data, dict) or not info.context:
-            return data
-        target = data.get("target_hexastring", "")
+            return cast(dict[str, Any], data)
+        d = cast(dict[str, Any], data)
+        target = d.get("target_hexastring", "")
         if not target:
-            return data  # field_validator will catch the empty case
+            return d  # field_validator will catch the empty case
         step = step_label(info.context)
         step_id = info.context.get("step_id", "")
         steps_context = info.context.get("steps_context")
@@ -64,7 +67,7 @@ class JumpToStepParams(BaseStepParams):
             raise ValueError(
                 ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step, value=target)
             )
-        return data
+        return d
 
 
 # EOF
