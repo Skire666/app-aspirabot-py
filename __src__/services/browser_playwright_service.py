@@ -220,7 +220,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         return self._pw is not None
 
-    def safe_goto_url(self, url, wait_state, timeout_ms, wait_dns_solver_sec) -> None:
+    def safe_goto_url(self, url: str, wait_state: str, timeout_ms: int, wait_dns_solver_sec: int) -> None:
         """Navigate to url, retrying on redirect / closed-page / DNS errors.
 
         Args:
@@ -237,7 +237,6 @@ class BrowserPlaywrightService(IWebBrowserService):
                 page = self.get_workflow_page()
                 page.goto(url, wait_until="commit", timeout=timeout_ms)
                 page.wait_for_load_state(cast_wait_state, timeout=timeout_ms)
-                return
             except Exception as exp:
                 msg = str(exp)
                 if "interrupted by another navigation" in msg and nav_retries < _NAV_MAX_RETRIES:
@@ -254,6 +253,8 @@ class BrowserPlaywrightService(IWebBrowserService):
                     do_loop = False  # le reload est la dernière tentative après délai DNS
                     continue
                 raise OpenUrlTooManyRetriesError() from exp
+            else:
+                return
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.

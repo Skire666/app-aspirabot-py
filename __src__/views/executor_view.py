@@ -15,7 +15,7 @@ from typing import Any, cast
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
-from views.components.column_combobox import ColumnCombobox
+from views.components.column_combobox.column_combobox import ColumnCombobox
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 

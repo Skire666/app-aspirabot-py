@@ -13,42 +13,16 @@ from __future__ import annotations
 import bisect
 import tkinter as tk
 from collections.abc import Callable
-from dataclasses import dataclass
-from datetime import datetime
 from tkinter import ttk
-from typing import Any, Literal
+from typing import Any
 
 from shared.constants import C_COLOR_BLUE_HIGHLIGHT_LIGHT
-
-# -----------------------------------------------------------------------------
-# Classes
-# -----------------------------------------------------------------------------
-
-
-@dataclass
-class GridColumn:
-    """Column definition for DataGrid.
-
-    Attributes:
-        id: Unique column identifier, used as key in row dicts.
-        title: Header label shown in the table.
-        width: Column width in pixels.
-        col_type: Rendering mode — ``"text"`` or ``"button"``.
-        format: Optional strftime format string applied to date values.
-        button_text: Label shown on the button (only for col_type="button").
-        visible: When False the column is hidden from the grid.
-    """
-
-    id: str
-    title: str
-    width: int = 120
-    col_type: Literal["text", "button"] = "text"
-    format: str | None = None
-    button_text: str | None = None
-    visible: bool = True
+from views.components.data_grid._data_grid_button_pool import _DataGridButtonPool
+from views.components.data_grid._data_grid_drawing import _DataGridDrawingMixin
+from views.components.data_grid._data_grid_types import GridColumn, build_offsets
 
 
-class DataGrid(ttk.Frame):
+class DataGrid(_DataGridDrawingMixin, ttk.Frame):
     """Reusable table widget with sorting, actions, and hover support."""
 
     def __init__(
@@ -86,10 +60,8 @@ class DataGrid(ttk.Frame):
         self._total_width: int = 0
         self._rebuild_geometry()
 
-        self._button_pool: dict[str, list[ttk.Button]] = {}
-        self._active_buttons: list[tuple[str, ttk.Button, int, int]] = []
-
         self._create_layout()
+        self._btn_pool = _DataGridButtonPool(self.body_canvas)
         self._update_scroll_regions()
         self._schedule_redraw()
 
@@ -122,7 +94,7 @@ class DataGrid(ttk.Frame):
         """Recomputes column widths, offsets, and total width from visible columns."""
         vis = self._visible_columns
         self._column_widths = [max(40, c.width) for c in vis]
-        self._column_offsets = self._build_offsets(self._column_widths)
+        self._column_offsets = build_offsets(self._column_widths)
         self._total_width = sum(c.width for c in vis)
 
     def toggle_column(self, column_id: str, visible: bool) -> None:
@@ -142,14 +114,6 @@ class DataGrid(ttk.Frame):
         self._update_scroll_regions()
         self._schedule_redraw()
 
-    @staticmethod
-    def _build_offsets(widths: list[int]) -> list[int]:
-        """Builds cumulative x offsets from column widths."""
-        offsets = [0]
-        for width in widths:
-            offsets.append(offsets[-1] + width)
-        return offsets
-
     # ------------------------------------------------------------------
     # Layout
     # ------------------------------------------------------------------
@@ -165,15 +129,15 @@ class DataGrid(ttk.Frame):
 
     def _create_header_canvas(self) -> None:
         """Build and grid the header canvas."""
-        self.header_canvas = tk.Canvas(
-            self, height=self._header_height, bg=self._bg_header, highlightthickness=0,
-        )
+        self.header_canvas = tk.Canvas(self, height=self._header_height, bg=self._bg_header, highlightthickness=0)
         self.header_canvas.grid(row=0, column=0, sticky="nsew")
 
     def _create_body_canvas(self) -> None:
         """Build and grid the scrollable body canvas."""
         self.body_canvas = tk.Canvas(
-            self, bg="white", highlightthickness=0,
+            self,
+            bg="white",
+            highlightthickness=0,
             xscrollcommand=self._on_body_xscroll,
             yscrollcommand=self._on_body_yscroll,
         )
@@ -470,248 +434,6 @@ class DataGrid(ttk.Frame):
         self._redraw_job = None
         self._draw_headers()
         self._draw_rows()
-
-    # ------------------------------------------------------------------
-    # Drawing — headers
-    # ------------------------------------------------------------------
-
-    def _draw_headers(self) -> None:
-        """Draws header cells for the visible columns."""
-        self.header_canvas.delete("header")
-        vis = self._visible_columns
-        if not vis:
-            return
-        col_start, col_end = self._visible_column_range()
-        for col_index in range(col_start, col_end):
-            self._draw_header_cell(col_index, vis)
-
-    def _draw_header_cell(self, col_index: int, vis: list[GridColumn]) -> None:
-        """Draw the background rectangle and title text for one header cell."""
-        x0 = self._column_offsets[col_index]
-        x1 = self._column_offsets[col_index + 1]
-        col = vis[col_index]
-        self.header_canvas.create_rectangle(
-            x0, 0, x1, self._header_height,
-            fill=self._bg_header, outline=self._grid_line, tags=("header",),
-        )
-        title = col.title
-        if col.col_type != "button" and self._sorted_column == col.id:
-            arrow = "▲" if self._sort_ascending else "▼"
-            title = f"{title} {arrow}"
-        self.header_canvas.create_text(
-            x0 + 8, self._header_height / 2, text=title, anchor="w",
-            fill=self._text_color, width=max(1, (x1 - x0) - 14),
-            font=("Segoe UI", 10, "bold"), tags=("header",),
-        )
-
-    # ------------------------------------------------------------------
-    # Drawing — rows (incremental)
-    # ------------------------------------------------------------------
-
-    def _draw_rows(self) -> None:
-        """Incrementally updates the canvas: only adds/removes rows that changed visibility."""
-        vis = self._visible_columns
-        if not self._data or not vis:
-            self._clear_all_rows()
-            return
-
-        new_row_range = self._visible_row_range()
-        new_col_range = self._visible_column_range()
-        old_rs, old_re = self._last_row_range
-        new_rs, new_re = new_row_range
-
-        if new_col_range != self._last_col_range:
-            # Column viewport shifted — full redraw is cheaper than per-cell surgery.
-            self._redraw_full_viewport(new_rs, new_re, new_col_range, vis)
-        else:
-            # Vertical scroll only: remove rows that left, add rows that entered.
-            self._update_rows_incrementally(old_rs, old_re, new_rs, new_re, new_col_range, vis)
-
-        self._last_row_range = new_row_range
-        self._last_col_range = new_col_range
-
-    def _clear_all_rows(self) -> None:
-        """Clear the body canvas and recycle buttons when no data or columns exist."""
-        self.body_canvas.delete("cell")
-        self._recycle_active_buttons()
-        self._last_row_range = (0, 0)
-        self._last_col_range = (0, 0)
-
-    def _redraw_full_viewport(
-        self, new_rs: int, new_re: int, new_col_range: tuple[int, int], vis: list[GridColumn]
-    ) -> None:
-        """Redraw all visible rows after a column-viewport shift.
-
-        Args:
-            new_rs: First visible row index.
-            new_re: One-past-last visible row index.
-            new_col_range: Column index range (start, end) to render.
-            vis: List of currently visible GridColumn definitions.
-        """
-        self.body_canvas.delete("cell")
-        self._recycle_active_buttons()
-        for row_index in range(new_rs, new_re):
-            self._draw_single_row(row_index, new_col_range, vis)
-
-    def _update_rows_incrementally(
-        self,
-        old_rs: int, old_re: int,
-        new_rs: int, new_re: int,
-        new_col_range: tuple[int, int],
-        vis: list[GridColumn],
-    ) -> None:
-        """Remove rows that scrolled out and draw rows that scrolled in.
-
-        Args:
-            old_rs: Previous first visible row index.
-            old_re: Previous one-past-last visible row index.
-            new_rs: New first visible row index.
-            new_re: New one-past-last visible row index.
-            new_col_range: Column index range (start, end) to render.
-            vis: List of currently visible GridColumn definitions.
-        """
-        for row_index in range(old_rs, min(old_re, new_rs)):
-            self._recycle_buttons_for_row(row_index)
-            self.body_canvas.delete(f"row-{row_index}")
-        for row_index in range(max(old_rs, new_re), old_re):
-            self._recycle_buttons_for_row(row_index)
-            self.body_canvas.delete(f"row-{row_index}")
-        for row_index in range(new_rs, min(new_re, old_rs)):
-            self._draw_single_row(row_index, new_col_range, vis)
-        for row_index in range(max(new_rs, old_re), new_re):
-            self._draw_single_row(row_index, new_col_range, vis)
-
-    def _draw_single_row(
-        self,
-        row_index: int,
-        col_range: tuple[int, int],
-        vis: list[GridColumn],
-    ) -> None:
-        """Draws background and all visible cells for one row."""
-        y0 = row_index * self._row_height
-        y1 = y0 + self._row_height
-        row_bg = (
-            self._bg_hover
-            if self._hover_row == row_index
-            else (self._bg_even if row_index % 2 == 0 else self._bg_odd)
-        )
-        row_data = self._data[row_index]
-        raw_bound = row_data.get("__bound__")
-        bound: object = raw_bound if raw_bound is not None else row_data.get("id", row_index)
-        row_tag = f"row-{row_index}"
-        col_start, col_end = col_range
-        self._draw_row_bg(y0, y1, row_bg, row_index, row_tag)
-        self._draw_row_cells(col_start, col_end, vis, row_index, y0, y1, bound, row_data, row_tag)
-
-    def _draw_row_bg(self, y0: int, y1: int, row_bg: str, row_index: int, row_tag: str) -> None:
-        """Draw the background rectangle for one data row."""
-        self.body_canvas.create_rectangle(
-            0, y0, self._total_width * 2, y1,  # TODO PCO ne remplit pas le reste, j'ai mis x2 pour compenser
-            fill=row_bg, outline=self._grid_line,
-            tags=("cell", f"row-bg-{row_index}", row_tag),
-        )
-
-    def _draw_row_cells(
-        self, col_start: int, col_end: int, vis: list[GridColumn],
-        row_index: int, y0: int, y1: int, bound: object,
-        row_data: dict[str, Any], row_tag: str,
-    ) -> None:
-        """Draw all visible cell widgets for one data row."""
-        for col_index in range(col_start, col_end):
-            x0 = self._column_offsets[col_index]
-            x1 = self._column_offsets[col_index + 1]
-            col = vis[col_index]
-            if col.col_type == "button":
-                self._draw_button_in_cell(row_index, y0, y1, bound, x0, x1, col, row_tag)
-            else:
-                self._draw_text_in_cell(y0, row_data, x0, x1, col, row_tag)
-
-    def _draw_text_in_cell(
-        self,
-        y0: int,
-        row_data: dict[str, Any],
-        x0: int,
-        x1: int,
-        col: GridColumn,
-        row_tag: str,
-    ) -> None:
-        value = row_data.get(col.id)
-        text = self._format_cell_value(value, col.format)
-        self.body_canvas.create_text(
-            x0 + 8, y0 + (self._row_height / 2),
-            text=text, anchor="w",
-            width=max(1, (x1 - x0) - 14),
-            fill=self._text_color, font=("Segoe UI", 9),
-            tags=("cell", row_tag),
-        )
-
-    @staticmethod
-    def _format_cell_value(value: object, fmt: str | None) -> str:
-        """Format a cell value for display, applying an optional strftime format."""
-        if not fmt:
-            return "" if value is None else str(value)
-        if hasattr(value, "strftime"):
-            return value.strftime(fmt)  # type: ignore[union-attr]
-        if isinstance(value, str):
-            try:
-                return datetime.fromisoformat(value).strftime(fmt)
-            except ValueError:
-                return value
-        if value is None:
-            return ""
-        return str(value)
-
-    def _draw_button_in_cell(
-        self,
-        row_index: int,
-        y0: int,
-        y1: int,
-        bound: object,
-        x0: int,
-        x1: int,
-        col: GridColumn,
-        row_tag: str,
-    ) -> None:
-        btn = self._acquire_button(col.id, col.button_text or "Action")
-        btn.configure(command=lambda action=col.id, b=bound: self._handle_action(action, b))
-        btn.bind("<Enter>", lambda _event, idx=row_index: self._set_hover_row(idx))
-        btn.bind("<Leave>", lambda _event, idx=row_index: self._release_button_hover_row(idx))
-        window_id = self.body_canvas.create_window(
-            (x0 + x1) / 2,
-            (y0 + y1) / 2,
-            window=btn,
-            width=max(40, (x1 - x0) - 5),
-            height=max(22, self._row_height - 4),
-            tags=("cell", row_tag),
-        )
-        self._active_buttons.append((col.id, btn, window_id, row_index))
-
-    # ------------------------------------------------------------------
-    # Button pool
-    # ------------------------------------------------------------------
-
-    def _acquire_button(self, action_id: str, text: str) -> ttk.Button:
-        """Reuses or creates an action button."""
-        pool = self._button_pool.setdefault(action_id, [])
-        button = pool.pop() if pool else ttk.Button(self.body_canvas, takefocus=False)
-        button.configure(text=text)
-        return button
-
-    def _recycle_active_buttons(self) -> None:
-        """Returns all active buttons to their pool (canvas items cleaned up separately)."""
-        for entry in self._active_buttons:
-            self._button_pool.setdefault(entry[0], []).append(entry[1])
-        self._active_buttons.clear()
-
-    def _recycle_buttons_for_row(self, row_index: int) -> None:
-        """Returns to pool the buttons belonging to a specific row."""
-        remaining: list[tuple[str, ttk.Button, int, int]] = []
-        for entry in self._active_buttons:
-            if entry[3] == row_index:
-                self._button_pool.setdefault(entry[0], []).append(entry[1])
-            else:
-                remaining.append(entry)
-        self._active_buttons = remaining
 
     # ------------------------------------------------------------------
     # Scroll regions and actions

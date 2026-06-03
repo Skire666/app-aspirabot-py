@@ -15,6 +15,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
 from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepTypeEnum
+from shared.exception_util import YoutubeBaseDataNotDownloadedError, YoutubeSrtNotDownloadedError
 from shared.step_registry import register_step_executor
 from shared.youtube_downloader import DownloadResult, download_youtube_data
 
@@ -40,9 +41,9 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
         )
 
         if p.basic_info and rs.nbr_base_success <= 0:
-            raise Exception("Aucun fichier de données de base téléchargé")
+            raise YoutubeBaseDataNotDownloadedError()
         if p.ddl_srt and rs.nbr_srt_success <= 0:
-            raise Exception("Aucun fichier de sous-titres téléchargé")
+            raise YoutubeSrtNotDownloadedError()
 
         context.last_message_step = (
             f"Téléchargés : Basic info +{rs.nbr_base_success} | Sous-titres +{rs.nbr_srt_success}"

@@ -326,7 +326,6 @@ class ExecutorPresenter:
         Args:
             profile: The launch profile providing the values.
         """
-        # URL source
         source_type = profile.url_source_type or ""
         self._vm.url_source_type_var.set(source_type)
         if source_type == UrlSourceTypeEnum.E_MANUAL.value:

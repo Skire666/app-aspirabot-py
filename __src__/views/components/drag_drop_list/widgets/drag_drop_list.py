@@ -13,86 +13,26 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Any, Protocol, TypeVar, cast
+from typing import Any, cast
 
-from shared.constants import C_COLOR_GRAY_BACKGROUND
-from shared.resources_icons_util import (
-    C_RESS_ICON_WHITE_COPY,
-    C_RESS_ICON_WHITE_DELETE,
-    C_RESS_ICON_WHITE_DOWN,
-    C_RESS_ICON_WHITE_EDIT,
-    C_RESS_ICON_WHITE_TOGGLE_OFF,
-    C_RESS_ICON_WHITE_TOGGLE_ON,
-    C_RESS_ICON_WHITE_UP,
-)
+from shared.resources_icons_util import C_RESS_ICON_WHITE_TOGGLE_OFF, C_RESS_ICON_WHITE_TOGGLE_ON
 from views.components.drag_drop_list.core.calculator import LayoutCalculator
 from views.components.drag_drop_list.core.controller import DragDropController
 from views.components.drag_drop_list.core.models import DirtyRegion, DragState
 from views.components.drag_drop_list.core.renderer import ButtonDef, RenderEngine
 from views.components.drag_drop_list.utils.throttling import Debouncer
-
-T = TypeVar("T")
-
-# ── Theme ─────────────────────────────────────────────────────────────────────
-
-DEFAULT_THEME: dict[str, str] = {
-    "bg": C_COLOR_GRAY_BACKGROUND,
-    "drag_bg": "#5286d9",
-    "insert": "#8fb1e8",
-    "btn_move": "#64748b",
-    "btn_dup": "#0ea5e9",
-    "btn_edit": "#f59e0b",
-    "btn_del": "#ef4444",
-    "btn_toggle_on": "#10b981",
-    "btn_toggle_off": "#9ca3af",
-    "btn_hover": "#808080",
-    "btn_fg": "#ffffff",
-}
-
-# ── Button registry ───────────────────────────────────────────────────────────
-
-
-@dataclass
-class _BtnDef:
-    """Definition of an action button type exposed in the public API."""
-
-    key: str
-    symbol: str
-    color_key: str
-    icon: str
-
-
-C_MINI_BUTTONS_CRUD: list[_BtnDef] = [
-    _BtnDef("delete", "D", "btn_del", C_RESS_ICON_WHITE_DELETE),
-    _BtnDef("edit", "E", "btn_edit", C_RESS_ICON_WHITE_EDIT),
-    _BtnDef("duplicate", "C", "btn_dup", C_RESS_ICON_WHITE_COPY),
-    _BtnDef("move_down", "B", "btn_move", C_RESS_ICON_WHITE_DOWN),
-    _BtnDef("move_up", "T", "btn_move", C_RESS_ICON_WHITE_UP),
-    _BtnDef("toggle_active", "V", "", ""),
-]
-
-# ── ItemRenderer protocol ─────────────────────────────────────────────────────
-
-
-class ItemRenderer(Protocol[T]):
-    """Structural protocol for the render_item callable passed to DragDropList.
-
-    Implementors MUST:
-    - Never call canvas.delete("all") — DragDropList manages canvas lifetime.
-    - Only draw within the rectangle (x, y, x+w, y+h). w already excludes buttons.
-    - Accept state as exactly one of "normal", "ghost", or "floating".
-    """
-
-    def __call__(self, canvas: tk.Canvas, item: T, idx: int, x: int, y: int, w: int, h: int, state: str) -> None:
-        """Renders item at list position idx into canvas area (x, y, x+w, y+h)."""
-        ...
-
+from views.components.drag_drop_list.widgets._drag_drop_list_actions_mixin import _DragDropListActionsMixin
+from views.components.drag_drop_list.widgets._drag_drop_list_types import (
+    C_MINI_BUTTONS_CRUD,
+    DEFAULT_THEME,
+    ItemRenderer,
+    _BtnDef,
+)
 
 # ── Widget ────────────────────────────────────────────────────────────────────
 
 
-class DragDropList[T](tk.Frame):
+class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
     """Reorderable list with drag-and-drop support.
 
     Architecture:
@@ -679,133 +619,6 @@ class DragDropList[T](tk.Frame):
             if x1 <= mx <= x2 and y1 <= my <= y2:
                 return btn.key
         return None
-
-    # ─── Button dispatch ──────────────────────────────────────────────────────
-
-    def _dispatch_btn(self, idx: int, key: str) -> None:
-        """Calls the user callback for key and delegates list mutation.
-
-        Args:
-            idx: Zero-based item index.
-            key: Button action key.
-        """
-        cb = self._cbs.get(key)
-        if cb is None:
-            return
-        result = cb(self.items[idx], idx)
-        self._apply_action(key, idx, result)
-
-    def _apply_action(self, key: str, idx: int, result: object) -> None:
-        """Applies list mutations and triggers UI refresh for the given action.
-
-        Args:
-            key: Button action key.
-            idx: Zero-based item index.
-            result: Return value from the user callback.
-        """
-        if key == "move_up" and idx > 0:
-            self._apply_move_up(idx)
-        elif key == "move_down" and idx < len(self.items) - 1:
-            self._apply_move_down(idx)
-        elif key == "duplicate" and result is not None:
-            self._apply_duplicate(idx, result)
-        elif key == "delete" and result:
-            self._apply_delete(idx)
-        elif key == "toggle_active":
-            self._apply_toggle(idx)
-
-    def _apply_delete(self, idx: int) -> None:
-        """Removes item at idx and refreshes the canvas.
-
-        Args:
-            idx: Zero-based item index.
-        """
-        self.items.pop(idx)
-        self._notify_reorder()
-        self._hovered_btn = None
-        self._update_canvas_height()
-        self.redraw_visible(force=True) if self._virtualize else self.redraw()
-
-    def _apply_duplicate(self, idx: int, result: object) -> None:
-        """Inserts a clone after idx and refreshes the canvas.
-
-        Args:
-            idx: Zero-based item index.
-            result: Clone returned by the on_duplicate callback.
-        """
-        self.items.insert(idx + 1, cast(T, result))
-        self._notify_reorder()
-        self._hovered_btn = None
-        self._update_canvas_height()
-        self.redraw_visible(force=True) if self._virtualize else self.redraw()
-
-    def _apply_move_down(self, idx: int) -> None:
-        """Moves item down one position and redraws the two affected items.
-
-        Args:
-            idx: Zero-based item index.
-        """
-        self.items.insert(idx + 1, self.items.pop(idx))
-        self._notify_reorder()
-        self._hovered_btn = None
-        self._redraw_item(idx)
-        self._redraw_item(idx + 1)
-
-    def _apply_move_up(self, idx: int) -> None:
-        """Moves item up one position and redraws the two affected items.
-
-        Args:
-            idx: Zero-based item index.
-        """
-        self.items.insert(idx - 1, self.items.pop(idx))
-        self._notify_reorder()
-        self._hovered_btn = None
-        self._redraw_item(idx)
-        self._redraw_item(idx - 1)
-
-    def _apply_toggle(self, idx: int) -> None:
-        """Refreshes the item at idx after a toggle-active action.
-
-        The callback is responsible for mutating item.is_active.
-        Attempts a zero-allocation color update via update_colors; falls back
-        to a full clear-region redraw when the hook is absent or misses cache.
-
-        Args:
-            idx: Zero-based item index.
-        """
-        self._hovered_btn = None
-        if not self._try_update_item_colors(idx):
-            self._redraw_item(idx)
-
-    def _try_update_item_colors(self, idx: int) -> bool:
-        """Attempts a color-only item update via the renderer's update_colors hook.
-
-        When the renderer exposes update_colors, reconfigures the item's canvas
-        primitives in-place (no delete/create), then redraws only the buttons
-        so the toggle icon reflects the new is_active state.
-
-        Args:
-            idx: Zero-based item index.
-
-        Returns:
-            True when the renderer handled the update in-place; False when a
-            full clear-region redraw is required (hook absent or cache miss).
-        """
-        renderer = self._render_item
-        if not hasattr(renderer, "update_colors"):
-            return False
-
-        # Color-only update — no geometry recalculation needed.
-        updated: bool = bool(cast(Any, renderer).update_colors(self.canvas, self.items[idx], idx, "normal"))
-        if updated:
-            self.canvas.delete(f"_btns{idx}")
-            self._draw_buttons_for(idx)
-        return updated
-
-    def _notify_reorder(self) -> None:
-        """Fires the on_reorder callback with the current item list."""
-        if self._on_reorder:
-            self._on_reorder(self.items)
 
 
 # EOF

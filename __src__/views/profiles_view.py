@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from view_models.profiles_view_model import ProfilesViewModel
-from views.components.data_grid import DataGrid, GridColumn
+from views.components.data_grid.data_grid import DataGrid, GridColumn
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 

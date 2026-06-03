@@ -779,6 +779,46 @@ class DownloadNotDetectedError(AspirabotBaseError):
         super().__init__("Le clic a été effectué mais aucun téléchargement n'a été détecté.")
 
 
+class YoutubeBaseDataNotDownloadedError(AspirabotBaseError):
+    """Raised when no basic info file was downloaded for a YouTube step."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Aucun fichier de données de base téléchargé.")
+
+
+class YoutubeSrtNotDownloadedError(AspirabotBaseError):
+    """Raised when no subtitle file was downloaded for a YouTube step."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Aucun fichier de sous-titres téléchargé.")
+
+
+class YoutubeUrlParameterEmptyError(ValueError, AspirabotBaseError):
+    """Raised when the url_youtube parameter is empty or blank."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Le paramètre 'url_youtube' doit être une chaîne non vide.")
+
+
+class YoutubeOutputDirParameterEmptyError(ValueError, AspirabotBaseError):
+    """Raised when the output_dir parameter is empty or blank."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Le paramètre 'output_dir' doit être une chaîne non vide.")
+
+
+class YoutubeNoDownloadOptionError(ValueError, AspirabotBaseError):
+    """Raised when neither get_basic_data nor get_srt is enabled."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Au moins une option ('get_basic_data' ou 'get_srt') doit être active.")
+
+
 class MissingUrlFilterError(ValueError, AspirabotBaseError):
     """Raised when no URL filter is available to execute a close-tabs step."""
 

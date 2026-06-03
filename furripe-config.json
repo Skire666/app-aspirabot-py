@@ -10,6 +10,19 @@
     },
     "EPI302": {
       "enabled": true
+    },
+    "EXT101": {
+      "enabled": true,
+      "max_complexity": 9
+    },
+    "HAS111": {
+      "enabled": true,
+      "max_volume": 900,
+      "max_volume_file": 9000
+    },
+    "MIR121": {
+      "enabled": true,
+      "min_mi": 8
     }
   },
   "exclude_dirs": [

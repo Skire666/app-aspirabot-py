@@ -19,8 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from shared.exception_util import JsonFileRepositoryError
-
-from __src__.shared.path_util import make_all_folders_if_not_exists
+from shared.path_util import make_all_folders_if_not_exists
 
 # -----------------------------------------------------------------------------
 # JSON codec helpers

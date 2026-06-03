@@ -8,6 +8,7 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
+from PIL.ImageTk import PhotoImage
 from shared.constants import (
     C_COLOR_BLACK_FONT,
     C_COLOR_BLUE_HIGHLIGHT_DARK,
@@ -17,7 +18,6 @@ from shared.i18n_fra import (
     C_LISTING_MODULES,
     TitleModuleEnum,
 )
-from PIL.ImageTk import PhotoImage
 from shared.resources_icons_util import (
     get_resource_icon_32px,
     get_resource_icon_32px_disabled,

@@ -114,6 +114,11 @@ class ScrapingContextModel:
     # ------------------------------------------------------------------
 
     def __init__(self, model_config: AppConfigurationModel) -> None:
+        """Initialize the scraping context from the application configuration.
+
+        Args:
+            model_config: Application configuration providing export and runtime settings.
+        """
         self.app_config = model_config
         self.folder_export = Path()
         self.downloaded_urls = set()

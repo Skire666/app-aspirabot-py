@@ -222,7 +222,7 @@ venvPath = "."
 venv = "venv"
 
 # Strictest level available in basedpyright (superset of "strict").
-typeCheckingMode = "basic" # "off" | "basic" | "standard" | "strict" | "all"
+typeCheckingMode = "standard" # "off" | "basic" | "standard" | "strict" | "all"
 
 # Suppresses errors on third-party libraries without type stubs (py.typed / stubs missing).
 reportMissingModuleSource = "none"

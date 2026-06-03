@@ -15,7 +15,7 @@ from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_registry import register_form
 from shared.step_view_item import StepViewItem
-from views.components.column_combobox import ColumnCombobox
+from views.components.column_combobox.column_combobox import ColumnCombobox
 from views.steps._constants import CONDITION_DISPLAY, CONDITION_MODEL_TO_VIEW, CONDITION_VIEW_TO_MODEL
 
 # -----------------------------------------------------------------------------

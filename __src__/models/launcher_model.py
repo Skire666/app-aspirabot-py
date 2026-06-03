@@ -113,7 +113,7 @@ class LaunchModel:
             profile_name=str(data.get("profile_name") or ""),
             export_folder=str(data.get("export_folder") or ""),
             url_source_type=str(data.get("url_source_type") or ""),
-            url_source_value=str(data.get("url_source_value") or ""),
+            url_source_value=data.get("url_source_value") or "",
             emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
             launch_count=int(data.get("launch_count", 0)),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import Any, cast
 
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -19,18 +20,28 @@ from shared.constants import (
 
 _logger = logging.getLogger(__name__)
 
+_ELEMENT_EXTRACTORS: dict[str, Callable[[ElementHandle], str]] = {
+    "textContent": lambda el: (el.text_content() or "").strip(),
+    "outerHTML": lambda el: str(el.evaluate("el => el.outerHTML") or "").strip(),
+    "innerHTML": lambda el: el.inner_html().strip(),
+    "value": lambda el: el.input_value().strip(),
+}
+
 
 def extract_from_element(element: ElementHandle, mode: str) -> str:
-    """Reads a property from a Playwright ElementHandle."""
-    if mode == "textContent":
-        return (element.text_content() or "").strip()
-    if mode == "outerHTML":
-        return element.evaluate("el => el.outerHTML").strip() or ""
-    if mode == "innerHTML":
-        return element.inner_html().strip() or ""
-    if mode == "value":
-        return element.input_value().strip() or ""
-    return element.inner_text().strip() or ""
+    """Reads a property from a Playwright ElementHandle.
+
+    Args:
+        element: The Playwright element to extract from.
+        mode: One of 'textContent', 'outerHTML', 'innerHTML', 'value'; defaults to inner_text.
+
+    Returns:
+        The extracted string value.
+    """
+    extractor = _ELEMENT_EXTRACTORS.get(mode)
+    if extractor is not None:
+        return extractor(element)
+    return element.inner_text().strip()
 
 
 def evaluate_count_condition(count: int, operator: str, value: int) -> bool:

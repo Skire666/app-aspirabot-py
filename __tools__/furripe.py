@@ -4,6 +4,13 @@ Rules:
   - EPI025: Functions with >25 effective lines (code only, no blanks/comments/docstring)
   - EPI301: Files must end with '# EOF'
   - EPI302: Files must have import section marker before imports
+  - EXT101: Functions with an 'extended' cyclomatic complexity above a threshold
+  - HAS111: Functions/files with a Halstead volume above a threshold
+  - MIR121: Files with a maintainability index below a threshold
+
+Suppression (Ruff-style):
+  - `# foqa` / `# foqa: CODE[, CODE...]` on a line suppresses findings on that line.
+  - `# furripe: foqa` / `# furripe: foqa: CODE[, ...]` anywhere suppresses across the whole file.
 
 Config is read from `furripe-config.json` in the current directory.
 """
@@ -14,10 +21,12 @@ import argparse
 import ast
 import contextlib
 import json
+import math
+import re
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Final, Protocol, TypedDict, cast
+from typing import Any, Final, NamedTuple, Protocol, TypedDict, cast
 
 import mccabe  # You'll need: pip install mccabe
 
@@ -37,7 +46,11 @@ EXIT_PATH_MISSING: Final[int] = 3
 
 FIXABLE_RULES: Final[frozenset[str]] = frozenset({"EPI301", "EPI302"})
 
-C_THRESHOLD_LINES: Final[int] = 26
+C_THRESHOLD_LINES: Final[int] = 25
+C_MAX_COMPLEXITY: Final[int] = 10  # EXT101 default (extended complexity)
+C_MAX_VOLUME: Final[int] = 1000  # HAS111 default per function
+C_MAX_VOLUME_FILE: Final[int] = 10000  # HAS111 default per file
+C_MIN_MI: Final[float] = 5  # MIR121 default (maintainability index floor)
 
 
 class RuleConfig(TypedDict, total=False):
@@ -48,6 +61,10 @@ class RuleConfig(TypedDict, total=False):
     max_score: int
     min_complexity: int
     min_lines: int
+    max_complexity: int
+    max_volume: int
+    max_volume_file: int
+    min_mi: float
 
 
 class RulesConfig(TypedDict, total=False):
@@ -56,6 +73,9 @@ class RulesConfig(TypedDict, total=False):
     EPI025: RuleConfig
     EPI301: RuleConfig
     EPI302: RuleConfig
+    EXT101: RuleConfig
+    HAS111: RuleConfig
+    MIR121: RuleConfig
 
 
 class Config(TypedDict):
@@ -102,6 +122,9 @@ DEFAULT_CONFIG: Final[Config] = {
         "EPI025": {"enabled": True, "threshold_lines": C_THRESHOLD_LINES},
         "EPI301": {"enabled": True},
         "EPI302": {"enabled": True},
+        "EXT101": {"enabled": True, "max_complexity": C_MAX_COMPLEXITY},
+        "HAS111": {"enabled": True, "max_volume": C_MAX_VOLUME, "max_volume_file": C_MAX_VOLUME_FILE},
+        "MIR121": {"enabled": True, "min_mi": C_MIN_MI},
     },
     "exclude_dirs": ["__pycache__", ".venv", ".git", "node_modules", "tests"],
     "output_format": "text",  # text or json
@@ -247,7 +270,7 @@ def effective_lines(func: FunctionNode, source_lines: list[str]) -> int:
 
 
 def calculate_complexity(func: FunctionNode) -> int:
-    """Calculate McCabe cyclomatic complexity for a function."""
+    """Calculate McCabe cyclomatic complexity for a function (mccabe library, ~Ruff)."""
     visitor = _make_mccabe_visitor()
     visitor.preorder(func, visitor)
     graph = next(iter(visitor.graphs.values()), None)
@@ -261,6 +284,200 @@ def get_function_source_lines(source_lines: list[str], func: FunctionNode) -> li
     start_line = func.lineno - 1
     end_line = getattr(func, "end_lineno", func.lineno) or func.lineno
     return source_lines[start_line:end_line]
+
+
+# --------------------------------------------------------------------------- #
+# Extended cyclomatic complexity (the in-house "superset" definition)
+# --------------------------------------------------------------------------- #
+def _is_wildcard_case(case: ast.match_case) -> bool:
+    """Return True for an irrefutable, unguarded `case` (e.g. `case _:`)."""
+    return case.guard is None and isinstance(case.pattern, ast.MatchAs) and case.pattern.pattern is None
+
+
+class _ExtendedComplexityVisitor(ast.NodeVisitor):
+    """Compute the 'extended' cyclomatic complexity of a single function.
+
+    Counts (complexity starts at 1):
+      - if / elif, for / async for, while, except            (common trunk)
+      - try ... else                                          (+1 if present)
+      - each match case except a final irrefutable wildcard
+      - each nested def / async def (+1, body also walked)    (Ruff semantics)
+      - boolean operators and / or (+ number_of_operands - 1)
+      - ternary expressions `a if c else b`                   (+1)
+      - if-clauses inside comprehensions                      (+1 each)
+    """
+
+    def __init__(self) -> None:
+        """Initialize the running complexity at 1."""
+        self.complexity: int = 1
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Nested function: add one decision point, then descend."""
+        self.complexity += 1
+        self.generic_visit(node)
+
+    visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]
+
+    def _decision(self, node: ast.AST) -> None:
+        """Generic +1 decision point that still descends into children."""
+        self.complexity += 1
+        self.generic_visit(node)
+
+    visit_If = _decision  # type: ignore[assignment]
+    visit_For = _decision  # type: ignore[assignment]
+    visit_AsyncFor = _decision  # type: ignore[assignment]
+    visit_While = _decision  # type: ignore[assignment]
+    visit_ExceptHandler = _decision  # type: ignore[assignment]
+
+    def visit_Try(self, node: ast.Try) -> None:
+        """A `try ... else` adds one branch (handlers are counted separately)."""
+        if node.orelse:
+            self.complexity += 1
+        self.generic_visit(node)
+
+    def visit_Match(self, node: ast.Match) -> None:
+        """Each case is a branch, except a final irrefutable wildcard."""
+        for case in node.cases:
+            if not _is_wildcard_case(case):
+                self.complexity += 1
+        self.generic_visit(node)
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> None:
+        """`a and b and c` adds (number of operands - 1) paths."""
+        self.complexity += len(node.values) - 1
+        self.generic_visit(node)
+
+    def visit_IfExp(self, node: ast.IfExp) -> None:
+        """Ternary expression adds one branch."""
+        self.complexity += 1
+        self.generic_visit(node)
+
+    def visit_comprehension(self, node: ast.comprehension) -> None:
+        """Each `if` filter in a comprehension adds one branch."""
+        self.complexity += len(node.ifs)
+        self.generic_visit(node)
+
+
+def extended_complexity(func: FunctionNode) -> int:
+    """Return the 'extended' cyclomatic complexity for a function.
+
+    The root function itself does not add a point; only its body is walked
+    (so nested defs add +1, but the outer signature does not).
+    """
+    visitor = _ExtendedComplexityVisitor()
+    for stmt in func.body:
+        visitor.visit(stmt)
+    return visitor.complexity
+
+
+# --------------------------------------------------------------------------- #
+# Halstead metrics (inspired by radon; reasonable parity)
+# --------------------------------------------------------------------------- #
+class HalsteadResult(NamedTuple):
+    """Halstead software metrics for a node (function or module)."""
+
+    n1: int  # distinct operators
+    n2: int  # distinct operands
+    big_n1: int  # total operators
+    big_n2: int  # total operands
+    vocabulary: int
+    length: int
+    volume: float
+    difficulty: float
+    effort: float
+    time: float
+    bugs: float
+
+
+def _halstead_tokens(node: ast.AST) -> tuple[list[str], list[str]]:
+    """Split an AST subtree into operator and operand token streams."""
+    operators: list[str] = []
+    operands: list[str] = []
+    for child in ast.walk(node):
+        if isinstance(child, ast.BinOp) or isinstance(child, ast.UnaryOp):
+            operators.append(type(child.op).__name__)
+        elif isinstance(child, ast.BoolOp):
+            operators.extend([type(child.op).__name__] * (len(child.values) - 1))
+        elif isinstance(child, ast.Compare):
+            operators.extend(type(op).__name__ for op in child.ops)
+        elif isinstance(child, ast.Name):
+            operands.append(child.id)
+        elif isinstance(child, ast.Constant):
+            operands.append(repr(child.value))
+    return operators, operands
+
+
+def halstead_metrics(node: ast.AST) -> HalsteadResult:
+    """Compute Halstead metrics for a function or module subtree."""
+    operators, operands = _halstead_tokens(node)
+    n1 = len(set(operators))
+    n2 = len(set(operands))
+    big_n1 = len(operators)
+    big_n2 = len(operands)
+    vocabulary = n1 + n2
+    length = big_n1 + big_n2
+
+    volume = length * math.log2(vocabulary) if vocabulary > 0 else 0.0
+    difficulty = (n1 / 2) * (big_n2 / n2) if n2 > 0 else 0.0
+    effort = difficulty * volume
+    time = effort / 18.0
+    bugs = volume / 3000.0
+
+    return HalsteadResult(n1, n2, big_n1, big_n2, vocabulary, length, volume, difficulty, effort, time, bugs)
+
+
+# --------------------------------------------------------------------------- #
+# Maintainability index (radon variant, normalized 0-100)
+# --------------------------------------------------------------------------- #
+def _iter_functions(tree: ast.AST) -> list[FunctionNode]:
+    """Return all function definitions found in a tree."""
+    return [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+
+
+def _count_sloc_comments(source_lines: list[str]) -> tuple[int, int]:
+    """Return (SLOC, comment lines) from physical source lines."""
+    sloc = 0
+    comments = 0
+    for raw in source_lines:
+        line = raw.strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            comments += 1
+        else:
+            sloc += 1
+    return sloc, comments
+
+
+def maintainability_index(source_lines: list[str], tree: ast.Module) -> float:
+    """Compute the radon-style maintainability index (0-100) for a module.
+
+    G uses the McCabe complexity already available via the mccabe library,
+    summed over the module's functions.
+    """
+    volume = halstead_metrics(tree).volume
+    total_complexity = sum(calculate_complexity(func) for func in _iter_functions(tree))
+    sloc, comments = _count_sloc_comments(source_lines)
+    if sloc <= 0:
+        return 100.0
+
+    comment_ratio = min(comments / sloc, 1.0)
+    ln_volume = math.log(volume) if volume > 0 else 0.0
+    ln_sloc = math.log(sloc) if sloc > 0 else 0.0
+
+    raw = (
+        171 - 5.2 * ln_volume - 0.23 * total_complexity - 16.2 * ln_sloc + 50 * math.sin(math.sqrt(2.4 * comment_ratio))
+    )
+    return max(0.0, min(100.0, raw * 100.0 / 171.0))
+
+
+def mi_rank(mi: float) -> str:
+    """Rank a maintainability index: A (>=20), B (>=10), C (<10)."""
+    if mi >= 20:
+        return "A"
+    if mi >= 10:
+        return "B"
+    return "C"
 
 
 # --------------------------------------------------------------------------- #
@@ -281,6 +498,72 @@ def check_epi025(
             "name": func.name,
         }
 
+    return None
+
+
+def check_ext101(func: FunctionNode, filename: str, max_complexity: int) -> Error | None:
+    """EXT101: Function whose extended cyclomatic complexity exceeds the threshold."""
+    complexity = extended_complexity(func)
+    if complexity > max_complexity:
+        return {
+            "code": "EXT101",
+            "message": f"`{func.name}` is too complex ({complexity} > {max_complexity})",
+            "filename": filename,
+            "line": func.lineno,
+            "column": func.col_offset + 1,
+            "name": func.name,
+        }
+    return None
+
+
+def check_has111_function(func: FunctionNode, filename: str, max_volume: int) -> Error | None:
+    """HAS111 (function level): Function whose Halstead volume exceeds the threshold."""
+    h = halstead_metrics(func)
+    if h.volume > max_volume:
+        return {
+            "code": "HAS111",
+            "message": (
+                f"`{func.name}` has high Halstead volume ({h.volume:.0f} > {max_volume}); "
+                f"difficulty={h.difficulty:.1f}, effort={h.effort:.0f}, est. bugs={h.bugs:.2f}"
+            ),
+            "filename": filename,
+            "line": func.lineno,
+            "column": func.col_offset + 1,
+            "name": func.name,
+        }
+    return None
+
+
+def check_has111_file(tree: ast.Module, filename: str, max_volume_file: int) -> Error | None:
+    """HAS111 (file level): File whose total Halstead volume exceeds the threshold."""
+    h = halstead_metrics(tree)
+    if h.volume > max_volume_file:
+        return {
+            "code": "HAS111",
+            "message": (
+                f"File has high Halstead volume ({h.volume:.0f} > {max_volume_file}); "
+                f"difficulty={h.difficulty:.1f}, effort={h.effort:.0f}, est. bugs={h.bugs:.2f}"
+            ),
+            "filename": filename,
+            "line": 1,
+            "column": 1,
+            "name": None,
+        }
+    return None
+
+
+def check_mir121(source_lines: list[str], tree: ast.Module, filename: str, min_mi: float) -> Error | None:
+    """MIR121: File whose maintainability index is below the threshold."""
+    mi = maintainability_index(source_lines, tree)
+    if mi < min_mi:
+        return {
+            "code": "MIR121",
+            "message": f"Low maintainability index ({mi:.1f} < {min_mi:.1f}), rank {mi_rank(mi)}",
+            "filename": filename,
+            "line": 1,
+            "column": 1,
+            "name": None,
+        }
     return None
 
 
@@ -385,6 +668,73 @@ def _get_rule_float(rule: RuleConfig, key: str, default: float) -> float:
 
 
 # --------------------------------------------------------------------------- #
+
+# --------------------------------------------------------------------------- #
+_CODE_PATTERN: Final[str] = r"[A-Z]+[0-9]+(?:[,\s]+[A-Z]+[0-9]+)*"
+_FOQA_RE: Final = re.compile(rf"#\s*foqa(?::\s*(?P<codes>{_CODE_PATTERN}))?", re.IGNORECASE)
+_FILE_FOQA_RE: Final = re.compile(rf"#\s*furripe:\s*foqa(?::\s*(?P<codes>{_CODE_PATTERN}))?", re.IGNORECASE)
+
+
+class FoqaDirectives(NamedTuple):
+    """Parsed suppression directives for one source file."""
+
+    blanket_lines: frozenset[int]  # lines carrying a bare `# foqa`
+    line_codes: dict[int, set[str]]  # lines carrying `# foqa: CODES`
+    file_blanket: bool  # a bare `# furripe: foqa` anywhere in the file
+    file_codes: set[str]  # codes from `# furripe: foqa: CODES`
+
+
+def _split_codes(group: str | None) -> set[str] | None:
+    """Return the upper-cased codes of a directive, or None for a blanket foqa."""
+    if not group:
+        return None
+    return {code.upper() for code in re.split(r"[,\s]+", group) if code}
+
+
+def parse_foqa(source_lines: list[str]) -> FoqaDirectives:
+    """Scan physical lines for `# foqa` and `# furripe: foqa` directives."""
+    blanket_lines: set[int] = set()
+    line_codes: dict[int, set[str]] = {}
+    file_blanket = False
+    file_codes: set[str] = set()
+
+    for lineno, raw in enumerate(source_lines, start=1):
+        file_match = _FILE_FOQA_RE.search(raw)
+        if file_match is not None:
+            codes = _split_codes(file_match.group("codes"))
+            if codes is None:
+                file_blanket = True
+            else:
+                file_codes.update(codes)
+            continue  # a file-level directive is not also a line directive
+
+        match = _FOQA_RE.search(raw)
+        if match is None:
+            continue
+        codes = _split_codes(match.group("codes"))
+        if codes is None:
+            blanket_lines.add(lineno)
+        else:
+            line_codes.setdefault(lineno, set()).update(codes)
+
+    return FoqaDirectives(frozenset(blanket_lines), line_codes, file_blanket, file_codes)
+
+
+def _is_suppressed(error: Error, directives: FoqaDirectives) -> bool:
+    """Return True if `error` is silenced by a foqa directive."""
+    if directives.file_blanket:
+        return True
+    code = error["code"]
+    if code in directives.file_codes:
+        return True
+    line = error["line"]
+    if line in directives.blanket_lines:
+        return True
+    codes = directives.line_codes.get(line)
+    return codes is not None and code in codes
+
+
+# --------------------------------------------------------------------------- #
 # File analysis
 # --------------------------------------------------------------------------- #
 def _parse_source(path: Path) -> tuple[str, list[str], ast.Module] | None:
@@ -461,8 +811,10 @@ def _apply_fixes(files: list[Path], config: Config) -> int:
     return modified
 
 
-def _collect_file_errors(source: str, filename: str, rules: RulesConfig) -> list[Error]:
-    """Collect file-level rule violations."""
+def _collect_file_errors(
+    source: str, source_lines: list[str], tree: ast.Module, filename: str, rules: RulesConfig
+) -> list[Error]:
+    """Collect file-level rule violations (EPI301, EPI302, HAS111 file, MIR121)."""
     errors: list[Error] = []
     if _rule_enabled(rules, "EPI301"):
         error = check_epi301(source, filename)
@@ -472,11 +824,23 @@ def _collect_file_errors(source: str, filename: str, rules: RulesConfig) -> list
         error = check_epi302(source, filename)
         if error is not None:
             errors.append(error)
+    if _rule_enabled(rules, "HAS111"):
+        rule = _get_rule(rules, "HAS111")
+        max_volume_file = _get_rule_int(rule, "max_volume_file", C_MAX_VOLUME_FILE)
+        error = check_has111_file(tree, filename, max_volume_file)
+        if error is not None:
+            errors.append(error)
+    if _rule_enabled(rules, "MIR121"):
+        rule = _get_rule(rules, "MIR121")
+        min_mi = _get_rule_float(rule, "min_mi", C_MIN_MI)
+        error = check_mir121(source_lines, tree, filename, min_mi)
+        if error is not None:
+            errors.append(error)
     return errors
 
 
 def _build_function_checks(rules: RulesConfig, source_lines: list[str], filename: str) -> list[FunctionCheck]:
-    """Build the list of function-level checks to run."""
+    """Build the list of function-level checks to run (EPI025, EXT101, HAS111)."""
     checks: list[FunctionCheck] = []
 
     if _rule_enabled(rules, "EPI025"):
@@ -487,6 +851,24 @@ def _build_function_checks(rules: RulesConfig, source_lines: list[str], filename
             return check_epi025(func, source_lines, filename, threshold)
 
         checks.append(_check_025)
+
+    if _rule_enabled(rules, "EXT101"):
+        rule_ext = _get_rule(rules, "EXT101")
+        max_complexity = _get_rule_int(rule_ext, "max_complexity", C_MAX_COMPLEXITY)
+
+        def _check_ext(func: FunctionNode) -> Error | None:
+            return check_ext101(func, filename, max_complexity)
+
+        checks.append(_check_ext)
+
+    if _rule_enabled(rules, "HAS111"):
+        rule_has = _get_rule(rules, "HAS111")
+        max_volume = _get_rule_int(rule_has, "max_volume", C_MAX_VOLUME)
+
+        def _check_has(func: FunctionNode) -> Error | None:
+            return check_has111_function(func, filename, max_volume)
+
+        checks.append(_check_has)
 
     return checks
 
@@ -518,9 +900,10 @@ def analyze_file(path: Path, config: Config) -> list[Error]:
 
     source, source_lines, tree = parsed
     rules = config["rules"]
-    errors = _collect_file_errors(source, str(path), rules)
+    errors = _collect_file_errors(source, source_lines, tree, str(path), rules)
     errors.extend(_collect_function_errors(tree, source_lines, str(path), rules))
-    return errors
+    directives = parse_foqa(source_lines)
+    return [error for error in errors if not _is_suppressed(error, directives)]
 
 
 def iter_python_files(root: Path, exclude_dirs: list[str]) -> list[Path]:
@@ -710,7 +1093,14 @@ def emit_statistics_json(errors: list[Error]) -> None:
 
 def get_rule_name(code: str) -> str:
     """Get the human-readable name for a rule code."""
-    rule_names = {"EPI025": "function-too-long", "EPI301": "missing-eof-marker", "EPI302": "missing-import-marker"}
+    rule_names = {
+        "EPI025": "function-too-long",
+        "EPI301": "missing-eof-marker",
+        "EPI302": "missing-import-marker",
+        "EXT101": "function-too-complex",
+        "HAS111": "high-halstead-volume",
+        "MIR121": "low-maintainability-index",
+    }
     return rule_names.get(code, "unknown-rule")
 
 
@@ -720,6 +1110,9 @@ def get_rule_help(code: str) -> str:
         "EPI025": "Long functions hide multiple responsibilities; consider splitting them for readability and tests.",
         "EPI301": "Add `# EOF` at the end of the file",
         "EPI302": "Add the import section marker before the first import statement",
+        "EXT101": "High extended cyclomatic complexity means many branches; split the function into smaller units.",
+        "HAS111": "A high Halstead volume signals dense code; simplify expressions and reduce distinct operators/operands.",
+        "MIR121": "A low maintainability index means the file is hard to maintain; reduce size, complexity, and add comments.",
     }
     return rule_help.get(code, "")
 
@@ -792,3 +1185,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+# EOF

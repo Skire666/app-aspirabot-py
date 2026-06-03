@@ -598,7 +598,7 @@ def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:
         root: The root Tk window that outlives all presenters.
         presenters: Presenter instances to keep alive for the application lifetime.
     """
-    setattr(root, "_app_presenters", presenters)
+    root._app_presenters = presenters
 
 
 # -----------------------------------------------------------------------------

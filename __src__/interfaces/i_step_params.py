@@ -10,7 +10,7 @@ Deserialisation is handled by per-step builder functions registered in the step 
 # Imports
 # -----------------------------------------------------------------------------
 
-from typing import Any, Protocol, Self
+from typing import Protocol, Self
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -27,7 +27,7 @@ class IStepParams(Protocol):
     registered in the step registry via ``register_params_builder``.
     """
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, object]:
         """Serialise the params to a JSON-compatible dictionary.
 
         Returns:
@@ -36,7 +36,7 @@ class IStepParams(Protocol):
         ...
 
     @classmethod
-    def model_validate(cls, obj: Any, *, context: dict[str, object] | None = None) -> Self:
+    def model_validate(cls, obj: object, *, context: dict[str, object] | None = None) -> Self:
         """Validate and construct the params model from a dict.
 
         Args:

@@ -23,6 +23,11 @@ from pathlib import Path
 from typing import Any, Final, cast
 
 import yt_dlp
+from shared.exception_util import (
+    YoutubeNoDownloadOptionError,
+    YoutubeOutputDirParameterEmptyError,
+    YoutubeUrlParameterEmptyError,
+)
 from shared.path_util import clean_filename_youtube
 from yt_dlp.utils import DownloadError
 
@@ -197,10 +202,11 @@ def _safe_validate(
     """Validate inputs; on failure, record error and return False."""
     try:
         _validate_inputs(url_youtube, output_dir, get_basic_data, get_srt)
-        return True
     except ValueError as exc:
         result.fail(f"Paramètres invalides : {exc}")
         return False
+    else:
+        return True
 
 
 def _safe_prepare_dir(output_dir: str, result: DownloadResult) -> Path | None:
@@ -208,10 +214,11 @@ def _safe_prepare_dir(output_dir: str, result: DownloadResult) -> Path | None:
     path = Path(output_dir)
     try:
         path.mkdir(parents=True, exist_ok=True)
-        return path
     except OSError as exc:
         result.fail(f"Création du dossier '{path}' impossible : {exc}")
         return None
+    else:
+        return path
 
 
 def _safe_fetch_info(url_youtube: str, result: DownloadResult) -> dict[str, Any] | None:
@@ -250,11 +257,11 @@ def _safe_download_subtitles(
 def _validate_inputs(url_youtube: str, output_dir: str, get_basic_data: bool, get_srt: bool) -> None:
     """Validate the public entry point arguments, raising ValueError on issues."""
     if not url_youtube.strip():
-        raise ValueError("Le paramètre 'url_youtube' doit être une chaîne non vide.")
+        raise YoutubeUrlParameterEmptyError()
     if not output_dir.strip():
-        raise ValueError("Le paramètre 'output_dir' doit être une chaîne non vide.")
+        raise YoutubeOutputDirParameterEmptyError()
     if not (get_basic_data or get_srt):
-        raise ValueError("Au moins une option ('get_basic_data' ou 'get_srt') doit être active.")
+        raise YoutubeNoDownloadOptionError()
 
 
 # ============================================================================
@@ -315,7 +322,7 @@ def _list_available_subtitles(info: dict[str, Any]) -> dict[str, list[str]]:
     }
 
 
-def _collect_fra_eng_labels(block: Any) -> list[str]:
+def _collect_fra_eng_labels(block: object) -> list[str]:
     """Return 'CODE (display name)' labels for FR/EN tracks of a subs block."""
     if not isinstance(block, dict):
         return []
@@ -415,7 +422,7 @@ def _name_matches_targets_fra_or_eng(code: str, name: str) -> bool:
 
 def _run_subtitle_phase(url: str, out_dir: Path, codes: list[str], result: DownloadResult, *, automatic: bool) -> None:
     """Run a single subtitle phase with fixed-delay retries on HTTP 429."""
-    delays: tuple[int, ...] = (0,) + RATE_LIMIT_RETRY_DELAYS
+    delays: tuple[int, ...] = (0, *RATE_LIMIT_RETRY_DELAYS)
     last_error: Exception | None = None
     for attempt, delay in enumerate(delays):
         if delay:
@@ -423,13 +430,14 @@ def _run_subtitle_phase(url: str, out_dir: Path, codes: list[str], result: Downl
             time.sleep(delay)
         try:
             _execute_yt_dlp_subs(url, out_dir, codes, automatic=automatic)
-            return
         except DownloadError as exc:
             last_error = exc
             if not _is_rate_limit_error(exc):
                 result.fail(f"Erreur yt-dlp (non rate-limit) : {exc}")
                 return
             result.warn("Limite de débit détectée (HTTP 429).")
+        else:
+            return
     result.fail(f"Échec définitif après réessais : {last_error}")
 
 

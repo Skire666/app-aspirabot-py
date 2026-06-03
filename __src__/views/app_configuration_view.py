@@ -93,7 +93,9 @@ class AppConfigurationView(ttk.Frame):
         combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
         self._log_level_combo = combo
 
-    def _add_enum_row_browser_engine(self, frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar) -> None:
+    def _add_enum_row_browser_engine(
+        self, frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar
+    ) -> None:
         """Add a browser-engine combobox row."""
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         combo = ttk.Combobox(frame, textvariable=var, state="readonly")

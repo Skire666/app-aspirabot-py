@@ -59,7 +59,7 @@ Les TNR sur une GUI sont piégeux. Applique ces principes :
 - **Factorisation** : utilise les *fixtures* pytest pour le setup/teardown (notamment le cycle de vie du root tkinter) et `@pytest.mark.parametrize` pour les jeux de valeurs.
 - **Isolation** : chaque test est indépendant, sans état partagé ni dépendance à l'ordre d'exécution.
 - **Imports** : les modules de `__src__` sont importables directement (grâce à `pythonpath`), ne préfixe pas par `__src__.`.
-- **Couverture minimale : 60 %.** Tes TNR, combinés aux TU existants, doivent maintenir une couverture d'au moins **60 %** sur `__src__`. Vérifie-le avec `--cov-fail-under=60` ; si le seuil n'est pas atteint, identifie les zones non couvertes (`term-missing`) et complète tes tests.
+- **Couverture minimale : 70 %.** Les **tests de non-régression** doivent maintenir une couverture d'au moins **70 %** sur `__src__`. Vérifie-le avec `--cov-fail-under=70` ; si le seuil n'est pas atteint, identifie les zones non couvertes (`term-missing`) et complète tes tests.
 - **Lisibilité** : chaque assertion non triviale est accompagnée d'un message expliquant le comportement figé.
 
 ## Garde-fous (non négociables)
@@ -73,5 +73,5 @@ Les TNR sur une GUI sont piégeux. Applique ces principes :
 ## Livrable attendu
 
 1. Un ou plusieurs fichiers `__tests__/regression_testing/*_regression.py` complets et exécutables.
-2. Sortie avec `--cov-fail-under=60` confirmant que tout passe et que la couverture de `__src__` est **≥ 60 %**.
+2. Sortie avec `--cov-fail-under=70` confirmant que tout passe et que la couverture de `__src__` est **≥ 70 %**.
 3. Un court rapport final : périmètre couvert, lacunes restantes, comportements suspects identifiés.
