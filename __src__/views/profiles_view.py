@@ -49,6 +49,7 @@ class ProfilesView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
         self._create_widgets()
         self._bind_vm_vars()
 
@@ -75,8 +76,17 @@ class ProfilesView(ttk.Frame):
         self._grid.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add on profiles_version_var to re-render on data change."""
-        self._vm.profiles_version_var.trace_add("write", self._sync_profiles)
+        """Register trace listeners on ViewModel Vars; ids stored for teardown."""
+        self._view_traces.append(
+            (self._vm.profiles_version_var, self._vm.profiles_version_var.trace_add("write", self._sync_profiles))
+        )
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
 
     def _sync_profiles(self, *_: object) -> None:
         """Re-render the DataGrid and counter from the ViewModel data."""

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import tkinter as tk
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
-from view_models.scenarios_view_model import ScenariosViewModel
 from view_models.profiles_view_model import ProfilesViewModel
+from view_models.scenarios_view_model import ScenariosViewModel
+
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -29,8 +29,9 @@ class TestScenariosViewModelValidate:
         svm.validate()
         cb.assert_called_once()
 
-    def test_validate_without_callback_no_error(self, svm: ScenariosViewModel) -> None:
-        svm.validate()
+    def test_validate_without_callback_raises(self, svm: ScenariosViewModel) -> None:
+        with pytest.raises(CallbackNotDefinedError):
+            svm.validate()
 
 
 class TestScenariosViewModelGridAction:

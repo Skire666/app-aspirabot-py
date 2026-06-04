@@ -72,6 +72,10 @@ C_DEBUG_DNS_DELAY_INVALID = "Le délai d'attente DNS doit être un entier entre 
 # Scraping panel — no URL source confirmation dialog
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"
 
+# Scraping panel — cancel confirmation dialog
+C_SCRAPING_CANCEL_CONFIRM_TITLE = "Confirmer l'annulation"
+C_SCRAPING_CANCEL_CONFIRM_MSG = "Êtes-vous sûr de vouloir annuler le processus en cours ?"
+
 # -----------------------------------------------------------------------------
 # Common dialog / presenter messages
 # -----------------------------------------------------------------------------

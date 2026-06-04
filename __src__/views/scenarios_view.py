@@ -52,6 +52,7 @@ class ScenariosView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
         self._create_actions_widgets()
         self._create_grid_widgets()
         self._bind_vm_vars()
@@ -93,9 +94,23 @@ class ScenariosView(ttk.Frame):
         self.grid.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add listeners on ViewModel Vars."""
-        self._vm.scenarios_version_var.trace_add("write", self._sync_scenarios)
-        self._vm.is_validation_running_var.trace_add("write", self._sync_validation_state)
+        """Register trace listeners on ViewModel Vars; ids stored for teardown."""
+        self._view_traces.append(
+            (self._vm.scenarios_version_var, self._vm.scenarios_version_var.trace_add("write", self._sync_scenarios))
+        )
+        self._view_traces.append(
+            (
+                self._vm.is_validation_running_var,
+                self._vm.is_validation_running_var.trace_add("write", self._sync_validation_state),
+            )
+        )
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
 
     def _sync_scenarios(self, *_: object) -> None:
         """Re-render the DataGrid and counter from the ViewModel data."""

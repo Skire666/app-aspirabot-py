@@ -6,36 +6,44 @@
 
 import tkinter as tk
 from collections.abc import Callable
-from tkinter import messagebox
+
+from shared.exception_util import CallbackNotDefinedError
+
+from view_models.view_model_base import ViewModelBase
 
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
 
-class ScrapingViewModel:
+class ScrapingViewModel(ViewModelBase):
     """UI state and action hooks for the live scraping panel.
 
     All display state is held as ``tk.*Var`` instances.  The journal uses a
     ``journal_append_var`` / ``journal_version_var`` pair for incremental
     appends, and a ``journal_clear_var`` for full clears.  The ``after``
-    method proxies Tkinter scheduling so the Presenter never needs to import
-    ``tkinter`` directly.
+    method (inherited from ViewModelBase) proxies Tkinter scheduling so the
+    Presenter never needs to import ``tkinter`` directly.
+
+    Derived state: ``is_launch_btn_enabled_var`` and ``is_cancel_btn_enabled_var``
+    are recomputed automatically whenever ``is_running_var``, ``has_context_var``,
+    or ``has_folder_var`` change.
     """
 
     def __init__(self, master: tk.Misc) -> None:
-        """Initialise all Vars and register bind slots.
+        """Initialise all Vars, wire derived-state recomputation, and register bind slots.
 
         Args:
             master: Tkinter parent used to scope Var lifetimes and the after() call.
         """
-        self._master = master
+        super().__init__(master)
         self._init_state_vars(master)
         self._init_stats_and_journal_vars(master)
         self._init_callbacks()
+        # Wire derived button-state recompute on all source Vars.
         for var in (self.is_running_var, self.has_context_var, self.has_folder_var):
-            var.trace_add("write", self._recompute_button_states)
-        self._recompute_button_states()
+            self._register_trace(var, self._guarded_recompute)
+        self._guarded_recompute()
 
     def _init_state_vars(self, master: tk.Misc) -> None:
         """Initialise context and run-state Vars.
@@ -54,10 +62,9 @@ class ScrapingViewModel:
         self.process_status_var = tk.StringVar(master=master, value="")
         self.is_pause_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_resume_active_var = tk.BooleanVar(master=master, value=False)
-        # Derived button-state Vars — recomputed from is_running_var, has_context_var, has_folder_var.
+        # Derived button-state Vars — recomputed via _recompute_derived.
         self.is_launch_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_cancel_btn_enabled_var = tk.BooleanVar(master=master, value=False)
-        self._updating_derived: bool = False
 
     def _init_stats_and_journal_vars(self, master: tk.Misc) -> None:
         """Initialise statistics and journal Vars.
@@ -89,33 +96,14 @@ class ScrapingViewModel:
         self._on_show_error: Callable[[str, str], None] | None = None
 
     # ------------------------------------------------------------------
-    # Derived state
+    # Derived state (via ViewModelBase gate)
     # ------------------------------------------------------------------
 
-    def _recompute_button_states(self, *_: object) -> None:
-        """Recompute button-enable derived Vars from run state and context Vars."""
-        if self._updating_derived:
-            return
-        self._updating_derived = True
-        try:
-            running = self.is_running_var.get()
-            self.is_launch_btn_enabled_var.set(not running and self.has_context_var.get())
-            self.is_cancel_btn_enabled_var.set(running)
-        finally:
-            self._updating_derived = False
-
-    # ------------------------------------------------------------------
-    # Threading proxy
-    # ------------------------------------------------------------------
-
-    def after(self, delay_ms: int, callback: Callable[[], None]) -> None:
-        """Schedule a callback on the main Tkinter thread.
-
-        Args:
-            delay_ms: Delay in milliseconds before the callback fires.
-            callback: Zero-argument callable to schedule.
-        """
-        self._master.after(delay_ms, callback)
+    def _recompute_derived(self) -> None:
+        """Recompute button-enable Vars from run state and context Vars."""
+        running = self.is_running_var.get()
+        self._set_if_changed(self.is_launch_btn_enabled_var, not running and self.has_context_var.get())
+        self._set_if_changed(self.is_cancel_btn_enabled_var, running)
 
     # ------------------------------------------------------------------
     # Journal helpers
@@ -139,60 +127,121 @@ class ScrapingViewModel:
     # ------------------------------------------------------------------
 
     def bind_launch(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Lancer."""
+        """Register the handler invoked when the user clicks Lancer.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_launch is not None:
+            raise CallbackNotDefinedError()
         self._on_launch = cb
 
     def bind_cancel(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Annuler."""
+        """Register the handler invoked when the user confirms cancellation.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_cancel is not None:
+            raise CallbackNotDefinedError()
         self._on_cancel = cb
 
     def bind_pause(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Mettre en pause."""
+        """Register the handler invoked when the user clicks Mettre en pause.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_pause is not None:
+            raise CallbackNotDefinedError()
         self._on_pause = cb
 
     def bind_resume(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Reprendre."""
+        """Register the handler invoked when the user clicks Reprendre.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_resume is not None:
+            raise CallbackNotDefinedError()
         self._on_resume = cb
 
     def bind_open_folder(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Ouvrir dossier."""
+        """Register the handler invoked when the user clicks Ouvrir dossier.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_open_folder is not None:
+            raise CallbackNotDefinedError()
         self._on_open_folder = cb
 
     def bind_show_error(self, cb: Callable[[str, str], None]) -> None:
-        """Register the handler that shows a modal error dialog."""
+        """Register the handler that shows a modal error dialog.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_show_error is not None:
+            raise CallbackNotDefinedError()
         self._on_show_error = cb
 
     # ------------------------------------------------------------------
-    # Action methods — called by the View
+    # Action methods — called by the View (pure dispatch, no logic)
     # ------------------------------------------------------------------
 
     def launch(self) -> None:
-        """Dispatch a launch request."""
-        if self._on_launch is not None:
-            self._on_launch()
+        """Dispatch a launch request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_launch is None:
+            raise CallbackNotDefinedError()
+        self._on_launch()
 
     def cancel(self) -> None:
-        """Dispatch a cancel request."""
-        confirmed = messagebox.askyesno(
-            "Confirmer l'annulation", "Êtes-vous sûr de vouloir annuler le processus en cours ?"
-        )
-        if confirmed and self._on_cancel is not None:
-            self._on_cancel()
+        """Dispatch a cancel request.
+
+        The View is responsible for showing a confirmation dialog before calling
+        this method.  This action method only dispatches — it contains no logic.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_cancel is None:
+            raise CallbackNotDefinedError()
+        self._on_cancel()
 
     def pause(self) -> None:
-        """Dispatch a pause request."""
-        if self._on_pause is not None:
-            self._on_pause()
+        """Dispatch a pause request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_pause is None:
+            raise CallbackNotDefinedError()
+        self._on_pause()
 
     def resume(self) -> None:
-        """Dispatch a resume request."""
-        if self._on_resume is not None:
-            self._on_resume()
+        """Dispatch a resume request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_resume is None:
+            raise CallbackNotDefinedError()
+        self._on_resume()
 
     def open_folder(self) -> None:
-        """Dispatch an open-folder request."""
-        if self._on_open_folder is not None:
-            self._on_open_folder()
+        """Dispatch an open-folder request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_open_folder is None:
+            raise CallbackNotDefinedError()
+        self._on_open_folder()
 
     def show_error(self, title: str, message: str) -> None:
         """Dispatch an error dialog request.

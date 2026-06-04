@@ -6,8 +6,9 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
+from view_models.executor_view_model import ExecutorViewModel, StepItem
 
-from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -111,10 +112,15 @@ class TestMissingActionMethods:
         vm.open_export_folder()
         cb.assert_called_once()
 
-    def test_no_callbacks_no_error(self, vm: ExecutorViewModel) -> None:
-        vm.scenario_changed("x")
-        vm.refresh_scenarios()
-        vm.edit_scenario("x")
-        vm.profile_selected("x")
-        vm.rename_profile("x")
-        vm.open_export_folder()
+    def test_unbound_primary_actions_raise(self, vm: ExecutorViewModel) -> None:
+        """Primary View-triggered actions raise when no handler is bound."""
+        for call in [
+            lambda: vm.scenario_changed("x"),
+            lambda: vm.refresh_scenarios(),
+            lambda: vm.edit_scenario("x"),
+            lambda: vm.profile_selected("x"),
+            lambda: vm.rename_profile("x"),
+            lambda: vm.open_export_folder(),
+        ]:
+            with pytest.raises(CallbackNotDefinedError):
+                call()

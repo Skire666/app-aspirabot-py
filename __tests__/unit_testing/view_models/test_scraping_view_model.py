@@ -8,6 +8,8 @@ from unittest.mock import MagicMock
 import pytest
 from view_models.scraping_view_model import ScrapingViewModel
 
+from shared.exception_util import CallbackNotDefinedError
+
 
 @pytest.fixture()
 def vm(tk_root: tk.Tk) -> ScrapingViewModel:
@@ -104,25 +106,15 @@ class TestBindAndDispatch:
         vm.bind_cancel(cb)
         assert vm._on_cancel is cb
 
-    def test_cancel_confirmed_dispatches(self, vm: ScrapingViewModel) -> None:
+    def test_cancel_dispatches_when_bound(self, vm: ScrapingViewModel) -> None:
+        """cancel() is a pure dispatch — confirmation is the View's responsibility."""
         cb = MagicMock()
         vm.bind_cancel(cb)
-        from unittest.mock import patch
-        with patch("tkinter.messagebox.askyesno", return_value=True):
-            vm.cancel()
+        vm.cancel()
         cb.assert_called_once()
 
-    def test_cancel_denied_does_not_dispatch(self, vm: ScrapingViewModel) -> None:
-        cb = MagicMock()
-        vm.bind_cancel(cb)
-        from unittest.mock import patch
-        with patch("tkinter.messagebox.askyesno", return_value=False):
-            vm.cancel()
-        cb.assert_not_called()
-
-    def test_cancel_no_callback_no_error(self, vm: ScrapingViewModel) -> None:
-        from unittest.mock import patch
-        with patch("tkinter.messagebox.askyesno", return_value=True):
+    def test_cancel_raises_when_unbound(self, vm: ScrapingViewModel) -> None:
+        with pytest.raises(CallbackNotDefinedError):
             vm.cancel()
 
 
@@ -135,9 +127,10 @@ class TestAfter:
 
 
 class TestReentrancyGuard:
-    def test_guard_blocks_nested_update_when_set_before_trace(self, vm: ScrapingViewModel) -> None:
+    def test_viewmodelbase_gate_blocks_nested_recompute(self, vm: ScrapingViewModel) -> None:
+        """ViewModelBase._in_recompute guards against re-entrant recomputation."""
         assert vm.is_launch_btn_enabled_var.get() is False  # initial state
-        vm._updating_derived = True  # arm guard before trace fires
-        vm.has_context_var.set(True)  # triggers trace, but guard returns early
-        assert vm.is_launch_btn_enabled_var.get() is False  # unchanged — guard worked
-        vm._updating_derived = False
+        vm._in_recompute = True  # arm ViewModelBase gate before trace fires
+        vm.has_context_var.set(True)  # triggers trace, but _guarded_recompute returns early
+        assert vm.is_launch_btn_enabled_var.get() is False  # unchanged — gate worked
+        vm._in_recompute = False

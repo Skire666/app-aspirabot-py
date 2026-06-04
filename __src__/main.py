@@ -551,7 +551,7 @@ def _wire_profiles_launch(
 
 
 def _register_and_anchor(root: tk.Tk, main_view: MainView, views: list[tk.Widget], presenters: list[object]) -> None:
-    """Unpack the ordered view list, register all views, and anchor presenters.
+    """Unpack the ordered view list, register all views, anchor presenters, and wire teardown.
 
     Args:
         root: Root window used as GC anchor for all presenters.
@@ -563,6 +563,28 @@ def _register_and_anchor(root: tk.Tk, main_view: MainView, views: list[tk.Widget
     faq_v = FaqView(main_view.content_area)
     _register_views(main_view, log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, faq_v, dbg_v)  # type: ignore[arg-type]
     _anchor_presenters(root, presenters)
+    # Register teardown sequence on application close.
+    _wire_teardown(root, [log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, dbg_v])
+
+
+def _wire_teardown(root: tk.Tk, teardown_views: list[tk.Widget]) -> None:
+    """Register WM_DELETE_WINDOW to call teardown() on each View before destroying root.
+
+    Teardown order: each View removes its VM traces and disposes its ViewModel,
+    then root is destroyed.
+
+    Args:
+        root: The root Tk window.
+        teardown_views: Views that implement ``teardown()``; called in list order.
+    """
+
+    def _on_close() -> None:
+        for view in teardown_views:
+            if hasattr(view, "teardown"):
+                view.teardown()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", _on_close)
 
 
 def _register_views(  # noqa: PLR0913, PLR0917

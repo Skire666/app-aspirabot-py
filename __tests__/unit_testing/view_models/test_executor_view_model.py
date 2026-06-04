@@ -6,8 +6,9 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
-
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem
+
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -92,10 +93,17 @@ class TestBindAndDispatch:
         vm.form_changed()
         cb.assert_called_once()
 
-    def test_no_callbacks_no_error(self, vm: ExecutorViewModel) -> None:
-        vm.launch()
-        vm.new_profile("N")
-        vm.save_profile()
-        vm.delete_profile()
+    def test_unbound_primary_actions_raise(self, vm: ExecutorViewModel) -> None:
+        """Primary View-triggered actions raise when no handler is bound."""
+        for call in [
+            lambda: vm.launch(),
+            lambda: vm.new_profile("N"),
+            lambda: vm.save_profile(),
+            lambda: vm.delete_profile(),
+            lambda: vm.form_changed(),
+        ]:
+            with pytest.raises(CallbackNotDefinedError):
+                call()
+
+    def test_show_error_does_not_raise_when_unbound(self, vm: ExecutorViewModel) -> None:
         vm.show_error("t", "m")
-        vm.form_changed()

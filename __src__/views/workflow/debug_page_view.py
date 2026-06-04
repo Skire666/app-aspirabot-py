@@ -47,6 +47,7 @@ class DebugPageView(tk.Toplevel):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
 
         short = vm.url[:_URL_TITLE_MAX_LEN] if len(vm.url) > _URL_TITLE_MAX_LEN else vm.url
         self.title(f"Debug — {short}")
@@ -203,11 +204,20 @@ class DebugPageView(tk.Toplevel):
     # -----------------------------------------------------------------------
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add listeners on all ViewModel Vars."""
-        self._vm.html_content_var.trace_add("write", self._sync_html_content)
-        self._vm.text_results_var.trace_add("write", self._sync_text_results)
-        self._vm.image_results_var.trace_add("write", self._sync_image_results)
-        self._vm.is_alive_var.trace_add("write", self._sync_alive)
+        """Register trace listeners on all ViewModel Vars; ids stored for teardown."""
+        for var, cb in [
+            (self._vm.html_content_var, self._sync_html_content),
+            (self._vm.text_results_var, self._sync_text_results),
+            (self._vm.image_results_var, self._sync_image_results),
+            (self._vm.is_alive_var, self._sync_alive),
+        ]:
+            self._view_traces.append((var, var.trace_add("write", cb)))
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces (ViewModel is owned by DebugView, not disposed here)."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
 
     def _sync_html_content(self, *_: object) -> None:
         """Re-render the HTML tab from html_content_var."""

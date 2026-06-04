@@ -7,8 +7,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
 from view_models.scenarios_view_model import ScenariosViewModel
+
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -113,14 +114,21 @@ class TestBindAndDispatch:
         vm.show_warning("warn")
         cb.assert_called_once_with("warn")
 
-    def test_no_callbacks_no_error(self, vm: ScenariosViewModel) -> None:
-        vm.create()
-        vm.open_folder()
-        vm.refresh()
-        vm.sort("x", False)
-        vm.edit("x")
-        vm.duplicate("x")
-        vm.launch("x")
-        vm.delete("x")
+    def test_unbound_primary_actions_raise(self, vm: ScenariosViewModel) -> None:
+        for call in [
+            lambda: vm.create(),
+            lambda: vm.open_folder(),
+            lambda: vm.refresh(),
+            lambda: vm.sort("x", False),
+            lambda: vm.edit("x"),
+            lambda: vm.duplicate("x"),
+            lambda: vm.launch("x"),
+            lambda: vm.delete("x"),
+            lambda: vm.validate(),
+        ]:
+            with pytest.raises(CallbackNotDefinedError):
+                call()
+
+    def test_optional_dialog_helpers_do_not_raise_when_unbound(self, vm: ScenariosViewModel) -> None:
         vm.show_error("x")
         vm.show_warning("x")

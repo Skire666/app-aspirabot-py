@@ -6,8 +6,9 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
+from view_models.workflow_view_model import WorkflowFormViewState, WorkflowViewModel
 
-from view_models.workflow_view_model import WorkflowViewModel
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -31,12 +32,7 @@ class TestInit:
 
 class TestLoadForm:
     def test_populates_vars(self, vm: WorkflowViewModel) -> None:
-        vm.load_form({
-            "id_file": "id42",
-            "scenario_name": "My Scenario",
-            "scenario_desc": "A desc",
-            "version": "1.2.0",
-        })
+        vm.load_form(id_file="id42", scenario_name="My Scenario", scenario_desc="A desc", version="1.2.0")
         assert vm.name_var.get() == "My Scenario"
         assert vm.desc_var.get() == "A desc"
         assert vm.version_var.get() == "1.2.0"
@@ -44,15 +40,15 @@ class TestLoadForm:
 
     def test_clears_dirty_flag(self, vm: WorkflowViewModel) -> None:
         vm.is_dirty_var.set(True)
-        vm.load_form({"id_file": "", "scenario_name": "", "scenario_desc": "", "version": ""})
+        vm.load_form(id_file="", scenario_name="", scenario_desc="", version="")
         assert vm.is_dirty_var.get() is False
 
     def test_is_loading_restored_to_false(self, vm: WorkflowViewModel) -> None:
-        vm.load_form({})
+        vm.load_form(id_file="", scenario_name="", scenario_desc="", version="")
         assert vm.is_loading_var.get() is False
 
-    def test_missing_keys_use_empty_string(self, vm: WorkflowViewModel) -> None:
-        vm.load_form({})
+    def test_empty_values_populate_empty_strings(self, vm: WorkflowViewModel) -> None:
+        vm.load_form(id_file="", scenario_name="", scenario_desc="", version="")
         assert vm.name_var.get() == ""
 
 
@@ -74,17 +70,18 @@ class TestClearForm:
         assert vm.is_loading_var.get() is False
 
 
-class TestGetFormData:
+class TestSnapshot:
     def test_reads_current_vars(self, vm: WorkflowViewModel) -> None:
         vm.name_var.set("N")
         vm.desc_var.set("D")
         vm.version_var.set("1.0.0")
         vm.id_file_var.set("abc")
-        data = vm.get_form_data()
-        assert data["scenario_name"] == "N"
-        assert data["scenario_desc"] == "D"
-        assert data["version"] == "1.0.0"
-        assert data["id_file"] == "abc"
+        state = vm.snapshot()
+        assert isinstance(state, WorkflowFormViewState)
+        assert state.scenario_name == "N"
+        assert state.scenario_desc == "D"
+        assert state.version == "1.0.0"
+        assert state.id_file == "abc"
 
 
 class TestBindAndDispatch:
@@ -125,9 +122,15 @@ class TestBindAndDispatch:
         vm.show_inline_form("step_obj")
         cb.assert_called_once_with("step_obj")
 
-    def test_no_callbacks_no_error(self, vm: WorkflowViewModel) -> None:
-        vm.save()
-        vm.cancel()
+    def test_unbound_primary_actions_raise(self, vm: WorkflowViewModel) -> None:
+        """save() and cancel() raise when unbound; helpers silently no-op."""
+        with pytest.raises(CallbackNotDefinedError):
+            vm.save()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.cancel()
+
+    def test_optional_helpers_do_not_raise_when_unbound(self, vm: WorkflowViewModel) -> None:
+        """show_error, show_warning, show_inline_form are lenient — no raise."""
         vm.show_error("x")
         vm.show_warning("y")
         vm.show_inline_form(None)

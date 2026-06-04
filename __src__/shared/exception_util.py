@@ -17,6 +17,18 @@ class AspirabotBaseError(Exception):
     """Base validation error."""
 
 
+class CallbackNotDefinedError(AspirabotBaseError):
+    """Raised when a required callback function is not defined."""
+
+    def __init__(self) -> None:
+        """Initialize the error message.
+
+        Args:
+            callback_name: The name of the missing callback function.
+        """
+        super().__init__("Le rappel requis n'est pas défini.")
+
+
 class ValueMustBePositiveError(AspirabotBaseError):
     """Raised when a value is not greater than zero."""
 

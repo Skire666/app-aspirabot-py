@@ -32,6 +32,7 @@ class LogView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
         self._create_widgets()
         self._bind_vm_vars()
         # Register View as error-dialog provider.
@@ -91,8 +92,10 @@ class LogView(ttk.Frame):
         self.tree.tag_configure("DEBUG", foreground="gray")
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add on logs_version_var to re-render on data change."""
-        self._vm.logs_version_var.trace_add("write", self._sync_logs)
+        """Register trace listeners on ViewModel Vars; ids stored for teardown."""
+        self._view_traces.append(
+            (self._vm.logs_version_var, self._vm.logs_version_var.trace_add("write", self._sync_logs))
+        )
 
     def _sync_logs(self, *_: object) -> None:
         """Re-render the Treeview from the ViewModel log list."""
@@ -108,6 +111,13 @@ class LogView(ttk.Frame):
             self.tree.selection_set(last_item_id)
             self.tree.focus(last_item_id)
             self.tree.see(last_item_id)
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
 
     @staticmethod
     def _show_error(title: str, message: str) -> None:

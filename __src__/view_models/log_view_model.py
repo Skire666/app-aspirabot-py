@@ -7,12 +7,16 @@
 import tkinter as tk
 from collections.abc import Callable
 
+from shared.exception_util import CallbackNotDefinedError
+
+from view_models.view_model_base import ViewModelBase
+
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
 
-class LogViewModel:
+class LogViewModel(ViewModelBase):
     """UI state and action hooks for the log display panel.
 
     Filter state is held as ``tk.BooleanVar`` instances so the View can bind
@@ -26,6 +30,8 @@ class LogViewModel:
         Args:
             master: Tkinter parent used to scope all Var lifetimes.
         """
+        super().__init__(master)
+
         # Filter Vars — bound to filter checkboxes in the View
         self.filter_critical_var = tk.BooleanVar(master=master, value=True)
         self.filter_error_var = tk.BooleanVar(master=master, value=True)
@@ -37,7 +43,7 @@ class LogViewModel:
         self._logs: list[tuple[str, str, str, str]] = []
         self.logs_version_var = tk.IntVar(master=master, value=0)
 
-        # Registered Presenter callbacks
+        # Presenter callback slots
         self._on_filter_changed: Callable[[], None] | None = None
         self._on_open_logs_folder: Callable[[], None] | None = None
         self._on_show_error: Callable[[str, str], None] | None = None
@@ -91,7 +97,12 @@ class LogViewModel:
 
         Args:
             cb: Zero-argument callable.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_filter_changed is not None:
+            raise CallbackNotDefinedError()
         self._on_filter_changed = cb
 
     def bind_open_logs_folder(self, cb: Callable[[], None]) -> None:
@@ -99,7 +110,12 @@ class LogViewModel:
 
         Args:
             cb: Zero-argument callable.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_open_logs_folder is not None:
+            raise CallbackNotDefinedError()
         self._on_open_logs_folder = cb
 
     def bind_show_error(self, cb: Callable[[str, str], None]) -> None:
@@ -107,7 +123,12 @@ class LogViewModel:
 
         Args:
             cb: Called with (title, message).
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_show_error is not None:
+            raise CallbackNotDefinedError()
         self._on_show_error = cb
 
     # ------------------------------------------------------------------
@@ -115,14 +136,24 @@ class LogViewModel:
     # ------------------------------------------------------------------
 
     def filter_changed(self) -> None:
-        """Dispatch a filter-change notification to the Presenter."""
-        if self._on_filter_changed is not None:
-            self._on_filter_changed()
+        """Dispatch a filter-change notification to the Presenter.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_filter_changed is None:
+            raise CallbackNotDefinedError()
+        self._on_filter_changed()
 
     def open_logs_folder(self) -> None:
-        """Dispatch an open-logs-folder request to the Presenter."""
-        if self._on_open_logs_folder is not None:
-            self._on_open_logs_folder()
+        """Dispatch an open-logs-folder request to the Presenter.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_open_logs_folder is None:
+            raise CallbackNotDefinedError()
+        self._on_open_logs_folder()
 
     def show_error(self, title: str, message: str) -> None:
         """Dispatch a show-error request to the registered dialog handler.

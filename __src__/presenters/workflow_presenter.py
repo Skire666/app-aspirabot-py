@@ -11,7 +11,6 @@ the ViewModel, ScenariosService, ProfilesService, and WorkflowService.
 
 import logging
 from collections.abc import Callable
-from typing import Any
 
 from models.scenario_model import ScenarioModel
 from presenters.steps_list_presenter import StepsListPresenter
@@ -82,7 +81,12 @@ class WorkflowPresenter:
 
         # Initialize an empty workflow for the new scenario.
         self._workflow_presenter.init_new(self._current_scenario.id_file)
-        self._vm.load_form(self._scenario_to_dict(self._current_scenario))
+        self._vm.load_form(
+            id_file=self._current_scenario.id_file,
+            scenario_name=self._current_scenario.scenario_name,
+            scenario_desc=self._current_scenario.scenario_desc,
+            version=self._current_scenario.version,
+        )
         self._vm.show_inline_form(None)
 
     def load_scenario(self, id_file: str) -> bool:
@@ -103,31 +107,17 @@ class WorkflowPresenter:
 
         # Load existing workflow steps from the repository.
         self._workflow_presenter.load(self._current_scenario.id_file)
-        self._vm.load_form(self._scenario_to_dict(self._current_scenario))
+        self._vm.load_form(
+            id_file=self._current_scenario.id_file,
+            scenario_name=self._current_scenario.scenario_name,
+            scenario_desc=self._current_scenario.scenario_desc,
+            version=self._current_scenario.version,
+        )
         self._vm.show_inline_form(None)
         return True
 
-    @staticmethod
-    def _scenario_to_dict(scenario: ScenarioModel) -> dict[str, Any]:
-        """Converts scenario model fields to a form-data dictionary.
-
-        Args:
-            scenario: Source scenario model.
-
-        Returns:
-            Dict with all form-relevant fields.
-        """
-        return {
-            "id_file": scenario.id_file,
-            "scenario_name": scenario.scenario_name,
-            "scenario_desc": scenario.scenario_desc,
-            "version": scenario.version,
-            "created_date_scenario": scenario.created_date_scenario,
-            "modified_date_scenario": scenario.modified_date_scenario,
-        }
-
     def _on_save(self) -> None:
-        """Validate and persist the current scenario (reads form data from ViewModel Vars)."""
+        """Validate and persist the current scenario (reads form data via snapshot)."""
         try:
             if not self._current_scenario:
                 return
@@ -138,11 +128,11 @@ class WorkflowPresenter:
                 self._vm.show_error(errors[0])
                 return
 
-            # Merge ViewModel Vars into the scenario model.
-            form_data = self._vm.get_form_data()
-            self._current_scenario.scenario_name = form_data["scenario_name"]
-            self._current_scenario.scenario_desc = form_data["scenario_desc"]
-            self._current_scenario.version = form_data["version"]
+            # Merge ViewModel snapshot into the scenario model.
+            state = self._vm.snapshot()
+            self._current_scenario.scenario_name = state.scenario_name
+            self._current_scenario.scenario_desc = state.scenario_desc
+            self._current_scenario.version = state.version
 
             # Collect steps from the sub-presenter.
             self._current_scenario.steps = self._workflow_presenter.get_steps()

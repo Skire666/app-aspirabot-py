@@ -9,12 +9,16 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from shared.exception_util import CallbackNotDefinedError
+
+from view_models.view_model_base import ViewModelBase
+
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
 
-class ScenariosViewModel:
+class ScenariosViewModel(ViewModelBase):
     """UI state and action hooks for the scenario list panel.
 
     The scenario list is stored as a plain Python list paired with a version
@@ -28,6 +32,8 @@ class ScenariosViewModel:
         Args:
             master: Tkinter parent used to scope all Var lifetimes.
         """
+        super().__init__(master)
+
         # Scenario list data
         self._scenarios: list[dict[str, Any]] = []
         self._folder_path: Path = Path()
@@ -37,7 +43,7 @@ class ScenariosViewModel:
         self.is_validation_running_var = tk.BooleanVar(master=master, value=False)
         self.validation_status_text_var = tk.StringVar(master=master, value="")
 
-        # Registered Presenter callbacks
+        # Presenter callback slots
         self._on_create: Callable[[], None] | None = None
         self._on_open_folder: Callable[[], None] | None = None
         self._on_refresh: Callable[[], None] | None = None
@@ -86,47 +92,113 @@ class ScenariosViewModel:
     # ------------------------------------------------------------------
 
     def bind_create(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Créer un scénario."""
+        """Register the handler invoked when the user clicks Créer un scénario.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_create is not None:
+            raise CallbackNotDefinedError()
         self._on_create = cb
 
     def bind_open_folder(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks the folder link."""
+        """Register the handler invoked when the user clicks the folder link.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_open_folder is not None:
+            raise CallbackNotDefinedError()
         self._on_open_folder = cb
 
     def bind_refresh(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Actualiser."""
+        """Register the handler invoked when the user clicks Actualiser.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_refresh is not None:
+            raise CallbackNotDefinedError()
         self._on_refresh = cb
 
     def bind_sort(self, cb: Callable[[str, bool], None]) -> None:
-        """Register the handler invoked when the user clicks a column header."""
+        """Register the handler invoked when the user clicks a column header.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_sort is not None:
+            raise CallbackNotDefinedError()
         self._on_sort = cb
 
     def bind_edit(self, cb: Callable[[str], None]) -> None:
-        """Register the handler invoked when the user clicks Modif."""
+        """Register the handler invoked when the user clicks Modif.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_edit is not None:
+            raise CallbackNotDefinedError()
         self._on_edit = cb
 
     def bind_duplicate(self, cb: Callable[[str], None]) -> None:
-        """Register the handler invoked when the user clicks Dupp."""
+        """Register the handler invoked when the user clicks Dupp.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_duplicate is not None:
+            raise CallbackNotDefinedError()
         self._on_duplicate = cb
 
     def bind_launch(self, cb: Callable[[str], None]) -> None:
-        """Register the handler invoked when the user clicks Lancer."""
+        """Register the handler invoked when the user clicks Lancer.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_launch is not None:
+            raise CallbackNotDefinedError()
         self._on_launch = cb
 
     def bind_delete(self, cb: Callable[[str], None]) -> None:
-        """Register the handler invoked when the user clicks Supp."""
+        """Register the handler invoked when the user clicks Supp.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_delete is not None:
+            raise CallbackNotDefinedError()
         self._on_delete = cb
 
     def bind_validate(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Valider les scénarios."""
+        """Register the handler invoked when the user clicks Valider les scénarios.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_validate is not None:
+            raise CallbackNotDefinedError()
         self._on_validate = cb
 
     def bind_show_warning(self, cb: Callable[[str], None]) -> None:
-        """Register the handler that displays a modal warning dialog."""
+        """Register the handler that displays a modal warning dialog.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_show_warning is not None:
+            raise CallbackNotDefinedError()
         self._on_show_warning = cb
 
     def bind_show_error(self, cb: Callable[[str], None]) -> None:
-        """Register the handler that displays a modal error dialog."""
+        """Register the handler that displays a modal error dialog.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_show_error is not None:
+            raise CallbackNotDefinedError()
         self._on_show_error = cb
 
     # ------------------------------------------------------------------
@@ -134,19 +206,34 @@ class ScenariosViewModel:
     # ------------------------------------------------------------------
 
     def create(self) -> None:
-        """Dispatch a create-scenario request."""
-        if self._on_create is not None:
-            self._on_create()
+        """Dispatch a create-scenario request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_create is None:
+            raise CallbackNotDefinedError()
+        self._on_create()
 
     def open_folder(self) -> None:
-        """Dispatch an open-folder request."""
-        if self._on_open_folder is not None:
-            self._on_open_folder()
+        """Dispatch an open-folder request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_open_folder is None:
+            raise CallbackNotDefinedError()
+        self._on_open_folder()
 
     def refresh(self) -> None:
-        """Dispatch a refresh request."""
-        if self._on_refresh is not None:
-            self._on_refresh()
+        """Dispatch a refresh request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_refresh is None:
+            raise CallbackNotDefinedError()
+        self._on_refresh()
 
     def sort(self, column: str, ascending: bool) -> None:
         """Dispatch a sort request.
@@ -154,50 +241,75 @@ class ScenariosViewModel:
         Args:
             column: Column identifier to sort by.
             ascending: True for ascending order.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_sort is not None:
-            self._on_sort(column, ascending)
+        if self._on_sort is None:
+            raise CallbackNotDefinedError()
+        self._on_sort(column, ascending)
 
     def edit(self, id_file: str) -> None:
         """Dispatch an edit request for the given scenario.
 
         Args:
             id_file: File ID of the scenario to edit.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_edit is not None:
-            self._on_edit(id_file)
+        if self._on_edit is None:
+            raise CallbackNotDefinedError()
+        self._on_edit(id_file)
 
     def duplicate(self, id_file: str) -> None:
         """Dispatch a duplicate request.
 
         Args:
             id_file: File ID of the scenario to duplicate.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_duplicate is not None:
-            self._on_duplicate(id_file)
+        if self._on_duplicate is None:
+            raise CallbackNotDefinedError()
+        self._on_duplicate(id_file)
 
     def launch(self, id_file: str) -> None:
         """Dispatch a launch request.
 
         Args:
             id_file: File ID of the scenario to launch.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_launch is not None:
-            self._on_launch(id_file)
+        if self._on_launch is None:
+            raise CallbackNotDefinedError()
+        self._on_launch(id_file)
 
     def delete(self, id_file: str) -> None:
         """Dispatch a delete request.
 
         Args:
             id_file: File ID of the scenario to delete.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_delete is not None:
-            self._on_delete(id_file)
+        if self._on_delete is None:
+            raise CallbackNotDefinedError()
+        self._on_delete(id_file)
 
     def validate(self) -> None:
-        """Dispatch a batch-validation request."""
-        if self._on_validate is not None:
-            self._on_validate()
+        """Dispatch a batch-validation request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_validate is None:
+            raise CallbackNotDefinedError()
+        self._on_validate()
 
     def show_warning(self, message: str) -> None:
         """Dispatch a warning dialog request.

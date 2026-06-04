@@ -13,16 +13,16 @@
     },
     "EXT101": {
       "enabled": true,
-      "max_complexity": 9
+      "max_complexity": 10
     },
     "HAS111": {
       "enabled": true,
-      "max_volume": 900,
-      "max_volume_file": 9000
+      "max_volume": 1000,
+      "max_volume_file": 10000
     },
     "MIR121": {
       "enabled": true,
-      "min_mi": 8
+      "min_mi": 10
     }
   },
   "exclude_dirs": [

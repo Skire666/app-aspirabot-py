@@ -1,6 +1,7 @@
-# Mission : générer des tests de non-régression (TNR)
+# Mission : générer des tests de non-régression (regression_testing)
 
 Tu es un agent chargé d'écrire des **tests de non-régression** (regression_testing) pour un projet Python existant. Ces tests viennent **en complément** des tests unitaires (unit_testing) déjà présents : ils ne les remplacent pas et ne les dupliquent pas.
+Un `regression_testing` vérifie qu'une modification du code (ajout de fonctionnalité, correction de bug, refactoring…) n'a pas « cassé » ce qui marchait déjà avant. L'idée centrale est la régression : une évolution qui réintroduit un dysfonctionnement sur du code existant.
 
 ## Contexte du projet
 
@@ -20,15 +21,15 @@ pytest __tests__/regression_testing/ --cov=__src__ --cov-report=term-missing
 
 Avant d'écrire quoi que ce soit, garde cette distinction en tête, car elle conditionne tout le travail :
 
-- **Test unitaire (unit_testing)** : Sont existants. vérifie qu'une fonction/classe fait *ce qu'elle est censée faire*, en isolation, selon la spécification.
+- **Test unitaire (unit_testing)** : Sont existants. Sert à vérifir qu'une fonction/classe fait *ce qu'elle est censée faire*, en isolation, selon la spécification.
 - **Test de non-régression (regression_testing)** : Ta mission. **fige le comportement actuellement observé du système** pour qu'une évolution future ne le modifie pas sans qu'on s'en aperçoive. Ce sont souvent des tests de *caractérisation* (golden master) et d'*intégration* couvrant :
   - les **flux complets** / workflows réels (enchaînement de plusieurs unités), pas une fonction isolée ;
   - les **cas limites et valeurs de bord** déjà gérés par le code ;
-  - les **bugs déjà corrigés** (un TNR par bug pour qu'il ne réapparaisse pas) ;
+  - les **bugs déjà corrigés** (un `regression_testing` par bug pour qu'il ne réapparaisse pas) ;
   - les **points d'intégration** entre modules ;
   - les **contrats publics** (signatures, formats de retour, structure des données produites).
 
-Règle d'or : un TNR capture le comportement **tel qu'il est aujourd'hui**, pas tel qu'il devrait être idéalement. Si tu découvres ce qui ressemble à un bug, **ne le « corrige » pas en faisant passer le test sur le comportement attendu** : documente-le (voir « Garde-fous »).
+Règle d'or : un `regression_testing` capture le comportement **tel qu'il est aujourd'hui**, pas tel qu'il devrait être idéalement. Si tu découvres ce qui ressemble à un bug, **ne le « corrige » pas en faisant passer le test sur le comportement attendu** : documente-le (voir « Garde-fous »).
 
 ## Méthodologie (boucle à suivre)
 
@@ -42,7 +43,7 @@ Règle d'or : un TNR capture le comportement **tel qu'il est aujourd'hui**, pas 
 
 ## Spécificités tkinter (important)
 
-Les TNR sur une GUI sont piégeux. Applique ces principes :
+Les `regression_testing` sur une GUI sont piégeux. Applique ces principes :
 
 - **Sépare la logique de l'affichage.** Teste en priorité la logique métier, la validation, la gestion d'état et les *callbacks* — pas le rendu pixel.
 - **Aucun test ne doit exiger un affichage.** Comme il n'y a ni CI ni Xvfb, tout test qui nécessiterait un vrai display est interdit : trouve une stratégie de mock, ou signale dans le rapport final que le comportement n'est pas testable sans affichage.
@@ -58,7 +59,7 @@ Les TNR sur une GUI sont piégeux. Applique ces principes :
 - **Structure** : pattern **AAA** (Arrange / Act / Assert), un comportement vérifié par test.
 - **Factorisation** : utilise les *fixtures* pytest pour le setup/teardown (notamment le cycle de vie du root tkinter) et `@pytest.mark.parametrize` pour les jeux de valeurs.
 - **Isolation** : chaque test est indépendant, sans état partagé ni dépendance à l'ordre d'exécution.
-- **Imports** : les modules de `__src__` sont importables directement (grâce à `pythonpath`), ne préfixe pas par `__src__.`.
+- **Imports** : les modules de `__src__` sont importables directement (grâce à `pythonpath`), ne préfixe pas par `__src__`.
 - **Couverture minimale : 70 %.** Les **tests de non-régression** doivent maintenir une couverture d'au moins **70 %** sur `__src__`. Vérifie-le avec `--cov-fail-under=70` ; si le seuil n'est pas atteint, identifie les zones non couvertes (`term-missing`) et complète tes tests.
 - **Lisibilité** : chaque assertion non triviale est accompagnée d'un message expliquant le comportement figé.
 
@@ -67,7 +68,7 @@ Les TNR sur une GUI sont piégeux. Applique ces principes :
 - **Ne modifie jamais le code de `__src__`.** Ta mission est de capturer le comportement existant, pas de le changer.
 - **Ne touche pas aux tests unitaires existants.** - Les tests dans `__tests__/unit_testing/` sont la norme et les tests de non-régression dans 'regression_testing' sont leurs suites logiques.
 
-- **Si un comportement semble être un bug** : écris quand même le TNR qui fige le comportement *actuel*, marque-le clairement (commentaire `# COMPORTEMENT SUSPECT À CONFIRMER` et/ou `@pytest.mark.xfail(reason=...)` selon le cas), et remonte-le dans ton rapport final. Tu ne décides pas seul de ce qui est correct.
+- **Si un comportement semble être un bug** : écris quand même les `regression_testing` qui fige le comportement *actuel*, marque-le clairement (commentaire `# COMPORTEMENT SUSPECT À CONFIRMER` et/ou `@pytest.mark.xfail(reason=...)` selon le cas), et remonte-le dans ton rapport final. Tu ne décides pas seul de ce qui est correct.
 - **Tests rapides et déterministes** : pas d'appels réseau, pas de fichiers temporaires non nettoyés, pas de dépendance horloge/aléatoire.
 
 ## Livrable attendu

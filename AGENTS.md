@@ -90,6 +90,8 @@ Every Python file in an MVP layer is suffixed with its layer name. This makes la
 
 The class inside a file is always the PascalCase counterpart of the file name (e.g. `provider_model.py` → `ProviderModel`, `scenario_edit_view_model.py` → `ScenarioEditViewModel`).
 
+> The shared ViewModel infrastructure base lives in `view_models/view_model_base.py` → `ViewModelBase`. It is the one file in `view_models/` not suffixed `_view_model.py`, because it is infrastructure, not a concrete per-view ViewModel.
+
 ---
 
 ## Service vs Presenter — Decision Rule
@@ -127,112 +129,451 @@ def on_submit(self) -> None:
 
 ---
 
-## ViewModel — UI State Container
+## ViewModel — Presentation State Container
 
-The `ViewModel` is the **only** owner of UI state. It is built around Tkinter's variable classes
-(`tk.StringVar`, `tk.BooleanVar`, `tk.IntVar`) and exposes:
+The `ViewModel` (VM) is the **single, typed, observable contract** between a `View` and its
+`Presenter`. It is the only owner of UI state. Conceptually it is a *presentation-state DTO that
+happens to be observable*: it holds the data the screen needs (as Tkinter Vars), recomputes its own
+derived state, dispatches user actions to the Presenter, and exposes a frozen snapshot for reading.
 
-1. **Source Vars** — bound to user inputs via `textvariable=` / `variable=`.
-2. **Derived Vars** — recomputed via `trace_add("write", ...)` on source Vars.
-3. **Action methods** — `submit()`, `cancel()`, etc., which invoke handlers registered by the Presenter.
-4. **Binding hooks** — `bind_submit(callback)`, `bind_cancel(callback)`, … called once by the Presenter at composition time.
+A correct VM is **pure UI plumbing**: no business rule, no service, no widget, no domain Model.
+If a VM method contains a domain decision, the decision is misplaced (→ Service). If it touches a
+widget, the binding is misplaced (→ View).
 
 ### Location and naming
 
 - Folder: `__src__/view_models/`
 - File: `<module>_view_model.py` (e.g. `scenario_edit_view_model.py`)
 - Class: `<Module>ViewModel` in PascalCase (e.g. `ScenarioEditViewModel`)
+- Base class: `view_models/view_model_base.py` → `ViewModelBase` (shared infrastructure)
 
-### Definition rules
+| Element | Convention | Example |
+|---|---|---|
+| Any `tk.*Var` | suffix `_var` | `url_var`, `is_busy_var`, `can_submit_var` |
+| Capability / boolean Var | `can_<x>_var` / `is_<x>_var` | `can_submit_var`, `is_dirty_var` |
+| Action method (called by View) | imperative verb | `submit()`, `cancel()`, `open_selected()` |
+| Presenter binding hook | prefix `bind_` | `bind_submit(cb)`, `bind_rows_changed(cb)` |
+| Stored Presenter callback | prefix `_on_` | `self._on_submit` |
+| Read-only snapshot type | `<Module>ViewState` (frozen) | `ScenarioEditViewState` |
+| Collection row type | `<Thing>RowState` (frozen) | `ScenarioRowState` |
 
-- Every `tk.*Var` must be assigned to `self.` — never use a local-scoped Var (silent GC).
-- Derived state is computed **inside** the VM via `trace_add("write", ...)`; never in the View.
-- Action methods are short and only dispatch to a registered callback.
-- Guard the setters of derived Vars against binding loops (re-entrancy).
-- Debounce `trace_add` reactions that are expensive to recompute.
-- The VM never imports a Service, a Repository, a Model, or a View.
+---
 
-### Canonical pattern
+### Var taxonomy and ownership matrix
+
+Every piece of UI state falls into exactly one category. The **ownership matrix is the core
+invariant of the layer** — violating "who writes what" is what makes a VM untestable or loop-prone.
+
+| Var kind | Purpose | Declared by | **Written by** | Read by | Two-way |
+|---|---|---|---|---|---|
+| **Source** | User input | VM | View (widget) **and** Presenter (on load) | VM recompute, snapshot | yes |
+| **Derived** | Computed from sources | VM | **VM recompute ONLY** | View, Presenter (read-only) | no (VM→View) |
+| **Status / message** | Busy flag, error text | VM | **Presenter ONLY** | View | no (Presenter→View) |
+| **Selection** | Selected id / index | VM | View (widget) **and** Presenter | VM, Presenter | yes |
+| **Collection** (non-Var) | List/table rows | VM | Presenter (via `set_rows`) | View (render) | no |
+
+Hard consequences of the matrix:
+
+- The **View never writes a derived or status Var** — it only reads them (via `textvariable=`/trace).
+- The **Presenter never writes a derived Var** — derived state is recomputed by the VM, never pushed.
+- The **VM never writes a status Var** with business content — it may only reset it (e.g. clear on
+  `cancel()`); the meaningful value (error message, busy flag) is always set by the Presenter.
+
+---
+
+### Construction protocol (strict order)
+
+The order in `__init__` is not cosmetic — getting it wrong silently breaks bindings.
+
+1. Call `super().__init__(master)` first (stores `master`, prepares trace/debounce registries).
+2. Create **every** Var as `self.<name>_var = tk.…Var(master=master, value=…)`.
+   A Var stored in a local variable is garbage-collected after `__init__` and its binding dies.
+3. Initialise `self._on_*` callback slots to `None`.
+4. Register traces via `self._register_trace(src_var, self._guarded_recompute)` for every Var that
+   feeds derived state. Never call `var.trace_add` directly — the base must track the id for disposal.
+5. Run `self._guarded_recompute()` **once** to compute initial derived state.
+
+---
+
+### Derived state and the recompute gate
+
+Derived Vars (`can_submit_var`, `is_dirty_var`, …) are recomputed **inside the VM**, never in the
+View, and never set by the Presenter. All recomputation flows through a single guarded entry point
+provided by `ViewModelBase`, which solves three problems at once:
+
+- **Re-entrancy** — a recompute writes a derived Var, whose own (accidental) trace would re-enter.
+- **Suspension** — during a batched multi-Var load, recompute is skipped and run once at the end.
+- **Churn** — `_set_if_changed` writes a Var only when the value actually changes (fewer traces).
 
 ```python
-# view_models/scenario_edit_view_model.py
+# view_models/view_model_base.py
+from __future__ import annotations
+
 import tkinter as tk
-from typing import Callable
+from collections.abc import Callable
+from contextlib import contextmanager
+from typing import Iterator
 
-class ScenarioEditViewModel:
-    """UI state and action hooks for the scenario edit form.
+class ViewModelBase:
+    """Infrastructure shared by all ViewModels.
 
-    Source Vars are bound to widgets via textvariable=/variable=.
-    Derived Vars (e.g. can_submit) are recomputed automatically on every write
-    to the relevant source Vars and never touched by the View.
+    Provides tracked trace registration, a re-entrant/suspendable recompute gate,
+    change-guarded Var writes, debounced scheduling, and deterministic disposal.
+    Subclasses override ``_recompute_derived`` and never manage trace ids,
+    re-entrancy flags, or pending ``after`` calls themselves.
     """
 
     def __init__(self, master: tk.Misc) -> None:
-        # Source Vars — bound to widgets in the View
+        # Real Tk root/widget; Vars and after() scheduling are anchored to it.
+        self._master = master
+        # (var, trace_id) pairs registered through _register_trace, for disposal.
+        self._trace_ids: list[tuple[tk.Variable, str]] = []
+        # Pending debounced callbacks, keyed by a stable string.
+        self._after_ids: dict[str, str] = {}
+        # >0 while a batch_update is active: recompute is deferred.
+        self._suspend_depth = 0
+        # True while inside _recompute_derived: blocks re-entrant recompute.
+        self._in_recompute = False
+
+    # ----- Trace registration (always tracked for disposal) -----
+
+    def _register_trace(self, var: tk.Variable, callback: Callable[..., None]) -> None:
+        """Add a write-trace on *var* and remember its id for later removal."""
+        trace_id = var.trace_add("write", callback)
+        self._trace_ids.append((var, trace_id))
+
+    # ----- Guarded Var write -----
+
+    def _set_if_changed(self, var: tk.Variable, value: object) -> None:
+        """Write *value* into *var* only when it differs from the current value."""
+        if var.get() != value:
+            var.set(value)
+
+    # ----- Recompute gate -----
+
+    def _guarded_recompute(self, *_: object) -> None:
+        """Single entry point for derived-state recomputation.
+
+        No-op while a batch update is active or while already recomputing.
+        """
+        if self._suspend_depth > 0 or self._in_recompute:
+            return
+        self._in_recompute = True
+        try:
+            self._recompute_derived()
+        finally:
+            self._in_recompute = False
+
+    def _recompute_derived(self) -> None:
+        """Recompute all derived Vars. Overridden by subclasses; no-op by default."""
+
+    @contextmanager
+    def batch_update(self) -> Iterator[None]:
+        """Suspend recomputation for a block of Var writes; recompute once on exit.
+
+        Used by the Presenter when populating several source Vars at once (e.g. on
+        load) so derived state is computed a single time instead of once per write.
+        """
+        self._suspend_depth += 1
+        try:
+            yield
+        finally:
+            self._suspend_depth -= 1
+            if self._suspend_depth == 0:
+                self._guarded_recompute()
+
+    # ----- Debounced scheduling -----
+
+    def _schedule(self, key: str, delay_ms: int, callback: Callable[[], None]) -> None:
+        """Debounce *callback* under *key*: a new call cancels the pending one."""
+        pending = self._after_ids.get(key)
+        if pending is not None:
+            self._master.after_cancel(pending)
+        self._after_ids[key] = self._master.after(
+            delay_ms, lambda: self._run_scheduled(key, callback)
+        )
+
+    def _run_scheduled(self, key: str, callback: Callable[[], None]) -> None:
+        """Clear the pending id for *key* then run *callback*."""
+        self._after_ids.pop(key, None)
+        callback()
+
+    # ----- Disposal -----
+
+    def dispose(self) -> None:
+        """Remove every registered trace and cancel every pending after-call.
+
+        Must be called by whoever owns the VM lifecycle when the View is discarded
+        (app shutdown, dialog close, tab destroy). Idempotent.
+        """
+        for var, trace_id in self._trace_ids:
+            var.trace_remove("write", trace_id)
+        self._trace_ids.clear()
+        for after_id in self._after_ids.values():
+            self._master.after_cancel(after_id)
+        self._after_ids.clear()
+```
+
+Rules for derived state:
+
+- Derived recomputation lives **only** in `_recompute_derived`.
+- Write derived Vars exclusively through `_set_if_changed`.
+- Never set a derived Var from a trace callback without going through `_guarded_recompute`.
+- A recompute that is **expensive** (regex over a long field, cross-field validation) must be
+  debounced via `self._schedule("recompute_x", 150, self._recompute_derived)` rather than run on
+  every keystroke. Keep the actual computation in a directly-callable method so tests bypass the timer.
+
+---
+
+### Action methods and binding hooks
+
+User actions never call the Presenter directly. The View calls a **VM action method**
+(`vm.submit()`), which dispatches to a callback the Presenter registered once via `bind_submit`.
+This keeps the VM the single contract and keeps the View ignorant of the Presenter.
+
+Fail-fast invariants (a wiring bug must surface at startup, not silently no-op):
+
+- `bind_<x>` **raises** if the hook is already bound (double-wiring is a composition error).
+- An action method **raises** if its hook is unbound when triggered (the View should never be able
+  to fire an unwired action; by the composition order this cannot happen at runtime).
+- Action methods **only dispatch** — no `try/except`, no Var transformation, no service call.
+
+```python
+# Excerpt — hook + action pattern (messages in French, per project convention)
+def bind_submit(self, callback: Callable[[], None]) -> None:
+    """Register the Presenter handler for submit(); rejects double binding."""
+    if self._on_submit is not None:
+        raise AppError("Le hook 'submit' est déjà lié.")
+    self._on_submit = callback
+
+def submit(self) -> None:
+    """Dispatch the submit action to the registered Presenter callback."""
+    if self._on_submit is None:
+        raise AppError("Action 'submit' déclenchée sans handler lié.")
+    self._on_submit()
+```
+
+Parameterised actions take the argument and forward it to a typed hook
+(`Callable[[str], None]`), e.g. `select_row(row_id: str)` → `self._on_select(row_id)`.
+
+---
+
+### Snapshot — the read-side DTO
+
+Reading state Var-by-Var in the Presenter is noisy and easy to get out of sync. The VM exposes a
+**frozen snapshot dataclass** of its scalar state. This is the "ViewModel as DTO": *write* through
+Vars and actions, *read* through one typed, immutable object.
+
+- Use the snapshot whenever the Presenter reads **3 or more** Vars together (e.g. before a save).
+- The snapshot contains **primitives only** — it must not import or expose a domain Model.
+- The snapshot is **read-only**: it never sets anything back.
+
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True, slots=True)
+class ScenarioEditViewState:
+    """Immutable read-only view of the scenario-edit VM scalar state."""
+    name: str
+    url: str
+    is_active: bool
+    is_busy: bool
+    can_submit: bool
+    error_message: str
+```
+
+---
+
+### Collections and tables (no `ListVar` in Tkinter)
+
+Tkinter has no observable collection Var, so list/table state is the **one exception** to the
+"everything is a Var" rule. The pattern:
+
+1. The VM stores rows as a private list of frozen `<Thing>RowState` (primitives only).
+2. The VM exposes a read-only `rows` property and a `bind_rows_changed(callback)` hook.
+3. The Presenter maps domain Models → row states and calls `vm.set_rows(...)`, which replaces the
+   list and fires `rows_changed`.
+4. The View subscribes to `rows_changed` and rebuilds its `ttk.Treeview` from `vm.rows`.
+5. Selection is a normal Var (`selected_id_var`), two-way like any source Var.
+
+```python
+# view_models/scenario_list_view_model.py
+from __future__ import annotations
+
+import tkinter as tk
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from shared.exception_util import AppError
+from view_models.view_model_base import ViewModelBase
+
+@dataclass(frozen=True, slots=True)
+class ScenarioRowState:
+    """One Treeview row, already formatted for display (primitives only)."""
+    id_scenario: str
+    name: str
+    status_label: str
+
+class ScenarioListViewModel(ViewModelBase):
+    """UI state for the scenario list: rows, selection, and row actions."""
+
+    def __init__(self, master: tk.Misc) -> None:
+        super().__init__(master)
+        # Selection (two-way, like any source Var)
+        self.selected_id_var = tk.StringVar(master=master, value="")
+        # Derived: an action is available only when a row is selected
+        self.can_open_var = tk.BooleanVar(master=master, value=False)
+        # Collection state (non-Var) + change notification
+        self._rows: tuple[ScenarioRowState, ...] = ()
+        self._on_rows_changed: Callable[[], None] | None = None
+        self._on_open: Callable[[str], None] | None = None
+        # Wire derived state and compute it once
+        self._register_trace(self.selected_id_var, self._guarded_recompute)
+        self._guarded_recompute()
+
+    @property
+    def rows(self) -> tuple[ScenarioRowState, ...]:
+        """Read-only current rows, for the View to render."""
+        return self._rows
+
+    def set_rows(self, rows: list[ScenarioRowState]) -> None:
+        """Replace the row set (called by the Presenter) and notify the View."""
+        self._rows = tuple(rows)
+        if self._on_rows_changed is not None:
+            self._on_rows_changed()
+
+    def _recompute_derived(self) -> None:
+        """An action is available only when a row is selected."""
+        self._set_if_changed(self.can_open_var, bool(self.selected_id_var.get()))
+
+    def bind_rows_changed(self, callback: Callable[[], None]) -> None:
+        """Register the View re-render handler; rejects double binding."""
+        if self._on_rows_changed is not None:
+            raise AppError("Le hook 'rows_changed' est déjà lié.")
+        self._on_rows_changed = callback
+
+    def bind_open(self, callback: Callable[[str], None]) -> None:
+        """Register the Presenter handler for open_selected()."""
+        if self._on_open is not None:
+            raise AppError("Le hook 'open' est déjà lié.")
+        self._on_open = callback
+
+    def open_selected(self) -> None:
+        """Dispatch the open action for the currently selected row id."""
+        if self._on_open is None:
+            raise AppError("Action 'open' déclenchée sans handler lié.")
+        self._on_open(self.selected_id_var.get())
+```
+
+> `ScenarioRowState` is **already formatted** for display (`status_label`, not a raw enum). The
+> Model→row mapping and the formatting happen in the Presenter — the VM stores presentation-ready
+> primitives, never domain objects.
+
+---
+
+### Canonical pattern — single edit form
+
+```python
+# view_models/scenario_edit_view_model.py
+from __future__ import annotations
+
+import tkinter as tk
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from shared.exception_util import AppError
+from view_models.view_model_base import ViewModelBase
+
+@dataclass(frozen=True, slots=True)
+class ScenarioEditViewState:
+    """Immutable read-only view of the scenario-edit VM scalar state."""
+    name: str
+    url: str
+    is_active: bool
+    is_busy: bool
+    can_submit: bool
+    error_message: str
+
+class ScenarioEditViewModel(ViewModelBase):
+    """UI state and action hooks for the scenario edit form.
+
+    Source Vars are bound to widgets; derived Vars (can_submit) are recomputed
+    automatically and never written by the View or the Presenter.
+    """
+
+    def __init__(self, master: tk.Misc) -> None:
+        super().__init__(master)
+        # Source Vars (two-way: widget + Presenter on load)
         self.name_var = tk.StringVar(master=master, value="")
         self.url_var = tk.StringVar(master=master, value="")
         self.is_active_var = tk.BooleanVar(master=master, value=False)
-
-        # Status / message Vars
+        # Status Vars (written by the Presenter only)
         self.error_message_var = tk.StringVar(master=master, value="")
         self.is_busy_var = tk.BooleanVar(master=master, value=False)
-
-        # Derived Vars — recomputed via trace_add, never set from the View
+        # Derived Var (written by the VM recompute only)
         self.can_submit_var = tk.BooleanVar(master=master, value=False)
-
-        # Re-entrancy guard for derived Vars
-        self._updating_derived = False
-
-        # Registered Presenter callbacks
+        # Presenter callback slots
         self._on_submit: Callable[[], None] | None = None
         self._on_cancel: Callable[[], None] | None = None
-
-        # Wire derived-state recomputation
+        # Wire recompute on every input that affects can_submit, then compute once
         for var in (self.name_var, self.url_var, self.is_busy_var):
-            var.trace_add("write", self._recompute_can_submit)
-        # Initial computation
-        self._recompute_can_submit()
+            self._register_trace(var, self._guarded_recompute)
+        self._guarded_recompute()
 
     # ----- Derived state -----
 
-    def _recompute_can_submit(self, *_: object) -> None:
-        """Recompute can_submit_var whenever a source Var changes."""
-        if self._updating_derived:
-            return
-        self._updating_derived = True
-        try:
-            name_ok = bool(self.name_var.get().strip())
-            url_ok = bool(self.url_var.get().strip())
-            ready = name_ok and url_ok and not self.is_busy_var.get()
-            if self.can_submit_var.get() != ready:
-                self.can_submit_var.set(ready)
-        finally:
-            self._updating_derived = False
+    def _recompute_derived(self) -> None:
+        """Recompute can_submit: both fields filled and not currently busy."""
+        ready = (
+            bool(self.name_var.get().strip())
+            and bool(self.url_var.get().strip())
+            and not self.is_busy_var.get()
+        )
+        self._set_if_changed(self.can_submit_var, ready)
 
-    # ----- Presenter binding hooks -----
+    # ----- Snapshot -----
+
+    def snapshot(self) -> ScenarioEditViewState:
+        """Return an immutable copy of the current scalar UI state."""
+        return ScenarioEditViewState(
+            name=self.name_var.get(),
+            url=self.url_var.get(),
+            is_active=self.is_active_var.get(),
+            is_busy=self.is_busy_var.get(),
+            can_submit=self.can_submit_var.get(),
+            error_message=self.error_message_var.get(),
+        )
+
+    # ----- Binding hooks -----
 
     def bind_submit(self, callback: Callable[[], None]) -> None:
-        """Register the Presenter handler invoked on submit()."""
+        """Register the Presenter handler for submit(); rejects double binding."""
+        if self._on_submit is not None:
+            raise AppError("Le hook 'submit' est déjà lié.")
         self._on_submit = callback
 
     def bind_cancel(self, callback: Callable[[], None]) -> None:
-        """Register the Presenter handler invoked on cancel()."""
+        """Register the Presenter handler for cancel(); rejects double binding."""
+        if self._on_cancel is not None:
+            raise AppError("Le hook 'cancel' est déjà lié.")
         self._on_cancel = callback
 
-    # ----- Action methods called by the View -----
+    # ----- Action methods (dispatch only) -----
 
     def submit(self) -> None:
         """Dispatch the submit action to the registered Presenter callback."""
-        if self._on_submit is not None:
-            self._on_submit()
+        if self._on_submit is None:
+            raise AppError("Action 'submit' déclenchée sans handler lié.")
+        self._on_submit()
 
     def cancel(self) -> None:
         """Dispatch the cancel action to the registered Presenter callback."""
-        if self._on_cancel is not None:
-            self._on_cancel()
+        if self._on_cancel is None:
+            raise AppError("Action 'cancel' déclenchée sans handler lié.")
+        self._on_cancel()
 ```
 
-### View — binds to the ViewModel, contains zero logic
+### View — binds, renders, forwards (zero logic)
 
 ```python
 # views/scenario_edit_view.py
@@ -248,16 +589,12 @@ class ScenarioEditView(ttk.Frame):
         super().__init__(master)
         self._vm = vm
 
-        # Build static widget tree
         ttk.Label(self, text="Nom :").grid(row=0, column=0, sticky="w")
         ttk.Entry(self, textvariable=vm.name_var).grid(row=0, column=1)
-
         ttk.Label(self, text="URL :").grid(row=1, column=0, sticky="w")
         ttk.Entry(self, textvariable=vm.url_var).grid(row=1, column=1)
-
         ttk.Checkbutton(self, text="Actif", variable=vm.is_active_var) \
             .grid(row=2, column=0, columnspan=2, sticky="w")
-
         ttk.Label(self, textvariable=vm.error_message_var, foreground="red") \
             .grid(row=3, column=0, columnspan=2, sticky="w")
 
@@ -265,17 +602,22 @@ class ScenarioEditView(ttk.Frame):
         self._submit_btn.grid(row=4, column=0)
         ttk.Button(self, text="Annuler", command=vm.cancel).grid(row=4, column=1)
 
-        # Non-Var binding: button enabled state mirrors can_submit_var
-        vm.can_submit_var.trace_add("write", self._sync_submit_enabled)
-        self._sync_submit_enabled()
+        # Non-Var binding: mirror can_submit_var onto the button's enabled state.
+        # The View tracks its own trace id so it can detach it on teardown.
+        self._enable_trace = vm.can_submit_var.trace_add("write", self._sync_enabled)
+        self._sync_enabled()
 
-    def _sync_submit_enabled(self, *_: object) -> None:
+    def _sync_enabled(self, *_: object) -> None:
         """Mirror vm.can_submit_var onto the submit button's state."""
         state = "normal" if self._vm.can_submit_var.get() else "disabled"
         self._submit_btn.configure(state=state)
+
+    def teardown(self) -> None:
+        """Detach the View-owned trace before the VM is disposed."""
+        self._vm.can_submit_var.trace_remove("write", self._enable_trace)
 ```
 
-### Presenter — registers callbacks, mutates Vars only
+### Presenter — maps, batches, reads via snapshot
 
 ```python
 # presenters/scenario_edit_presenter.py
@@ -292,33 +634,31 @@ class ScenarioEditPresenter:
         self._vm = vm
         self._service = service
         self._logger = logging.getLogger(__name__)
-
-        # Register handlers — the VM will dispatch user actions to them
         vm.bind_submit(self._on_submit)
         vm.bind_cancel(self._on_cancel)
 
     def load_scenario(self, id_scenario: str) -> None:
-        """Fetch a scenario and populate the ViewModel Vars."""
+        """Fetch a scenario and populate the VM Vars in a single recompute."""
         try:
             scenario = self._service.get_scenario(id_scenario)
         except ScenarioNotFoundError as e:
             self._vm.error_message_var.set(str(e))
             return
-        # Map domain model → VM Vars (the only allowed coupling point)
-        self._vm.name_var.set(scenario.name)
-        self._vm.url_var.set(scenario.url)
-        self._vm.is_active_var.set(scenario.active)
-        self._vm.error_message_var.set("")
+        # One recompute of can_submit fires when the batch block exits.
+        with self._vm.batch_update():
+            self._vm.name_var.set(scenario.name)
+            self._vm.url_var.set(scenario.url)
+            self._vm.is_active_var.set(scenario.active)
+            self._vm.error_message_var.set("")
 
     def _on_submit(self) -> None:
-        """Triggered by vm.submit(); read Vars, call service, update Vars."""
+        """Read VM state via snapshot, call the service, reflect status into Vars."""
         self._vm.is_busy_var.set(True)
         self._vm.error_message_var.set("")
+        state = self._vm.snapshot()
         try:
             self._service.save_scenario(
-                name=self._vm.name_var.get(),
-                url=self._vm.url_var.get(),
-                active=self._vm.is_active_var.get(),
+                name=state.name, url=state.url, active=state.is_active
             )
         except AppError as e:
             self._logger.error("Erreur lors de l'enregistrement : %s", e, exc_info=True)
@@ -327,17 +667,18 @@ class ScenarioEditPresenter:
             self._vm.is_busy_var.set(False)
 
     def _on_cancel(self) -> None:
-        """Reset the form Vars to a clean state."""
-        self._vm.name_var.set("")
-        self._vm.url_var.set("")
-        self._vm.is_active_var.set(False)
-        self._vm.error_message_var.set("")
+        """Reset the form to a clean state in a single recompute."""
+        with self._vm.batch_update():
+            self._vm.name_var.set("")
+            self._vm.url_var.set("")
+            self._vm.is_active_var.set(False)
+            self._vm.error_message_var.set("")
 ```
 
-### Composition root — `main.py`
+### Composition root — wiring and disposal
 
 ```python
-# main.py — assemble VM, View, and Presenter; keep references to prevent GC
+# main.py — assemble VM, View, and Presenter; anchor against GC; dispose on shutdown
 import tkinter as tk
 
 from presenters.scenario_edit_presenter import ScenarioEditPresenter
@@ -357,13 +698,93 @@ def main() -> None:
     view = ScenarioEditView(master=root, vm=vm)
     presenter = ScenarioEditPresenter(vm=vm, service=service)
 
-    # Keep a reference to the Presenter on the root so the GC does not collect it
-    root._presenter = presenter   # noqa: SLF001 — intentional GC anchor
+    # Keep a reference to the Presenter so the GC does not collect it.
+    root._presenter = presenter  # noqa: SLF001 — intentional GC anchor
+
+    # Disposal order is always View first, VM second: the View owns traces on VM
+    # Vars, so it must detach them before the VM tears the Vars' traces down.
+    def _on_close() -> None:
+        view.teardown()
+        vm.dispose()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", _on_close)
     view.pack(fill="both", expand=True)
     root.mainloop()
 
 if __name__ == "__main__":
     main()
+```
+
+> Transient dialogs and destroyable lazy tabs follow the same `teardown()` → `dispose()` sequence.
+
+### Testing a ViewModel
+
+VM tests need a hidden Tk root but **no widgets, no `mainloop`**. They assert on Var values and on
+dispatch, after calling action methods directly.
+
+```python
+# __tests__/view_models/conftest.py
+import tkinter as tk
+import pytest
+
+@pytest.fixture
+def tk_root():
+    """Provide a hidden Tk root for Var creation, torn down after the test."""
+    root = tk.Tk()
+    root.withdraw()
+    yield root
+    root.destroy()
+```
+
+```python
+# __tests__/view_models/test_scenario_edit_view_model.py
+from view_models.scenario_edit_view_model import ScenarioEditViewModel
+
+def test_can_submit_requires_both_fields(tk_root):
+    vm = ScenarioEditViewModel(master=tk_root)
+    assert vm.can_submit_var.get() is False
+    vm.name_var.set("Demo")
+    assert vm.can_submit_var.get() is False  # url still empty
+    vm.url_var.set("https://x.test")
+    assert vm.can_submit_var.get() is True
+
+def test_busy_blocks_submit(tk_root):
+    vm = ScenarioEditViewModel(master=tk_root)
+    vm.name_var.set("Demo")
+    vm.url_var.set("https://x.test")
+    vm.is_busy_var.set(True)
+    assert vm.can_submit_var.get() is False
+
+def test_submit_dispatches_to_bound_handler(tk_root):
+    vm = ScenarioEditViewModel(master=tk_root)
+    calls = []
+    vm.bind_submit(lambda: calls.append("submit"))
+    vm.submit()
+    assert calls == ["submit"]
+
+def test_batch_update_recomputes_once(tk_root):
+    vm = ScenarioEditViewModel(master=tk_root)
+    computed = []
+    vm.can_submit_var.trace_add("write", lambda *_: computed.append(1))
+    with vm.batch_update():
+        vm.name_var.set("Demo")
+        vm.url_var.set("https://x.test")
+    assert computed == [1]  # one transition, not two
+
+def test_snapshot_reflects_current_state(tk_root):
+    vm = ScenarioEditViewModel(master=tk_root)
+    vm.name_var.set("Demo")
+    vm.url_var.set("https://x.test")
+    snap = vm.snapshot()
+    assert (snap.name, snap.url, snap.can_submit) == ("Demo", "https://x.test", True)
+
+def test_dispose_stops_recomputation(tk_root):
+    vm = ScenarioEditViewModel(master=tk_root)
+    vm.dispose()
+    vm.name_var.set("Demo")
+    vm.url_var.set("https://x.test")
+    assert vm.can_submit_var.get() is False  # traces removed, no recompute
 ```
 
 ### Anti-patterns — ViewModel
@@ -386,7 +807,7 @@ def __init__(self, master):
 def _on_name_change(self, *_):
     self._vm.can_submit_var.set(bool(self._vm.name_var.get()) and bool(self._vm.url_var.get()))
 
-# GOOD — derived state belongs in the VM via trace_add
+# GOOD — derived state belongs in _recompute_derived via the recompute gate
 ```
 
 ❌ Never call a Service or a Repository from the ViewModel
@@ -398,17 +819,20 @@ class ScenarioEditViewModel:
 
 # GOOD — VM dispatches to a Presenter-registered callback
 def submit(self):
-    if self._on_submit is not None:
-        self._on_submit()
+    if self._on_submit is None:
+        raise AppError("Action 'submit' déclenchée sans handler lié.")
+    self._on_submit()
 ```
 
-❌ Never mutate a Var inside its own `trace_add` callback without a re-entrancy guard
+❌ Never set a derived Var without `_set_if_changed` inside the recompute gate
 ```python
 # BAD — write triggers the callback which writes again → infinite loop
-def _recompute(self, *_):
+def _recompute_derived(self):
     self.derived_var.set(self.source_var.get().upper())
 
-# GOOD — guard with self._updating_derived flag (see canonical pattern above)
+# GOOD — change-guarded write, run inside the base recompute gate
+def _recompute_derived(self):
+    self._set_if_changed(self.derived_var, self.source_var.get().upper())
 ```
 
 ❌ Never let the Presenter touch a widget directly
@@ -416,7 +840,7 @@ def _recompute(self, *_):
 # BAD
 self._view._submit_btn.configure(state="disabled")
 
-# GOOD — mutate a VM Var; the View's trace_add reflects it
+# GOOD — mutate a VM Var; the View's trace reflects it
 self._vm.is_busy_var.set(True)
 ```
 
@@ -550,11 +974,6 @@ Run `ruff check --select I --fix` before committing.
 - Strict **PEP 8** compliance.
 - **Docstrings** required on all public classes and functions, **Google style**, in **English**.
 - **Inline comments** in **English**.
-- **Method length**: 25 lines of code maximum per method.
-  - Docstrings, blank lines, and pure argument-wrapping lines are excluded from the count.
-  - Beyond 25 lines of actual code, split into focused private helpers with intent-revealing names.
-- **File length**: 1000 lines maximum — split into focused modules above that.
-- **Comments**: one comment per logical block, roughly every 5 lines of code.
 
 ```python
 # GOOD — decompose by semantic step, not by arbitrary line count
@@ -632,7 +1051,8 @@ All concrete objects are assembled once in `main.py` and injected via `__init__`
 
 The composition root in `main.py` is also responsible for keeping a reference to every
 `Presenter` instance so it is not garbage-collected — losing the reference silently kills
-the bindings to the ViewModel.
+the bindings to the ViewModel. It is equally responsible for the disposal sequence
+(View `teardown()` → VM `dispose()`) when a view is discarded.
 
 ---
 
@@ -775,15 +1195,10 @@ All runtime exceptions inherit from a common base defined in `shared/exception_u
 
 ```python
 # shared/exception_util.py
-class AppError(Exception):
+class AspirabotBaseError(Exception):
     """Base error for the application."""
 
-class ScrapingError(AppError): ...
-class PageLoadError(ScrapingError): ...
-class ScenarioError(AppError): ...
-class ScenarioNotFoundError(ScenarioError): ...
-class RepositoryError(AppError): ...
-class DatabaseUnavailableError(RepositoryError): ...
+...
 ```
 
 Exception messages (the string passed to `raise`) are written in **French**.
@@ -800,8 +1215,12 @@ Exception messages (the string passed to `raise`) are written in **French**.
 | `Repository` | `RepositoryError` subclasses            | Low-level errors (`OSError`, `json.JSONDecodeError`…) — wraps and re-raises |
 | `Service`    | Domain exceptions                       | `RepositoryError` if a transformation is needed                          |
 | `Presenter`  | —                                       | Domain exceptions → formats and writes the message into a VM Var         |
-| `ViewModel`  | —                                       | Nothing — it is pure state.                                              |
-| `View`       | —                                       | Nothing — it only renders.                                               |
+| `ViewModel`  | Wiring invariants only (`AppError`)     | Nothing — it is pure state.                                              |
+| `View`       | —                                       | Nothing — it only renders.                                              |
+
+> The ViewModel raises `AppError` **only** for composition-time wiring invariants
+> (double `bind_<x>`, action triggered without a bound handler). It never raises for
+> domain or runtime reasons — those are the Service's and Presenter's responsibility.
 
 ```python
 # Repository — wrap technical errors
@@ -1295,13 +1714,71 @@ MyParams.model_validate(data, context={"step_index": idx, "steps_context": ctx, 
 When adding tests:
 - Place tests in a `__tests__/` folder at the project root.
 - Use **pytest**.
-- Mirror the `__src__/` folder structure inside `__tests__/`.
+- Mirror the `__src__/` folder structure inside `__tests__/`
+  (e.g. `view_models/scenario_edit_view_model.py`
+  → `__tests__/view_models/test_scenario_edit_view_model.py`).
 - Every new feature must be accompanied by its tests.
-- ViewModel tests instantiate a hidden `tk.Tk()` root and assert on Var values after action calls — no widget needed.
 - Run tests with:
 ```bash
 pytest __tests__/ -v
 ```
+
+### Testing ViewModels
+
+The ViewModel is the most testable layer and must be covered **without any widget,
+display, or `mainloop`**. A test only needs a hidden `tk.Tk()` root to anchor the Vars,
+provided once via a shared fixture:
+
+```python
+# __tests__/view_models/conftest.py
+import tkinter as tk
+import pytest
+
+@pytest.fixture
+def tk_root():
+    """Provide a hidden Tk root for Var creation, torn down after the test."""
+    root = tk.Tk()
+    root.withdraw()
+    yield root
+    root.destroy()
+```
+
+Drive the VM by setting **source** Vars and calling **action methods** directly, then
+assert on Var values and on dispatch. No Presenter, no Service, no real callback — use a
+plain lambda or a small fake as the bound handler.
+
+Every ViewModel test suite must cover, at minimum:
+
+- **Derived state transitions** — each derived Var (`can_submit_var`, `is_dirty_var`, …)
+  flips correctly as its source Vars change, including the initial value at construction.
+- **Status inputs to derived state** — e.g. setting `is_busy_var` disables `can_submit_var`.
+- **Action dispatch** — `vm.submit()` calls the handler registered via `bind_submit`;
+  a parameterised action forwards the right argument.
+- **Hook fail-fast** — binding a hook twice raises, and triggering an unbound action raises.
+- **Batch updates** — a `with vm.batch_update(): …` block recomputes derived state exactly
+  once (assert via a trace counter on the derived Var), with the correct final value.
+- **Snapshot** — `vm.snapshot()` returns a frozen DTO matching current Var values.
+- **Collections** — `set_rows([...])` fires the `rows_changed` hook and exposes the rows
+  as an immutable tuple via the `rows` property; selection drives the related derived Var.
+- **Disposal** — after `vm.dispose()`, writing a source Var no longer recomputes derived
+  state (traces removed) and no pending `after` call remains.
+
+For a **debounced** recompute, call the underlying compute method directly to assert the
+result; test the scheduling separately in a dedicated timing test by pumping the loop with
+`tk_root.update()` after the debounce delay. Never rely on wall-clock sleeps for logic.
+
+The canonical fixture and a full set of example tests live in the **ViewModel** section.
+
+### Testing Presenters
+
+Presenters are tested with a **real ViewModel** (hidden root) and a **fake Service** that
+records calls or raises domain exceptions. Assert on the VM Vars the Presenter is allowed
+to mutate (status/source) — never on widgets, which do not exist in the test.
+
+- A successful service call leaves `error_message_var` empty and `is_busy_var` False.
+- A raised domain exception (e.g. `ScenarioNotFoundError`) is reflected into
+  `error_message_var`; an unexpected `AppError` is logged and surfaces a generic message.
+- `load_scenario(...)` populates the source Vars through a single recompute (`batch_update`).
 
 ---
 
@@ -1321,12 +1798,24 @@ If you are an AI agent, treat these as hard constraints — no exception, no wor
 
 ### ViewModel Violations
 
-❌ Never store a `tk.*Var` as a local variable instead of an instance attribute (silent GC).
-❌ Never compute derived state inside the View — use `trace_add` in the VM.
+❌ Never store a `tk.*Var` as a local variable instead of `self.<name>_var` (silent GC).
+❌ Never extend a ViewModel without inheriting `ViewModelBase` and calling `super().__init__(master)` first.
+❌ Never compute derived state anywhere but `_recompute_derived` — not in the View, not in the Presenter.
+❌ Never write a **derived** Var from the View or the Presenter — derived Vars are VM output only.
+❌ Never write a **status** Var (error / busy) from the VM with business content — the Presenter owns it.
+❌ Never call `var.trace_add` directly — register through `self._register_trace` so it can be disposed.
+❌ Never mutate a Var inside its own recompute without `_set_if_changed` and the recompute gate (loop).
+❌ Never set several source Vars one-by-one from the Presenter on load — wrap them in `with vm.batch_update():`.
+❌ Never run an expensive recompute on every keystroke — debounce it via `self._schedule(...)`.
+❌ Never put logic in an action method (`try/except`, transformation, service call) — it only dispatches.
+❌ Never let a `bind_<x>` silently overwrite an existing hook, or let an unbound action no-op — fail fast.
 ❌ Never call a Service, Repository, or Model from a ViewModel.
-❌ Never mutate a Var inside its own `trace_add` callback without a re-entrancy guard.
-❌ Never pass raw domain Models into the View — the Presenter maps them onto VM Vars.
-❌ Never pass `dict[str, Any]` as UI state — UI state lives in typed Vars on the VM.
+❌ Never import a Service, Repository, Model, Presenter, or View into a ViewModel (only `tkinter`, `shared/`).
+❌ Never store or expose a domain Model inside the VM, a `RowState`, or a snapshot — primitives only.
+❌ Never pass `dict[str, Any]` as UI state — state is typed Vars; the read DTO is a frozen dataclass.
+❌ Never return a mutable list from a collection accessor — expose an immutable tuple via a read-only property.
+❌ Never skip `dispose()` wiring at the composition root — leaked traces fire on dead state after teardown.
+❌ Never build or load data in a ViewModel at construction — the Presenter decides when to load.
 
 ### View Violations
 
@@ -1348,6 +1837,7 @@ class ScenarioEditView(ttk.Frame):
         self._inline_form = StepInlineFormPanel(self, vm)
         # No load() here — the Presenter triggers loading via a VM Var update
 ```
+❌ Never leave a View-owned trace attached when the View is destroyed — detach it in `teardown()` before the VM is disposed.
 
 ### Presenter Violations
 
@@ -1355,6 +1845,7 @@ class ScenarioEditView(ttk.Frame):
 ❌ Never import `tkinter` from a Presenter.
 ❌ Never place business logic inside a Presenter — that belongs in a Service.
 ❌ Never instantiate a Service or Repository inside a Presenter — inject via `__init__`.
+❌ Never push derived state into the VM — set only source/status Vars; derived Vars recompute themselves.
 
 ### Service / Repository Violations
 
@@ -1372,8 +1863,6 @@ class ScenarioEditView(ttk.Frame):
 
 ### Code Quality Violations
 
-❌ Never write a method longer than 25 lines of code — break it down.
-❌ Never write a file longer than 1000 lines — split into focused modules.
 ❌ Never use `print()` — use `self._logger = logging.getLogger(__name__)`.
 ❌ Never use Python 2.
 ❌ Never commit runtime-generated files or folders.

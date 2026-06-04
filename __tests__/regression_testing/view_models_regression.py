@@ -18,17 +18,17 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
+from view_models.app_configuration_view_model import AppConfigurationViewModel
+from view_models.debug_view_model import DebugViewModel
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
 from view_models.log_view_model import LogViewModel
 from view_models.profiles_view_model import ProfilesViewModel
-from view_models.scraping_view_model import ScrapingViewModel
 from view_models.scenarios_view_model import ScenariosViewModel
+from view_models.scraping_view_model import ScrapingViewModel
 from view_models.splashscreen_view_model import SplashscreenViewModel
 from view_models.workflow_view_model import WorkflowViewModel
-from view_models.app_configuration_view_model import AppConfigurationViewModel
-from view_models.debug_view_model import DebugViewModel
 
+from shared.exception_util import CallbackNotDefinedError
 
 # ===========================================================================
 # ExecutorViewModel
@@ -152,8 +152,9 @@ class TestExecutorViewModelDispatch:
         exec_vm.scenario_changed("scen_01")
         cb.assert_called_once_with("scen_01")
 
-    def test_scenario_changed_no_callback_no_error(self, exec_vm: ExecutorViewModel) -> None:
-        exec_vm.scenario_changed("scen_01")  # must not raise
+    def test_scenario_changed_without_callback_raises(self, exec_vm: ExecutorViewModel) -> None:
+        with pytest.raises(CallbackNotDefinedError):
+            exec_vm.scenario_changed("scen_01")
 
     def test_refresh_scenarios_calls_callback(self, exec_vm: ExecutorViewModel) -> None:
         cb = MagicMock()
@@ -291,10 +292,6 @@ class TestScenariosViewModelDispatch:
         scen_vm.refresh()
         cb.assert_called_once()
 
-    def test_no_callback_no_error(self, scen_vm: ScenariosViewModel) -> None:
-        scen_vm.create()
-        scen_vm.refresh()
-
 
 # ===========================================================================
 # WorkflowViewModel
@@ -319,12 +316,12 @@ class TestWorkflowViewModelInit:
 
 class TestWorkflowViewModelLoadForm:
     def test_load_form_populates_vars(self, wf_vm: WorkflowViewModel) -> None:
-        wf_vm.load_form({"scenario_name": "My Workflow", "scenario_desc": "A desc", "version": "1", "id_file": "f01"})
+        wf_vm.load_form(id_file="f01", scenario_name="My Workflow", scenario_desc="A desc", version="1")
         assert wf_vm.name_var.get() == "My Workflow"
         assert wf_vm.desc_var.get() == "A desc"
 
     def test_load_form_suppresses_dirty(self, wf_vm: WorkflowViewModel) -> None:
-        wf_vm.load_form({"scenario_name": "X", "scenario_desc": "", "version": "1", "id_file": "f01"})
+        wf_vm.load_form(id_file="f01", scenario_name="X", scenario_desc="", version="1")
         assert wf_vm.is_dirty_var.get() is False
 
 
@@ -341,9 +338,11 @@ class TestWorkflowViewModelDispatch:
         wf_vm.cancel()
         cb.assert_called_once()
 
-    def test_no_callback_no_error(self, wf_vm: WorkflowViewModel) -> None:
-        wf_vm.save()
-        wf_vm.cancel()
+    def test_unbound_actions_raise(self, wf_vm: WorkflowViewModel) -> None:
+        with pytest.raises(CallbackNotDefinedError):
+            wf_vm.save()
+        with pytest.raises(CallbackNotDefinedError):
+            wf_vm.cancel()
 
 
 # ===========================================================================
@@ -434,11 +433,15 @@ class TestScrapingViewModelDispatch:
         scrap_vm.show_error("T", "M")
         cb.assert_called_once_with("T", "M")
 
-    def test_no_callback_no_error(self, scrap_vm: ScrapingViewModel) -> None:
-        scrap_vm.launch()
-        scrap_vm.pause()
-        scrap_vm.resume()
-        scrap_vm.open_folder()
+    def test_unbound_actions_raise(self, scrap_vm: ScrapingViewModel) -> None:
+        for call in [
+            lambda: scrap_vm.launch(),
+            lambda: scrap_vm.pause(),
+            lambda: scrap_vm.resume(),
+            lambda: scrap_vm.open_folder(),
+        ]:
+            with pytest.raises(CallbackNotDefinedError):
+                call()
 
 
 # ===========================================================================
@@ -495,10 +498,6 @@ class TestLogViewModelDispatch:
         log_vm.bind_show_error(cb)
         log_vm.show_error("T", "M")
         cb.assert_called_once_with("T", "M")
-
-    def test_no_callback_no_error(self, log_vm: LogViewModel) -> None:
-        log_vm.filter_changed()
-        log_vm.open_logs_folder()
 
 
 # ===========================================================================
@@ -631,10 +630,10 @@ class TestAppConfigurationViewModelDispatch:
         cfg_vm.form_changed()
         cb.assert_called_once()
 
-    def test_no_callback_no_error(self, cfg_vm: AppConfigurationViewModel) -> None:
-        cfg_vm.save()
-        cfg_vm.cancel()
-        cfg_vm.form_changed()
+    def test_unbound_actions_raise(self, cfg_vm: AppConfigurationViewModel) -> None:
+        for call in [lambda: cfg_vm.save(), lambda: cfg_vm.cancel(), lambda: cfg_vm.form_changed()]:
+            with pytest.raises(CallbackNotDefinedError):
+                call()
 
 
 # ===========================================================================
@@ -701,10 +700,10 @@ class TestDebugViewModelDispatch:
         dbg_vm.close()
         cb.assert_called_once()
 
-    def test_no_callback_no_error(self, dbg_vm: DebugViewModel) -> None:
-        dbg_vm.start("x", "0", "0")
-        dbg_vm.refresh()
-        dbg_vm.close()
+    def test_unbound_actions_raise(self, dbg_vm: DebugViewModel) -> None:
+        for call in [lambda: dbg_vm.start("x", "0", "0"), lambda: dbg_vm.refresh(), lambda: dbg_vm.close()]:
+            with pytest.raises(CallbackNotDefinedError):
+                call()
 
 
 # ===========================================================================

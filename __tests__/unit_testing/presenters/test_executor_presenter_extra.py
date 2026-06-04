@@ -16,9 +16,8 @@ from presenters.executor_presenter import ExecutorPresenter
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
-from shared.exception_util import AspirabotBaseError, ProfileNotFoundError
+from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import C_EXEC_NO_PROFILE, C_EXEC_NO_SCENARIO
-
 
 # ---------------------------------------------------------------------------
 # Helpers / Fixtures
@@ -216,10 +215,7 @@ class TestUpdateUrlPreview:
     def test_provider_error_sets_empty_preview(self) -> None:
         presenter, vm, _, _ = _make_presenter()
 
-        with patch(
-            "presenters.executor_presenter.build_url_source_scenario",
-            side_effect=AspirabotBaseError("boom"),
-        ):
+        with patch("presenters.executor_presenter.build_url_source_scenario", side_effect=CallbackNotDefinedError()):
             presenter._update_url_preview(UrlSourceTypeEnum.E_FOLDER.value, "/some/path", "mtime_asc")
 
         vm.set_url_preview.assert_called_with([])
@@ -276,7 +272,7 @@ class TestOnNewProfile:
     def test_service_error_returns_early(self) -> None:
         presenter, vm, _, svc_prof = _make_presenter()
         presenter._current_scenario = _make_scenario()
-        svc_prof.create_profile_launch.side_effect = AspirabotBaseError("fail")
+        svc_prof.create_profile_launch.side_effect = CallbackNotDefinedError()
 
         presenter._on_new_profile("Broken Profile")
 
@@ -378,7 +374,7 @@ class TestOnDeleteProfile:
         presenter, vm, _, svc_prof = _make_presenter()
         presenter._current_scenario = _make_scenario()
         presenter._current_profile = _make_profile()
-        svc_prof.delete_profile_launch.side_effect = AspirabotBaseError("fail")
+        svc_prof.delete_profile_launch.side_effect = CallbackNotDefinedError()
 
         presenter._on_delete_profile()
 
@@ -434,7 +430,7 @@ class TestOnSaveProfile:
         presenter, vm, _, svc_prof = _make_presenter()
         presenter._current_scenario = _make_scenario()
         presenter._current_profile = _make_profile()
-        svc_prof.update_profile_launch.side_effect = AspirabotBaseError("fail")
+        svc_prof.update_profile_launch.side_effect = CallbackNotDefinedError()
         _setup_vm_for_apply(vm)
 
         presenter._on_save_profile()
@@ -604,7 +600,7 @@ class TestSaveBeforeLaunch:
         profile = _make_profile()
         presenter._current_scenario = scenario
         presenter._current_profile = profile
-        svc_prof.update_profile_launch.side_effect = AspirabotBaseError("save failed")
+        svc_prof.update_profile_launch.side_effect = CallbackNotDefinedError()
 
         presenter._save_before_launch()  # must not propagate the exception
 
@@ -706,7 +702,7 @@ class TestOnOpenExportFolder:
     def test_service_error_shows_error_dialog(self) -> None:
         presenter, vm, _, svc_prof = _make_presenter()
         vm.export_folder_var.get.return_value = "/tmp/export"
-        svc_prof.open_export_folder.side_effect = AspirabotBaseError("fail")
+        svc_prof.open_export_folder.side_effect = CallbackNotDefinedError()
 
         presenter._on_open_export_folder()
 

@@ -7,8 +7,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
 from view_models.profiles_view_model import ProfilesViewModel
+
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -77,9 +78,13 @@ class TestBindAndDispatch:
         vm.sort("name", False)
         cb.assert_called_once_with("name", False)
 
-    def test_no_callbacks_no_error(self, vm: ProfilesViewModel) -> None:
-        vm.refresh()
-        vm.open_folder()
-        vm.launch_profile("s", "p")
-        vm.delete_profile("s", "p", "n")
-        vm.sort("x", True)
+    def test_unbound_primary_actions_raise(self, vm: ProfilesViewModel) -> None:
+        for call in [
+            lambda: vm.refresh(),
+            lambda: vm.open_folder(),
+            lambda: vm.launch_profile("s", "p"),
+            lambda: vm.delete_profile("s", "p", "n"),
+            lambda: vm.sort("x", True),
+        ]:
+            with pytest.raises(CallbackNotDefinedError):
+                call()

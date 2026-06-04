@@ -27,6 +27,7 @@ class AppConfigurationView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
 
         self._log_level_combo: ttk.Combobox | None = None
         self._browser_engine_combo: ttk.Combobox | None = None
@@ -139,8 +140,8 @@ class AppConfigurationView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add listeners on ViewModel Vars."""
-        # Form changes dispatch to VM.
+        """Register trace listeners on ViewModel Vars; ids stored for teardown."""
+        # Form changes dispatch to VM (one lambda per var to capture each binding correctly).
         for var in (
             self._vm.log_level_var,
             self._vm.folder_logs_var,
@@ -150,13 +151,22 @@ class AppConfigurationView(ttk.Frame):
             self._vm.gui_booting_fullscreen_var,
             self._vm.browser_engine_var,
         ):
-            var.trace_add("write", lambda *_: self._vm.form_changed())
+            self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
 
-        # Button enable states.
-        self._vm.is_cancel_enabled_var.trace_add("write", self._sync_cancel_btn)
-        # Option lists for comboboxes.
-        self._vm.log_level_options_version_var.trace_add("write", self._sync_log_level_options)
-        self._vm.browser_engine_options_version_var.trace_add("write", self._sync_browser_engine_options)
+        # Button enable states and combo option lists.
+        for var, cb in [
+            (self._vm.is_cancel_enabled_var, self._sync_cancel_btn),
+            (self._vm.log_level_options_version_var, self._sync_log_level_options),
+            (self._vm.browser_engine_options_version_var, self._sync_browser_engine_options),
+        ]:
+            self._view_traces.append((var, var.trace_add("write", cb)))
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
 
     def _sync_cancel_btn(self, *_: object) -> None:
         """Mirror is_cancel_enabled_var onto the Cancel and Save buttons."""

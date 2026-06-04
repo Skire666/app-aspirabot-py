@@ -6,8 +6,9 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
+from view_models.app_configuration_view_model import AppConfigurationViewModel, AppConfigViewState
 
-from view_models.app_configuration_view_model import AppConfigurationViewModel
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -29,21 +30,23 @@ class TestInit:
 
 class TestSetAndGetData:
     def test_set_data_populates_vars(self, vm: AppConfigurationViewModel) -> None:
-        vm.set_data({
-            "folder_logs": "/logs",
-            "folder_scenarios": "/scen",
-            "folder_scraping": "/scraping",
-            "log_level_enum": "INFO",
-            "browser_engine": "Playwright",
-            "gui_booting_size": "1200x900",
-            "gui_booting_fullscreen": True,
-        })
+        vm.set_data(
+            {
+                "folder_logs": "/logs",
+                "folder_scenarios": "/scen",
+                "folder_scraping": "/scraping",
+                "log_level_enum": "INFO",
+                "browser_engine": "Playwright",
+                "gui_booting_size": "1200x900",
+                "gui_booting_fullscreen": True,
+            }
+        )
         assert vm.folder_logs_var.get() == "/logs"
         assert vm.log_level_var.get() == "INFO"
 
-    def test_get_data_returns_dict(self, vm: AppConfigurationViewModel) -> None:
-        data = vm.get_data()
-        assert isinstance(data, dict)
+    def test_snapshot_returns_view_state(self, vm: AppConfigurationViewModel) -> None:
+        state = vm.snapshot()
+        assert isinstance(state, AppConfigViewState)
 
     def test_options_lists(self, vm: AppConfigurationViewModel) -> None:
         vm.set_log_level_options(["DEBUG", "INFO", "WARNING"])
@@ -97,9 +100,19 @@ class TestBindAndDispatch:
         vm.form_changed()
         cb.assert_called_once()
 
-    def test_no_callbacks_no_error(self, vm: AppConfigurationViewModel) -> None:
-        vm.save()
-        vm.cancel()
-        vm.reset()
-        vm.show_error("m")
-        vm.form_changed()
+    def test_unbound_primary_actions_raise(self, vm: AppConfigurationViewModel) -> None:
+        """Primary action methods raise AspirabotBaseError when no handler is bound."""
+        with pytest.raises(CallbackNotDefinedError):
+            vm.save()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.cancel()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.reset()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.form_changed()
+
+    def test_optional_helpers_do_not_raise_when_unbound(self, vm: AppConfigurationViewModel) -> None:
+        """Optional helper methods (show_error, ask_reset) silently no-op when unbound."""
+        vm.show_error("m")  # lenient — no raise
+        result = vm.ask_reset()
+        assert result is False

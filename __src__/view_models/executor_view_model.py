@@ -14,7 +14,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY, C_EXEC_USED_DATE_EMPTY
+
+from view_models.view_model_base import ViewModelBase
 
 # -----------------------------------------------------------------------------
 # Item types — view-layer representations of domain list entries
@@ -67,7 +70,7 @@ class StepItem:
 # -----------------------------------------------------------------------------
 
 
-class ExecutorViewModel:
+class ExecutorViewModel(ViewModelBase):
     """UI state and action hooks for the executor panel.
 
     All UI state lives here as ``tk.*Var`` instances.  Lists (scenarios,
@@ -75,8 +78,8 @@ class ExecutorViewModel:
     with a version ``tk.IntVar`` that increments on every mutation — the View
     traces those version Vars to know when to re-render.
 
-    Derived state (URL-source widget enable flags) is recomputed automatically
-    whenever ``url_source_type_var`` changes, via an internal ``trace_add``.
+    Derived state: URL-source widget enable flags and the profile-section active
+    flag are recomputed automatically via the ViewModelBase recompute gate.
     """
 
     def __init__(self, master: tk.Misc) -> None:
@@ -85,16 +88,16 @@ class ExecutorViewModel:
         Args:
             master: Tkinter parent used to scope all Var lifetimes.
         """
+        super().__init__(master)
         self._init_form_vars(master)
         self._init_list_vars(master)
         self._init_callbacks()
         # Wire derived state from url_source_type_var.
-        self.url_source_type_var.trace_add("write", self._recompute_url_source_state)
-        self._recompute_url_source_state()
+        self._register_trace(self.url_source_type_var, self._guarded_recompute)
         # Wire derived section-active state.
-        for var in (self.is_profile_cfg_accessible_var, self.is_profile_section_enabled_var):
-            var.trace_add("write", self._recompute_profile_section_active)
-        self._recompute_profile_section_active()
+        self._register_trace(self.is_profile_cfg_accessible_var, self._guarded_recompute)
+        self._register_trace(self.is_profile_section_enabled_var, self._guarded_recompute)
+        self._guarded_recompute()
 
     def _init_form_vars(self, master: tk.Misc) -> None:
         """Initialise source, display, state, and derived Vars.
@@ -118,14 +121,14 @@ class ExecutorViewModel:
         self.verification_message_var = tk.StringVar(master=master, value="")
         # Pre-filled in rename / delete dialogs.
         self.current_profile_name_var = tk.StringVar(master=master, value="")
-        # State Vars — Presenter writes, View traces for enable/disable.
+        # Status Vars — Presenter writes, View traces for enable/disable.
         self.is_profiles_list_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_profile_section_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_edit_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_rename_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_delete_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_save_btn_enabled_var = tk.BooleanVar(master=master, value=False)
-        # Derived state Vars — recomputed from url_source_type_var.
+        # Derived Vars — recomputed from url_source_type_var.
         self.is_path_entry_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_sort_order_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_preview_editable_var = tk.BooleanVar(master=master, value=False)
@@ -133,7 +136,6 @@ class ExecutorViewModel:
         self.is_profile_cfg_accessible_var = tk.BooleanVar(master=master, value=False)
         # Derived section-active Var — AND of is_profile_cfg_accessible_var and is_profile_section_enabled_var.
         self.is_profile_section_active_var = tk.BooleanVar(master=master, value=False)
-        self._updating_derived: bool = False
 
     def _init_list_vars(self, master: tk.Misc) -> None:
         """Initialise list data attributes with version-trigger IntVars.
@@ -167,6 +169,29 @@ class ExecutorViewModel:
         self._on_launch: Callable[[], None] | None = None
         self._on_open_export_folder: Callable[[], None] | None = None
         self._on_show_error: Callable[[str, str], None] | None = None
+
+    # ------------------------------------------------------------------
+    # Derived state (via ViewModelBase gate)
+    # ------------------------------------------------------------------
+
+    def _recompute_derived(self) -> None:
+        """Recompute all derived Vars from their source Vars."""
+        self._compute_url_source_state()
+        self._compute_profile_section_active()
+
+    def _compute_url_source_state(self) -> None:
+        """Recompute URL-source widget enable flags from url_source_type_var."""
+        stype = self.url_source_type_var.get()
+        is_folder_json = stype in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
+        is_manual = stype == UrlSourceTypeEnum.E_MANUAL.value
+        self._set_if_changed(self.is_path_entry_enabled_var, is_folder_json)
+        self._set_if_changed(self.is_sort_order_enabled_var, is_folder_json)
+        self._set_if_changed(self.is_preview_editable_var, is_manual)
+
+    def _compute_profile_section_active(self) -> None:
+        """Recompute is_profile_section_active_var from its two source Vars."""
+        active = self.is_profile_cfg_accessible_var.get() and self.is_profile_section_enabled_var.get()
+        self._set_if_changed(self.is_profile_section_active_var, active)
 
     # ------------------------------------------------------------------
     # List accessors
@@ -245,37 +270,6 @@ class ExecutorViewModel:
         self.url_preview_version_var.set(self.url_preview_version_var.get() + 1)
 
     # ------------------------------------------------------------------
-    # Derived state
-    # ------------------------------------------------------------------
-
-    def _recompute_profile_section_active(self, *_: object) -> None:
-        """Recompute is_profile_section_active_var from its two source Vars."""
-        if self._updating_derived:
-            return
-        self._updating_derived = True
-        try:
-            active = self.is_profile_cfg_accessible_var.get() and self.is_profile_section_enabled_var.get()
-            if self.is_profile_section_active_var.get() != active:
-                self.is_profile_section_active_var.set(active)
-        finally:
-            self._updating_derived = False
-
-    def _recompute_url_source_state(self, *_: object) -> None:
-        """Recompute URL-source widget enable flags from url_source_type_var."""
-        if self._updating_derived:
-            return
-        self._updating_derived = True
-        try:
-            stype = self.url_source_type_var.get()
-            is_folder_json = stype in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
-            is_manual = stype == UrlSourceTypeEnum.E_MANUAL.value
-            self.is_path_entry_enabled_var.set(is_folder_json)
-            self.is_sort_order_enabled_var.set(is_folder_json)
-            self.is_preview_editable_var.set(is_manual)
-        finally:
-            self._updating_derived = False
-
-    # ------------------------------------------------------------------
     # Bind hooks — called once by the Presenter at composition time
     # ------------------------------------------------------------------
 
@@ -284,95 +278,122 @@ class ExecutorViewModel:
 
         Args:
             cb: Called with the selected ``id_file``.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_scenario_changed is not None:
+            raise CallbackNotDefinedError()
         self._on_scenario_changed = cb
 
     def bind_refresh_scenarios(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when the user clicks Rafraîchir.
 
-        Args:
-            cb: Zero-argument callable.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_refresh_scenarios is not None:
+            raise CallbackNotDefinedError()
         self._on_refresh_scenarios = cb
 
     def bind_edit_scenario(self, cb: Callable[[str], None]) -> None:
         """Register the handler invoked when the user clicks Modifier.
 
-        Args:
-            cb: Called with the selected ``id_file``.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_edit_scenario is not None:
+            raise CallbackNotDefinedError()
         self._on_edit_scenario = cb
 
     def bind_profile_selected(self, cb: Callable[[str], None]) -> None:
         """Register the handler invoked when the user selects a profile.
 
-        Args:
-            cb: Called with the selected ``id_profile``.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_profile_selected is not None:
+            raise CallbackNotDefinedError()
         self._on_profile_selected = cb
 
     def bind_new_profile(self, cb: Callable[[str], None]) -> None:
         """Register the handler invoked when the user confirms a new profile.
 
-        Args:
-            cb: Called with the chosen profile name string.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_new_profile is not None:
+            raise CallbackNotDefinedError()
         self._on_new_profile = cb
 
     def bind_rename_profile(self, cb: Callable[[str], None]) -> None:
         """Register the handler invoked when the user confirms a rename.
 
-        Args:
-            cb: Called with the new name string.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_rename_profile is not None:
+            raise CallbackNotDefinedError()
         self._on_rename_profile = cb
 
     def bind_delete_profile(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked after the user confirms deletion.
 
-        Args:
-            cb: Zero-argument callable.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_delete_profile is not None:
+            raise CallbackNotDefinedError()
         self._on_delete_profile = cb
 
     def bind_save_profile(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when the user clicks Sauvegarder.
 
-        Args:
-            cb: Zero-argument callable.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_save_profile is not None:
+            raise CallbackNotDefinedError()
         self._on_save_profile = cb
 
     def bind_form_changed(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when any editable form field changes.
 
-        Args:
-            cb: Zero-argument callable.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_form_changed is not None:
+            raise CallbackNotDefinedError()
         self._on_form_changed = cb
 
     def bind_launch(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when the user clicks Lancer.
 
-        Args:
-            cb: Zero-argument callable.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_launch is not None:
+            raise CallbackNotDefinedError()
         self._on_launch = cb
 
     def bind_open_export_folder(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when the user clicks Ouvrir dossier.
 
-        Args:
-            cb: Zero-argument callable.
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_open_export_folder is not None:
+            raise CallbackNotDefinedError()
         self._on_open_export_folder = cb
 
     def bind_show_error(self, cb: Callable[[str, str], None]) -> None:
         """Register the handler that shows a modal error dialog.
 
-        Args:
-            cb: Called with (title, message).
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
         """
+        if self._on_show_error is not None:
+            raise CallbackNotDefinedError()
         self._on_show_error = cb
 
     # ------------------------------------------------------------------
@@ -384,75 +405,125 @@ class ExecutorViewModel:
 
         Args:
             id_file: The newly selected scenario identifier.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_scenario_changed is not None:
-            self._on_scenario_changed(id_file)
+        if self._on_scenario_changed is None:
+            raise CallbackNotDefinedError()
+        self._on_scenario_changed(id_file)
 
     def refresh_scenarios(self) -> None:
-        """Dispatch a scenario-list refresh request."""
-        if self._on_refresh_scenarios is not None:
-            self._on_refresh_scenarios()
+        """Dispatch a scenario-list refresh request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_refresh_scenarios is None:
+            raise CallbackNotDefinedError()
+        self._on_refresh_scenarios()
 
     def edit_scenario(self, id_file: str) -> None:
         """Dispatch a scenario-edit request.
 
         Args:
             id_file: The scenario to open in the workflow editor.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_edit_scenario is not None:
-            self._on_edit_scenario(id_file)
+        if self._on_edit_scenario is None:
+            raise CallbackNotDefinedError()
+        self._on_edit_scenario(id_file)
 
     def profile_selected(self, id_profile: str) -> None:
-        """Dispatch a profile-selection change to the registered handler.
+        """Dispatch a profile-selection change.
 
         Args:
             id_profile: The newly selected profile identifier.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_profile_selected is not None:
-            self._on_profile_selected(id_profile)
+        if self._on_profile_selected is None:
+            raise CallbackNotDefinedError()
+        self._on_profile_selected(id_profile)
 
     def new_profile(self, name: str) -> None:
         """Dispatch a new-profile creation with the chosen name.
 
         Args:
             name: Profile name entered by the user in the dialog.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_new_profile is not None:
-            self._on_new_profile(name)
+        if self._on_new_profile is None:
+            raise CallbackNotDefinedError()
+        self._on_new_profile(name)
 
     def rename_profile(self, new_name: str) -> None:
         """Dispatch a rename confirmation with the new name.
 
         Args:
             new_name: New profile name entered by the user.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_rename_profile is not None:
-            self._on_rename_profile(new_name)
+        if self._on_rename_profile is None:
+            raise CallbackNotDefinedError()
+        self._on_rename_profile(new_name)
 
     def delete_profile(self) -> None:
-        """Dispatch a delete confirmation (user already confirmed in the View)."""
-        if self._on_delete_profile is not None:
-            self._on_delete_profile()
+        """Dispatch a delete confirmation (user already confirmed in the View).
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_delete_profile is None:
+            raise CallbackNotDefinedError()
+        self._on_delete_profile()
 
     def save_profile(self) -> None:
-        """Dispatch a save-profile request."""
-        if self._on_save_profile is not None:
-            self._on_save_profile()
+        """Dispatch a save-profile request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_save_profile is None:
+            raise CallbackNotDefinedError()
+        self._on_save_profile()
 
     def form_changed(self) -> None:
-        """Dispatch a form-changed notification (dirty flag)."""
-        if self._on_form_changed is not None:
-            self._on_form_changed()
+        """Dispatch a form-changed notification (dirty flag).
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_form_changed is None:
+            raise CallbackNotDefinedError()
+        self._on_form_changed()
 
     def launch(self) -> None:
-        """Dispatch a launch request."""
-        if self._on_launch is not None:
-            self._on_launch()
+        """Dispatch a launch request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_launch is None:
+            raise CallbackNotDefinedError()
+        self._on_launch()
 
     def open_export_folder(self) -> None:
-        """Dispatch an open-export-folder request."""
-        if self._on_open_export_folder is not None:
-            self._on_open_export_folder()
+        """Dispatch an open-export-folder request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_open_export_folder is None:
+            raise CallbackNotDefinedError()
+        self._on_open_export_folder()
 
     def show_error(self, title: str, message: str) -> None:
         """Dispatch an error dialog request.

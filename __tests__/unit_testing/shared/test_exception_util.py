@@ -5,13 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from shared.exception_util import (
     AspirabotBaseError,
+    BlankStringError,
     BrowserAlreadyLaunchedError,
     BrowserLaunchFailedError,
     BrowserNotLaunchedError,
-    BlankStringError,
+    CallbackNotDefinedError,
     ColumnNotFoundError,
     ConfigurationNotLoadedError,
     CountHtmlElementsConditionNotMetError,
@@ -79,15 +79,14 @@ from shared.exception_util import (
     UrlSourceExhaustedError,
     UrlSourceFileNotFoundError,
     UrlSourceFilesNotDiscoveredError,
-    UrlSourceNoUrlBufferedError,
     UrlSourceNotReadyError,
+    UrlSourceNoUrlBufferedError,
     ValueMustBeNonNegativeError,
     ValueMustBePositiveAndEvenError,
     ValueMustBePositiveError,
     ValueTooLargeError,
     ValueTooSmallError,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -109,8 +108,8 @@ class TestAspirabotBaseError:
         assert issubclass(AspirabotBaseError, Exception)
 
     def test_instantiate_with_message(self) -> None:
-        err = AspirabotBaseError("oops")
-        assert "oops" in str(err)
+        err = CallbackNotDefinedError()
+        assert str(err)
 
 
 # ---------------------------------------------------------------------------

@@ -44,6 +44,7 @@ class SplashscreenView(tk.Toplevel):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
 
         # Remove OS window decorations for a clean overlay appearance.
         self.overrideredirect(True)
@@ -99,8 +100,17 @@ class SplashscreenView(tk.Toplevel):
     # -----------------------------------------------------------------------------
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add on status_var to mirror it onto the status label."""
-        self._vm.status_var.trace_add("write", self._sync_status)
+        """Register trace listeners on ViewModel Vars; ids stored for teardown."""
+        self._view_traces.append(
+            (self._vm.status_var, self._vm.status_var.trace_add("write", self._sync_status))
+        )
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
 
     def _sync_status(self, *_: object) -> None:
         """Update the status label and flush pending draw operations."""

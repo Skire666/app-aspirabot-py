@@ -46,6 +46,7 @@ class ExecutorView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
 
         # Local rendering caches — refreshed from VM list data on version changes.
         self._profile_items: list[ProfileItem] = []
@@ -156,7 +157,9 @@ class ExecutorView(ttk.Frame):
         ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
         )
-        self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed())
+        self._view_traces.append(
+            (self._vm.export_folder_var, self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed()))
+        )
         ttk.Entry(row, textvariable=self._vm.export_folder_var).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
         )
@@ -184,7 +187,9 @@ class ExecutorView(ttk.Frame):
 
         self._lbl_source_path = ttk.Label(row, text="Chemin (si requis) : ")
         self._lbl_source_path.pack(side=tk.LEFT, padx=(98, 5), pady=(0, 5))
-        self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed())
+        self._view_traces.append(
+            (self._vm.url_source_path_var, self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed()))
+        )
         self._entry_source_path = ttk.Entry(row, textvariable=self._vm.url_source_path_var)
         self._entry_source_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5))
 
@@ -237,7 +242,9 @@ class ExecutorView(ttk.Frame):
         ttk.Label(row, text="Erreurs globales max. avant mise en pause d'urgence :").pack(
             side=tk.LEFT, padx=(0, 5), pady=(0, 5)
         )
-        self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed())
+        self._view_traces.append(
+            (self._vm.global_threshold_var, self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()))
+        )
         ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=12).pack(side=tk.LEFT, pady=(0, 5))
 
     def _create_cfg_row6(self, parent: tk.Widget) -> None:
@@ -248,7 +255,9 @@ class ExecutorView(ttk.Frame):
         self._combo_steps = ttk.Combobox(row, state="readonly", width=38)
         self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
-        self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed())
+        self._view_traces.append(
+            (self._vm.step_threshold_var, self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()))
+        )
         ttk.Label(row, text=" après  ").pack(side=tk.LEFT)
         ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=12).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         ttk.Label(row, text="erreurs").pack(side=tk.LEFT)
@@ -274,25 +283,35 @@ class ExecutorView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add listeners for all non-Var widget bindings."""
-        self._vm.scenarios_version_var.trace_add("write", self._sync_scenarios)
-        self._vm.selected_scenario_id_var.trace_add("write", self._sync_scenario_selection)
-        self._vm.profiles_version_var.trace_add("write", self._sync_profiles)
-        self._vm.selected_profile_id_var.trace_add("write", self._sync_profile_selection)
-        self._vm.steps_version_var.trace_add("write", self._sync_steps)
-        self._vm.step_id_selected_var.trace_add("write", self._sync_step_selection)
-        self._vm.url_preview_version_var.trace_add("write", self._sync_url_preview)
-        self._vm.url_source_type_var.trace_add("write", self._sync_url_source_type)
-        self._vm.is_profiles_list_enabled_var.trace_add("write", self._sync_profiles_list_enabled)
-        self._vm.is_profile_section_active_var.trace_add("write", self._sync_profile_section_enabled)
-        self._vm.is_edit_btn_enabled_var.trace_add("write", self._sync_edit_btn)
-        self._vm.is_rename_btn_enabled_var.trace_add("write", self._sync_rename_btn)
-        self._vm.is_delete_btn_enabled_var.trace_add("write", self._sync_delete_btn)
-        self._vm.is_save_btn_enabled_var.trace_add("write", self._sync_save_btn)
-        self._vm.is_path_entry_enabled_var.trace_add("write", self._sync_path_entry)
-        self._vm.is_sort_order_enabled_var.trace_add("write", self._sync_sort_order)
-        self._vm.is_preview_editable_var.trace_add("write", self._sync_preview_editable)
+        """Register trace listeners for all non-Var widget bindings; ids stored for teardown."""
+        for var, cb in [
+            (self._vm.scenarios_version_var, self._sync_scenarios),
+            (self._vm.selected_scenario_id_var, self._sync_scenario_selection),
+            (self._vm.profiles_version_var, self._sync_profiles),
+            (self._vm.selected_profile_id_var, self._sync_profile_selection),
+            (self._vm.steps_version_var, self._sync_steps),
+            (self._vm.step_id_selected_var, self._sync_step_selection),
+            (self._vm.url_preview_version_var, self._sync_url_preview),
+            (self._vm.url_source_type_var, self._sync_url_source_type),
+            (self._vm.is_profiles_list_enabled_var, self._sync_profiles_list_enabled),
+            (self._vm.is_profile_section_active_var, self._sync_profile_section_enabled),
+            (self._vm.is_edit_btn_enabled_var, self._sync_edit_btn),
+            (self._vm.is_rename_btn_enabled_var, self._sync_rename_btn),
+            (self._vm.is_delete_btn_enabled_var, self._sync_delete_btn),
+            (self._vm.is_save_btn_enabled_var, self._sync_save_btn),
+            (self._vm.is_path_entry_enabled_var, self._sync_path_entry),
+            (self._vm.is_sort_order_enabled_var, self._sync_sort_order),
+            (self._vm.is_preview_editable_var, self._sync_preview_editable),
+        ]:
+            self._view_traces.append((var, var.trace_add("write", cb)))
         self._apply_initial_state()
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
 
     def _apply_initial_state(self) -> None:
         self._sync_profiles_list_enabled()

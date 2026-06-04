@@ -102,6 +102,10 @@ class DebugView(ttk.Frame):
     # Private helpers
     # -----------------------------------------------------------------------
 
+    def teardown(self) -> None:
+        """Dispose the ViewModel (no view-owned traces to remove for this view)."""
+        self._vm.dispose()
+
     def _open_debug_page(self) -> None:
         """Open a DebugPageView Toplevel bound to this View's ViewModel.
 

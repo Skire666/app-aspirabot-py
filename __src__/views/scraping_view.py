@@ -13,6 +13,7 @@ from tkinter import messagebox, ttk
 
 from shared.constants import C_COLOR_ORANGE_BLINKING
 from shared.enums import StepTypeEnum
+from shared.i18n_fra import C_SCRAPING_CANCEL_CONFIRM_MSG, C_SCRAPING_CANCEL_CONFIRM_TITLE
 from view_models.scraping_view_model import ScrapingViewModel
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
@@ -51,6 +52,7 @@ class ScrapingView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
 
         # Blink state for the Reprendre button.
         self._blink_active: bool = False
@@ -127,7 +129,7 @@ class ScrapingView(ttk.Frame):
         )
         self._btn_launch.pack(side=tk.LEFT, padx=(0, 5))
 
-        self._btn_cancel = ttk.Button(row, text="Annuler (kill)", command=lambda: self._vm.cancel(), state=tk.DISABLED)
+        self._btn_cancel = ttk.Button(row, text="Annuler (kill)", command=self._on_cancel_click, state=tk.DISABLED)
         self._btn_cancel.pack(side=tk.LEFT, padx=(0, 5))
 
         self._btn_pause = ttk.Button(row, text="Mettre en pause", command=lambda: self._vm.pause(), state=tk.DISABLED)
@@ -164,16 +166,33 @@ class ScrapingView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _bind_vm_vars(self) -> None:
-        """Register trace_add listeners on all relevant ViewModel Vars."""
-        # Piloting button states.
-        self._vm.is_launch_btn_enabled_var.trace_add("write", self._sync_launch_btn)
-        self._vm.is_cancel_btn_enabled_var.trace_add("write", self._sync_cancel_btn)
-        self._vm.is_pause_enabled_var.trace_add("write", self._sync_pause_btn)
-        self._vm.is_resume_active_var.trace_add("write", self._sync_resume_active)
+        """Register trace listeners on all relevant ViewModel Vars; ids stored for teardown."""
+        for var, cb in [
+            (self._vm.is_launch_btn_enabled_var, self._sync_launch_btn),
+            (self._vm.is_cancel_btn_enabled_var, self._sync_cancel_btn),
+            (self._vm.is_pause_enabled_var, self._sync_pause_btn),
+            (self._vm.is_resume_active_var, self._sync_resume_active),
+            (self._vm.journal_version_var, self._sync_journal_append),
+            (self._vm.journal_clear_var, self._sync_journal_clear),
+        ]:
+            self._view_traces.append((var, var.trace_add("write", cb)))
 
-        # Journal.
-        self._vm.journal_version_var.trace_add("write", self._sync_journal_append)
-        self._vm.journal_clear_var.trace_add("write", self._sync_journal_clear)
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
+
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # User interaction handlers
+    # ------------------------------------------------------------------
+
+    def _on_cancel_click(self) -> None:
+        """Show cancel confirmation then dispatch to the ViewModel if confirmed."""
+        if messagebox.askyesno(C_SCRAPING_CANCEL_CONFIRM_TITLE, C_SCRAPING_CANCEL_CONFIRM_MSG):
+            self._vm.cancel()
 
     # ------------------------------------------------------------------
     # Sync methods (called by trace_add)

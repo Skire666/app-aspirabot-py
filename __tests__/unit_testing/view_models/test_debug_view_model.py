@@ -6,8 +6,9 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
-
 from view_models.debug_view_model import DebugViewModel
+
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -66,13 +67,20 @@ class TestBindAndDispatch:
         vm.analyze_images("img")
         cb.assert_called_once_with("img")
 
-    def test_no_callbacks_no_error(self, vm: DebugViewModel) -> None:
-        vm.start("http://x.com", "30", "5")
-        vm.close()
-        vm.refresh()
-        vm.open_debug_page()
-        vm.analyze_texts(".x")
-        vm.analyze_images("img")
+    def test_unbound_primary_actions_raise(self, vm: DebugViewModel) -> None:
+        """Primary action methods raise AspirabotBaseError when no handler is bound."""
+        with pytest.raises(CallbackNotDefinedError):
+            vm.start("http://x.com", "30", "5")
+        with pytest.raises(CallbackNotDefinedError):
+            vm.close()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.refresh()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.open_debug_page()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.analyze_texts(".x")
+        with pytest.raises(CallbackNotDefinedError):
+            vm.analyze_images("img")
 
 
 class TestProperties:

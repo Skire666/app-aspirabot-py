@@ -49,6 +49,7 @@ class WorkflowView(ttk.Frame):
         """
         super().__init__(parent)
         self._vm = vm
+        self._view_traces: list[tuple[tk.Variable, str]] = []
 
         self._create_widgets()
         self._bind_vm_vars()
@@ -110,8 +111,10 @@ class WorkflowView(ttk.Frame):
         """
         ttk.Label(parent, text="Nom :", width=7).pack(side="left")
 
-        # Bound to ViewModel Var; trace_add marks dirty.
-        self._vm.name_var.trace_add("write", lambda *_: self._mark_dirty())
+        # Bound to ViewModel Var; trace_add marks dirty (id stored for teardown).
+        self._view_traces.append(
+            (self._vm.name_var, self._vm.name_var.trace_add("write", lambda *_: self._mark_dirty()))
+        )
         self._entry_name = ttk.Entry(parent, textvariable=self._vm.name_var)
         self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
@@ -127,13 +130,17 @@ class WorkflowView(ttk.Frame):
         """
         ttk.Label(parent, text="Desc. :", width=7).pack(side="left")
 
-        self._vm.desc_var.trace_add("write", lambda *_: self._mark_dirty())
+        self._view_traces.append(
+            (self._vm.desc_var, self._vm.desc_var.trace_add("write", lambda *_: self._mark_dirty()))
+        )
         self._entry_url = ttk.Entry(parent, textvariable=self._vm.desc_var)
         self._entry_url.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         ttk.Label(parent, text="Version :", width=10).pack(side="left", padx=(20, 0))
 
-        self._vm.version_var.trace_add("write", lambda *_: self._mark_dirty())
+        self._view_traces.append(
+            (self._vm.version_var, self._vm.version_var.trace_add("write", lambda *_: self._mark_dirty()))
+        )
         self._entry_version = ttk.Entry(parent, textvariable=self._vm.version_var, width=15)
         self._entry_version.pack(side="left")
 
@@ -344,8 +351,17 @@ class WorkflowView(ttk.Frame):
 
     def _bind_vm_vars(self) -> None:
         """Wire is_dirty_var trace to keep Save button state in sync."""
-        self._vm.is_dirty_var.trace_add("write", self._sync_save_btn_state)
+        self._view_traces.append(
+            (self._vm.is_dirty_var, self._vm.is_dirty_var.trace_add("write", self._sync_save_btn_state))
+        )
         self._sync_save_btn_state()
+
+    def teardown(self) -> None:
+        """Detach all view-owned VM traces and dispose the ViewModel."""
+        for var, trace_id in self._view_traces:
+            var.trace_remove("write", trace_id)
+        self._view_traces.clear()
+        self._vm.dispose()
 
     # ---------------------------------------------------------------
     # Public interface — IStepsListGestionView (used by StepsListPresenter)

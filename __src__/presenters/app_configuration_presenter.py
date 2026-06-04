@@ -6,14 +6,13 @@
 
 import logging
 from datetime import datetime
-from typing import Any
 
 from models.app_configuration_model import AppConfigurationModel
 from services.app_configuration_service import ConfigService
 from shared.constants import C_BROWSER_ENGINE_PLAYWRIGHT
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from shared.exception_util import AspirabotBaseError
-from view_models.app_configuration_view_model import AppConfigurationViewModel
+from view_models.app_configuration_view_model import AppConfigurationViewModel, AppConfigViewState
 
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
@@ -38,7 +37,7 @@ class AppConfigurationPresenter:
         self._vm = vm
         self._service = service
         self._is_loading = False
-        self._last_loaded_data: dict[str, Any] | None = None
+        self._last_loaded_state: AppConfigViewState | None = None
 
         self._vm.bind_save(self._on_save)
         self._vm.bind_reset(self._on_reset)
@@ -61,9 +60,9 @@ class AppConfigurationPresenter:
 
     def _on_save(self) -> None:
         """Validates and persists configuration changes from the ViewModel."""
-        form_data = self._vm.get_data()
+        state = self._vm.snapshot()
         try:
-            new_config = self._build_model(form_data)
+            new_config = self._build_model(state)
             self._service.update_configuration(new_config)
         except AspirabotBaseError as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
@@ -97,44 +96,48 @@ class AppConfigurationPresenter:
             return
         self._update_cancel_state()
 
-    def _build_model(self, data: dict[str, Any]) -> AppConfigurationModel:
-        """Builds a configuration model from raw form data."""
-        normalized = self._normalize_form_data(data)
-        return AppConfigurationModel(**normalized)
-
     @staticmethod
-    def _normalize_form_data(data: dict[str, Any]) -> dict[str, Any]:
-        """Normalizes raw form data for stable comparisons and model creation."""
-        return {
-            "log_level_enum": str(data.get("log_level_enum", "")),
-            "folder_logs": str(data.get("folder_logs", "")),
-            "folder_scenarios": str(data.get("folder_scenarios", "")),
-            "gui_booting_size": str(data.get("gui_booting_size", "")),
-            "gui_booting_fullscreen": bool(data.get("gui_booting_fullscreen")),
-            "browser_engine": str(data.get("browser_engine", "")),
-        }
+    def _build_model(state: AppConfigViewState) -> AppConfigurationModel:
+        """Build a configuration model from a typed ViewModel snapshot.
+
+        Args:
+            state: Immutable snapshot of the configuration form.
+
+        Returns:
+            A new ``AppConfigurationModel`` populated from *state*.
+        """
+        return AppConfigurationModel(
+            log_level_enum=state.log_level_enum,
+            folder_logs=state.folder_logs,
+            folder_scenarios=state.folder_scenarios,
+            folder_scraping=state.folder_scraping,
+            gui_booting_size=state.gui_booting_size,
+            gui_booting_fullscreen=state.gui_booting_fullscreen,
+            browser_engine=state.browser_engine,
+        )
 
     def _apply_configuration(self, config: AppConfigurationModel) -> None:
-        """Pushes configuration data into the ViewModel and resets change tracking."""
-        data = config.to_dict()
+        """Push configuration data into the ViewModel and reset change tracking.
+
+        Args:
+            config: The configuration model to reflect into the form Vars.
+        """
         self._is_loading = True
-        self._vm.set_data(data)
+        self._vm.set_data(config.to_dict())
         self._is_loading = False
-        self._last_loaded_data = data
+        self._last_loaded_state = self._vm.snapshot()
         self._vm.is_cancel_enabled_var.set(False)
         self._refresh_last_write_time()
 
     def _update_cancel_state(self) -> None:
-        """Enables or disables cancel depending on edit state."""
+        """Enable or disable the cancel button based on unsaved changes."""
         self._vm.is_cancel_enabled_var.set(self._has_changes())
 
     def _has_changes(self) -> bool:
-        """Returns True when the form differs from the last loaded config."""
-        if self._last_loaded_data is None:
+        """Return True when the form differs from the last loaded configuration."""
+        if self._last_loaded_state is None:
             return False
-        current = self._normalize_form_data(self._vm.get_data())
-        baseline = self._normalize_form_data(self._last_loaded_data)
-        return current != baseline
+        return self._vm.snapshot() != self._last_loaded_state
 
     def _refresh_last_write_time(self) -> None:
         """Pulls the last-write timestamp and pushes it to the view."""

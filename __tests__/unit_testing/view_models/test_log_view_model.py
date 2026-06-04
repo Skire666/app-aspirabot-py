@@ -6,8 +6,9 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
-
 from view_models.log_view_model import LogViewModel
+
+from shared.exception_util import CallbackNotDefinedError
 
 
 @pytest.fixture()
@@ -62,8 +63,11 @@ class TestGetActiveFilters:
 
     def test_all_disabled_returns_empty(self, vm: LogViewModel) -> None:
         for var in (
-            vm.filter_critical_var, vm.filter_error_var,
-            vm.filter_warning_var, vm.filter_info_var, vm.filter_debug_var,
+            vm.filter_critical_var,
+            vm.filter_error_var,
+            vm.filter_warning_var,
+            vm.filter_info_var,
+            vm.filter_debug_var,
         ):
             var.set(False)
         assert vm.get_active_filters() == []
@@ -88,7 +92,11 @@ class TestBindAndDispatch:
         vm.show_error("title", "message")
         cb.assert_called_once_with("title", "message")
 
-    def test_no_callback_no_error(self, vm: LogViewModel) -> None:
-        vm.filter_changed()  # no callback registered — must not raise
-        vm.open_logs_folder()
+    def test_unbound_primary_actions_raise(self, vm: LogViewModel) -> None:
+        with pytest.raises(CallbackNotDefinedError):
+            vm.filter_changed()
+        with pytest.raises(CallbackNotDefinedError):
+            vm.open_logs_folder()
+
+    def test_show_error_does_not_raise_when_unbound(self, vm: LogViewModel) -> None:
         vm.show_error("x", "y")
