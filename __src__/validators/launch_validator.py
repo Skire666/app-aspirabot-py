@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Self
+from typing import Self
 
 from models.launcher_model import LaunchModel
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
@@ -19,13 +19,6 @@ from shared.i18n_fra import (
     C_EXEC_NO_URL_SOURCE,
     C_EXEC_STEP_THRESHOLD_WITHOUT_STEP,
 )
-
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-_NON_MANUAL_SOURCE_TYPES = {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
-
 
 # -----------------------------------------------------------------------------
 # Internal Pydantic schema (validation-only, not persisted)
@@ -42,7 +35,9 @@ class _LaunchValidationSchema(BaseModel):
 
     export_folder: str
     url_source_type: str
-    url_source_value: Any
+    url_sources_list_manual: list
+    url_sources_folder_shortcuts: str
+    url_sources_folder_jsons: str
     emergency_stop_threshold: int
     emergency_stop_step_id: str
     emergency_stop_step_threshold: int
@@ -83,8 +78,10 @@ class _LaunchValidationSchema(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def check_url_source_value(self) -> Self:
-        if self.url_source_type in _NON_MANUAL_SOURCE_TYPES and not self.url_source_value:
+    def check_url_source_fields(self) -> Self:
+        if self.url_source_type == UrlSourceTypeEnum.E_FOLDER.value and not self.url_sources_folder_shortcuts:
+            raise ValueError(C_EXEC_FOLDER_URL_SOURCE_EMPTY)
+        if self.url_source_type == UrlSourceTypeEnum.E_JSON.value and not self.url_sources_folder_jsons:
             raise ValueError(C_EXEC_FOLDER_URL_SOURCE_EMPTY)
         return self
 
@@ -107,7 +104,9 @@ def validate_launch_profile(profile: LaunchModel) -> list[str]:
         _LaunchValidationSchema(
             export_folder=profile.export_folder or "",
             url_source_type=profile.url_source_type or "",
-            url_source_value=profile.url_source_value,
+            url_sources_list_manual=profile.url_sources_list_manual,
+            url_sources_folder_shortcuts=profile.url_sources_folder_shortcuts or "",
+            url_sources_folder_jsons=profile.url_sources_folder_jsons or "",
             emergency_stop_threshold=profile.emergency_stop_threshold,
             emergency_stop_step_id=profile.emergency_stop_step_id or "",
             emergency_stop_step_threshold=profile.emergency_stop_step_threshold,

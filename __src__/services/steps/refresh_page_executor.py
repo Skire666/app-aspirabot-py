@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, cast, override
+from typing import cast, override
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -16,6 +16,8 @@ from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_ms
+
+from __src__.shared.converter_util import convert_wait_until_to_literals
 
 
 class RefreshPageExecutor(StepExecutorBase, IStepExecutor):
@@ -31,15 +33,15 @@ class RefreshPageExecutor(StepExecutorBase, IStepExecutor):
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(RefreshPageParams, context.step_scraping_data.params)
-        cast_wait_state = cast(Literal["domcontentloaded", "load", "networkidle"], p.wait_state)
         page = browser.get_workflow_page()
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
+        cast_wait_time = convert_wait_until_to_literals(p.wait_until)
 
         # Clear session cookies before reload when requested.
         if p.clear_cache:
             page.context.clear_cookies()
         page.reload()
-        page.wait_for_load_state(cast_wait_state, timeout=timeout_ms)
+        page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
         context.last_message_step = "Page rafraîchie avec succès, attente de chargement"
 
 

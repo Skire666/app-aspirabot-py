@@ -28,11 +28,14 @@ def _valid_profile() -> LaunchModel:
         "profile_name": "Test",
         "export_folder": "/tmp/export",
         "url_source_type": "MANUAL",
-        "url_source_value": ["https://example.com"],
+        "url_sources_list_manual": ["https://example.com"],
+        "url_sources_folder_shortcuts": "",
+        "url_sources_folder_jsons": "",
+        "url_sort_order_shortcuts": "",
+        "url_sort_order_jsons": "",
         "emergency_stop_threshold": 3,
         "launch_count": 0,
         "used_date_profile": None,
-        "url_sort_order": "",
         "emergency_stop_step_id": "step_abc",
         "emergency_stop_step_threshold": 2,
     }
@@ -153,39 +156,50 @@ class TestStepThresholdValidation:
 
 
 # ---------------------------------------------------------------------------
-# url_source_value cross-field rule (FOLDER / JSON require non-empty value)
+# Per-mode path cross-field rule (FOLDER / JSON require their path field)
 # ---------------------------------------------------------------------------
 
 
-class TestUrlSourceValueCrossFieldRule:
-    @pytest.mark.parametrize("source_type", ["FOLDER", "JSON"])
-    def test_empty_value_for_non_manual_source_produces_error(self, source_type: str) -> None:
-        """FOLDER and JSON source types require a non-empty url_source_value."""
+class TestUrlSourcePathCrossFieldRule:
+    def test_folder_source_without_shortcuts_path_produces_error(self) -> None:
+        """FOLDER source type requires a non-empty url_sources_folder_shortcuts."""
         profile = _valid_profile()
-        profile.url_source_type = source_type
-        profile.url_source_value = ""
+        profile.url_source_type = "FOLDER"
+        profile.url_sources_folder_shortcuts = ""
         errors = validate_launch_profile(profile)
-        assert len(errors) >= 1, (
-            f"Empty url_source_value with source_type={source_type!r} must produce an error"
-        )
+        assert len(errors) >= 1, "Empty shortcuts path with FOLDER source must produce an error"
 
-    @pytest.mark.parametrize("source_type", ["FOLDER", "JSON"])
-    def test_none_value_for_non_manual_source_produces_error(self, source_type: str) -> None:
+    def test_folder_source_with_shortcuts_path_is_valid(self) -> None:
         profile = _valid_profile()
-        profile.url_source_type = source_type
-        profile.url_source_value = None  # type: ignore[assignment]
+        profile.url_source_type = "FOLDER"
+        profile.url_sources_folder_shortcuts = "/data/shortcuts"
         errors = validate_launch_profile(profile)
-        assert len(errors) >= 1
+        assert errors == []
 
-    def test_manual_source_empty_value_is_valid(self) -> None:
-        """MANUAL source does not trigger the cross-field url_source_value check."""
+    def test_json_source_without_jsons_path_produces_error(self) -> None:
+        """JSON source type requires a non-empty url_sources_folder_jsons."""
+        profile = _valid_profile()
+        profile.url_source_type = "JSON"
+        profile.url_sources_folder_jsons = ""
+        errors = validate_launch_profile(profile)
+        assert len(errors) >= 1, "Empty jsons path with JSON source must produce an error"
+
+    def test_json_source_with_jsons_path_is_valid(self) -> None:
+        profile = _valid_profile()
+        profile.url_source_type = "JSON"
+        profile.url_sources_folder_jsons = "/data/jsons"
+        errors = validate_launch_profile(profile)
+        assert errors == []
+
+    def test_manual_source_empty_paths_is_valid(self) -> None:
+        """MANUAL source must not trigger any per-mode path cross-field error."""
         profile = _valid_profile()
         profile.url_source_type = "MANUAL"
-        profile.url_source_value = []
+        profile.url_sources_folder_shortcuts = ""
+        profile.url_sources_folder_jsons = ""
         errors = validate_launch_profile(profile)
-        # MANUAL mode — cross-field rule must not fire; other fields are valid
-        assert all("source" not in e.lower() for e in errors), (
-            "MANUAL source must not trigger the url_source_value cross-field error"
+        assert all("chemin" not in e.lower() for e in errors), (
+            "MANUAL source must not trigger the per-mode path cross-field error"
         )
 
 

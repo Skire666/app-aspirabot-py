@@ -36,7 +36,7 @@
             "params": {
                 "url_mode": "<<SOURCE>>",
                 "url_custom": "https://example.com/",
-                "wait_state": "networkidle",
+                "wait_until": "networkidle",
                 "wait_dns_solver": 6,
                 "timeout_duration": 10,
                 "timeout_unit": "s",

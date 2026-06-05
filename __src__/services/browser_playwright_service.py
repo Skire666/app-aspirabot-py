@@ -14,11 +14,12 @@ import contextlib
 import logging
 import time
 from pathlib import Path
-from typing import Literal, cast
 
 from interfaces.i_web_browser_service import IWebBrowserService
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 from shared.constants import C_STR_ERROR_JS_EVALUATION
+from shared.converter_util import convert_wait_until_to_literals
+from shared.enums import WaitUntilEnum
 from shared.exception_util import BrowserAlreadyLaunchedError, BrowserNotLaunchedError, OpenUrlTooManyRetriesError
 
 # -----------------------------------------------------------------------------
@@ -129,14 +130,17 @@ class BrowserPlaywrightService(IWebBrowserService):
         context = self._browser.contexts[0]
         if len(context.pages) == 0:
             self._workflow_page = context.new_page()
+            print("Nouvelle page créée pour le workflow.")
         elif forced_new_page:
             new_pg = context.new_page()
             if self._workflow_page:
                 with contextlib.suppress(Exception):
                     self._workflow_page.close()
             self._workflow_page = new_pg
-        else:
+            print("Nouvelle page forcée créée pour le workflow.")
+        elif self._workflow_page is None:
             self._workflow_page = context.pages[0]  # Track the first page as the workflow page.
+            print("Page existante utilisée pour le workflow.")
 
         return self._workflow_page
 
@@ -220,41 +224,68 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         return self._pw is not None
 
-    def safe_goto_url(self, url: str, wait_state: str, timeout_ms: int, wait_dns_solver_sec: int) -> None:
+    def safe_goto_url(self, url: str, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_sec: int) -> None:
         """Navigate to url, retrying on redirect / closed-page / DNS errors.
 
         Args:
             url: URL to navigate to.
-            wait_state: Playwright wait state to wait for after navigation.
+            wait_until: Playwright wait until option to wait for after navigation.
             timeout_ms: Timeout in milliseconds for navigation and waiting.
             wait_dns_solver_sec: Seconds to wait between retries if a DNS error is encountered.
 
         """
-        from_recovered, nav_retries, do_loop = False, 0, True
-        cast_wait_state = cast(Literal["domcontentloaded", "load", "networkidle"], wait_state)
-        while do_loop:
+        nav_retries, do_loop = 0, True
+        cast_wait_time = convert_wait_until_to_literals(wait_until)
+        while do_loop and nav_retries < _NAV_MAX_RETRIES:
             try:
                 page = self.get_workflow_page()
                 page.goto(url, wait_until="commit", timeout=timeout_ms)
-                page.wait_for_load_state(cast_wait_state, timeout=timeout_ms)
-            except Exception as exp:
-                msg = str(exp)
-                if "interrupted by another navigation" in msg and nav_retries < _NAV_MAX_RETRIES:
-                    self.get_workflow_page(forced_new_page=True)  # Force a new page to recover from the navigation
-                    nav_retries += 1
-                    continue  # la redirection a pris le dessus : on relance goto vers l'URL voulue
-                if "has been closed" in msg and not from_recovered:
-                    self._workflow_page = self.get_workflow_page(forced_new_page=True)
-                    from_recovered = True
-                    continue
-                if "ERR_NAME_NOT_RESOLVED" in msg:  # redirection ? DNS ?
-                    page.wait_for_timeout(1000 * wait_dns_solver_sec)
-                    page.reload(wait_until=cast_wait_state, timeout=timeout_ms)
-                    do_loop = False  # le reload est la dernière tentative après délai DNS
-                    continue
-                raise OpenUrlTooManyRetriesError() from exp
+                page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
+            except Exception as exp:  # noqa: BLE001
+                nav_retries, do_loop = self._handle_goto_error(exp, wait_until, timeout_ms, wait_dns_sec, nav_retries)
             else:
                 return
+
+    def _handle_goto_error(
+        self, exp: Exception, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_solver_sec: int, nav_retries: int
+    ) -> tuple[int, bool]:
+        """Handle a navigation exception and return the updated retry-loop state.
+
+        Args:
+            exp: The caught exception.
+            wait_until: Playwright wait state for DNS reload.
+            timeout_ms: Navigation timeout in milliseconds.
+            wait_dns_solver_sec: Seconds to wait before the DNS reload.
+            nav_retries: Current count of navigation-interrupted retries.
+            do_loop: Current loop continuation flag.
+
+        Returns:
+            Updated (nav_retries, do_loop) tuple.
+
+        Raises:
+            OpenUrlTooManyRetriesError: When no known recovery path matches the error.
+        """
+        assert self._workflow_page is not None, "Workflow page should be initialized before..."
+
+        msg = str(exp)
+        if "interrupted by another navigation" in msg and nav_retries < _NAV_MAX_RETRIES:
+            self.get_workflow_page(forced_new_page=True)
+            print("Tentative type : interruption de navigation détectée")
+            return nav_retries + 1, True
+        if "has been closed" in msg:
+            self.get_workflow_page(forced_new_page=True)
+            self._workflow_page.wait_for_timeout(1000)  # ms
+            print("Tentative type : page fermée détectée")
+            return nav_retries + 1, True
+        if "ERR_NAME_NOT_RESOLVED" in msg:
+            cast_wait_time = convert_wait_until_to_literals(wait_until)
+            self.get_workflow_page()
+            self._workflow_page.wait_for_timeout(1000 * wait_dns_solver_sec)
+            self._workflow_page.reload(wait_until=cast_wait_time, timeout=timeout_ms)
+            print("Tentative type : résolution de nom non résolue détectée")
+            return nav_retries, False
+        print(f"Erreur de navigation non récupérable : {msg}")
+        raise OpenUrlTooManyRetriesError() from exp
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.

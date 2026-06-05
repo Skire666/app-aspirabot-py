@@ -1,14 +1,11 @@
-"""Regression tests — LaunchModel.import_from_data_json url_source_value type preservation.
+"""Regression tests — LaunchModel per-mode URL source field type preservation.
 
-Regression for the bug where `str()` was applied unconditionally to
-`url_source_value` during deserialization, turning a list of URLs into its
-string representation (e.g. "['http://...']"), causing `isinstance(v, list)`
-to return False downstream and silently producing an empty URL list.
-
-Scope:
-- import_from_data_json must preserve list type when url_source_value is a list.
-- import_from_data_json must preserve str type when url_source_value is a string.
-- Round-trip export_to_data_json → import_from_data_json must be lossless for both types.
+Regression scope (replaces the former url_source_value single-field tests):
+- import_from_data_json must store url_sources_list_manual as list[str].
+- import_from_data_json must store url_sources_folder_shortcuts as str.
+- import_from_data_json must store url_sources_folder_jsons as str.
+- Round-trip export_to_data_json → import_from_data_json must be lossless for all three fields.
+- Missing fields in JSON must default to empty list / empty strings (no KeyError).
 """
 
 from __future__ import annotations
@@ -36,7 +33,6 @@ _BASE_DATA: dict = {
     "emergency_stop_threshold": 5,
     "launch_count": 0,
     "used_date_profile": None,
-    "url_sort_order": "",
     "emergency_stop_step_id": "",
     "emergency_stop_step_threshold": 0,
 }
@@ -51,49 +47,36 @@ def _data(**overrides) -> dict:
 # ---------------------------------------------------------------------------
 
 
-class TestImportFromDataJsonUrlSourceValueType:
-    def test_list_value_remains_list_when_source_type_is_manual(self) -> None:
-        """url_source_value doit rester une liste après désérialisation (mode MANUAL)."""
-        # Arrange
-        data = _data(url_source_value=_URLS)
-
-        # Act
+class TestImportFromDataJsonFieldTypes:
+    def test_list_manual_remains_list(self) -> None:
+        """url_sources_list_manual must be deserialized as list[str]."""
+        data = _data(url_sources_list_manual=_URLS)
         model = LaunchModel.import_from_data_json(data)
-
-        # Assert
-        assert isinstance(model.url_source_value, list), (
-            "url_source_value doit être de type list après import — str() ne doit pas être appliqué"
+        assert isinstance(model.url_sources_list_manual, list), (
+            "url_sources_list_manual doit être list après import"
         )
 
-    def test_list_value_content_is_preserved_when_source_type_is_manual(self) -> None:
-        """Les URLs contenues dans url_source_value doivent être intactes après désérialisation."""
-        # Arrange
-        data = _data(url_source_value=_URLS)
-
-        # Act
+    def test_list_manual_content_preserved(self) -> None:
+        """URL list content must be identical after deserialization."""
+        data = _data(url_sources_list_manual=_URLS)
         model = LaunchModel.import_from_data_json(data)
+        assert model.url_sources_list_manual == _URLS
 
-        # Assert
-        assert model.url_source_value == _URLS, (
-            "Le contenu de url_source_value doit être identique aux URLs d'origine"
-        )
-
-    def test_string_value_remains_str_when_source_type_is_folder(self) -> None:
-        """url_source_value doit rester une chaîne après désérialisation (mode FOLDER)."""
-        # Arrange
-        path = "/data/images"
-        data = _data(url_source_type="FOLDER", url_source_value=path)
-
-        # Act
+    def test_folder_shortcuts_remains_str(self) -> None:
+        """url_sources_folder_shortcuts must be deserialized as str."""
+        path = "/data/shortcuts"
+        data = _data(url_source_type="FOLDER", url_sources_folder_shortcuts=path)
         model = LaunchModel.import_from_data_json(data)
+        assert isinstance(model.url_sources_folder_shortcuts, str)
+        assert model.url_sources_folder_shortcuts == path
 
-        # Assert
-        assert isinstance(model.url_source_value, str), (
-            "url_source_value doit rester str quand la valeur stockée est un chemin"
-        )
-        assert model.url_source_value == path, (
-            "Le chemin ne doit pas être altéré lors de l'import"
-        )
+    def test_folder_jsons_remains_str(self) -> None:
+        """url_sources_folder_jsons must be deserialized as str."""
+        path = "/data/jsons"
+        data = _data(url_source_type="JSON", url_sources_folder_jsons=path)
+        model = LaunchModel.import_from_data_json(data)
+        assert isinstance(model.url_sources_folder_jsons, str)
+        assert model.url_sources_folder_jsons == path
 
 
 # ---------------------------------------------------------------------------
@@ -101,64 +84,74 @@ class TestImportFromDataJsonUrlSourceValueType:
 # ---------------------------------------------------------------------------
 
 
-class TestRoundTripUrlSourceValue:
-    def test_roundtrip_list_is_lossless(self) -> None:
-        """export_to_data_json → import_from_data_json doit préserver la liste d'URLs."""
-        # Arrange
-        data = _data(url_source_value=_URLS)
+class TestRoundTripFields:
+    def test_roundtrip_list_manual_is_lossless(self) -> None:
+        """export_to_data_json → import_from_data_json must preserve url_sources_list_manual."""
+        data = _data(url_sources_list_manual=_URLS)
         original = LaunchModel.import_from_data_json(data)
+        restored = LaunchModel.import_from_data_json(original.export_to_data_json())
+        assert restored.url_sources_list_manual == _URLS
 
-        # Act
-        exported = original.export_to_data_json()
-        restored = LaunchModel.import_from_data_json(exported)
-
-        # Assert
-        assert restored.url_source_value == _URLS, (
-            "Le round-trip doit reproduire la liste de URLs à l'identique"
-        )
-
-    def test_roundtrip_string_is_lossless(self) -> None:
-        """export_to_data_json → import_from_data_json doit préserver un chemin string."""
-        # Arrange
-        path = "/mnt/data/source"
-        data = _data(url_source_type="FOLDER", url_source_value=path)
+    def test_roundtrip_folder_shortcuts_is_lossless(self) -> None:
+        """Round-trip must preserve url_sources_folder_shortcuts."""
+        path = "/mnt/shortcuts"
+        data = _data(url_source_type="FOLDER", url_sources_folder_shortcuts=path)
         original = LaunchModel.import_from_data_json(data)
+        restored = LaunchModel.import_from_data_json(original.export_to_data_json())
+        assert restored.url_sources_folder_shortcuts == path
 
-        # Act
-        exported = original.export_to_data_json()
-        restored = LaunchModel.import_from_data_json(exported)
-
-        # Assert
-        assert restored.url_source_value == path, (
-            "Le round-trip doit reproduire le chemin à l'identique"
-        )
+    def test_roundtrip_folder_jsons_is_lossless(self) -> None:
+        """Round-trip must preserve url_sources_folder_jsons."""
+        path = "/mnt/jsons"
+        data = _data(url_source_type="JSON", url_sources_folder_jsons=path)
+        original = LaunchModel.import_from_data_json(data)
+        restored = LaunchModel.import_from_data_json(original.export_to_data_json())
+        assert restored.url_sources_folder_jsons == path
 
 
 # ---------------------------------------------------------------------------
-# Parametric — types of url_source_value accepted by import_from_data_json
+# Missing-field defaults (no migration)
+# ---------------------------------------------------------------------------
+
+
+class TestMissingFieldDefaults:
+    def test_missing_list_manual_defaults_to_empty_list(self) -> None:
+        """Absent url_sources_list_manual must default to [], not raise."""
+        model = LaunchModel.import_from_data_json(_data())
+        assert model.url_sources_list_manual == []
+
+    def test_missing_folder_shortcuts_defaults_to_empty_str(self) -> None:
+        """Absent url_sources_folder_shortcuts must default to ''."""
+        model = LaunchModel.import_from_data_json(_data())
+        assert model.url_sources_folder_shortcuts == ""
+
+    def test_missing_folder_jsons_defaults_to_empty_str(self) -> None:
+        """Absent url_sources_folder_jsons must default to ''."""
+        model = LaunchModel.import_from_data_json(_data())
+        assert model.url_sources_folder_jsons == ""
+
+
+# ---------------------------------------------------------------------------
+# Parametric — sort order fields preserved
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
-    "raw_value, expected_type",
+    "shortcuts_order, jsons_order",
     [
-        (_URLS, list),
-        ("/some/path", str),
-        ("", str),
+        ("mtime_asc", "mtime_desc"),
+        ("mtime_desc", "mtime_asc"),
+        ("", ""),
     ],
-    ids=["list-of-urls", "path-string", "empty-string"],
+    ids=["asc-desc", "desc-asc", "empty-both"],
 )
-def test_import_from_data_json_url_source_value_type_is_preserved(
-    raw_value: list | str, expected_type: type
-) -> None:
-    """import_from_data_json doit préserver le type natif de url_source_value."""
-    # Arrange
-    data = _data(url_source_value=raw_value)
-
-    # Act
-    model = LaunchModel.import_from_data_json(data)
-
-    # Assert
-    assert isinstance(model.url_source_value, expected_type), (
-        f"Attendu type {expected_type.__name__}, obtenu {type(model.url_source_value).__name__}"
+def test_sort_order_fields_round_trip(shortcuts_order: str, jsons_order: str) -> None:
+    """Both sort order fields must survive a round-trip unchanged."""
+    data = _data(
+        url_sort_order_shortcuts=shortcuts_order,
+        url_sort_order_jsons=jsons_order,
     )
+    original = LaunchModel.import_from_data_json(data)
+    restored = LaunchModel.import_from_data_json(original.export_to_data_json())
+    assert restored.url_sort_order_shortcuts == shortcuts_order
+    assert restored.url_sort_order_jsons == jsons_order

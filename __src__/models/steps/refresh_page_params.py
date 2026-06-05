@@ -11,6 +11,7 @@ from typing import Any, cast
 from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator, model_validator
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
+from shared.enums import WaitUntilEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 
@@ -18,7 +19,7 @@ class RefreshPageParams(BaseStepParams):
     """Parameters for the refresh page scraping step."""
 
     clear_cache: bool
-    wait_state: str
+    wait_until: WaitUntilEnum
     timeout_duration: int
     timeout_unit: str
     comment: str
@@ -44,9 +45,7 @@ class RefreshPageParams(BaseStepParams):
         unit = d.get("timeout_unit", "")
         if isinstance(duration, int) and duration > 0 and unit not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             raise ValueError(
-                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(
-                    step=step_label(info.context), value=unit
-                )
+                ERROR_TEMPLATES["refresh_page_timeout_unit_invalid"].format(step=step_label(info.context), value=unit)
             )
         return d
 

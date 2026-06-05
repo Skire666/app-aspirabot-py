@@ -9,6 +9,7 @@ scrollable journal. All state is driven by ScrapingViewModel Vars.
 # -----------------------------------------------------------------------------
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import messagebox, ttk
 
 from shared.constants import C_COLOR_ORANGE_BLINKING
@@ -167,14 +168,15 @@ class ScrapingView(ttk.Frame):
 
     def _bind_vm_vars(self) -> None:
         """Register trace listeners on all relevant ViewModel Vars; ids stored for teardown."""
-        for var, cb in [
+        bindings: list[tuple[tk.Variable, Callable[..., object]]] = [
             (self._vm.is_launch_btn_enabled_var, self._sync_launch_btn),
             (self._vm.is_cancel_btn_enabled_var, self._sync_cancel_btn),
             (self._vm.is_pause_enabled_var, self._sync_pause_btn),
             (self._vm.is_resume_active_var, self._sync_resume_active),
             (self._vm.journal_version_var, self._sync_journal_append),
             (self._vm.journal_clear_var, self._sync_journal_clear),
-        ]:
+        ]
+        for var, cb in bindings:
             self._view_traces.append((var, var.trace_add("write", cb)))
 
     def teardown(self) -> None:

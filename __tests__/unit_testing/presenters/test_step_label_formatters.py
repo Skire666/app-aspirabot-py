@@ -286,12 +286,12 @@ class TestFmtOpenUrl:
 
 class TestFmtRefreshPage:
     def test_clear_cache_true(self) -> None:
-        result = _fmt(StepTypeEnum.E_REFRESH_PAGE, {"clear_cache": True, "timeout_duration": 8, "timeout_unit": "s", "wait_state": "load"})
+        result = _fmt(StepTypeEnum.E_REFRESH_PAGE, {"clear_cache": True, "timeout_duration": 8, "timeout_unit": "s", "wait_until": "load"})
         assert "F5" in result
         assert "load" in result
 
     def test_clear_cache_false(self) -> None:
-        result = _fmt(StepTypeEnum.E_REFRESH_PAGE, {"clear_cache": False, "timeout_duration": 3, "timeout_unit": "s", "wait_state": "networkidle"})
+        result = _fmt(StepTypeEnum.E_REFRESH_PAGE, {"clear_cache": False, "timeout_duration": 3, "timeout_unit": "s", "wait_until": "networkidle"})
         assert "Garde" in result
 
 
@@ -416,7 +416,7 @@ class TestFmtWaitHtmlImages:
 
 class TestFmtWaitPageState:
     def test_with_timeout(self) -> None:
-        result = _fmt(StepTypeEnum.E_WAIT_PAGE_STATE, {"timeout_duration": 15, "timeout_unit": "s", "wait_state": "load"})
+        result = _fmt(StepTypeEnum.E_WAIT_PAGE_STATE, {"timeout_duration": 15, "timeout_unit": "s", "wait_until": "load"})
         assert "15" in result
         assert "load" in result
         assert "sec" in result

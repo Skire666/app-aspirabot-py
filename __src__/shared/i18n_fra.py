@@ -56,6 +56,7 @@ C_EXEC_INVALID_GLOBAL_THRESHOLD = "Le seuil global d'erreurs doit être un entie
 C_EXEC_STEP_THRESHOLD_WITHOUT_STEP = "Veuillez sélectionner une étape pour le seuil par étape."
 C_EXEC_INVALID_STEP_THRESHOLD = "Le seuil par étape doit être un entier entre 1 et 9 999 999."
 C_EXEC_FOLDER_URL_SOURCE_EMPTY = "Le chemin de la source d'URL est requis."
+C_EXEC_URL_COUNT_FMT = "{count} URL"
 C_EXEC_SAVE_ERROR = "La sauvegarde du profil a échoué. Vos modifications n'ont pas été enregistrées."
 
 # Executor panel — labels

@@ -345,12 +345,12 @@ class TestOpenUrlParamsValidation:
 
 
 class TestRefreshPageParamsValidation:
-    def test_invalid_wait_state_with_context_raises(self) -> None:
+    def test_invalid_wait_until_with_context_raises(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
 
         with pytest.raises(ValidationError):
             RefreshPageParams.model_validate(
-                {"wait_state": "bad_state", "timeout_ms": 30000, "comment": ""},
+                {"clear_cache": False, "wait_until": "bad_state", "timeout_duration": 30, "timeout_unit": "s", "comment": ""},
                 context=_CTX,
             )
 
@@ -359,7 +359,7 @@ class TestRefreshPageParamsValidation:
 
         with pytest.raises(ValidationError):
             RefreshPageParams.model_validate(
-                {"wait_state": "load", "timeout_ms": -1, "comment": ""},
+                {"clear_cache": False, "wait_until": "load", "timeout_duration": -1, "timeout_unit": "s", "comment": ""},
                 context=_CTX,
             )
 
@@ -370,12 +370,12 @@ class TestRefreshPageParamsValidation:
 
 
 class TestWaitPageStateParamsValidation:
-    def test_invalid_wait_state_with_context_raises(self) -> None:
+    def test_invalid_wait_until_with_context_raises(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
 
         with pytest.raises(ValidationError):
             WaitPageStateParams.model_validate(
-                {"wait_state": "flying", "timeout_ms": 5000, "comment": ""},
+                {"wait_until": "flying", "timeout_duration": 5, "timeout_unit": "s", "comment": ""},
                 context=_CTX,
             )
 
@@ -384,7 +384,7 @@ class TestWaitPageStateParamsValidation:
 
         with pytest.raises(ValidationError):
             WaitPageStateParams.model_validate(
-                {"wait_state": "load", "timeout_ms": -100, "comment": ""},
+                {"wait_until": "load", "timeout_duration": -100, "timeout_unit": "s", "comment": ""},
                 context=_CTX,
             )
 

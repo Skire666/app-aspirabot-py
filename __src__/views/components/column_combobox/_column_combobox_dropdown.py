@@ -29,7 +29,7 @@ from views.components.column_combobox._column_combobox_util import (
 )
 
 if TYPE_CHECKING:
-    from views.components.column_combobox import ColumnCombobox
+    from views.components.column_combobox.column_combobox import ColumnCombobox
 
 # -----------------------------------------------------------------------------
 # Dropdown

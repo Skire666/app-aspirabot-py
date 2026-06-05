@@ -25,7 +25,7 @@ from models.app_configuration_model import AppConfigurationModel
 from playwright.sync_api import Page
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
-from shared.enums import ExtractTextHtmlEnum
+from shared.enums import ExtractTextHtmlEnum, WaitUntilEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import C_DEBUG_DNS_DELAY_INVALID, C_DEBUG_TIMEOUT_INVALID, C_DEBUG_URL_EMPTY
 from view_models.debug_view_model import DebugViewModel
@@ -189,9 +189,7 @@ class DebugPresenter:
 
         try:
             self._debug_browser.launch()
-            self._debug_browser.safe_goto_url(
-                url, wait_state="networkidle", timeout_ms=timeout * 1000, wait_dns_solver_sec=dns_delay
-            )
+            self._debug_browser.safe_goto_url(url, WaitUntilEnum.E_IDLE, timeout * 1000, dns_delay)
             page = self._debug_browser.get_workflow_page()
             html = self._debug_service.get_html_content(page)
             self._push_html(html)

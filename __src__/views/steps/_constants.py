@@ -26,12 +26,6 @@ WAIT_UNIT_VIEW_TO_MODEL: dict[str, str] = dict(zip(WAIT_UNIT_DISPLAY, C_UNITS_TI
 WAIT_UNIT_MODEL_TO_VIEW: dict[str, str] = dict(zip(C_UNITS_TIME_ALLOWED_FOR_MODEL, WAIT_UNIT_DISPLAY, strict=True))
 
 # -----------------------------------------------------------------------------
-# Playwright wait-state values
-# -----------------------------------------------------------------------------
-
-C_CHOICES_WAIT_PAGE_STATE: list[str] = ["domcontentloaded", "load", "networkidle"]
-
-# -----------------------------------------------------------------------------
 # Download mode values
 # -----------------------------------------------------------------------------
 

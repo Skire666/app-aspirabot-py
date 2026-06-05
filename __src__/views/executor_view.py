@@ -9,7 +9,9 @@ action methods.  No business logic, no service calls.
 # Imports
 # -----------------------------------------------------------------------------
 
+import contextlib
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any, cast
 
@@ -51,7 +53,6 @@ class ExecutorView(ttk.Frame):
         # Local rendering caches — refreshed from VM list data on version changes.
         self._profile_items: list[ProfileItem] = []
         self._step_items: list[StepItem] = []
-        self._source_choices: list[tuple[str, str]] = []
 
         # Cooldown guard for refresh button.
         self._refresh_cooldown: bool = False
@@ -129,10 +130,11 @@ class ExecutorView(ttk.Frame):
         self._cfg_grid = container
         self._create_cfg_row0(container)
         self._create_cfg_row1(container)
-        self._create_cfg_row2(container)
-        self._create_cfg_row2_bis(container)
-        self._create_cfg_row3(container)
-        self._create_cfg_row4(container)
+        self._create_cfg_source_row(container)
+        self._create_cfg_panels_container(container)
+        self._create_cfg_panel_manual()
+        self._create_cfg_panel_folder()
+        self._create_cfg_panel_json()
         self._create_cfg_row5(container)
         self._create_cfg_row6(container)
 
@@ -158,82 +160,200 @@ class ExecutorView(ttk.Frame):
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
         )
         self._view_traces.append(
-            (self._vm.export_folder_var, self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed()))
+            (
+                self._vm.export_folder_var,
+                self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
         )
         ttk.Entry(row, textvariable=self._vm.export_folder_var).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
         )
 
-    def _create_cfg_row2(self, parent: tk.Widget) -> None:
-        """Row 2 — URL source type combobox and folder/json path entry."""
+    def _create_cfg_source_row(self, parent: tk.Widget) -> None:
+        """Source-type row — three RadioButtons replacing the old Combobox."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         ttk.Label(row, text="Source d'URL :", width=15).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        source_choices = [
+        for label, value in (
             ("Liste manuelle", UrlSourceTypeEnum.E_MANUAL.value),
             ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER.value),
             ("Dossier avec JSON", UrlSourceTypeEnum.E_JSON.value),
-        ]
-        self._source_choices = source_choices
-        display_values = [label for label, _ in source_choices]
-        self._combo_source = ttk.Combobox(row, values=display_values, state="readonly", width=18)
-        self._combo_source.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self._combo_source.bind("<<ComboboxSelected>>", self._on_source_type_changed)
+        ):
+            ttk.Radiobutton(
+                row,
+                text=label,
+                variable=self._vm.url_source_type_var,
+                value=value,
+                command=lambda: self._vm.form_changed(),
+            ).pack(side=tk.LEFT, padx=(0, 20), pady=(0, 5))
 
-    def _create_cfg_row2_bis(self, parent: tk.Widget) -> None:
-        """Row 2 — URL source type combobox and folder/json path entry."""
+    def _create_cfg_panels_container(self, parent: tk.Widget) -> None:
+        """Create the container that holds the three mode panels (always packed)."""
+        self._panels_container = ttk.Frame(parent)
+        self._panels_container.pack(fill=tk.X)
+
+    def _create_cfg_panel_manual(self) -> None:
+        """MANUAL panel — editable text widget with URL counter."""
+        self._panel_manual = ttk.Frame(self._panels_container)
+
+        inner = ttk.Frame(self._panel_manual)
+        inner.pack(fill=tk.X)
+
+        left = ttk.Frame(inner)
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 23), pady=(0, 5))
+        ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
+        ttk.Label(left, textvariable=self._vm.url_count_manual_var).pack(anchor=tk.W)
+
+        preview_frame = ttk.Frame(inner)
+        preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._txt_url_manual = tk.Text(preview_frame, height=7, wrap=tk.NONE)
+        scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_manual.yview)  # type: ignore[reportUnknownMemberType]
+        self._txt_url_manual.configure(yscrollcommand=scrollbar.set)
+        self._txt_url_manual.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(0, 5))
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self._txt_url_manual.bind("<<Modified>>", self._on_manual_text_modified)
+
+    def _create_cfg_panel_folder(self) -> None:
+        """FOLDER panel — path entry, read-only preview, and sort-order RadioButtons."""
+        self._panel_folder = ttk.Frame(self._panels_container)
+        self._create_folder_path_row(self._panel_folder)
+        self._create_folder_preview_row(self._panel_folder)
+        self._create_folder_sort_row(self._panel_folder)
+
+    def _create_folder_path_row(self, parent: tk.Widget) -> None:
+        """Path entry row with browse button for the FOLDER source panel.
+
+        Args:
+            parent: The FOLDER panel frame to attach widgets to.
+        """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-
-        self._lbl_source_path = ttk.Label(row, text="Chemin (si requis) : ")
-        self._lbl_source_path.pack(side=tk.LEFT, padx=(98, 5), pady=(0, 5))
+        ttk.Label(row, text="Chemin :", width=15).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._view_traces.append(
-            (self._vm.url_source_path_var, self._vm.url_source_path_var.trace_add("write", lambda *_: self._vm.form_changed()))
+            (
+                self._vm.url_source_path_shortcuts_var,
+                self._vm.url_source_path_shortcuts_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
         )
-        self._entry_source_path = ttk.Entry(row, textvariable=self._vm.url_source_path_var)
-        self._entry_source_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5))
+        ttk.Entry(row, textvariable=self._vm.url_source_path_shortcuts_var).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
+        )
+        ttk.Button(row, text="Parcourir", command=self._browse_shortcuts_folder).pack(side=tk.RIGHT, pady=(0, 5))
 
-        self._btn_browse_source = ttk.Button(row, text="Parcourir", command=self._browse_source_folder)
-        self._btn_browse_source.pack(side=tk.RIGHT, pady=(0, 5))
+    def _create_folder_preview_row(self, parent: tk.Widget) -> None:
+        """Preview row with URL count and scrolled text for the FOLDER source panel.
 
-    def _create_cfg_row3(self, parent: tk.Widget) -> None:
-        """Row 3 — URL preview (scrollable, editable only in manual mode)."""
+        Args:
+            parent: The FOLDER panel frame to attach widgets to.
+        """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Aperçu URLs :", width=15).pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 5), pady=(0, 5))
+        left = ttk.Frame(row)
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 23), pady=(0, 5))
+        ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
+        ttk.Label(left, textvariable=self._vm.url_count_shortcuts_var).pack(anchor=tk.W)
         preview_frame = ttk.Frame(row)
         preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self._txt_url_preview = tk.Text(preview_frame, height=7, wrap=tk.NONE)
-        scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_preview.yview)  # type: ignore[reportUnknownMemberType]
-        self._txt_url_preview.configure(yscrollcommand=scrollbar.set)
-        self._txt_url_preview.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
+        self._txt_url_shortcuts = tk.Text(preview_frame, height=7, wrap=tk.NONE, state=tk.DISABLED)
+        scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_shortcuts.yview)  # type: ignore[reportUnknownMemberType]
+        self._txt_url_shortcuts.configure(yscrollcommand=scrollbar.set)
+        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(0, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_preview.bind("<<Modified>>", self._on_url_text_modified)
 
-    def _create_cfg_row4(self, parent: tk.Widget) -> None:
-        """Row 4 — sort-order radio buttons (active for folder/json only)."""
+    def _create_folder_sort_row(self, parent: tk.Widget) -> None:
+        """Sort-order RadioButtons row for the FOLDER source panel.
+
+        Args:
+            parent: The FOLDER panel frame to attach widgets to.
+        """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        self._lbl_sort_order = ttk.Label(row, text="Ordre de lecture :")
-        self._lbl_sort_order.pack(side=tk.LEFT, padx=(98, 5), pady=(0, 5))
-        self._rb_recent = ttk.Radiobutton(
+        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(100, 5), pady=(0, 5))
+        ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
-            variable=self._vm.url_sort_order_var,
+            variable=self._vm.url_sort_order_shortcuts_var,
             value=UrlSortOrderEnum.E_MTIME_DESC.value,
             command=lambda: self._vm.form_changed(),
-        )
-        self._rb_recent.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
-        self._rb_oldest = ttk.Radiobutton(
+        ).pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
+        ttk.Radiobutton(
             row,
             text="Lire les plus anciens",
-            variable=self._vm.url_sort_order_var,
+            variable=self._vm.url_sort_order_shortcuts_var,
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
+        ).pack(side=tk.LEFT, pady=(0, 5))
+
+    def _create_cfg_panel_json(self) -> None:
+        """JSON panel — path entry, read-only preview, and sort-order RadioButtons."""
+        self._panel_json = ttk.Frame(self._panels_container)
+        self._create_json_path_row(self._panel_json)
+        self._create_json_preview_row(self._panel_json)
+        self._create_json_sort_row(self._panel_json)
+
+    def _create_json_path_row(self, parent: tk.Widget) -> None:
+        """Path entry row with browse button for the JSON source panel.
+
+        Args:
+            parent: The JSON panel frame to attach widgets to.
+        """
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Chemin :", width=15).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self._view_traces.append(
+            (
+                self._vm.url_source_path_jsons_var,
+                self._vm.url_source_path_jsons_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
         )
-        self._rb_oldest.pack(side=tk.LEFT, pady=(0, 5))
-        self._rb_recent.state(["disabled"])
-        self._rb_oldest.state(["disabled"])
+        ttk.Entry(row, textvariable=self._vm.url_source_path_jsons_var).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
+        )
+        ttk.Button(row, text="Parcourir", command=self._browse_jsons_folder).pack(side=tk.RIGHT, pady=(0, 5))
+
+    def _create_json_preview_row(self, parent: tk.Widget) -> None:
+        """Preview row with URL count and scrolled text for the JSON source panel.
+
+        Args:
+            parent: The JSON panel frame to attach widgets to.
+        """
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        left = ttk.Frame(row)
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 23), pady=(0, 5))
+        ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
+        ttk.Label(left, textvariable=self._vm.url_count_jsons_var).pack(anchor=tk.W)
+        preview_frame = ttk.Frame(row)
+        preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._txt_url_jsons = tk.Text(preview_frame, height=7, wrap=tk.NONE, state=tk.DISABLED)
+        scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_jsons.yview)  # type: ignore[reportUnknownMemberType]
+        self._txt_url_jsons.configure(yscrollcommand=scrollbar.set)
+        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(0, 5))
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def _create_json_sort_row(self, parent: tk.Widget) -> None:
+        """Sort-order RadioButtons row for the JSON source panel.
+
+        Args:
+            parent: The JSON panel frame to attach widgets to.
+        """
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(100, 5), pady=(0, 5))
+        ttk.Radiobutton(
+            row,
+            text="Lire récemment modifié",
+            variable=self._vm.url_sort_order_jsons_var,
+            value=UrlSortOrderEnum.E_MTIME_DESC.value,
+            command=lambda: self._vm.form_changed(),
+        ).pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
+        ttk.Radiobutton(
+            row,
+            text="Lire les plus anciens",
+            variable=self._vm.url_sort_order_jsons_var,
+            value=UrlSortOrderEnum.E_MTIME_ASC.value,
+            command=lambda: self._vm.form_changed(),
+        ).pack(side=tk.LEFT, pady=(0, 5))
 
     def _create_cfg_row5(self, parent: tk.Widget) -> None:
         """Row 5 — global error threshold."""
@@ -243,7 +363,10 @@ class ExecutorView(ttk.Frame):
             side=tk.LEFT, padx=(0, 5), pady=(0, 5)
         )
         self._view_traces.append(
-            (self._vm.global_threshold_var, self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()))
+            (
+                self._vm.global_threshold_var,
+                self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
         )
         ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=12).pack(side=tk.LEFT, pady=(0, 5))
 
@@ -256,7 +379,10 @@ class ExecutorView(ttk.Frame):
         self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
         self._view_traces.append(
-            (self._vm.step_threshold_var, self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()))
+            (
+                self._vm.step_threshold_var,
+                self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
         )
         ttk.Label(row, text=" après  ").pack(side=tk.LEFT)
         ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=12).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
@@ -284,25 +410,27 @@ class ExecutorView(ttk.Frame):
 
     def _bind_vm_vars(self) -> None:
         """Register trace listeners for all non-Var widget bindings; ids stored for teardown."""
-        for var, cb in [
+        bindings: list[tuple[tk.Variable, Callable[..., object]]] = [
             (self._vm.scenarios_version_var, self._sync_scenarios),
             (self._vm.selected_scenario_id_var, self._sync_scenario_selection),
             (self._vm.profiles_version_var, self._sync_profiles),
             (self._vm.selected_profile_id_var, self._sync_profile_selection),
             (self._vm.steps_version_var, self._sync_steps),
             (self._vm.step_id_selected_var, self._sync_step_selection),
-            (self._vm.url_preview_version_var, self._sync_url_preview),
-            (self._vm.url_source_type_var, self._sync_url_source_type),
             (self._vm.is_profiles_list_enabled_var, self._sync_profiles_list_enabled),
             (self._vm.is_profile_section_active_var, self._sync_profile_section_enabled),
             (self._vm.is_edit_btn_enabled_var, self._sync_edit_btn),
             (self._vm.is_rename_btn_enabled_var, self._sync_rename_btn),
             (self._vm.is_delete_btn_enabled_var, self._sync_delete_btn),
             (self._vm.is_save_btn_enabled_var, self._sync_save_btn),
-            (self._vm.is_path_entry_enabled_var, self._sync_path_entry),
-            (self._vm.is_sort_order_enabled_var, self._sync_sort_order),
-            (self._vm.is_preview_editable_var, self._sync_preview_editable),
-        ]:
+            (self._vm.is_manual_panel_visible_var, self._sync_manual_panel),
+            (self._vm.is_folder_panel_visible_var, self._sync_folder_panel),
+            (self._vm.is_json_panel_visible_var, self._sync_json_panel),
+            (self._vm.manual_urls_version_var, self._sync_manual_text),
+            (self._vm.url_preview_shortcuts_version_var, self._sync_shortcuts_preview),
+            (self._vm.url_preview_jsons_version_var, self._sync_jsons_preview),
+        ]
+        for var, cb in bindings:
             self._view_traces.append((var, var.trace_add("write", cb)))
         self._apply_initial_state()
 
@@ -320,6 +448,9 @@ class ExecutorView(ttk.Frame):
         self._sync_rename_btn()
         self._sync_delete_btn()
         self._sync_save_btn()
+        self._sync_manual_panel()
+        self._sync_folder_panel()
+        self._sync_json_panel()
 
     # ------------------------------------------------------------------
     # Sync methods (called by trace_add)
@@ -370,20 +501,44 @@ class ExecutorView(ttk.Frame):
                 return
         self._combo_steps.set("")
 
-    def _sync_url_preview(self, *_: object) -> None:
-        """Update the URL preview Text widget from the ViewModel list."""
-        text = "\n".join(self._vm.get_url_preview())
-        self._set_url_preview_text(text, editable=False)
-        self._sync_preview_editable()
+    def _sync_manual_panel(self, *_: object) -> None:
+        """Show or hide the MANUAL mode panel based on is_manual_panel_visible_var."""
+        if self._vm.is_manual_panel_visible_var.get():
+            self._panel_manual.pack(fill=tk.X)
+        else:
+            self._panel_manual.pack_forget()
 
-    def _sync_url_source_type(self, *_: object) -> None:
-        """Select the URL-source combobox entry matching url_source_type_var."""
-        target = self._vm.url_source_type_var.get()
-        for idx, (_label, value) in enumerate(self._source_choices):
-            if value == target:
-                self._combo_source.current(idx)
-                return
-        self._combo_source.set("")
+    def _sync_folder_panel(self, *_: object) -> None:
+        """Show or hide the FOLDER mode panel based on is_folder_panel_visible_var."""
+        if self._vm.is_folder_panel_visible_var.get():
+            self._panel_folder.pack(fill=tk.X)
+        else:
+            self._panel_folder.pack_forget()
+
+    def _sync_json_panel(self, *_: object) -> None:
+        """Show or hide the JSON mode panel based on is_json_panel_visible_var."""
+        if self._vm.is_json_panel_visible_var.get():
+            self._panel_json.pack(fill=tk.X)
+        else:
+            self._panel_json.pack_forget()
+
+    def _sync_manual_text(self, *_: object) -> None:
+        """Repopulate the MANUAL text widget when the Presenter loads a profile."""
+        text = self._vm.manual_urls_var.get()
+        self._txt_url_manual.configure(state=tk.NORMAL)
+        self._txt_url_manual.delete("1.0", tk.END)
+        self._txt_url_manual.insert("1.0", text)
+        self._txt_url_manual.edit_modified(False)
+
+    def _sync_shortcuts_preview(self, *_: object) -> None:
+        """Update the FOLDER read-only text widget from the shortcuts preview list."""
+        text = "\n".join(self._vm.get_url_preview_shortcuts())
+        self._write_readonly_text(self._txt_url_shortcuts, text)
+
+    def _sync_jsons_preview(self, *_: object) -> None:
+        """Update the JSON read-only text widget from the jsons preview list."""
+        text = "\n".join(self._vm.get_url_preview_jsons())
+        self._write_readonly_text(self._txt_url_jsons, text)
 
     def _sync_profiles_list_enabled(self, *_: object) -> None:
         """Enable or disable the profile listbox and Nouveau button."""
@@ -393,8 +548,6 @@ class ExecutorView(ttk.Frame):
 
     def _sync_profile_section_enabled(self, *_: object) -> None:
         """Enable or disable the entire profile-config section."""
-        import contextlib
-
         enabled = self._vm.is_profile_section_active_var.get()
 
         def _apply(widget: tk.Widget) -> None:
@@ -411,12 +564,16 @@ class ExecutorView(ttk.Frame):
 
         _apply(self._cfg_grid)
         if enabled:
-            self._sync_url_source_type()
-            self._sync_path_entry()
-            self._sync_sort_order()
-            self._sync_preview_editable()
+            self._sync_manual_panel()
+            self._sync_folder_panel()
+            self._sync_json_panel()
+            # Readonly text widgets must remain disabled even when the section is active.
+            self._txt_url_shortcuts.configure(state=tk.DISABLED)
+            self._txt_url_jsons.configure(state=tk.DISABLED)
         else:
-            self._txt_url_preview.configure(state=tk.DISABLED)
+            self._txt_url_manual.configure(state=tk.DISABLED)
+            self._txt_url_shortcuts.configure(state=tk.DISABLED)
+            self._txt_url_jsons.configure(state=tk.DISABLED)
 
     def _sync_edit_btn(self, *_: object) -> None:
         """Mirror is_edit_btn_enabled_var onto the Modifier button."""
@@ -437,45 +594,6 @@ class ExecutorView(ttk.Frame):
         """Mirror is_save_btn_enabled_var onto the Sauvegarder button."""
         state = tk.NORMAL if self._vm.is_save_btn_enabled_var.get() else tk.DISABLED
         self._btn_save.configure(state=state)
-
-    def _is_profile_section_active(self) -> bool:
-        return self._vm.is_profile_section_active_var.get()
-
-    def _sync_path_entry(self, *_: object) -> None:
-        """Enable or disable the path label, entry and its browse button."""
-        if not self._is_profile_section_active():
-            self._lbl_source_path.configure(state=tk.DISABLED)
-            self._entry_source_path.configure(state=tk.DISABLED)
-            self._btn_browse_source.configure(state=tk.DISABLED)
-            return
-        state = tk.NORMAL if self._vm.is_path_entry_enabled_var.get() else tk.DISABLED
-        self._lbl_source_path.configure(state=state)
-        self._entry_source_path.configure(state=state)
-        self._btn_browse_source.configure(state=state)
-
-    def _sync_sort_order(self, *_: object) -> None:
-        """Enable or disable the sort-order label and radio buttons."""
-        if not self._is_profile_section_active():
-            self._lbl_sort_order.configure(state=tk.DISABLED)
-            self._rb_recent.state(["disabled"])
-            self._rb_oldest.state(["disabled"])
-            return
-        enabled = self._vm.is_sort_order_enabled_var.get()
-        self._lbl_sort_order.configure(state=tk.NORMAL if enabled else tk.DISABLED)
-        rb_state = ["!disabled"] if enabled else ["disabled"]
-        self._rb_recent.state(rb_state)
-        self._rb_oldest.state(rb_state)
-
-    def _sync_preview_editable(self, *_: object) -> None:
-        """Switch the URL preview Text widget between editable and read-only."""
-        if not self._is_profile_section_active():
-            self._txt_url_preview.configure(state=tk.DISABLED)
-            return
-        editable = self._vm.is_preview_editable_var.get()
-        if editable:
-            self._txt_url_preview.configure(state=tk.NORMAL)
-        else:
-            self._txt_url_preview.configure(state=tk.DISABLED)
 
     # ------------------------------------------------------------------
     # Dialog helpers — owned by View (require parent=self)
@@ -548,16 +666,11 @@ class ExecutorView(ttk.Frame):
             self._vm.step_id_selected_var.set(self._step_items[idx].step_id)
         self._vm.form_changed()
 
-    def _on_source_type_changed(self, _event: tk.Event) -> None:
-        idx = self._combo_source.current()
-        if 0 <= idx < len(self._source_choices):
-            self._vm.url_source_type_var.set(self._source_choices[idx][1])
-        self._vm.form_changed()
-
-    def _on_url_text_modified(self, _event: tk.Event) -> None:
-        if self._txt_url_preview.edit_modified():
-            self._txt_url_preview.edit_modified(False)
-            content = self._txt_url_preview.get("1.0", tk.END)
+    def _on_manual_text_modified(self, _event: tk.Event) -> None:
+        if self._txt_url_manual.edit_modified():
+            # Tkinter Text sets modified=True once and won't fire <<Modified>> again until it is cleared.
+            self._txt_url_manual.edit_modified(False)
+            content = self._txt_url_manual.get("1.0", tk.END)
             self._vm.manual_urls_var.set(content)
             self._vm.form_changed()
 
@@ -566,28 +679,35 @@ class ExecutorView(ttk.Frame):
         if folder:
             self._vm.export_folder_var.set(folder)
 
-    def _browse_source_folder(self) -> None:
-        folder = filedialog.askdirectory(title="Choisir le dossier source d'URL", parent=self)
+    def _browse_shortcuts_folder(self) -> None:
+        folder = filedialog.askdirectory(title="Choisir le dossier source (URL)", parent=self)
         if folder:
-            self._vm.url_source_path_var.set(folder)
+            self._vm.url_source_path_shortcuts_var.set(folder)
+
+    def _browse_jsons_folder(self) -> None:
+        folder = filedialog.askdirectory(title="Choisir le dossier source (JSON)", parent=self)
+        if folder:
+            self._vm.url_source_path_jsons_var.set(folder)
 
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _set_url_preview_text(self, text: str, *, editable: bool) -> None:
-        """Replace the content of the URL text widget.
+    @staticmethod
+    def _write_readonly_text(widget: tk.Text, text: str) -> None:
+        """Replace the content of a read-only text widget.
 
         Args:
-            text: The text to write into the widget.
-            editable: When True the widget accepts typing; otherwise read-only.
+            widget: The ``tk.Text`` to update.
+            text: New text content to display.
         """
-        self._txt_url_preview.configure(state=tk.NORMAL)
-        self._txt_url_preview.delete("1.0", tk.END)
-        self._txt_url_preview.insert("1.0", text)
-        self._txt_url_preview.edit_modified(False)
-        if not editable:
-            self._txt_url_preview.configure(state=tk.DISABLED)
+        # DISABLED state makes insert/delete no-ops; temporarily re-enable to update content.
+        widget.configure(state=tk.NORMAL)
+        widget.delete("1.0", tk.END)
+        widget.insert("1.0", text)
+        # Clear the modified flag so <<Modified>> fires correctly on the next user edit.
+        widget.edit_modified(False)
+        widget.configure(state=tk.DISABLED)
 
 
 # EOF

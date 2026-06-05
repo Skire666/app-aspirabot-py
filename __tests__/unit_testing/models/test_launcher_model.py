@@ -16,11 +16,14 @@ def _make_profile(**kwargs: object) -> LaunchModel:
         "profile_name": "My Profile",
         "export_folder": "/tmp/export",
         "url_source_type": "MANUAL",
-        "url_source_value": ["http://example.com"],
+        "url_sources_list_manual": ["http://example.com"],
+        "url_sources_folder_shortcuts": "",
+        "url_sources_folder_jsons": "",
         "emergency_stop_threshold": 5,
         "launch_count": 0,
         "used_date_profile": None,
-        "url_sort_order": "",
+        "url_sort_order_shortcuts": "",
+        "url_sort_order_jsons": "",
         "emergency_stop_step_id": "",
         "emergency_stop_step_threshold": 1,
     }
@@ -60,9 +63,12 @@ class TestExportToDataJson:
     def test_contains_expected_keys(self) -> None:
         profile = _make_profile()
         result = profile.export_to_data_json()
-        for key in ("id_profile", "id_scenario", "profile_name", "export_folder",
-                    "url_source_type", "url_source_value", "emergency_stop_threshold",
-                    "launch_count", "used_date_profile"):
+        for key in (
+            "id_profile", "id_scenario", "profile_name", "export_folder",
+            "url_source_type", "url_sources_list_manual", "url_sources_folder_shortcuts",
+            "url_sources_folder_jsons", "url_sort_order_shortcuts", "url_sort_order_jsons",
+            "emergency_stop_threshold", "launch_count", "used_date_profile",
+        ):
             assert key in result
 
 
@@ -81,13 +87,16 @@ class TestImportFromDataJson:
             "profile_name": "P",
             "export_folder": "/tmp",
             "url_source_type": "MANUAL",
-            "url_source_value": [],
             "emergency_stop_threshold": 1,
             "launch_count": 0,
             "used_date_profile": None,
         }
         result = LaunchModel.import_from_data_json(data)
-        assert result.url_sort_order == ""
+        assert result.url_sort_order_shortcuts == ""
+        assert result.url_sort_order_jsons == ""
+        assert result.url_sources_list_manual == []
+        assert result.url_sources_folder_shortcuts == ""
+        assert result.url_sources_folder_jsons == ""
         assert result.emergency_stop_step_id == ""
 
 

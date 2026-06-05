@@ -27,11 +27,8 @@ class StepExecutorBase:
     this context dict is present, so normal construction is unaffected.
     """
 
-    @staticmethod
-    def validate_model(
-        model: StepScrapingModel,
-        step_index: int,
-        steps_context: StepsContext,
+    def validate_model(  # noqa: PLR6301
+        self, model: StepScrapingModel, step_index: int, steps_context: StepsContext
     ) -> list[str]:
         """Validate *model* params using the Pydantic model's own validators.
 
@@ -43,16 +40,14 @@ class StepExecutorBase:
         Returns:
             A list of French error strings; empty when the params are valid.
         """
-        ctx: dict[str, Any] = {
-            "step_index": step_index,
-            "steps_context": steps_context,
-            "step_id": model.step_id,
-        }
+        ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": model.step_id}
         try:
             type(model.params).model_validate(model.params.to_dict(), context=ctx)
         except ValidationError as exc:
-            return [str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
-                    for err in exc.errors()]
+            return [
+                str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
+                for err in exc.errors()
+            ]
         else:
             return []
 

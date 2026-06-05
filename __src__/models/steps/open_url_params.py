@@ -11,7 +11,7 @@ from typing import Any, cast
 from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator, model_validator
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
-from shared.enums import OpenUrlModeEnum
+from shared.enums import OpenUrlModeEnum, WaitUntilEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 _DNS_SOLVER_WAIT_MAX = 30
@@ -22,7 +22,7 @@ class OpenUrlParams(BaseStepParams):
 
     url_mode: str
     url_custom: str
-    wait_state: str
+    wait_until: WaitUntilEnum
     wait_dns_solver: int
     timeout_duration: int
     timeout_unit: str

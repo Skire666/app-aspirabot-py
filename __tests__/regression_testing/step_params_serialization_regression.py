@@ -133,16 +133,30 @@ class TestCountHtmlElementsParamsSerialization:
 
 class TestCountHtmlImagesParamsSerialization:
     _DATA = {
-        "width_min": 100, "width_max": 800,
-        "height_min": 100, "height_max": 600,
-        "success_if": "success", "operator": "equal", "value": 5, "comment": "",
+        "width_min": 100,
+        "width_max": 800,
+        "height_min": 100,
+        "height_max": 600,
+        "success_if": "success",
+        "operator": "equal",
+        "value": 5,
+        "comment": "",
     }
 
     def test_to_dict_expected_keys(self) -> None:
         from models.steps.count_html_images_params import CountHtmlImagesParams
 
         d = CountHtmlImagesParams(**self._DATA).to_dict()
-        assert set(d.keys()) == {"width_min", "width_max", "height_min", "height_max", "success_if", "operator", "value", "comment"}
+        assert set(d.keys()) == {
+            "width_min",
+            "width_max",
+            "height_min",
+            "height_max",
+            "success_if",
+            "operator",
+            "value",
+            "comment",
+        }
 
     def test_round_trip(self) -> None:
         from models.steps.count_html_images_params import CountHtmlImagesParams
@@ -156,7 +170,15 @@ class TestCountHtmlImagesParamsSerialization:
 
 
 class TestDownloadImageParamsSerialization:
-    _DATA = {"mode": "all", "unique_only": True, "width_min": 200, "width_max": 1920, "height_min": 200, "height_max": 1080, "comment": ""}
+    _DATA = {
+        "mode": "all",
+        "unique_only": True,
+        "width_min": 200,
+        "width_max": 1920,
+        "height_min": 200,
+        "height_max": 1080,
+        "comment": "",
+    }
 
     def test_to_dict_expected_keys(self) -> None:
         from models.steps.download_image_params import DownloadImageParams
@@ -319,13 +341,19 @@ class TestKillBrowserParamsSerialization:
 
 
 class TestRefreshPageParamsSerialization:
-    _DATA = {"clear_cache": True, "wait_state": "networkidle", "timeout_duration": 15, "timeout_unit": "s", "comment": ""}
+    _DATA = {
+        "clear_cache": True,
+        "wait_until": "networkidle",
+        "timeout_duration": 15,
+        "timeout_unit": "s",
+        "comment": "",
+    }
 
     def test_to_dict_expected_keys(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
 
         d = RefreshPageParams(**self._DATA).to_dict()
-        assert set(d.keys()) == {"clear_cache", "wait_state", "timeout_duration", "timeout_unit", "comment"}
+        assert set(d.keys()) == {"clear_cache", "wait_until", "timeout_duration", "timeout_unit", "comment"}
 
     def test_clear_cache_bool_preserved(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
@@ -380,7 +408,15 @@ class TestWaitHtmlElementsParamsSerialization:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 
         d = WaitHtmlElementsParams(**self._DATA).to_dict()
-        assert set(d.keys()) == {"selector", "operator", "quantity", "retry_delay", "retry_unit", "retry_max", "comment"}
+        assert set(d.keys()) == {
+            "selector",
+            "operator",
+            "quantity",
+            "retry_delay",
+            "retry_unit",
+            "retry_max",
+            "comment",
+        }
 
     def test_round_trip(self) -> None:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
@@ -395,10 +431,16 @@ class TestWaitHtmlElementsParamsSerialization:
 
 class TestWaitHtmlImagesParamsSerialization:
     _DATA = {
-        "height_min": 250, "height_max": 99999,
-        "width_min": 250, "width_max": 99999,
-        "operator": "equal", "quantity": 3,
-        "retry_delay": 400, "retry_unit": "ms", "retry_max": 10, "comment": "",
+        "height_min": 250,
+        "height_max": 99999,
+        "width_min": 250,
+        "width_max": 99999,
+        "operator": "equal",
+        "quantity": 3,
+        "retry_delay": 400,
+        "retry_unit": "ms",
+        "retry_max": 10,
+        "comment": "",
     }
 
     def test_to_dict_expected_keys(self) -> None:
@@ -424,13 +466,13 @@ class TestWaitHtmlImagesParamsSerialization:
 
 
 class TestWaitPageStateParamsSerialization:
-    _DATA = {"wait_state": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
+    _DATA = {"wait_until": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
 
     def test_to_dict_expected_keys(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
 
         d = WaitPageStateParams(**self._DATA).to_dict()
-        assert set(d.keys()) == {"wait_state", "timeout_duration", "timeout_unit", "comment"}
+        assert set(d.keys()) == {"wait_until", "timeout_duration", "timeout_unit", "comment"}
 
     def test_round_trip(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
@@ -491,15 +533,15 @@ class TestYoutubeTranscriptsParamsSerialization:
 
 _ALL_PARAMS_INSTANCES = [
     pytest.param(
-        lambda: __import__("models.steps.click_on_element_params", fromlist=["ClickOnElementParams"]).ClickOnElementParams(
-            selector=".btn", click_mode="left", index_clicked=0, comment=""
-        ),
+        lambda: __import__(
+            "models.steps.click_on_element_params", fromlist=["ClickOnElementParams"]
+        ).ClickOnElementParams(selector=".btn", click_mode="left", index_clicked=0, comment=""),
         id="ClickOnElement",
     ),
     pytest.param(
-        lambda: __import__("models.steps.click_for_download_params", fromlist=["ClickForDownloadParams"]).ClickForDownloadParams(
-            selector=".dl", click_mode="left", index_clicked=0, comment=""
-        ),
+        lambda: __import__(
+            "models.steps.click_for_download_params", fromlist=["ClickForDownloadParams"]
+        ).ClickForDownloadParams(selector=".dl", click_mode="left", index_clicked=0, comment=""),
         id="ClickForDownload",
     ),
     pytest.param(
@@ -509,14 +551,23 @@ _ALL_PARAMS_INSTANCES = [
         id="CloseTabs",
     ),
     pytest.param(
-        lambda: __import__("models.steps.count_html_elements_params", fromlist=["CountHtmlElementsParams"]).CountHtmlElementsParams(
-            selector=".item", success_if="success", operator="equal", value=1, comment=""
-        ),
+        lambda: __import__(
+            "models.steps.count_html_elements_params", fromlist=["CountHtmlElementsParams"]
+        ).CountHtmlElementsParams(selector=".item", success_if="success", operator="equal", value=1, comment=""),
         id="CountHtmlElements",
     ),
     pytest.param(
-        lambda: __import__("models.steps.count_html_images_params", fromlist=["CountHtmlImagesParams"]).CountHtmlImagesParams(
-            width_min=100, width_max=1000, height_min=100, height_max=1000, success_if="success", operator="equal", value=2, comment=""
+        lambda: __import__(
+            "models.steps.count_html_images_params", fromlist=["CountHtmlImagesParams"]
+        ).CountHtmlImagesParams(
+            width_min=100,
+            width_max=1000,
+            height_min=100,
+            height_max=1000,
+            success_if="success",
+            operator="equal",
+            value=2,
+            comment="",
         ),
         id="CountHtmlImages",
     ),
@@ -527,9 +578,9 @@ _ALL_PARAMS_INSTANCES = [
         id="DownloadImage",
     ),
     pytest.param(
-        lambda: __import__("models.steps.export_data_to_js_params", fromlist=["ExportDataToJsParams"]).ExportDataToJsParams(
-            prefix_file="out_", comment=""
-        ),
+        lambda: __import__(
+            "models.steps.export_data_to_js_params", fromlist=["ExportDataToJsParams"]
+        ).ExportDataToJsParams(prefix_file="out_", comment=""),
         id="ExportDataToJs",
     ),
     pytest.param(
@@ -545,9 +596,9 @@ _ALL_PARAMS_INSTANCES = [
         id="ExtractTexts",
     ),
     pytest.param(
-        lambda: __import__("models.steps.extract_variable_params", fromlist=["ExtractVariableParams"]).ExtractVariableParams(
-            variable="last_url", mapping="url", comment=""
-        ),
+        lambda: __import__(
+            "models.steps.extract_variable_params", fromlist=["ExtractVariableParams"]
+        ).ExtractVariableParams(variable="last_url", mapping="url", comment=""),
         id="ExtractVariable",
     ),
     pytest.param(
@@ -564,7 +615,7 @@ _ALL_PARAMS_INSTANCES = [
     ),
     pytest.param(
         lambda: __import__("models.steps.refresh_page_params", fromlist=["RefreshPageParams"]).RefreshPageParams(
-            clear_cache=False, wait_state="load", timeout_duration=10, timeout_unit="s", comment=""
+            clear_cache=False, wait_until="load", timeout_duration=10, timeout_unit="s", comment=""
         ),
         id="RefreshPage",
     ),
@@ -587,40 +638,57 @@ _ALL_PARAMS_INSTANCES = [
         id="WaitFixedTime",
     ),
     pytest.param(
-        lambda: __import__("models.steps.wait_html_elements_params", fromlist=["WaitHtmlElementsParams"]).WaitHtmlElementsParams(
+        lambda: __import__(
+            "models.steps.wait_html_elements_params", fromlist=["WaitHtmlElementsParams"]
+        ).WaitHtmlElementsParams(
             selector=".row", operator="equal", quantity=10, retry_delay=500, retry_unit="ms", retry_max=10, comment=""
         ),
         id="WaitHtmlElements",
     ),
     pytest.param(
-        lambda: __import__("models.steps.wait_html_images_params", fromlist=["WaitHtmlImagesParams"]).WaitHtmlImagesParams(
-            height_min=250, height_max=99999, width_min=250, width_max=99999,
-            operator="equal", quantity=1, retry_delay=400, retry_unit="ms", retry_max=10, comment=""
+        lambda: __import__(
+            "models.steps.wait_html_images_params", fromlist=["WaitHtmlImagesParams"]
+        ).WaitHtmlImagesParams(
+            height_min=250,
+            height_max=99999,
+            width_min=250,
+            width_max=99999,
+            operator="equal",
+            quantity=1,
+            retry_delay=400,
+            retry_unit="ms",
+            retry_max=10,
+            comment="",
         ),
         id="WaitHtmlImages",
     ),
     pytest.param(
         lambda: __import__("models.steps.wait_page_state_params", fromlist=["WaitPageStateParams"]).WaitPageStateParams(
-            wait_state="networkidle", timeout_duration=10, timeout_unit="s", comment=""
+            wait_until="networkidle", timeout_duration=10, timeout_unit="s", comment=""
         ),
         id="WaitPageState",
     ),
     pytest.param(
-        lambda: __import__("models.steps.wait_user_action_params", fromlist=["WaitUserActionParams"]).WaitUserActionParams(
-            condition="always", wait_duration=5, wait_unit="s", comment=""
-        ),
+        lambda: __import__(
+            "models.steps.wait_user_action_params", fromlist=["WaitUserActionParams"]
+        ).WaitUserActionParams(condition="always", wait_duration=5, wait_unit="s", comment=""),
         id="WaitUserAction",
     ),
     pytest.param(
-        lambda: __import__("models.steps.youtube_transcripts_params", fromlist=["YoutubeTranscriptsParams"]).YoutubeTranscriptsParams(
-            title="Tutorial", comment="", basic_info=True, ddl_srt=True
-        ),
+        lambda: __import__(
+            "models.steps.youtube_transcripts_params", fromlist=["YoutubeTranscriptsParams"]
+        ).YoutubeTranscriptsParams(title="Tutorial", comment="", basic_info=True, ddl_srt=True),
         id="YoutubeTranscripts",
     ),
     pytest.param(
         lambda: __import__("models.steps.open_url_params", fromlist=["OpenUrlParams"]).OpenUrlParams(
-            url_mode="<<SOURCE>>", url_custom="", wait_state="load",
-            wait_dns_solver=5, timeout_duration=30, timeout_unit="s", comment=""
+            url_mode="<<SOURCE>>",
+            url_custom="",
+            wait_until="load",
+            wait_dns_solver=5,
+            timeout_duration=30,
+            timeout_unit="s",
+            comment="",
         ),
         id="OpenUrl",
     ),

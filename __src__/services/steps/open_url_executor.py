@@ -51,7 +51,7 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
         context.last_url_opened = target_url
         timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
 
-        browser.safe_goto_url(target_url, p.wait_state, timeout_ms, p.wait_dns_solver)
+        browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
 
         page = browser.get_workflow_page()
         # si changement de domaine, plante, mais si petit redirection, plante pas

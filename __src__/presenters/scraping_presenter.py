@@ -24,7 +24,7 @@ from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scraping_service import ScrapingService
-from shared.enums import EventScrapingEnum, StepTypeEnum
+from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
@@ -257,11 +257,24 @@ class ScrapingPresenter:
         """
         assert self._profile is not None
         p = self._profile
+        stype = p.url_source_type
+        if stype == UrlSourceTypeEnum.E_MANUAL.value:
+            source_value: list[str] | str | None = p.url_sources_list_manual
+            sort_order = ""
+        elif stype == UrlSourceTypeEnum.E_FOLDER.value:
+            source_value = p.url_sources_folder_shortcuts or None
+            sort_order = p.url_sort_order_shortcuts
+        elif stype == UrlSourceTypeEnum.E_JSON.value:
+            source_value = p.url_sources_folder_jsons or None
+            sort_order = p.url_sort_order_jsons
+        else:
+            source_value = None
+            sort_order = ""
         return WorkflowRunConfigModel(
-            url_source_type=p.url_source_type,
-            url_source_value=p.url_source_value,
+            url_source_type=stype,
+            url_source_value=source_value,
             export_folder=p.export_folder,
-            url_sort_order=p.url_sort_order,
+            url_sort_order=sort_order,
         )
 
     def _build_run_handlers(self) -> WorkflowRunHandlers:

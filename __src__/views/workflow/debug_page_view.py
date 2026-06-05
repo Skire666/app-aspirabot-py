@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
 
 from view_models.debug_view_model import DebugViewModel
@@ -205,12 +206,13 @@ class DebugPageView(tk.Toplevel):
 
     def _bind_vm_vars(self) -> None:
         """Register trace listeners on all ViewModel Vars; ids stored for teardown."""
-        for var, cb in [
+        bindings: list[tuple[tk.Variable, Callable[..., object]]] = [
             (self._vm.html_content_var, self._sync_html_content),
             (self._vm.text_results_var, self._sync_text_results),
             (self._vm.image_results_var, self._sync_image_results),
             (self._vm.is_alive_var, self._sync_alive),
-        ]:
+        ]
+        for var, cb in bindings:
             self._view_traces.append((var, var.trace_add("write", cb)))
 
     def teardown(self) -> None:

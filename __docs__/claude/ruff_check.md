@@ -1,4 +1,4 @@
-L'objectif est de corriger les erreurs remontés par des logiciels de qualimétrie.
+L'objectif est de corriger les erreurs remontées par des logiciels de qualimétrie.
 
 Pour cela, lit le fichier @AGENTS.md et respecte ses directives sans exception pour corriger dans les normes.
 

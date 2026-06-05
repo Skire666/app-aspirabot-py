@@ -286,7 +286,7 @@ class TestKillBrowserParams:
 
 
 class TestRefreshPageParams:
-    _BASE = {"clear_cache": False, "wait_state": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
+    _BASE = {"clear_cache": False, "wait_until": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
 
     def test_valid_passes(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
@@ -305,7 +305,7 @@ class TestRefreshPageParams:
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
-        p = RefreshPageParams(clear_cache=False, wait_state="load", timeout_duration=0, timeout_unit="days", comment="")
+        p = RefreshPageParams(clear_cache=False, wait_until="load", timeout_duration=0, timeout_unit="days", comment="")
         assert p.timeout_duration == 0
 
 
@@ -337,7 +337,7 @@ class TestScrollDownParams:
 
 
 class TestWaitPageStateParams:
-    _BASE = {"wait_state": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
+    _BASE = {"wait_until": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
 
     def test_valid_passes(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
@@ -356,7 +356,7 @@ class TestWaitPageStateParams:
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
-        p = WaitPageStateParams(wait_state="load", timeout_duration=0, timeout_unit="bad", comment="")
+        p = WaitPageStateParams(wait_until="load", timeout_duration=0, timeout_unit="bad", comment="")
         assert p.timeout_duration == 0
 
 

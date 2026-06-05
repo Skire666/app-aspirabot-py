@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 
 # -----------------------------------------------------------------------------
 # Base class
@@ -63,15 +63,16 @@ class ViewModelBase:
 
     # ----- Guarded Var write -----
 
-    def _set_if_changed(self, var: tk.Variable, value: object) -> None:
+    @staticmethod
+    def _set_if_changed(var: tk.Variable, value: object) -> None:
         """Write *value* into *var* only when it differs from the current value.
 
         Args:
             var: Target Var.
             value: New value to apply.
         """
-        if var.get() != value:
-            var.set(value)
+        if var.get() != value:  # pyright: ignore[reportUnknownMemberType]
+            var.set(value)  # pyright: ignore[reportUnknownMemberType]
 
     # ----- Recompute gate -----
 
@@ -161,16 +162,12 @@ class ViewModelBase:
         discarded (app shutdown, dialog close, tab destroy).  Idempotent.
         """
         for var, trace_id in self._trace_ids:
-            try:
+            with suppress(Exception):
                 var.trace_remove("write", trace_id)
-            except Exception:  # noqa: BLE001
-                pass
         self._trace_ids.clear()
         for after_id in self._after_ids.values():
-            try:
+            with suppress(Exception):
                 self._master.after_cancel(after_id)
-            except Exception:  # noqa: BLE001
-                pass
         self._after_ids.clear()
 
 

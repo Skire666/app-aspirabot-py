@@ -92,28 +92,39 @@ class ExecutorViewModel(ViewModelBase):
         self._init_form_vars(master)
         self._init_list_vars(master)
         self._init_callbacks()
-        # Wire derived state from url_source_type_var.
+        # Wire derived panel visibility and url_count_manual_var.
         self._register_trace(self.url_source_type_var, self._guarded_recompute)
+        self._register_trace(self.manual_urls_var, self._guarded_recompute)
         # Wire derived section-active state.
         self._register_trace(self.is_profile_cfg_accessible_var, self._guarded_recompute)
         self._register_trace(self.is_profile_section_enabled_var, self._guarded_recompute)
         self._guarded_recompute()
 
     def _init_form_vars(self, master: tk.Misc) -> None:
-        """Initialise source, display, state, and derived Vars.
+        """Initialise all form Vars by delegating to focused sub-initialisers.
+
+        Args:
+            master: Tkinter parent used to scope all Var lifetimes.
+        """
+        self._init_source_display_vars(master)
+        self._init_status_derived_vars(master)
+
+    def _init_source_display_vars(self, master: tk.Misc) -> None:
+        """Initialise source (user-editable) and display (Presenter-written) Vars.
 
         Args:
             master: Tkinter parent used to scope all Var lifetimes.
         """
         # Source Vars — user-editable, bound to form widgets.
         self.export_folder_var = tk.StringVar(master=master, value="")
-        self.url_source_type_var = tk.StringVar(master=master, value="")
-        self.url_source_path_var = tk.StringVar(master=master, value="")
-        self.url_sort_order_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
+        self.url_source_type_var = tk.StringVar(master=master, value=UrlSourceTypeEnum.E_MANUAL.value)
+        self.manual_urls_var = tk.StringVar(master=master, value="")
+        self.url_source_path_shortcuts_var = tk.StringVar(master=master, value="")
+        self.url_source_path_jsons_var = tk.StringVar(master=master, value="")
+        self.url_sort_order_shortcuts_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
+        self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         self.global_threshold_var = tk.StringVar(master=master, value="1")
         self.step_threshold_var = tk.StringVar(master=master, value="0")
-        # Manual-mode URL text: updated by View's Text <<Modified>> handler.
-        self.manual_urls_var = tk.StringVar(master=master, value="")
         # Display Vars — Presenter writes, View binds via textvariable=.
         self.used_date_var = tk.StringVar(master=master, value=C_EXEC_USED_DATE_EMPTY)
         self.launch_count_var = tk.StringVar(master=master, value="0")
@@ -121,6 +132,13 @@ class ExecutorViewModel(ViewModelBase):
         self.verification_message_var = tk.StringVar(master=master, value="")
         # Pre-filled in rename / delete dialogs.
         self.current_profile_name_var = tk.StringVar(master=master, value="")
+
+    def _init_status_derived_vars(self, master: tk.Misc) -> None:
+        """Initialise status (Presenter-written) and derived (VM-recomputed) Vars.
+
+        Args:
+            master: Tkinter parent used to scope all Var lifetimes.
+        """
         # Status Vars — Presenter writes, View traces for enable/disable.
         self.is_profiles_list_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_profile_section_enabled_var = tk.BooleanVar(master=master, value=False)
@@ -128,12 +146,17 @@ class ExecutorViewModel(ViewModelBase):
         self.is_rename_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_delete_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_save_btn_enabled_var = tk.BooleanVar(master=master, value=False)
-        # Derived Vars — recomputed from url_source_type_var.
-        self.is_path_entry_enabled_var = tk.BooleanVar(master=master, value=False)
-        self.is_sort_order_enabled_var = tk.BooleanVar(master=master, value=False)
-        self.is_preview_editable_var = tk.BooleanVar(master=master, value=False)
+        # Status Vars — URL counts written when previews are pushed by the Presenter.
+        self.url_count_shortcuts_var = tk.StringVar(master=master, value="0 URL")
+        self.url_count_jsons_var = tk.StringVar(master=master, value="0 URL")
         # Scenario-level gate — True iff a scenario is currently selected.
         self.is_profile_cfg_accessible_var = tk.BooleanVar(master=master, value=False)
+        # Derived Vars — panel visibility recomputed from url_source_type_var.
+        self.is_manual_panel_visible_var = tk.BooleanVar(master=master, value=True)
+        self.is_folder_panel_visible_var = tk.BooleanVar(master=master, value=False)
+        self.is_json_panel_visible_var = tk.BooleanVar(master=master, value=False)
+        # Derived Var — URL count for manual mode, recomputed from manual_urls_var.
+        self.url_count_manual_var = tk.StringVar(master=master, value="0 URL")
         # Derived section-active Var — AND of is_profile_cfg_accessible_var and is_profile_section_enabled_var.
         self.is_profile_section_active_var = tk.BooleanVar(master=master, value=False)
 
@@ -152,8 +175,13 @@ class ExecutorViewModel(ViewModelBase):
         self._steps: list[StepItem] = []
         self.steps_version_var = tk.IntVar(master=master, value=0)
         self.step_id_selected_var = tk.StringVar(master=master, value="")
-        self._url_preview: list[str] = []
-        self.url_preview_version_var = tk.IntVar(master=master, value=0)
+        # Per-mode URL preview lists (non-Var) with version-trigger IntVars.
+        self._url_preview_shortcuts: list[str] = []
+        self.url_preview_shortcuts_version_var = tk.IntVar(master=master, value=0)
+        self._url_preview_jsons: list[str] = []
+        self.url_preview_jsons_version_var = tk.IntVar(master=master, value=0)
+        # Version trigger for the manual text widget (bumped by set_manual_urls).
+        self.manual_urls_version_var = tk.IntVar(master=master, value=0)
 
     def _init_callbacks(self) -> None:
         """Initialise all Presenter callback slots to None."""
@@ -180,13 +208,14 @@ class ExecutorViewModel(ViewModelBase):
         self._compute_profile_section_active()
 
     def _compute_url_source_state(self) -> None:
-        """Recompute URL-source widget enable flags from url_source_type_var."""
+        """Recompute panel visibility and manual URL count from their source Vars."""
         stype = self.url_source_type_var.get()
-        is_folder_json = stype in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}
-        is_manual = stype == UrlSourceTypeEnum.E_MANUAL.value
-        self._set_if_changed(self.is_path_entry_enabled_var, is_folder_json)
-        self._set_if_changed(self.is_sort_order_enabled_var, is_folder_json)
-        self._set_if_changed(self.is_preview_editable_var, is_manual)
+        self._set_if_changed(self.is_manual_panel_visible_var, stype == UrlSourceTypeEnum.E_MANUAL.value)
+        self._set_if_changed(self.is_folder_panel_visible_var, stype == UrlSourceTypeEnum.E_FOLDER.value)
+        self._set_if_changed(self.is_json_panel_visible_var, stype == UrlSourceTypeEnum.E_JSON.value)
+        raw = self.manual_urls_var.get()
+        count = sum(1 for line in raw.splitlines() if line.strip())
+        self._set_if_changed(self.url_count_manual_var, f"{count} URL")
 
     def _compute_profile_section_active(self) -> None:
         """Recompute is_profile_section_active_var from its two source Vars."""
@@ -221,13 +250,21 @@ class ExecutorViewModel(ViewModelBase):
         """
         return list(self._steps)
 
-    def get_url_preview(self) -> list[str]:
-        """Return a snapshot of the current URL preview list.
+    def get_url_preview_shortcuts(self) -> list[str]:
+        """Return a snapshot of the FOLDER-mode URL preview list.
 
         Returns:
-            A copy of the internal URL preview list.
+            A copy of the internal shortcuts preview list.
         """
-        return list(self._url_preview)
+        return list(self._url_preview_shortcuts)
+
+    def get_url_preview_jsons(self) -> list[str]:
+        """Return a snapshot of the JSON-mode URL preview list.
+
+        Returns:
+            A copy of the internal jsons preview list.
+        """
+        return list(self._url_preview_jsons)
 
     # ------------------------------------------------------------------
     # List mutators — called by Presenter to push new data
@@ -260,14 +297,34 @@ class ExecutorViewModel(ViewModelBase):
         self._steps = list(items)
         self.steps_version_var.set(self.steps_version_var.get() + 1)
 
-    def set_url_preview(self, urls: list[str]) -> None:
-        """Replace the URL preview list and increment the version trigger.
+    def set_manual_urls(self, urls: list[str]) -> None:
+        """Replace the manual URL list, update manual_urls_var, and bump the version trigger.
 
         Args:
-            urls: New ordered URL strings.
+            urls: Ordered list of raw URL strings for MANUAL mode.
         """
-        self._url_preview = list(urls)
-        self.url_preview_version_var.set(self.url_preview_version_var.get() + 1)
+        self.manual_urls_var.set("\n".join(urls))
+        self.manual_urls_version_var.set(self.manual_urls_version_var.get() + 1)
+
+    def set_url_preview_shortcuts(self, urls: list[str]) -> None:
+        """Replace the FOLDER-mode preview list, update the count Var, and bump the version trigger.
+
+        Args:
+            urls: New ordered URL strings read from the shortcuts folder.
+        """
+        self._url_preview_shortcuts = list(urls)
+        self.url_count_shortcuts_var.set(f"{len(urls)} URL")
+        self.url_preview_shortcuts_version_var.set(self.url_preview_shortcuts_version_var.get() + 1)
+
+    def set_url_preview_jsons(self, urls: list[str]) -> None:
+        """Replace the JSON-mode preview list, update the count Var, and bump the version trigger.
+
+        Args:
+            urls: New ordered URL strings read from the jsons folder.
+        """
+        self._url_preview_jsons = list(urls)
+        self.url_count_jsons_var.set(f"{len(urls)} URL")
+        self.url_preview_jsons_version_var.set(self.url_preview_jsons_version_var.get() + 1)
 
     # ------------------------------------------------------------------
     # Bind hooks — called once by the Presenter at composition time

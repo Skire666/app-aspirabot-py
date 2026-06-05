@@ -36,8 +36,8 @@ class BaseStepParams(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize to a JSON-compatible dict (delegates to ``model_dump()``)."""
-        return self.model_dump()
+        """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
+        return self.model_dump(mode="json")
 
 
 # EOF

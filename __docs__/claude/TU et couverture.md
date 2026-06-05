@@ -11,7 +11,7 @@ Un `unit_testing` vérifie qu'une unité isolée de code (une fonction, une mét
 - Framework : **pytest** + **pytest-cov**.
 - `__src__` est déjà sur le `pythonpath`, donc tu importes directement depuis le module source (ex. `from mon_module import MaClasse`) sans préfixer par `__src__`.
 
-Commande de référence (déjà configurée) :
+Commande de référence :
 
 ```
 pytest __tests__/unit_testing/ --cov=__src__ --cov-report=term-missing

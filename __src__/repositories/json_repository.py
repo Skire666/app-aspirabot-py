@@ -29,25 +29,25 @@ from shared.path_util import make_all_folders_if_not_exists
 class _JsonEncoder(json.JSONEncoder):
     """Extend the standard encoder to serialise date, datetime and time."""
 
-    def default(self, obj: object) -> object:
+    def default(self, o: object) -> object:
         """Convert date/datetime/time to a tagged JSON object.
 
         Args:
-            obj: The Python object to serialise.
+            o: The Python object to serialise.
 
         Returns:
             A dict with ``__type__`` and ``value`` keys for temporal types,
             or delegates to the parent encoder for all other types.
         """
-        if isinstance(obj, datetime):
-            return {"__type__": "datetime", "value": obj.isoformat()}
-        if isinstance(obj, date):
-            return {"__type__": "date", "value": obj.isoformat()}
-        if isinstance(obj, time):
-            return {"__type__": "time", "value": obj.isoformat()}
-        if isinstance(obj, Enum):
-            return str(obj.value)
-        return super().default(obj)
+        if isinstance(o, datetime):
+            return {"__type__": "datetime", "value": o.isoformat()}
+        if isinstance(o, date):
+            return {"__type__": "date", "value": o.isoformat()}
+        if isinstance(o, time):
+            return {"__type__": "time", "value": o.isoformat()}
+        if isinstance(o, Enum):
+            return str(o.value)
+        return super().default(o)
 
 
 def _decode_hook(raw: dict[str, Any]) -> dict[str, Any] | date | datetime | time:

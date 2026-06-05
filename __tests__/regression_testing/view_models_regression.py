@@ -44,8 +44,8 @@ class TestExecutorViewModelInit:
     def test_export_folder_var_exists(self, exec_vm: ExecutorViewModel) -> None:
         assert isinstance(exec_vm.export_folder_var, tk.StringVar)
 
-    def test_url_source_type_var_empty(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.url_source_type_var.get() == ""
+    def test_url_source_type_var_defaults_to_manual(self, exec_vm: ExecutorViewModel) -> None:
+        assert exec_vm.url_source_type_var.get() == "MANUAL"
 
     def test_initial_scenarios_empty(self, exec_vm: ExecutorViewModel) -> None:
         assert exec_vm.get_scenarios() == []
@@ -56,8 +56,11 @@ class TestExecutorViewModelInit:
     def test_initial_steps_empty(self, exec_vm: ExecutorViewModel) -> None:
         assert exec_vm.get_steps() == []
 
-    def test_initial_url_preview_empty(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.get_url_preview() == []
+    def test_initial_url_preview_shortcuts_empty(self, exec_vm: ExecutorViewModel) -> None:
+        assert exec_vm.get_url_preview_shortcuts() == []
+
+    def test_initial_url_preview_jsons_empty(self, exec_vm: ExecutorViewModel) -> None:
+        assert exec_vm.get_url_preview_jsons() == []
 
 
 class TestExecutorViewModelListMutators:
@@ -91,41 +94,54 @@ class TestExecutorViewModelListMutators:
         exec_vm.set_steps([StepItem("st1", "L")])
         assert exec_vm.steps_version_var.get() == v0 + 1
 
-    def test_set_url_preview_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
+    def test_set_url_preview_shortcuts_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
         urls = ["https://a.com", "https://b.com"]
-        exec_vm.set_url_preview(urls)
-        assert exec_vm.get_url_preview() == urls
+        exec_vm.set_url_preview_shortcuts(urls)
+        assert exec_vm.get_url_preview_shortcuts() == urls
 
-    def test_set_url_preview_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
-        v0 = exec_vm.url_preview_version_var.get()
-        exec_vm.set_url_preview(["https://x.com"])
-        assert exec_vm.url_preview_version_var.get() == v0 + 1
+    def test_set_url_preview_shortcuts_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
+        v0 = exec_vm.url_preview_shortcuts_version_var.get()
+        exec_vm.set_url_preview_shortcuts(["https://x.com"])
+        assert exec_vm.url_preview_shortcuts_version_var.get() == v0 + 1
+
+    def test_set_url_preview_jsons_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
+        urls = ["https://a.com"]
+        exec_vm.set_url_preview_jsons(urls)
+        assert exec_vm.get_url_preview_jsons() == urls
+
+    def test_set_url_preview_jsons_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
+        v0 = exec_vm.url_preview_jsons_version_var.get()
+        exec_vm.set_url_preview_jsons(["https://x.com"])
+        assert exec_vm.url_preview_jsons_version_var.get() == v0 + 1
 
 
 class TestExecutorViewModelDerivedUrlSourceState:
-    def test_manual_source_enables_preview_editable(self, exec_vm: ExecutorViewModel) -> None:
+    def test_manual_source_shows_manual_panel(self, exec_vm: ExecutorViewModel) -> None:
         exec_vm.url_source_type_var.set("MANUAL")
-        assert exec_vm.is_preview_editable_var.get() is True
+        assert exec_vm.is_manual_panel_visible_var.get() is True
 
-    def test_manual_source_disables_path_entry(self, exec_vm: ExecutorViewModel) -> None:
+    def test_manual_source_hides_folder_and_json_panels(self, exec_vm: ExecutorViewModel) -> None:
         exec_vm.url_source_type_var.set("MANUAL")
-        assert exec_vm.is_path_entry_enabled_var.get() is False
+        assert exec_vm.is_folder_panel_visible_var.get() is False
+        assert exec_vm.is_json_panel_visible_var.get() is False
 
-    def test_folder_source_enables_path_entry(self, exec_vm: ExecutorViewModel) -> None:
+    def test_folder_source_shows_folder_panel(self, exec_vm: ExecutorViewModel) -> None:
         exec_vm.url_source_type_var.set("FOLDER")
-        assert exec_vm.is_path_entry_enabled_var.get() is True
+        assert exec_vm.is_folder_panel_visible_var.get() is True
 
-    def test_folder_source_disables_preview_editable(self, exec_vm: ExecutorViewModel) -> None:
+    def test_folder_source_hides_manual_and_json_panels(self, exec_vm: ExecutorViewModel) -> None:
         exec_vm.url_source_type_var.set("FOLDER")
-        assert exec_vm.is_preview_editable_var.get() is False
+        assert exec_vm.is_manual_panel_visible_var.get() is False
+        assert exec_vm.is_json_panel_visible_var.get() is False
 
-    def test_json_source_enables_path_entry(self, exec_vm: ExecutorViewModel) -> None:
+    def test_json_source_shows_json_panel(self, exec_vm: ExecutorViewModel) -> None:
         exec_vm.url_source_type_var.set("JSON")
-        assert exec_vm.is_path_entry_enabled_var.get() is True
+        assert exec_vm.is_json_panel_visible_var.get() is True
 
-    def test_json_source_enables_sort_order(self, exec_vm: ExecutorViewModel) -> None:
+    def test_json_source_hides_manual_and_folder_panels(self, exec_vm: ExecutorViewModel) -> None:
         exec_vm.url_source_type_var.set("JSON")
-        assert exec_vm.is_sort_order_enabled_var.get() is True
+        assert exec_vm.is_manual_panel_visible_var.get() is False
+        assert exec_vm.is_folder_panel_visible_var.get() is False
 
 
 class TestExecutorViewModelDerivedProfileSectionActive:

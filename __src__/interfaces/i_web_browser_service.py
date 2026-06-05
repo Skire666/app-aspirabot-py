@@ -12,6 +12,7 @@ lifecycle details: launching, page management, stealth patching, and shutdown.
 from typing import Protocol
 
 from playwright.sync_api import Page
+from shared.enums import WaitUntilEnum
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -95,7 +96,7 @@ class IWebBrowserService(Protocol):
         """
         ...
 
-    def safe_goto_url(self, url: str, wait_state: str, timeout_ms: int, wait_dns_solver_sec: int) -> None:
+    def safe_goto_url(self, url: str, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_sec: int) -> None:
         """Navigate the current page to the target URL with error handling and retries.
 
         This method wraps the Playwright ``page.goto()`` function with additional
@@ -105,9 +106,9 @@ class IWebBrowserService(Protocol):
 
         Args:
             url: The target URL to navigate to.
-            wait_state: The load state to wait for (e.g. "networkidle").
+            wait_until: The load state to wait for (e.g. "networkidle").
             timeout_ms: Maximum navigation time in milliseconds before timing out.
-            wait_dns_solver_sec: Seconds to wait for DNS resolution before aborting.
+            wait_dns_sec: Seconds to wait for DNS resolution before aborting.
 
         Raises:
             Exception: If navigation ultimately fails after retries.

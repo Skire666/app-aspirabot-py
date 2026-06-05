@@ -52,8 +52,10 @@ def _setup_vm_for_apply(vm: MagicMock) -> None:
     vm.export_folder_var.get.return_value = "/tmp/export"
     vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_MANUAL.value
     vm.manual_urls_var.get.return_value = ""
-    vm.url_source_path_var.get.return_value = ""
-    vm.url_sort_order_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
+    vm.url_source_path_shortcuts_var.get.return_value = ""
+    vm.url_source_path_jsons_var.get.return_value = ""
+    vm.url_sort_order_shortcuts_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
+    vm.url_sort_order_jsons_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
     vm.step_id_selected_var.get.return_value = "step001"
     vm.global_threshold_var.get.return_value = "10"
     vm.step_threshold_var.get.return_value = "5"
@@ -101,32 +103,40 @@ class TestSelectBestProfileNoBest:
 
 
 # ---------------------------------------------------------------------------
-# Lines 333-336: _push_url_source_vars — manual URL source branch
+# _push_url_source_vars — per-mode field distribution
 # ---------------------------------------------------------------------------
 
 
-class TestPushUrlSourceVarsManual:
-    def test_list_value_joins_with_newline_and_sets_preview(self) -> None:
+class TestPushUrlSourceVars:
+    def test_manual_mode_calls_set_manual_urls(self) -> None:
         presenter, vm, _, _ = _make_presenter()
         profile = _make_profile()
         profile.url_source_type = UrlSourceTypeEnum.E_MANUAL.value
-        profile.url_source_value = ["http://a.com", "http://b.com"]
+        profile.url_sources_list_manual = ["http://a.com", "http://b.com"]
 
         presenter._push_url_source_vars(profile)
 
-        vm.manual_urls_var.set.assert_called_with("http://a.com\nhttp://b.com")
-        vm.set_url_preview.assert_called_with(["http://a.com", "http://b.com"])
+        vm.set_manual_urls.assert_called_with(["http://a.com", "http://b.com"])
 
-    def test_non_list_value_yields_empty_preview(self) -> None:
+    def test_folder_mode_sets_shortcuts_path(self) -> None:
         presenter, vm, _, _ = _make_presenter()
         profile = _make_profile()
-        profile.url_source_type = UrlSourceTypeEnum.E_MANUAL.value
-        profile.url_source_value = "not_a_list"
+        profile.url_source_type = UrlSourceTypeEnum.E_FOLDER.value
+        profile.url_sources_folder_shortcuts = "/data/shortcuts"
 
         presenter._push_url_source_vars(profile)
 
-        vm.manual_urls_var.set.assert_called_with("")
-        vm.set_url_preview.assert_called_with([])
+        vm.url_source_path_shortcuts_var.set.assert_called_with("/data/shortcuts")
+
+    def test_json_mode_sets_jsons_path(self) -> None:
+        presenter, vm, _, _ = _make_presenter()
+        profile = _make_profile()
+        profile.url_source_type = UrlSourceTypeEnum.E_JSON.value
+        profile.url_sources_folder_jsons = "/data/jsons"
+
+        presenter._push_url_source_vars(profile)
+
+        vm.url_source_path_jsons_var.set.assert_called_with("/data/jsons")
 
 
 # ---------------------------------------------------------------------------
@@ -151,74 +161,81 @@ class TestClearProfileForm:
 
 
 # ---------------------------------------------------------------------------
-# Lines 391-392: _refresh_url_preview_from_form
+# _refresh_url_preview_from_form — delegates to per-mode update methods
 # ---------------------------------------------------------------------------
 
 
 class TestRefreshUrlPreviewFromForm:
-    def test_delegates_to_update_url_preview_using_vm_state(self) -> None:
+    def test_unknown_type_does_not_call_any_preview_setter(self) -> None:
         presenter, vm, _, _ = _make_presenter()
         vm.url_source_type_var.get.return_value = ""
-        vm.url_sort_order_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
-        vm.url_source_path_var.get.return_value = ""
+        vm.url_source_path_shortcuts_var.get.return_value = ""
+        vm.url_sort_order_shortcuts_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
 
         presenter._refresh_url_preview_from_form()
 
-        vm.set_url_preview.assert_called_with([])
+        vm.set_url_preview_shortcuts.assert_not_called()
+        vm.set_url_preview_jsons.assert_not_called()
+
+    def test_folder_type_calls_shortcuts_setter(self) -> None:
+        presenter, vm, _, _ = _make_presenter()
+        vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_FOLDER.value
+        vm.url_source_path_shortcuts_var.get.return_value = ""
+        vm.url_sort_order_shortcuts_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
+
+        presenter._refresh_url_preview_from_form()
+
+        vm.set_url_preview_shortcuts.assert_called_with([])
 
 
 # ---------------------------------------------------------------------------
-# Lines 403, 407-416: _update_url_preview — all branches
+# _update_url_preview_shortcuts / _update_url_preview_jsons
 # ---------------------------------------------------------------------------
 
 
-class TestUpdateUrlPreview:
-    def test_manual_type_returns_early_without_setting_preview(self) -> None:
+class TestUpdateUrlPreviewShortcuts:
+    def test_empty_path_sets_empty_preview(self) -> None:
         presenter, vm, _, _ = _make_presenter()
 
-        presenter._update_url_preview(UrlSourceTypeEnum.E_MANUAL.value, ["url1"], "mtime_asc")
+        presenter._update_url_preview_shortcuts("", "mtime_asc")
 
-        vm.set_url_preview.assert_not_called()
+        vm.set_url_preview_shortcuts.assert_called_with([])
 
-    def test_unknown_type_sets_empty_preview(self) -> None:
-        presenter, vm, _, _ = _make_presenter()
-
-        presenter._update_url_preview("TOTALLY_UNKNOWN", "somepath", "mtime_asc")
-
-        vm.set_url_preview.assert_called_with([])
-
-    def test_folder_with_none_value_sets_empty_preview(self) -> None:
-        presenter, vm, _, _ = _make_presenter()
-
-        presenter._update_url_preview(UrlSourceTypeEnum.E_FOLDER.value, None, "mtime_asc")
-
-        vm.set_url_preview.assert_called_with([])
-
-    def test_folder_with_list_value_sets_empty_preview(self) -> None:
-        presenter, vm, _, _ = _make_presenter()
-
-        presenter._update_url_preview(UrlSourceTypeEnum.E_FOLDER.value, ["list_not_str"], "mtime_asc")
-
-        vm.set_url_preview.assert_called_with([])
-
-    def test_folder_with_valid_path_calls_provider_and_sets_urls(self) -> None:
+    def test_valid_path_calls_provider_and_sets_urls(self) -> None:
         presenter, vm, _, _ = _make_presenter()
         provider = MagicMock()
         provider.preview_url_listed.return_value = ["http://x.com"]
 
         with patch("presenters.executor_presenter.build_url_source_scenario", return_value=provider) as mock_build:
-            presenter._update_url_preview(UrlSourceTypeEnum.E_FOLDER.value, "/some/path", "mtime_asc")
+            presenter._update_url_preview_shortcuts("/some/path", "mtime_asc")
 
         mock_build.assert_called_once()
-        vm.set_url_preview.assert_called_with(["http://x.com"])
+        vm.set_url_preview_shortcuts.assert_called_with(["http://x.com"])
 
     def test_provider_error_sets_empty_preview(self) -> None:
         presenter, vm, _, _ = _make_presenter()
 
         with patch("presenters.executor_presenter.build_url_source_scenario", side_effect=CallbackNotDefinedError()):
-            presenter._update_url_preview(UrlSourceTypeEnum.E_FOLDER.value, "/some/path", "mtime_asc")
+            presenter._update_url_preview_shortcuts("/some/path", "mtime_asc")
 
-        vm.set_url_preview.assert_called_with([])
+        vm.set_url_preview_shortcuts.assert_called_with([])
+
+
+class TestUpdateUrlPreviewJsons:
+    def test_empty_path_sets_empty_preview(self) -> None:
+        presenter, vm, _, _ = _make_presenter()
+
+        presenter._update_url_preview_jsons("", "mtime_asc")
+
+        vm.set_url_preview_jsons.assert_called_with([])
+
+    def test_provider_error_sets_empty_preview(self) -> None:
+        presenter, vm, _, _ = _make_presenter()
+
+        with patch("presenters.executor_presenter.build_url_source_scenario", side_effect=CallbackNotDefinedError()):
+            presenter._update_url_preview_jsons("/some/path", "mtime_asc")
+
+        vm.set_url_preview_jsons.assert_called_with([])
 
 
 # ---------------------------------------------------------------------------
@@ -466,43 +483,6 @@ class TestApplyFormToProfile:
 
 
 # ---------------------------------------------------------------------------
-# Lines 506-510: _read_url_source_value_from_vm
-# ---------------------------------------------------------------------------
-
-
-class TestReadUrlSourceValueFromVm:
-    def test_manual_parses_multiline_url_list(self) -> None:
-        presenter, vm, _, _ = _make_presenter()
-        vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_MANUAL.value
-        vm.manual_urls_var.get.return_value = "  http://a.com  \n  http://b.com  \n"
-
-        result = presenter._read_url_source_value_from_vm()
-
-        assert result == ["http://a.com", "http://b.com"]
-
-    def test_manual_blank_input_returns_empty_list(self) -> None:
-        presenter, vm, _, _ = _make_presenter()
-        vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_MANUAL.value
-        vm.manual_urls_var.get.return_value = "   "
-
-        assert presenter._read_url_source_value_from_vm() == []
-
-    def test_non_manual_returns_path_string(self) -> None:
-        presenter, vm, _, _ = _make_presenter()
-        vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_FOLDER.value
-        vm.url_source_path_var.get.return_value = "/some/folder"
-
-        assert presenter._read_url_source_value_from_vm() == "/some/folder"
-
-    def test_non_manual_empty_path_returns_none(self) -> None:
-        presenter, vm, _, _ = _make_presenter()
-        vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_FOLDER.value
-        vm.url_source_path_var.get.return_value = "   "
-
-        assert presenter._read_url_source_value_from_vm() is None
-
-
-# ---------------------------------------------------------------------------
 # Lines 513-514: _on_form_changed
 # ---------------------------------------------------------------------------
 
@@ -511,8 +491,8 @@ class TestOnFormChanged:
     def test_marks_dirty_and_refreshes_url_preview(self) -> None:
         presenter, vm, _, _ = _make_presenter()
         vm.url_source_type_var.get.return_value = ""
-        vm.url_sort_order_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
-        vm.url_source_path_var.get.return_value = ""
+        vm.url_source_path_shortcuts_var.get.return_value = ""
+        vm.url_sort_order_shortcuts_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
 
         presenter._on_form_changed()
 
@@ -545,8 +525,10 @@ class TestValidateLaunch:
 
         vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_MANUAL.value
         vm.manual_urls_var.get.return_value = "http://example.com"
-        vm.url_source_path_var.get.return_value = ""
-        vm.url_sort_order_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
+        vm.url_source_path_shortcuts_var.get.return_value = ""
+        vm.url_source_path_jsons_var.get.return_value = ""
+        vm.url_sort_order_shortcuts_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
+        vm.url_sort_order_jsons_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
         vm.step_id_selected_var.get.return_value = "step001"
         vm.global_threshold_var.get.return_value = "10"
         vm.step_threshold_var.get.return_value = "5"
@@ -616,8 +598,10 @@ class TestOnLaunchClicked:
     def _setup_valid_vm(self, vm: MagicMock) -> None:
         vm.url_source_type_var.get.return_value = UrlSourceTypeEnum.E_MANUAL.value
         vm.manual_urls_var.get.return_value = "http://example.com"
-        vm.url_source_path_var.get.return_value = ""
-        vm.url_sort_order_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
+        vm.url_source_path_shortcuts_var.get.return_value = ""
+        vm.url_source_path_jsons_var.get.return_value = ""
+        vm.url_sort_order_shortcuts_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
+        vm.url_sort_order_jsons_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
         vm.step_id_selected_var.get.return_value = "step001"
         vm.global_threshold_var.get.return_value = "10"
         vm.step_threshold_var.get.return_value = "5"
@@ -631,12 +615,14 @@ class TestOnLaunchClicked:
         # Leave VM vars returning empty/invalid values (MagicMock defaults)
         vm.url_source_type_var.get.return_value = ""
         vm.export_folder_var.get.return_value = ""
-        vm.url_sort_order_var.get.return_value = ""
+        vm.url_sort_order_shortcuts_var.get.return_value = ""
+        vm.url_sort_order_jsons_var.get.return_value = ""
         vm.step_id_selected_var.get.return_value = ""
         vm.global_threshold_var.get.return_value = "0"
         vm.step_threshold_var.get.return_value = "0"
         vm.manual_urls_var.get.return_value = ""
-        vm.url_source_path_var.get.return_value = ""
+        vm.url_source_path_shortcuts_var.get.return_value = ""
+        vm.url_source_path_jsons_var.get.return_value = ""
 
         hook = MagicMock()
         presenter.on_request_launch_scraping = hook

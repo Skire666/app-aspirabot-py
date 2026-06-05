@@ -12,10 +12,10 @@ from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from shared.constants import C_MAXIMUM_WAIT_TIME, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
-from shared.enums import StepTypeEnum
+from shared.enums import StepTypeEnum, WaitUntilEnum
 from shared.parse_util import safe_int_from_dict
 from shared.step_registry import register_form
-from views.steps._constants import C_CHOICES_WAIT_PAGE_STATE, WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL
+from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -23,12 +23,14 @@ from views.steps._constants import C_CHOICES_WAIT_PAGE_STATE, WAIT_UNIT_MODEL_TO
 
 C_INPUT_DEFAULT_TIMEOUT_DURATION = 8
 C_INPUT_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
-C_INPUT_DEFAULT_WAIT_STATE = C_CHOICES_WAIT_PAGE_STATE[-1]
+C_INPUT_DEFAULT_WAIT_UNTIL = WaitUntilEnum.E_IDLE.value
 
-C_KEY_WAIT_STATE = "wait_state"
+C_KEY_WAIT_UNTIL = "wait_until"
 C_KEY_TIMEOUT_DURATION = "timeout_duration"
 C_KEY_TIMEOUT_UNIT = "timeout_unit"
 C_KEY_COMMENT = "comment"
+
+C_CHOICES_WAIT_PAGE_UNTIL = [WaitUntilEnum.E_DOM.value, WaitUntilEnum.E_LOAD.value, WaitUntilEnum.E_IDLE.value]
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -54,28 +56,28 @@ class WaitPageStateFormDef(IStepFormDef):
             frame: The tkinter frame to populate.
             widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
         """
-        self._build_subform_wait_state(frame, widgets)
+        self._build_subform_wait_until(frame, widgets)
         self._build_subform_timeout(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
-    def _build_subform_wait_state(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+    def _build_subform_wait_until(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the page load state combobox row.
 
         Args:
             frame: Parent frame to pack the row into.
-            widgets: Mutable mapping; populated with the C_KEY_WAIT_STATE tk.Variable.
+            widgets: Mutable mapping; populated with the C_KEY_WAIT_UNTIL tk.Variable.
         """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
         ttk.Label(line1, text="Attendre le chargement :").pack(side=tk.LEFT, padx=(0, 5))
-        ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_STATE)
-        ttk.Combobox(line1, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_STATE, state="readonly").pack(
+        ws_var = tk.StringVar(value=C_INPUT_DEFAULT_WAIT_UNTIL)
+        ttk.Combobox(line1, textvariable=ws_var, values=C_CHOICES_WAIT_PAGE_UNTIL, state="readonly").pack(
             side=tk.LEFT, padx=(0, 5)
         )
         ttk.Label(line1, text="(dom > load > idle 500ms)").pack(side=tk.LEFT, padx=(0, 5))
-        widgets[C_KEY_WAIT_STATE] = ws_var
+        widgets[C_KEY_WAIT_UNTIL] = ws_var
 
     @staticmethod
     def _build_subform_timeout(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -124,7 +126,7 @@ class WaitPageStateFormDef(IStepFormDef):
             params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_WAIT_STATE].set(params_dict.get(C_KEY_WAIT_STATE, C_INPUT_DEFAULT_WAIT_STATE))
+        widgets[C_KEY_WAIT_UNTIL].set(params_dict.get(C_KEY_WAIT_UNTIL, C_INPUT_DEFAULT_WAIT_UNTIL))
         td = str(params_dict.get(C_KEY_TIMEOUT_DURATION, C_INPUT_DEFAULT_TIMEOUT_DURATION))
         widgets[C_KEY_TIMEOUT_DURATION].set(td)
         widgets[C_KEY_TIMEOUT_UNIT].set(
@@ -143,7 +145,7 @@ class WaitPageStateFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         return {
-            C_KEY_WAIT_STATE: widgets[C_KEY_WAIT_STATE].get(),
+            C_KEY_WAIT_UNTIL: widgets[C_KEY_WAIT_UNTIL].get(),
             C_KEY_TIMEOUT_DURATION: safe_int_from_dict(widgets, C_KEY_TIMEOUT_DURATION, -1),
             C_KEY_TIMEOUT_UNIT: WAIT_UNIT_VIEW_TO_MODEL.get(widgets[C_KEY_TIMEOUT_UNIT].get()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),

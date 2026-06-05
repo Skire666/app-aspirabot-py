@@ -580,8 +580,9 @@ def _wire_teardown(root: tk.Tk, teardown_views: list[tk.Widget]) -> None:
 
     def _on_close() -> None:
         for view in teardown_views:
-            if hasattr(view, "teardown"):
-                view.teardown()
+            teardown_fn = getattr(view, "teardown", None)
+            if callable(teardown_fn):
+                teardown_fn()
         root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", _on_close)

@@ -321,23 +321,22 @@ class ExecutorPresenter:
         self._vm.export_folder_var.set(profile.export_folder or "")
 
     def _push_url_source_vars(self, profile: LaunchModel) -> None:
-        """Write URL source type, value, and sort order into VM Vars.
+        """Write URL source type, per-mode values, and sort orders into VM Vars.
 
         Args:
             profile: The launch profile providing the values.
         """
-        source_type = profile.url_source_type or ""
+        source_type = profile.url_source_type or UrlSourceTypeEnum.E_MANUAL.value
         self._vm.url_source_type_var.set(source_type)
-        if source_type == UrlSourceTypeEnum.E_MANUAL.value:
-            manual = profile.url_source_value
-            manual_list = manual if isinstance(manual, list) else []
-            self._vm.manual_urls_var.set("\n".join(manual_list))
-            self._vm.set_url_preview(manual_list)
-        else:
-            path = profile.url_source_value if isinstance(profile.url_source_value, str) else ""
-            self._vm.url_source_path_var.set(path)
-        # Sort order
-        self._vm.url_sort_order_var.set(profile.url_sort_order or UrlSortOrderEnum.E_MTIME_ASC.value)
+        self._vm.set_manual_urls(profile.url_sources_list_manual)
+        self._vm.url_source_path_shortcuts_var.set(profile.url_sources_folder_shortcuts)
+        self._vm.url_source_path_jsons_var.set(profile.url_sources_folder_jsons)
+        self._vm.url_sort_order_shortcuts_var.set(
+            profile.url_sort_order_shortcuts or UrlSortOrderEnum.E_MTIME_ASC.value
+        )
+        self._vm.url_sort_order_jsons_var.set(
+            profile.url_sort_order_jsons or UrlSortOrderEnum.E_MTIME_ASC.value
+        )
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
@@ -382,37 +381,62 @@ class ExecutorPresenter:
         self._vm.is_save_btn_enabled_var.set(False)
 
     def _refresh_url_preview(self, profile: LaunchModel) -> None:
-        """Build a URL preview from the profile source and push it to the VM."""
-        self._update_url_preview(profile.url_source_type, profile.url_source_value, profile.url_sort_order)
+        """Build URL previews from the profile source and push them to the VM."""
+        stype = profile.url_source_type
+        if stype == UrlSourceTypeEnum.E_FOLDER.value:
+            self._update_url_preview_shortcuts(profile.url_sources_folder_shortcuts, profile.url_sort_order_shortcuts)
+        elif stype == UrlSourceTypeEnum.E_JSON.value:
+            self._update_url_preview_jsons(profile.url_sources_folder_jsons, profile.url_sort_order_jsons)
 
     def _refresh_url_preview_from_form(self) -> None:
-        """Build a URL preview from the live VM state and push it to the VM."""
-        source_value = self._read_url_source_value_from_vm()
-        self._update_url_preview(self._vm.url_source_type_var.get(), source_value, self._vm.url_sort_order_var.get())
+        """Build URL previews from the live VM state and push them to the VM."""
+        stype = self._vm.url_source_type_var.get()
+        if stype == UrlSourceTypeEnum.E_FOLDER.value:
+            self._update_url_preview_shortcuts(
+                self._vm.url_source_path_shortcuts_var.get().strip(),
+                self._vm.url_sort_order_shortcuts_var.get(),
+            )
+        elif stype == UrlSourceTypeEnum.E_JSON.value:
+            self._update_url_preview_jsons(
+                self._vm.url_source_path_jsons_var.get().strip(),
+                self._vm.url_sort_order_jsons_var.get(),
+            )
 
-    def _update_url_preview(self, source_type: str, source_value: list[str] | str | None, sort_str: str) -> None:
-        """Fetch preview URLs from the provider and push them to the VM.
+    def _update_url_preview_shortcuts(self, path: str, sort_str: str) -> None:
+        """Fetch shortcuts-folder preview URLs and push them to the VM.
 
         Args:
-            source_type: Raw URL source type string.
-            source_value: Path string for folder/json sources, or URL list for manual.
+            path: Folder path containing .url shortcut files.
             sort_str: Raw sort-order string.
         """
-        if source_type == UrlSourceTypeEnum.E_MANUAL.value:
-            return
-        if source_type not in {UrlSourceTypeEnum.E_FOLDER.value, UrlSourceTypeEnum.E_JSON.value}:
-            self._vm.set_url_preview([])
-            return
-        if not source_value or not isinstance(source_value, str):
-            self._vm.set_url_preview([])
+        if not path:
+            self._vm.set_url_preview_shortcuts([])
             return
         try:
             sort = self._parse_sort_order(sort_str)
-            provider = build_url_source_scenario(source_type, source_value, sort)
-            self._vm.set_url_preview(provider.preview_url_listed())
+            provider = build_url_source_scenario(UrlSourceTypeEnum.E_FOLDER.value, path, sort)
+            self._vm.set_url_preview_shortcuts(provider.preview_url_listed())
         except AspirabotBaseError:
-            self._logger.exception("Erreur lors de la prévisualisation des URLs")
-            self._vm.set_url_preview([])
+            self._logger.exception("Erreur lors de la prévisualisation des URLs (shortcuts)")
+            self._vm.set_url_preview_shortcuts([])
+
+    def _update_url_preview_jsons(self, path: str, sort_str: str) -> None:
+        """Fetch json-folder preview URLs and push them to the VM.
+
+        Args:
+            path: Folder path containing .json files.
+            sort_str: Raw sort-order string.
+        """
+        if not path:
+            self._vm.set_url_preview_jsons([])
+            return
+        try:
+            sort = self._parse_sort_order(sort_str)
+            provider = build_url_source_scenario(UrlSourceTypeEnum.E_JSON.value, path, sort)
+            self._vm.set_url_preview_jsons(provider.preview_url_listed())
+        except AspirabotBaseError:
+            self._logger.exception("Erreur lors de la prévisualisation des URLs (jsons)")
+            self._vm.set_url_preview_jsons([])
 
     @staticmethod
     def _parse_sort_order(value: str) -> UrlSortOrderEnum:
@@ -490,23 +514,15 @@ class ExecutorPresenter:
             return
         self._current_profile.export_folder = self._vm.export_folder_var.get()
         self._current_profile.url_source_type = self._vm.url_source_type_var.get()
-        self._current_profile.url_source_value = self._read_url_source_value_from_vm()
-        self._current_profile.url_sort_order = self._vm.url_sort_order_var.get()
+        raw_manual = self._vm.manual_urls_var.get().strip()
+        self._current_profile.url_sources_list_manual = [u.strip() for u in raw_manual.splitlines() if u.strip()]
+        self._current_profile.url_sources_folder_shortcuts = self._vm.url_source_path_shortcuts_var.get().strip()
+        self._current_profile.url_sources_folder_jsons = self._vm.url_source_path_jsons_var.get().strip()
+        self._current_profile.url_sort_order_shortcuts = self._vm.url_sort_order_shortcuts_var.get()
+        self._current_profile.url_sort_order_jsons = self._vm.url_sort_order_jsons_var.get()
         self._current_profile.emergency_stop_step_id = self._vm.step_id_selected_var.get()
         self._current_profile.emergency_stop_threshold = safe_int_from_str(self._vm.global_threshold_var.get(), 0)
         self._current_profile.emergency_stop_step_threshold = safe_int_from_str(self._vm.step_threshold_var.get(), 0)
-
-    def _read_url_source_value_from_vm(self) -> list[str] | str | None:
-        """Package the URL source value from the live ViewModel state.
-
-        Returns:
-            A list of URL strings for manual mode, or a path string for others.
-        """
-        stype = self._vm.url_source_type_var.get()
-        if stype == UrlSourceTypeEnum.E_MANUAL.value:
-            raw = self._vm.manual_urls_var.get().strip()
-            return [u.strip() for u in raw.splitlines() if u.strip()]
-        return self._vm.url_source_path_var.get().strip() or None
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)

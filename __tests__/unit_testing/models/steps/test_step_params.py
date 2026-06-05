@@ -105,7 +105,7 @@ class TestOpenUrlParams:
     _BASE = {
         "url_mode": "<<SOURCE>>",
         "url_custom": "",
-        "wait_state": "load",
+        "wait_until": "load",
         "wait_dns_solver": 5,
         "timeout_duration": 30,
         "timeout_unit": "s",

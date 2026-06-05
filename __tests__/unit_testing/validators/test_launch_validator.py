@@ -13,11 +13,14 @@ def _make_profile(**kwargs: object) -> LaunchModel:
         "profile_name": "Test Profile",
         "export_folder": "/tmp/export",
         "url_source_type": "MANUAL",
-        "url_source_value": ["http://example.com"],
+        "url_sources_list_manual": ["http://example.com"],
+        "url_sources_folder_shortcuts": "",
+        "url_sources_folder_jsons": "",
         "emergency_stop_threshold": 5,
         "launch_count": 0,
         "used_date_profile": None,
-        "url_sort_order": "",
+        "url_sort_order_shortcuts": "",
+        "url_sort_order_jsons": "",
         "emergency_stop_step_id": "step_abc",
         "emergency_stop_step_threshold": 3,
     }
@@ -67,24 +70,23 @@ class TestValidateLaunchProfile:
         errors = validate_launch_profile(profile)
         assert len(errors) >= 1
 
-    def test_folder_source_without_value_returns_error(self) -> None:
-        profile = _make_profile(url_source_type="FOLDER", url_source_value="")
+    def test_folder_source_without_path_returns_error(self) -> None:
+        profile = _make_profile(url_source_type="FOLDER", url_sources_folder_shortcuts="")
         errors = validate_launch_profile(profile)
         assert len(errors) >= 1
 
-    def test_folder_source_with_value_valid(self) -> None:
-        profile = _make_profile(url_source_type="FOLDER", url_source_value="/some/folder")
+    def test_folder_source_with_path_valid(self) -> None:
+        profile = _make_profile(url_source_type="FOLDER", url_sources_folder_shortcuts="/some/folder")
         errors = validate_launch_profile(profile)
         assert errors == []
 
-    def test_json_source_without_value_returns_error(self) -> None:
-        profile = _make_profile(url_source_type="JSON", url_source_value=None)
+    def test_json_source_without_path_returns_error(self) -> None:
+        profile = _make_profile(url_source_type="JSON", url_sources_folder_jsons="")
         errors = validate_launch_profile(profile)
         assert len(errors) >= 1
 
-    def test_manual_source_with_none_value_valid(self) -> None:
-        # MANUAL source ignores the url_source_value constraint
-        profile = _make_profile(url_source_type="MANUAL", url_source_value=None)
+    def test_manual_source_with_empty_list_valid(self) -> None:
+        profile = _make_profile(url_source_type="MANUAL", url_sources_list_manual=[])
         errors = validate_launch_profile(profile)
         assert errors == []
 

@@ -201,8 +201,8 @@ def _fmt_refresh_page(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -
     timeout = params.get("timeout_duration", 10)
     unit_time = params.get("timeout_unit", "")
     unit_display = _WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-    wait_state = params.get("wait_state", "networkidle")
-    return f"Rafraîchir la page  -  timeout : {timeout} {unit_display}\n{mode_str}  -  Attendre : {wait_state}"
+    wait_until = params.get("wait_until", "networkidle")
+    return f"Rafraîchir la page  -  timeout : {timeout} {unit_display}\n{mode_str}  -  Attendre : {wait_until}"
 
 
 def _fmt_scroll_down(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -265,8 +265,8 @@ def _fmt_wait_page_state(params: dict[str, Any], _idx: int, _ctx: dict[str, int]
     timeout = params.get("timeout_duration", 8)
     unit_time = params.get("timeout_unit", "")
     unit_display = _WAIT_UNIT_MODEL_TO_VIEW.get(unit_time, unit_time)
-    wait_state = params.get("wait_state", "networkidle")
-    return f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\nAttendre : {wait_state}"
+    wait_until = params.get("wait_until", "networkidle")
+    return f"Attendre l'état de chargement  -  timeout : {timeout} {unit_display}\nAttendre : {wait_until}"
 
 
 def _fmt_wait_user_action(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:

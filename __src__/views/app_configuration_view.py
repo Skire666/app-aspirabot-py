@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import filedialog, messagebox, ttk
 
 from view_models.app_configuration_view_model import AppConfigurationViewModel
@@ -154,11 +155,12 @@ class AppConfigurationView(ttk.Frame):
             self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
 
         # Button enable states and combo option lists.
-        for var, cb in [
+        bindings: list[tuple[tk.Variable, Callable[..., object]]] = [
             (self._vm.is_cancel_enabled_var, self._sync_cancel_btn),
             (self._vm.log_level_options_version_var, self._sync_log_level_options),
             (self._vm.browser_engine_options_version_var, self._sync_browser_engine_options),
-        ]:
+        ]
+        for var, cb in bindings:
             self._view_traces.append((var, var.trace_add("write", cb)))
 
     def teardown(self) -> None:

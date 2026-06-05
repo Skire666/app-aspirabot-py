@@ -35,34 +35,59 @@ class TestSetStepsAndUrlPreview:
         assert vm.get_steps() == steps
         assert vm.steps_version_var.get() == 1
 
-    def test_set_url_preview_stores_and_increments_version(self, vm: ExecutorViewModel) -> None:
+    def test_set_url_preview_shortcuts_stores_and_increments_version(self, vm: ExecutorViewModel) -> None:
         urls = ["http://a.com", "http://b.com"]
-        vm.set_url_preview(urls)
-        assert vm.get_url_preview() == urls
-        assert vm.url_preview_version_var.get() == 1
+        vm.set_url_preview_shortcuts(urls)
+        assert vm.get_url_preview_shortcuts() == urls
+        assert vm.url_preview_shortcuts_version_var.get() == 1
 
-    def test_get_url_preview_returns_copy(self, vm: ExecutorViewModel) -> None:
-        vm.set_url_preview(["http://a.com"])
-        result = vm.get_url_preview()
+    def test_set_url_preview_jsons_stores_and_increments_version(self, vm: ExecutorViewModel) -> None:
+        urls = ["http://x.com"]
+        vm.set_url_preview_jsons(urls)
+        assert vm.get_url_preview_jsons() == urls
+        assert vm.url_preview_jsons_version_var.get() == 1
+
+    def test_get_url_preview_shortcuts_returns_copy(self, vm: ExecutorViewModel) -> None:
+        vm.set_url_preview_shortcuts(["http://a.com"])
+        result = vm.get_url_preview_shortcuts()
         result.append("http://extra.com")
-        assert vm.get_url_preview() == ["http://a.com"]
+        assert vm.get_url_preview_shortcuts() == ["http://a.com"]
+
+    def test_set_url_preview_shortcuts_updates_count_var(self, vm: ExecutorViewModel) -> None:
+        vm.set_url_preview_shortcuts(["http://a.com", "http://b.com"])
+        assert vm.url_count_shortcuts_var.get() == "2 URL"
+
+    def test_set_url_preview_jsons_updates_count_var(self, vm: ExecutorViewModel) -> None:
+        vm.set_url_preview_jsons(["http://a.com"])
+        assert vm.url_count_jsons_var.get() == "1 URL"
 
 
 class TestDerivedStateRecompute:
-    def test_url_source_manual_enables_preview_editable(self, vm: ExecutorViewModel) -> None:
+    def test_url_source_manual_shows_manual_panel(self, vm: ExecutorViewModel) -> None:
         vm.url_source_type_var.set("MANUAL")
-        assert vm.is_preview_editable_var.get() is True
-        assert vm.is_path_entry_enabled_var.get() is False
+        assert vm.is_manual_panel_visible_var.get() is True
+        assert vm.is_folder_panel_visible_var.get() is False
+        assert vm.is_json_panel_visible_var.get() is False
 
-    def test_url_source_folder_enables_path_entry(self, vm: ExecutorViewModel) -> None:
+    def test_url_source_folder_shows_folder_panel(self, vm: ExecutorViewModel) -> None:
         vm.url_source_type_var.set("FOLDER")
-        assert vm.is_path_entry_enabled_var.get() is True
-        assert vm.is_sort_order_enabled_var.get() is True
-        assert vm.is_preview_editable_var.get() is False
+        assert vm.is_folder_panel_visible_var.get() is True
+        assert vm.is_manual_panel_visible_var.get() is False
+        assert vm.is_json_panel_visible_var.get() is False
 
-    def test_url_source_json_enables_path_entry(self, vm: ExecutorViewModel) -> None:
+    def test_url_source_json_shows_json_panel(self, vm: ExecutorViewModel) -> None:
         vm.url_source_type_var.set("JSON")
-        assert vm.is_path_entry_enabled_var.get() is True
+        assert vm.is_json_panel_visible_var.get() is True
+        assert vm.is_manual_panel_visible_var.get() is False
+        assert vm.is_folder_panel_visible_var.get() is False
+
+    def test_url_count_manual_reflects_non_empty_lines(self, vm: ExecutorViewModel) -> None:
+        vm.manual_urls_var.set("http://a.com\nhttp://b.com\n   \n")
+        assert vm.url_count_manual_var.get() == "2 URL"
+
+    def test_url_count_manual_empty_input(self, vm: ExecutorViewModel) -> None:
+        vm.manual_urls_var.set("")
+        assert vm.url_count_manual_var.get() == "0 URL"
 
     def test_profile_section_active_both_true(self, vm: ExecutorViewModel) -> None:
         vm.is_profile_cfg_accessible_var.set(True)

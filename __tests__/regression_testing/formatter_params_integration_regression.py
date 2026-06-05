@@ -258,7 +258,7 @@ class TestOpenUrlIntegration:
     def test_source_mode_label(self) -> None:
         from models.steps.open_url_params import OpenUrlParams
 
-        p = OpenUrlParams(url_mode="<<SOURCE>>", url_custom="", wait_state="load", wait_dns_solver=5, timeout_duration=10, timeout_unit="s", comment="")
+        p = OpenUrlParams(url_mode="<<SOURCE>>", url_custom="", wait_until="load", wait_dns_solver=5, timeout_duration=10, timeout_unit="s", comment="")
         label = _label(StepTypeEnum.E_OPEN_URL, p)
         assert "10" in label
         assert "sec" in label
@@ -267,7 +267,7 @@ class TestOpenUrlIntegration:
     def test_custom_mode_label(self) -> None:
         from models.steps.open_url_params import OpenUrlParams
 
-        p = OpenUrlParams(url_mode="<<CUSTOM>>", url_custom="https://test.com", wait_state="load", wait_dns_solver=5, timeout_duration=15, timeout_unit="m", comment="")
+        p = OpenUrlParams(url_mode="<<CUSTOM>>", url_custom="https://test.com", wait_until="load", wait_dns_solver=5, timeout_duration=15, timeout_unit="m", comment="")
         label = _label(StepTypeEnum.E_OPEN_URL, p)
         assert "https://test.com" in label
         assert "min" in label
@@ -282,13 +282,13 @@ class TestRefreshPageIntegration:
     def test_clear_cache_true_shows_ctrl_f5(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
 
-        p = RefreshPageParams(clear_cache=True, wait_state="networkidle", timeout_duration=8, timeout_unit="s", comment="")
+        p = RefreshPageParams(clear_cache=True, wait_until="networkidle", timeout_duration=8, timeout_unit="s", comment="")
         assert "F5" in _label(StepTypeEnum.E_REFRESH_PAGE, p)
 
     def test_wait_state_in_label(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
 
-        p = RefreshPageParams(clear_cache=False, wait_state="networkidle", timeout_duration=8, timeout_unit="s", comment="")
+        p = RefreshPageParams(clear_cache=False, wait_until="networkidle", timeout_duration=8, timeout_unit="s", comment="")
         assert "networkidle" in _label(StepTypeEnum.E_REFRESH_PAGE, p)
 
 
@@ -387,7 +387,7 @@ class TestWaitPageStateIntegration:
     def test_wait_state_and_timeout_in_label(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
 
-        p = WaitPageStateParams(wait_state="domcontentloaded", timeout_duration=20, timeout_unit="s", comment="")
+        p = WaitPageStateParams(wait_until="domcontentloaded", timeout_duration=20, timeout_unit="s", comment="")
         label = _label(StepTypeEnum.E_WAIT_PAGE_STATE, p)
         assert "domcontentloaded" in label
         assert "20" in label

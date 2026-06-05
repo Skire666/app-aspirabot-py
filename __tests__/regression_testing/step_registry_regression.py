@@ -42,7 +42,7 @@ class TestBuildParamsHappyPath:
             (StepTypeEnum.E_OPEN_URL, {"url": "https://example.com", "open_mode": "e_source", "comment": ""}),
             (StepTypeEnum.E_CLOSE_TABS, {"close_mode": "all_except_current", "url_filter": "", "comment": ""}),
             (StepTypeEnum.E_KILL_BROWSER, {"comment": "", "delay_before_kill_ms": 0}),
-            (StepTypeEnum.E_REFRESH_PAGE, {"wait_state": "load", "timeout_ms": 30000, "comment": ""}),
+            (StepTypeEnum.E_REFRESH_PAGE, {"clear_cache": False, "wait_until": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}),
         ],
         ids=[
             "section",

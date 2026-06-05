@@ -33,7 +33,7 @@ class ExportDataToJsExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_EXPORT_DATA_TO_JS
 
     @override
-    def execute_logical(self, _: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(ExportDataToJsParams, context.step_scraping_data.params)

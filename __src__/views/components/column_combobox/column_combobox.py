@@ -238,7 +238,12 @@ class ColumnCombobox(tk.Frame):
 
     # ── ttk.Combobox compatibility ────────────────────────────────────────────
 
-    def bind(self, sequence: str = "", func: Callable[..., Any] | None = None, add: bool | str = False) -> str:
+    def bind(  # type: ignore[override]
+        self,
+        sequence: str | None = "",
+        func: Callable[..., Any] | None = None,
+        add: bool | str | None = False,
+    ) -> str:
         """Bind an event on this widget.
 
         ``<<ComboboxSelected>>`` is generated on item selection; bind it here.
@@ -250,7 +255,7 @@ class ColumnCombobox(tk.Frame):
         """
         return super().bind(sequence, func, add)  # type: ignore[arg-type]
 
-    def configure(self, **kwargs: Any) -> None:
+    def configure(self, **kwargs: Any) -> None:  # type: ignore[override]
         """Configure widget options.
 
         Handles ``state``, ``font``. Remaining options are forwarded to the Frame.

@@ -1,7 +1,7 @@
 """Domain model for a scraping launch profile.
 
 A launch profile stores user-configured parameters for a single scraping
-session: export folder, URL source mode, and usage statistics.
+session: export folder, URL source mode with per-mode values, and usage statistics.
 """
 
 # -----------------------------------------------------------------------------
@@ -38,15 +38,19 @@ _C_DEFAULT_EXPORT_FOLDER: str = str(Path(C_CURRENT_WORKING_DIR) / C_DATA_DEFAULT
 class LaunchModel:
     """Stores user-configured parameters for a scraping session.
 
-    A profile captures the export folder, URL source mode and its collected
-    value, as well as usage statistics (launch count and last-used date).
+    A profile captures the export folder, URL source mode and the per-mode
+    values, as well as usage statistics (launch count and last-used date).
 
     Attributes:
         id_profile: Unique identifier as a hex string.
         id_scenario: Human-readable scenario name.
         export_folder: Absolute path of the export destination folder.
-        url_source_type: One of "manual", "folder", or "" when unset.
-        url_source_value: List of URLs for "manual"; path string for others.
+        url_source_type: One of "MANUAL", "FOLDER", "JSON", or "" when unset.
+        url_sources_list_manual: Explicit URL list for MANUAL mode.
+        url_sources_folder_shortcuts: Folder path for FOLDER mode (.url files).
+        url_sources_folder_jsons: Folder path for JSON mode (.json files).
+        url_sort_order_shortcuts: Sort order string for FOLDER mode.
+        url_sort_order_jsons: Sort order string for JSON mode.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
         launch_count: Number of times the profile was launched.
     """
@@ -56,12 +60,14 @@ class LaunchModel:
     profile_name: str
     export_folder: str
     url_source_type: str
-    url_source_value: list[str] | str | None
+    url_sources_list_manual: list[str]
+    url_sources_folder_shortcuts: str
+    url_sources_folder_jsons: str
     emergency_stop_threshold: int
     launch_count: int
     used_date_profile: datetime | None
-    # Sort order for folder/json sources — matches UrlSortOrderEnum.value strings.
-    url_sort_order: str = ""
+    url_sort_order_shortcuts: str = ""
+    url_sort_order_jsons: str = ""
     # Per-step emergency stop: step ID to monitor and its error threshold.
     emergency_stop_step_id: str = ""
     emergency_stop_step_threshold: int = 0
@@ -85,14 +91,30 @@ class LaunchModel:
             profile_name="Nouveau profil",
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
             url_source_type="",
-            url_source_value=None,
+            url_sources_list_manual=[],
+            url_sources_folder_shortcuts="",
+            url_sources_folder_jsons="",
             emergency_stop_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             launch_count=0,
             used_date_profile=None,
-            url_sort_order="",
+            url_sort_order_shortcuts="",
+            url_sort_order_jsons="",
             emergency_stop_step_id="",
             emergency_stop_step_threshold=1,
         )
+
+    @staticmethod
+    def _get_str(data: dict[str, Any], key: str) -> str:
+        """Extract a string field from *data*, defaulting to empty string when absent or falsy.
+
+        Args:
+            data: Raw dict from JSON deserialization.
+            key: Dict key to look up.
+
+        Returns:
+            The value converted to str, or empty string if missing or falsy.
+        """
+        return str(data.get(key) or "")
 
     @classmethod
     def import_from_data_json(cls, data: dict[str, Any]) -> LaunchModel:
@@ -107,17 +129,21 @@ class LaunchModel:
         Raises:
             None.
         """
+        raw_manual = data.get("url_sources_list_manual")
         return cls(
-            id_profile=str(data.get("id_profile") or ""),
-            id_scenario=str(data.get("id_scenario") or ""),
-            profile_name=str(data.get("profile_name") or ""),
-            export_folder=str(data.get("export_folder") or ""),
-            url_source_type=str(data.get("url_source_type") or ""),
-            url_source_value=data.get("url_source_value") or "",
+            id_profile=cls._get_str(data, "id_profile"),
+            id_scenario=cls._get_str(data, "id_scenario"),
+            profile_name=cls._get_str(data, "profile_name"),
+            export_folder=cls._get_str(data, "export_folder"),
+            url_source_type=cls._get_str(data, "url_source_type"),
+            url_sources_list_manual=raw_manual if isinstance(raw_manual, list) else [],
+            url_sources_folder_shortcuts=cls._get_str(data, "url_sources_folder_shortcuts"),
+            url_sources_folder_jsons=cls._get_str(data, "url_sources_folder_jsons"),
             emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
             launch_count=int(data.get("launch_count", 0)),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
-            url_sort_order=data.get("url_sort_order", ""),
+            url_sort_order_shortcuts=cls._get_str(data, "url_sort_order_shortcuts"),
+            url_sort_order_jsons=cls._get_str(data, "url_sort_order_jsons"),
             emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
             emergency_stop_step_threshold=int(data.get("emergency_stop_step_threshold", 0)),
         )
@@ -137,11 +163,14 @@ class LaunchModel:
             "profile_name": self.profile_name,
             "export_folder": self.export_folder,
             "url_source_type": self.url_source_type,
-            "url_source_value": self.url_source_value,
+            "url_sources_list_manual": self.url_sources_list_manual,
+            "url_sources_folder_shortcuts": self.url_sources_folder_shortcuts,
+            "url_sources_folder_jsons": self.url_sources_folder_jsons,
+            "url_sort_order_shortcuts": self.url_sort_order_shortcuts,
+            "url_sort_order_jsons": self.url_sort_order_jsons,
             "emergency_stop_threshold": self.emergency_stop_threshold,
             "launch_count": self.launch_count,
             "used_date_profile": self.used_date_profile,
-            "url_sort_order": self.url_sort_order,
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
         }

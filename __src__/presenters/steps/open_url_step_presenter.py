@@ -10,7 +10,7 @@ from typing import Any
 
 from models.steps.open_url_params import OpenUrlParams
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
-from shared.enums import OpenUrlModeEnum, StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepTypeEnum, WaitUntilEnum
 from shared.step_registry import register_params_builder
 
 
@@ -26,7 +26,7 @@ def _build(data: dict[str, Any]) -> OpenUrlParams:
     return OpenUrlParams(
         url_mode=data.get("url_mode", OpenUrlModeEnum.E_SOURCE.value),
         url_custom=data.get("url_custom", ""),
-        wait_state=data.get("wait_state", "networkidle"),
+        wait_until=data.get("wait_until", WaitUntilEnum.E_IDLE.value),
         wait_dns_solver=int(data.get("wait_dns_solver", 6)),
         timeout_duration=int(data.get("timeout_duration", 1)),
         timeout_unit=data.get("timeout_unit", C_UNITS_TIME_DEFAULT_MODEL),
