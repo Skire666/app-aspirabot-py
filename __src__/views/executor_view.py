@@ -142,7 +142,7 @@ class ExecutorView(ttk.Frame):
         """Row 0 — usage statistics (last used date, launch count)."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Dernier usage :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Dernier usage :").pack(side=tk.LEFT, padx=(0, 16), pady=(0, 5))
         ttk.Label(row, textvariable=self._vm.used_date_var).pack(side=tk.LEFT, padx=(0, 30), pady=(0, 5))
         ttk.Label(row, text="Lancements :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         ttk.Label(row, textvariable=self._vm.launch_count_var).pack(side=tk.LEFT, pady=(0, 5))

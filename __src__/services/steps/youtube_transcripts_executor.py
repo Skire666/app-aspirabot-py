@@ -36,6 +36,9 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
         assert context.step_scraping_data is not None
         p = cast(YoutubeTranscriptsParams, context.step_scraping_data.params)
 
+        # cf. RATE_LIMIT_RETRY_DELAYS -> (1, 3)
+        # cf. PHASE_PAUSE_SECONDS -> 1
+
         rs: DownloadResult = download_youtube_data(
             context.last_url_opened, str(context.folder_export), p.basic_info, p.ddl_srt
         )

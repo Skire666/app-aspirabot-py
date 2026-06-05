@@ -76,7 +76,7 @@ TARGET_LANG_CODES: Final[tuple[str, ...]] = ("fr", "en")
 DEFAULT_SHORT_CODE: Final[str] = "UNDEF"
 
 # --- Rate-limit / phase pacing ---------------------------------------------
-RATE_LIMIT_RETRY_DELAYS: Final[tuple[int, ...]] = (3, 5)
+RATE_LIMIT_RETRY_DELAYS: Final[tuple[int, ...]] = (1, 3)  # old = (0, 3, 5, 7)
 PHASE_PAUSE_SECONDS: Final[int] = 1
 HTTP_429_PATTERNS: Final[tuple[str, ...]] = ("429", "too many requests", "rate-limit")
 
@@ -375,14 +375,13 @@ def _download_subtitles(
 
     _logger.info("Phase manuelle - codes sélectionnés : %s", manual_codes or "aucun")
     if manual_codes:
+        time.sleep(PHASE_PAUSE_SECONDS)
         for code in manual_codes:
             _run_subtitle_phase(url_youtube, out_dir, [code], result, automatic=False)
-    _logger.info("Pause de %s s avant la phase automatique.", PHASE_PAUSE_SECONDS)
-
-    time.sleep(PHASE_PAUSE_SECONDS)
 
     _logger.info("Phase automatique - codes sélectionnés : %s", auto_codes or "aucun")
     if auto_codes:
+        time.sleep(PHASE_PAUSE_SECONDS)
         for code in auto_codes:
             _run_subtitle_phase(url_youtube, out_dir, [code], result, automatic=True)
     _rename_subtitle_files(out_dir, video_id, manual_block, auto_block, manual_codes, auto_codes, result)
@@ -422,12 +421,12 @@ def _name_matches_targets_fra_or_eng(code: str, name: str) -> bool:
 
 def _run_subtitle_phase(url: str, out_dir: Path, codes: list[str], result: DownloadResult, *, automatic: bool) -> None:
     """Run a single subtitle phase with fixed-delay retries on HTTP 429."""
-    delays: tuple[int, ...] = (0, *RATE_LIMIT_RETRY_DELAYS)
     last_error: Exception | None = None
-    for attempt, delay in enumerate(delays):
-        if delay:
-            result.warn(f"Réessai sous-titres dans {delay}s (tentative {attempt}).")
+    for _, delay in enumerate(RATE_LIMIT_RETRY_DELAYS):  # idx, delay
+        if delay > 0:
             time.sleep(delay)
+
+        # ddl subtitle download; on failure, if it's a rate-limit issue, retry after the delay;
         try:
             _execute_yt_dlp_subs(url, out_dir, codes, automatic=automatic)
         except DownloadError as exc:

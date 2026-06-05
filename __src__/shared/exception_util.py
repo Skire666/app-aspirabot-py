@@ -828,7 +828,7 @@ class YoutubeNoDownloadOptionError(ValueError, AspirabotBaseError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Au moins une option ('get_basic_data' ou 'get_srt') doit être active.")
+        super().__init__("Au moins une option doit être active.")
 
 
 class MissingUrlFilterError(ValueError, AspirabotBaseError):

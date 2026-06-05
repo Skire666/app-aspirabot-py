@@ -4,6 +4,7 @@
 # Imports
 # -----------------------------------------------------------------------------
 
+from services.steps.check_url_page_executor import CheckUrlPageExecutor
 from services.steps.click_for_download_executor import ClickForDownloadExecutor
 from services.steps.click_on_element_executor import ClickOnElementExecutor
 from services.steps.close_tabs_executor import CloseTabsExecutor
@@ -28,6 +29,7 @@ from services.steps.wait_user_action_executor import WaitUserActionExecutor
 from services.steps.youtube_transcripts_executor import YoutubeTranscriptsExecutor
 
 __all__ = [
+    "CheckUrlPageExecutor",
     "ClickForDownloadExecutor",
     "ClickOnElementExecutor",
     "CloseTabsExecutor",

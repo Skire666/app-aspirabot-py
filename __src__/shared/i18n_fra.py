@@ -56,7 +56,6 @@ C_EXEC_INVALID_GLOBAL_THRESHOLD = "Le seuil global d'erreurs doit être un entie
 C_EXEC_STEP_THRESHOLD_WITHOUT_STEP = "Veuillez sélectionner une étape pour le seuil par étape."
 C_EXEC_INVALID_STEP_THRESHOLD = "Le seuil par étape doit être un entier entre 1 et 9 999 999."
 C_EXEC_FOLDER_URL_SOURCE_EMPTY = "Le chemin de la source d'URL est requis."
-C_EXEC_URL_COUNT_FMT = "{count} URL"
 C_EXEC_SAVE_ERROR = "La sauvegarde du profil a échoué. Vos modifications n'ont pas été enregistrées."
 
 # Executor panel — labels
@@ -128,6 +127,7 @@ C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
 C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_SECTION_STEPS: "Section",
     StepTypeEnum.E_OPEN_URL: "Ouvrir une URL",
+    StepTypeEnum.E_CHECK_URL_PAGE: "Vérifier URL de la page",
     StepTypeEnum.E_CLOSE_TABS: "Fermer des onglets",
     StepTypeEnum.E_REFRESH_PAGE: "Rafraîchir la page",
     StepTypeEnum.E_WAIT_PAGE_STATE: "Attendre un état de page",
@@ -155,6 +155,8 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
 # -----------------------------------------------------------------------------
 
 ERROR_TEMPLATES: dict[str, str] = {
+    # --- check_url_page ---
+    "check_url_page_nothing_to_check": "Étape {step} : Choix vides. Cocher au minimum 1 case.",
     # --- Shared image dimension validation (download_image, count_html_images, wait_html_images) ---
     "image_dim_not_int": "Étape {step} : {key} doit être un nombre entier.",
     "image_dim_negative": "Étape {step} : {key} doit être >= 0.",
@@ -179,7 +181,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "end_process_wait_duration_invalid": "Étape {step} : la durée d'attente doit être >= 0.",
     "end_process_wait_unit_invalid": "Étape {step} : unité de temps invalide — {value!r}.",
     # --- export data to js ---
-    "export_data_to_js_prefix_file_required": "Étape {step} : le préfixe de nom de fichier est obligatoire.",
+    "export_data_to_js_prefix_file_required": "Étape {step} : Préfixe du fichier obligatoire.",
     # --- extract_links ---
     "extract_links_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
     "extract_links_target_invalid": "Étape {step} : cible '{value}' invalide.",
@@ -201,13 +203,13 @@ ERROR_TEMPLATES: dict[str, str] = {
     "open_url_timeout_unit_invalid": "Étape {step} : l'unité de timeout est invalide.",
     # --- refresh_page ---
     "refresh_page_timeout_invalid": "Étape {step} : le timeout doit être >= 1.",
-    "refresh_page_timeout_unit_invalid": "Étape {step} : l'unité de timeout est invalide — {value!r}.",
+    "refresh_page_timeout_unit_invalid": "Étape {step} : l'unité de timeout invalide — {value!r}.",
     # --- scroll_down ---
     "scroll_down_pixels_invalid": "Étape {step} : le nombre de pixels doit être >= 1.",
     # --- section ---
     "section_title_required": "Étape {step} : le titre de la section est obligatoire.",
     # --- youtube_transcripts ---
-    "youtube_transcripts_title_required": "Étape {step} : le titre YouTube Transcripts est obligatoire.",
+    "youtube_transcripts_title_required": "Étape {step} : Le titre est obligatoire.",
     # --- export_variable ---
     "export_variable_invalid": "Étape {step} : variable invalide — {value!r}.",
     "export_variable_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",

@@ -57,6 +57,7 @@ _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
 # Step types whose start line is simply "dt | step_id | step_type.value ".
 _SIMPLE_STEP_TYPES: frozenset[StepTypeEnum] = frozenset(
     {
+        StepTypeEnum.E_CHECK_URL_PAGE,
         StepTypeEnum.E_JUMP_TO_STEP,
         StepTypeEnum.E_CLOSE_TABS,
         StepTypeEnum.E_KILL_BROWSER,

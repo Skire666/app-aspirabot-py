@@ -215,7 +215,7 @@ class ExecutorViewModel(ViewModelBase):
         self._set_if_changed(self.is_json_panel_visible_var, stype == UrlSourceTypeEnum.E_JSON.value)
         raw = self.manual_urls_var.get()
         count = sum(1 for line in raw.splitlines() if line.strip())
-        self._set_if_changed(self.url_count_manual_var, f"{count} URL")
+        self._set_if_changed(self.url_count_manual_var, f"x{count} URL(s)")
 
     def _compute_profile_section_active(self) -> None:
         """Recompute is_profile_section_active_var from its two source Vars."""
@@ -313,7 +313,7 @@ class ExecutorViewModel(ViewModelBase):
             urls: New ordered URL strings read from the shortcuts folder.
         """
         self._url_preview_shortcuts = list(urls)
-        self.url_count_shortcuts_var.set(f"{len(urls)} URL")
+        self.url_count_shortcuts_var.set(f"x{len(urls)} URL(s)")
         self.url_preview_shortcuts_version_var.set(self.url_preview_shortcuts_version_var.get() + 1)
 
     def set_url_preview_jsons(self, urls: list[str]) -> None:
@@ -323,7 +323,7 @@ class ExecutorViewModel(ViewModelBase):
             urls: New ordered URL strings read from the jsons folder.
         """
         self._url_preview_jsons = list(urls)
-        self.url_count_jsons_var.set(f"{len(urls)} URL")
+        self.url_count_jsons_var.set(f"x{len(urls)} URL(s)")
         self.url_preview_jsons_version_var.set(self.url_preview_jsons_version_var.get() + 1)
 
     # ------------------------------------------------------------------

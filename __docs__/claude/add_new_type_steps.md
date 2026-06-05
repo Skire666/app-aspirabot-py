@@ -34,7 +34,7 @@ Class CheckUrlPageFormDef(IStepFormDef)
 - load_params_step_to_widget / read_params_from_view sur les champs
 - register_form(SectionFormDef()) en fin de module
 
-4. __src__/presenters/steps/check_url_page_presenter.py
+4. __src__/presenters/steps/check_url_page_step_presenter.py
 
 - Fonction _build(data) → CheckUrlPageParams(...)
 - register_params_builder(StepTypeEnum.E_CHECK_URL_PAGE, _build)

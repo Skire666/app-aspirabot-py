@@ -4,6 +4,7 @@
 # Imports
 # -----------------------------------------------------------------------------
 
+from models.steps.check_url_page_params import CheckUrlPageParams
 from models.steps.click_for_download_params import ClickForDownloadParams
 from models.steps.click_on_element_params import ClickOnElementParams
 from models.steps.close_tabs_params import CloseTabsParams
@@ -28,6 +29,7 @@ from models.steps.wait_user_action_params import WaitUserActionParams
 from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
 
 __all__ = [
+    "CheckUrlPageParams",
     "ClickForDownloadParams",
     "ClickOnElementParams",
     "CloseTabsParams",
