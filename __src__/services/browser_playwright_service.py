@@ -130,17 +130,14 @@ class BrowserPlaywrightService(IWebBrowserService):
         context = self._browser.contexts[0]
         if len(context.pages) == 0:
             self._workflow_page = context.new_page()
-            print("Nouvelle page créée pour le workflow.")
         elif forced_new_page:
             new_pg = context.new_page()
             if self._workflow_page:
                 with contextlib.suppress(Exception):
                     self._workflow_page.close()
             self._workflow_page = new_pg
-            print("Nouvelle page forcée créée pour le workflow.")
         elif self._workflow_page is None:
             self._workflow_page = context.pages[0]  # Track the first page as the workflow page.
-            print("Page existante utilisée pour le workflow.")
 
         return self._workflow_page
 
@@ -270,19 +267,16 @@ class BrowserPlaywrightService(IWebBrowserService):
         msg = str(exp)
         if "interrupted by another navigation" in msg and nav_retries < _NAV_MAX_RETRIES:
             self.get_workflow_page(forced_new_page=True)
-            print("Tentative type : interruption de navigation détectée")
             return nav_retries + 1, True
         if "has been closed" in msg:
             self.get_workflow_page(forced_new_page=True)
             self._workflow_page.wait_for_timeout(1000)  # ms
-            print("Tentative type : page fermée détectée")
             return nav_retries + 1, True
         if "ERR_NAME_NOT_RESOLVED" in msg:
             cast_wait_time = convert_wait_until_to_literals(wait_until)
             self.get_workflow_page()
             self._workflow_page.wait_for_timeout(1000 * wait_dns_solver_sec)
             self._workflow_page.reload(wait_until=cast_wait_time, timeout=timeout_ms)
-            print("Tentative type : résolution de nom non résolue détectée")
             return nav_retries, False
         print(f"Erreur de navigation non récupérable : {msg}")
         raise OpenUrlTooManyRetriesError() from exp

@@ -39,9 +39,9 @@ class JumpToStepExecutor(StepExecutorBase, IStepExecutor):
             context.pending_jump = p.target_hexastring
 
         str_jump = (
-            f"Doit sauter vers l'étape [#{p.target_hexastring}]"
+            f"Doit sauter vers l'étape [#{p.target_hexastring}] (comment : {p.comment})"
             if should_jump
-            else "Ne saute pas. Lit prochaine étape."
+            else "Ne saute pas. Lit prochaine étape (comment : " + p.comment + ")"
         )
         context.last_message_step = str_jump
 

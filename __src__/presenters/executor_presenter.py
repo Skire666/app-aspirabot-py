@@ -336,9 +336,7 @@ class ExecutorPresenter:
         self._vm.url_sort_order_shortcuts_var.set(
             profile.url_sort_order_shortcuts or UrlSortOrderEnum.E_MTIME_ASC.value
         )
-        self._vm.url_sort_order_jsons_var.set(
-            profile.url_sort_order_jsons or UrlSortOrderEnum.E_MTIME_ASC.value
-        )
+        self._vm.url_sort_order_jsons_var.set(profile.url_sort_order_jsons or UrlSortOrderEnum.E_MTIME_ASC.value)
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
@@ -395,13 +393,11 @@ class ExecutorPresenter:
         stype = self._vm.url_source_type_var.get()
         if stype == UrlSourceTypeEnum.E_FOLDER.value:
             self._update_url_preview_shortcuts(
-                self._vm.url_source_path_shortcuts_var.get().strip(),
-                self._vm.url_sort_order_shortcuts_var.get(),
+                self._vm.url_source_path_shortcuts_var.get().strip(), self._vm.url_sort_order_shortcuts_var.get()
             )
         elif stype == UrlSourceTypeEnum.E_JSON.value:
             self._update_url_preview_jsons(
-                self._vm.url_source_path_jsons_var.get().strip(),
-                self._vm.url_sort_order_jsons_var.get(),
+                self._vm.url_source_path_jsons_var.get().strip(), self._vm.url_sort_order_jsons_var.get()
             )
 
     def _update_url_preview_shortcuts(self, path: str, sort_str: str) -> None:
@@ -572,6 +568,8 @@ class ExecutorPresenter:
         self._current_profile.increment_launch_count()
         try:
             self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
+            # faut update le cache de l'executor, car il ne relit pas après une modif du scéanrios.
+            self._current_scenario = self._svc_scenarios.read_scenario(self._current_scenario.id_file)
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la sauvegarde pré-lancement")
         self._push_stats_vars(self._current_profile)

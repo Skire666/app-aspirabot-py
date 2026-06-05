@@ -164,15 +164,15 @@ def _build_and_wire_components(  # noqa: PLR0914
     profiles_view, prof_pr, prof_svc, prof_repo = _init_profiles_components(
         main_view, startup_service.config_model, JsonFileRepository()
     )
-    scen_view, scen_pre, edit_view, edit_p, steps_pr, scen_svc = _init_scenarios_components(
+    scen_view, scen_pre, edit_view, edit_pr, steps_pr, scen_svc = _init_scenarios_components(
         main_view, prof_svc, prof_repo, startup_service.config_model, JsonFileRepository()
     )
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
-    scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model)
+    scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc)
     dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
-    _wire_all_navigation(main_view, scen_pre, edit_p, exec_pre, prof_pr, scrap_pre)
+    _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre)
     views: list[tk.Widget] = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
-    presenters: list[object] = [log_pr, cfg_pr, prof_pr, scen_pre, edit_p, steps_pr, exec_pre, scrap_pre, dbg_p]
+    presenters: list[object] = [log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr, exec_pre, scrap_pre, dbg_p]
     _register_and_anchor(root, main_view, views, presenters)
 
 
@@ -375,13 +375,14 @@ def _init_executor_component(
 
 
 def _init_scraping_component(
-    main_view: MainView, config_model: AppConfigurationModel
+    main_view: MainView, config_model: AppConfigurationModel, scenarios_service: ScenariosService
 ) -> tuple[ScrapingView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
     Args:
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the scraping output folder.
+        scenarios_service: The scenarios service for managing scenario data.
 
     Returns:
         A (ScrapingView, ScrapingPresenter) tuple.
@@ -398,7 +399,7 @@ def _init_scraping_component(
         ),
         journal_repository=JournalRepository(),
     )
-    scraping_presenter = ScrapingPresenter(vm=scraping_vm, service=scraping_service)
+    scraping_presenter = ScrapingPresenter(scraping_vm, scraping_service, scenarios_service)
     return scraping_view, scraping_presenter
 
 

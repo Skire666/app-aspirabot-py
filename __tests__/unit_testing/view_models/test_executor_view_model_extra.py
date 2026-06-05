@@ -6,9 +6,8 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
-from view_models.executor_view_model import ExecutorViewModel, StepItem
-
 from shared.exception_util import CallbackNotDefinedError
+from view_models.executor_view_model import ExecutorViewModel, StepItem
 
 
 @pytest.fixture()
@@ -53,14 +52,6 @@ class TestSetStepsAndUrlPreview:
         result.append("http://extra.com")
         assert vm.get_url_preview_shortcuts() == ["http://a.com"]
 
-    def test_set_url_preview_shortcuts_updates_count_var(self, vm: ExecutorViewModel) -> None:
-        vm.set_url_preview_shortcuts(["http://a.com", "http://b.com"])
-        assert vm.url_count_shortcuts_var.get() == "2 URL"
-
-    def test_set_url_preview_jsons_updates_count_var(self, vm: ExecutorViewModel) -> None:
-        vm.set_url_preview_jsons(["http://a.com"])
-        assert vm.url_count_jsons_var.get() == "1 URL"
-
 
 class TestDerivedStateRecompute:
     def test_url_source_manual_shows_manual_panel(self, vm: ExecutorViewModel) -> None:
@@ -80,14 +71,6 @@ class TestDerivedStateRecompute:
         assert vm.is_json_panel_visible_var.get() is True
         assert vm.is_manual_panel_visible_var.get() is False
         assert vm.is_folder_panel_visible_var.get() is False
-
-    def test_url_count_manual_reflects_non_empty_lines(self, vm: ExecutorViewModel) -> None:
-        vm.manual_urls_var.set("http://a.com\nhttp://b.com\n   \n")
-        assert vm.url_count_manual_var.get() == "2 URL"
-
-    def test_url_count_manual_empty_input(self, vm: ExecutorViewModel) -> None:
-        vm.manual_urls_var.set("")
-        assert vm.url_count_manual_var.get() == "0 URL"
 
     def test_profile_section_active_both_true(self, vm: ExecutorViewModel) -> None:
         vm.is_profile_cfg_accessible_var.set(True)

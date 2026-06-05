@@ -332,6 +332,8 @@ class ScrapingService:
             if self._context.cancel_event.is_set():
                 break
             # Block here while the run is paused.
+            if not self._context.pause_event.is_set():
+                self._on_event_logging(EventScrapingEnum.E_PAUSE_ASKED, None, None)
             self._context.pause_event.wait()
             if self._context.cancel_event.is_set():
                 break

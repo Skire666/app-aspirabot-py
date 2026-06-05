@@ -41,6 +41,8 @@ from shared.i18n_fra import (
 )
 from view_models.scraping_view_model import ScrapingViewModel
 
+from __src__.services.scenarios_service import ScenariosService
+
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
@@ -86,16 +88,20 @@ class ScrapingPresenter:
         on_scraping_stopped: Hook injected by main.py — restores sibling modules.
     """
 
-    def __init__(self, vm: ScrapingViewModel, service: ScrapingService) -> None:
+    def __init__(
+        self, vm: ScrapingViewModel, service_scraping: ScrapingService, scenarios_service: ScenariosService
+    ) -> None:
         """Wire ViewModel callbacks and initialise per-run state.
 
         Args:
             vm: The live scraping panel ViewModel.
-            service: The scraping orchestration service.
+            service_scraping: The scraping orchestration service.
+            scenarios_service: The scenarios service for managing scenario data.
         """
         self._logger = logging.getLogger(__name__)
         self._vm = vm
-        self._service = service
+        self._service_scraping = service_scraping
+        self._service_scenarios = scenarios_service
 
         # Session context set by set_launch_context().
         self._scenario: ScenarioModel | None = None
@@ -167,6 +173,8 @@ class ScrapingPresenter:
         """Start the scraping workflow in a background thread."""
         if self._is_running or not self._scenario or not self._profile:
             return
+        # Refresh scenario to get latest steps/params (cache in scraping, not updated after edit workflow).
+        self._scenario = self._service_scenarios.read_scenario(self._scenario.id_file)
         self._prepare_run()
         self._worker_thread = threading.Thread(target=self._run_in_thread, daemon=True)
         self._worker_thread.start()
@@ -216,7 +224,7 @@ class ScrapingPresenter:
         if not self._is_running:
             return
         self._is_paused = False
-        self._service.update_emergency_thresholds(self._current_global_threshold, self._current_step_threshold)
+        self._service_scraping.update_emergency_thresholds(self._current_global_threshold, self._current_step_threshold)
         self._pause_event.set()
         self._vm.is_resume_active_var.set(False)
         self._vm.is_pause_enabled_var.set(True)
@@ -227,7 +235,7 @@ class ScrapingPresenter:
         if not self._profile or not self._profile.export_folder.strip():
             return
         try:
-            self._service.open_export_folder(self._profile.export_folder)
+            self._service_scraping.open_export_folder(self._profile.export_folder)
         except (AspirabotBaseError, OSError) as e:
             self._vm.show_error(C_ERROR_DIALOG_TITLE, C_OPEN_EXPORT_FOLDER_ERROR.format(exc=e))
 
@@ -242,7 +250,7 @@ class ScrapingPresenter:
         config = self._build_run_config()
         handlers = self._build_run_handlers()
         try:
-            report = self._service.run_workflow(self._scenario, config, handlers)
+            report = self._service_scraping.run_workflow(self._scenario, config, handlers)
         except AspirabotBaseError:
             self._logger.exception("Erreur critique pendant le scraping")
             report = None
@@ -394,9 +402,8 @@ class ScrapingPresenter:
             return ""
         result = "OK" if context.last_result_step else "KO"
         msg = context.last_message_step or ""
-        if context.last_time_elapsed <= 0:
-            return f"{step.step_id} | {result} | {msg}"
-        return f"{step.step_id} | {result} | {context.last_time_elapsed:.2f}s | {msg}"
+        # NOTE PCO : 0.00 ne veut pas dire 0, mais simplement 0.000077s parfois
+        return f"{step.step_id} | {result} | {context.last_time_elapsed + 0.001:.3f}s | {msg}"
 
     def _append_journal(self, line: str) -> None:
         """Add a line to the ViewModel journal and the internal buffer.
@@ -455,7 +462,7 @@ class ScrapingPresenter:
         if not self._profile or not self._journal_lines:
             return
         folder = Path(self._profile.export_folder)
-        path = self._service.export_journal(self._journal_lines, folder)
+        path = self._service_scraping.export_journal(self._journal_lines, folder)
         if path is not None:
             self._vm.journal_path_var.set(f"Fichier journal : {path}")
 
@@ -471,8 +478,8 @@ class ScrapingPresenter:
 
     def _poll_stats(self) -> None:
         """Read the current scraping context and push formatted stats to the ViewModel."""
-        ctx: ScrapingContextModel = self._service.current_context
-        stats: ScrapingStatisticsModel = self._service.current_stats
+        ctx: ScrapingContextModel = self._service_scraping.current_context
+        stats: ScrapingStatisticsModel = self._service_scraping.current_stats
         date_fmt = "%d/%m/%Y %H:%M:%S"
         ts = stats.started_at.strftime(date_fmt) if stats.started_at else "—"
         tid = self._profile.emergency_stop_step_id if self._profile else ""

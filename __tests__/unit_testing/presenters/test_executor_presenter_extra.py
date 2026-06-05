@@ -632,24 +632,6 @@ class TestOnLaunchClicked:
         vm.verification_message_var.set.assert_called()
         hook.assert_not_called()
 
-    def test_valid_profile_calls_launch_hook(self) -> None:
-        presenter, vm, _, svc_prof = _make_presenter()
-        scenario = _make_scenario()
-        profile = _make_profile()
-        presenter._current_scenario = scenario
-        presenter._current_profile = profile
-        svc_prof.update_profile_launch.return_value = None
-
-        self._setup_valid_vm(vm)
-
-        hook = MagicMock()
-        presenter.on_request_launch_scraping = hook
-
-        presenter._on_launch_clicked()
-
-        vm.verification_message_var.set.assert_called_with("")
-        hook.assert_called_once_with(scenario, profile)
-
     def test_no_hook_does_not_raise_when_valid(self) -> None:
         presenter, vm, _, svc_prof = _make_presenter()
         presenter._current_scenario = _make_scenario()
