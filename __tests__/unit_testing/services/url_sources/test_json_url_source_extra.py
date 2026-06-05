@@ -5,11 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from services.url_sources.json_url_source import JsonUrlSourceProvider
 from shared.enums import UrlSortOrderEnum
-from shared.exception_util import UrlSourceExhaustedError
 
 
 def _write_json(folder: Path, name: str, data: object) -> Path:
@@ -26,7 +23,7 @@ class TestPreviewWithBufferedUrl:
         p = JsonUrlSourceProvider(str(tmp_path))
 
         # Trigger has_next to fill the buffer
-        assert p.has_next()
+        assert p.load_url_if_available()
 
         # _buffered is now set to "http://a.com"
         preview = p.preview_url_listed()
@@ -39,7 +36,7 @@ class TestPreviewWithBufferedUrl:
         p = JsonUrlSourceProvider(str(tmp_path))
 
         # Fill buffer + pending
-        assert p.has_next()
+        assert p.load_url_if_available()
         preview = p.preview_url_listed()
 
         assert "http://a.com" in preview
@@ -61,7 +58,7 @@ class TestMtimeDescSortOrder:
         p = JsonUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_MTIME_DESC)
 
         # Newest first → http://new.com should come out first
-        first = p.next_url()
+        first = p.pop_url()
         assert first == "http://new.com"
 
 
@@ -71,9 +68,9 @@ class TestExhaustedDisplayText:
     def test_exhausted_shows_no_more_url(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        p.next_url()
+        p.pop_url()
         # Advance through all files
-        assert not p.has_next()
+        assert not p.load_url_if_available()
         text = p.display_progress_tuple_text()
         assert "plus aucune" in text
 
@@ -86,7 +83,7 @@ class TestPendingUrlsPath:
         p = JsonUrlSourceProvider(str(tmp_path))
 
         urls = []
-        while p.has_next():
-            urls.append(p.next_url())
+        while p.load_url_if_available():
+            urls.append(p.pop_url())
 
         assert urls == ["http://x.com", "http://y.com", "http://z.com"]

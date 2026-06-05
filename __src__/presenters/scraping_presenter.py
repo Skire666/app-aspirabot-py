@@ -57,7 +57,6 @@ _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
 # Step types whose start line is simply "dt | step_id | step_type.value ".
 _SIMPLE_STEP_TYPES: frozenset[StepTypeEnum] = frozenset(
     {
-        StepTypeEnum.E_OPEN_URL,
         StepTypeEnum.E_JUMP_TO_STEP,
         StepTypeEnum.E_CLOSE_TABS,
         StepTypeEnum.E_KILL_BROWSER,
@@ -332,16 +331,22 @@ class ScrapingPresenter:
             self._vm.after(0, lambda entry=line: self._append_journal(entry))
 
     @staticmethod
-    def preformat_step_start(dt: str, step: StepScrapingModel, context: ScrapingContextModel | None) -> str:
+    def preformat_step_start(step: StepScrapingModel, context: ScrapingContextModel) -> str:
         """Pre-format the E_STEP_START journal line to include the step type."""
         if step.step_type == StepTypeEnum.E_SECTION_STEPS:
             title = getattr(step.params, "title", "")
-            return f"{dt} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title}"
-        if step.step_type == StepTypeEnum.E_YOUTUBE_TRANSCRIPTS:
+            dt_now = datetime.now().strftime("%H:%M:%S")
+            return f"{dt_now} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title}"
+        if step.step_type == StepTypeEnum.E_YOUTUBE_DDL:
             last_will_be_used = context.last_url_opened if context else ""
-            return f"{dt} | {step.step_id} | {step.step_type.value} | {last_will_be_used}"
+            return f"{step.step_id} | {step.step_type.value} | Utilisé : {last_will_be_used}"
+        if step.step_type == StepTypeEnum.E_OPEN_URL:
+            next_url = context.url_source.preview_next_url() if context and context.url_source else "—"
+            return f"{step.step_id} | {step.step_type.value} | Prochaine : {next_url}"
+
+        # For other simple step types, the step type is enough for the start line
         if step.step_type in _SIMPLE_STEP_TYPES:
-            return f"{dt} | {step.step_id} | {step.step_type.value} "
+            return f"{step.step_id} | {step.step_type.value} "
         # ignore other step types for the start line (will be visible in the done line)
         return ""
 
@@ -358,17 +363,16 @@ class ScrapingPresenter:
         Returns:
             A formatted string or empty string when the event is ignored.
         """
-        ts = datetime.now().strftime("%H:%M:%S")
         if event in _LIFECYCLE_MESSAGES:
-            return f"{ts} | {_LIFECYCLE_MESSAGES[event]}"
+            return f"{datetime.now().strftime('%H:%M:%S')} | {_LIFECYCLE_MESSAGES[event]}"
         if event == EventScrapingEnum.E_STEP_START and step:
-            return self.preformat_step_start(ts, step, context)
+            return self.preformat_step_start(step, context)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
-            return self._format_step_done(ts, step, context)
+            return self._format_step_done(step, context)
         return ""
 
     @staticmethod
-    def _format_step_done(ts: str, step: StepScrapingModel, context: ScrapingContextModel) -> str:
+    def _format_step_done(step: StepScrapingModel, context: ScrapingContextModel) -> str:
         """Build the E_STEP_DONE journal entry.
 
         Args:
@@ -384,7 +388,7 @@ class ScrapingPresenter:
         result = "OK" if context.last_result_step else "KO"
         duration = f"{context.last_time_elapsed:.2f}s"
         msg = context.last_message_step or ""
-        return f"{ts} | {step.step_id} | {result} | {duration} | {msg}"
+        return f"{step.step_id} | {result} | {duration} | {msg}"
 
     def _append_journal(self, line: str) -> None:
         """Add a line to the ViewModel journal and the internal buffer.

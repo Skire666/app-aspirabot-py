@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import pytest
-
-from services.url_sources.url_source_factory import build_url_source_scenario
-from services.url_sources.manual_url_source import ManualUrlSourceProvider
 from services.url_sources.folder_url_source import FolderUrlSourceProvider
 from services.url_sources.json_url_source import JsonUrlSourceProvider
+from services.url_sources.manual_url_source import ManualUrlSourceProvider
+from services.url_sources.url_source_factory import build_url_source_scenario
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSourceTypeError
 
@@ -20,7 +19,7 @@ class TestBuildUrlSourceScenario:
     def test_manual_with_empty_list(self) -> None:
         provider = build_url_source_scenario("MANUAL", [])
         assert isinstance(provider, ManualUrlSourceProvider)
-        assert not provider.has_next()
+        assert not provider.load_url_if_available()
 
     def test_manual_with_str_raises_type_error(self) -> None:
         with pytest.raises(InvalidUrlSourceValueTypeError):

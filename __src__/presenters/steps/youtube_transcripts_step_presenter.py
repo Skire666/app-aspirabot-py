@@ -1,4 +1,4 @@
-"""Per-step presenter for YOUTUBE_TRANSCRIPTS — builds typed params from raw dict."""
+"""Per-step presenter for YOUTUBE_DDL — builds typed params from raw dict."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -22,13 +22,10 @@ def _build(data: dict[str, Any]) -> YoutubeTranscriptsParams:
     Returns:
         A fully populated YoutubeTranscriptsParams instance.
     """
-    return YoutubeTranscriptsParams(
-        title=data.get("title", ""),
-        comment=data.get("comment", ""),
-    )
+    return YoutubeTranscriptsParams(title=data.get("title", ""), comment=data.get("comment", ""))
 
 
-register_params_builder(StepTypeEnum.E_YOUTUBE_TRANSCRIPTS, _build)
+register_params_builder(StepTypeEnum.E_YOUTUBE_DDL, _build)
 
 
 # EOF

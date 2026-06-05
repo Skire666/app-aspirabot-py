@@ -218,7 +218,7 @@ def _fmt_section(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str
 
 
 def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
-    """Format label for YOUTUBE_TRANSCRIPTS."""
+    """Format label for YOUTUBE_DDL."""
     title = params.get("title", "")
     return f"YouTube Transcripts\nInfo : {title}"
 
@@ -302,7 +302,7 @@ _REGISTRY: dict[StepTypeEnum, _FormatterFn] = {
     StepTypeEnum.E_REFRESH_PAGE: _fmt_refresh_page,
     StepTypeEnum.E_SCROLL_DOWN: _fmt_scroll_down,
     StepTypeEnum.E_SECTION_STEPS: _fmt_section,
-    StepTypeEnum.E_YOUTUBE_TRANSCRIPTS: _fmt_youtube_transcripts,
+    StepTypeEnum.E_YOUTUBE_DDL: _fmt_youtube_transcripts,
     StepTypeEnum.E_EXTRACT_VARIABLE: _fmt_export_variable,
     StepTypeEnum.E_WAIT_FIXED_TIME: _fmt_wait_fixed_time,
     StepTypeEnum.E_WAIT_HTML_ELEMENTS: _fmt_wait_html_elements,

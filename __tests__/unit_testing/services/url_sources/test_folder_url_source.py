@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from services.url_sources.folder_url_source import FolderUrlSourceProvider
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import (
@@ -36,48 +35,48 @@ class TestFolderUrlSourceProviderInit:
 class TestHasNext:
     def test_empty_folder_has_no_next(self, tmp_path: Path) -> None:
         p = FolderUrlSourceProvider(str(tmp_path))
-        assert not p.has_next()
+        assert not p.load_url_if_available()
 
-    def test_folder_with_one_url_file_has_next(self, tmp_path: Path) -> None:
+    def test_folder_with_one_url_file_load_url_if_available(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
-        assert p.has_next()
+        assert p.load_url_if_available()
 
     def test_non_existent_folder_raises(self) -> None:
         p = FolderUrlSourceProvider("/this/does/not/exist")
         with pytest.raises(UrlSourceFileNotFoundError):
-            p.has_next()
+            p.load_url_if_available()
 
     def test_exhausted_returns_false(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
-        p.next_url()
-        assert not p.has_next()
+        p.pop_url()
+        assert not p.load_url_if_available()
 
 
 class TestNextUrl:
     def test_returns_url_from_file(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
-        assert p.next_url() == "http://a.com"
+        assert p.pop_url() == "http://a.com"
 
     def test_raises_when_exhausted(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
-        p.next_url()
+        p.pop_url()
         with pytest.raises(UrlSourceExhaustedError):
-            p.next_url()
+            p.pop_url()
 
     def test_raises_on_empty_folder(self, tmp_path: Path) -> None:
         p = FolderUrlSourceProvider(str(tmp_path))
         with pytest.raises(UrlSourceExhaustedError):
-            p.next_url()
+            p.pop_url()
 
     def test_multiple_files_consumed_in_order(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://aaa.com")
         _write_url_file(tmp_path, "b.url", "http://bbb.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        urls = [p.next_url(), p.next_url()]
+        urls = [p.pop_url(), p.pop_url()]
         assert urls == ["http://aaa.com", "http://bbb.com"]
 
     def test_files_without_url_prefix_skipped(self, tmp_path: Path) -> None:
@@ -85,7 +84,7 @@ class TestNextUrl:
         (tmp_path / "empty.url").write_text("no-prefix-here\n", encoding="utf-8")
         _write_url_file(tmp_path, "good.url", "http://good.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        url = p.next_url()
+        url = p.pop_url()
         assert url == "http://good.com"
 
 
@@ -93,15 +92,15 @@ class TestReset:
     def test_reset_rewinds(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
-        first = p.next_url()
+        first = p.pop_url()
         p.reset()
-        second = p.next_url()
+        second = p.pop_url()
         assert first == second == "http://a.com"
 
     def test_reset_preserves_discovered_paths(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
-        p.has_next()  # triggers discovery
+        p.load_url_if_available()  # triggers discovery
         paths_before = list(p._file_paths)  # type: ignore[arg-type]
         p.reset()
         assert p._file_paths == paths_before
@@ -113,14 +112,14 @@ class TestSortOrders:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         _write_url_file(tmp_path, "b.url", "http://b.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        urls = [p.next_url(), p.next_url(), p.next_url()]
+        urls = [p.pop_url(), p.pop_url(), p.pop_url()]
         assert urls == ["http://a.com", "http://b.com", "http://c.com"]
 
     def test_name_desc_order(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         _write_url_file(tmp_path, "b.url", "http://b.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_DESC)
-        urls = [p.next_url(), p.next_url()]
+        urls = [p.pop_url(), p.pop_url()]
         assert urls == ["http://b.com", "http://a.com"]
 
 
@@ -139,7 +138,7 @@ class TestPreviewUrlListed:
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
         preview = p.preview_url_listed()
         assert "http://a.com" in preview
-        assert p.next_url() == "http://a.com"  # cursor unchanged
+        assert p.pop_url() == "http://a.com"  # cursor unchanged
 
     def test_limited_to_10(self, tmp_path: Path) -> None:
         for i in range(15):
@@ -158,7 +157,7 @@ class TestDisplayProgressTupleText:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         _write_url_file(tmp_path, "b.url", "http://b.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        p.next_url()
+        p.pop_url()
         text = p.display_progress_tuple_text()
         assert "1" in text
         assert "2" in text
@@ -166,7 +165,7 @@ class TestDisplayProgressTupleText:
     def test_exhausted_message(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
-        p.next_url()
+        p.pop_url()
         text = p.display_progress_tuple_text()
         assert "plus aucune" in text
 

@@ -1,8 +1,8 @@
 """URL source scenario backed by a folder of .txt files (one URL per file).
 
-Discovery is lazy: the folder is scanned only on the first ``has_next()`` or
-``next_url()`` call. File content is read one file at a time with a one-URL
-look-ahead buffer so that ``has_next()`` is accurate even when some files
+Discovery is lazy: the folder is scanned only on the first ``load_url_if_available()`` or
+``pop_url()`` call. File content is read one file at a time with a one-URL
+look-ahead buffer so that ``load_url_if_available()`` is accurate even when some files
 are empty.
 """
 
@@ -36,7 +36,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
 
     Files are sorted by name. Each file is opened only when its turn arrives.
     Files whose first non-empty line is empty are silently skipped.
-    A one-URL look-ahead buffer makes ``has_next()`` accurate.
+    A one-URL look-ahead buffer makes ``load_url_if_available()`` accurate.
     """
 
     def __init__(self, folder_path: str, sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC) -> None:
@@ -56,7 +56,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
     # IUrlSourceProvider
     # ------------------------------------------------------------------
 
-    def has_next(self) -> bool:
+    def load_url_if_available(self) -> bool:
         """Return True when at least one URL remains available.
 
         Triggers lazy folder discovery and fills the look-ahead buffer
@@ -72,7 +72,18 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
         self._fill_one_url_if_empty()  # update uniquement si == _SENTINEL
         return self._buffered is not _SENTINEL
 
-    def next_url(self) -> str:
+    def preview_next_url(self) -> str:
+        """Return the next URL without advancing the internal cursor.
+
+        Returns:
+            The next URL string, or an empty string if no URLs remain.
+
+        Raises:
+            FileNotFoundError: If the folder does not exist on first access.
+        """
+        return str(self._buffered) if self._buffered is not _SENTINEL else "<_no_url_>"
+
+    def pop_url(self) -> str:
         """Drain the look-ahead buffer and return the next URL.
 
         Returns:
@@ -82,7 +93,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
             StopIteration: When all files have been consumed.
             FileNotFoundError: If the folder does not exist on first access.
         """
-        if not self.has_next():
+        if not self.load_url_if_available():
             raise UrlSourceExhaustedError()
 
         url = str(self._buffered)

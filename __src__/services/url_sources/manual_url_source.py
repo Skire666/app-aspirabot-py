@@ -37,7 +37,7 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
         self._urls: list[str] = [u for u in urls if u]
         self._index: int = 0
 
-    def has_next(self) -> bool:
+    def load_url_if_available(self) -> bool:
         """Return True when more URLs remain.
 
         Returns:
@@ -48,7 +48,18 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
         """
         return self._index < len(self._urls)
 
-    def next_url(self) -> str:
+    def preview_next_url(self) -> str:
+        """Return the next URL without advancing the internal cursor.
+
+        Returns:
+            The next URL string, or an empty string if no URLs remain.
+
+        Raises:
+            FileNotFoundError: If the folder does not exist on first access.
+        """
+        return self._urls[self._index] if 0 <= self._index < len(self._urls) else "<_no_url_>"
+
+    def pop_url(self) -> str:
         """Return the next URL and advance the cursor.
 
         Returns:
@@ -57,7 +68,7 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
         Raises:
             StopIteration: When all URLs have been consumed.
         """
-        if not self.has_next():
+        if not self.load_url_if_available():
             raise UrlSourceExhaustedError()
 
         # Advance index after fetching.

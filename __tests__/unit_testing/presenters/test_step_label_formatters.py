@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
 from presenters.step_label_formatters import format_step_label
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -132,7 +129,14 @@ class TestFmtCountHtmlImages:
     def test_custom_sizes(self) -> None:
         result = _fmt(
             StepTypeEnum.E_COUNT_HTML_IMAGES,
-            {"operator": "less_than", "value": 1, "width_min": 100, "height_min": 100, "width_max": 800, "height_max": 600},
+            {
+                "operator": "less_than",
+                "value": 1,
+                "width_min": 100,
+                "height_min": 100,
+                "width_max": 800,
+                "height_max": 600,
+            },
         )
         assert "100x100" in result
         assert "800x600" in result
@@ -155,7 +159,14 @@ class TestFmtDownloadImage:
     def test_size_range_displayed(self) -> None:
         result = _fmt(
             StepTypeEnum.E_DOWNLOAD_IMAGE,
-            {"unique_only": True, "mode": "all", "width_min": 200, "height_min": 200, "width_max": 1000, "height_max": 800},
+            {
+                "unique_only": True,
+                "mode": "all",
+                "width_min": 200,
+                "height_min": 200,
+                "width_max": 1000,
+                "height_max": 800,
+            },
         )
         assert "200x200" in result
 
@@ -273,7 +284,12 @@ class TestFmtOpenUrl:
     def test_custom_mode(self) -> None:
         result = _fmt(
             StepTypeEnum.E_OPEN_URL,
-            {"url_mode": OpenUrlModeEnum.E_CUSTOM.value, "url_custom": "https://example.com", "timeout_duration": 5, "timeout_unit": "m"},
+            {
+                "url_mode": OpenUrlModeEnum.E_CUSTOM.value,
+                "url_custom": "https://example.com",
+                "timeout_duration": 5,
+                "timeout_unit": "m",
+            },
         )
         assert "https://example.com" in result
         assert "min" in result
@@ -286,12 +302,18 @@ class TestFmtOpenUrl:
 
 class TestFmtRefreshPage:
     def test_clear_cache_true(self) -> None:
-        result = _fmt(StepTypeEnum.E_REFRESH_PAGE, {"clear_cache": True, "timeout_duration": 8, "timeout_unit": "s", "wait_until": "load"})
+        result = _fmt(
+            StepTypeEnum.E_REFRESH_PAGE,
+            {"clear_cache": True, "timeout_duration": 8, "timeout_unit": "s", "wait_until": "load"},
+        )
         assert "F5" in result
         assert "load" in result
 
     def test_clear_cache_false(self) -> None:
-        result = _fmt(StepTypeEnum.E_REFRESH_PAGE, {"clear_cache": False, "timeout_duration": 3, "timeout_unit": "s", "wait_until": "networkidle"})
+        result = _fmt(
+            StepTypeEnum.E_REFRESH_PAGE,
+            {"clear_cache": False, "timeout_duration": 3, "timeout_unit": "s", "wait_until": "networkidle"},
+        )
         assert "Garde" in result
 
 
@@ -327,18 +349,18 @@ class TestFmtSection:
 
 
 # ---------------------------------------------------------------------------
-# YOUTUBE_TRANSCRIPTS
+# YOUTUBE_DDL
 # ---------------------------------------------------------------------------
 
 
 class TestFmtYoutubeTranscripts:
     def test_with_title(self) -> None:
-        result = _fmt(StepTypeEnum.E_YOUTUBE_TRANSCRIPTS, {"title": "My Video"})
+        result = _fmt(StepTypeEnum.E_YOUTUBE_DDL, {"title": "My Video"})
         assert "YouTube" in result
         assert "My Video" in result
 
     def test_empty(self) -> None:
-        result = _fmt(StepTypeEnum.E_YOUTUBE_TRANSCRIPTS, {})
+        result = _fmt(StepTypeEnum.E_YOUTUBE_DDL, {})
         assert "YouTube" in result
 
 
@@ -380,7 +402,9 @@ class TestFmtWaitFixedTime:
 
 class TestFmtWaitHtmlElements:
     def test_greater_or_equal_operator(self) -> None:
-        result = _fmt(StepTypeEnum.E_WAIT_HTML_ELEMENTS, {"operator": "greater_or_equal", "quantity": 3, "selector": "div"})
+        result = _fmt(
+            StepTypeEnum.E_WAIT_HTML_ELEMENTS, {"operator": "greater_or_equal", "quantity": 3, "selector": "div"}
+        )
         assert ">=" in result
         assert "3" in result
 
@@ -403,7 +427,14 @@ class TestFmtWaitHtmlImages:
     def test_size_range(self) -> None:
         result = _fmt(
             StepTypeEnum.E_WAIT_HTML_IMAGES,
-            {"retry_delay": 1, "retry_unit": "s", "width_min": 300, "height_min": 200, "width_max": 1920, "height_max": 1080},
+            {
+                "retry_delay": 1,
+                "retry_unit": "s",
+                "width_min": 300,
+                "height_min": 200,
+                "width_max": 1920,
+                "height_max": 1080,
+            },
         )
         assert "300x200" in result
         assert "1920x1080" in result
@@ -416,7 +447,9 @@ class TestFmtWaitHtmlImages:
 
 class TestFmtWaitPageState:
     def test_with_timeout(self) -> None:
-        result = _fmt(StepTypeEnum.E_WAIT_PAGE_STATE, {"timeout_duration": 15, "timeout_unit": "s", "wait_until": "load"})
+        result = _fmt(
+            StepTypeEnum.E_WAIT_PAGE_STATE, {"timeout_duration": 15, "timeout_unit": "s", "wait_until": "load"}
+        )
         assert "15" in result
         assert "load" in result
         assert "sec" in result

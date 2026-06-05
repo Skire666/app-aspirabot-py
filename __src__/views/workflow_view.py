@@ -50,6 +50,7 @@ class WorkflowView(ttk.Frame):
         super().__init__(parent)
         self._vm = vm
         self._view_traces: list[tuple[tk.Variable, str]] = []
+        self._footer_locked = False
 
         self._create_widgets()
         self._bind_vm_vars()
@@ -252,6 +253,7 @@ class WorkflowView(ttk.Frame):
         self._mark_dirty()
         self._inline_form.set_creation_mode()
         self._inline_form.reset(self._get_current_listbox_type())
+        self._set_footer_locked(False)
         return True
 
     def _on_inline_cancel(self) -> None:
@@ -262,6 +264,7 @@ class WorkflowView(ttk.Frame):
 
         self._inline_form.set_creation_mode()
         self._inline_form.reset(self._get_current_listbox_type())
+        self._set_footer_locked(False)
 
     def _on_inline_type_changed(self, label: str) -> None:
         """Syncs the type selector listbox when the form's dropdown changes.
@@ -376,8 +379,10 @@ class WorkflowView(ttk.Frame):
         self._inline_form.load(item)
         if item is not None:
             self._inline_form.set_edit_mode()
+            self._set_footer_locked(True)
         else:
             self._inline_form.set_creation_mode()
+            self._set_footer_locked(False)
 
     def show_inline_form_errors(self, errors: list[str]) -> None:
         """Forwards validation errors to the inline form panel.
@@ -408,8 +413,19 @@ class WorkflowView(ttk.Frame):
     # Dirty state management
     # ---------------------------------------------------------------
 
+    def _set_footer_locked(self, locked: bool) -> None:
+        """Disable or restore the footer Save/Cancel buttons during inline editing."""
+        self._footer_locked = locked
+        self._btn_cancel.configure(state="disabled" if locked else "normal")
+        if locked:
+            self._btn_save.configure(state="disabled")
+        else:
+            self._sync_save_btn_state()
+
     def _sync_save_btn_state(self, *_: object) -> None:
         """Mirror vm.is_dirty_var onto the Save button's enabled state."""
+        if self._footer_locked:
+            return
         state = "normal" if self._vm.is_dirty_var.get() else "disabled"
         self._btn_save.configure(state=state)
 

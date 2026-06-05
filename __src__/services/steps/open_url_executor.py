@@ -14,7 +14,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.open_url_params import OpenUrlParams
 from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import OpenUrlModeEnum, StepTypeEnum
-from shared.exception_util import EmptyCustomUrlError, UrlNavigationMismatchError, UrlSourceExhaustedError
+from shared.exception_util import EmptyCustomUrlError, UrlSourceExhaustedError
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_ms
 
@@ -53,11 +53,6 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
 
         browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
 
-        page = browser.get_workflow_page()
-        # si changement de domaine, plante, mais si petit redirection, plante pas
-        if page and not page.url.startswith(target_url):
-            raise UrlNavigationMismatchError(page.url, target_url)
-
         context.last_message_step = f"Ouvert : {target_url}"
 
     @staticmethod
@@ -81,9 +76,9 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
             target_url = p.url_custom
         else:
             # Consume the next URL from the injected source
-            if context.url_source is None or not context.url_source.has_next():
+            if context.url_source is None or not context.url_source.load_url_if_available():
                 raise UrlSourceExhaustedError()
-            target_url = context.url_source.next_url()
+            target_url = context.url_source.pop_url()
         return target_url
 
 

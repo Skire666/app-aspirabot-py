@@ -24,7 +24,7 @@ class IUrlSourceProvider(Protocol):
     can be reused across multiple workflow runs without being reconstructed.
     """
 
-    def has_next(self) -> bool:
+    def load_url_if_available(self) -> bool:
         """Return True if at least one URL remains to be consumed.
 
         Returns:
@@ -32,14 +32,22 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
-    def next_url(self) -> str:
+    def preview_next_url(self) -> str:
+        """Return the next URL without advancing the internal cursor.
+
+        Returns:
+            The next URL string, or an empty string if no URLs remain.
+        """
+        ...
+
+    def pop_url(self) -> str:
         """Return the next URL and advance the internal cursor.
 
         Returns:
             The next URL string from this source.
 
         Raises:
-            StopIteration: When no URLs remain (i.e. ``has_next()`` is False).
+            StopIteration: When no URLs remain (i.e. ``load_url_if_available()`` is False).
         """
         ...
 

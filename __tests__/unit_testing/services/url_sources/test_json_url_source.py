@@ -6,11 +6,9 @@ import json
 from pathlib import Path
 
 import pytest
-
 from services.url_sources.json_url_source import JsonUrlSourceProvider, _collect_urls
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFoundError
-
 
 # ---------------------------------------------------------------------------
 # _collect_urls helper
@@ -90,77 +88,77 @@ class TestInit:
 class TestHasNext:
     def test_empty_folder(self, tmp_path: Path) -> None:
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert not p.has_next()
+        assert not p.load_url_if_available()
 
     def test_json_with_urls(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert p.has_next()
+        assert p.load_url_if_available()
 
     def test_non_existent_folder_raises(self) -> None:
         p = JsonUrlSourceProvider("/nonexistent/path")
         with pytest.raises(UrlSourceFileNotFoundError):
-            p.has_next()
+            p.load_url_if_available()
 
     def test_json_without_urls(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "empty.json", {"key": "not-a-url"})
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert not p.has_next()
+        assert not p.load_url_if_available()
 
 
 class TestNextUrl:
     def test_returns_url_from_json(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert p.next_url() == "http://a.com"
+        assert p.pop_url() == "http://a.com"
 
     def test_exhausted_raises(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        p.next_url()
+        p.pop_url()
         with pytest.raises(UrlSourceExhaustedError):
-            p.next_url()
+            p.pop_url()
 
     def test_empty_folder_raises_immediately(self, tmp_path: Path) -> None:
         p = JsonUrlSourceProvider(str(tmp_path))
         with pytest.raises(UrlSourceExhaustedError):
-            p.next_url()
+            p.pop_url()
 
     def test_multiple_urls_in_one_file(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com", "http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert p.next_url() == "http://a.com"
-        assert p.next_url() == "http://b.com"
+        assert p.pop_url() == "http://a.com"
+        assert p.pop_url() == "http://b.com"
 
     def test_urls_across_files(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         _write_json(tmp_path, "b.json", ["http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        urls = [p.next_url(), p.next_url()]
+        urls = [p.pop_url(), p.pop_url()]
         assert "http://a.com" in urls
         assert "http://b.com" in urls
 
     def test_nested_json_structure(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "nested.json", {"items": [{"url": "http://nested.com"}]})
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert p.next_url() == "http://nested.com"
+        assert p.pop_url() == "http://nested.com"
 
 
 class TestReset:
     def test_rewind_after_consumption(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        p.next_url()
+        p.pop_url()
         p.reset()
-        assert p.has_next()
-        assert p.next_url() == "http://a.com"
+        assert p.load_url_if_available()
+        assert p.pop_url() == "http://a.com"
 
     def test_reset_clears_pending(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com", "http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        p.next_url()
+        p.pop_url()
         p.reset()
-        first = p.next_url()
+        first = p.pop_url()
         assert first == "http://a.com"
 
 
@@ -170,14 +168,14 @@ class TestSortOrders:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         _write_json(tmp_path, "b.json", ["http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        urls = [p.next_url() for _ in range(3)]
+        urls = [p.pop_url() for _ in range(3)]
         assert urls == ["http://a.com", "http://b.com", "http://c.com"]
 
     def test_name_desc(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         _write_json(tmp_path, "b.json", ["http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_DESC)
-        urls = [p.next_url(), p.next_url()]
+        urls = [p.pop_url(), p.pop_url()]
         assert urls == ["http://b.com", "http://a.com"]
 
 
@@ -195,7 +193,7 @@ class TestPreviewUrlListed:
         p = JsonUrlSourceProvider(str(tmp_path))
         preview = p.preview_url_listed()
         assert "http://a.com" in preview
-        assert p.next_url() == "http://a.com"  # cursor unchanged
+        assert p.pop_url() == "http://a.com"  # cursor unchanged
 
     def test_limited_to_10(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", [f"http://{i}.com" for i in range(15)])
@@ -212,7 +210,7 @@ class TestDisplayProgress:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         _write_json(tmp_path, "b.json", ["http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        p.has_next()  # triggers discovery but buffers from first file
+        p.load_url_if_available()  # triggers discovery but buffers from first file
         text = p.display_progress_tuple_text()
         # After has_next, at least one file has been indexed
         assert "fichier" in text
@@ -220,4 +218,4 @@ class TestDisplayProgress:
     def test_invalid_json_file_skipped(self, tmp_path: Path) -> None:
         (tmp_path / "bad.json").write_text("{not valid json", encoding="utf-8")
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert not p.has_next()
+        assert not p.load_url_if_available()

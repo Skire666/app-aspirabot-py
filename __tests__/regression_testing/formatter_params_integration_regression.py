@@ -18,7 +18,6 @@ from __future__ import annotations
 from presenters.step_label_formatters import format_step_label
 from shared.enums import StepTypeEnum
 
-
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
@@ -97,7 +96,9 @@ class TestCountHtmlElementsIntegration:
     def test_selector_and_operator_in_label(self) -> None:
         from models.steps.count_html_elements_params import CountHtmlElementsParams
 
-        p = CountHtmlElementsParams(selector=".result", success_if="success", operator="greater_than", value=10, comment="")
+        p = CountHtmlElementsParams(
+            selector=".result", success_if="success", operator="greater_than", value=10, comment=""
+        )
         label = _label(StepTypeEnum.E_COUNT_HTML_ELEMENTS, p)
         assert ".result" in label
         assert ">" in label
@@ -114,8 +115,14 @@ class TestCountHtmlImagesIntegration:
         from models.steps.count_html_images_params import CountHtmlImagesParams
 
         p = CountHtmlImagesParams(
-            width_min=200, width_max=1920, height_min=200, height_max=1080,
-            success_if="success", operator="equal", value=4, comment="",
+            width_min=200,
+            width_max=1920,
+            height_min=200,
+            height_max=1080,
+            success_if="success",
+            operator="equal",
+            value=4,
+            comment="",
         )
         label = _label(StepTypeEnum.E_COUNT_HTML_IMAGES, p)
         assert "==" in label
@@ -131,19 +138,25 @@ class TestDownloadImageIntegration:
     def test_unique_only_true_label(self) -> None:
         from models.steps.download_image_params import DownloadImageParams
 
-        p = DownloadImageParams(mode="all", unique_only=True, width_min=250, width_max=99999, height_min=250, height_max=99999, comment="")
+        p = DownloadImageParams(
+            mode="all", unique_only=True, width_min=250, width_max=99999, height_min=250, height_max=99999, comment=""
+        )
         assert "doublons refusés" in _label(StepTypeEnum.E_DOWNLOAD_IMAGE, p)
 
     def test_unique_only_false_label(self) -> None:
         from models.steps.download_image_params import DownloadImageParams
 
-        p = DownloadImageParams(mode="selected", unique_only=False, width_min=100, width_max=800, height_min=100, height_max=600, comment="")
+        p = DownloadImageParams(
+            mode="selected", unique_only=False, width_min=100, width_max=800, height_min=100, height_max=600, comment=""
+        )
         assert "doublons autorisés" in _label(StepTypeEnum.E_DOWNLOAD_IMAGE, p)
 
     def test_size_range_in_label(self) -> None:
         from models.steps.download_image_params import DownloadImageParams
 
-        p = DownloadImageParams(mode="all", unique_only=True, width_min=300, width_max=1920, height_min=200, height_max=1080, comment="")
+        p = DownloadImageParams(
+            mode="all", unique_only=True, width_min=300, width_max=1920, height_min=200, height_max=1080, comment=""
+        )
         label = _label(StepTypeEnum.E_DOWNLOAD_IMAGE, p)
         assert "300" in label
         assert "200" in label
@@ -192,7 +205,9 @@ class TestExtractTextsIntegration:
     def test_selector_and_mode_in_label(self) -> None:
         from models.steps.extract_texts_params import ExtractTextsParams
 
-        p = ExtractTextsParams(selector=".headline", extract_mode="innerText", target="first", mapping="headlines", comment="")
+        p = ExtractTextsParams(
+            selector=".headline", extract_mode="innerText", target="first", mapping="headlines", comment=""
+        )
         label = _label(StepTypeEnum.E_EXTRACT_TEXTS, p)
         assert ".headline" in label
         assert "headlines" in label
@@ -258,7 +273,15 @@ class TestOpenUrlIntegration:
     def test_source_mode_label(self) -> None:
         from models.steps.open_url_params import OpenUrlParams
 
-        p = OpenUrlParams(url_mode="<<SOURCE>>", url_custom="", wait_until="load", wait_dns_solver=5, timeout_duration=10, timeout_unit="s", comment="")
+        p = OpenUrlParams(
+            url_mode="<<SOURCE>>",
+            url_custom="",
+            wait_until="load",
+            wait_dns_solver=5,
+            timeout_duration=10,
+            timeout_unit="s",
+            comment="",
+        )
         label = _label(StepTypeEnum.E_OPEN_URL, p)
         assert "10" in label
         assert "sec" in label
@@ -267,7 +290,15 @@ class TestOpenUrlIntegration:
     def test_custom_mode_label(self) -> None:
         from models.steps.open_url_params import OpenUrlParams
 
-        p = OpenUrlParams(url_mode="<<CUSTOM>>", url_custom="https://test.com", wait_until="load", wait_dns_solver=5, timeout_duration=15, timeout_unit="m", comment="")
+        p = OpenUrlParams(
+            url_mode="<<CUSTOM>>",
+            url_custom="https://test.com",
+            wait_until="load",
+            wait_dns_solver=5,
+            timeout_duration=15,
+            timeout_unit="m",
+            comment="",
+        )
         label = _label(StepTypeEnum.E_OPEN_URL, p)
         assert "https://test.com" in label
         assert "min" in label
@@ -282,13 +313,17 @@ class TestRefreshPageIntegration:
     def test_clear_cache_true_shows_ctrl_f5(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
 
-        p = RefreshPageParams(clear_cache=True, wait_until="networkidle", timeout_duration=8, timeout_unit="s", comment="")
+        p = RefreshPageParams(
+            clear_cache=True, wait_until="networkidle", timeout_duration=8, timeout_unit="s", comment=""
+        )
         assert "F5" in _label(StepTypeEnum.E_REFRESH_PAGE, p)
 
     def test_wait_state_in_label(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
 
-        p = RefreshPageParams(clear_cache=False, wait_until="networkidle", timeout_duration=8, timeout_unit="s", comment="")
+        p = RefreshPageParams(
+            clear_cache=False, wait_until="networkidle", timeout_duration=8, timeout_unit="s", comment=""
+        )
         assert "networkidle" in _label(StepTypeEnum.E_REFRESH_PAGE, p)
 
 
@@ -351,8 +386,13 @@ class TestWaitHtmlElementsIntegration:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 
         p = WaitHtmlElementsParams(
-            selector=".card", operator="greater_or_equal", quantity=5,
-            retry_delay=500, retry_unit="ms", retry_max=10, comment="",
+            selector=".card",
+            operator="greater_or_equal",
+            quantity=5,
+            retry_delay=500,
+            retry_unit="ms",
+            retry_max=10,
+            comment="",
         )
         label = _label(StepTypeEnum.E_WAIT_HTML_ELEMENTS, p)
         assert ".card" in label
@@ -370,8 +410,16 @@ class TestWaitHtmlImagesIntegration:
         from models.steps.wait_html_images_params import WaitHtmlImagesParams
 
         p = WaitHtmlImagesParams(
-            height_min=300, height_max=99999, width_min=400, width_max=99999,
-            operator="equal", quantity=1, retry_delay=250, retry_unit="ms", retry_max=5, comment="",
+            height_min=300,
+            height_max=99999,
+            width_min=400,
+            width_max=99999,
+            operator="equal",
+            quantity=1,
+            retry_delay=250,
+            retry_unit="ms",
+            retry_max=5,
+            comment="",
         )
         label = _label(StepTypeEnum.E_WAIT_HTML_IMAGES, p)
         assert "250" in label
@@ -414,7 +462,7 @@ class TestWaitUserActionIntegration:
 
 
 # ---------------------------------------------------------------------------
-# YOUTUBE_TRANSCRIPTS
+# YOUTUBE_DDL
 # ---------------------------------------------------------------------------
 
 
@@ -423,6 +471,6 @@ class TestYoutubeTranscriptsIntegration:
         from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
 
         p = YoutubeTranscriptsParams(title="Python Tutorial", comment="", basic_info=True, ddl_srt=False)
-        label = _label(StepTypeEnum.E_YOUTUBE_TRANSCRIPTS, p)
+        label = _label(StepTypeEnum.E_YOUTUBE_DDL, p)
         assert "Python Tutorial" in label
         assert "YouTube" in label

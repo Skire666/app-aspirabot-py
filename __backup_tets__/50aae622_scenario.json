@@ -58,7 +58,7 @@
             }
         },
         {
-            "step_type": "YOUTUBE_TRANSCRIPTS",
+            "step_type": "YOUTUBE_DDL",
             "step_id": "bcZE",
             "is_active": true,
             "modified_date": {

@@ -1,4 +1,4 @@
-"""IStepFormDef for YOUTUBE_TRANSCRIPTS."""
+"""IStepFormDef for YOUTUBE_DDL."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -35,7 +35,7 @@ class YoutubeTranscriptsFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_YOUTUBE_TRANSCRIPTS
+        return StepTypeEnum.E_YOUTUBE_DDL
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

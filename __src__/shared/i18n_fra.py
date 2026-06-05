@@ -140,7 +140,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_CLICK_ON_ELEMENT: "Cliquer sur un élément",
     StepTypeEnum.E_CLICK_FOR_DOWNLOAD: "Cliquer pour télécharger",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
-    StepTypeEnum.E_YOUTUBE_TRANSCRIPTS: "YouTube Transcripts",
+    StepTypeEnum.E_YOUTUBE_DDL: "YouTube info/srt",
     StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes",
     StepTypeEnum.E_EXTRACT_LINKS: "Extraire liens",
     StepTypeEnum.E_EXTRACT_VARIABLE: "Exporter une variable",

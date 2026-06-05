@@ -1,4 +1,4 @@
-"""Typed parameter model for the YOUTUBE_TRANSCRIPTS step."""
+"""Typed parameter model for the YOUTUBE_DDL step."""
 
 # -----------------------------------------------------------------------------
 # Imports

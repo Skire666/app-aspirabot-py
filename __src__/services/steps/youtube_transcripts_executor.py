@@ -1,4 +1,4 @@
-"""IStepExecutor for YOUTUBE_TRANSCRIPTS."""
+"""IStepExecutor for YOUTUBE_DDL."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -28,7 +28,7 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_YOUTUBE_TRANSCRIPTS
+        return StepTypeEnum.E_YOUTUBE_DDL
 
     @override
     def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
