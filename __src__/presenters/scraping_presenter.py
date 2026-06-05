@@ -275,6 +275,7 @@ class ScrapingPresenter:
             url_source_value=source_value,
             export_folder=p.export_folder,
             url_sort_order=sort_order,
+            warmup_url=p.warmup_url.strip(),
         )
 
     def _build_run_handlers(self) -> WorkflowRunHandlers:
@@ -366,6 +367,11 @@ class ScrapingPresenter:
         """
         if event in _LIFECYCLE_MESSAGES:
             return f"{datetime.now().strftime('%H:%M:%S')} | {_LIFECYCLE_MESSAGES[event]}"
+        if event == EventScrapingEnum.E_PAUSE_ASKED:
+            return f"{datetime.now().strftime('%H:%M:%S')} | Mise en pause. En attente de reprise..."
+        if event == EventScrapingEnum.E_WARMUP_URL and context:
+            url = context.last_url_opened or ""
+            return f"{datetime.now().strftime('%H:%M:%S')} | Préchauffe URL : {url}\nMise en pause. En attente de reprise..."
         if event == EventScrapingEnum.E_STEP_START and step:
             return self.preformat_step_start(step, context)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
@@ -387,9 +393,10 @@ class ScrapingPresenter:
         if step.step_type == StepTypeEnum.E_SECTION_STEPS:
             return ""
         result = "OK" if context.last_result_step else "KO"
-        duration = f"{context.last_time_elapsed:.2f}s"
         msg = context.last_message_step or ""
-        return f"{step.step_id} | {result} | {duration} | {msg}"
+        if context.last_time_elapsed <= 0:
+            return f"{step.step_id} | {result} | {msg}"
+        return f"{step.step_id} | {result} | {context.last_time_elapsed:.2f}s | {msg}"
 
     def _append_journal(self, line: str) -> None:
         """Add a line to the ViewModel journal and the internal buffer.

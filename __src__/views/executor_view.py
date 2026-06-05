@@ -69,7 +69,7 @@ class ExecutorView(ttk.Frame):
     def _create_widgets(self) -> None:
         """Build all four sections in order."""
         outer = ttk.Frame(self)
-        outer.pack(fill=tk.BOTH, expand=True, padx=5)
+        outer.pack(fill=tk.BOTH, expand=True)
         self._create_scenario_section(outer)
         self._create_profiles_section(outer)
         self._create_profile_config_section(outer)
@@ -92,7 +92,7 @@ class ExecutorView(ttk.Frame):
         self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=60)
         self._combo_scenarios.set_display_column("scenario_name")
         self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
-        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=(0, 5))
+        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10), pady=(0, 5))
 
     def _create_profiles_section(self, parent: tk.Widget) -> None:
         """Build the available-profiles section."""
@@ -100,14 +100,14 @@ class ExecutorView(ttk.Frame):
         frame.pack(fill=tk.X)
 
         self._listbox_profiles = tk.Listbox(frame, height=5, selectmode=tk.SINGLE, exportselection=False)
-        self._listbox_profiles.pack(fill=tk.X, pady=(0, 5))
+        self._listbox_profiles.pack(fill=tk.X, padx=5, pady=(0, 5))
         self._listbox_profiles.bind("<<ListboxSelect>>", self._on_listbox_profile_selected)
 
         btn_row = ttk.Frame(frame)
         btn_row.pack(fill=tk.X, pady=(0, 5))
 
         self._btn_new = ttk.Button(btn_row, text="Nouveau", command=self._on_new_clicked)
-        self._btn_new.pack(side=tk.LEFT, padx=(0, 5))
+        self._btn_new.pack(side=tk.LEFT, padx=5)
 
         self._btn_rename = ttk.Button(btn_row, text="Renommer", command=self._on_rename_clicked)
         self._btn_rename.pack(side=tk.LEFT, padx=(0, 5))
@@ -119,7 +119,7 @@ class ExecutorView(ttk.Frame):
         self._btn_save.pack(side=tk.LEFT, padx=(0, 5))
 
         self._lbl_saved = ttk.Label(btn_row, textvariable=self._vm.saved_date_var)
-        self._lbl_saved.pack(side=tk.RIGHT, padx=(5, 0))
+        self._lbl_saved.pack(side=tk.RIGHT, padx=5)
 
     def _create_profile_config_section(self, parent: tk.Widget) -> None:
         """Build the launch-profile configuration section."""
@@ -135,6 +135,7 @@ class ExecutorView(ttk.Frame):
         self._create_cfg_panel_manual()
         self._create_cfg_panel_folder()
         self._create_cfg_panel_json()
+        self._create_cfg_row_warmup(container)
         self._create_cfg_row5(container)
         self._create_cfg_row6(container)
 
@@ -142,7 +143,7 @@ class ExecutorView(ttk.Frame):
         """Row 0 — usage statistics (last used date, launch count)."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Dernier usage :").pack(side=tk.LEFT, padx=(0, 16), pady=(0, 5))
+        ttk.Label(row, text="Dernier usage :").pack(side=tk.LEFT, padx=(5, 16), pady=(0, 5))
         ttk.Label(row, textvariable=self._vm.used_date_var).pack(side=tk.LEFT, padx=(0, 30), pady=(0, 5))
         ttk.Label(row, text="Lancements :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         ttk.Label(row, textvariable=self._vm.launch_count_var).pack(side=tk.LEFT, pady=(0, 5))
@@ -151,11 +152,11 @@ class ExecutorView(ttk.Frame):
         """Row 1 — export folder path, browse button, open-folder button."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
 
         FolderLinkWidget(
             row, title="Dossier", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_export_folder()
-        ).pack(side=tk.RIGHT, pady=(0, 5))
+        ).pack(side=tk.RIGHT, padx=(0, 10), pady=(0, 5))
         ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
         )
@@ -173,7 +174,7 @@ class ExecutorView(ttk.Frame):
         """Source-type row — three RadioButtons replacing the old Combobox."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Source d'URL :", width=15).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Source d'URL :", width=15).pack(side=tk.LEFT, padx=5, pady=(0, 5))
         for label, value in (
             ("Liste manuelle", UrlSourceTypeEnum.E_MANUAL.value),
             ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER.value),
@@ -200,7 +201,7 @@ class ExecutorView(ttk.Frame):
         inner.pack(fill=tk.X)
 
         left = ttk.Frame(inner)
-        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 23), pady=(0, 5))
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 24), pady=(0, 5))
         ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
         ttk.Label(left, textvariable=self._vm.url_count_manual_var).pack(anchor=tk.W)
 
@@ -209,8 +210,8 @@ class ExecutorView(ttk.Frame):
         self._txt_url_manual = tk.Text(preview_frame, height=7, wrap=tk.NONE)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_manual.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_manual.configure(yscrollcommand=scrollbar.set)
-        self._txt_url_manual.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(0, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self._txt_url_manual.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
         self._txt_url_manual.bind("<<Modified>>", self._on_manual_text_modified)
 
     def _create_cfg_panel_folder(self) -> None:
@@ -228,7 +229,7 @@ class ExecutorView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Chemin :", width=15).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Chemin :", width=16).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._view_traces.append(
             (
                 self._vm.url_source_path_shortcuts_var,
@@ -238,7 +239,9 @@ class ExecutorView(ttk.Frame):
         ttk.Entry(row, textvariable=self._vm.url_source_path_shortcuts_var).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
         )
-        ttk.Button(row, text="Parcourir", command=self._browse_shortcuts_folder).pack(side=tk.RIGHT, pady=(0, 5))
+        ttk.Button(row, text="Parcourir", command=self._browse_shortcuts_folder).pack(
+            side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
+        )
 
     def _create_folder_preview_row(self, parent: tk.Widget) -> None:
         """Preview row with URL count and scrolled text for the FOLDER source panel.
@@ -249,7 +252,7 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 23), pady=(0, 5))
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 24), pady=(0, 5))
         ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
         ttk.Label(left, textvariable=self._vm.url_count_shortcuts_var).pack(anchor=tk.W)
         preview_frame = ttk.Frame(row)
@@ -257,8 +260,8 @@ class ExecutorView(ttk.Frame):
         self._txt_url_shortcuts = tk.Text(preview_frame, height=7, wrap=tk.NONE, state=tk.DISABLED)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_shortcuts.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_shortcuts.configure(yscrollcommand=scrollbar.set)
-        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(0, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
 
     def _create_folder_sort_row(self, parent: tk.Widget) -> None:
         """Sort-order RadioButtons row for the FOLDER source panel.
@@ -268,7 +271,7 @@ class ExecutorView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(100, 5), pady=(0, 5))
+        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(105, 5), pady=(0, 5))
         ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -299,7 +302,7 @@ class ExecutorView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Chemin :", width=15).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Chemin :", width=16).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._view_traces.append(
             (
                 self._vm.url_source_path_jsons_var,
@@ -309,7 +312,9 @@ class ExecutorView(ttk.Frame):
         ttk.Entry(row, textvariable=self._vm.url_source_path_jsons_var).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
         )
-        ttk.Button(row, text="Parcourir", command=self._browse_jsons_folder).pack(side=tk.RIGHT, pady=(0, 5))
+        ttk.Button(row, text="Parcourir", command=self._browse_jsons_folder).pack(
+            side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
+        )
 
     def _create_json_preview_row(self, parent: tk.Widget) -> None:
         """Preview row with URL count and scrolled text for the JSON source panel.
@@ -320,7 +325,7 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(0, 23), pady=(0, 5))
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 24), pady=(0, 5))
         ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
         ttk.Label(left, textvariable=self._vm.url_count_jsons_var).pack(anchor=tk.W)
         preview_frame = ttk.Frame(row)
@@ -328,8 +333,8 @@ class ExecutorView(ttk.Frame):
         self._txt_url_jsons = tk.Text(preview_frame, height=7, wrap=tk.NONE, state=tk.DISABLED)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_jsons.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_jsons.configure(yscrollcommand=scrollbar.set)
-        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(0, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
 
     def _create_json_sort_row(self, parent: tk.Widget) -> None:
         """Sort-order RadioButtons row for the JSON source panel.
@@ -339,7 +344,7 @@ class ExecutorView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(100, 5), pady=(0, 5))
+        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(105, 5), pady=(0, 5))
         ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -355,12 +360,24 @@ class ExecutorView(ttk.Frame):
             command=lambda: self._vm.form_changed(),
         ).pack(side=tk.LEFT, pady=(0, 5))
 
+    def _create_cfg_row_warmup(self, parent: tk.Widget) -> None:
+        """Warmup URL row — optional URL to open before the run starts."""
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text="Préchauffe URL : ").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        self._view_traces.append(
+            (self._vm.warmup_url_var, self._vm.warmup_url_var.trace_add("write", lambda *_: self._vm.form_changed()))
+        )
+        ttk.Entry(row, textvariable=self._vm.warmup_url_var).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
+        )
+
     def _create_cfg_row5(self, parent: tk.Widget) -> None:
         """Row 5 — global error threshold."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         ttk.Label(row, text="Erreurs globales max. avant mise en pause d'urgence :").pack(
-            side=tk.LEFT, padx=(0, 5), pady=(0, 5)
+            side=tk.LEFT, padx=5, pady=(0, 5)
         )
         self._view_traces.append(
             (
@@ -374,8 +391,8 @@ class ExecutorView(ttk.Frame):
         """Row 6 — per-step error threshold with step selector."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Mettre en pause l'étape :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self._combo_steps = ttk.Combobox(row, state="readonly", width=38)
+        ttk.Label(row, text="Mettre en pause l'étape :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        self._combo_steps = ttk.Combobox(row, state="readonly", width=35)
         self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
         self._view_traces.append(
@@ -385,7 +402,7 @@ class ExecutorView(ttk.Frame):
             )
         )
         ttk.Label(row, text=" après  ").pack(side=tk.LEFT)
-        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=12).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=10).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         ttk.Label(row, text="erreurs").pack(side=tk.LEFT)
 
     def _create_launch_section(self, parent: tk.Widget) -> None:
@@ -396,12 +413,12 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(frame)
         row.pack(fill=tk.X, padx=5, pady=(0, 5))
 
-        ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
         ttk.Label(row, textvariable=self._vm.verification_message_var, foreground="red").pack(
             side=tk.LEFT, fill=tk.X, expand=True, pady=(0, 5)
         )
 
-        self._btn_launch = ttk.Button(row, text="Lancer le scraping", command=lambda: self._vm.launch())
+        self._btn_launch = ttk.Button(row, text="Lancer le scraping", width=25, command=lambda: self._vm.launch())
         self._btn_launch.pack(side=tk.RIGHT, padx=(10, 0), pady=(0, 5))
 
     # ------------------------------------------------------------------

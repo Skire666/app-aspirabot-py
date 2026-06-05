@@ -125,6 +125,7 @@ class ExecutorViewModel(ViewModelBase):
         self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         self.global_threshold_var = tk.StringVar(master=master, value="1")
         self.step_threshold_var = tk.StringVar(master=master, value="0")
+        self.warmup_url_var = tk.StringVar(master=master, value="")
         # Display Vars — Presenter writes, View binds via textvariable=.
         self.used_date_var = tk.StringVar(master=master, value=C_EXEC_USED_DATE_EMPTY)
         self.launch_count_var = tk.StringVar(master=master, value="0")

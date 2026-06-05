@@ -28,7 +28,7 @@ from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
 from services.url_sources.url_source_factory import build_url_source_scenario
 from services.workflow_service import WorkflowService
-from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum
+from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum, WaitUntilEnum
 from shared.exception_util import BrowserNotLaunchedError, ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 from shared.step_registry import get_step_executor
@@ -107,6 +107,9 @@ class ScrapingService:
         self._emergency_stop_step_threshold: int = 0
         self._emergency_stop_step_failed: int = 0
 
+        # Optional warmup URL — navigated to before steps run, waits for user resume.
+        self._warmup_url: str = ""
+
         # Run-scoped callbacks.
         self._on_event_logging: (
             Callable[[EventScrapingEnum, StepScrapingModel | None, ScrapingContextModel | None], None] | None
@@ -140,6 +143,7 @@ class ScrapingService:
         self._on_emergency_stop = handlers.on_emergency_stop
         self._emergency_stop_step_id = handlers.emergency_stop_step_id
         self._emergency_stop_step_threshold = handlers.emergency_stop_step_threshold
+        self._warmup_url = config.warmup_url.strip()
         self._statistics.start_timer()
 
         # Build and attach the URL source when requested, forwarding sort order.
@@ -259,12 +263,36 @@ class ScrapingService:
             self._on_event_logging(EventScrapingEnum.E_CONTEXT_INIT, None, None)
             self._browser_service.get_workflow_page()
             self._on_event_logging(EventScrapingEnum.E_WORKFLOW_INIT, None, None)
-            self._run_all_steps(scenario.steps)
+            self._run_warmup_url()
+            if not self._context.cancel_event.is_set():
+                self._run_all_steps(scenario.steps)
         finally:
             # Always close the browser even if a step raised an exception.
             self._browser_service.close_browser()
 
         return self._context.cancel_event.is_set()
+
+    def _run_warmup_url(self) -> None:
+        """Navigate to the warmup URL and block until the user clicks Reprendre.
+
+        Does nothing when ``_warmup_url`` is empty or when the run is already cancelled.
+        """
+        if not self._warmup_url or self._context.cancel_event.is_set():
+            return
+        assert self._browser_service is not None
+        assert self._on_event_logging is not None
+
+        self._logger.info("Préchauffe : Url : %s", self._warmup_url)
+        self._context.last_url_opened = self._warmup_url
+        self._on_event_logging(EventScrapingEnum.E_WARMUP_URL, None, self._context)
+
+        self._browser_service.safe_goto_url(self._warmup_url, WaitUntilEnum.E_DOM, 30_000, 5)
+
+        # Signal the UI to activate the Reprendre button, then block.
+        if callable(self._context.on_user_wait):
+            self._context.on_user_wait()
+        self._context.pause_event.clear()
+        self._context.pause_event.wait()
 
     def _build_report(self, cancelled: bool) -> ScrapingStatisticsModel:
         """Assemble the final report from run-level counters.
@@ -296,6 +324,7 @@ class ScrapingService:
         Args:
             steps: Ordered list of scraping steps to run.
         """
+        assert self._on_event_logging is not None
         self._reset_run_state(steps)
         i = 0
 

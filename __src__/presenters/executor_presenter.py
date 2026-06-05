@@ -319,6 +319,8 @@ class ExecutorPresenter:
         self._vm.current_profile_name_var.set(profile.profile_name)
         # Export folder
         self._vm.export_folder_var.set(profile.export_folder or "")
+        # Warmup URL
+        self._vm.warmup_url_var.set(profile.warmup_url or "")
 
     def _push_url_source_vars(self, profile: LaunchModel) -> None:
         """Write URL source type, per-mode values, and sort orders into VM Vars.
@@ -523,6 +525,7 @@ class ExecutorPresenter:
         self._current_profile.emergency_stop_step_id = self._vm.step_id_selected_var.get()
         self._current_profile.emergency_stop_threshold = safe_int_from_str(self._vm.global_threshold_var.get(), 0)
         self._current_profile.emergency_stop_step_threshold = safe_int_from_str(self._vm.step_threshold_var.get(), 0)
+        self._current_profile.warmup_url = self._vm.warmup_url_var.get().strip()
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)

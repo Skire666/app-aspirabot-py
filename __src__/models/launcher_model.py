@@ -71,6 +71,8 @@ class LaunchModel:
     # Per-step emergency stop: step ID to monitor and its error threshold.
     emergency_stop_step_id: str = ""
     emergency_stop_step_threshold: int = 0
+    # Optional URL to open before the run starts; execution waits for user resume.
+    warmup_url: str = ""
 
     @classmethod
     def get_default(cls, id_scenario: str) -> LaunchModel:
@@ -101,6 +103,7 @@ class LaunchModel:
             url_sort_order_jsons="",
             emergency_stop_step_id="",
             emergency_stop_step_threshold=1,
+            warmup_url="",
         )
 
     @staticmethod
@@ -146,6 +149,7 @@ class LaunchModel:
             url_sort_order_jsons=cls._get_str(data, "url_sort_order_jsons"),
             emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
             emergency_stop_step_threshold=int(data.get("emergency_stop_step_threshold", 0)),
+            warmup_url=cls._get_str(data, "warmup_url"),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -173,6 +177,7 @@ class LaunchModel:
             "used_date_profile": self.used_date_profile,
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
+            "warmup_url": self.warmup_url,
         }
 
     @classmethod

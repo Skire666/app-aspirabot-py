@@ -41,6 +41,8 @@ class WorkflowRunConfigModel:
     export_folder: str = ""
     # Sort order for folder/json sources — matches UrlSortOrderEnum.value strings.
     url_sort_order: str = ""
+    # Optional URL to navigate to before running steps; empty string disables warmup.
+    warmup_url: str = ""
 
 
 # EOF
