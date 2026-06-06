@@ -51,7 +51,7 @@ class WaitHtmlImagesExecutor(StepExecutorBase, IStepExecutor):
                 time.sleep(nbr_delay_in_sec)
             event_bus.log_step(context, f"Trouvé {count} image(s), condition vérifiée.")
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

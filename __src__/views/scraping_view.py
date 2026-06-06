@@ -13,7 +13,7 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 
 from shared.constants import C_COLOR_ORANGE_BLINKING
-from shared.enums import StepTypeEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.i18n_fra import C_SCRAPING_CANCEL_CONFIRM_MSG, C_SCRAPING_CANCEL_CONFIRM_TITLE
 from view_models.scraping_view_model import ScrapingViewModel
 from views.components.folder_link_widget import FolderLinkWidget
@@ -149,9 +149,10 @@ class ScrapingView(ttk.Frame):
         txt_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
 
         self._txt_journal = tk.Text(txt_frame, state=tk.DISABLED, wrap=tk.NONE, height=12)
-        self._txt_journal.tag_configure("ko", foreground="red")
-        self._txt_journal.tag_configure("jump", foreground="blue")
-        self._txt_journal.tag_configure("open_url_ok", foreground="green")
+        self._txt_journal.tag_configure("tag_open", foreground="blue")
+        self._txt_journal.tag_configure("tag_success", foreground="green")
+        self._txt_journal.tag_configure("tag_warning", foreground="orange")
+        self._txt_journal.tag_configure("tag_error", foreground="red")
         sb_y = ttk.Scrollbar(txt_frame, orient=tk.VERTICAL, command=self._txt_journal.yview)  # type: ignore[reportUnknownMemberType]
         sb_x = ttk.Scrollbar(txt_frame, orient=tk.HORIZONTAL, command=self._txt_journal.xview)  # type: ignore[reportUnknownMemberType]
         self._txt_journal.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
@@ -237,12 +238,18 @@ class ScrapingView(ttk.Frame):
 
     @staticmethod
     def _journal_tag(line: str) -> str:
-        if " KO " in line:
-            return "ko"
-        if f" {StepTypeEnum.E_JUMP_TO_STEP.value} " in line:
-            return "jump"
-        if f" {StepTypeEnum.E_OPEN_URL.value} " in line:
-            return "open_url_ok"
+        if StepTypeEnum.E_OPEN_URL.value in line:
+            return "tag_open"
+        if StepExecutionResultEnum.E_SUCCESS.value in line:
+            return "tag_success"
+        if StepExecutionResultEnum.E_SKIPPED.value in line or StepExecutionResultEnum.E_WARNING.value in line:
+            return "tag_warning"
+        if (
+            "Excp" in line
+            or StepExecutionResultEnum.E_ERROR.value in line
+            or StepExecutionResultEnum.E_FATAL.value in line
+        ):
+            return "tag_error"
         return ""
 
     def _sync_journal_append(self, *_: object) -> None:

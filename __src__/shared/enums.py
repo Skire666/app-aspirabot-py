@@ -92,11 +92,11 @@ class StepExecutionResultEnum(Enum):
     """
 
     E_UNSET = "UNSET"  # default value; should be overridden by executors
-    E_SKIPPED = "skipped"  # step was not executed due to a jump or section condition
-    E_SUCCESS = "success"  # step completed fully
-    E_WARNING = "warning"  # completed with a non-critical anomaly; workflow continues
-    E_ERROR = "error"  # step failed; workflow continues to next step
-    E_FATAL = "fatal"  # step failed; workflow stops immediately
+    E_SKIPPED = "SKIPPED"  # step was not executed due to a jump or section condition
+    E_SUCCESS = "SUCCESS"  # step completed fully
+    E_WARNING = "WARNING"  # completed with a non-critical anomaly; workflow continues
+    E_ERROR = "ERROR"  # step failed; workflow continues to next step
+    E_FATAL = "FATAL"  # step failed; workflow stops immediately
     E_UNKNOWN = "UNKNOWN"
 
 

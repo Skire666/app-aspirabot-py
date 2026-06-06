@@ -31,6 +31,9 @@ from shared.exception_util import (
 from shared.path_util import clean_filename_youtube
 from yt_dlp.utils import DownloadError
 
+from __src__.interfaces.i_scraping_event_bus import IScrapingEventBus
+from __src__.models.scraping_context_model import ScrapingContextModel
+
 # ============================================================================
 # CONSTANTS (single source of truth — tune the behaviour from here)
 # ============================================================================
@@ -148,52 +151,42 @@ class DownloadResult:
 # ============================================================================
 
 
-def download_youtube_data(url_youtube: str, output_dir: str, get_basic_data: bool, get_srt: bool) -> DownloadResult:
-    """Download YouTube basic metadata and/or subtitle tracks to ``output_dir``.
+def download_youtube_data(
+    url_youtube: str,
+    output_dir: str,
+    get_basic_data: bool,
+    get_srt: bool,
+    event_bus: IScrapingEventBus,
+    ctx: ScrapingContextModel,
+) -> DownloadResult:
+    """Orchestrate the full pipeline; record outcomes into ``result``."""
+    result: DownloadResult = DownloadResult()
 
-    This function never raises: any failure is captured in the returned
-    :class:`DownloadResult`. The caller MUST inspect ``result.errors``.
+    if not _safe_validate(url_youtube, output_dir, get_basic_data, get_srt, result):
+        event_bus.log_step(ctx, f"Paramètres invalides : {result.errors[-1]}")
+        return result
+    out_path = _safe_prepare_dir(output_dir, result)
+    if out_path is None:
+        return result
 
-    Args:
-        url_youtube: Public YouTube URL of the video to process.
-        output_dir: Directory where output files will be written.
-        get_basic_data: When True, save a JSON file with the configured fields.
-        get_srt: When True, download manual and automatic subtitles (FR/EN).
+    # basic info extraction (also serves as a validation step before attempting subs download)
+    all_infos = _safe_fetch_info(url_youtube, result)
+    if all_infos is None:
+        return result
+    video_id = str(all_infos.get("id") or "unknown")
 
-    Returns:
-        A :class:`DownloadResult` summarising files, warnings, and errors.
-    """
-    result = DownloadResult()
-    try:
-        _execute_pipeline(url_youtube, output_dir, get_basic_data, get_srt, result)
-    except Exception as exc:
-        result.fail(f"Erreur inattendue dans le pipeline : {exc!r}")
-        _logger.exception("Erreur inattendue dans le pipeline principal.")
+    # choices
+    if get_basic_data:
+        _safe_save_basic_data(all_infos, out_path, video_id, result, event_bus, ctx)
+    if get_srt:
+        _safe_download_subtitles(url_youtube, all_infos, out_path, video_id, result, event_bus, ctx)
+
     return result
 
 
 # ============================================================================
 # PIPELINE ORCHESTRATION
 # ============================================================================
-
-
-def _execute_pipeline(
-    url_youtube: str, output_dir: str, get_basic_data: bool, get_srt: bool, result: DownloadResult
-) -> None:
-    """Orchestrate the full pipeline; record outcomes into ``result``."""
-    if not _safe_validate(url_youtube, output_dir, get_basic_data, get_srt, result):
-        return
-    out_path = _safe_prepare_dir(output_dir, result)
-    if out_path is None:
-        return
-    all_infos = _safe_fetch_info(url_youtube, result)
-    if all_infos is None:
-        return
-    video_id = str(all_infos.get("id") or "unknown")
-    if get_basic_data:
-        _safe_save_basic_data(all_infos, out_path, video_id, result)
-    if get_srt:
-        _safe_download_subtitles(url_youtube, all_infos, out_path, video_id, result)
 
 
 def _safe_validate(
@@ -230,21 +223,35 @@ def _safe_fetch_info(url_youtube: str, result: DownloadResult) -> dict[str, Any]
         return None
 
 
-def _safe_save_basic_data(info: dict[str, Any], out_dir: Path, video_id: str, result: DownloadResult) -> None:
+def _safe_save_basic_data(
+    info: dict[str, Any],
+    out_dir: Path,
+    video_id: str,
+    result: DownloadResult,
+    event_bus: IScrapingEventBus,
+    ctx: ScrapingContextModel,
+) -> None:
     """Wrap ``_save_basic_data`` to capture any unexpected exception."""
     try:
         _save_basic_data(info, out_dir, video_id, result)
+        event_bus.log_step(ctx, "Données basiques téléchargées.")
         result.nbr_base_success += 1
     except Exception as exc:  # noqa: BLE001
         result.fail(f"Données basiques (erreur inattendue) : {exc!r}")
 
 
 def _safe_download_subtitles(
-    url: str, info: dict[str, Any], out_dir: Path, video_id: str, result: DownloadResult
+    url: str,
+    info: dict[str, Any],
+    out_dir: Path,
+    video_id: str,
+    result: DownloadResult,
+    event_bus: IScrapingEventBus,
+    ctx: ScrapingContextModel,
 ) -> None:
     """Wrap ``_download_subtitles`` to capture any unexpected exception."""
     try:
-        _download_subtitles(url, info, out_dir, video_id, result)
+        _download_subtitles(url, info, out_dir, video_id, result, event_bus, ctx)
     except Exception as exc:  # noqa: BLE001
         result.fail(f"Sous-titres (erreur inattendue) : {exc!r}")
 
@@ -365,7 +372,13 @@ def _short_lang_code(code: str, name: str) -> str:
 
 
 def _download_subtitles(
-    url_youtube: str, info: dict[str, Any], out_dir: Path, video_id: str, result: DownloadResult
+    url_youtube: str,
+    info: dict[str, Any],
+    out_dir: Path,
+    video_id: str,
+    result: DownloadResult,
+    event_bus: IScrapingEventBus,
+    ctx: ScrapingContextModel,
 ) -> None:
     """Run the two-phase subtitle workflow (manual then automatic)."""
     manual_block: dict[str, Any] = info.get("subtitles") or {}
@@ -375,12 +388,14 @@ def _download_subtitles(
 
     _logger.info("Phase manuelle - codes sélectionnés : %s", manual_codes or "aucun")
     if manual_codes:
+        event_bus.log_step(ctx, f"Sous-titres manuels : {', '.join(manual_codes)}")
         time.sleep(PHASE_PAUSE_SECONDS)
         for code in manual_codes:
             _run_subtitle_phase(url_youtube, out_dir, [code], result, automatic=False)
 
     _logger.info("Phase automatique - codes sélectionnés : %s", auto_codes or "aucun")
     if auto_codes:
+        event_bus.log_step(ctx, f"Sous-titres automatiques : {', '.join(auto_codes)}")
         time.sleep(PHASE_PAUSE_SECONDS)
         for code in auto_codes:
             _run_subtitle_phase(url_youtube, out_dir, [code], result, automatic=True)

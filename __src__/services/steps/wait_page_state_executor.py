@@ -42,7 +42,7 @@ class WaitPageStateExecutor(StepExecutorBase, IStepExecutor):
             page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
             event_bus.log_step(context, f"État '{p.wait_until.value}' atteint.")
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

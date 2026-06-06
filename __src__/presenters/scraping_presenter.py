@@ -13,7 +13,6 @@ main.py to gray/ungray module tabs. No business logic lives here.
 import logging
 import threading
 from collections.abc import Callable
-from datetime import datetime
 from pathlib import Path
 
 from models.launcher_model import LaunchModel
@@ -25,6 +24,7 @@ from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
+from shared.datetime_util import get_time_now_hh_mm_ss
 from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
@@ -47,7 +47,7 @@ from view_models.scraping_view_model import ScrapingViewModel
 # Constants
 # -----------------------------------------------------------------------------
 
-_POLL_INTERVAL_MS = 300
+_POLL_INTERVAL_MS = 200
 
 _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
     EventScrapingEnum.E_BROWSER_INIT: C_SCRAPING_EVENT_BROWSER_INIT,
@@ -326,54 +326,35 @@ class ScrapingPresenter:
     def _format_journal_line(
         self, event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
     ) -> str:
-        """Build a formatted journal entry from a scraping event.
-
-        Args:
-            event: The lifecycle event type.
-            step: The step model, present for E_STEP_LOG events.
-            context: The scraping context, present for step events.
-
-        Returns:
-            A formatted string or empty string when the event is ignored.
-        """
         if event in _LIFECYCLE_MESSAGES:
-            return f"{datetime.now().strftime('%H:%M:%S')} | {_LIFECYCLE_MESSAGES[event]}"
+            return f"{get_time_now_hh_mm_ss()} | {_LIFECYCLE_MESSAGES[event]}"
         if event == EventScrapingEnum.E_WARMUP_URL and context:
-            ts = datetime.now().strftime("%H:%M:%S")
-            url = context.last_url_opened or ""
-            return f"{ts} | Préchauffe URL : {url}\n{C_SCRAPING_EVENT_PAUSE_ASKED}"
+            return f"{get_time_now_hh_mm_ss()} | Préchauffe URL : {context.last_url_opened or ''}\n{get_time_now_hh_mm_ss()} | {C_SCRAPING_EVENT_PAUSE_ASKED}"
         if event == EventScrapingEnum.E_STEP_START and step:
             return self.preformat_step_start(step, context)
-        if event == EventScrapingEnum.E_STEP_DONE and step and context:
-            return f"         | {context.last_result_step.value.upper()} | {context.last_time_elapsed:.3f}s"
         if event == EventScrapingEnum.E_STEP_LOG and step and context:
-            all_msg = ""
-            for msg in context.log_messages:
-                all_msg += f"         | {step.step_id} | {msg}\n"
+            lines = [f"{get_time_now_hh_mm_ss()} | {step.step_id} | {msg}" for msg in context.log_messages]
             context.log_messages.clear()
-            return all_msg.strip("\n")
+            return "\n".join(lines)
+        if event == EventScrapingEnum.E_STEP_DONE and step and context:
+            return f"{get_time_now_hh_mm_ss()} | {step.step_id} | Fin : {context.last_result_step.value} | {context.last_time_elapsed:.3f}s"
         return ""
 
     @staticmethod
     def preformat_step_start(step: StepScrapingModel, context: ScrapingContextModel | None) -> str:
         """Pre-format the E_STEP_START journal line to include the step type."""
         assert context is not None
+        sid, stype = step.step_id, step.step_type
 
-        # Special handling for steps where the type alone is not informative enough.
-        if step.step_type == StepTypeEnum.E_SECTION_STEPS:
+        if stype == StepTypeEnum.E_SECTION_STEPS:
             title = getattr(step.params, "title", "")
-            dt_now = datetime.now().strftime("%H:%M:%S")
-            return f"{dt_now} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title}"
-        # For steps with dynamic behavior based on the context, include relevant info.
-        if step.step_type == StepTypeEnum.E_YOUTUBE_DDL:
-            last_will_be_used = context.last_url_opened if context else ""
-            return f"{step.step_id} | {step.step_type.value} | Utilisé : {last_will_be_used}"
-        # For open URL steps, preview the next URL to be opened (from source or custom) for better traceability.
-        if step.step_type == StepTypeEnum.E_OPEN_URL:
-            next_url = context.url_source.preview_next_url() if context and context.url_source else "—"
-            return f"{step.step_id} | {step.step_type.value} | Prochaine : {next_url}"
-
-        return f"{step.step_id} | {step.step_type.value} "
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Titre : {title}"
+        if stype == StepTypeEnum.E_YOUTUBE_DDL:
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Utilisé : {context.last_url_opened}"
+        if stype == StepTypeEnum.E_OPEN_URL:
+            next_url = context.url_source.preview_next_url() if context.url_source else "<_no_preview_url_>"
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Prochaine : {next_url}"
+        return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}>"
 
     def _append_journal(self, line: str) -> None:
         """Add a line to the ViewModel journal and the internal buffer.
@@ -415,7 +396,7 @@ class ScrapingPresenter:
         Args:
             rp: The completed statistics model.
         """
-        ts = datetime.now().strftime("%H:%M:%S")
+        ts = get_time_now_hh_mm_ss()
         self._append_journal(f"{ts} | === Résumé final ===")
         self._append_journal(
             f"{ts} | Étapes : total={rp.steps_executed} | OK={rp.steps_success} | KO={rp.steps_failed}"
@@ -426,6 +407,12 @@ class ScrapingPresenter:
         self._append_journal(
             f"{ts} | Clics : total={rp.clicks_executed} | OK={rp.clicks_success} | KO={rp.clicks_failed}"
         )
+        self._append_journal(f"{ts} | Annulé : {'oui' if rp.cancelled else 'non'}")
+
+        duration_in_min = (
+            (rp.finished_at - rp.started_at).total_seconds() / 60 if rp.started_at and rp.finished_at else 0
+        )
+        self._append_journal(f"{ts} | Durée totale : {duration_in_min:.1f} min")
 
     def _export_journal(self) -> None:
         """Delegate journal persistence to ScrapingService and push the path to the view."""

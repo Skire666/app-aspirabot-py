@@ -64,7 +64,7 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
             debug_one_item = links[0] if links and links[0] else "<no link>"
             event_bus.log_step(context, f"Extrait x{len(links)} lien(s) | Debug='{debug_one_item}'.")
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

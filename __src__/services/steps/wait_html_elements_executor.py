@@ -52,7 +52,7 @@ class WaitHtmlElementsExecutor(StepExecutorBase, IStepExecutor):
             msg = f"Trouvé {counted_items} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
             event_bus.log_step(context, msg)
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

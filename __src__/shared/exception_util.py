@@ -540,7 +540,7 @@ class BrowserNotLaunchedError(RuntimeError, AspirabotBaseError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Le navigateur n'est pas lancé. Appelez launch() en premier.")
+        super().__init__("Le navigateur n'est pas lancé ou a été fermé.")
 
 
 class PageNotAvailableOrClosedError(RuntimeError, AspirabotBaseError):

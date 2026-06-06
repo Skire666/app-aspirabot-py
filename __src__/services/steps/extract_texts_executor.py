@@ -62,7 +62,7 @@ class ExtractTextsExecutor(StepExecutorBase, IStepExecutor):
             debug_one_item = texts[0] if texts and texts[0] else "<no text>"
             event_bus.log_step(context, f"Extrait x{len(texts)} texte(s) | Debug='{debug_one_item}'.")
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

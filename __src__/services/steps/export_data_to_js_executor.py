@@ -50,7 +50,7 @@ class ExportDataToJsExecutor(StepExecutorBase, IStepExecutor):
             self._json_repo.write_from_dict(dest, context.extracted_data.to_dict())
             event_bus.log_step(context, f"Export vers fichier JSON. Préfixe : {p.prefix_file}.")
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

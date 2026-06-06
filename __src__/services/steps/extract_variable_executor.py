@@ -65,7 +65,7 @@ class ExtractVariableExecutor(StepExecutorBase, IStepExecutor):
             context.push_extracted_values(p.mapping, p.variable, p.comment, [value])
             event_bus.log_step(context, f"Variable extraite '{p.variable}' = '{value}'.")
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

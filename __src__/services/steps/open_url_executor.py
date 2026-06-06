@@ -54,7 +54,7 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
             browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
             event_bus.log_step(context, f"Ouvert : {target_url}")
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(context, f"Erreur : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

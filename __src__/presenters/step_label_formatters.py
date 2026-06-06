@@ -221,7 +221,7 @@ def _fmt_scroll_down(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) ->
 def _fmt_section(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for SECTION_STEPS."""
     title = params.get("title", "")
-    return f"Section : {title}"
+    return f"----- Section : {title} -----"
 
 
 def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
