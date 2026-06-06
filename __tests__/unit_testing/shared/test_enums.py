@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from shared.enums import (
-    EventScrapingEnum,
     ExtractTargetEnum,
     ExtractTextHtmlEnum,
     OpenUrlModeEnum,
@@ -72,19 +71,6 @@ class TestOpenUrlModeEnum:
 
     def test_lookup_by_value(self) -> None:
         assert OpenUrlModeEnum("<<SOURCE>>") is OpenUrlModeEnum.E_SOURCE
-
-
-class TestEventScrapingEnum:
-    def test_all_values_non_empty(self) -> None:
-        for member in EventScrapingEnum:
-            assert member.value
-
-    def test_key_events_exist(self) -> None:
-        names = {m.name for m in EventScrapingEnum}
-        assert "E_STEP_START" in names
-        assert "E_STEP_DONE" in names
-        assert "E_COMPLETED" in names
-        assert "E_EMERGENCY_STOP" in names
 
 
 class TestExtractEnums:

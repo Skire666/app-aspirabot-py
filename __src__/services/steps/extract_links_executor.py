@@ -9,13 +9,14 @@ from __future__ import annotations
 from typing import cast, override
 from urllib.parse import urljoin, urlparse
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_links_params import ExtractLinksParams
 from playwright.sync_api import ElementHandle
 from services.steps.step_executor_base import StepExecutorBase
-from shared.enums import ExtractTargetEnum, StepTypeEnum
+from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
@@ -32,39 +33,41 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_EXTRACT_LINKS
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Query the selector, apply the target filter, and extract links into the context.
-
-        Reads ExtractLinksParams from context step params, queries all matching DOM
-        elements, filters to first, last, or all per the target param, then extracts
-        links. Writes a summary to context.last_message_step.
 
         Args:
             browser: Live browser service providing the current Playwright page.
-            context: Scraping context; step params is read and last_message_step is written.
+            context: Scraping context.
+            event_bus: Event bus for intermediate log entries.
         """
         assert context.step_scraping_data is not None
         p = cast(ExtractLinksParams, context.step_scraping_data.params)
-        page = browser.get_workflow_page()
-
-        elements: list[ElementHandle] = page.query_selector_all(p.selector)
-        if not elements:
-            return
-        selected: list[ElementHandle] = (
-            [elements[0]]
-            if p.target == ExtractTargetEnum.E_FIRST
-            else [elements[-1]]
-            if p.target == ExtractTargetEnum.E_LAST
-            else elements  # all
-        )
-
-        parsed = urlparse(page.url)
-        base_url = f"{parsed.scheme}://{parsed.netloc}"
-        links: list[str] = self._get_all_links_from_elements(selected, base_url)
-
-        context.push_extracted_values(p.mapping, p.selector, p.comment, links)
-        debug_one_item = links[0] if links and links[0] else "<no link>"
-        context.last_message_step = f"Extrait x{len(links)} lien(s) | Debug='{debug_one_item}'."
+        try:
+            page = browser.get_workflow_page()
+            elements: list[ElementHandle] = page.query_selector_all(p.selector)
+            if not elements:
+                return StepExecutionResultEnum.SUCCESS
+            selected: list[ElementHandle] = (
+                [elements[0]]
+                if p.target == ExtractTargetEnum.E_FIRST
+                else [elements[-1]]
+                if p.target == ExtractTargetEnum.E_LAST
+                else elements  # all
+            )
+            parsed = urlparse(page.url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+            links: list[str] = self._get_all_links_from_elements(selected, base_url)
+            context.push_extracted_values(p.mapping, p.selector, p.comment, links)
+            debug_one_item = links[0] if links and links[0] else "<no link>"
+            event_bus.log_step(context, f"Extrait x{len(links)} lien(s) | Debug='{debug_one_item}'.")
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
     @staticmethod
     def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str) -> list[str]:

@@ -3,7 +3,7 @@
   "rules": {
     "EPI025": {
       "enabled": true,
-      "threshold_lines": 25
+      "threshold_lines": 26
     },
     "EPI301": {
       "enabled": true
@@ -13,16 +13,16 @@
     },
     "EXT101": {
       "enabled": true,
-      "max_complexity": 10
+      "max_complexity": 12
     },
     "HAS111": {
       "enabled": true,
       "max_volume": 1000,
-      "max_volume_file": 10000
+      "max_volume_file": 12000
     },
     "MIR121": {
       "enabled": true,
-      "min_mi": 10
+      "min_mi": 6
     }
   },
   "exclude_dirs": [

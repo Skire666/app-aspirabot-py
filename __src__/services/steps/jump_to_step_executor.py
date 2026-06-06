@@ -8,12 +8,13 @@ from __future__ import annotations
 
 from typing import cast, override
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.jump_to_step_params import JumpToStepParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.enums import StepTypeEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
@@ -26,24 +27,31 @@ class JumpToStepExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_JUMP_TO_STEP
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(JumpToStepParams, context.step_scraping_data.params)
-        should_jump = (
-            p.condition == "always"
-            or (context.last_result_step and p.condition == "success")
-            or (not context.last_result_step and p.condition == "failure")
-        )
-        if should_jump and p.target_hexastring:
-            context.pending_jump = p.target_hexastring
-
-        str_jump = (
-            f"Doit sauter vers l'étape [#{p.target_hexastring}] (comment : {p.comment})"
-            if should_jump
-            else "Ne saute pas. Lit prochaine étape (comment : " + p.comment + ")"
-        )
-        context.last_message_step = str_jump
+        try:
+            should_jump = (
+                p.condition == "always"
+                or (context.last_result_step and p.condition == "success")
+                or (not context.last_result_step and p.condition == "failure")
+            )
+            if should_jump and p.target_hexastring:
+                context.pending_jump = p.target_hexastring
+            str_jump = (
+                f"Doit sauter vers l'étape [#{p.target_hexastring}] (comment : {p.comment})"
+                if should_jump
+                else "Ne saute pas. Lit prochaine étape (comment : " + p.comment + ")"
+            )
+            event_bus.log_step(context, str_jump)
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
 
 register_step_executor(JumpToStepExecutor())

@@ -26,9 +26,10 @@ from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
+from services.scraping_event_bus import ScrapingEventBus
 from services.url_sources.url_source_factory import build_url_source_scenario
 from services.workflow_service import WorkflowService
-from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSortOrderEnum, WaitUntilEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum, UrlSortOrderEnum, WaitUntilEnum
 from shared.exception_util import BrowserNotLaunchedError, ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 from shared.step_registry import get_step_executor
@@ -98,6 +99,9 @@ class ScrapingService:
         # Run-level statistics counters.
         self._statistics: ScrapingStatisticsModel = ScrapingStatisticsModel()
 
+        # Event bus — replaced at the start of each run; no-op between runs.
+        self._event_bus: ScrapingEventBus = ScrapingEventBus(None)
+
         # Global emergency-stop configuration — set before each run.
         self._emergency_stop_threshold: int = 0
         self._on_emergency_stop: Callable[[], None] | None = None
@@ -109,11 +113,6 @@ class ScrapingService:
 
         # Optional warmup URL — navigated to before steps run, waits for user resume.
         self._warmup_url: str = ""
-
-        # Run-scoped callbacks.
-        self._on_event_logging: (
-            Callable[[EventScrapingEnum, StepScrapingModel | None, ScrapingContextModel | None], None] | None
-        ) = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -134,11 +133,13 @@ class ScrapingService:
         Returns:
             A ScrapingReportModel summarising the completed run.
         """
+        # Build the event bus for this run from the Presenter-supplied callback.
+        self._event_bus = ScrapingEventBus(handlers.on_logging_event)
+
         # Bind run-scoped signals and callbacks onto the shared context.
         self._context.pause_event = handlers.pause_event
         self._context.cancel_event = handlers.cancel_event
         self._context.on_user_wait = handlers.on_user_wait
-        self._on_event_logging = handlers.on_logging_event
         self._emergency_stop_threshold = handlers.emergency_stop_threshold
         self._on_emergency_stop = handlers.on_emergency_stop
         self._emergency_stop_step_id = handlers.emergency_stop_step_id
@@ -255,14 +256,13 @@ class ScrapingService:
         Returns:
             True if the run was aborted by the cancel signal.
         """
-        assert self._on_event_logging is not None
         assert self._browser_service is not None
-        self._on_event_logging(EventScrapingEnum.E_BROWSER_INIT, None, None)
+        self._event_bus.fire_browser_init()
         self._browser_service.launch()
         try:
-            self._on_event_logging(EventScrapingEnum.E_CONTEXT_INIT, None, None)
+            self._event_bus.fire_context_init()
             self._browser_service.get_workflow_page()
-            self._on_event_logging(EventScrapingEnum.E_WORKFLOW_INIT, None, None)
+            self._event_bus.fire_workflow_init()
             self._run_warmup_url()
             if not self._context.cancel_event.is_set():
                 self._run_all_steps(scenario.steps)
@@ -280,11 +280,10 @@ class ScrapingService:
         if not self._warmup_url or self._context.cancel_event.is_set():
             return
         assert self._browser_service is not None
-        assert self._on_event_logging is not None
 
         self._logger.info("Préchauffe : Url : %s", self._warmup_url)
         self._context.last_url_opened = self._warmup_url
-        self._on_event_logging(EventScrapingEnum.E_WARMUP_URL, None, self._context)
+        self._event_bus.fire_warmup_url(self._context)
 
         self._browser_service.safe_goto_url(self._warmup_url, WaitUntilEnum.E_DOM, 30_000, 5)
 
@@ -303,9 +302,7 @@ class ScrapingService:
         Returns:
             A fully populated ScrapingReportModel.
         """
-        assert self._on_event_logging is not None
-        self._on_event_logging(EventScrapingEnum.E_COMPLETED, None, None)
-
+        self._event_bus.fire_completed()
         self._statistics.finish_timer()
         self._statistics.cancelled = cancelled
         return self._statistics
@@ -324,7 +321,6 @@ class ScrapingService:
         Args:
             steps: Ordered list of scraping steps to run.
         """
-        assert self._on_event_logging is not None
         self._reset_run_state(steps)
         i = 0
 
@@ -333,7 +329,7 @@ class ScrapingService:
                 break
             # Block here while the run is paused.
             if not self._context.pause_event.is_set():
-                self._on_event_logging(EventScrapingEnum.E_PAUSE_ASKED, None, None)
+                self._event_bus.fire_pause()
             self._context.pause_event.wait()
             if self._context.cancel_event.is_set():
                 break
@@ -361,7 +357,7 @@ class ScrapingService:
         self._emergency_stop_step_failed = 0
 
     def _run_one_step(self, step: StepScrapingModel, index: int) -> int:
-        """Execute one step, update stats, fire callback, return next index.
+        """Execute one step, update stats, return next index.
 
         Args:
             step: The step model to execute.
@@ -370,23 +366,17 @@ class ScrapingService:
         Returns:
             The index of the next step to execute.
         """
-        # Notify presenter that this step is about to start (for journal pre-insert).
-        if callable(self._on_event_logging):
-            self._on_event_logging(EventScrapingEnum.E_STEP_START, step, self._context)
-
-        is_success = self._execute_step(step)
+        result = self._execute_step(step)
+        is_ok = result in {StepExecutionResultEnum.SUCCESS, StepExecutionResultEnum.WARNING}
 
         if self._browser_service is not None:
             self._context.browser_stats = self._browser_service.get_stats()
 
-        # Update run-level statistics based on the outcome.
-        self._update_step_stats(step, is_success)
+        self._update_step_stats(step, is_ok)
 
-        # Notify the presenter with the completed step result.
-        if callable(self._on_event_logging):
-            self._on_event_logging(EventScrapingEnum.E_STEP_DONE, step, self._context)
+        if result == StepExecutionResultEnum.FATAL:
+            self._context.end_process = True
 
-        # Resolve any pending jump or simply advance to the next step.
         return self._consume_pending_jump(index)
 
     def _update_step_stats(self, step: StepScrapingModel, is_success: bool) -> None:
@@ -443,8 +433,7 @@ class ScrapingService:
 
         # Threshold reached — block execution at the next iteration.
         self._context.pause_event.clear()
-        if callable(self._on_event_logging):
-            self._on_event_logging(EventScrapingEnum.E_EMERGENCY_STOP, next_step, self._context)
+        self._event_bus.fire_emergency_stop(next_step, self._context)
         if callable(self._on_emergency_stop):
             self._on_emergency_stop()
 
@@ -476,11 +465,11 @@ class ScrapingService:
     # Step execution
     # ------------------------------------------------------------------
 
-    def _execute_step(self, step: StepScrapingModel) -> bool:
+    def _execute_step(self, step: StepScrapingModel) -> StepExecutionResultEnum:
         """Dispatch a step to its registered executor and convert exceptions.
 
         The context is updated in place before calling the executor; output
-        signals (last_message_step, pending_jump, end_process) are written
+        signals (pending_jump, end_process) are written
         directly onto self._context by the executor and read back by the
         orchestration methods after this call returns.
 
@@ -488,7 +477,8 @@ class ScrapingService:
             step: The step model to execute.
 
         Returns:
-            A ``(success, message)`` tuple.
+            The ``StepExecutionResultEnum`` value returned by the executor, or
+            ``ERROR`` when the executor raises an unexpected exception.
         """
         # Prepare per-step state on the shared context.
         self._context.prepare_step_execution(step)
@@ -496,22 +486,22 @@ class ScrapingService:
         # if the step is inactive, skip execution
         if not step.is_active:
             self._context.set_result_execution(True, "SKIP")
-            return True
+            return StepExecutionResultEnum.SUCCESS
 
         if self._browser_service is None:
             raise BrowserNotLaunchedError()
         try:
             executor: IStepExecutor = get_step_executor(step.step_type)
-            executor.execute_logical(self._browser_service, self._context)
+            result = executor.execute_logical(self._browser_service, self._context, self._event_bus)
         except Exception as exc:
             # Log the exception and set the step result to failure, but allow the run to continue.
             self._context.set_result_execution(False, f"Excep : <<{exc}>>")
             self._logger.exception("Erreur lors de l'exécution de l'étape %s", step.step_id)
-            return False
+            return StepExecutionResultEnum.ERROR
 
-        # end success path — the executor should have set the result and message on the context.
-        self._context.set_result_execution(True, "OK")
-        return True
+        is_ok = result in {StepExecutionResultEnum.SUCCESS, StepExecutionResultEnum.WARNING}
+        self._context.set_result_execution(is_ok, result.value)
+        return result
 
 
 # EOF

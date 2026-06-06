@@ -34,6 +34,7 @@ from shared.resources_icons_util import (
 C_SCRAPING_EVENT_BROWSER_INIT = "Initialisation du navigateur..."
 C_SCRAPING_EVENT_CONTEXT_INIT = "Création du contexte de navigation..."
 C_SCRAPING_EVENT_WORKFLOW_INIT = "Démarrage des étapes du workflow..."
+C_SCRAPING_EVENT_PAUSE_ASKED = "Mise en pause. En attente de reprise..."
 
 # Scraping panel — final run status labels
 C_SCRAPING_STATUS_CANCELLED = "Scraping annulé"

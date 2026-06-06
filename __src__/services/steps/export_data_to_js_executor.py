@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import cast, override
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
@@ -15,7 +16,7 @@ from models.steps.export_data_to_js_params import ExportDataToJsParams
 from repositories.json_repository import JsonFileRepository
 from services.steps.step_executor_base import StepExecutorBase
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
-from shared.enums import StepTypeEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ExportFolderNotConfiguredError, NoDataToExportError
 from shared.step_registry import register_step_executor
 
@@ -33,26 +34,26 @@ class ExportDataToJsExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_EXPORT_DATA_TO_JS
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(ExportDataToJsParams, context.step_scraping_data.params)
-
-        # Nothing to write — skip without logging noise.
-        if not context.extracted_data or not context.extracted_data.urls:
-            raise NoDataToExportError()
-
-        # Guard against unset export folder (default Path() resolves to ".").
-        if str(context.folder_export) in {".", ""}:
-            raise ExportFolderNotConfiguredError()
-
-        # Build timestamped destination path and delegate write to the repository.
-        timestamp = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
-        dest = context.folder_export / f"{p.prefix_file}_{timestamp}.json"
-
-        self._json_repo.write_from_dict(dest, context.extracted_data.to_dict())
-
-        context.last_message_step = f"Export vers fichier JSON. Préfixe : {p.prefix_file}."
+        try:
+            if not context.extracted_data or not context.extracted_data.urls:
+                raise NoDataToExportError()  # noqa: TRY301
+            if str(context.folder_export) in {".", ""}:
+                raise ExportFolderNotConfiguredError()  # noqa: TRY301
+            timestamp = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
+            dest = context.folder_export / f"{p.prefix_file}_{timestamp}.json"
+            self._json_repo.write_from_dict(dest, context.extracted_data.to_dict())
+            event_bus.log_step(context, f"Export vers fichier JSON. Préfixe : {p.prefix_file}.")
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
 
 register_step_executor(ExportDataToJsExecutor())

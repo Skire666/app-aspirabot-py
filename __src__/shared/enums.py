@@ -75,11 +75,24 @@ class EventScrapingEnum(Enum):
     E_WORKFLOW_INIT = "WORKFLOW_INIT"
     E_WARMUP_URL = "WARMUP_URL"
     E_PAUSE_ASKED = "PAUSE_ASKED"
-    E_STEP_START = "STEP_START"
-    E_STEP_DONE = "STEP_DONE"
+    E_STEP_LOG = "STEP_LOG"  # log emitted from inside an executor
     E_EMERGENCY_STOP = "EMERGENCY_STOP"
     E_COMPLETED = "COMPLETED"
     E_UNKNOWN = "UNKNOWN"
+
+
+class StepExecutionResultEnum(Enum):
+    """Enumerates the possible outcomes of a single step execution.
+
+    Returned by every IStepExecutor.execute_logical() implementation.
+    SUCCESS and WARNING are both treated as success for statistics purposes;
+    ERROR and FATAL are both failures, but only FATAL stops the workflow.
+    """
+
+    SUCCESS = "success"  # step completed fully
+    WARNING = "warning"  # completed with a non-critical anomaly; workflow continues
+    ERROR = "error"      # step failed; workflow continues to next step
+    FATAL = "fatal"      # step failed; workflow stops immediately
 
 
 class ExtractTextHtmlEnum(Enum):

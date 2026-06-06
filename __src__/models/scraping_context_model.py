@@ -76,7 +76,6 @@ class ScrapingContextModel:
         on_user_wait: Optional callback fired by WAIT_USER_ACTION steps.
         step_params: Raw step-specific parameter dict from the step model.
         url_source: Optional URL source scenario consumed by OPEN_URL steps.
-        last_message_step: Output — human-readable result set by the executor.
         pending_jump: Output — jump target (index or step_id) set by the executor.
         end_process: Output — set to True by the executor to stop the workflow.
     """
@@ -101,7 +100,6 @@ class ScrapingContextModel:
     url_source: IUrlSourceProvider | None = field(default=None)
 
     # Output signals written by executors and read back by the orchestrator.
-    last_message_step: str = field(default="")
     last_result_step: bool = field(default=True)
     last_url_opened: str = field(default="")  # peut être en erreur, pas grave
     last_time_elapsed: float = field(default=0.0)
@@ -147,7 +145,6 @@ class ScrapingContextModel:
         self.end_process = False
         self.downloaded_urls = set()
         self.extracted_data = ExtractedData()
-        self.last_message_step = ""
         self.browser_stats = (0, "—")
 
         # Build fast-lookup maps used by JUMP_TO_STEP resolution.
@@ -162,7 +159,6 @@ class ScrapingContextModel:
         """
         self._time_started = time.time()
         self.step_scraping_data = step
-        self.last_message_step = ""
         self.last_time_elapsed = 0.0
         self.pending_jump = None
         self.end_process = False
@@ -175,8 +171,6 @@ class ScrapingContextModel:
             message: Human-readable result message.
         """
         self.last_result_step = is_success
-        if not self.last_message_step:
-            self.last_message_step = message
         self.last_time_elapsed = time.time() - self._time_started
 
     def push_extracted_values(self, mapping_key: str, inp: str, com: str, vals: list[str]) -> None:

@@ -180,7 +180,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         pages = self.get_all_pages()
         num_pages = len(pages)
-        current_url = pages[0].url if num_pages > 0 else "<auucun onglet ouvert>"
+        current_url = pages[0].url if num_pages > 0 else "<aucun onglet>"
         return num_pages, current_url
 
     def close_browser(self) -> None:
@@ -228,7 +228,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             url: URL to navigate to.
             wait_until: Playwright wait until option to wait for after navigation.
             timeout_ms: Timeout in milliseconds for navigation and waiting.
-            wait_dns_solver_sec: Seconds to wait between retries if a DNS error is encountered.
+            wait_dns_sec: Seconds to wait between retries if a DNS error is encountered.
 
         """
         nav_retries, do_loop = 0, True
@@ -269,13 +269,14 @@ class BrowserPlaywrightService(IWebBrowserService):
             self.get_workflow_page(forced_new_page=True)
             return nav_retries + 1, True
         if "has been closed" in msg:
+            time.sleep(1)  # Short delay to allow any pending page-close events to process.
             self.get_workflow_page(forced_new_page=True)
             self._workflow_page.wait_for_timeout(1000)  # ms
             return nav_retries + 1, True
         if "ERR_NAME_NOT_RESOLVED" in msg:
             cast_wait_time = convert_wait_until_to_literals(wait_until)
             self.get_workflow_page()
-            self._workflow_page.wait_for_timeout(1000 * wait_dns_solver_sec)
+            time.sleep(wait_dns_solver_sec)  # Wait before retrying DNS resolution
             self._workflow_page.reload(wait_until=cast_wait_time, timeout=timeout_ms)
             return nav_retries, False
         print(f"Erreur de navigation non récupérable : {msg}")

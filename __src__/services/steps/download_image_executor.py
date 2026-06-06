@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, cast, override
 from urllib.parse import urljoin
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
@@ -17,7 +18,7 @@ from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import get_filtered_images
 from services.steps.step_executor_base import StepExecutorBase
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
-from shared.enums import StepTypeEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ImageDownloadFailedError, ImageNotDownloadedError
 from shared.path_util import make_all_folders_if_not_exists
 from shared.step_registry import register_step_executor
@@ -46,27 +47,33 @@ class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_DOWNLOAD_IMAGE
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Execute the download-image step for all targeted images."""
         assert context.step_scraping_data is not None
         p = cast(DownloadImageParams, context.step_scraping_data.params)
-        page = browser.get_workflow_page()
-        downloaded_urls = context.downloaded_urls
-
-        images = get_filtered_images(browser, p.to_dict())
-        targets = _select_images_by_mode(images, p.mode)
-        make_all_folders_if_not_exists(context.folder_export, is_file_path=False)
-        downloaded_count = 0
-
-        for image in targets:
-            full_url = urljoin(page.url, str(image.get("src", "")))
-            if p.unique_only and full_url in downloaded_urls:
-                continue
-            self._save_image(page, full_url, context, downloaded_urls)
-            downloaded_count += 1
-
-        if downloaded_count == 0:
-            raise ImageNotDownloadedError(len(targets))
+        try:
+            page = browser.get_workflow_page()
+            downloaded_urls = context.downloaded_urls
+            images = get_filtered_images(browser, p.to_dict())
+            targets = _select_images_by_mode(images, p.mode)
+            make_all_folders_if_not_exists(context.folder_export, is_file_path=False)
+            downloaded_count = 0
+            for image in targets:
+                full_url = urljoin(page.url, str(image.get("src", "")))
+                if p.unique_only and full_url in downloaded_urls:
+                    continue
+                self._save_image(page, full_url, context, downloaded_urls)
+                downloaded_count += 1
+            if downloaded_count == 0:
+                raise ImageNotDownloadedError(len(targets))  # noqa: TRY301
+            event_bus.log_step(context, f"Téléchargé {downloaded_count} image(s).")
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
     @staticmethod
     def _save_image(

@@ -9,12 +9,13 @@ from __future__ import annotations
 import time
 from typing import cast, override
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.wait_user_action_params import WaitUserActionParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.enums import StepTypeEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
 
@@ -28,13 +29,21 @@ class WaitUserActionExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_WAIT_USER_ACTION
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(WaitUserActionParams, context.step_scraping_data.params)
-        if not self._should_pause(p, context):
-            return
-        self._do_pause(context, p)
+        try:
+            if not self._should_pause(p, context):
+                return StepExecutionResultEnum.SUCCESS
+            self._do_pause(context, p, event_bus)
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
     @staticmethod
     def _should_pause(p: WaitUserActionParams, context: ScrapingContextModel) -> bool:
@@ -56,12 +65,13 @@ class WaitUserActionExecutor(StepExecutorBase, IStepExecutor):
         return False
 
     @staticmethod
-    def _do_pause(context: ScrapingContextModel, p: WaitUserActionParams) -> None:
+    def _do_pause(context: ScrapingContextModel, p: WaitUserActionParams, event_bus: IScrapingEventBus) -> None:
         """Block until the user resumes or the scraping is cancelled.
 
         Args:
             context: Current scraping context.
             p: Step parameters.
+            event_bus: Event bus for emitting the resume/cancel log entry.
         """
         if callable(context.on_user_wait):
             context.on_user_wait()
@@ -70,9 +80,8 @@ class WaitUserActionExecutor(StepExecutorBase, IStepExecutor):
         cancelled = context.cancel_event.is_set()
         if p.wait_duration >= 1 and not cancelled:
             time.sleep(convert_to_sec(p.wait_duration, p.wait_unit))
-        context.last_message_step = (
-            "Reprise utilisateur détectée" if not cancelled else "Attente annulée par l'utilisateur"
-        )
+        msg = "Reprise utilisateur détectée" if not cancelled else "Attente annulée par l'utilisateur"
+        event_bus.log_step(context, msg)
 
 
 register_step_executor(WaitUserActionExecutor())

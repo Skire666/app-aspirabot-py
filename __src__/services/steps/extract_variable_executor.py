@@ -10,12 +10,13 @@ import datetime
 from typing import cast, override
 from urllib.parse import urlparse
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_variable_params import ExtractVariableParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.enums import StepTypeEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
@@ -47,19 +48,27 @@ class ExtractVariableExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_EXTRACT_VARIABLE
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Resolve the chosen variable from context and push it into extracted data.
 
         Args:
             browser: Unused — values are read from context, not the browser.
             context: Live scraping context; extracted_data is written with the resolved value.
+            event_bus: Event bus for intermediate log entries.
         """
         assert context.step_scraping_data is not None
         p = cast(ExtractVariableParams, context.step_scraping_data.params)
-
-        value = _resolve_variable(p.variable, context)
-        context.push_extracted_values(p.mapping, p.variable, p.comment, [value])
-        context.last_message_step = f"Variable extraite '{p.variable}' = '{value}'."
+        try:
+            value = _resolve_variable(p.variable, context)
+            context.push_extracted_values(p.mapping, p.variable, p.comment, [value])
+            event_bus.log_step(context, f"Variable extraite '{p.variable}' = '{value}'.")
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
 
 register_step_executor(ExtractVariableExecutor())

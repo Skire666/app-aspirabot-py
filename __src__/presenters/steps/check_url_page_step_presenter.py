@@ -17,7 +17,7 @@ def _build(data: dict[str, Any]) -> CheckUrlPageParams:
     """Build CheckUrlPageParams from a raw JSON params dict."""
     return CheckUrlPageParams(
         check_domain=bool(data.get("check_domain", True)),
-        check_path=bool(data.get("check_path", False)),
+        check_path=bool(data.get("check_path")),
         comment=data.get("comment", ""),
     )
 

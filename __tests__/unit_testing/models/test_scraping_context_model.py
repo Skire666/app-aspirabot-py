@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from unittest.mock import MagicMock
 
-import pytest
-
-from models.scraping_context_model import ExtractedData, KeyData, ScrapingContextModel, UrlData
 from models.app_configuration_model import AppConfigurationModel
+from models.scraping_context_model import ExtractedData, KeyData, ScrapingContextModel, UrlData
 
 
 def _make_config() -> AppConfigurationModel:
@@ -65,9 +62,7 @@ class TestExtractedData:
     def test_to_dict_with_data(self) -> None:
         ed = ExtractedData()
         ed.urls["http://example.com"] = UrlData()
-        ed.urls["http://example.com"].keys["title"] = KeyData(
-            input=".h1", comment="test", values=["Hello", "World"]
-        )
+        ed.urls["http://example.com"].keys["title"] = KeyData(input=".h1", comment="test", values=["Hello", "World"])
         d = ed.to_dict()
         assert "http://example.com" in d
         assert "title" in d["http://example.com"]
@@ -82,7 +77,6 @@ class TestExtractedData:
 class TestScrapingContextModelInit:
     def test_defaults_are_set(self) -> None:
         ctx = _make_context()
-        assert ctx.last_message_step == ""
         assert ctx.last_result_step is True
         assert ctx.last_url_opened == ""
         assert ctx.pending_jump is None
@@ -97,13 +91,11 @@ class TestResetBeforeNewProcess:
         ctx.last_result_step = False
         ctx.pending_jump = 3
         ctx.end_process = True
-        ctx.last_message_step = "some message"
         steps = [_make_step("s1"), _make_step("s2")]
         ctx.reset_before_new_process(steps)
         assert ctx.last_result_step is True
         assert ctx.pending_jump is None
         assert ctx.end_process is False
-        assert ctx.last_message_step == ""
 
     def test_builds_step_id_maps(self) -> None:
         ctx = _make_context()
@@ -142,11 +134,9 @@ class TestResetBeforeNewProcess:
 class TestPrepareStepExecution:
     def test_clears_message_and_elapsed(self) -> None:
         ctx = _make_context()
-        ctx.last_message_step = "old msg"
         ctx.last_time_elapsed = 9.9
         step = _make_step("s1")
         ctx.prepare_step_execution(step)
-        assert ctx.last_message_step == ""
         assert ctx.last_time_elapsed == 0.0
 
     def test_sets_step_scraping_data(self) -> None:
@@ -176,20 +166,6 @@ class TestSetResultExecution:
         ctx.prepare_step_execution(_make_step("s1"))
         ctx.set_result_execution(False, "error")
         assert ctx.last_result_step is False
-
-    def test_sets_message_when_empty(self) -> None:
-        ctx = _make_context()
-        ctx.prepare_step_execution(_make_step("s1"))
-        ctx.last_message_step = ""
-        ctx.set_result_execution(True, "done")
-        assert ctx.last_message_step == "done"
-
-    def test_does_not_overwrite_existing_message(self) -> None:
-        ctx = _make_context()
-        ctx.prepare_step_execution(_make_step("s1"))
-        ctx.last_message_step = "already set"
-        ctx.set_result_execution(True, "new msg")
-        assert ctx.last_message_step == "already set"
 
 
 class TestPushExtractedValues:

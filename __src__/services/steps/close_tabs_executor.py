@@ -8,13 +8,14 @@ from __future__ import annotations
 
 from typing import cast, override
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.close_tabs_params import CloseTabsParams
 from playwright.sync_api import Page
 from services.steps.step_executor_base import StepExecutorBase
-from shared.enums import OpenUrlModeEnum, StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import CurrentPageClosedUnexpectedlyError, MissingUrlFilterError
 from shared.step_registry import register_step_executor
 
@@ -28,21 +29,26 @@ class CloseTabsExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_CLOSE_TABS
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(CloseTabsParams, context.step_scraping_data.params)
-        filter_used = self._resolve_url_filter(p, context)
-        current_page = browser.get_workflow_page()
-        counter_closed = self._close_non_matching_tabs(browser, filter_used)
-        context.last_message_step = (
-            f"Fermé {counter_closed} onglet(s) ne correspondant pas au filtre URL {filter_used!r}."
-            if filter_used
-            else ""
-        )
-        if current_page not in browser.get_all_pages():
-            raise CurrentPageClosedUnexpectedlyError()
-        self._enforce_max_tabs(browser, current_page, p.max_tabs)
+        try:
+            filter_used = self._resolve_url_filter(p, context)
+            current_page = browser.get_workflow_page()
+            counter_closed = self._close_non_matching_tabs(browser, filter_used)
+            msg = f"Fermé {counter_closed} onglet(s) ne correspondant pas au filtre URL {filter_used!r}."
+            event_bus.log_step(context, msg)
+            if current_page not in browser.get_all_pages():
+                raise CurrentPageClosedUnexpectedlyError()  # noqa: TRY301
+            self._enforce_max_tabs(browser, current_page, p.max_tabs)
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
     @staticmethod
     def _resolve_url_filter(p: CloseTabsParams, context: ScrapingContextModel) -> str:

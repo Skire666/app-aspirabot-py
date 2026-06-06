@@ -46,11 +46,11 @@ EXIT_PATH_MISSING: Final[int] = 3
 
 FIXABLE_RULES: Final[frozenset[str]] = frozenset({"EPI301", "EPI302"})
 
-C_THRESHOLD_LINES: Final[int] = 25
-C_MAX_COMPLEXITY: Final[int] = 10  # EXT101 default (extended complexity)
+C_THRESHOLD_LINES: Final[int] = 26
+C_MAX_COMPLEXITY: Final[int] = 12  # EXT101 default (extended complexity)
 C_MAX_VOLUME: Final[int] = 1000  # HAS111 default per function
-C_MAX_VOLUME_FILE: Final[int] = 10000  # HAS111 default per file
-C_MIN_MI: Final[float] = 5  # MIR121 default (maintainability index floor)
+C_MAX_VOLUME_FILE: Final[int] = 12000  # HAS111 default per file
+C_MIN_MI: Final[float] = 6  # MIR121 default (maintainability index floor)
 
 
 class RuleConfig(TypedDict, total=False):

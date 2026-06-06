@@ -29,7 +29,22 @@ from views.components.drag_drop_list.widgets._drag_drop_list_types import (
     _BtnDef,
 )
 
-# ── Widget ────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+
+# ms before full redraw after resize (default 0)
+C_RESIZE_DEBOUNCE_MS = 16
+
+# ms before forced final redraw after resize (default 250)
+C_RESIZE_FINALIZE_MS = 16
+
+# min ms between drag redraws (default 16)
+C_DRAG_REDRAW_MIN_INTERVAL_MS = 16
+
+# -----------------------------------------------------------------------------
+# Classes
+# -----------------------------------------------------------------------------
 
 
 class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
@@ -51,10 +66,7 @@ class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
     gap_expand          : extra px opened at drop target during drag (default 8)
     btn_size            : action button size in px (default 36)
     theme               : color dict merged with DEFAULT_THEME
-    resize_debounce_ms  : ms before full redraw after resize (default 0)
     resize_min_delta_px : min width delta to trigger intermediate redraws (default 4)
-    resize_finalize_ms  : ms before forced final redraw after resize (default 250)
-    drag_redraw_min_interval_ms : min ms between drag redraws (default 16)
     drag_redraw_min_delta_px    : min Y delta before drag redraw (default 3)
     virtualize          : only draw items in the visible viewport (default False)
     viewport_provider   : callback returning (top_y, bottom_y) in list coords
@@ -79,10 +91,7 @@ class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
         gap_expand: int = 8,
         btn_size: int = 36,
         theme: dict[str, str] | None = None,
-        resize_debounce_ms: int = 16,
         resize_min_delta_px: int = 1,
-        resize_finalize_ms: int = 16,
-        drag_redraw_min_interval_ms: int = 16,
         drag_redraw_min_delta_px: int = 1,
         virtualize: bool = False,
         viewport_provider: Callable[[], tuple[int, int]] | None = None,
@@ -106,10 +115,7 @@ class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
             gap_expand: Extra space opened at the drop target during drag.
             btn_size: Square size of action buttons in pixels.
             theme: Partial color override merged with DEFAULT_THEME.
-            resize_debounce_ms: Debounce delay for resize redraws.
             resize_min_delta_px: Min width change to trigger intermediate redraw.
-            resize_finalize_ms: Delay for forced final redraw after resize.
-            drag_redraw_min_interval_ms: Min ms between drag frame redraws.
             drag_redraw_min_delta_px: Min pointer Y delta before a drag redraw.
             virtualize: Enable viewport culling for large lists.
             viewport_provider: Returns (top_y, bottom_y) visible bounds.
@@ -127,9 +133,9 @@ class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
         self.items: list[T] = items
         self._render_item: ItemRenderer[T] = render_item
         self._init_subsystems(
-            item_height, pad, gap_expand, btn_size, drag_redraw_min_interval_ms, drag_redraw_min_delta_px
+            item_height, pad, gap_expand, btn_size, C_DRAG_REDRAW_MIN_INTERVAL_MS, drag_redraw_min_delta_px
         )
-        self._init_resize_state(resize_debounce_ms, resize_finalize_ms, resize_min_delta_px)
+        self._init_resize_state(C_RESIZE_DEBOUNCE_MS, C_RESIZE_FINALIZE_MS, resize_min_delta_px)
         self._init_virtualize_state(virtualize, viewport_provider, virtualize_buffer)
         self._init_callbacks(on_move_up, on_move_down, on_duplicate, on_edit, on_delete, on_toggle_active, on_reorder)
         self._drag_state: DragState | None = None
@@ -477,9 +483,9 @@ class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
             bw = self._calc.btn_zone_width(len(self._visible_btns))
             draw_btns = btn_start <= i < btn_end
 
-            updated: bool = bool(has_resize_update and r_any.resize_update(
-                self.canvas, self.items[i], i, x, y, w - bw, h, "normal"
-            ))
+            updated: bool = bool(
+                has_resize_update and r_any.resize_update(self.canvas, self.items[i], i, x, y, w - bw, h, "normal")
+            )
             if updated:
                 if draw_btns and self._visible_btns:
                     self.canvas.delete(f"_btns{i}")

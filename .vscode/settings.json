@@ -1,3 +1,5 @@
 {
     "editor.codeLens": true,
+    "python.languageServer": "None",
+    "basedpyright.analysis.diagnosticMode": "workspace"
 }

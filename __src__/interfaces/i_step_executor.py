@@ -14,10 +14,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps_context_model import StepsContext
-from shared.enums import StepTypeEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 
 if TYPE_CHECKING:
     from interfaces.i_web_browser_service import IWebBrowserService
@@ -51,19 +52,24 @@ class IStepExecutor(Protocol):
         """
         ...
 
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Execute the step using the browser service and the runtime context.
-
-        Step-specific parameters are read from ``context.step_params`` (via a
-        typed param model).  Cross-step runtime state is read from the typed
-        attributes of ``context``.  Output signals are written back to
-        ``context.last_message_step``, ``context.pending_jump``, or
-        ``context.end_process``.
 
         Args:
             browser: The active browser service instance.
             context: Runtime context carrying step params, orchestrator state,
                 and mutable output-signal slots.
+            event_bus: Event bus for emitting intermediate log entries via
+                ``log_step()``.  Lifecycle methods on the bus are reserved for
+                ``ScrapingService`` and must not be called from executors.
+
+        Returns:
+            ``SUCCESS`` — step completed fully.
+            ``WARNING`` — completed with a non-critical anomaly; workflow continues.
+            ``ERROR``   — step failed; workflow continues to next step.
+            ``FATAL``   — step failed; workflow stops immediately.
 
         Raises:
             PlaywrightError: On browser-level failure.

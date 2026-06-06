@@ -8,12 +8,13 @@ from __future__ import annotations
 
 from typing import cast, override
 
+from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.open_url_params import OpenUrlParams
 from services.steps.step_executor_base import StepExecutorBase
-from shared.enums import OpenUrlModeEnum, StepTypeEnum
+from shared.enums import OpenUrlModeEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import EmptyCustomUrlError, UrlSourceExhaustedError
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_ms
@@ -38,22 +39,25 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
         return StepTypeEnum.E_OPEN_URL
 
     @override
-    def execute_logical(self, browser: IWebBrowserService, context: ScrapingContextModel) -> None:
+    def execute_logical(
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(OpenUrlParams, context.step_scraping_data.params)
-
-        # Resolve the target URL from the source scenario or the custom field.
-        target_url = self._extract_next_url_used(context, p)
-
-        # obligé de le mettre avant de goto
-        # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
-        context.last_url_opened = target_url
-        timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
-
-        browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
-
-        context.last_message_step = f"Ouvert : {target_url}"
+        try:
+            target_url = self._extract_next_url_used(context, p)
+            # obligé de le mettre avant de goto
+            # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
+            context.last_url_opened = target_url
+            timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
+            browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
+            event_bus.log_step(context, f"Ouvert : {target_url}")
+        except Exception as exc:  # noqa: BLE001
+            event_bus.log_step(context, f"Erreur : {exc}")
+            return StepExecutionResultEnum.ERROR
+        else:
+            return StepExecutionResultEnum.SUCCESS
 
     @staticmethod
     def _extract_next_url_used(context: ScrapingContextModel, p: OpenUrlParams) -> str:
