@@ -33,11 +33,13 @@ class JumpToStepExecutor(StepExecutorBase, IStepExecutor):
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(JumpToStepParams, context.step_scraping_data.params)
+        is_success = context.last_step_was_success()
+
         try:
             should_jump = (
                 p.condition == "always"
-                or (context.last_result_step and p.condition == "success")
-                or (not context.last_result_step and p.condition == "failure")
+                or (is_success and p.condition == "success")
+                or (not is_success and p.condition == "failure")
             )
             if should_jump and p.target_hexastring:
                 context.pending_jump = p.target_hexastring
@@ -49,9 +51,9 @@ class JumpToStepExecutor(StepExecutorBase, IStepExecutor):
             event_bus.log_step(context, str_jump)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Erreur : {exc}")
-            return StepExecutionResultEnum.ERROR
+            return StepExecutionResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.SUCCESS
+            return StepExecutionResultEnum.E_SUCCESS
 
 
 register_step_executor(JumpToStepExecutor())

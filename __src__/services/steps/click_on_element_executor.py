@@ -54,9 +54,9 @@ class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
             event_bus.log_step(context, f"Clique OK avec sélecteur {p.selector!r} avec le mode {result!r}.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Erreur : {exc}")
-            return StepExecutionResultEnum.ERROR
+            return StepExecutionResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.SUCCESS
+            return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
     def _do_click(browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int) -> str:

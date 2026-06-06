@@ -55,9 +55,9 @@ class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
             event_bus.log_step(context, f"Ouvert : {target_url}")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Erreur : {exc}")
-            return StepExecutionResultEnum.ERROR
+            return StepExecutionResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.SUCCESS
+            return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
     def _extract_next_url_used(context: ScrapingContextModel, p: OpenUrlParams) -> str:

@@ -71,6 +71,24 @@ class ScrapingEventBus:
         """
         self._cb(EventScrapingEnum.E_WARMUP_URL, None, context)
 
+    def fire_step_start(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
+        """Signal that a step is about to start executing.
+
+        Args:
+            step: The step that is about to run.
+            context: Live scraping context at the time of dispatch.
+        """
+        self._cb(EventScrapingEnum.E_STEP_START, step, context)
+
+    def fire_step_done(self, step: StepScrapingModel, context: ScrapingContextModel) -> None:
+        """Signal that a step has finished executing.
+
+        Args:
+            step: The step that just finished running.
+            context: Live scraping context at the time of dispatch.
+        """
+        self._cb(EventScrapingEnum.E_STEP_DONE, step, context)
+
     def fire_pause(self) -> None:
         """Signal that the workflow has entered a manual or automatic pause."""
         self._cb(EventScrapingEnum.E_PAUSE_ASKED, None, None)
@@ -101,6 +119,7 @@ class ScrapingEventBus:
                 before ``execute_logical`` is called).
             message: French-language progress message to log.
         """
+        context.log_messages.append(message)
         self._cb(EventScrapingEnum.E_STEP_LOG, context.step_scraping_data, context)
 
 

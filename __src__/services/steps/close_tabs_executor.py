@@ -46,9 +46,9 @@ class CloseTabsExecutor(StepExecutorBase, IStepExecutor):
             self._enforce_max_tabs(browser, current_page, p.max_tabs)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Erreur : {exc}")
-            return StepExecutionResultEnum.ERROR
+            return StepExecutionResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.SUCCESS
+            return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
     def _resolve_url_filter(p: CloseTabsParams, context: ScrapingContextModel) -> str:

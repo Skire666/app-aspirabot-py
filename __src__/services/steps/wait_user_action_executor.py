@@ -37,13 +37,13 @@ class WaitUserActionExecutor(StepExecutorBase, IStepExecutor):
         p = cast(WaitUserActionParams, context.step_scraping_data.params)
         try:
             if not self._should_pause(p, context):
-                return StepExecutionResultEnum.SUCCESS
+                return StepExecutionResultEnum.E_SKIPPED
             self._do_pause(context, p, event_bus)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Erreur : {exc}")
-            return StepExecutionResultEnum.ERROR
+            return StepExecutionResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.SUCCESS
+            return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
     def _should_pause(p: WaitUserActionParams, context: ScrapingContextModel) -> bool:

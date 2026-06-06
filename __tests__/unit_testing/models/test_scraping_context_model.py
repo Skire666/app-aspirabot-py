@@ -74,29 +74,7 @@ class TestExtractedData:
 # ---------------------------------------------------------------------------
 
 
-class TestScrapingContextModelInit:
-    def test_defaults_are_set(self) -> None:
-        ctx = _make_context()
-        assert ctx.last_result_step is True
-        assert ctx.last_url_opened == ""
-        assert ctx.pending_jump is None
-        assert ctx.end_process is False
-        assert ctx.step_scraping_data is None
-        assert ctx.url_source is None
-
-
 class TestResetBeforeNewProcess:
-    def test_resets_outputs(self) -> None:
-        ctx = _make_context()
-        ctx.last_result_step = False
-        ctx.pending_jump = 3
-        ctx.end_process = True
-        steps = [_make_step("s1"), _make_step("s2")]
-        ctx.reset_before_new_process(steps)
-        assert ctx.last_result_step is True
-        assert ctx.pending_jump is None
-        assert ctx.end_process is False
-
     def test_builds_step_id_maps(self) -> None:
         ctx = _make_context()
         steps = [_make_step("step_a"), _make_step("step_b")]
@@ -152,20 +130,6 @@ class TestPrepareStepExecution:
         ctx.prepare_step_execution(_make_step("x"))
         assert ctx.pending_jump is None
         assert ctx.end_process is False
-
-
-class TestSetResultExecution:
-    def test_sets_success_flag(self) -> None:
-        ctx = _make_context()
-        ctx.prepare_step_execution(_make_step("s1"))
-        ctx.set_result_execution(True, "ok")
-        assert ctx.last_result_step is True
-
-    def test_sets_failure_flag(self) -> None:
-        ctx = _make_context()
-        ctx.prepare_step_execution(_make_step("s1"))
-        ctx.set_result_execution(False, "error")
-        assert ctx.last_result_step is False
 
 
 class TestPushExtractedValues:

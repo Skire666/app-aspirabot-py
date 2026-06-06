@@ -25,7 +25,7 @@ from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
-from shared.enums import EventScrapingEnum, UrlSourceTypeEnum
+from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
@@ -47,7 +47,7 @@ from view_models.scraping_view_model import ScrapingViewModel
 # Constants
 # -----------------------------------------------------------------------------
 
-_POLL_INTERVAL_MS = 500
+_POLL_INTERVAL_MS = 300
 
 _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
     EventScrapingEnum.E_BROWSER_INIT: C_SCRAPING_EVENT_BROWSER_INIT,
@@ -323,9 +323,8 @@ class ScrapingPresenter:
         if line:
             self._vm.after(0, lambda entry=line: self._append_journal(entry))
 
-    @staticmethod
     def _format_journal_line(
-        event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
+        self, event: EventScrapingEnum, step: StepScrapingModel | None, context: ScrapingContextModel | None
     ) -> str:
         """Build a formatted journal entry from a scraping event.
 
@@ -343,9 +342,38 @@ class ScrapingPresenter:
             ts = datetime.now().strftime("%H:%M:%S")
             url = context.last_url_opened or ""
             return f"{ts} | Préchauffe URL : {url}\n{C_SCRAPING_EVENT_PAUSE_ASKED}"
+        if event == EventScrapingEnum.E_STEP_START and step:
+            return self.preformat_step_start(step, context)
+        if event == EventScrapingEnum.E_STEP_DONE and step and context:
+            return f"         | {context.last_result_step.value.upper()} | {context.last_time_elapsed:.3f}s"
         if event == EventScrapingEnum.E_STEP_LOG and step and context:
-            return f"         | {step.step_id}"
+            all_msg = ""
+            for msg in context.log_messages:
+                all_msg += f"         | {step.step_id} | {msg}\n"
+            context.log_messages.clear()
+            return all_msg.strip("\n")
         return ""
+
+    @staticmethod
+    def preformat_step_start(step: StepScrapingModel, context: ScrapingContextModel | None) -> str:
+        """Pre-format the E_STEP_START journal line to include the step type."""
+        assert context is not None
+
+        # Special handling for steps where the type alone is not informative enough.
+        if step.step_type == StepTypeEnum.E_SECTION_STEPS:
+            title = getattr(step.params, "title", "")
+            dt_now = datetime.now().strftime("%H:%M:%S")
+            return f"{dt_now} | {step.step_id} | - - - {StepTypeEnum.E_SECTION_STEPS.value} - - - {title}"
+        # For steps with dynamic behavior based on the context, include relevant info.
+        if step.step_type == StepTypeEnum.E_YOUTUBE_DDL:
+            last_will_be_used = context.last_url_opened if context else ""
+            return f"{step.step_id} | {step.step_type.value} | Utilisé : {last_will_be_used}"
+        # For open URL steps, preview the next URL to be opened (from source or custom) for better traceability.
+        if step.step_type == StepTypeEnum.E_OPEN_URL:
+            next_url = context.url_source.preview_next_url() if context and context.url_source else "—"
+            return f"{step.step_id} | {step.step_type.value} | Prochaine : {next_url}"
+
+        return f"{step.step_id} | {step.step_type.value} "
 
     def _append_journal(self, line: str) -> None:
         """Add a line to the ViewModel journal and the internal buffer.

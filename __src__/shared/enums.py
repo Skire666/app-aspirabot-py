@@ -75,7 +75,9 @@ class EventScrapingEnum(Enum):
     E_WORKFLOW_INIT = "WORKFLOW_INIT"
     E_WARMUP_URL = "WARMUP_URL"
     E_PAUSE_ASKED = "PAUSE_ASKED"
+    E_STEP_START = "STEP_START"
     E_STEP_LOG = "STEP_LOG"  # log emitted from inside an executor
+    E_STEP_DONE = "STEP_DONE"
     E_EMERGENCY_STOP = "EMERGENCY_STOP"
     E_COMPLETED = "COMPLETED"
     E_UNKNOWN = "UNKNOWN"
@@ -89,10 +91,13 @@ class StepExecutionResultEnum(Enum):
     ERROR and FATAL are both failures, but only FATAL stops the workflow.
     """
 
-    SUCCESS = "success"  # step completed fully
-    WARNING = "warning"  # completed with a non-critical anomaly; workflow continues
-    ERROR = "error"      # step failed; workflow continues to next step
-    FATAL = "fatal"      # step failed; workflow stops immediately
+    E_UNSET = "UNSET"  # default value; should be overridden by executors
+    E_SKIPPED = "skipped"  # step was not executed due to a jump or section condition
+    E_SUCCESS = "success"  # step completed fully
+    E_WARNING = "warning"  # completed with a non-critical anomaly; workflow continues
+    E_ERROR = "error"  # step failed; workflow continues to next step
+    E_FATAL = "fatal"  # step failed; workflow stops immediately
+    E_UNKNOWN = "UNKNOWN"
 
 
 class ExtractTextHtmlEnum(Enum):

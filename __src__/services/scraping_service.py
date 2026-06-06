@@ -30,7 +30,7 @@ from services.scraping_event_bus import ScrapingEventBus
 from services.url_sources.url_source_factory import build_url_source_scenario
 from services.workflow_service import WorkflowService
 from shared.enums import StepExecutionResultEnum, StepTypeEnum, UrlSortOrderEnum, WaitUntilEnum
-from shared.exception_util import BrowserNotLaunchedError, ExportFolderNotADirectoryError
+from shared.exception_util import ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 from shared.step_registry import get_step_executor
 
@@ -366,31 +366,26 @@ class ScrapingService:
         Returns:
             The index of the next step to execute.
         """
+        self._context.prepare_step_execution(step)
+        self._event_bus.fire_step_start(step, self._context)
         result = self._execute_step(step)
-        is_ok = result in {StepExecutionResultEnum.SUCCESS, StepExecutionResultEnum.WARNING}
+        self._context.set_result_execution(result)
+        self._event_bus.fire_step_done(step, self._context)
 
         if self._browser_service is not None:
             self._context.browser_stats = self._browser_service.get_stats()
 
-        self._update_step_stats(step, is_ok)
+        is_okay = self._context.last_step_was_success()
+        self._statistics.update_result_step(step.step_type, is_okay)
 
-        if result == StepExecutionResultEnum.FATAL:
+        # Track per-step failures for the step-level emergency stop.
+        if not is_okay and step.step_id == self._emergency_stop_step_id:
+            self._emergency_stop_step_failed += 1
+
+        if result == StepExecutionResultEnum.E_FATAL:
             self._context.end_process = True
 
         return self._consume_pending_jump(index)
-
-    def _update_step_stats(self, step: StepScrapingModel, is_success: bool) -> None:
-        """Increment the appropriate run-level counters after a step completes.
-
-        Args:
-            step: The step that just executed.
-            is_success: True when the step completed without error.
-        """
-        self._statistics.update_result_step(step.step_type, is_success)
-
-        # Track per-step failures for the step-level emergency stop.
-        if not is_success and step.step_id == self._emergency_stop_step_id:
-            self._emergency_stop_step_failed += 1
 
     def _consume_pending_jump(self, current_index: int) -> int:
         """Resolve and clear any pending JUMP_TO_STEP signal.
@@ -480,28 +475,22 @@ class ScrapingService:
             The ``StepExecutionResultEnum`` value returned by the executor, or
             ``ERROR`` when the executor raises an unexpected exception.
         """
-        # Prepare per-step state on the shared context.
-        self._context.prepare_step_execution(step)
+        assert self._browser_service is not None
 
         # if the step is inactive, skip execution
         if not step.is_active:
-            self._context.set_result_execution(True, "SKIP")
-            return StepExecutionResultEnum.SUCCESS
+            return StepExecutionResultEnum.E_SKIPPED
 
-        if self._browser_service is None:
-            raise BrowserNotLaunchedError()
         try:
             executor: IStepExecutor = get_step_executor(step.step_type)
             result = executor.execute_logical(self._browser_service, self._context, self._event_bus)
-        except Exception as exc:
-            # Log the exception and set the step result to failure, but allow the run to continue.
-            self._context.set_result_execution(False, f"Excep : <<{exc}>>")
+        except Exception:
+            # Log the exception and set the step result to failure
+            print(f"Erreur lors de l'exécution de l'étape {step.step_id} :")
             self._logger.exception("Erreur lors de l'exécution de l'étape %s", step.step_id)
-            return StepExecutionResultEnum.ERROR
-
-        is_ok = result in {StepExecutionResultEnum.SUCCESS, StepExecutionResultEnum.WARNING}
-        self._context.set_result_execution(is_ok, result.value)
-        return result
+            return StepExecutionResultEnum.E_ERROR
+        else:
+            return result
 
 
 # EOF

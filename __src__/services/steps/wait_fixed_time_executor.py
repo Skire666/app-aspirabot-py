@@ -42,9 +42,9 @@ class WaitFixedTimeExecutor(StepExecutorBase, IStepExecutor):
             event_bus.log_step(context, f"Pause durant {time_sec:.3f} sec.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Erreur : {exc}")
-            return StepExecutionResultEnum.ERROR
+            return StepExecutionResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.SUCCESS
+            return StepExecutionResultEnum.E_SUCCESS
 
 
 register_step_executor(WaitFixedTimeExecutor())

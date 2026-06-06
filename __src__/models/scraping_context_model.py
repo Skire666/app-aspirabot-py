@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 from models.app_configuration_model import AppConfigurationModel
 from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepExecutionResultEnum
 
 if TYPE_CHECKING:
     from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -92,6 +93,7 @@ class ScrapingContextModel:
 
     # Step-specific raw params (used to construct typed param models).
     step_scraping_data: StepScrapingModel | None = field(default=None)
+    log_messages: list[str] = field(default_factory=list)
 
     # date extracted
     extracted_data: ExtractedData | None = field(default=None)
@@ -100,7 +102,7 @@ class ScrapingContextModel:
     url_source: IUrlSourceProvider | None = field(default=None)
 
     # Output signals written by executors and read back by the orchestrator.
-    last_result_step: bool = field(default=True)
+    last_result_step: StepExecutionResultEnum = field(default=StepExecutionResultEnum.E_UNSET)
     last_url_opened: str = field(default="")  # peut être en erreur, pas grave
     last_time_elapsed: float = field(default=0.0)
     pending_jump: str | int | None = field(default=None)
@@ -140,7 +142,8 @@ class ScrapingContextModel:
         if self.url_source is not None:
             self.url_source.reset()
 
-        self.last_result_step = True
+        self.last_result_step = StepExecutionResultEnum.E_SUCCESS
+        self.log_messages = []
         self.pending_jump = None
         self.end_process = False
         self.downloaded_urls = set()
@@ -163,15 +166,14 @@ class ScrapingContextModel:
         self.pending_jump = None
         self.end_process = False
 
-    def set_result_execution(self, is_success: bool, message: str) -> None:
+    def set_result_execution(self, result: StepExecutionResultEnum) -> None:
         """Set the result of the step execution and update related state.
 
         Args:
-            is_success: True when the step completed without error.
-            message: Human-readable result message.
+            result: The execution result enum value.
         """
-        self.last_result_step = is_success
-        self.last_time_elapsed = time.time() - self._time_started
+        self.last_result_step = result
+        self.last_time_elapsed = time.time() - self._time_started + 0.001  # add 1ms to avoid zero values
 
     def push_extracted_values(self, mapping_key: str, inp: str, com: str, vals: list[str]) -> None:
         """Push extracted values into the context's extracted_data dict.
@@ -193,6 +195,14 @@ class ScrapingContextModel:
         self.extracted_data.urls[url].keys[mapping_key] = KeyData(input=inp, comment=com, values=vals)
         # TODO PCO : je réacrase tout, et en vrai, c'est pas plus mal
         # a voir si je dois merge les values en cas d'existant
+
+    def last_step_was_success(self) -> bool:
+        """Helper to check if the last step execution was a success."""
+        return self.last_result_step in {
+            StepExecutionResultEnum.E_SKIPPED,
+            StepExecutionResultEnum.E_SUCCESS,
+            StepExecutionResultEnum.E_WARNING,
+        }
 
 
 # EOF
