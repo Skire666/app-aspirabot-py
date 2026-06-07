@@ -23,7 +23,7 @@ def _build(data: dict[str, Any]) -> ExtractVariableParams:
         A fully populated ExtractVariableParams instance.
     """
     return ExtractVariableParams(
-        variable=data.get("variable", "date_time_now"), mapping=data.get("mapping", ""), comment=data.get("comment", "")
+        variable=data.get("variable", "datetime_now"), mapping=data.get("mapping", ""), comment=data.get("comment", "")
     )
 
 

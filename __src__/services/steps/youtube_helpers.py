@@ -23,6 +23,9 @@ from pathlib import Path
 from typing import Any, Final, cast
 
 import yt_dlp
+from interfaces.i_scraping_event_bus import IScrapingEventBus
+from models.scraping_context_model import ScrapingContextModel
+from shared.datetime_util import C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF
 from shared.exception_util import (
     YoutubeNoDownloadOptionError,
     YoutubeOutputDirParameterEmptyError,
@@ -30,9 +33,6 @@ from shared.exception_util import (
 )
 from shared.path_util import clean_filename_youtube
 from yt_dlp.utils import DownloadError
-
-from __src__.interfaces.i_scraping_event_bus import IScrapingEventBus
-from __src__.models.scraping_context_model import ScrapingContextModel
 
 # ============================================================================
 # CONSTANTS (single source of truth — tune the behaviour from here)
@@ -89,7 +89,7 @@ SUBTITLE_EXTENSIONS_KEEP: Final[tuple[str, ...]] = ("srt", "vtt", "json3")
 
 # --- Filename patterns -----------------------------------------------------
 NA_TOKEN: Final[str] = "<<_#N/A_>>"
-TIMESTAMP_FMT: Final[str] = "%Y_%m_%d - %H_%M_%S_%f"
+TIMESTAMP_FMT: Final[str] = C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF
 BASIC_DATA_FILENAME_FMT: Final[str] = "{vid} - basic_data - {ts}.json"
 SUBTITLE_FILENAME_FMT: Final[str] = "{vid} - {origin} - {lang} - {ts}.{ext}"
 NA_FILENAME_FMT: Final[str] = "{vid} - {origin} - {lang} - {ts}.{ext}"

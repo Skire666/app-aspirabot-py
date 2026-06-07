@@ -9,8 +9,9 @@ from datetime import datetime
 # -----------------------------------------------------------------------------
 
 
-C_DATETIME_FORMAT_HH_MM_SS = "%H:%M:%S"
+C_TIME_FORMAT_HH_MM_SS = "%H:%M:%S"
 C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS = "%Y-%m-%d %H:%M:%S"
+C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM = "%Y-%m-%d %H:%M"
 C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF = "%Y-%m-%d %H:%M:%S.%f"
 C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF = "%Y-%m-%d_%Hh%Mm%Ss%f"
 
@@ -19,13 +20,22 @@ C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF = "%Y-%m-%d_%Hh%Mm%Ss%f"
 # -----------------------------------------------------------------------------
 
 
+def get_datetime_now_yyyy_mm_dd_hh_mm() -> str:
+    """Returns the current date and time as a string in the format '2024-06-01 14h30'.
+
+    Returns:
+        A string representing the current date and time.
+    """
+    return datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM)
+
+
 def get_time_now_hh_mm_ss() -> str:
     """Returns the current date and time as a string in the format '14:30:45'.
 
     Returns:
         A string representing the current date and time.
     """
-    return datetime.now().strftime(C_DATETIME_FORMAT_HH_MM_SS)
+    return datetime.now().strftime(C_TIME_FORMAT_HH_MM_SS)
 
 
 def dict_with_key_to_optional_datetime(dict_with_datetime: dict[str, object], key: str) -> datetime | None:
@@ -55,7 +65,7 @@ def dict_with_key_to_optional_datetime(dict_with_datetime: dict[str, object], ke
 
 
 def get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
-    """Returns the current date and time as a string in the format '2024-06-01_14h30m45s654321'.
+    """Returns the current date and time as a string in the format '2024-06-01_14.30.45.654321'.
 
     Returns:
         A string representing the current date and time.

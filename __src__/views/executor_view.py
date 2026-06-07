@@ -88,8 +88,8 @@ class ExecutorView(ttk.Frame):
 
         self._combo_scenarios = ColumnCombobox(frame)
         self._combo_scenarios.add_column("scenario_name", lambda m: m.scenario_name, width=140)
-        self._combo_scenarios.add_column("scenario_desc", lambda m: m.scenario_desc, width=200)
-        self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=60)
+        self._combo_scenarios.add_column("scenario_desc", lambda m: m.scenario_desc, width=240)
+        self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=25)
         self._combo_scenarios.set_display_column("scenario_name")
         self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
         self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10), pady=(0, 5))

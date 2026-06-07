@@ -38,7 +38,7 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
         """Execute the step."""
         assert ctx.step_scraping_data is not None
         p = cast(YoutubeTranscriptsParams, ctx.step_scraping_data.params)
-        exp_folder = str(ctx.folder_export)
+        exp_folder = str(ctx.folder_export) + "/srt"
         try:
             rs = download_youtube_data(ctx.last_url_opened, exp_folder, p.basic_info, p.ddl_srt, event_bus, ctx)
             if p.basic_info and rs.nbr_base_success <= 0:

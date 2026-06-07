@@ -12,6 +12,7 @@ from typing import Any
 
 from models.launcher_model import LaunchModel
 from services.profiles_service import ProfilesService
+from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from shared.dialog_util import ask_delete_profile_confirmation
 from shared.exception_util import AspirabotBaseError
 from view_models.profiles_view_model import ProfilesViewModel
@@ -122,7 +123,9 @@ class ProfilesPresenter:
                     "profile_name": p.profile_name,
                     "scenario_name": self._service_profile.get_scenario_name(p.id_scenario),
                     "url_source_type": p.url_source_type,
-                    "used_date_profile": p.used_date_profile.strftime("%d/%m/%Y %H:%M") if p.used_date_profile else "",
+                    "used_date_profile": p.used_date_profile.strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM)
+                    if p.used_date_profile
+                    else "",
                     "launch_count": str(p.launch_count),
                     "id_profile": p.id_profile,
                     "id_scenario": p.id_scenario,

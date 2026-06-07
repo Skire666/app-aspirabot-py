@@ -6,6 +6,7 @@
 
 from models.log_entry_model import LogEntryModel
 from services.logging_service import LoggingService
+from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import C_ERROR_DIALOG_TITLE, C_LOG_OPEN_FOLDER_ERROR
 from view_models.log_view_model import LogViewModel
@@ -52,7 +53,7 @@ class LogPresenter:
         all_logs = self._service.get_all_log_entries()
         for log in all_logs:
             if log.level in active_filters:
-                formatted_date = log.date.strftime("%Y-%m-%d %H:%M:%S")
+                formatted_date = log.date.strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM)
                 logs_data.append((formatted_date, log.level, log.origin, log.message))
 
         self._vm.set_logs(logs_data)

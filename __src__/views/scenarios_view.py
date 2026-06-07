@@ -7,6 +7,7 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from view_models.scenarios_view_model import ScenariosViewModel
 from views.components.data_grid.data_grid import DataGrid, GridColumn
 from views.components.folder_link_widget import FolderLinkWidget
@@ -25,8 +26,8 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
     GridColumn(id="scenario_desc", title="Description", width=160),
     GridColumn(id="version", title="Version", width=82),
     GridColumn(id="id_file", title="ID Fichier", width=100),
-    GridColumn(id="created_date_scenario", title="Création", width=125, format="%d/%m/%Y %H:%M"),
-    GridColumn(id="modified_date_scenario", title="Modification", width=125, format="%d/%m/%Y %H:%M"),
+    GridColumn(id="created_date_scenario", title="Création", width=125, format=C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM),
+    GridColumn(id="modified_date_scenario", title="Modification", width=125, format=C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM),
 ]
 
 # -----------------------------------------------------------------------------

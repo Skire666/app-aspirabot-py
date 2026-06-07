@@ -5,8 +5,9 @@
 # -----------------------------------------------------------------------------
 
 import logging
-from datetime import datetime
 from pathlib import Path
+
+from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 
 # -----------------------------------------------------------------------------
 # Class
@@ -39,7 +40,7 @@ class JournalRepository:
                 be written.
         """
         folder.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
         path = folder / f"journal_{timestamp}.txt"
         try:
             path.write_text("\n".join(lines), encoding="utf-8")

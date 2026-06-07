@@ -20,6 +20,7 @@ from models.step_scraping_model import StepScrapingModel
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.url_sources.url_source_factory import build_url_source_scenario
+from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
@@ -41,7 +42,7 @@ from view_models.executor_view_model import ExecutorViewModel, ProfileItem, Scen
 # Module-level constant
 # -----------------------------------------------------------------------------
 
-_DATE_FMT = "%d/%m/%Y %H:%M"
+_DATE_FMT = C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 
 # -----------------------------------------------------------------------------
 # Class

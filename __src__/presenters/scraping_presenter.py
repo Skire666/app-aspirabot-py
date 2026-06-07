@@ -24,7 +24,7 @@ from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
-from shared.datetime_util import get_time_now_hh_mm_ss
+from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM, get_time_now_hh_mm_ss
 from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
@@ -437,7 +437,7 @@ class ScrapingPresenter:
         """Read the current scraping context and push formatted stats to the ViewModel."""
         ctx: ScrapingContextModel = self._service_scraping.current_context
         stats: ScrapingStatisticsModel = self._service_scraping.current_stats
-        date_fmt = "%d/%m/%Y %H:%M:%S"
+        date_fmt = C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
         ts = stats.started_at.strftime(date_fmt) if stats.started_at else "—"
         tid = self._profile.emergency_stop_step_id if self._profile else ""
         parts = [f"Démarré : {ts}", f"Seuil global : {self._current_global_threshold}"]

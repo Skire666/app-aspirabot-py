@@ -7,6 +7,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from view_models.profiles_view_model import ProfilesViewModel
 from views.components.data_grid.data_grid import DataGrid, GridColumn
 from views.components.folder_link_widget import FolderLinkWidget
@@ -22,7 +23,7 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
     GridColumn(id="profile_name", title="Nom du profil", width=160),
     GridColumn(id="scenario_name", title="Scénario", width=150),
     GridColumn(id="url_source_type", title="Source", width=100),
-    GridColumn(id="used_date_profile", title="Dernier usage", width=140, format="%d/%m/%Y %H:%M"),
+    GridColumn(id="used_date_profile", title="Dernier usage", width=140, format=C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM),
     GridColumn(id="launch_count", title="Utilisés", width=100),
     GridColumn(id="id_profile", title="ID Profil", width=85),
     GridColumn(id="id_scenario", title="ID Scénario", width=85),

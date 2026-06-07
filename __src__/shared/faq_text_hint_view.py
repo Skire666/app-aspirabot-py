@@ -300,7 +300,7 @@ class FaqTextTextHint:
             "Exporter une variable": (
                 "Capture une variable système dans les données extraites du scénario.\n\n"
                 "• Variable (valeurs autorisées) :\n"
-                "  - date_time_now : horodatage au moment de l'exécution\n"
+                "  - datetime_now : horodatage au moment de l'exécution\n"
                 "  - last_url : dernière URL ouverte par un step 'Ouvrir une URL'\n"
                 "  - last_domain : domaine extrait de la dernière URL ouverte\n"
                 "• Clé de mapping : obligatoire, non vide\n\n"

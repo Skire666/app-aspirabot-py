@@ -78,7 +78,7 @@ class ExtractVariableFormDef(IStepFormDef):
         row1.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row1, text="Clé/Mapping :").pack(side=tk.LEFT, padx=(0, 5))
-        mapping_var = tk.StringVar(value="")
+        mapping_var = tk.StringVar(value="datetime_now | last_url | last_domain")
         ttk.Entry(row1, textvariable=mapping_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_MAPPING] = mapping_var
 
@@ -123,7 +123,7 @@ class ExtractVariableFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         return {
-            C_KEY_VARIABLE: EXPORT_VAR_VIEW_TO_MODEL.get(widgets[C_KEY_VARIABLE].get(), "date_time_now"),
+            C_KEY_VARIABLE: EXPORT_VAR_VIEW_TO_MODEL.get(widgets[C_KEY_VARIABLE].get(), "datetime_now"),
             C_KEY_MAPPING: widgets[C_KEY_MAPPING].get().strip(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }

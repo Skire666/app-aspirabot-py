@@ -10,7 +10,7 @@ from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator
 from shared.i18n_fra import ERROR_TEMPLATES
 
-_ALLOWED_VARIABLES: frozenset[str] = frozenset({"date_time_now", "last_url", "last_domain"})
+_ALLOWED_VARIABLES: frozenset[str] = frozenset({"datetime_now", "last_url", "last_domain"})
 
 
 class ExtractVariableParams(BaseStepParams):

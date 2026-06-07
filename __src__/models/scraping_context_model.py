@@ -204,5 +204,12 @@ class ScrapingContextModel:
             StepExecutionResultEnum.E_WARNING,
         }
 
+    def reset_exported_data(self) -> None:
+        """Clear all extracted data from the context.
+
+        Clear extracted data after export to prevent duplicate exports
+        """
+        self.extracted_data = ExtractedData()
+
 
 # EOF

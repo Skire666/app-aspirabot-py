@@ -16,6 +16,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_variable_params import ExtractVariableParams
 from services.steps.step_executor_base import StepExecutorBase
+from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
@@ -24,14 +25,14 @@ def _resolve_variable(variable: str, context: ScrapingContextModel) -> str:
     """Return the current value for the requested context variable.
 
     Args:
-        variable: One of 'date_time_now', 'last_url', or 'last_domain'.
+        variable: One of 'datetime_now', 'last_url', or 'last_domain'.
         context: Live scraping context providing URL and timestamp data.
 
     Returns:
         The resolved string value for the variable.
     """
-    if variable == "date_time_now":
-        return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if variable == "datetime_now":
+        return datetime.datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS)
     if variable == "last_url":
         return context.last_url_opened
     if variable == "last_domain":
@@ -63,7 +64,7 @@ class ExtractVariableExecutor(StepExecutorBase, IStepExecutor):
         try:
             value = _resolve_variable(p.variable, context)
             context.push_extracted_values(p.mapping, p.variable, p.comment, [value])
-            event_bus.log_step(context, f"Variable extraite '{p.variable}' = '{value}'.")
+            event_bus.log_step(context, f"Variable '{p.variable}' = '{value}'.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
