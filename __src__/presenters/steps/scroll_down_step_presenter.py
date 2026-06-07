@@ -24,6 +24,8 @@ def _build(data: dict[str, Any]) -> ScrollDownParams:
     """
     return ScrollDownParams(
         pixels=int(data.get("pixels", 1000)),
+        nbr_loops=int(data.get("nbr_loops", 1)),
+        delay_pause=int(data.get("delay_pause", 0)),
         comment=data.get("comment", ""),
     )
 

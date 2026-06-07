@@ -26,7 +26,7 @@ from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFound
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
-_PREVIEW_LIMIT = 10
+_PREVIEW_LIMIT = 50
 
 
 def _collect_urls(obj: object, result: list[str]) -> None:
@@ -128,14 +128,14 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
         self._buffered = _SENTINEL
 
     def preview_url_listed(self) -> list[str]:
-        """Return up to 10 upcoming URLs without altering any internal state.
+        """Return up to 50 upcoming URLs without altering any internal state.
 
         Drains the look-ahead buffer and pending list virtually, then peeks
         at subsequent files — leaving ``_file_index``, ``_pending_urls``, and
         ``_buffered`` untouched.
 
         Returns:
-            A list of at most 10 URL strings in iteration order; empty when
+            A list of at most 50 URL strings in iteration order; empty when
             no files have been discovered yet or all are exhausted.
 
         Raises:

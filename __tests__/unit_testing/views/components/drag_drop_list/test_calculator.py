@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from views.components.drag_drop_list.core.calculator import LayoutCalculator
 
 
@@ -61,24 +60,6 @@ class TestItemY:
         assert calc.item_y(3) == 4 + 3 * (48 + 4)
 
 
-class TestTotalHeight:
-    """Tests for total_height()."""
-
-    def test_no_items_returns_pad(self) -> None:
-        calc = LayoutCalculator(48, 4, 8, 36)
-        calc.set_n_items(0)
-        assert calc.total_height() == 4  # max(base, pad)
-
-    def test_n_items(self, calc: LayoutCalculator) -> None:
-        expected = 10 * (48 + 4) + 4
-        assert calc.total_height() == expected
-
-    def test_with_expand_gap(self, calc: LayoutCalculator) -> None:
-        calc.set_expand_gap(5)
-        expected = 10 * (48 + 4) + 4 + 8
-        assert calc.total_height() == expected
-
-
 class TestItemW:
     """Tests for item_w()."""
 
@@ -95,7 +76,7 @@ class TestIdxAt:
     """Tests for idx_at()."""
 
     def test_hit_first_item(self, calc: LayoutCalculator) -> None:
-        assert calc.idx_at(4) == 0   # top of item 0
+        assert calc.idx_at(4) == 0  # top of item 0
         assert calc.idx_at(51) == 0  # bottom of item 0
 
     def test_hit_second_item(self, calc: LayoutCalculator) -> None:

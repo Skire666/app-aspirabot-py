@@ -33,22 +33,26 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
 
     @override
     def execute_logical(
-        self, browser: IWebBrowserService, ctx: ScrapingContextModel, event_bus: IScrapingEventBus
+        self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
     ) -> StepExecutionResultEnum:
         """Execute the step."""
-        assert ctx.step_scraping_data is not None
-        p = cast(YoutubeTranscriptsParams, ctx.step_scraping_data.params)
-        exp_folder = str(ctx.folder_export) + "/srt"
+        assert context.step_scraping_data is not None
+        p = cast(YoutubeTranscriptsParams, context.step_scraping_data.params)
+        exp_folder = str(context.folder_export) + "/srt"
         try:
-            rs = download_youtube_data(ctx.last_url_opened, exp_folder, p.basic_info, p.ddl_srt, event_bus, ctx)
+            # "socket_timeout" -> 20
+            # RATE_LIMIT_RETRY_DELAYS -> (1, 3)
+            # PHASE_PAUSE_SECONDS -> 1
+
+            rs = download_youtube_data(context.last_url_opened, exp_folder, p.basic_info, p.ddl_srt, event_bus, context)
             if p.basic_info and rs.nbr_base_success <= 0:
                 raise YoutubeBaseDataNotDownloadedError()  # noqa: TRY301
             if p.ddl_srt and rs.nbr_srt_success <= 0:
                 raise YoutubeSrtNotDownloadedError()  # noqa: TRY301
             msg = f"Téléchargés : Basic info +{rs.nbr_base_success} | Sous-titres +{rs.nbr_srt_success}"
-            event_bus.log_step(ctx, msg)
+            event_bus.log_step(context, msg)
         except Exception as exc:  # noqa: BLE001
-            event_bus.log_step(ctx, f"Excp : {exc}")
+            event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

@@ -201,8 +201,8 @@ class ExecutorView(ttk.Frame):
         inner.pack(fill=tk.X)
 
         left = ttk.Frame(inner)
-        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 24), pady=(0, 5))
-        ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 20), pady=(0, 5))
+        ttk.Label(left, text="Aperçu top 50:").pack(anchor=tk.W)
         ttk.Label(left, textvariable=self._vm.url_count_manual_var).pack(anchor=tk.W)
 
         preview_frame = ttk.Frame(inner)
@@ -229,7 +229,7 @@ class ExecutorView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Chemin :", width=16).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Chemin :", width=16).pack(side=tk.LEFT, padx=(0, 8), pady=(0, 5))
         self._view_traces.append(
             (
                 self._vm.url_source_path_shortcuts_var,
@@ -252,8 +252,8 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 24), pady=(0, 5))
-        ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 20), pady=(0, 5))
+        ttk.Label(left, text="Aperçu top 50 :").pack(anchor=tk.W)
         ttk.Label(left, textvariable=self._vm.url_count_shortcuts_var).pack(anchor=tk.W)
         preview_frame = ttk.Frame(row)
         preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -302,7 +302,7 @@ class ExecutorView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Chemin :", width=16).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(row, text="Chemin :", width=16).pack(side=tk.LEFT, padx=(0, 8), pady=(0, 5))
         self._view_traces.append(
             (
                 self._vm.url_source_path_jsons_var,
@@ -325,8 +325,8 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 24), pady=(0, 5))
-        ttk.Label(left, text="Aperçu URLs :").pack(anchor=tk.W)
+        left.pack(side=tk.LEFT, anchor=tk.NW, padx=(5, 20), pady=(0, 5))
+        ttk.Label(left, text="Aperçu top 50 :").pack(anchor=tk.W)
         ttk.Label(left, textvariable=self._vm.url_count_jsons_var).pack(anchor=tk.W)
         preview_frame = ttk.Frame(row)
         preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

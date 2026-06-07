@@ -13,7 +13,7 @@ from shared.exception_util import UrlSourceExhaustedError
 # Constants
 # -----------------------------------------------------------------------------
 
-_PREVIEW_LIMIT = 10
+_PREVIEW_LIMIT = 50
 
 # -----------------------------------------------------------------------------
 # Class
@@ -88,10 +88,10 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
         self._index = 0
 
     def preview_url_listed(self) -> list[str]:
-        """Return up to 10 upcoming URLs from the current cursor position.
+        """Return up to 50 upcoming URLs from the current cursor position.
 
         Returns:
-            A slice of at most 10 URLs; empty when the list is exhausted.
+            A slice of at most 50 URLs; empty when the list is exhausted.
 
         Raises:
             None.

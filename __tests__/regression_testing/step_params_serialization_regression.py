@@ -374,13 +374,13 @@ class TestRefreshPageParamsSerialization:
 
 
 class TestScrollDownParamsSerialization:
-    _DATA = {"pixels": 750, "comment": "scroll half page"}
+    _DATA = {"pixels": 750, "nbr_loops": 3, "delay_pause": 500, "comment": "scroll half page"}
 
     def test_to_dict_expected_keys(self) -> None:
         from models.steps.scroll_down_params import ScrollDownParams
 
         d = ScrollDownParams(**self._DATA).to_dict()
-        assert set(d.keys()) == {"pixels", "comment"}
+        assert set(d.keys()) == {"pixels", "nbr_loops", "delay_pause", "comment"}
 
     def test_round_trip(self) -> None:
         from models.steps.scroll_down_params import ScrollDownParams

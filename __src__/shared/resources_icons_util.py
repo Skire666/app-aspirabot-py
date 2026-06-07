@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw, ImageTk
 # black big buttons
 C_RESS_ICON_BLACK_LOGS = "./__ress__/icons/b_128_logs.png"
 C_RESS_ICON_BLACK_PROFILES = "./__ress__/icons/b_128_profiles.png"
+C_RESS_ICON_BLACK_DISCOVER = "./__ress__/icons/b_128_discover.png"
 C_RESS_ICON_BLACK_SCENARIOS = "./__ress__/icons/b_128_scenarios.png"
 C_RESS_ICON_BLACK_EDITOR = "./__ress__/icons/b_128_editor.png"
 C_RESS_ICON_BLACK_EXECUTOR = "./__ress__/icons/b_128_executor.png"
@@ -25,6 +26,7 @@ C_RESS_ICON_BLACK_DEBUG = "./__ress__/icons/b_128_debug.png"
 # white big buttons
 C_RESS_ICON_WHITE_LOGS = "./__ress__/icons/w_128_logs.png"
 C_RESS_ICON_WHITE_PROFILES = "./__ress__/icons/w_128_profiles.png"
+C_RESS_ICON_WHITE_DISCOVER = "./__ress__/icons/w_128_discover.png"
 C_RESS_ICON_WHITE_SCENARIOS = "./__ress__/icons/w_128_scenarios.png"
 C_RESS_ICON_WHITE_EDITOR = "./__ress__/icons/w_128_editor.png"
 C_RESS_ICON_WHITE_EXECUTOR = "./__ress__/icons/w_128_executor.png"

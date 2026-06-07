@@ -8,6 +8,7 @@ from shared.enums import StepTypeEnum, TitleModuleEnum
 from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_CONFIG,
     C_RESS_ICON_BLACK_DEBUG,
+    C_RESS_ICON_BLACK_DISCOVER,
     C_RESS_ICON_BLACK_EDITOR,
     C_RESS_ICON_BLACK_EXECUTOR,
     C_RESS_ICON_BLACK_FAQ,
@@ -17,6 +18,7 @@ from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_SCRAPING,
     C_RESS_ICON_WHITE_CONFIG,
     C_RESS_ICON_WHITE_DEBUG,
+    C_RESS_ICON_WHITE_DISCOVER,
     C_RESS_ICON_WHITE_EDITOR,
     C_RESS_ICON_WHITE_EXECUTOR,
     C_RESS_ICON_WHITE_FAQ,
@@ -113,6 +115,7 @@ C_SCENARIO_NOT_FOUND_BY_ID = "Le scénario avec l'ID '{id_file}' n'existe pas."
 # Order of modules is determined by the order of entries in this dictionary.
 C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
     TitleModuleEnum.E_LOGS: ("Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS),
+    TitleModuleEnum.E_DISCOVER: ("Découvrir", C_RESS_ICON_BLACK_DISCOVER, C_RESS_ICON_WHITE_DISCOVER),
     TitleModuleEnum.E_PROFILES: ("Profils", C_RESS_ICON_BLACK_PROFILES, C_RESS_ICON_WHITE_PROFILES),
     TitleModuleEnum.E_SCENARIOS: ("Scénarios", C_RESS_ICON_BLACK_SCENARIOS, C_RESS_ICON_WHITE_SCENARIOS),
     TitleModuleEnum.E_WORKFLOW: ("Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR),
@@ -207,6 +210,8 @@ ERROR_TEMPLATES: dict[str, str] = {
     "refresh_page_timeout_unit_invalid": "Étape {step} : l'unité de timeout invalide — {value!r}.",
     # --- scroll_down ---
     "scroll_down_pixels_invalid": "Étape {step} : le nombre de pixels doit être >= 1.",
+    "scroll_down_nbr_loops_invalid": "Étape {step} : le nombre de boucles doit être entre 1 et 99.",
+    "scroll_down_delay_pause_invalid": "Étape {step} : la pause doit être entre 0 et 99.",
     # --- section ---
     "section_title_required": "Étape {step} : le titre de la section est obligatoire.",
     # --- youtube_transcripts ---

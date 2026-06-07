@@ -21,6 +21,8 @@ from shared.step_registry import register_form
 # -----------------------------------------------------------------------------
 
 C_KEY_PIXELS_DISTANCE = "pixels"
+C_KEY_NBR_LOOPS = "nbr_loops"
+C_KEY_DELAY_PAUSE = "delay_pause"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -45,6 +47,8 @@ class ScrollDownFormDef(IStepFormDef):
             widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
         """
         self._build_subform_pixels(frame, widgets)
+        self._build_subform_nbr_loops(frame, widgets)
+        self._build_subform_delay_pause(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
@@ -64,6 +68,26 @@ class ScrollDownFormDef(IStepFormDef):
             side="left", padx=(0, 5)
         )
         widgets[C_KEY_PIXELS_DISTANCE] = pixels_var
+
+    @staticmethod
+    def _build_subform_nbr_loops(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        row1 = ttk.Frame(frame)
+        row1.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row1, text="Nombre de boucle :").pack(side="left", padx=(0, 5))
+        nbr_loops_var = tk.StringVar(value="1")
+        ttk.Entry(row1, textvariable=nbr_loops_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_NBR_LOOPS] = nbr_loops_var
+
+    @staticmethod
+    def _build_subform_delay_pause(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        row2 = ttk.Frame(frame)
+        row2.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row2, text="Pause entre chaque (sec.) :").pack(side="left", padx=(0, 5))
+        delay_pause_var = tk.StringVar(value="0")
+        ttk.Entry(row2, textvariable=delay_pause_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_DELAY_PAUSE] = delay_pause_var
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -90,6 +114,8 @@ class ScrollDownFormDef(IStepFormDef):
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
         widgets[C_KEY_PIXELS_DISTANCE].set(str(params_dict.get(C_KEY_PIXELS_DISTANCE, 1000)))
+        widgets[C_KEY_NBR_LOOPS].set(str(params_dict.get(C_KEY_NBR_LOOPS, 1)))
+        widgets[C_KEY_DELAY_PAUSE].set(str(params_dict.get(C_KEY_DELAY_PAUSE, 0)))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
@@ -104,6 +130,8 @@ class ScrollDownFormDef(IStepFormDef):
         """
         return {
             C_KEY_PIXELS_DISTANCE: safe_int_from_dict(widgets, C_KEY_PIXELS_DISTANCE, -1),
+            C_KEY_NBR_LOOPS: safe_int_from_dict(widgets, C_KEY_NBR_LOOPS, 1),
+            C_KEY_DELAY_PAUSE: safe_int_from_dict(widgets, C_KEY_DELAY_PAUSE, 0),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

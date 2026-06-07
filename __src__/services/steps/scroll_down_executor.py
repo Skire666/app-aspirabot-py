@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import cast, override
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
@@ -36,14 +37,18 @@ class ScrollDownExecutor(StepExecutorBase, IStepExecutor):
         assert context.step_scraping_data is not None
         p = cast(ScrollDownParams, context.step_scraping_data.params)
         try:
-            is_success, _ = browser.evaluate_script_with_safe_retry(
-                f"window.scrollBy(0, {p.pixels})",
-                C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
-                C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
-            )
-            if not is_success:
-                raise ScriptExecutionFailedError("scroll_down")  # noqa: TRY301
-            event_bus.log_step(context, f"Défilement de {p.pixels}px effectué.")
+            for idx in range(p.nbr_loops):
+                # Add a pause between scrolls, except before the first one.
+                if idx >= 1 and p.delay_pause > 0:
+                    time.sleep(p.delay_pause)
+                is_success, _ = browser.evaluate_script_with_safe_retry(
+                    f"window.scrollBy(0, {p.pixels})",
+                    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
+                    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
+                )
+                if not is_success:
+                    raise ScriptExecutionFailedError("scroll_down")  # noqa: TRY301
+                event_bus.log_step(context, f"Défilement de {p.pixels}px effectué.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

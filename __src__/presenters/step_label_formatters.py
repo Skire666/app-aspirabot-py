@@ -215,7 +215,9 @@ def _fmt_refresh_page(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -
 def _fmt_scroll_down(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for SCROLL_DOWN."""
     pixels = params.get("pixels", 1000)
-    return f"Défilement vers le bas\nLongueur: {pixels} px"
+    nbr_loops = params.get("nbr_loops", 1)
+    delay_pause = params.get("delay_pause", 0)
+    return f"Défilement vers le bas\nLongueur: {pixels} px  —  x{nbr_loops} boucle(s)  —  pause: {delay_pause}"
 
 
 def _fmt_section(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:

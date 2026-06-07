@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -103,6 +104,19 @@ ORIGIN_AUTO: Final[str] = "srt_autogen"
 _logger: Final[logging.Logger] = logging.getLogger(LOGGER_NAME)
 
 
+def clean_youtube_url(url):
+    """Clean a YouTube URL by extracting the video ID and reformatting it.
+
+    This function looks for the 'v' parameter in the query string and constructs a
+    standardized YouTube URL. If the 'v' parameter is not found, it returns the original URL.
+    """
+    match = re.search(r"[?&]v=([a-zA-Z0-9_-]+)", url)
+    if not match:
+        return url  # pas de paramètre v, on retourne l'URL telle quelle
+
+    return f"https://www.youtube.com/watch?v={match.group(1)}"
+
+
 # ============================================================================
 # RESULT CLASS — caller-facing summary
 # ============================================================================
@@ -162,23 +176,30 @@ def download_youtube_data(
     """Orchestrate the full pipeline; record outcomes into ``result``."""
     result: DownloadResult = DownloadResult()
 
+    url_youtube = clean_youtube_url(url_youtube)
+    print(f"Début du téléchargement YouTube : url='{url_youtube}'")
     if not _safe_validate(url_youtube, output_dir, get_basic_data, get_srt, result):
         event_bus.log_step(ctx, f"Paramètres invalides : {result.errors[-1]}")
         return result
+    print("Validation des paramètres réussie.")
     out_path = _safe_prepare_dir(output_dir, result)
     if out_path is None:
         return result
 
+    print("Préparation du répertoire de sortie.")
     # basic info extraction (also serves as a validation step before attempting subs download)
     all_infos = _safe_fetch_info(url_youtube, result)
     if all_infos is None:
         return result
     video_id = str(all_infos.get("id") or "unknown")
 
+    print(f"Extraction des informations vidéo : {video_id}")
     # choices
     if get_basic_data:
+        print(f"Enregistrement des données basiques : {video_id}")
         _safe_save_basic_data(all_infos, out_path, video_id, result, event_bus, ctx)
     if get_srt:
+        print(f"Téléchargement des sous-titres : {video_id}")
         _safe_download_subtitles(url_youtube, all_infos, out_path, video_id, result, event_bus, ctx)
 
     return result
@@ -284,6 +305,7 @@ def _fetch_video_info(url_youtube: str) -> dict[str, Any]:
         "skip_download": True,
         "writesubtitles": False,
         "writeautomaticsub": False,
+        "socket_timeout": 20,
     }
     with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[arg-type]
         raw = ydl.extract_info(url_youtube, download=False)
