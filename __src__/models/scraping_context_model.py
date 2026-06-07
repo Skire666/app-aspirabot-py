@@ -16,7 +16,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from models.app_configuration_model import AppConfigurationModel
 from models.step_scraping_model import StepScrapingModel
@@ -61,6 +61,35 @@ class ExtractedData:
             }
             for url, val_ud in self.urls.items()
         }
+
+    @classmethod
+    def import_from_data_json(cls, data: dict[str, Any]) -> ExtractedData:
+        """Reconstruct an ExtractedData instance from a plain dict produced by to_dict().
+
+        Args:
+            data: Raw dict loaded from a JSON file produced by to_dict().
+
+        Returns:
+            A fully reconstructed ExtractedData instance; empty when data is invalid.
+        """
+        urls: dict[str, UrlData] = {}
+        for url_key, url_raw in data.items():
+            if not isinstance(url_raw, dict):
+                continue
+            keys: dict[str, KeyData] = {}
+            url_raw_typed = cast(dict[str, object], url_raw)
+            for key_name, key_raw in url_raw_typed.items():
+                if not isinstance(key_raw, dict):
+                    continue
+                key_raw_typed = cast(dict[str, object], key_raw)
+                raw_values = key_raw_typed.get("values", [])
+                keys[str(key_name)] = KeyData(
+                    input=str(key_raw_typed.get("input") or ""),
+                    comment=str(key_raw_typed.get("comment") or ""),
+                    values=[str(v) for v in (raw_values if isinstance(raw_values, list) else [])],
+                )
+            urls[str(url_key)] = UrlData(keys=keys)
+        return cls(urls=urls)
 
 
 @dataclass

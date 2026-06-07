@@ -6,54 +6,34 @@
     },
     "modified_date_profile": {
         "__type__": "datetime",
-        "value": "2026-06-03T01:13:48.448762"
+        "value": "2026-06-07T22:33:57.758015"
     },
     "launch_profiles": [
         {
             "id_profile": "78cf4ec4",
             "id_scenario": "50aae622",
             "profile_name": "Youtube - liste manuelle",
-            "export_folder": "E:\\app-aspirabot-py\\data_scraping",
+            "export_folder": "E:/app-life-selector/Youtube/FilmGame - Export - Fiches",
             "url_source_type": "MANUAL",
-            "url_source_value": [
-                "https://www.youtube.com/watch?v=oEjZUfpZ8dA",
-                "https://www.youtube.com/watch?v=Szoeo4HBJ4c",
-                "https://www.youtube.com/watch?v=huAwz_BR8WM",
-                "https://www.youtube.com/watch?v=YQHsXMglC9A",
-                "https://www.youtube.com/watch?v=5XPlYxjKQ6k",
-                "https://www.youtube.com/watch?v=JgHXD8211T4",
-                "https://www.youtube.com/watch?v=xXMUpqSyJJo",
-                "https://www.youtube.com/watch?v=aSOSYAk-o9Y",
-                "https://www.youtube.com/watch?v=BY3zuxMDSdM"
+            "url_sources_list_manual": [
+                "https://www.youtube.com/watch?v=hLQl3WQQoQ0&list=RDhLQl3WQQoQ0&start_radio=1",
+                "https://www.youtube.com/watch?v=GjZLHxmUBZM",
+                "https://www.youtube.com/watch?v=4xhfYzeR93I",
+                "https://www.youtube.com/watch?v=Dkqzqw8rxXI"
             ],
+            "url_sources_folder_shortcuts": "",
+            "url_sources_folder_jsons": "",
+            "url_sort_order_shortcuts": "mtime_asc",
+            "url_sort_order_jsons": "mtime_desc",
             "emergency_stop_threshold": 100,
-            "launch_count": 46,
+            "launch_count": 104,
             "used_date_profile": {
                 "__type__": "datetime",
-                "value": "2026-06-03T01:13:48.447069"
+                "value": "2026-06-07T22:33:57.756253"
             },
-            "url_sort_order": "mtime_asc",
-            "emergency_stop_step_id": "2y88",
-            "emergency_stop_step_threshold": 1
-        },
-        {
-            "id_profile": "df12dcc3",
-            "id_scenario": "50aae622",
-            "profile_name": "test",
-            "export_folder": "E:\\app-aspirabot-py\\data_scraping",
-            "url_source_type": "MANUAL",
-            "url_source_value": [
-                "https://www.wawacity.news"
-            ],
-            "emergency_stop_threshold": 1,
-            "launch_count": 2,
-            "used_date_profile": {
-                "__type__": "datetime",
-                "value": "2026-06-02T17:49:27.312792"
-            },
-            "url_sort_order": "mtime_asc",
-            "emergency_stop_step_id": "qDeH",
-            "emergency_stop_step_threshold": 1
+            "emergency_stop_step_id": "ee83",
+            "emergency_stop_step_threshold": 5,
+            "warmup_url": "https://www.youtube.com/"
         }
     ]
 }

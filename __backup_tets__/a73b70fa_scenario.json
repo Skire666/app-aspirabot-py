@@ -1,14 +1,14 @@
 {
-    "id_file": "50aae622",
-    "scenario_name": "Youtube - fiche - base & srt",
-    "scenario_desc": "Télécharger transcript d'une vidéo youtube",
+    "id_file": "a73b70fa",
+    "scenario_name": "Youtube - chaine - vidéos",
+    "scenario_desc": "Lister toutes les vidéos d'une chaine",
     "created_date_scenario": {
         "__type__": "datetime",
-        "value": "2026-05-31T21:38:54.222627"
+        "value": "2026-06-07T10:50:54.924748"
     },
     "modified_date_scenario": {
         "__type__": "datetime",
-        "value": "2026-06-07T22:08:51.045183"
+        "value": "2026-06-07T20:24:13.585626"
     },
     "version": "1.0.0",
     "steps": [
@@ -49,11 +49,11 @@
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-07T10:27:20.048878"
+                "value": "2026-06-07T18:05:04.140480"
             },
             "params": {
                 "condition": "failure",
-                "target_hexastring": "d4yF",
+                "target_hexastring": "Ed3q",
                 "comment": "Saute vers la fin process"
             }
         },
@@ -73,16 +73,16 @@
         },
         {
             "step_type": "JUMP_TO_STEP",
-            "step_id": "FGbq",
+            "step_id": "xZ7G",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-07T10:27:32.322744"
+                "value": "2026-06-07T18:05:10.312364"
             },
             "params": {
                 "condition": "failure",
-                "target_hexastring": "d4yF",
-                "comment": "Sauter vers la fin du process"
+                "target_hexastring": "Ed3q",
+                "comment": "Saute vers la fin process"
             }
         },
         {
@@ -91,76 +91,91 @@
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-05T16:45:13.916263"
+                "value": "2026-06-07T18:02:40.323920"
             },
             "params": {
-                "title": "DDL les infos youtube",
+                "title": "Défiler vers le bas - 2 fois",
                 "comment": ""
             }
         },
         {
             "step_type": "WAIT_FIXED_TIME",
-            "step_id": "eddG",
+            "step_id": "69gb",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-07T22:08:25.285869"
+                "value": "2026-06-07T20:22:58.198379"
             },
             "params": {
-                "duration": 1,
+                "duration": 3,
                 "unit": "s",
                 "comment": ""
             }
         },
         {
-            "step_type": "YOUTUBE_DDL",
-            "step_id": "bEZy",
+            "step_type": "SCROLL_DOWN",
+            "step_id": "pg5H",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-05T16:40:19.834500"
+                "value": "2026-06-07T20:24:11.557549"
             },
             "params": {
-                "title": "Download automatique FRA/ENG",
-                "comment": "",
-                "basic_info": true,
-                "ddl_srt": true
-            }
-        },
-        {
-            "step_type": "JUMP_TO_STEP",
-            "step_id": "CF9x",
-            "is_active": true,
-            "modified_date": {
-                "__type__": "datetime",
-                "value": "2026-06-07T10:28:42.887051"
-            },
-            "params": {
-                "condition": "failure",
-                "target_hexastring": "qDeH",
-                "comment": "Pas de vidéo, retourne au début"
+                "pixels": 4321,
+                "nbr_loops": 50,
+                "delay_pause": 3,
+                "comment": ""
             }
         },
         {
             "step_type": "SECTION_STEPS",
-            "step_id": "cGbA",
+            "step_id": "d4yF",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-07T10:38:20.343031"
+                "value": "2026-06-07T18:02:23.560013"
             },
             "params": {
-                "title": "Export url dones en json",
+                "title": "Extraire les liens",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "WAIT_FIXED_TIME",
+            "step_id": "NtZE",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-06-07T18:42:16.682476"
+            },
+            "params": {
+                "duration": 3,
+                "unit": "s",
+                "comment": ""
+            }
+        },
+        {
+            "step_type": "EXTRACT_LINKS",
+            "step_id": "tFAk",
+            "is_active": true,
+            "modified_date": {
+                "__type__": "datetime",
+                "value": "2026-06-07T10:56:31.898217"
+            },
+            "params": {
+                "selector": "h3 > a",
+                "target": "all",
+                "mapping": "url_video",
                 "comment": ""
             }
         },
         {
             "step_type": "EXTRACT_VARIABLE",
-            "step_id": "YG2e",
+            "step_id": "3BHx",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-07T10:39:02.691918"
+                "value": "2026-06-07T10:56:48.406140"
             },
             "params": {
                 "variable": "datetime_now",
@@ -169,77 +184,15 @@
             }
         },
         {
-            "step_type": "EXTRACT_VARIABLE",
-            "step_id": "tFAk",
-            "is_active": true,
-            "modified_date": {
-                "__type__": "datetime",
-                "value": "2026-06-07T10:38:56.223660"
-            },
-            "params": {
-                "variable": "last_url",
-                "mapping": "last_url",
-                "comment": ""
-            }
-        },
-        {
-            "step_type": "EXTRACT_TEXTS",
-            "step_id": "9d9D",
-            "is_active": true,
-            "modified_date": {
-                "__type__": "datetime",
-                "value": "2026-06-07T22:03:41.257267"
-            },
-            "params": {
-                "selector": "#title > h1",
-                "extract_mode": "innerText",
-                "target": "all",
-                "mapping": "title_h1",
-                "comment": "titre de la vidéo"
-            }
-        },
-        {
-            "step_type": "EXTRACT_TEXTS",
-            "step_id": "5C6e",
-            "is_active": true,
-            "modified_date": {
-                "__type__": "datetime",
-                "value": "2026-06-07T22:07:31.292705"
-            },
-            "params": {
-                "selector": "#text > a",
-                "extract_mode": "innerText",
-                "target": "all",
-                "mapping": "channel_name",
-                "comment": "nom de la chaine"
-            }
-        },
-        {
-            "step_type": "EXTRACT_TEXTS",
-            "step_id": "ppqk",
-            "is_active": true,
-            "modified_date": {
-                "__type__": "datetime",
-                "value": "2026-06-07T22:07:47.414798"
-            },
-            "params": {
-                "selector": "#snippet",
-                "extract_mode": "innerText",
-                "target": "all",
-                "mapping": "description_preview",
-                "comment": "description vidéo"
-            }
-        },
-        {
             "step_type": "EXPORT_DATA_TO_JS",
             "step_id": "ee83",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-07T09:15:15.392415"
+                "value": "2026-06-07T11:00:29.113799"
             },
             "params": {
-                "prefix_file": "export_urls_done",
+                "prefix_file": "export_all_videos",
                 "comment": ""
             }
         },
@@ -249,21 +202,21 @@
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-06-07T22:08:47.807007"
+                "value": "2026-06-07T10:57:41.761405"
             },
             "params": {
                 "condition": "always",
                 "target_hexastring": "qDeH",
-                "comment": "export ok, retourne au début"
+                "comment": "export  ok, retourne au début"
             }
         },
         {
             "step_type": "SECTION_STEPS",
-            "step_id": "d4yF",
+            "step_id": "Ed3q",
             "is_active": true,
             "modified_date": {
                 "__type__": "datetime",
-                "value": "2026-05-31T21:32:49.901698"
+                "value": "2026-06-07T18:02:13.440867"
             },
             "params": {
                 "title": "Fin process",

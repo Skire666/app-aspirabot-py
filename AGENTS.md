@@ -343,13 +343,13 @@ Fail-fast invariants (a wiring bug must surface at startup, not silently no-op):
 def bind_submit(self, callback: Callable[[], None]) -> None:
     """Register the Presenter handler for submit(); rejects double binding."""
     if self._on_submit is not None:
-        raise AppError("Le hook 'submit' est déjà lié.")
+        raise CallbackNotDefinedError()
     self._on_submit = callback
 
 def submit(self) -> None:
     """Dispatch the submit action to the registered Presenter callback."""
     if self._on_submit is None:
-        raise AppError("Action 'submit' déclenchée sans handler lié.")
+        raise CallbackNotDefinedError()
     self._on_submit()
 ```
 
@@ -404,7 +404,7 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from shared.exception_util import AppError
+from shared.exception_util import CallbackNotDefinedError
 from view_models.view_model_base import ViewModelBase
 
 @dataclass(frozen=True, slots=True)
@@ -449,19 +449,19 @@ class ScenarioListViewModel(ViewModelBase):
     def bind_rows_changed(self, callback: Callable[[], None]) -> None:
         """Register the View re-render handler; rejects double binding."""
         if self._on_rows_changed is not None:
-            raise AppError("Le hook 'rows_changed' est déjà lié.")
+            raise CallbackNotDefinedError()
         self._on_rows_changed = callback
 
     def bind_open(self, callback: Callable[[str], None]) -> None:
         """Register the Presenter handler for open_selected()."""
         if self._on_open is not None:
-            raise AppError("Le hook 'open' est déjà lié.")
+            raise CallbackNotDefinedError()
         self._on_open = callback
 
     def open_selected(self) -> None:
         """Dispatch the open action for the currently selected row id."""
         if self._on_open is None:
-            raise AppError("Action 'open' déclenchée sans handler lié.")
+            raise CallbackNotDefinedError()
         self._on_open(self.selected_id_var.get())
 ```
 
@@ -481,7 +481,7 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from shared.exception_util import AppError
+from shared.exception_util import CallbackNotDefinedError
 from view_models.view_model_base import ViewModelBase
 
 @dataclass(frozen=True, slots=True)
@@ -549,13 +549,13 @@ class ScenarioEditViewModel(ViewModelBase):
     def bind_submit(self, callback: Callable[[], None]) -> None:
         """Register the Presenter handler for submit(); rejects double binding."""
         if self._on_submit is not None:
-            raise AppError("Le hook 'submit' est déjà lié.")
+            raise CallbackNotDefinedError()
         self._on_submit = callback
 
     def bind_cancel(self, callback: Callable[[], None]) -> None:
         """Register the Presenter handler for cancel(); rejects double binding."""
         if self._on_cancel is not None:
-            raise AppError("Le hook 'cancel' est déjà lié.")
+            raise CallbackNotDefinedError()
         self._on_cancel = callback
 
     # ----- Action methods (dispatch only) -----
@@ -563,13 +563,13 @@ class ScenarioEditViewModel(ViewModelBase):
     def submit(self) -> None:
         """Dispatch the submit action to the registered Presenter callback."""
         if self._on_submit is None:
-            raise AppError("Action 'submit' déclenchée sans handler lié.")
+            raise CallbackNotDefinedError()
         self._on_submit()
 
     def cancel(self) -> None:
         """Dispatch the cancel action to the registered Presenter callback."""
         if self._on_cancel is None:
-            raise AppError("Action 'cancel' déclenchée sans handler lié.")
+            raise CallbackNotDefinedError()
         self._on_cancel()
 ```
 
@@ -624,7 +624,7 @@ class ScenarioEditView(ttk.Frame):
 import logging
 
 from services.scenario_service import ScenarioService
-from shared.exception_util import AppError, ScenarioNotFoundError
+from shared.exception_util import CallbackNotDefinedError, ScenarioNotFoundError
 from view_models.scenario_edit_view_model import ScenarioEditViewModel
 
 class ScenarioEditPresenter:
@@ -660,7 +660,7 @@ class ScenarioEditPresenter:
             self._service.save_scenario(
                 name=state.name, url=state.url, active=state.is_active
             )
-        except AppError as e:
+        except CallbackNotDefinedError as e:
             self._logger.error("Erreur lors de l'enregistrement : %s", e, exc_info=True)
             self._vm.error_message_var.set(str(e))
         finally:
@@ -820,7 +820,7 @@ class ScenarioEditViewModel:
 # GOOD — VM dispatches to a Presenter-registered callback
 def submit(self):
     if self._on_submit is None:
-        raise AppError("Action 'submit' déclenchée sans handler lié.")
+        raise CallbackNotDefinedError()
     self._on_submit()
 ```
 
@@ -1174,7 +1174,7 @@ def start_scraping(self, id_scenario: str) -> None:
 def _on_submit(self) -> None:
     try:
         self._service.start_scraping(self._vm.scenario_id_var.get())
-    except AppError as e:
+    except CallbackNotDefinedError as e:
         self._logger.error("Erreur lors du scraping : %s", e, exc_info=True)
         self._vm.error_message_var.set(format_error(e))
 ```
@@ -1215,10 +1215,10 @@ Exception messages (the string passed to `raise`) are written in **French**.
 | `Repository` | `RepositoryError` subclasses            | Low-level errors (`OSError`, `json.JSONDecodeError`…) — wraps and re-raises |
 | `Service`    | Domain exceptions                       | `RepositoryError` if a transformation is needed                          |
 | `Presenter`  | —                                       | Domain exceptions → formats and writes the message into a VM Var         |
-| `ViewModel`  | Wiring invariants only (`AppError`)     | Nothing — it is pure state.                                              |
+| `ViewModel`  | Wiring invariants only      | Nothing — it is pure state.                                              |
 | `View`       | —                                       | Nothing — it only renders.                                              |
 
-> The ViewModel raises `AppError` **only** for composition-time wiring invariants
+> The ViewModel raises `CallbackNotDefinedError` **only** for composition-time wiring invariants
 > (double `bind_<x>`, action triggered without a bound handler). It never raises for
 > domain or runtime reasons — those are the Service's and Presenter's responsibility.
 
@@ -1247,7 +1247,7 @@ def _on_load(self) -> None:
         self._vm.error_message_var.set("")
     except ScenarioNotFoundError as e:
         self._vm.error_message_var.set(str(e))
-    except AppError as e:
+    except CallbackNotDefinedError as e:
         self._logger.error("Erreur inattendue : %s", e, exc_info=True)
         self._vm.error_message_var.set("Une erreur inattendue est survenue.")
 ```
@@ -1777,7 +1777,7 @@ to mutate (status/source) — never on widgets, which do not exist in the test.
 
 - A successful service call leaves `error_message_var` empty and `is_busy_var` False.
 - A raised domain exception (e.g. `ScenarioNotFoundError`) is reflected into
-  `error_message_var`; an unexpected `AppError` is logged and surfaces a generic message.
+  `error_message_var`; an unexpected `CallbackNotDefinedError` is logged and surfaces a generic message.
 - `load_scenario(...)` populates the source Vars through a single recompute (`batch_update`).
 
 ---

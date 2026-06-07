@@ -1,0 +1,36 @@
+{
+    "id_scenario": "a73b70fa",
+    "created_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-07T10:50:54.926982"
+    },
+    "modified_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-07T21:27:48.217617"
+    },
+    "launch_profiles": [
+        {
+            "id_profile": "455df544",
+            "id_scenario": "a73b70fa",
+            "profile_name": "FilmGame - Lister vidéos",
+            "export_folder": "E:\\app-life-selector\\Youtube\\FilmGame - Export - Chaines",
+            "url_source_type": "MANUAL",
+            "url_sources_list_manual": [
+                "https://www.youtube.com/user/godofwarlefilm/videos"
+            ],
+            "url_sources_folder_shortcuts": "E:\\app-life-selector\\Youtube\\FilmGame - RAC",
+            "url_sources_folder_jsons": "",
+            "url_sort_order_shortcuts": "mtime_asc",
+            "url_sort_order_jsons": "mtime_asc",
+            "emergency_stop_threshold": 10,
+            "launch_count": 9,
+            "used_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-06-07T21:27:48.195196"
+            },
+            "emergency_stop_step_id": "tFAk",
+            "emergency_stop_step_threshold": 5,
+            "warmup_url": "https://www.youtube.com"
+        }
+    ]
+}

@@ -155,6 +155,35 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
 }
 
 # -----------------------------------------------------------------------------
+# Discover panel — project management
+# -----------------------------------------------------------------------------
+
+C_DISCOVER_PROJECT_SAVED_DATE_FMT = "Sauvegardé le : {date}"
+C_DISCOVER_PROJECT_SAVED_DATE_EMPTY = "Sauvegardé le : --"
+
+# Discover panel — input/output counters
+C_DISCOVER_NODE_COUNT_FMT = "Noeud principal : {count}"
+C_DISCOVER_NODE_COUNT_EMPTY = "Noeud principal : --"
+C_DISCOVER_VALUE_COUNT_FMT = "Nombre de valeurs : {count}"
+C_DISCOVER_VALUE_COUNT_EMPTY = "Nombre de valeurs : --"
+
+# Discover panel — verification field
+C_DISCOVER_VERIFICATION_EMPTY = "Vérification : --"
+C_DISCOVER_VERIFICATION_OK = "Vérification : OK"
+C_DISCOVER_VERIFICATION_FMT = "Vérification : {msg}"
+
+# Discover panel — save profile result
+C_DISCOVER_SAVE_PROFILE_SUCCESS_FMT = "{count} lien(s) ajouté(s) avec succès."
+C_DISCOVER_SAVE_PROFILE_NO_NEW_URLS = "Aucun nouveau lien à ajouter."
+
+# Discover panel — preview
+C_DISCOVER_PREVIEW_EMPTY = "--"
+C_DISCOVER_PREVIEW_FMT = "{value}"
+
+# Discover panel — default auto profile name
+C_DISCOVER_PROFILE_NAME_AUTO_FMT = "auto_{date}"
+
+# -----------------------------------------------------------------------------
 # Templates errors
 # -----------------------------------------------------------------------------
 
