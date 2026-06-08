@@ -107,6 +107,42 @@ C_STEP_NOT_FOUND_FOR_UPDATE = "L'étape n'existe plus. Impossible de mettre à j
 C_SCENARIO_NOT_FOUND_BY_ID = "Le scénario avec l'ID '{id_file}' n'existe pas."
 
 # -----------------------------------------------------------------------------
+# Discover panel
+# -----------------------------------------------------------------------------
+
+# Project management labels
+C_DISCOVER_SAVED_DATE_FMT = "Sauvegardé le : {date}"
+C_DISCOVER_SAVED_DATE_EMPTY = "Sauvegardé le : --"
+C_DISCOVER_RENAME_DIALOG_TITLE = "Renommer le projet"
+C_DISCOVER_RENAME_DIALOG_MSG = "Nouveau nom du projet :"
+C_DISCOVER_DELETE_CONFIRM_TITLE = "Supprimer le projet"
+C_DISCOVER_DELETE_CONFIRM_MSG = "Êtes-vous sûr de vouloir supprimer le projet '{name}' ?"
+
+# Verification labels
+C_DISCOVER_FILES_COUNT_OK = "{count} fichier(s)"
+C_DISCOVER_FILES_COUNT_ZERO = "Aucun fichier"
+C_DISCOVER_FILES_COUNT_ERROR = "Erreur : {exc}"
+C_DISCOVER_URLS_COUNT_OK = "{count} URL(s)"
+C_DISCOVER_URLS_COUNT_ZERO = "Aucun URL"
+C_DISCOVER_URLS_COUNT_COMPUTING = "Calcul en cours..."
+C_DISCOVER_URLS_COUNT_ERROR = "Erreur : {exc}"
+
+# Profile save result labels
+C_DISCOVER_PROFILE_SAVE_OK = "{count} lien(s) ajouté(s) au profil."
+C_DISCOVER_PROFILE_SAVE_ZERO = "Aucun nouveau lien à ajouter."
+C_DISCOVER_PROFILE_SAVE_ERROR = "Erreur lors de la sauvegarde : {exc}"
+
+# Profile save button blocking hints
+C_DISCOVER_SAVE_LIST_HINT_INPUT = "URLs d'entrée non valides"
+C_DISCOVER_SAVE_LIST_HINT_OUTPUT = "URLs de sortie non valides"
+C_DISCOVER_SAVE_LIST_HINT_BOTH = "URLs d'entrée et de sortie non valides"
+
+# Error messages
+C_DISCOVER_PROJECT_NAME_EMPTY = "Le nom du projet ne peut pas être vide."
+C_DISCOVER_SAVE_FAILED = "La sauvegarde a échoué : {exc}"
+C_DISCOVER_NO_PROFILE_SELECTED = "Veuillez sélectionner un profil."
+
+# -----------------------------------------------------------------------------
 # Labels
 # -----------------------------------------------------------------------------
 
@@ -145,9 +181,9 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_CLICK_FOR_DOWNLOAD: "Cliquer pour télécharger",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
     StepTypeEnum.E_YOUTUBE_DDL: "YouTube info/srt",
-    StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes",
-    StepTypeEnum.E_EXTRACT_LINKS: "Extraire liens",
-    StepTypeEnum.E_EXTRACT_VARIABLE: "Exporter une variable",
+    StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes de la page",
+    StepTypeEnum.E_EXTRACT_LINKS: "Extraire liens de la page",
+    StepTypeEnum.E_EXTRACT_VARIABLE: "Extraire variable système",
     StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (json)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",

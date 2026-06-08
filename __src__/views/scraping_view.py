@@ -94,7 +94,7 @@ class ScrapingView(ttk.Frame):
         ttk.Label(grid, textvariable=self._vm.folder_var).grid(row=2, column=1, sticky=tk.W, pady=(0, 5))
 
         FolderLinkWidget(
-            grid, title="Dossier", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder()
+            grid, title="Dossier :", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder()
         ).grid(row=2, column=2, padx=(10, 0), pady=(0, 5))
 
     def _create_stats_section(self, parent: tk.Widget) -> None:

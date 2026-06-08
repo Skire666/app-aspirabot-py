@@ -15,6 +15,8 @@ from shared.enums import StepTypeEnum
 from shared.step_registry import register_form
 from views.steps._constants import EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_MODEL_TO_VIEW, EXTRACT_TARGET_VIEW_TO_MODEL
 
+from __src__.views.components.canvas_checkbox import CanvasCheckbox
+
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
@@ -24,6 +26,7 @@ C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_KEY_SELECTOR = "selector"
 C_KEY_TARGET_EXTRACTED = "target"
 C_KEY_MAPPING = "mapping"
+C_KEY_CUTTED_AMPERSAND = "cutted_ampersand"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -49,6 +52,7 @@ class ExtractLinksFormDef(IStepFormDef):
         """
         self._build_subform_selector(frame, widgets)
         self._build_subform_target(frame, widgets)
+        self._build_subform_cutted_ampersand(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
@@ -91,6 +95,23 @@ class ExtractLinksFormDef(IStepFormDef):
         widgets[C_KEY_MAPPING] = mapping_var
 
     @staticmethod
+    def _build_subform_cutted_ampersand(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the cutted ampersand checkbox row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_CUTTED_AMPERSAND tk.Variable.
+        """
+        row3 = ttk.Frame(frame)
+        row3.pack(fill="x", pady=(0, 8))
+
+        cutted_amp_var = tk.BooleanVar(value=True)
+        CanvasCheckbox(row3, text="Couper les URLs avant le & (ex: pour anti-youtube)", variable=cutted_amp_var).pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
+        widgets[C_KEY_CUTTED_AMPERSAND] = cutted_amp_var
+
+    @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build the comment input row.
 
@@ -119,6 +140,7 @@ class ExtractLinksFormDef(IStepFormDef):
             EXTRACT_TARGET_MODEL_TO_VIEW.get(params_dict.get(C_KEY_TARGET_EXTRACTED, ""), EXTRACT_TARGET_DISPLAY[-1])
         )
         widgets[C_KEY_MAPPING].set(params_dict.get(C_KEY_MAPPING, ""))
+        widgets[C_KEY_CUTTED_AMPERSAND].set(params_dict.get(C_KEY_CUTTED_AMPERSAND, True))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
@@ -135,6 +157,7 @@ class ExtractLinksFormDef(IStepFormDef):
             C_KEY_SELECTOR: widgets[C_KEY_SELECTOR].get().strip(),
             C_KEY_TARGET_EXTRACTED: EXTRACT_TARGET_VIEW_TO_MODEL.get(widgets[C_KEY_TARGET_EXTRACTED].get()),
             C_KEY_MAPPING: widgets[C_KEY_MAPPING].get().strip(),
+            C_KEY_CUTTED_AMPERSAND: widgets[C_KEY_CUTTED_AMPERSAND].get(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

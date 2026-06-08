@@ -151,7 +151,7 @@ def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) 
     selector = params.get("selector") or "<vide>"
     target = params.get("target", "")
     mapping = params.get("mapping", "")
-    return f"Extraire liens  -  {mapping}\n{target}  |  Sél. : {selector}"
+    return f"Extraire liens de la page  -  Clé : {mapping}\nCible : {target}  |  Sél. : {selector}"
 
 
 def _fmt_extract_texts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -160,7 +160,7 @@ def _fmt_extract_texts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) 
     extract_mode = params.get("extract_mode", "")
     target = params.get("target", "")
     mapping = params.get("mapping", "")
-    return f"Extraire textes  -  {mapping}\n{extract_mode}  /  {target}  |  Sél. : {selector}"
+    return f"Extraire textes de la page  -  Clé : {mapping}\nMode : {extract_mode}  |  Cible : {target}  |  Sél. : {selector}"
 
 
 def _fmt_jump_to_step(params: dict[str, Any], _idx: int, ctx: dict[str, int]) -> str:
@@ -235,7 +235,7 @@ def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, 
 def _fmt_export_variable(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXTRACT_VARIABLE."""
     variable = params.get("variable", "")
-    return f"Extraire une variable locale\n{variable}"
+    return f"Extraire variable système  -  Clé : {variable}\n(calculé dynamiquement)"
 
 
 def _fmt_wait_fixed_time(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:

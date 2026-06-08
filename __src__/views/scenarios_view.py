@@ -84,7 +84,10 @@ class ScenariosView(ttk.Frame):
         self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
 
         self._btn_open_folder = FolderLinkWidget(
-            top_frame, title="Dossier des scénarios :", path="", callback=lambda: self._vm.open_folder()
+            top_frame,
+            title="Dossier des scénarios :",
+            path="Cliquer pour ouvrir",
+            callback=lambda: self._vm.open_folder(),
         )
         self._btn_open_folder.pack(side=tk.RIGHT, padx=(10), pady=(0, 5))
 

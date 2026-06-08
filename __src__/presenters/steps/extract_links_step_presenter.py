@@ -26,6 +26,7 @@ def _build(data: dict[str, Any]) -> ExtractLinksParams:
         selector=data.get("selector", ""),
         target=data.get("target", ExtractTargetEnum.E_ALL.value),
         mapping=data.get("mapping", "key_name"),
+        cutted_ampersand=data.get("cutted_ampersand", True),
         comment=data.get("comment", ""),
     )
 

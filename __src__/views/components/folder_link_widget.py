@@ -41,11 +41,14 @@ class FolderLinkWidget(tk.Frame):
         self._path = path
         self._callback = callback
 
-        self._label = tk.Label(self, text=title or "Path :")
+        self._label = tk.Label(self, text=title)
         self._label.pack(side="left")
 
-        self._link = tk.Label(self, text=self._path or "(no path)")
-        self._link.pack(side="left", padx=(4, 0))
+        self._link = tk.Label(self, text=self._path or "--")
+        if title.strip():
+            self._link.pack(side="left", padx=(4, 0))
+        else:
+            self._link.pack(side="left")
 
         self._apply_style()
         self._bind_events()

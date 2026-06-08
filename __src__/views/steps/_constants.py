@@ -105,8 +105,8 @@ COUNT_SUCCESS_IF_MODEL_TO_VIEW: dict[str, str] = dict(
 # EXTRACT_VARIABLE display / model mappings
 # -----------------------------------------------------------------------------
 
-EXPORT_VAR_DISPLAY: list[str] = ["Date actuelle", "URL", "Domaine"]
-EXPORT_VAR_VALUES: list[str] = ["datetime_now", "last_url", "last_domain"]
+EXPORT_VAR_DISPLAY: list[str] = ["Date actuelle", "URL (complète)", "URL (domaine)", "URL (tronquée au '&')"]
+EXPORT_VAR_VALUES: list[str] = ["datetime_now", "last_url_full", "last_url_domain", "last_url_cutted"]
 EXPORT_VAR_VIEW_TO_MODEL: dict[str, str] = dict(zip(EXPORT_VAR_DISPLAY, EXPORT_VAR_VALUES, strict=True))
 EXPORT_VAR_MODEL_TO_VIEW: dict[str, str] = dict(zip(EXPORT_VAR_VALUES, EXPORT_VAR_DISPLAY, strict=True))
 

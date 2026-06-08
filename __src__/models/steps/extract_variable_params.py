@@ -10,7 +10,7 @@ from models.steps.base_step_params import BaseStepParams, step_label
 from pydantic import ValidationInfo, field_validator
 from shared.i18n_fra import ERROR_TEMPLATES
 
-_ALLOWED_VARIABLES: frozenset[str] = frozenset({"datetime_now", "last_url", "last_domain"})
+C_ALLOWED_VARIABLES: frozenset[str] = frozenset({"datetime_now", "last_url_full", "last_url_domain", "last_url_cutted"})
 
 
 class ExtractVariableParams(BaseStepParams):
@@ -26,7 +26,7 @@ class ExtractVariableParams(BaseStepParams):
         """Reject unrecognised variable identifiers."""
         if not info.context:
             return v
-        if v not in _ALLOWED_VARIABLES:
+        if v not in C_ALLOWED_VARIABLES:
             raise ValueError(ERROR_TEMPLATES["export_variable_invalid"].format(step=step_label(info.context), value=v))
         return v
 

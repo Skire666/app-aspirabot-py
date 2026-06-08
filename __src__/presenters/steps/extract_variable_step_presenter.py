@@ -12,6 +12,16 @@ from models.steps.extract_variable_params import ExtractVariableParams
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_params_builder
 
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+
+C_ALLOWED_VARIABLES: list[str] = ["datetime_now", "last_url_full", "last_url_domain", "last_url_cutted"]
+
+# -----------------------------------------------------------------------------
+# Functions
+# -----------------------------------------------------------------------------
+
 
 def _build(data: dict[str, Any]) -> ExtractVariableParams:
     """Build ExtractVariableParams from a raw JSON params dict.
@@ -23,7 +33,9 @@ def _build(data: dict[str, Any]) -> ExtractVariableParams:
         A fully populated ExtractVariableParams instance.
     """
     return ExtractVariableParams(
-        variable=data.get("variable", "datetime_now"), mapping=data.get("mapping", ""), comment=data.get("comment", "")
+        variable=data.get("variable", C_ALLOWED_VARIABLES[-1]),
+        mapping=data.get("mapping", ""),
+        comment=data.get("comment", ""),
     )
 
 

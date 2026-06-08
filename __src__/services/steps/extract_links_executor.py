@@ -59,7 +59,7 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
             )
             parsed = urlparse(page.url)
             base_url = f"{parsed.scheme}://{parsed.netloc}"
-            links: list[str] = self._get_all_links_from_elements(selected, base_url)
+            links: list[str] = self._get_all_links_from_elements(selected, base_url, p.cutted_ampersand)
             context.push_extracted_values(p.mapping, p.selector, p.comment, links)
             debug_one_item = links[0] if links and links[0] else "<no link>"
             event_bus.log_step(context, f"Extrait x{len(links)} lien(s) | Debug='{debug_one_item}'.")
@@ -70,12 +70,13 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
             return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
-    def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str) -> list[str]:
+    def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str, cutted_ampersand: bool) -> list[str]:
         """Extract href attributes from a list of elements.
 
         Args:
             elements: List of ElementHandle objects to extract links from.
             base_url: The base URL to resolve relative links against.
+            cutted_ampersand: Whether to cut the ampersand from the links.
 
         Returns:
             List of fully qualified URLs extracted from the elements.
@@ -86,7 +87,11 @@ class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
             href = (el.get_attribute("href") or "").strip()
             if href:
                 full_url = urljoin(base_url, href)
-                links.append(full_url)
+                if cutted_ampersand:
+                    # anti-youtube and random extra query params
+                    links.append(full_url.split("&")[0])
+                else:
+                    links.append(full_url)
         return links
 
 

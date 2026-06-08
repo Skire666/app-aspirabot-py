@@ -20,6 +20,7 @@ class ExtractLinksParams(BaseStepParams):
     selector: str
     target: str
     mapping: str
+    cutted_ampersand: bool
     comment: str = ""
 
     @field_validator("selector")
@@ -29,9 +30,7 @@ class ExtractLinksParams(BaseStepParams):
         if not info.context:
             return v
         if not v.strip():
-            raise ValueError(
-                ERROR_TEMPLATES["extract_links_selector_required"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["extract_links_selector_required"].format(step=step_label(info.context)))
         return v
 
     @field_validator("target")
@@ -53,9 +52,7 @@ class ExtractLinksParams(BaseStepParams):
         if not info.context:
             return v
         if not v.strip():
-            raise ValueError(
-                ERROR_TEMPLATES["extract_links_mapping_required"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["extract_links_mapping_required"].format(step=step_label(info.context)))
         return v
 
 

@@ -155,7 +155,7 @@ class ExecutorView(ttk.Frame):
         ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
 
         FolderLinkWidget(
-            row, title="Dossier", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_export_folder()
+            row, title="Dossier :", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_export_folder()
         ).pack(side=tk.RIGHT, padx=(0, 10), pady=(0, 5))
         ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)

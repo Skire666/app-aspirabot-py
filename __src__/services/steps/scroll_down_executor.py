@@ -37,23 +37,39 @@ class ScrollDownExecutor(StepExecutorBase, IStepExecutor):
         assert context.step_scraping_data is not None
         p = cast(ScrollDownParams, context.step_scraping_data.params)
         try:
+            consecutive_no_growth, previous_height = 0, self._get_page_height(browser)
             for idx in range(p.nbr_loops):
-                # Add a pause between scrolls, except before the first one.
                 if idx >= 1 and p.delay_pause > 0:
                     time.sleep(p.delay_pause)
-                is_success, _ = browser.evaluate_script_with_safe_retry(
-                    f"window.scrollBy(0, {p.pixels})",
-                    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
-                    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
-                )
-                if not is_success:
-                    raise ScriptExecutionFailedError("scroll_down")  # noqa: TRY301
+                self._do_scroll(browser, p)
                 event_bus.log_step(context, f"Défilement de {p.pixels}px effectué.")
+                previous_height, consecutive_no_growth = self._is_page_growing(
+                    browser, previous_height, consecutive_no_growth
+                )
+                if consecutive_no_growth >= 5:
+                    event_bus.log_step(context, "Page stabilisée, arrêt du défilement.")
+                    return False
+            return True
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS
+
+    def _get_page_height(self, browser) -> int:
+        return browser.evaluate_script("document.documentElement.scrollHeight")
+
+    def _is_page_growing(self, browser, previous_height: int, consecutive_no_growth: int) -> tuple[int, int]:
+        new_height = self._get_page_height(browser)
+        growing = new_height > previous_height
+        return new_height if growing else previous_height, 0 if growing else consecutive_no_growth + 1
+
+    def _do_scroll(self, browser, p) -> None:
+        is_success, _ = browser.evaluate_script_with_safe_retry(
+            f"window.scrollBy(0, {p.pixels})", C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+        )
+        if not is_success:
+            raise ScriptExecutionFailedError("scroll_down")
 
 
 register_step_executor(ScrollDownExecutor())

@@ -15,6 +15,7 @@ import views.steps  # noqa: F401 - load registry entries
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.debug_presenter import DebugPresenter
+from presenters.discover_presenter import DiscoverPresenter
 from presenters.executor_presenter import ExecutorPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.profiles_presenter import ProfilesPresenter
@@ -24,6 +25,7 @@ from presenters.splashscreen_presenter import SplashscreenPresenter
 from presenters.steps_list_presenter import StepsListPresenter
 from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
+from repositories.discover_repository import DiscoverRepository
 from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
 from repositories.profiles_repository import ProfilesRepository
@@ -31,6 +33,7 @@ from repositories.scenarios_repository import ScenariosRepository
 from services.app_configuration_service import ConfigService
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
+from services.discover_service import DiscoverService
 from services.logging_service import LoggingService
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
@@ -44,6 +47,7 @@ from shared.enums import TitleModuleEnum
 from shared.path_util import get_current_working_directory
 from view_models.app_configuration_view_model import AppConfigurationViewModel
 from view_models.debug_view_model import DebugViewModel
+from view_models.discover_view_model import DiscoverViewModel
 from view_models.executor_view_model import ExecutorViewModel
 from view_models.log_view_model import LogViewModel
 from view_models.profiles_view_model import ProfilesViewModel
@@ -53,6 +57,7 @@ from view_models.splashscreen_view_model import SplashscreenViewModel
 from view_models.workflow_view_model import WorkflowViewModel
 from views.app_configuration_view import AppConfigurationView
 from views.debug_view import DebugView
+from views.discover_view import DiscoverView
 from views.executor_view import ExecutorView
 from views.faq_view import FaqView
 from views.log_view import LogView
@@ -125,6 +130,7 @@ def _wire_all_navigation(
     executor_presenter: ExecutorPresenter,
     profiles_presenter: ProfilesPresenter,
     scraping_presenter: ScrapingPresenter,
+    discover_presenter: DiscoverPresenter,
 ) -> None:
     """Wire all inter-component navigation callbacks and lazy-loading hooks.
 
@@ -135,6 +141,7 @@ def _wire_all_navigation(
         executor_presenter: Presenter for the executor panel.
         profiles_presenter: Presenter for the profiles panel.
         scraping_presenter: Presenter for the live scraping panel.
+        discover_presenter: Presenter for the discover panel.
     """
     _wire_scenario_navigation(main_view, scenario_presenter, workflow_presenter)
     _wire_executor_launch(main_view, scenario_presenter, executor_presenter)
@@ -153,6 +160,7 @@ def _wire_all_navigation(
     executor_presenter.on_request_edit_scenario = on_executor_edit_scenario
     main_view.set_on_show(TitleModuleEnum.E_PROFILES, profiles_presenter.ensure_profiles_loaded)
     main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, executor_presenter.ensure_scenarios_loaded)
+    main_view.set_on_show(TitleModuleEnum.E_DISCOVER, discover_presenter.ensure_data_loaded)
 
 
 def _build_and_wire_components(  # noqa: PLR0914
@@ -170,9 +178,14 @@ def _build_and_wire_components(  # noqa: PLR0914
     exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc)
     dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
-    _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre)
-    views: list[tk.Widget] = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
-    presenters: list[object] = [log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr, exec_pre, scrap_pre, dbg_p]
+    disc_view, disc_pr = _init_discover_component(
+        main_view, startup_service.config_model, prof_svc, JsonFileRepository()
+    )
+    _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre, disc_pr)
+    views: list[tk.Widget] = [
+        log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view, disc_view
+    ]
+    presenters: list[object] = [log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr, exec_pre, scrap_pre, dbg_p, disc_pr]
     _register_and_anchor(root, main_view, views, presenters)
 
 
@@ -403,6 +416,31 @@ def _init_scraping_component(
     return scraping_view, scraping_presenter
 
 
+def _init_discover_component(
+    main_view: MainView,
+    config_model: AppConfigurationModel,
+    profiles_service: ProfilesService,
+    json_repo: JsonFileRepository,
+) -> tuple[DiscoverView, DiscoverPresenter]:
+    """Create and wire the Discover module component.
+
+    Args:
+        main_view: Main container providing the content area as parent.
+        config_model: Configuration model supplying the scenarios folder path.
+        profiles_service: Shared profiles service used to list and update profiles.
+        json_repo: Shared JSON repository injected into the discover repository.
+
+    Returns:
+        A (DiscoverView, DiscoverPresenter) tuple.
+    """
+    repo = DiscoverRepository(config_model.folder_scenarios, json_repo)
+    service = DiscoverService(repo)
+    vm = DiscoverViewModel(master=main_view.content_area)
+    presenter = DiscoverPresenter(vm=vm, service=service, profiles_service=profiles_service)
+    view = DiscoverView(main_view.content_area, vm=vm, presenter=presenter)
+    return view, presenter
+
+
 # -----------------------------------------------------------------------------
 # Navigation wiring
 # -----------------------------------------------------------------------------
@@ -557,7 +595,7 @@ def _register_and_anchor(root: tk.Tk, main_view: MainView, views: list[tk.Widget
     Args:
         root: Root window used as GC anchor for all presenters.
         main_view: Navigation shell that maps modules to view widgets.
-        views: Ordered list [log, profiles, cfg, scenarios, workflow, executor, scraping, debug].
+        views: Ordered list [log, profiles, cfg, scenarios, workflow, executor, scraping, debug, discover].
         presenters: All presenter instances to keep alive for the application lifetime.
     """
     log_v, prof_v, cfg_v, scen_v, wf_v, exec_v, scrap_v, dbg_v, disc_v = views
@@ -600,6 +638,7 @@ def _register_views(  # noqa: PLR0913, PLR0917
     scraping_view: ScrapingView,
     faq_view: FaqView,
     debug_view: DebugView,
+    discover_view: DiscoverView,
 ) -> None:
     """Map each sidebar entry to its view widget and show the default tab."""
     main_view.add_view(TitleModuleEnum.E_LOGS, log_view)
@@ -611,6 +650,7 @@ def _register_views(  # noqa: PLR0913, PLR0917
     main_view.add_view(TitleModuleEnum.E_FAQ, faq_view)
     main_view.add_view(TitleModuleEnum.E_OPTIONS, config_view)
     main_view.add_view(TitleModuleEnum.E_DEBUG, debug_view)
+    main_view.add_view(TitleModuleEnum.E_DISCOVER, discover_view)
 
     main_view.show_view(TitleModuleEnum.E_SCENARIOS)
 

@@ -297,12 +297,13 @@ class FaqTextTextHint:
                 "Extrait uniquement l'attribut href — pas le texte du lien.\n"
                 "Si aucun élément ne correspond, avertissement sans erreur fatale."
             ),
-            "Exporter une variable": (
+            "Extraire variable système": (
                 "Capture une variable système dans les données extraites du scénario.\n\n"
                 "• Variable (valeurs autorisées) :\n"
                 "  - datetime_now : horodatage au moment de l'exécution\n"
-                "  - last_url : dernière URL ouverte par un step 'Ouvrir une URL'\n"
-                "  - last_domain : domaine extrait de la dernière URL ouverte\n"
+                "  - last_url_full : dernière URL ouverte par un step 'Ouvrir une URL'\n"
+                "  - last_url_domain : domaine de la dernière URL ouverte\n"
+                "  - last_url_cutted : dernière URL ouverte, avec les paramètres coupés (avant le &)\n"
                 "• Clé de mapping : obligatoire, non vide\n\n"
                 "Toute valeur de variable hors de ces trois identifiants génère une erreur."
             ),

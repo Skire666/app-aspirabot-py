@@ -886,6 +886,31 @@ class JsonFileRepositoryError(AspirabotBaseError):
 
 
 # -----------------------------------------------------------------------------
+# Discover module errors
+# -----------------------------------------------------------------------------
+
+
+class DiscoverProjectNotFoundError(FileNotFoundError, AspirabotBaseError):
+    """Raised when a Discover project cannot be found by its id."""
+
+    def __init__(self, id_discover: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            id_discover: The project identifier that was not found.
+        """
+        super().__init__(f"Projet Découvrir introuvable : {id_discover}")
+
+
+class DiscoverHubReadError(AspirabotBaseError):
+    """Raised when the discovers hub JSON file cannot be read or parsed."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Impossible de lire le fichier du hub Découvrir.")
+
+
+# -----------------------------------------------------------------------------
 # UI widget errors
 # -----------------------------------------------------------------------------
 
