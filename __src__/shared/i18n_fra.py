@@ -247,7 +247,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     # --- scroll_down ---
     "scroll_down_pixels_invalid": "Étape {step} : le nombre de pixels doit être >= 1.",
     "scroll_down_nbr_loops_invalid": "Étape {step} : le nombre de boucles doit être entre 1 et 99.",
-    "scroll_down_delay_pause_invalid": "Étape {step} : la pause doit être entre 0 et 99.",
+    "scroll_down_delay_pause_invalid": "Étape {step} : la pause doit être entre 1 et 99.",
     # --- section ---
     "section_title_required": "Étape {step} : le titre de la section est obligatoire.",
     # --- youtube_transcripts ---

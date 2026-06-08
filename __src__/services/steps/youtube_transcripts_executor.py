@@ -45,8 +45,14 @@ class YoutubeTranscriptsExecutor(StepExecutorBase, IStepExecutor):
             # PHASE_PAUSE_SECONDS -> 1
 
             rs = download_youtube_data(context.last_url_opened, exp_folder, p.basic_info, p.ddl_srt, event_bus, context)
+            if rs.video_age_restricted:
+                event_bus.log_step(context, "Vidéo marquée comme réservée aux adultes, extraction impossible.")
+                raise YoutubeBaseDataNotDownloadedError("video_age_restricted")  # noqa: TRY301
+            if rs.video_not_found:
+                event_bus.log_step(context, "Vidéo introuvable, extraction impossible.")
+                raise YoutubeBaseDataNotDownloadedError("video_not_found")  # noqa: TRY301
             if p.basic_info and rs.nbr_base_success <= 0:
-                raise YoutubeBaseDataNotDownloadedError()  # noqa: TRY301
+                raise YoutubeBaseDataNotDownloadedError("no_ddl_basic_info")  # noqa: TRY301
             if p.ddl_srt and rs.nbr_srt_success <= 0:
                 raise YoutubeSrtNotDownloadedError()  # noqa: TRY301
             msg = f"Téléchargés : Basic info +{rs.nbr_base_success} | Sous-titres +{rs.nbr_srt_success}"

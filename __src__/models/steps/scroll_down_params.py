@@ -48,7 +48,7 @@ class ScrollDownParams(BaseStepParams):
         """Reject pause durations outside [0, 99]."""
         if not info.context:
             return v
-        if not (0 <= v <= _C_MAX_PAUSE):
+        if not (1 <= v <= _C_MAX_PAUSE):
             raise ValueError(ERROR_TEMPLATES["scroll_down_delay_pause_invalid"].format(step=step_label(info.context)))
         return v
 

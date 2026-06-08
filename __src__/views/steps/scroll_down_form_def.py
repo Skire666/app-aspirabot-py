@@ -77,6 +77,7 @@ class ScrollDownFormDef(IStepFormDef):
         ttk.Label(row1, text="Nombre de boucle :").pack(side="left", padx=(0, 5))
         nbr_loops_var = tk.StringVar(value="1")
         ttk.Entry(row1, textvariable=nbr_loops_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ttk.Label(row1, text="(abandonne si stable depuis 5 tours)").pack(side="left", padx=(0, 5))
         widgets[C_KEY_NBR_LOOPS] = nbr_loops_var
 
     @staticmethod
@@ -85,8 +86,9 @@ class ScrollDownFormDef(IStepFormDef):
         row2.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row2, text="Pause entre chaque (sec.) :").pack(side="left", padx=(0, 5))
-        delay_pause_var = tk.StringVar(value="0")
+        delay_pause_var = tk.StringVar(value="1")
         ttk.Entry(row2, textvariable=delay_pause_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ttk.Label(row2, text="(ignoré lors de la 1ère boucle)").pack(side="left", padx=(0, 5))
         widgets[C_KEY_DELAY_PAUSE] = delay_pause_var
 
     @staticmethod

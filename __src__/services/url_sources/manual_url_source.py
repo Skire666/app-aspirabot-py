@@ -74,6 +74,9 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
         # Advance index after fetching.
         url = self._urls[self._index]
         self._index += 1
+        while not url.strip() and self.load_url_if_available():
+            url = self._urls[self._index]
+            self._index += 1
         return url
 
     def reset(self) -> None:

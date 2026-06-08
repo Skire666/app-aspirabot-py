@@ -216,7 +216,7 @@ def _fmt_scroll_down(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) ->
     """Format label for SCROLL_DOWN."""
     pixels = params.get("pixels", 1000)
     nbr_loops = params.get("nbr_loops", 1)
-    delay_pause = params.get("delay_pause", 0)
+    delay_pause = params.get("delay_pause", 1)
     return f"Défilement vers le bas\nLongueur: {pixels} px  —  x{nbr_loops} boucle(s)  —  pause: {delay_pause}"
 
 

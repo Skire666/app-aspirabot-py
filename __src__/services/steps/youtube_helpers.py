@@ -104,17 +104,23 @@ ORIGIN_AUTO: Final[str] = "srt_autogen"
 _logger: Final[logging.Logger] = logging.getLogger(LOGGER_NAME)
 
 
-def clean_youtube_url(url):
+def clean_youtube_url(url: str) -> str:
     """Clean a YouTube URL by extracting the video ID and reformatting it.
 
     This function looks for the 'v' parameter in the query string and constructs a
     standardized YouTube URL. If the 'v' parameter is not found, it returns the original URL.
+
+    # https://www.youtube.com/?v=cmXyYWC1FZc&pp=sdfsdf -> https://www.youtube.com/watch?v=cmXyYWC1FZc
+    # https://www.youtube.com/watch?v=aaaaGEU&pp=ugUEEgJmcg%3D%3D -> https://www.youtube.com/watch?v=aaaaGEU
+    # https://www.youtube.com/shorts/cmXyYWC1FZc&pp=sdfsdf -> https://www.youtube.com/watch?v=cmXyYWC1FZc
     """
     match = re.search(r"[?&]v=([a-zA-Z0-9_-]+)", url)
     if not match:
-        return url  # pas de paramètre v, on retourne l'URL telle quelle
+        match = re.search(r"shorts/([a-zA-Z0-9_-]+)", url)
 
-    return f"https://www.youtube.com/watch?v={match.group(1)}"
+    if match:
+        return f"https://www.youtube.com/watch?v={match.group(1)}"
+    return ""  # pas de paramètre v, on retourne l'URL telle quelle
 
 
 # ============================================================================
@@ -141,6 +147,8 @@ class DownloadResult:
     files_downloaded: list[Path] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    video_not_found: bool = False
+    video_age_restricted: bool = False
     nbr_base_success: int = 0
     nbr_srt_success: int = 0
 
@@ -240,6 +248,11 @@ def _safe_fetch_info(url_youtube: str, result: DownloadResult) -> dict[str, Any]
     try:
         return _fetch_video_info(url_youtube)
     except (DownloadError, RuntimeError) as exc:
+        exc_str: str = str(exc).lower()
+        if "in to confirm your age" in exc_str:
+            result.video_age_restricted = True
+        if "video unavailable" in exc_str:
+            result.video_not_found = True
         result.fail(f"Extraction des informations vidéo échouée : {exc}")
         return None
 

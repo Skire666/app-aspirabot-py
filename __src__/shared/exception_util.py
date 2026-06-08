@@ -794,9 +794,9 @@ class DownloadNotDetectedError(AspirabotBaseError):
 class YoutubeBaseDataNotDownloadedError(AspirabotBaseError):
     """Raised when no basic info file was downloaded for a YouTube step."""
 
-    def __init__(self) -> None:
+    def __init__(self, error_details: str) -> None:
         """Initialize the error message."""
-        super().__init__("Aucun fichier de données de base téléchargé.")
+        super().__init__(f"Aucun fichier de base téléchargé. Détails : {error_details}")
 
 
 class YoutubeSrtNotDownloadedError(AspirabotBaseError):
@@ -812,7 +812,7 @@ class YoutubeUrlParameterEmptyError(ValueError, AspirabotBaseError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__("Le paramètre 'url_youtube' doit être une chaîne non vide.")
+        super().__init__("Le paramètre 'url_youtube' doit être une vidéo/short valide.")
 
 
 class YoutubeOutputDirParameterEmptyError(ValueError, AspirabotBaseError):

@@ -152,6 +152,7 @@ def _wire_all_navigation(
         if workflow_presenter.load_scenario(id_file):
             main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
             main_view.set_tab_state(TitleModuleEnum.E_SCENARIOS, tk.DISABLED)
+            main_view.set_tab_state(TitleModuleEnum.E_DISCOVER, tk.DISABLED)
             main_view.set_tab_state(TitleModuleEnum.E_PROFILES, tk.DISABLED)
             main_view.set_tab_state(TitleModuleEnum.E_EXECUTOR, tk.DISABLED)
             main_view.set_tab_state(TitleModuleEnum.E_SCRAPING, tk.DISABLED)
@@ -183,9 +184,28 @@ def _build_and_wire_components(  # noqa: PLR0914
     )
     _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre, disc_pr)
     views: list[tk.Widget] = [
-        log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view, disc_view
+        log_view,
+        profiles_view,
+        cfg_view,
+        scen_view,
+        edit_view,
+        exec_view,
+        scrap_view,
+        dbg_view,
+        disc_view,
     ]
-    presenters: list[object] = [log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr, exec_pre, scrap_pre, dbg_p, disc_pr]
+    presenters: list[object] = [
+        log_pr,
+        cfg_pr,
+        prof_pr,
+        scen_pre,
+        edit_pr,
+        steps_pr,
+        exec_pre,
+        scrap_pre,
+        dbg_p,
+        disc_pr,
+    ]
     _register_and_anchor(root, main_view, views, presenters)
 
 
@@ -485,6 +505,7 @@ def _open_workflow_tab(main_view: MainView) -> None:
     for mod in (
         TitleModuleEnum.E_SCENARIOS,
         TitleModuleEnum.E_PROFILES,
+        TitleModuleEnum.E_DISCOVER,
         TitleModuleEnum.E_EXECUTOR,
         TitleModuleEnum.E_SCRAPING,
     ):
@@ -502,6 +523,7 @@ def _close_workflow_tab(main_view: MainView) -> None:
     for mod in (
         TitleModuleEnum.E_SCENARIOS,
         TitleModuleEnum.E_PROFILES,
+        TitleModuleEnum.E_DISCOVER,
         TitleModuleEnum.E_EXECUTOR,
         TitleModuleEnum.E_SCRAPING,
     ):
@@ -522,6 +544,7 @@ def _wire_scraping_navigation(
     blocked_mods = (
         TitleModuleEnum.E_PROFILES,
         TitleModuleEnum.E_SCENARIOS,
+        TitleModuleEnum.E_DISCOVER,
         TitleModuleEnum.E_EXECUTOR,
         TitleModuleEnum.E_WORKFLOW,
     )
