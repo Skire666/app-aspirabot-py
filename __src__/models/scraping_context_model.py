@@ -31,65 +31,53 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class KeyData:
-    """CSS selector, comment, and extracted string values for one mapping key."""
+class ExtractedItem:
+    """One extracted mapping entry: key name, selector/source, extracted values, comment."""
 
+    key: str
     input: str
-    comment: str
     values: list[str] = field(default_factory=list)
-
-
-@dataclass
-class UrlData:
-    """Extracted key data indexed by mapping key name for one URL."""
-
-    keys: dict[str, KeyData] = field(default_factory=dict)
+    comment: str = field(default="")
 
 
 @dataclass
 class ExtractedData:
-    """All extracted data, indexed by URL then by mapping key."""
+    """All extracted items as a flat ordered list."""
 
-    urls: dict[str, UrlData] = field(default_factory=dict)
+    items: list[ExtractedItem] = field(default_factory=list)
 
-    def to_dict(self) -> dict[str, dict[str, dict[str, Any]]]:
-        """Serialize to a plain dict for JSON export."""
-        return {
-            url: {
-                key: {"input": val_kd.input, "comment": val_kd.comment, "values": val_kd.values}
-                for key, val_kd in val_ud.keys.items()
-            }
-            for url, val_ud in self.urls.items()
-        }
+    def to_list(self) -> list[dict[str, Any]]:
+        """Serialize to a list of dicts for JSON export."""
+        return [
+            {"key": item.key, "input": item.input, "values": item.values, "comment": item.comment}
+            for item in self.items
+        ]
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> ExtractedData:
-        """Reconstruct an ExtractedData instance from a plain dict produced by to_dict().
+    def import_from_data_json(cls, data: list[Any]) -> ExtractedData:
+        """Reconstruct an ExtractedData instance from a list produced by to_list().
 
         Args:
-            data: Raw dict loaded from a JSON file produced by to_dict().
+            data: Raw list loaded from a JSON file produced by to_list().
 
         Returns:
             A fully reconstructed ExtractedData instance; empty when data is invalid.
         """
-        urls: dict[str, UrlData] = {}
-        for url_key, url_raw in data.items():
-            if not isinstance(url_raw, dict):
+        result: list[ExtractedItem] = []
+        for raw in data:
+            if not isinstance(raw, dict):
                 continue
-            keys: dict[str, KeyData] = {}
-            url_raw_typed = cast(dict[str, object], url_raw)
-            for key_name, key_raw in url_raw_typed.items():
-                if not isinstance(key_raw, dict):
-                    continue
-                key_raw_typed = cast(dict[str, object], key_raw)
-                raw_values = key_raw_typed.get("values", [])
-                keys[str(key_name)] = KeyData(
-                    input=str(key_raw_typed.get("input") or ""),
-                    comment=str(key_raw_typed.get("comment") or ""),
+            raw_typed = cast(dict[str, object], raw)
+            raw_values = raw_typed.get("values", [])
+            result.append(
+                ExtractedItem(
+                    key=str(raw_typed.get("key") or ""),
+                    input=str(raw_typed.get("input") or ""),
                     values=[str(v) for v in (raw_values if isinstance(raw_values, list) else [])],
+                    comment=str(raw_typed.get("comment") or ""),
                 )
-            urls[str(url_key)] = UrlData(keys=keys)
-        return cls(urls=urls)
+            )
+        return cls(items=result)
 
 
 @dataclass
@@ -213,17 +201,10 @@ class ScrapingContextModel:
             com: A user-provided comment for the extracted values.
             vals: The list of extracted string values to store.
         """
-        url = self.last_url_opened or "no_url"
-
         if self.extracted_data is None:
             self.extracted_data = ExtractedData()
 
-        if url not in self.extracted_data.urls:
-            self.extracted_data.urls[url] = UrlData()
-
-        self.extracted_data.urls[url].keys[mapping_key] = KeyData(input=inp, comment=com, values=vals)
-        # TODO PCO : je réacrase tout, et en vrai, c'est pas plus mal
-        # a voir si je dois merge les values en cas d'existant
+        self.extracted_data.items.append(ExtractedItem(key=mapping_key, input=inp, values=vals, comment=com))
 
     def last_step_was_success(self) -> bool:
         """Helper to check if the last step execution was a success."""

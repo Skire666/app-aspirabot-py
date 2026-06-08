@@ -92,7 +92,7 @@ class ExecutorView(ttk.Frame):
         self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=25)
         self._combo_scenarios.set_display_column("scenario_name")
         self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
-        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10), pady=(0, 5))
+        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(6), pady=(0, 5))
 
     def _create_profiles_section(self, parent: tk.Widget) -> None:
         """Build the available-profiles section."""

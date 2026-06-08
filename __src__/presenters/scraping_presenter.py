@@ -354,6 +354,8 @@ class ScrapingPresenter:
         if stype == StepTypeEnum.E_OPEN_URL:
             next_url = context.url_source.preview_next_url() if context.url_source else "<_no_preview_url_>"
             return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Prochaine : {next_url}"
+        if stype == StepTypeEnum.E_SCROLL_DOWN:
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Dist. : {step.params.pixels} | Boucle : {step.params.nbr_loops}"
         return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}>"
 
     def _append_journal(self, line: str) -> None:

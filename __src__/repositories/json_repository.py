@@ -139,7 +139,7 @@ class JsonFileRepository:
         _cache[key_cached] = data
         return copy.deepcopy(data)
 
-    def write_from_dict(self, path: Path, data: dict[str, Any]) -> None:
+    def write_from_dict(self, path: Path, data: dict[str, Any] | list[Any]) -> None:
         """Serialise *data* to *path* as JSON and invalidate the cache entry.
 
         Parent directories are created automatically.  On success the cache
