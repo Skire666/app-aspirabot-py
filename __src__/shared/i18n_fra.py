@@ -129,9 +129,9 @@ C_DISCOVER_URLS_COUNT_ERROR = "Erreur : {exc}"
 
 # Compute result label
 C_DISCOVER_COMPUTE_OK = (
-    "Entrée : {in_total} total, {in_unique} unique(s), {in_dupes} doublon(s)"
-    "  —  Sortie : {out_total} total, {out_unique} unique(s), {out_dupes} doublon(s)"
-    "  —  {new_count} nouvelle(s) URL(s)."
+    "Entrée : {in_unique} uniq. + {in_dupes} doub."
+    "   —   Sortie : {out_unique} uniq. + {out_dupes} doub."
+    "   —   {new_count} à ajouter"
 )
 
 # Profile save result labels
@@ -142,7 +142,7 @@ C_DISCOVER_PROFILE_SAVE_ERROR = "Erreur lors de la sauvegarde : {exc}"
 # Profile save button blocking hints
 C_DISCOVER_SAVE_LIST_HINT_INPUT = "URLs d'entrée non valides"
 C_DISCOVER_SAVE_LIST_HINT_OUTPUT = "URLs de sortie non valides"
-C_DISCOVER_SAVE_LIST_HINT_BOTH = "URLs d'entrée et de sortie non valides"
+C_DISCOVER_SAVE_LIST_HINT_BOTH = "URLs d'entrée et de sortie indeterminées"
 C_DISCOVER_SAVE_LIST_HINT_NO_NAME = "Nom du profil vide"
 
 # Error messages
@@ -230,10 +230,12 @@ ERROR_TEMPLATES: dict[str, str] = {
     "end_process_wait_unit_invalid": "Étape {step} : unité de temps invalide — {value!r}.",
     # --- export data to js ---
     "export_data_to_js_prefix_file_required": "Étape {step} : Préfixe du fichier obligatoire.",
+    # --- all etracts with mapping ---
+    "extract_key_mapping_already_used": "Étape {step} : clé de mapping déjà utilisé.",
     # --- extract_links ---
     "extract_links_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
     "extract_links_target_invalid": "Étape {step} : cible '{value}' invalide.",
-    "extract_links_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
+    "extract_links_mapping_required": "Étape {step} : clé de mapping est obligatoire.",
     # --- extract_texts ---
     "extract_texts_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
     "extract_texts_mode_invalid": "Étape {step} : mode d'extraction '{value}' invalide.",

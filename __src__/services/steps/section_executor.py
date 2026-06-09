@@ -13,14 +13,13 @@ from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 _logger = logging.getLogger(__name__)
 
 
-class SectionExecutor(StepExecutorBase, IStepExecutor):
+class SectionExecutor(IStepExecutor):
     """Executor for the section step — logs the title and always returns success."""
 
     @classmethod

@@ -14,13 +14,12 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.kill_browser_params import KillBrowserParams
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
 
 
-class KillBrowserExecutor(StepExecutorBase, IStepExecutor):
+class KillBrowserExecutor(IStepExecutor):
     """Executor for the end process scraping step."""
 
     @classmethod

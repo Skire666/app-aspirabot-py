@@ -318,7 +318,7 @@ def _fetch_video_info(url_youtube: str) -> dict[str, Any]:
         "skip_download": True,
         "writesubtitles": False,
         "writeautomaticsub": False,
-        "socket_timeout": 20,
+        "socket_timeout": 30,
     }
     with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[arg-type]
         raw = ydl.extract_info(url_youtube, download=False)

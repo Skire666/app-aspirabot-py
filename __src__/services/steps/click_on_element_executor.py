@@ -13,7 +13,6 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.click_on_element_params import ClickOnElementParams
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ElementNotFoundForClickError
 from shared.step_registry import register_step_executor
@@ -31,7 +30,7 @@ C_LIMIT_TIMEOUT_CLICK_MS = 10000
 # -----------------------------------------------------------------------------
 
 
-class ClickOnElementExecutor(StepExecutorBase, IStepExecutor):
+class ClickOnElementExecutor(IStepExecutor):
     """Executor for the click element scraping step."""
 
     @classmethod

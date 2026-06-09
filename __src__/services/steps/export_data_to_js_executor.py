@@ -14,14 +14,13 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.export_data_to_js_params import ExportDataToJsParams
 from repositories.json_repository import JsonFileRepository
-from services.steps.step_executor_base import StepExecutorBase
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ExportFolderNotConfiguredError, NoDataToExportError
 from shared.step_registry import register_step_executor
 
 
-class ExportDataToJsExecutor(StepExecutorBase, IStepExecutor):
+class ExportDataToJsExecutor(IStepExecutor):
     """Executor for the export data to JavaScript step."""
 
     def __init__(self) -> None:

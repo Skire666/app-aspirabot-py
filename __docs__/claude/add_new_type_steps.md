@@ -17,7 +17,7 @@ Au moins 1 des 2 bool doit être à True.
 
 2. __src__/services/steps/check_url_page_executor.py
 
-- Class CheckUrlPageExecutor(StepExecutorBase, IStepExecutor)
+- Class CheckUrlPageExecutor(IStepExecutor)
 - step_type() → StepTypeEnum.E_CHECK_URL_PAGE
 - execute_logical(browser, context) : cast vers CheckUrlPageParams
 - register_step_executor(SectionExecutor()) en fin de module

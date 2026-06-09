@@ -14,13 +14,12 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.close_tabs_params import CloseTabsParams
 from playwright.sync_api import Page
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import OpenUrlModeEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import CurrentPageClosedUnexpectedlyError, MissingUrlFilterError
 from shared.step_registry import register_step_executor
 
 
-class CloseTabsExecutor(StepExecutorBase, IStepExecutor):
+class CloseTabsExecutor(IStepExecutor):
     """Executor for the close tabs scraping step."""
 
     @classmethod

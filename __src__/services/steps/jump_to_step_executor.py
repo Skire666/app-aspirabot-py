@@ -13,12 +13,11 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.jump_to_step_params import JumpToStepParams
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
-class JumpToStepExecutor(StepExecutorBase, IStepExecutor):
+class JumpToStepExecutor(IStepExecutor):
     """Executor for the jump to step scraping step."""
 
     @classmethod

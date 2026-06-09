@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from models.step_scraping_model import StepScrapingModel
+from shared.enums import StepTypeEnum
 
 # -----------------------------------------------------------------------------
 # Class
@@ -74,6 +75,21 @@ class StepsContext:
             if step.step_id == step_id:
                 return idx
         return None
+
+    def validate_params_mapping(self, value_mapping: str) -> bool:
+        """Validate that the mapping string references existing steps in the context."""
+        if not value_mapping.strip():
+            return False
+        found: int = 0
+        for _, step in enumerate(self.steps):
+            if (
+                step.step_type
+                in {StepTypeEnum.E_EXTRACT_TEXTS, StepTypeEnum.E_EXTRACT_LINKS, StepTypeEnum.E_EXTRACT_VARIABLE}
+                and step.params
+                and step.params.mapping == value_mapping
+            ):
+                found += 1
+        return found <= 1  # 2 or more -> ambiguous mapping, which is invalid
 
 
 # EOF

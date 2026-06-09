@@ -15,12 +15,11 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_links_params import ExtractLinksParams
 from playwright.sync_api import ElementHandle
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
-class ExtractLinksExecutor(StepExecutorBase, IStepExecutor):
+class ExtractLinksExecutor(IStepExecutor):
     """Executor for the extract links scraping step."""
 
     @classmethod

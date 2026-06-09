@@ -132,6 +132,7 @@ class StepsListPresenter:
         # Validate each step in its current order for cross-step consistency.
         for index, step in enumerate(self._steps):
             errors.extend(self._workflow_service.validate_step(index, step, self._steps))
+        print(f"Number of validation errors: {errors}")
         return errors
 
     def clear_steps(self) -> None:
@@ -180,6 +181,7 @@ class StepsListPresenter:
         candidate_errors = self._validate_solo_step(candidate_steps, target_index)
 
         if candidate_errors:
+            print(f"Validation errors for new step: {len(candidate_errors)}")
             if self._gestion_view:
                 self._gestion_view.show_inline_form_errors(candidate_errors)
             return False

@@ -1,22 +1,23 @@
 """Typed parameter model for the JUMP_TO_STEP step."""
 
-# -----------------------------------------------------------------------------
-# Imports
-# -----------------------------------------------------------------------------
-
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from models.steps.base_step_params import BaseStepParams, step_label
-from pydantic import ValidationInfo, field_validator, model_validator
+from models.steps.base_step_params import extract_pydantic_errors, step_label
+from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator, model_validator
 from shared.i18n_fra import ERROR_TEMPLATES
+
+if TYPE_CHECKING:
+    from models.steps_context_model import StepsContext
 
 _ALLOWED_CONDITIONS = frozenset({"success", "failure", "always"})
 
 
-class JumpToStepParams(BaseStepParams):
+class JumpToStepParams(BaseModel):
     """Parameters for the jump to step scraping step."""
+
+    model_config = ConfigDict(frozen=True)
 
     condition: str
     target_hexastring: str
@@ -30,9 +31,7 @@ class JumpToStepParams(BaseStepParams):
             return v
         if v not in _ALLOWED_CONDITIONS:
             raise ValueError(
-                ERROR_TEMPLATES["jump_to_step_condition_invalid"].format(
-                    step=step_label(info.context), value=v
-                )
+                ERROR_TEMPLATES["jump_to_step_condition_invalid"].format(step=step_label(info.context), value=v)
             )
         return v
 
@@ -43,9 +42,7 @@ class JumpToStepParams(BaseStepParams):
         if not info.context:
             return v
         if not v:
-            raise ValueError(
-                ERROR_TEMPLATES["jump_to_step_target_missing"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["jump_to_step_target_missing"].format(step=step_label(info.context)))
         return v
 
     @model_validator(mode="before")
@@ -60,14 +57,25 @@ class JumpToStepParams(BaseStepParams):
             return d  # field_validator will catch the empty case
         step = step_label(info.context)
         step_id = info.context.get("step_id", "")
-        steps_context = info.context.get("steps_context")
+        steps_context: StepsContext = info.context.get("steps_context")
         if str(target) == str(step_id):
             raise ValueError(ERROR_TEMPLATES["jump_to_step_self_reference"].format(step=step))
         if steps_context is not None and steps_context.find_by_id(str(target)) is None:
-            raise ValueError(
-                ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step, value=target)
-            )
+            raise ValueError(ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step, value=target))
         return d
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
+        return self.model_dump(mode="json")
+
+    def validate_with_context(self, step_index: int, steps_context: StepsContext, step_id: str) -> list[str]:
+        """Validate params in workflow context and return French error strings."""
+        ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": step_id}
+        try:
+            type(self).model_validate(self.to_dict(), context=ctx)
+        except ValidationError as exc:
+            return extract_pydantic_errors(exc)
+        return []
 
 
 # EOF

@@ -14,7 +14,6 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.click_for_download_params import ClickForDownloadParams
 from playwright.sync_api import Download, ElementHandle, Page
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import DownloadNotDetectedError, ElementNotFoundForClickError
 from shared.step_registry import register_step_executor
@@ -31,7 +30,7 @@ C_LIMIT_TIMEOUT_CLICK_MS = 10000
 # -----------------------------------------------------------------------------
 
 
-class ClickForDownloadExecutor(StepExecutorBase, IStepExecutor):
+class ClickForDownloadExecutor(IStepExecutor):
     """Executor for the click for download scraping step."""
 
     @classmethod

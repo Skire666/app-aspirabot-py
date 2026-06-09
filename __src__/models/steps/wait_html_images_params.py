@@ -1,23 +1,24 @@
 """Typed parameter model for the WAIT_HTML_IMAGES step."""
 
-# -----------------------------------------------------------------------------
-# Imports
-# -----------------------------------------------------------------------------
-
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from models.steps.base_step_params import BaseStepParams, step_label
-from pydantic import ValidationInfo, field_validator, model_validator
+from models.steps.base_step_params import extract_pydantic_errors, step_label
+from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator, model_validator
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
 from shared.i18n_fra import ERROR_TEMPLATES
+
+if TYPE_CHECKING:
+    from models.steps_context_model import StepsContext
 
 _ALLOWED_OPERATORS = frozenset({"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"})
 
 
-class WaitHtmlImagesParams(BaseStepParams):
+class WaitHtmlImagesParams(BaseModel):
     """Parameters for the wait image size scraping step."""
+
+    model_config = ConfigDict(frozen=True)
 
     height_min: int
     height_max: int
@@ -133,6 +134,19 @@ class WaitHtmlImagesParams(BaseStepParams):
                 )
             )
         return d
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
+        return self.model_dump(mode="json")
+
+    def validate_with_context(self, step_index: int, steps_context: StepsContext, step_id: str) -> list[str]:
+        """Validate params in workflow context and return French error strings."""
+        ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": step_id}
+        try:
+            type(self).model_validate(self.to_dict(), context=ctx)
+        except ValidationError as exc:
+            return extract_pydantic_errors(exc)
+        return []
 
 
 # EOF

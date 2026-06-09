@@ -11,7 +11,6 @@ step registry.  The presenter calls validate_step() before persisting changes.
 from models.step_scraping_model import StepScrapingModel
 from models.steps_context_model import StepsContext
 from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
-from shared.step_registry import get_step_executor
 
 
 class WorkflowService:
@@ -41,9 +40,12 @@ class WorkflowService:
             A list of error messages; empty when the step is valid.
         """
         try:
-            executor = get_step_executor(step.step_type)
             steps_context = StepsContext.from_list(steps)
-            return executor.validate_model(step, step_index, steps_context)
+            if not step.params:
+                raise ValueError(f"Step {step.step_id} has no params to validate")
+            if step.params.validate_with_context is None:
+                raise ValueError(f"Step {step.step_id} has params without validate_with_context method")
+            return step.params.validate_with_context(step_index, steps_context, step.step_id)
         except NoExecutorsRegisteredError, ExecutorNotRegisteredError:
             return []
 

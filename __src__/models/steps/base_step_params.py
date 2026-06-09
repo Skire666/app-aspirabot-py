@@ -1,14 +1,8 @@
-"""Pydantic base class shared by all step parameter models."""
-
-# -----------------------------------------------------------------------------
-# Imports
-# -----------------------------------------------------------------------------
+"""Shared helpers for step parameter models."""
 
 from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict
+from pydantic import ValidationError
 
 
 def step_label(context: dict[str, object] | None) -> str:
@@ -19,25 +13,12 @@ def step_label(context: dict[str, object] | None) -> str:
     return str(int(idx) + 1).zfill(2) if isinstance(idx, int) and idx >= 0 else "??"
 
 
-class BaseStepParams(BaseModel):
-    """Frozen Pydantic model base for all step parameter models.
-
-    Subclasses declare fields and add ``@field_validator`` / ``@model_validator``
-    methods.  Validators are context-aware: they only run when a
-    ``context`` dict is supplied via ``model_validate(..., context=ctx)``.
-    Construction without context never raises (safe for deserialization).
-
-    The ``context`` dict passed by ``StepExecutorBase.validate_model`` contains:
-        - ``step_index`` (int): zero-based position in the workflow.
-        - ``steps_context`` (StepsContext): full workflow snapshot.
-        - ``step_id`` (str): the current step's own ID (for self-reference checks).
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
-        return self.model_dump(mode="json")
+def extract_pydantic_errors(exc: ValidationError) -> list[str]:
+    """Extract human-readable error strings from a Pydantic ValidationError."""
+    return [
+        str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
+        for err in exc.errors()
+    ]
 
 
 # EOF

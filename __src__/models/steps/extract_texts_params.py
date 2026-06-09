@@ -1,22 +1,25 @@
 """Typed parameter model for the EXTRACT_TEXTS step."""
 
-# -----------------------------------------------------------------------------
-# Imports
-# -----------------------------------------------------------------------------
-
 from __future__ import annotations
 
-from models.steps.base_step_params import BaseStepParams, step_label
-from pydantic import ValidationInfo, field_validator
+from typing import TYPE_CHECKING, Any
+
+from models.steps.base_step_params import extract_pydantic_errors, step_label
+from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
 from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum
 from shared.i18n_fra import ERROR_TEMPLATES
+
+if TYPE_CHECKING:
+    from models.steps_context_model import StepsContext
 
 _ALLOWED_MODES = frozenset({e.value for e in ExtractTextHtmlEnum})
 _ALLOWED_TARGETS = frozenset({e.value for e in ExtractTargetEnum})
 
 
-class ExtractTextsParams(BaseStepParams):
+class ExtractTextsParams(BaseModel):
     """Parameters for the extract texts scraping step."""
+
+    model_config = ConfigDict(frozen=True)
 
     selector: str
     extract_mode: str
@@ -31,9 +34,7 @@ class ExtractTextsParams(BaseStepParams):
         if not info.context:
             return v
         if not v.strip():
-            raise ValueError(
-                ERROR_TEMPLATES["extract_texts_selector_required"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["extract_texts_selector_required"].format(step=step_label(info.context)))
         return v
 
     @field_validator("extract_mode")
@@ -67,10 +68,26 @@ class ExtractTextsParams(BaseStepParams):
         if not info.context:
             return v
         if not v.strip():
+            raise ValueError(ERROR_TEMPLATES["extract_texts_mapping_required"].format(step=step_label(info.context)))
+        steps_context: StepsContext = info.context.get("steps_context")
+        if not steps_context.validate_params_mapping(v):
             raise ValueError(
-                ERROR_TEMPLATES["extract_texts_mapping_required"].format(step=step_label(info.context))
+                ERROR_TEMPLATES["extract_key_mapping_already_used"].format(step=step_label(info.context), value=v)
             )
         return v
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
+        return self.model_dump(mode="json")
+
+    def validate_with_context(self, step_index: int, steps_context: StepsContext, step_id: str) -> list[str]:
+        """Validate params in workflow context and return French error strings."""
+        ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": step_id}
+        try:
+            type(self).model_validate(self.to_dict(), context=ctx)
+        except ValidationError as exc:
+            return extract_pydantic_errors(exc)
+        return []
 
 
 # EOF

@@ -14,13 +14,12 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.wait_fixed_time_params import WaitFixedTimeParams
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
 
 
-class WaitFixedTimeExecutor(StepExecutorBase, IStepExecutor):
+class WaitFixedTimeExecutor(IStepExecutor):
     """Executor for the wait fixed time scraping step."""
 
     @classmethod

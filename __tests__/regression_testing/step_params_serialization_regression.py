@@ -1,7 +1,7 @@
 """Regression tests — step params serialization contracts.
 
 Freezes the to_dict() key structure and round-trip behaviour for every
-concrete BaseStepParams subclass.  These tests capture the JSON persistence
+concrete step params class.  These tests capture the JSON persistence
 contract: if a field is renamed or a key changes, downstream deserialisers
 (StepScrapingModel.import_from_data_json) and formatters will silently break.
 

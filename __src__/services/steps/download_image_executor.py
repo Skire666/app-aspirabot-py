@@ -16,7 +16,6 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import get_filtered_images
-from services.steps.step_executor_base import StepExecutorBase
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ImageDownloadFailedError, ImageNotDownloadedError
@@ -38,7 +37,7 @@ def _select_images_by_mode(images: list[dict[str, Any]], mode: str) -> list[dict
     return [max(images, key=lambda img: img["width"] * img["height"])]
 
 
-class DownloadImageExecutor(StepExecutorBase, IStepExecutor):
+class DownloadImageExecutor(IStepExecutor):
     """Executor for the download image scraping step."""
 
     @classmethod

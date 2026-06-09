@@ -16,8 +16,6 @@ from typing import TYPE_CHECKING, Protocol
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
 from models.scraping_context_model import ScrapingContextModel
-from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 
 if TYPE_CHECKING:
@@ -75,20 +73,6 @@ class IStepExecutor(Protocol):
             PlaywrightError: On browser-level failure.
             TimeoutError: When a wait step exceeds its deadline.
             FileNotFoundError: When a required file is missing.
-        """
-        ...
-
-    def validate_model(self, model: StepScrapingModel, step_index: int, steps_context: StepsContext) -> list[str]:
-        """Validate step parameters and return human-readable error messages.
-
-        Args:
-            model: The step model containing typed params to validate.
-            step_index: Zero-based position of the step in the workflow.
-            steps_context: Read-only snapshot of the full workflow, used for
-                cross-step checks such as jump-target resolution.
-
-        Returns:
-            A list of French error strings; empty when the params are valid.
         """
         ...
 

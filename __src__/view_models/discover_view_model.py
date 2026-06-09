@@ -136,6 +136,7 @@ class DiscoverViewModel(ViewModelBase):
         self.check_result_computed_var = tk.StringVar(master=master, value="")
         self.can_update_profile_var = tk.BooleanVar(master=master, value=False)
         self.save_profile_hint_var = tk.StringVar(master=master, value="")
+        self.is_computing_var = tk.BooleanVar(master=master, value=False)
 
     def _init_state(self) -> None:
         """Initialise non-Var collection and hash state."""

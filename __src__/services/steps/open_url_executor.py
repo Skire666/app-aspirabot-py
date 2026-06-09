@@ -13,7 +13,6 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.open_url_params import OpenUrlParams
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import OpenUrlModeEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import EmptyCustomUrlError, UrlSourceExhaustedError
 from shared.step_registry import register_step_executor
@@ -30,7 +29,7 @@ _DNS_SOLVER_WAIT_MAX = 30  # Maximum accepted value; values > this are rejected 
 # -----------------------------------------------------------------------------
 
 
-class OpenUrlExecutor(StepExecutorBase, IStepExecutor):
+class OpenUrlExecutor(IStepExecutor):
     """Executor for the open URL scraping step."""
 
     @classmethod

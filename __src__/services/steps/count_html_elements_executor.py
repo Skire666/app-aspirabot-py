@@ -15,7 +15,6 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.count_html_elements_params import CountHtmlElementsParams
 from services.steps._helpers import evaluate_count_condition
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import CountHtmlElementsConditionNotMetError
 from shared.step_registry import register_step_executor
@@ -23,7 +22,7 @@ from shared.step_registry import register_step_executor
 _logger = logging.getLogger(__name__)
 
 
-class CountHtmlElementsExecutor(StepExecutorBase, IStepExecutor):
+class CountHtmlElementsExecutor(IStepExecutor):
     """Executor for the count element scraping step."""
 
     @classmethod

@@ -362,6 +362,7 @@ class DiscoverPresenter:
         if not self._vm.profile_name_template_var.get().strip():
             self._vm.profile_name_template_var.set(f"auto_{get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()}")
         self._computed = None
+        self._vm.is_computing_var.set(True)
 
         threading.Thread(target=self._compute_worker, args=(snap,), daemon=True).start()
 
@@ -414,15 +415,14 @@ class DiscoverPresenter:
         if computed is not None:
             self._vm.check_result_computed_var.set(
                 C_DISCOVER_COMPUTE_OK.format(
-                    in_total=computed.input_total_count,
                     in_unique=computed.input_unique_count,
                     in_dupes=computed.input_duplicate_count,
-                    out_total=computed.output_total_count,
                     out_unique=computed.output_unique_count,
                     out_dupes=computed.output_duplicate_count,
                     new_count=computed.new_url_count,
                 )
             )
+        self._vm.is_computing_var.set(False)
 
     def _set_input_url_vars(self, urls: list[str], error: str) -> None:
         """Write input URL count/error to VM check and validity vars."""

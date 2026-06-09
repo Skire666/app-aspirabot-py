@@ -15,7 +15,6 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_variable_params import ExtractVariableParams
-from services.steps.step_executor_base import StepExecutorBase
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
@@ -46,7 +45,7 @@ def _resolve_variable(variable: str, context: ScrapingContextModel) -> str:
     return ""
 
 
-class ExtractVariableExecutor(StepExecutorBase, IStepExecutor):
+class ExtractVariableExecutor(IStepExecutor):
     """Executor for the export variable step — reads from context and pushes to extracted data."""
 
     @classmethod

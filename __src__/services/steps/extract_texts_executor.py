@@ -15,12 +15,11 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_texts_params import ExtractTextsParams
 from playwright.sync_api import ElementHandle
 from services.steps._helpers import extract_from_element
-from services.steps.step_executor_base import StepExecutorBase
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
-class ExtractTextsExecutor(StepExecutorBase, IStepExecutor):
+class ExtractTextsExecutor(IStepExecutor):
     """Executor for the extract text scraping step."""
 
     @classmethod
