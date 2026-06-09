@@ -13,9 +13,8 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_form
+from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import EXTRACT_TARGET_DISPLAY, EXTRACT_TARGET_MODEL_TO_VIEW, EXTRACT_TARGET_VIEW_TO_MODEL
-
-from __src__.views.components.canvas_checkbox import CanvasCheckbox
 
 # -----------------------------------------------------------------------------
 # Constants

@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any, cast
 
+from models.scenario_model import ScenarioModel
 from presenters.discover_presenter import DiscoverPresenter
 from view_models.discover_view_model import DiscoverViewModel
 from views.components.column_combobox.column_combobox import ColumnCombobox
@@ -40,7 +41,7 @@ class DiscoverView(ttk.Frame):
         Args:
             parent: Parent Tkinter container.
             vm: ViewModel owning all UI state.
-            presenter: Presenter providing project/profile selection callbacks.
+            presenter: Presenter providing project/scenario selection callbacks.
         """
         super().__init__(parent)
         self._vm = vm
@@ -56,7 +57,6 @@ class DiscoverView(ttk.Frame):
 
     def _create_widgets(self) -> None:
         """Build a scrollable container hosting the four sections."""
-        # Outer scrollable canvas
         self._inner = tk.Frame(self, borderwidth=0)
         self._inner.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
@@ -100,7 +100,6 @@ class DiscoverView(ttk.Frame):
         frame = HorizontalLineFrame(parent, text="Entrée - Découverte les liens")
         frame.pack(fill=tk.X)
 
-        # Ligne 0 : folder path (Pack RIGHT first so Entry fills the middle)
         self._create_input_folder_row(frame)
 
         # Ligne 1 : JSON pattern + file count verification
@@ -111,7 +110,7 @@ class DiscoverView(ttk.Frame):
         ttk.Label(row1, text="Regexp fichiers :").pack(side=tk.LEFT, padx=(0, 0), pady=6)
         ttk.Entry(row1, textvariable=self._vm.input_pattern_json_var).pack(fill=tk.X, padx=(6, 0), pady=6)
 
-        # Ligne 2 : key + URL pattern + URL count verification
+        # Ligne 2 : key + URL pattern + URL count (filled by Calculer la liste)
         row2 = ttk.Frame(frame)
         row2.pack(fill=tk.X, padx=4)
         ttk.Label(row2, textvariable=self._vm.input_urls_check_var, width=15).pack(side=tk.RIGHT, padx=(4, 0), pady=6)
@@ -128,7 +127,6 @@ class DiscoverView(ttk.Frame):
         frame = HorizontalLineFrame(parent, text="Sortie - Fiche unique")
         frame.pack(fill=tk.X)
 
-        # Ligne 0 : folder path (Pack RIGHT first so Entry fills the middle)
         self._create_output_folder_row(frame)
 
         # Ligne 1 : JSON pattern + file count verification
@@ -139,7 +137,7 @@ class DiscoverView(ttk.Frame):
         ttk.Label(row1, text="Regexp fichiers :").pack(side=tk.LEFT, padx=(0, 0), pady=6)
         ttk.Entry(row1, textvariable=self._vm.output_pattern_json_var).pack(fill=tk.X, padx=(6, 0), pady=6)
 
-        # Ligne 2 : key + URL pattern + URL count verification
+        # Ligne 2 : key + URL pattern + URL count (filled by Calculer la liste)
         row2 = ttk.Frame(frame)
         row2.pack(fill=tk.X, padx=4)
         ttk.Label(row2, textvariable=self._vm.output_urls_check_var, width=15).pack(side=tk.RIGHT, padx=(4, 0), pady=6)
@@ -156,34 +154,40 @@ class DiscoverView(ttk.Frame):
         self._frame_profile = HorizontalLineFrame(parent, text="Mise à jour du profil")
         self._frame_profile.pack(fill=tk.X)
 
-        # Ligne 0 : profile combobox
+        # Ligne 0 : scenario combobox
         row0 = ttk.Frame(self._frame_profile)
         row0.pack(fill=tk.X, padx=4)
-        ttk.Label(row0, text="Choisir le profil :", width=15).pack(side=tk.LEFT, padx=(0, 0))
-        self._combo_profiles = ColumnCombobox(row0, width=28)
-        self._combo_profiles.add_column("profile_name", lambda r: r.profile_name, width=160)
-        self._combo_profiles.add_column("scenario_name", lambda r: r.scenario_name, width=140)
-        self._combo_profiles.add_column("id_profile", lambda r: r.id_profile, width=80)
-        self._combo_profiles.set_display_column("profile_name")
-        self._combo_profiles.bind("<<ComboboxSelected>>", self._on_profile_selected)
-        self._combo_profiles.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(6, 0))
+        ttk.Label(row0, text="Choisir un scénario :", width=18).pack(side=tk.LEFT, padx=(0, 0))
+        self._combo_scenarios = ColumnCombobox(row0, width=28)
+        self._combo_scenarios.add_column("scenario_name", lambda r: r.scenario_name, width=160)
+        self._combo_scenarios.add_column("scenario_desc", lambda r: r.scenario_desc, width=200)
+        self._combo_scenarios.add_column("id_file", lambda r: r.id_file, width=80)
+        self._combo_scenarios.set_display_column("scenario_name")
+        self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_scenario_selected)
+        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(6, 0))
 
-        # Ligne 1 : profile name + save list button
+        # Ligne 1 : profile name entry
         row1 = ttk.Frame(self._frame_profile)
         row1.pack(fill=tk.X, padx=4, pady=(6, 0))
-        ttk.Label(row1, text="Nom du profil :", width=15).pack(side=tk.LEFT, padx=(0, 0))
-        ttk.Entry(row1, textvariable=self._vm.profile_name_template_var, width=30).pack(side=tk.LEFT, padx=(6, 0))
-        self._btn_save_list = ttk.Button(row1, text="Sauvegarder la liste", command=self._vm.save_profile_list)
-        self._btn_save_list.pack(side=tk.LEFT, padx=(12, 0))
-        ttk.Label(row1, textvariable=self._vm.save_profile_hint_var).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(row1, text="Nom du profil :", width=18).pack(side=tk.LEFT, padx=(0, 0))
+        ttk.Entry(row1, textvariable=self._vm.profile_name_template_var, width=34).pack(side=tk.LEFT, padx=(6, 0))
 
-        # Ligne 2 : save result label
+        # Ligne 2 : Calculer la liste button (sous le label "Nom du profil :")
         row2 = ttk.Frame(self._frame_profile)
-        row2.pack(fill=tk.X, padx=4)
-        ttk.Label(row2, text="Résultat sauvegarde").pack(side=tk.LEFT, padx=(0, 6), pady=6)
-        ttk.Label(row2, textvariable=self._vm.profile_save_result_var).pack(side=tk.LEFT, padx=(6, 0), pady=6)
+        row2.pack(fill=tk.X, padx=4, pady=(4, 0))
+        ttk.Button(row2, text="Calculer la liste", command=self._vm.compute_url_list).pack(side=tk.LEFT)
+        ttk.Label(row2, text="Vérification :").pack(side=tk.LEFT, padx=(22, 6), pady=6)
+        ttk.Label(row2, textvariable=self._vm.check_result_computed_var).pack(side=tk.LEFT, padx=(6, 0), pady=6)
+
+        # Ligne 3 : save list button + hint
+        row3 = ttk.Frame(self._frame_profile)
+        row3.pack(fill=tk.X, padx=4, pady=(6, 0))
+        self._btn_save_list = ttk.Button(row3, text="Sauvegarder la liste", command=self._vm.save_profile_list)
+        self._btn_save_list.pack(side=tk.LEFT, padx=(0, 0))
+        ttk.Label(row3, textvariable=self._vm.save_profile_hint_var).pack(side=tk.LEFT, padx=(8, 0))
 
         self._add_trace(self._vm.can_update_profile_var, lambda *_: self._sync_save_list_btn())
+        self._add_trace(self._vm.profile_id_scenario_var, lambda *_: self._sync_combo_scenario_selection())
         self._sync_save_list_btn()
 
     # ─── Section helpers ───────────────────────────────────────────────────────
@@ -244,7 +248,7 @@ class DiscoverView(ttk.Frame):
     def _bind_vm_collections(self) -> None:
         """Register callbacks so the View re-renders collections on change."""
         self._vm.bind_projects_changed(self._on_projects_changed)
-        self._vm.bind_profiles_changed(self._on_profiles_changed)
+        self._vm.bind_scenarios_changed(self._on_scenarios_changed)
 
     def _on_projects_changed(self) -> None:
         """Re-render the projects listbox from vm.projects."""
@@ -261,17 +265,17 @@ class DiscoverView(ttk.Frame):
             self._listbox_projects.selection_set(selected_idx)
             self._listbox_projects.see(selected_idx)
 
-    def _on_profiles_changed(self) -> None:
-        """Re-render the profiles ColumnCombobox from vm.profiles."""
-        self._combo_profiles.clear()
+    def _on_scenarios_changed(self) -> None:
+        """Re-render the scenarios ColumnCombobox from vm.scenarios."""
+        self._combo_scenarios.clear()
         selected_id = self._vm.profile_id_scenario_var.get()
         selected_idx: int | None = None
-        for i, row in enumerate(self._vm.profiles):
-            self._combo_profiles.add_item(row)
-            if row.id_scenario == selected_id:
+        for i, row in enumerate(self._vm.scenarios):
+            self._combo_scenarios.add_item(row)
+            if row.id_file == selected_id:
                 selected_idx = i
         if selected_idx is not None:
-            self._combo_profiles.current(selected_idx)
+            self._combo_scenarios.current(selected_idx)
 
     # -------------------------------------------------------------------------
     # Event handlers (UI logic only — no business decisions)
@@ -323,10 +327,10 @@ class DiscoverView(ttk.Frame):
         if folder:
             self._vm.output_folder_json_var.set(folder)
 
-    def _on_profile_selected(self, event: Any) -> None:  # noqa: ANN401
+    def _on_scenario_selected(self, _event: Any) -> None:  # noqa: ANN401
         """Handle combobox selection and notify the presenter."""
-        row = self._combo_profiles.get_selected_object()
-        self._presenter.on_profile_selected(row)
+        row: ScenarioModel | None = self._combo_scenarios.get_selected_object()
+        self._presenter.on_scenario_selected(row)
 
     # -------------------------------------------------------------------------
     # Button state sync (mirrors derived Vars)
@@ -352,6 +356,15 @@ class DiscoverView(ttk.Frame):
         """Enable/disable the Save-list button based on can_update_profile_var."""
         state = tk.NORMAL if self._vm.can_update_profile_var.get() else tk.DISABLED
         self._btn_save_list.configure(state=state)
+
+    def _sync_combo_scenario_selection(self) -> None:
+        """Update combo selection to match profile_id_scenario_var (e.g. on project load)."""
+        selected_id = self._vm.profile_id_scenario_var.get()
+        for i, row in enumerate(self._vm.scenarios):
+            if row.id_file == selected_id:
+                if self._combo_scenarios.current() != i:
+                    self._combo_scenarios.current(i)
+                return
 
     # -------------------------------------------------------------------------
     # Trace helpers (View-owned, detached on teardown)

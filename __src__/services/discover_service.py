@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 import fnmatch
-import json
 import logging
 from pathlib import Path
 from typing import Any, cast
@@ -22,6 +21,7 @@ from shared.exception_util import (
     DiscoverKeyMappingRequiredError,
     DiscoverProjectNotFoundError,
     DiscoverUrlPatternRequiredError,
+    JsonFileRepositoryError,
 )
 
 # -----------------------------------------------------------------------------
@@ -205,7 +205,7 @@ class DiscoverService:
             raise DiscoverUrlPatternRequiredError()
 
     def _collect_urls_from_files(self, files: list[Path], key: str, url_pattern: str) -> list[str]:
-        """Iterate over *files*, parse each JSON, and collect matching URLs.
+        """Iterate over *files*, read each via the repository, and collect matching URLs.
 
         Args:
             files: List of JSON file paths to read.
@@ -218,9 +218,9 @@ class DiscoverService:
         urls: list[str] = []
         for file_path in files:
             try:
-                raw_data = self._read_json_file(file_path)
+                raw_data = self._repository.read_data_file(file_path)
                 urls.extend(self._extract_urls_from_data(raw_data, key, url_pattern))
-            except Exception:
+            except JsonFileRepositoryError:
                 self._logger.error("Impossible de lire '%s'.", file_path.name, exc_info=True)
         return urls
 
@@ -248,14 +248,14 @@ class DiscoverService:
         for url in output_urls:
             output_count[url] = output_count.get(url, 0) + 1
 
-        new_entries: list[tuple[str, int]] = []
-        existing_entries: list[tuple[str, int]] = []
+        new_entries: dict[str, int] = {}
+        existing_entries: dict[str, int] = {}
 
         for url, count in input_count.items():
             if url in output_set:
-                existing_entries.append((url, output_count.get(url, 1)))
+                existing_entries[url] = output_count.get(url, 1)
             else:
-                new_entries.append((url, count))
+                new_entries[url] = count
 
         self._logger.info(
             "Calcul lancé : %s nouvelle(s) URL(s), %s existante(s).", len(new_entries), len(existing_entries)
@@ -279,7 +279,7 @@ class DiscoverService:
         Returns:
             A ready-to-use LaunchModel with url_sources_list_manual set.
         """
-        new_urls = [url for url, _ in computed.new_entries]
+        new_urls = list(computed.new_entries.keys())
         profile = LaunchModel.get_default(id_scenario)
         profile.profile_name = profile_name
         profile.url_source_type = "MANUAL"
@@ -291,30 +291,11 @@ class DiscoverService:
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def _read_json_file(file_path: Path) -> Any:  # noqa: ANN401
-        """Read and parse a single JSON file.
+    def _extract_urls_from_data(raw_data: list[Any], key: str, url_pattern: str) -> list[str]:
+        """Extract URLs from a parsed JSON list matching key and URL pattern.
 
         Args:
-            file_path: Path to the JSON file.
-
-        Returns:
-            The parsed JSON content (list or dict).
-
-        Raises:
-            OSError: When the file cannot be opened.
-            json.JSONDecodeError: When the file contains invalid JSON.
-        """
-        with file_path.open(encoding="utf-8") as fh:
-            return json.load(fh)
-
-    @staticmethod
-    def _extract_urls_from_data(raw_data: Any, key: str, url_pattern: str) -> list[str]:  # noqa: ANN401
-        """Extract URLs from a parsed JSON payload matching key and URL pattern.
-
-        Supports both list-of-items (ExtractedData format) and plain list-of-strings.
-
-        Args:
-            raw_data: Parsed JSON content.
+            raw_data: Parsed JSON list from a scraping data file.
             key: Mapping key to match against ExtractedItem.key.
             url_pattern: Glob pattern to filter URLs.
 
@@ -322,10 +303,7 @@ class DiscoverService:
             A flat list of matching URL strings.
         """
         urls: list[str] = []
-        if not isinstance(raw_data, list):
-            return urls
-
-        for item in cast(list[object], raw_data):
+        for item in raw_data:
             if not isinstance(item, dict):
                 continue
             item_dict = cast(dict[str, object], item)
@@ -335,12 +313,10 @@ class DiscoverService:
             raw_vals = item_dict.get("values")
             if not isinstance(raw_vals, list):
                 continue
-            typed_vals = cast(list[object], raw_vals)
-            for v in typed_vals:
+            for v in cast(list[object], raw_vals):
                 sv = str(v)
                 if fnmatch.fnmatch(sv, url_pattern):
                     urls.append(sv)
-
         return urls
 
 

@@ -20,7 +20,7 @@ from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
 from shared.step_registry import register_step_executor
 
-C_LIMIT_GIVE_UP_SCROLLING = 5  # number of consecutive no-growth iterations before giving up on scrolling
+C_LIMIT_GIVE_UP_SCROLLING = 3  # number of consecutive no-growth iterations before giving up on scrolling
 
 
 class ScrollDownExecutor(StepExecutorBase, IStepExecutor):

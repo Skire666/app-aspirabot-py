@@ -16,7 +16,7 @@ import logging
 from datetime import date, datetime, time
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from shared.exception_util import JsonFileRepositoryError
 from shared.path_util import make_all_folders_if_not_exists
@@ -76,7 +76,7 @@ def _decode_hook(raw: dict[str, Any]) -> dict[str, Any] | date | datetime | time
 # Module-level cache shared by all JsonFileRepository instances/subclasses
 # -----------------------------------------------------------------------------
 
-_cache: dict[str, dict[str, Any]] = {}
+_cache: dict[str, Any] = {}
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -137,7 +137,7 @@ class JsonFileRepository:
         # Load from disk, populate cache, return a deep copy.
         data = self._load_from_disk(resolved)
         _cache[key_cached] = data
-        return copy.deepcopy(data)
+        return cast(dict[str, Any], copy.deepcopy(data))
 
     def write_from_dict(self, path: Path, data: dict[str, Any] | list[Any]) -> None:
         """Serialise *data* to *path* as JSON and invalidate the cache entry.
@@ -172,25 +172,60 @@ class JsonFileRepository:
         for k in stale:
             del _cache[k]
 
+    def read_list_from_path(self, path: Path) -> list[Any]:
+        """Return the JSON list content of *path*, loading from disk when needed.
+
+        Mirrors ``read_from_path`` but expects the file root to be a JSON array.
+        On a cache hit a deep copy of the cached value is returned.
+        On a cache miss the file is read, stored in the cache, then a deep
+        copy is returned.  When the file does not exist ``[]`` is returned
+        and nothing is cached.
+
+        Args:
+            path: Path to the JSON file containing a list at the root level.
+
+        Returns:
+            A deep copy of the file's JSON list, or ``[]`` when absent.
+
+        Raises:
+            JsonFileRepositoryError: When the file exists but is unreadable
+                or contains invalid JSON.
+        """
+        resolved = path.resolve()
+
+        if not resolved.exists():
+            self._logger.warning("Fichier JSON absent : '%s'.", resolved)
+            return []
+
+        key_cached = str(resolved) + str(resolved.stat().st_mtime)
+
+        if key_cached in _cache:
+            self._logger.debug("Déjà chargé. Lecture du cache '%s'.", resolved)
+            return cast(list[Any], copy.deepcopy(_cache[key_cached]))
+
+        data = self._load_from_disk(resolved)
+        _cache[key_cached] = data
+        return cast(list[Any], copy.deepcopy(data))
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _load_from_disk(self, resolved: Path) -> dict[str, Any]:
+    def _load_from_disk(self, resolved: Path) -> dict[str, Any] | list[Any]:
         """Read and deserialise a JSON file; raises on I/O or parse errors.
 
         Args:
             resolved: Fully resolved path to an existing JSON file.
 
         Returns:
-            The deserialised content as a dict.
+            The deserialised content (dict or list depending on the file root type).
 
         Raises:
             JsonFileRepositoryError: When the file cannot be opened or parsed.
         """
         try:
             with resolved.open(encoding="utf-8") as fh:
-                data: dict[str, Any] = json.load(fh, object_hook=_decode_hook)
+                data = json.load(fh, object_hook=_decode_hook)
             self._logger.debug("Fichier JSON chargé depuis le disque : '%s'.", resolved)
         except (OSError, json.JSONDecodeError) as exc:
             self._logger.error("Lecture impossible pour '%s'.", resolved, exc_info=True)

@@ -122,7 +122,7 @@ class DiscoverModel:
             "id_discover": str(data.get("id_discover") or ""),
             "project_name": str(data.get("project_name") or ""),
             "profile_id_scenario": str(data.get("profile_id_scenario") or ""),
-            "profile_name_template": str(data.get("profile_name_template") or _C_DEFAULT_PROFILE_NAME_TEMPLATE),
+            "profile_name_template": str(data.get("profile_name_template") or ""),
         }
 
     @classmethod

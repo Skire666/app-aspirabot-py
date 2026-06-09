@@ -127,6 +127,13 @@ C_DISCOVER_URLS_COUNT_ZERO = "Aucun URL"
 C_DISCOVER_URLS_COUNT_COMPUTING = "Calcul en cours..."
 C_DISCOVER_URLS_COUNT_ERROR = "Erreur : {exc}"
 
+# Compute result label
+C_DISCOVER_COMPUTE_OK = (
+    "Entrée : {in_total} total, {in_unique} unique(s), {in_dupes} doublon(s)"
+    "  —  Sortie : {out_total} total, {out_unique} unique(s), {out_dupes} doublon(s)"
+    "  —  {new_count} nouvelle(s) URL(s)."
+)
+
 # Profile save result labels
 C_DISCOVER_PROFILE_SAVE_OK = "{count} lien(s) ajouté(s) au profil."
 C_DISCOVER_PROFILE_SAVE_ZERO = "Aucun nouveau lien à ajouter."
@@ -136,6 +143,7 @@ C_DISCOVER_PROFILE_SAVE_ERROR = "Erreur lors de la sauvegarde : {exc}"
 C_DISCOVER_SAVE_LIST_HINT_INPUT = "URLs d'entrée non valides"
 C_DISCOVER_SAVE_LIST_HINT_OUTPUT = "URLs de sortie non valides"
 C_DISCOVER_SAVE_LIST_HINT_BOTH = "URLs d'entrée et de sortie non valides"
+C_DISCOVER_SAVE_LIST_HINT_NO_NAME = "Nom du profil vide"
 
 # Error messages
 C_DISCOVER_PROJECT_NAME_EMPTY = "Le nom du projet ne peut pas être vide."

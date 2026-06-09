@@ -1,4 +1,4 @@
-"""Repository for the Discover hub JSON file."""
+"""Repository for the Discover hub JSON file and scraping data files."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -6,6 +6,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from models.discovers_hub_model import DiscoversHubModel
 from repositories.json_repository import JsonFileRepository
@@ -71,6 +72,25 @@ class DiscoverRepository:
         hub = DiscoversHubModel.import_from_data_json(data)
         self._logger.debug("Hub Découvrir chargé : %s projets.", len(hub.projects))
         return hub
+
+    def read_data_file(self, path: Path) -> list[Any]:
+        """Read a scraping data JSON file, returning an empty list when absent.
+
+        Delegates to the shared JSON cache so repeatedly read files are not
+        reloaded from disk.
+
+        Args:
+            path: Absolute path to the JSON data file.
+
+        Returns:
+            The list of items parsed from the file, or ``[]`` when absent.
+
+        Raises:
+            JsonFileRepositoryError: When the file exists but cannot be read or parsed.
+        """
+        data = self._json_repo.read_list_from_path(path)
+        self._logger.debug("Fichier de données chargé : '%s', %s élément(s).", path.name, len(data))
+        return data
 
     def write_hub(self, hub: DiscoversHubModel) -> None:
         """Persist the hub to disk.

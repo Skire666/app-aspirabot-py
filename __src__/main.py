@@ -197,7 +197,7 @@ def _assemble_components(  # noqa: PLR0914
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc)
     dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
     disc_view, disc_pr = _init_discover_component(
-        main_view, startup_service.config_model, prof_svc, JsonFileRepository()
+        main_view, startup_service.config_model, prof_svc, scen_svc, JsonFileRepository()
     )
     _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre, disc_pr)
     views: list[tk.Widget] = [
@@ -440,6 +440,7 @@ def _init_discover_component(
     main_view: MainView,
     config_model: AppConfigurationModel,
     profiles_service: ProfilesService,
+    scenarios_service: ScenariosService,
     json_repo: JsonFileRepository,
 ) -> tuple[DiscoverView, DiscoverPresenter]:
     """Create and wire the Discover module component.
@@ -447,7 +448,8 @@ def _init_discover_component(
     Args:
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the scenarios folder path.
-        profiles_service: Shared profiles service used to list and update profiles.
+        profiles_service: Shared profiles service used to update launch profiles.
+        scenarios_service: Shared scenarios service used to list available scenarios.
         json_repo: Shared JSON repository injected into the discover repository.
 
     Returns:
@@ -456,7 +458,9 @@ def _init_discover_component(
     repo = DiscoverRepository(config_model.folder_scenarios, json_repo)
     service = DiscoverService(repo)
     vm = DiscoverViewModel(master=main_view.content_area)
-    presenter = DiscoverPresenter(vm=vm, service=service, profiles_service=profiles_service)
+    presenter = DiscoverPresenter(
+        vm=vm, service=service, profiles_service=profiles_service, scenarios_service=scenarios_service
+    )
     view = DiscoverView(main_view.content_area, vm=vm, presenter=presenter)
     return view, presenter
 

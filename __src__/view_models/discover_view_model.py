@@ -10,10 +10,12 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import (
     C_DISCOVER_SAVE_LIST_HINT_BOTH,
     C_DISCOVER_SAVE_LIST_HINT_INPUT,
+    C_DISCOVER_SAVE_LIST_HINT_NO_NAME,
     C_DISCOVER_SAVE_LIST_HINT_OUTPUT,
 )
 
@@ -33,13 +35,12 @@ class DiscoverProjectRowState:
 
 
 @dataclass(frozen=True, slots=True)
-class ProfileRowState:
-    """One row in the profiles ColumnCombobox, already formatted for display."""
+class ScenarioRowState:
+    """One row in the scenarios ColumnCombobox, already formatted for display."""
 
-    id_profile: str
-    id_scenario: str
-    profile_name: str
+    id_file: str
     scenario_name: str
+    scenario_desc: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,15 +130,17 @@ class DiscoverViewModel(ViewModelBase):
     def _init_profile_vars(self, master: tk.Misc) -> None:
         """Initialise Cadre 3 Vars (profile section)."""
         self.profile_id_scenario_var = tk.StringVar(master=master, value="")
-        self.profile_name_template_var = tk.StringVar(master=master, value="")
-        self.profile_save_result_var = tk.StringVar(master=master, value="")
+        self.profile_name_template_var = tk.StringVar(
+            master=master, value=f"auto_{get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()}"
+        )
+        self.check_result_computed_var = tk.StringVar(master=master, value="")
         self.can_update_profile_var = tk.BooleanVar(master=master, value=False)
         self.save_profile_hint_var = tk.StringVar(master=master, value="")
 
     def _init_state(self) -> None:
         """Initialise non-Var collection and hash state."""
         self._projects: tuple[DiscoverProjectRowState, ...] = ()
-        self._profiles: tuple[ProfileRowState, ...] = ()
+        self._scenarios: tuple[ScenarioRowState, ...] = ()
         self._saved_form_hash: tuple[str, ...] = ()
         self._input_urls_last_hash: tuple[str, ...] = ()
         self._output_urls_last_hash: tuple[str, ...] = ()
@@ -154,10 +157,9 @@ class DiscoverViewModel(ViewModelBase):
         self._on_open_input_folder: Callable[[], None] | None = None
         self._on_open_output_folder: Callable[[], None] | None = None
         self._on_input_files_check_requested: Callable[[], None] | None = None
-        self._on_input_urls_check_requested: Callable[[], None] | None = None
         self._on_output_files_check_requested: Callable[[], None] | None = None
-        self._on_output_urls_check_requested: Callable[[], None] | None = None
-        self._on_profiles_changed: Callable[[], None] | None = None
+        self._on_compute_url_list: Callable[[], None] | None = None
+        self._on_scenarios_changed: Callable[[], None] | None = None
         self._on_save_profile_list: Callable[[], None] | None = None
 
     def _register_traces(self) -> None:
@@ -191,8 +193,9 @@ class DiscoverViewModel(ViewModelBase):
         self._recompute_output_derived()
         input_ok = self.input_is_valid_var.get()
         output_ok = self.output_is_valid_var.get()
-        self._set_if_changed(self.can_update_profile_var, input_ok and output_ok)
-        self._set_if_changed(self.save_profile_hint_var, self._compute_save_profile_hint(input_ok, output_ok))
+        name_ok = bool(self.profile_name_template_var.get().strip())
+        self._set_if_changed(self.can_update_profile_var, input_ok and output_ok and name_ok)
+        self._set_if_changed(self.save_profile_hint_var, self._compute_save_profile_hint(input_ok, output_ok, name_ok))
 
     def _recompute_project_derived(self) -> None:
         """Recompute Cadre 0 derived Vars (create / action / save buttons)."""
@@ -204,15 +207,13 @@ class DiscoverViewModel(ViewModelBase):
         )
 
     def _recompute_input_derived(self) -> None:
-        """Schedule or clear input file/URL checks based on current source Vars."""
+        """Schedule file count check; reset URL validity when source fields change."""
         if self.input_folder_json_var.get().strip() and self.input_pattern_json_var.get().strip():
             self._schedule("input_files_check", 250, self._fire_input_files_check)
         else:
             self._set_if_changed(self.input_files_check_var, "")
             self._set_if_changed(self.input_is_valid_var, False)
 
-        # Guard: only reschedule when source fields actually changed so that
-        # status-Var writes from the async callback don't re-trigger the check.
         input_ready = (
             bool(self.input_folder_json_var.get().strip())
             and bool(self.input_pattern_json_var.get().strip())
@@ -223,14 +224,15 @@ class DiscoverViewModel(ViewModelBase):
             h = self._build_input_urls_hash()
             if h != self._input_urls_last_hash:
                 self._input_urls_last_hash = h
-                self._schedule("input_urls_check", 500, self._fire_input_urls_check)
+                self._set_if_changed(self.input_urls_check_var, "")
+                self._set_if_changed(self.input_is_valid_var, False)
         else:
             self._input_urls_last_hash = ()
             self._set_if_changed(self.input_urls_check_var, "")
             self._set_if_changed(self.input_is_valid_var, False)
 
     def _recompute_output_derived(self) -> None:
-        """Schedule or clear output file/URL checks based on current source Vars."""
+        """Schedule file count check; reset URL validity when source fields change."""
         if self.output_folder_json_var.get().strip() and self.output_pattern_json_var.get().strip():
             self._schedule("output_files_check", 250, self._fire_output_files_check)
         else:
@@ -247,7 +249,8 @@ class DiscoverViewModel(ViewModelBase):
             h = self._build_output_urls_hash()
             if h != self._output_urls_last_hash:
                 self._output_urls_last_hash = h
-                self._schedule("output_urls_check", 500, self._fire_output_urls_check)
+                self._set_if_changed(self.output_urls_check_var, "")
+                self._set_if_changed(self.output_is_valid_var, False)
         else:
             self._output_urls_last_hash = ()
             self._set_if_changed(self.output_urls_check_var, "")
@@ -258,8 +261,10 @@ class DiscoverViewModel(ViewModelBase):
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def _compute_save_profile_hint(input_ok: bool, output_ok: bool) -> str:
+    def _compute_save_profile_hint(input_ok: bool, output_ok: bool, name_ok: bool) -> str:
         """Return the hint message blocking 'Sauvegarder la liste', or '' when ready."""
+        if not name_ok:
+            return C_DISCOVER_SAVE_LIST_HINT_NO_NAME
         if not input_ok and not output_ok:
             return C_DISCOVER_SAVE_LIST_HINT_BOTH
         if not input_ok:
@@ -352,23 +357,23 @@ class DiscoverViewModel(ViewModelBase):
             self._on_projects_changed()
 
     # -------------------------------------------------------------------------
-    # Collection API — profiles
+    # Collection API — scenarios
     # -------------------------------------------------------------------------
 
     @property
-    def profiles(self) -> tuple[ProfileRowState, ...]:
-        """Read-only current profile rows for the View to render."""
-        return self._profiles
+    def scenarios(self) -> tuple[ScenarioRowState, ...]:
+        """Read-only current scenario rows for the View to render."""
+        return self._scenarios
 
-    def set_profiles(self, rows: list[ProfileRowState]) -> None:
-        """Replace the profile rows (called by the Presenter) and notify the View.
+    def set_scenarios(self, rows: list[ScenarioRowState]) -> None:
+        """Replace the scenario rows (called by the Presenter) and notify the View.
 
         Args:
-            rows: New list of profile row states.
+            rows: New list of ScenarioRowState instances.
         """
-        self._profiles = tuple(rows)
-        if self._on_profiles_changed is not None:
-            self._on_profiles_changed()
+        self._scenarios = tuple(rows)
+        if self._on_scenarios_changed is not None:
+            self._on_scenarios_changed()
 
     # -------------------------------------------------------------------------
     # Helper: post to main thread (used by Presenter for async callbacks)
@@ -446,29 +451,23 @@ class DiscoverViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_input_files_check_requested = callback
 
-    def bind_input_urls_check_requested(self, callback: Callable[[], None]) -> None:
-        """Register the Presenter handler for input URL count; rejects double binding."""
-        if self._on_input_urls_check_requested is not None:
-            raise CallbackNotDefinedError()
-        self._on_input_urls_check_requested = callback
-
     def bind_output_files_check_requested(self, callback: Callable[[], None]) -> None:
         """Register the Presenter handler for output file count; rejects double binding."""
         if self._on_output_files_check_requested is not None:
             raise CallbackNotDefinedError()
         self._on_output_files_check_requested = callback
 
-    def bind_output_urls_check_requested(self, callback: Callable[[], None]) -> None:
-        """Register the Presenter handler for output URL count; rejects double binding."""
-        if self._on_output_urls_check_requested is not None:
+    def bind_compute_url_list(self, callback: Callable[[], None]) -> None:
+        """Register the Presenter handler for compute_url_list(); rejects double binding."""
+        if self._on_compute_url_list is not None:
             raise CallbackNotDefinedError()
-        self._on_output_urls_check_requested = callback
+        self._on_compute_url_list = callback
 
-    def bind_profiles_changed(self, callback: Callable[[], None]) -> None:
-        """Register the View re-render handler for the profiles combobox; rejects double binding."""
-        if self._on_profiles_changed is not None:
+    def bind_scenarios_changed(self, callback: Callable[[], None]) -> None:
+        """Register the View re-render handler for the scenarios combobox; rejects double binding."""
+        if self._on_scenarios_changed is not None:
             raise CallbackNotDefinedError()
-        self._on_profiles_changed = callback
+        self._on_scenarios_changed = callback
 
     def bind_save_profile_list(self, callback: Callable[[], None]) -> None:
         """Register the Presenter handler for save_profile_list(); rejects double binding."""
@@ -528,6 +527,12 @@ class DiscoverViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_open_output_folder()
 
+    def compute_url_list(self) -> None:
+        """Dispatch the compute-url-list action to the registered Presenter callback."""
+        if self._on_compute_url_list is None:
+            raise CallbackNotDefinedError()
+        self._on_compute_url_list()
+
     def save_profile_list(self) -> None:
         """Dispatch the save-profile-list action to the registered Presenter callback."""
         if self._on_save_profile_list is None:
@@ -543,20 +548,10 @@ class DiscoverViewModel(ViewModelBase):
         if self._on_input_files_check_requested is not None:
             self._on_input_files_check_requested()
 
-    def _fire_input_urls_check(self) -> None:
-        """Fire the input URLs check hook when the debounce timer expires."""
-        if self._on_input_urls_check_requested is not None:
-            self._on_input_urls_check_requested()
-
     def _fire_output_files_check(self) -> None:
         """Fire the output files check hook when the debounce timer expires."""
         if self._on_output_files_check_requested is not None:
             self._on_output_files_check_requested()
-
-    def _fire_output_urls_check(self) -> None:
-        """Fire the output URLs check hook when the debounce timer expires."""
-        if self._on_output_urls_check_requested is not None:
-            self._on_output_urls_check_requested()
 
 
 # EOF

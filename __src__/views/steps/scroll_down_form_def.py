@@ -25,6 +25,8 @@ C_KEY_NBR_LOOPS = "nbr_loops"
 C_KEY_DELAY_PAUSE = "delay_pause"
 C_KEY_COMMENT = "comment"
 
+C_LIMIT_GIVE_UP_SCROLLING = 3  # number of consecutive no-growth iterations before giving up on scrolling --- IGNORE ---
+
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
@@ -77,7 +79,9 @@ class ScrollDownFormDef(IStepFormDef):
         ttk.Label(row1, text="Nombre de boucle :").pack(side="left", padx=(0, 5))
         nbr_loops_var = tk.StringVar(value="1")
         ttk.Entry(row1, textvariable=nbr_loops_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        ttk.Label(row1, text="(abandonne si stable depuis 5 tours)").pack(side="left", padx=(0, 5))
+        ttk.Label(row1, text=f"(abandonne si stable depuis {C_LIMIT_GIVE_UP_SCROLLING} tours)").pack(
+            side="left", padx=(0, 5)
+        )
         widgets[C_KEY_NBR_LOOPS] = nbr_loops_var
 
     @staticmethod
