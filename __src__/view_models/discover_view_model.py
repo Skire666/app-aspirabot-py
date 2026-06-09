@@ -16,6 +16,7 @@ from shared.i18n_fra import (
     C_DISCOVER_SAVE_LIST_HINT_INPUT,
     C_DISCOVER_SAVE_LIST_HINT_OUTPUT,
 )
+
 from view_models.view_model_base import ViewModelBase
 
 # -----------------------------------------------------------------------------
@@ -83,64 +84,66 @@ class DiscoverViewModel(ViewModelBase):
             master: Parent Tk widget used to anchor all Vars.
         """
         super().__init__(master)
+        self._init_project_vars(master)
+        self._init_input_vars(master)
+        self._init_output_vars(master)
+        self._init_profile_vars(master)
+        self._init_state()
+        self._init_callbacks()
+        self._register_traces()
+        self._guarded_recompute()
 
-        # ── Cadre 0 : project management (source Vars) ──
+    # -------------------------------------------------------------------------
+    # Internal init helpers
+    # -------------------------------------------------------------------------
+
+    def _init_project_vars(self, master: tk.Misc) -> None:
+        """Initialise Cadre 0 Vars (project management)."""
         self.new_project_name_var = tk.StringVar(master=master, value="")
         self.selected_project_id_var = tk.StringVar(master=master, value="")
-
-        # ── Cadre 0 : status Vars (Presenter writes) ──
         self.saved_date_var = tk.StringVar(master=master, value="--")
-
-        # ── Cadre 0 : derived Vars ──
         self.can_create_project_var = tk.BooleanVar(master=master, value=False)
         self.can_action_project_var = tk.BooleanVar(master=master, value=False)
         self.can_save_project_var = tk.BooleanVar(master=master, value=False)
 
-        # ── Cadre 1 : input source Vars ──
+    def _init_input_vars(self, master: tk.Misc) -> None:
+        """Initialise Cadre 1 Vars (input section)."""
         self.input_folder_json_var = tk.StringVar(master=master, value="")
         self.input_pattern_json_var = tk.StringVar(master=master, value="export*.json")
         self.input_key_mapping_var = tk.StringVar(master=master, value="key_xxx")
         self.input_pattern_urls_var = tk.StringVar(master=master, value="https*")
-
-        # ── Cadre 1 : status Vars (Presenter writes) ──
         self.input_files_check_var = tk.StringVar(master=master, value="--")
         self.input_urls_check_var = tk.StringVar(master=master, value="--")
         self.input_is_valid_var = tk.BooleanVar(master=master, value=False)
 
-        # ── Cadre 2 : output source Vars ──
+    def _init_output_vars(self, master: tk.Misc) -> None:
+        """Initialise Cadre 2 Vars (output section)."""
         self.output_folder_json_var = tk.StringVar(master=master, value="")
         self.output_pattern_json_var = tk.StringVar(master=master, value="export*.json")
         self.output_key_mapping_var = tk.StringVar(master=master, value="key_xxx")
         self.output_pattern_urls_var = tk.StringVar(master=master, value="https*")
-
-        # ── Cadre 2 : status Vars (Presenter writes) ──
         self.output_files_check_var = tk.StringVar(master=master, value="--")
         self.output_urls_check_var = tk.StringVar(master=master, value="--")
         self.output_is_valid_var = tk.BooleanVar(master=master, value=False)
 
-        # ── Cadre 3 : profile source Vars ──
+    def _init_profile_vars(self, master: tk.Misc) -> None:
+        """Initialise Cadre 3 Vars (profile section)."""
         self.profile_id_scenario_var = tk.StringVar(master=master, value="")
         self.profile_name_template_var = tk.StringVar(master=master, value="")
-
-        # ── Cadre 3 : status Vars (Presenter writes) ──
         self.profile_save_result_var = tk.StringVar(master=master, value="")
-
-        # ── Cadre 3 : derived Vars ──
         self.can_update_profile_var = tk.BooleanVar(master=master, value=False)
         self.save_profile_hint_var = tk.StringVar(master=master, value="")
 
-        # ── Collections ──
+    def _init_state(self) -> None:
+        """Initialise non-Var collection and hash state."""
         self._projects: tuple[DiscoverProjectRowState, ...] = ()
         self._profiles: tuple[ProfileRowState, ...] = ()
-
-        # ── Dirty-tracking baseline (set by confirm_saved()) ──
         self._saved_form_hash: tuple[str, ...] = ()
-
-        # ── URL-check hash guards (prevents re-scheduling when only status Vars changed) ──
         self._input_urls_last_hash: tuple[str, ...] = ()
         self._output_urls_last_hash: tuple[str, ...] = ()
 
-        # ── Presenter callback slots ──
+    def _init_callbacks(self) -> None:
+        """Initialise all Presenter callback slots to None."""
         self._on_create_project: Callable[[], None] | None = None
         self._on_rename_project: Callable[[], None] | None = None
         self._on_delete_project: Callable[[], None] | None = None
@@ -157,7 +160,8 @@ class DiscoverViewModel(ViewModelBase):
         self._on_profiles_changed: Callable[[], None] | None = None
         self._on_save_profile_list: Callable[[], None] | None = None
 
-        # ── Traces ──
+    def _register_traces(self) -> None:
+        """Register all write-traces for derived-state recomputation."""
         self._register_trace(self.new_project_name_var, self._guarded_recompute)
         self._register_trace(self.selected_project_id_var, self._guarded_recompute)
         self._register_trace(self.input_is_valid_var, self._guarded_recompute)
@@ -176,36 +180,38 @@ class DiscoverViewModel(ViewModelBase):
         ):
             self._register_trace(var, self._guarded_recompute)
 
-        self._guarded_recompute()
-
     # -------------------------------------------------------------------------
     # Derived state
     # -------------------------------------------------------------------------
 
     def _recompute_derived(self) -> None:
         """Recompute all derived Vars and schedule verification hooks."""
-        has_project_selected = bool(self.selected_project_id_var.get())
+        self._recompute_project_derived()
+        self._recompute_input_derived()
+        self._recompute_output_derived()
+        input_ok = self.input_is_valid_var.get()
+        output_ok = self.output_is_valid_var.get()
+        self._set_if_changed(self.can_update_profile_var, input_ok and output_ok)
+        self._set_if_changed(self.save_profile_hint_var, self._compute_save_profile_hint(input_ok, output_ok))
+
+    def _recompute_project_derived(self) -> None:
+        """Recompute Cadre 0 derived Vars (create / action / save buttons)."""
+        has_selected = bool(self.selected_project_id_var.get())
         self._set_if_changed(self.can_create_project_var, bool(self.new_project_name_var.get().strip()))
-        self._set_if_changed(self.can_action_project_var, has_project_selected)
+        self._set_if_changed(self.can_action_project_var, has_selected)
         self._set_if_changed(
-            self.can_save_project_var, has_project_selected and self._build_form_hash() != self._saved_form_hash
+            self.can_save_project_var, has_selected and self._build_form_hash() != self._saved_form_hash
         )
 
-        # Schedule file checks when folder + pattern are both set.
+    def _recompute_input_derived(self) -> None:
+        """Schedule or clear input file/URL checks based on current source Vars."""
         if self.input_folder_json_var.get().strip() and self.input_pattern_json_var.get().strip():
             self._schedule("input_files_check", 250, self._fire_input_files_check)
         else:
             self._set_if_changed(self.input_files_check_var, "")
             self._set_if_changed(self.input_is_valid_var, False)
 
-        if self.output_folder_json_var.get().strip() and self.output_pattern_json_var.get().strip():
-            self._schedule("output_files_check", 250, self._fire_output_files_check)
-        else:
-            self._set_if_changed(self.output_files_check_var, "")
-            self._set_if_changed(self.output_is_valid_var, False)
-
-        # Schedule URL counts when all four fields are filled.
-        # Guard: only reschedule when the source fields actually changed, so that
+        # Guard: only reschedule when source fields actually changed so that
         # status-Var writes from the async callback don't re-trigger the check.
         input_ready = (
             bool(self.input_folder_json_var.get().strip())
@@ -223,6 +229,14 @@ class DiscoverViewModel(ViewModelBase):
             self._set_if_changed(self.input_urls_check_var, "")
             self._set_if_changed(self.input_is_valid_var, False)
 
+    def _recompute_output_derived(self) -> None:
+        """Schedule or clear output file/URL checks based on current source Vars."""
+        if self.output_folder_json_var.get().strip() and self.output_pattern_json_var.get().strip():
+            self._schedule("output_files_check", 250, self._fire_output_files_check)
+        else:
+            self._set_if_changed(self.output_files_check_var, "")
+            self._set_if_changed(self.output_is_valid_var, False)
+
         output_ready = (
             bool(self.output_folder_json_var.get().strip())
             and bool(self.output_pattern_json_var.get().strip())
@@ -238,12 +252,6 @@ class DiscoverViewModel(ViewModelBase):
             self._output_urls_last_hash = ()
             self._set_if_changed(self.output_urls_check_var, "")
             self._set_if_changed(self.output_is_valid_var, False)
-
-        # Computed last so it reflects any is_valid invalidations done above.
-        input_ok = self.input_is_valid_var.get()
-        output_ok = self.output_is_valid_var.get()
-        self._set_if_changed(self.can_update_profile_var, input_ok and output_ok)
-        self._set_if_changed(self.save_profile_hint_var, self._compute_save_profile_hint(input_ok, output_ok))
 
     # -------------------------------------------------------------------------
     # Dirty tracking

@@ -31,7 +31,7 @@ class DiscoversHubModel:
     modified_date: datetime | None = None
 
     @classmethod
-    def get_default(cls) -> "DiscoversHubModel":
+    def get_default(cls) -> DiscoversHubModel:
         """Build an empty hub with timestamps set to now.
 
         Returns:
@@ -41,7 +41,7 @@ class DiscoversHubModel:
         return cls(projects=[], created_date=now, modified_date=now)
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> "DiscoversHubModel":
+    def import_from_data_json(cls, data: dict[str, Any]) -> DiscoversHubModel:
         """Reconstruct a DiscoversHubModel from a JSON-compatible dictionary.
 
         Args:

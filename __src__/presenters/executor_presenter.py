@@ -496,6 +496,7 @@ class ExecutorPresenter:
         if not self._current_profile or not self._current_scenario:
             return
         self._apply_form_to_profile()
+        saved_id = self._current_profile.id_profile
         try:
             self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
             self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
@@ -504,8 +505,13 @@ class ExecutorPresenter:
             self._vm.show_error(C_ERROR_DIALOG_TITLE, C_EXEC_SAVE_ERROR)
             return
         self._push_profiles(self._current_profiles_model.launch_profiles)
-        self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
-        self._set_dirty(False)
+        profile = self._current_profiles_model.get_profile_by_id(saved_id)
+        if profile:
+            self._select_profile_model(profile)
+        else:
+            self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
+            self._set_dirty(False)
+            self._vm.selected_profile_id_var.set(saved_id)
 
     def _apply_form_to_profile(self) -> None:
         """Read ViewModel Vars and write values back onto _current_profile."""

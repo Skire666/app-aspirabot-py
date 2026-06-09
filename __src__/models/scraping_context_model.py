@@ -68,12 +68,13 @@ class ExtractedData:
             if not isinstance(raw, dict):
                 continue
             raw_typed = cast(dict[str, object], raw)
-            raw_values = raw_typed.get("values", [])
+            raw_values = raw_typed.get("values")
+            typed_values: list[object] = cast(list[object], raw_values) if isinstance(raw_values, list) else []
             result.append(
                 ExtractedItem(
                     key=str(raw_typed.get("key") or ""),
                     input=str(raw_typed.get("input") or ""),
-                    values=[str(v) for v in (raw_values if isinstance(raw_values, list) else [])],
+                    values=[str(v) for v in typed_values],
                     comment=str(raw_typed.get("comment") or ""),
                 )
             )

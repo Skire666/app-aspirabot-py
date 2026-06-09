@@ -160,7 +160,10 @@ def _fmt_extract_texts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) 
     extract_mode = params.get("extract_mode", "")
     target = params.get("target", "")
     mapping = params.get("mapping", "")
-    return f"Extraire textes de la page  -  Clé : {mapping}\nMode : {extract_mode}  |  Cible : {target}  |  Sél. : {selector}"
+    return (
+        f"Extraire textes de la page  -  Clé : {mapping}\n"
+        f"Mode : {extract_mode}  |  Cible : {target}  |  Sél. : {selector}"
+    )
 
 
 def _fmt_jump_to_step(params: dict[str, Any], _idx: int, ctx: dict[str, int]) -> str:

@@ -14,12 +14,14 @@ import logging
 import threading
 from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 from models.launcher_model import LaunchModel
 from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps.scroll_down_params import ScrollDownParams
 from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scenarios_service import ScenariosService
@@ -329,16 +331,28 @@ class ScrapingPresenter:
         if event in _LIFECYCLE_MESSAGES:
             return f"{get_time_now_hh_mm_ss()} | {_LIFECYCLE_MESSAGES[event]}"
         if event == EventScrapingEnum.E_WARMUP_URL and context:
-            return f"{get_time_now_hh_mm_ss()} | Préchauffe URL : {context.last_url_opened or ''}\n{get_time_now_hh_mm_ss()} | {C_SCRAPING_EVENT_PAUSE_ASKED}"
+            return self._format_warmup_url_line(context)
         if event == EventScrapingEnum.E_STEP_START and step:
             return self.preformat_step_start(step, context)
         if event == EventScrapingEnum.E_STEP_LOG and step and context:
-            lines = [f"{get_time_now_hh_mm_ss()} | {step.step_id} | {msg}" for msg in context.log_messages]
-            context.log_messages.clear()
-            return "\n".join(lines)
+            return self._format_step_log_lines(step, context)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
-            return f"{get_time_now_hh_mm_ss()} | {step.step_id} | Fin : {context.last_result_step.value} | {context.last_time_elapsed:.3f}s"
+            ts = get_time_now_hh_mm_ss()
+            return f"{ts} | {step.step_id} | Fin : {context.last_result_step.value} | {context.last_time_elapsed:.3f}s"
         return ""
+
+    @staticmethod
+    def _format_warmup_url_line(context: ScrapingContextModel) -> str:
+        """Format the E_WARMUP_URL journal entry with the paused-after message."""
+        ts = get_time_now_hh_mm_ss()
+        return f"{ts} | Préchauffe URL : {context.last_url_opened or ''}\n{ts} | {C_SCRAPING_EVENT_PAUSE_ASKED}"
+
+    @staticmethod
+    def _format_step_log_lines(step: StepScrapingModel, context: ScrapingContextModel) -> str:
+        """Format E_STEP_LOG event lines and drain the context log buffer."""
+        lines = [f"{get_time_now_hh_mm_ss()} | {step.step_id} | {msg}" for msg in context.log_messages]
+        context.log_messages.clear()
+        return "\n".join(lines)
 
     @staticmethod
     def preformat_step_start(step: StepScrapingModel, context: ScrapingContextModel | None) -> str:
@@ -355,7 +369,11 @@ class ScrapingPresenter:
             next_url = context.url_source.preview_next_url() if context.url_source else "<_no_preview_url_>"
             return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Prochaine : {next_url}"
         if stype == StepTypeEnum.E_SCROLL_DOWN:
-            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Dist. : {step.params.pixels} | Boucle : {step.params.nbr_loops}"
+            ts = get_time_now_hh_mm_ss()
+            scroll_params = cast(ScrollDownParams, step.params)
+            return (
+                f"{ts} | {sid} | <{stype.value}> | Dist. : {scroll_params.pixels} | Boucle : {scroll_params.nbr_loops}"
+            )
         return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}>"
 
     def _append_journal(self, line: str) -> None:

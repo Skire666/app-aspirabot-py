@@ -57,7 +57,8 @@ class ScrollDownExecutor(StepExecutorBase, IStepExecutor):
         else:
             return StepExecutionResultEnum.E_SUCCESS
 
-    def _get_page_height(self, browser: IWebBrowserService) -> int:
+    @staticmethod
+    def _get_page_height(browser: IWebBrowserService) -> int:
         """Return the current page height by evaluating a script with retries."""
         success, values = browser.evaluate_script_with_safe_retry(
             "document.documentElement.scrollHeight",
@@ -76,7 +77,8 @@ class ScrollDownExecutor(StepExecutorBase, IStepExecutor):
         growing = new_height > previous_height
         return new_height if growing else previous_height, 0 if growing else consecutive_no_growth + 1
 
-    def _do_scroll(self, browser: IWebBrowserService, p: ScrollDownParams) -> None:
+    @staticmethod
+    def _do_scroll(browser: IWebBrowserService, p: ScrollDownParams) -> None:
         """Execute the scrollBy script with retries."""
         is_success, _ = browser.evaluate_script_with_safe_retry(
             f"window.scrollBy(0, {p.pixels})", C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT

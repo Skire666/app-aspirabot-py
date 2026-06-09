@@ -164,10 +164,27 @@ def _wire_all_navigation(
     main_view.set_on_show(TitleModuleEnum.E_DISCOVER, discover_presenter.ensure_data_loaded)
 
 
-def _build_and_wire_components(  # noqa: PLR0914
+def _build_and_wire_components(
     root: tk.Tk, main_view: MainView, config_repo: AppConfigurationRepository, startup_service: StartupService
 ) -> None:
     """Instantiate all MVP groups, wire navigation, register views, and anchor presenters."""
+    views, presenters = _assemble_components(main_view, config_repo, startup_service)
+    _register_and_anchor(root, main_view, views, presenters)
+
+
+def _assemble_components(  # noqa: PLR0914
+    main_view: MainView, config_repo: AppConfigurationRepository, startup_service: StartupService
+) -> tuple[list[tk.Widget], list[object]]:
+    """Instantiate all MVP component groups, wire navigation, and return views/presenters.
+
+    Args:
+        main_view: Navigation shell that hosts all tab views.
+        config_repo: Repository for reading/writing application configuration.
+        startup_service: Service providing config model and logging service.
+
+    Returns:
+        Tuple of (views, presenters) lists ready for GC-anchoring.
+    """
     log_view, log_pr = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_pr = _init_config_component(main_view, config_repo)
     profiles_view, prof_pr, prof_svc, prof_repo = _init_profiles_components(
@@ -184,29 +201,12 @@ def _build_and_wire_components(  # noqa: PLR0914
     )
     _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre, disc_pr)
     views: list[tk.Widget] = [
-        log_view,
-        profiles_view,
-        cfg_view,
-        scen_view,
-        edit_view,
-        exec_view,
-        scrap_view,
-        dbg_view,
-        disc_view,
+        log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view, disc_view,
     ]
     presenters: list[object] = [
-        log_pr,
-        cfg_pr,
-        prof_pr,
-        scen_pre,
-        edit_pr,
-        steps_pr,
-        exec_pre,
-        scrap_pre,
-        dbg_p,
-        disc_pr,
+        log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr, exec_pre, scrap_pre, dbg_p, disc_pr,
     ]
-    _register_and_anchor(root, main_view, views, presenters)
+    return views, presenters
 
 
 def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, startup_service: StartupService) -> None:
@@ -685,7 +685,7 @@ def _anchor_presenters(root: tk.Tk, presenters: list[object]) -> None:
         root: The root Tk window that outlives all presenters.
         presenters: Presenter instances to keep alive for the application lifetime.
     """
-    root._app_presenters = presenters
+    root._app_presenters = presenters  # type: ignore[attr-defined]
 
 
 # -----------------------------------------------------------------------------

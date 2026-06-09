@@ -8,14 +8,21 @@ import fnmatch
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from models.discover_model import DiscoverModel
 from models.discovers_hub_model import DiscoversHubModel
 from models.launch_computed_model import LaunchComputedModel
 from models.launcher_model import LaunchModel
 from repositories.discover_repository import DiscoverRepository
-from shared.exception_util import DiscoverProjectNotFoundError
+from shared.exception_util import (
+    DiscoverFilePatternRequiredError,
+    DiscoverFolderNotFoundError,
+    DiscoverFolderPathRequiredError,
+    DiscoverKeyMappingRequiredError,
+    DiscoverProjectNotFoundError,
+    DiscoverUrlPatternRequiredError,
+)
 
 # -----------------------------------------------------------------------------
 # Class
@@ -138,13 +145,13 @@ class DiscoverService:
             ValueError: When folder or pattern is empty.
         """
         if not folder or not folder.strip():
-            raise ValueError("Le chemin du dossier est requis.")
+            raise DiscoverFolderPathRequiredError()
         if not pattern or not pattern.strip():
-            raise ValueError("Le pattern des fichiers est requis.")
+            raise DiscoverFilePatternRequiredError()
 
         folder_path = Path(folder)
         if not folder_path.exists() or not folder_path.is_dir():
-            raise FileNotFoundError(f"Dossier introuvable : {folder}")
+            raise DiscoverFolderNotFoundError(folder)
 
         files = [f for f in folder_path.iterdir() if f.is_file() and fnmatch.fnmatch(f.name, pattern)]
         self._logger.debug("Dossier '%s', pattern '%s' : %s fichier(s).", folder, pattern, len(files))
@@ -171,29 +178,50 @@ class DiscoverService:
             FileNotFoundError: When the folder does not exist.
             OSError: When a file cannot be read.
         """
-        if not folder or not folder.strip():
-            raise ValueError("Le chemin du dossier est requis.")
-        if not pattern or not pattern.strip():
-            raise ValueError("Le pattern des fichiers est requis.")
-        if not key or not key.strip():
-            raise ValueError("La clé/mapping est requise.")
-        if not url_pattern or not url_pattern.strip():
-            raise ValueError("Le pattern des URLs est requis.")
-
+        self._validate_load_args(folder, pattern, key, url_pattern)
         folder_path = Path(folder)
         if not folder_path.exists() or not folder_path.is_dir():
-            raise FileNotFoundError(f"Dossier introuvable : {folder}")
-
+            raise DiscoverFolderNotFoundError(folder)
         files = [f for f in folder_path.iterdir() if f.is_file() and fnmatch.fnmatch(f.name, pattern)]
-        urls: list[str] = []
+        return self._collect_urls_from_files(files, key, url_pattern)
 
+    @staticmethod
+    def _validate_load_args(folder: str, pattern: str, key: str, url_pattern: str) -> None:
+        """Raise a domain error when any required scan argument is empty or blank.
+
+        Args:
+            folder: Folder path to validate.
+            pattern: File glob pattern to validate.
+            key: Mapping key to validate.
+            url_pattern: URL glob pattern to validate.
+        """
+        if not folder or not folder.strip():
+            raise DiscoverFolderPathRequiredError()
+        if not pattern or not pattern.strip():
+            raise DiscoverFilePatternRequiredError()
+        if not key or not key.strip():
+            raise DiscoverKeyMappingRequiredError()
+        if not url_pattern or not url_pattern.strip():
+            raise DiscoverUrlPatternRequiredError()
+
+    def _collect_urls_from_files(self, files: list[Path], key: str, url_pattern: str) -> list[str]:
+        """Iterate over *files*, parse each JSON, and collect matching URLs.
+
+        Args:
+            files: List of JSON file paths to read.
+            key: Mapping key used to select ExtractedItem entries.
+            url_pattern: Glob pattern applied to each URL value.
+
+        Returns:
+            A flat list of matching URL strings.
+        """
+        urls: list[str] = []
         for file_path in files:
             try:
                 raw_data = self._read_json_file(file_path)
                 urls.extend(self._extract_urls_from_data(raw_data, key, url_pattern))
             except Exception:
                 self._logger.error("Impossible de lire '%s'.", file_path.name, exc_info=True)
-
         return urls
 
     # -------------------------------------------------------------------------
@@ -239,7 +267,8 @@ class DiscoverService:
             existing_entries=existing_entries,
         )
 
-    def build_launch_model(self, id_scenario: str, profile_name: str, computed: LaunchComputedModel) -> LaunchModel:
+    @staticmethod
+    def build_launch_model(id_scenario: str, profile_name: str, computed: LaunchComputedModel) -> LaunchModel:
         """Build a LaunchModel populated with the new URLs as manual sources.
 
         Args:
@@ -296,16 +325,18 @@ class DiscoverService:
         if not isinstance(raw_data, list):
             return urls
 
-        for item in raw_data:
+        for item in cast(list[object], raw_data):
             if not isinstance(item, dict):
                 continue
-            item_key = str(item.get("key") or "")
+            item_dict = cast(dict[str, object], item)
+            item_key = str(item_dict.get("key") or "")
             if item_key != key:
                 continue
-            values = item.get("values", [])
-            if not isinstance(values, list):
+            raw_vals = item_dict.get("values")
+            if not isinstance(raw_vals, list):
                 continue
-            for v in values:
+            typed_vals = cast(list[object], raw_vals)
+            for v in typed_vals:
                 sv = str(v)
                 if fnmatch.fnmatch(sv, url_pattern):
                     urls.append(sv)

@@ -890,6 +890,50 @@ class JsonFileRepositoryError(AspirabotBaseError):
 # -----------------------------------------------------------------------------
 
 
+class DiscoverFolderPathRequiredError(ValueError, AspirabotBaseError):
+    """Raised when the folder path for a Discover scan is empty or blank."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Le chemin du dossier est requis.")
+
+
+class DiscoverFilePatternRequiredError(ValueError, AspirabotBaseError):
+    """Raised when the file pattern for a Discover scan is empty or blank."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Le pattern des fichiers est requis.")
+
+
+class DiscoverKeyMappingRequiredError(ValueError, AspirabotBaseError):
+    """Raised when the key/mapping for URL extraction is empty or blank."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("La clé/mapping est requise.")
+
+
+class DiscoverUrlPatternRequiredError(ValueError, AspirabotBaseError):
+    """Raised when the URL pattern for a Discover scan is empty or blank."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Le pattern des URLs est requis.")
+
+
+class DiscoverFolderNotFoundError(FileNotFoundError, AspirabotBaseError):
+    """Raised when the folder for a Discover scan does not exist on disk."""
+
+    def __init__(self, folder: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            folder: The folder path that was not found.
+        """
+        super().__init__(f"Dossier introuvable : {folder}")
+
+
 class DiscoverProjectNotFoundError(FileNotFoundError, AspirabotBaseError):
     """Raised when a Discover project cannot be found by its id."""
 

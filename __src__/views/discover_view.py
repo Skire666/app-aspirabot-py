@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
-from typing import Any
+from typing import Any, cast
 
 from presenters.discover_presenter import DiscoverPresenter
 from view_models.discover_view_model import DiscoverViewModel
@@ -83,28 +83,15 @@ class DiscoverView(ttk.Frame):
         # Ligne 1 : listbox
         row1 = ttk.Frame(frame)
         row1.pack(fill=tk.X, padx=4, pady=(4, 0))
-        self._listbox_projects = tk.Listbox(row1, height=5, selectmode=tk.SINGLE, exportselection=False)
+        self._listbox_projects = tk.Listbox(
+            row1, height=5, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
+        )
         self._listbox_projects.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self._listbox_projects.bind("<<ListboxSelect>>", self._on_listbox_project_select)
 
         # Ligne 2 : rename / delete / save / date
-        row2 = ttk.Frame(frame)
-        row2.pack(fill=tk.X, padx=4, pady=(6, 4))
-        self._btn_rename = ttk.Button(row2, text="Renommer la sélection", command=self._on_rename_clicked)
-        self._btn_rename.pack(side=tk.LEFT, padx=(0, 4))
-        self._btn_delete = ttk.Button(row2, text="Supprimer la sélection", command=self._on_delete_clicked)
-        self._btn_delete.pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(row2, textvariable=self._vm.saved_date_var).pack(side=tk.RIGHT, padx=(4, 0))
-        self._btn_save_project = ttk.Button(row2, text="Sauvegarder le projet", command=self._vm.save_project)
-        self._btn_save_project.pack(side=tk.RIGHT, padx=6)
-
-        # Traces: sync button states from derived vars
-        self._add_trace(self._vm.can_create_project_var, lambda *_: self._sync_create_btn())
-        self._add_trace(self._vm.can_action_project_var, lambda *_: self._sync_action_btns())
-        self._add_trace(self._vm.can_save_project_var, lambda *_: self._sync_save_btn())
-        self._sync_create_btn()
-        self._sync_action_btns()
-        self._sync_save_btn()
+        self._create_project_actions_row(frame)
+        self._wire_project_button_states()
 
     # ─── Cadre 1 : input section ───────────────────────────────────────────────
 
@@ -113,19 +100,8 @@ class DiscoverView(ttk.Frame):
         frame = HorizontalLineFrame(parent, text="Entrée - Découverte les liens")
         frame.pack(fill=tk.X)
 
-        # Ligne 0 : folder path
-        row0 = ttk.Frame(frame)
-        row0.pack(fill=tk.X, padx=4)
-        # Pack RIGHT widgets first so Entry can fill the remaining middle space.
-        self._input_folder_link = FolderLinkWidget(
-            row0, title="", path="Ouvrir dossier", callback=self._vm.open_input_folder
-        )
-        self._input_folder_link.pack(side=tk.RIGHT, padx=(6, 0))
-        ttk.Button(row0, text="Parcourir", command=self._on_browse_input_clicked).pack(side=tk.RIGHT, padx=(4, 0))
-        ttk.Label(row0, text="Dossier JSON :", width=14).pack(side=tk.LEFT)
-        ttk.Entry(row0, textvariable=self._vm.input_folder_json_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(6, 0)
-        )
+        # Ligne 0 : folder path (Pack RIGHT first so Entry fills the middle)
+        self._create_input_folder_row(frame)
 
         # Ligne 1 : JSON pattern + file count verification
         row1 = ttk.Frame(frame)
@@ -152,19 +128,8 @@ class DiscoverView(ttk.Frame):
         frame = HorizontalLineFrame(parent, text="Sortie - Fiche unique")
         frame.pack(fill=tk.X)
 
-        # Ligne 0 : folder path
-        row0 = ttk.Frame(frame)
-        row0.pack(fill=tk.X, padx=4)
-        # Pack RIGHT widgets first so Entry can fill the remaining middle space.
-        self._output_folder_link = FolderLinkWidget(
-            row0, title="", path="Ouvrir dossier", callback=self._vm.open_output_folder
-        )
-        self._output_folder_link.pack(side=tk.RIGHT, padx=(6, 0))
-        ttk.Button(row0, text="Parcourir", command=self._on_browse_output_clicked).pack(side=tk.RIGHT, padx=(4, 0))
-        ttk.Label(row0, text="Dossier JSON :", width=14).pack(side=tk.LEFT)
-        ttk.Entry(row0, textvariable=self._vm.output_folder_json_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(6, 0)
-        )
+        # Ligne 0 : folder path (Pack RIGHT first so Entry fills the middle)
+        self._create_output_folder_row(frame)
 
         # Ligne 1 : JSON pattern + file count verification
         row1 = ttk.Frame(frame)
@@ -221,6 +186,57 @@ class DiscoverView(ttk.Frame):
         self._add_trace(self._vm.can_update_profile_var, lambda *_: self._sync_save_list_btn())
         self._sync_save_list_btn()
 
+    # ─── Section helpers ───────────────────────────────────────────────────────
+
+    def _create_project_actions_row(self, parent: tk.Frame) -> None:
+        """Build the rename / delete / save / date row for the project section."""
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X, padx=4, pady=(6, 4))
+        self._btn_rename = ttk.Button(row, text="Renommer la sélection", command=self._on_rename_clicked)
+        self._btn_rename.pack(side=tk.LEFT, padx=(0, 4))
+        self._btn_delete = ttk.Button(row, text="Supprimer la sélection", command=self._on_delete_clicked)
+        self._btn_delete.pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(row, textvariable=self._vm.saved_date_var).pack(side=tk.RIGHT, padx=(4, 0))
+        self._btn_save_project = ttk.Button(row, text="Sauvegarder le projet", command=self._vm.save_project)
+        self._btn_save_project.pack(side=tk.RIGHT, padx=6)
+
+    def _wire_project_button_states(self) -> None:
+        """Wire traces so derived Vars drive create / action / save button states."""
+        self._add_trace(self._vm.can_create_project_var, lambda *_: self._sync_create_btn())
+        self._add_trace(self._vm.can_action_project_var, lambda *_: self._sync_action_btns())
+        self._add_trace(self._vm.can_save_project_var, lambda *_: self._sync_save_btn())
+        self._sync_create_btn()
+        self._sync_action_btns()
+        self._sync_save_btn()
+
+    def _create_input_folder_row(self, parent: tk.Frame) -> None:
+        """Build the folder-path row for the input section."""
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X, padx=4)
+        self._input_folder_link = FolderLinkWidget(
+            row, title="", path="Ouvrir dossier", callback=self._vm.open_input_folder
+        )
+        self._input_folder_link.pack(side=tk.RIGHT, padx=(6, 0))
+        ttk.Button(row, text="Parcourir", command=self._on_browse_input_clicked).pack(side=tk.RIGHT, padx=(4, 0))
+        ttk.Label(row, text="Dossier JSON :", width=14).pack(side=tk.LEFT)
+        ttk.Entry(row, textvariable=self._vm.input_folder_json_var).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(6, 0)
+        )
+
+    def _create_output_folder_row(self, parent: tk.Frame) -> None:
+        """Build the folder-path row for the output section."""
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X, padx=4)
+        self._output_folder_link = FolderLinkWidget(
+            row, title="", path="Ouvrir dossier", callback=self._vm.open_output_folder
+        )
+        self._output_folder_link.pack(side=tk.RIGHT, padx=(6, 0))
+        ttk.Button(row, text="Parcourir", command=self._on_browse_output_clicked).pack(side=tk.RIGHT, padx=(4, 0))
+        ttk.Label(row, text="Dossier JSON :", width=14).pack(side=tk.LEFT)
+        ttk.Entry(row, textvariable=self._vm.output_folder_json_var).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(6, 0)
+        )
+
     # -------------------------------------------------------------------------
     # VM collection bindings
     # -------------------------------------------------------------------------
@@ -263,7 +279,7 @@ class DiscoverView(ttk.Frame):
 
     def _on_listbox_project_select(self, event: Any) -> None:  # noqa: ANN401
         """Handle listbox selection change; restore highlight if Tkinter cleared it."""
-        selection = self._listbox_projects.curselection()
+        selection = cast(tuple[int, ...], self._listbox_projects.curselection())  # type: ignore[reportUnknownMemberType]
         if not selection:
             projects = self._vm.projects
             if not projects:
@@ -272,7 +288,7 @@ class DiscoverView(ttk.Frame):
             restore_idx = next((i for i, r in enumerate(projects) if r.id_discover == selected_id), 0)
             self._listbox_projects.selection_set(restore_idx)
             return
-        idx = selection[0]
+        idx: int = selection[0]
         projects = self._vm.projects
         if 0 <= idx < len(projects):
             self._presenter.on_project_selected(projects[idx].id_discover)

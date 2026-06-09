@@ -63,7 +63,7 @@ class DiscoverModel:
     modified_date: datetime | None
 
     @classmethod
-    def get_default(cls, name: str) -> "DiscoverModel":
+    def get_default(cls, name: str) -> DiscoverModel:
         """Build a new project with default values.
 
         Args:
@@ -85,13 +85,13 @@ class DiscoverModel:
             output_key_mapping=_C_DEFAULT_KEY_MAPPING,
             output_pattern_urls=_C_DEFAULT_PATTERN_URLS,
             profile_id_scenario="",
-            profile_name_template=_C_DEFAULT_PROFILE_NAME_TEMPLATE,
+            profile_name_template=_C_DEFAULT_PROFILE_NAME_TEMPLATE.format(date=now.strftime("%Y-%m-%d %Hh%Mm%Ss")),
             created_date=now,
             modified_date=now,
         )
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> "DiscoverModel":
+    def import_from_data_json(cls, data: dict[str, Any]) -> DiscoverModel:
         """Reconstruct a DiscoverModel from a JSON-compatible dictionary.
 
         Args:
@@ -101,21 +101,63 @@ class DiscoverModel:
             A fully reconstructed DiscoverModel instance.
         """
         return cls(
-            id_discover=str(data.get("id_discover") or ""),
-            project_name=str(data.get("project_name") or ""),
-            input_folder_json=str(data.get("input_folder_json") or ""),
-            input_pattern_json=str(data.get("input_pattern_json") or _C_DEFAULT_PATTERN_JSON),
-            input_key_mapping=str(data.get("input_key_mapping") or _C_DEFAULT_KEY_MAPPING),
-            input_pattern_urls=str(data.get("input_pattern_urls") or _C_DEFAULT_PATTERN_URLS),
-            output_folder_json=str(data.get("output_folder_json") or ""),
-            output_pattern_json=str(data.get("output_pattern_json") or _C_DEFAULT_PATTERN_JSON),
-            output_key_mapping=str(data.get("output_key_mapping") or _C_DEFAULT_KEY_MAPPING),
-            output_pattern_urls=str(data.get("output_pattern_urls") or _C_DEFAULT_PATTERN_URLS),
-            profile_id_scenario=str(data.get("profile_id_scenario") or ""),
-            profile_name_template=str(data.get("profile_name_template") or _C_DEFAULT_PROFILE_NAME_TEMPLATE),
+            **cls._parse_basic_fields(data),
+            **cls._parse_input_fields(data),
+            **cls._parse_output_fields(data),
             created_date=dict_with_key_to_optional_datetime(data, "created_date"),
             modified_date=dict_with_key_to_optional_datetime(data, "modified_date"),
         )
+
+    @classmethod
+    def _parse_basic_fields(cls, data: dict[str, Any]) -> dict[str, str]:
+        """Extract id, name, and profile scalar fields from *data*.
+
+        Args:
+            data: Raw dict from JSON deserialization.
+
+        Returns:
+            Partial keyword-argument dict for cls().
+        """
+        return {
+            "id_discover": str(data.get("id_discover") or ""),
+            "project_name": str(data.get("project_name") or ""),
+            "profile_id_scenario": str(data.get("profile_id_scenario") or ""),
+            "profile_name_template": str(data.get("profile_name_template") or _C_DEFAULT_PROFILE_NAME_TEMPLATE),
+        }
+
+    @classmethod
+    def _parse_input_fields(cls, data: dict[str, Any]) -> dict[str, str]:
+        """Extract input-section fields from *data*.
+
+        Args:
+            data: Raw dict from JSON deserialization.
+
+        Returns:
+            Partial keyword-argument dict for cls().
+        """
+        return {
+            "input_folder_json": str(data.get("input_folder_json") or ""),
+            "input_pattern_json": str(data.get("input_pattern_json") or _C_DEFAULT_PATTERN_JSON),
+            "input_key_mapping": str(data.get("input_key_mapping") or _C_DEFAULT_KEY_MAPPING),
+            "input_pattern_urls": str(data.get("input_pattern_urls") or _C_DEFAULT_PATTERN_URLS),
+        }
+
+    @classmethod
+    def _parse_output_fields(cls, data: dict[str, Any]) -> dict[str, str]:
+        """Extract output-section fields from *data*.
+
+        Args:
+            data: Raw dict from JSON deserialization.
+
+        Returns:
+            Partial keyword-argument dict for cls().
+        """
+        return {
+            "output_folder_json": str(data.get("output_folder_json") or ""),
+            "output_pattern_json": str(data.get("output_pattern_json") or _C_DEFAULT_PATTERN_JSON),
+            "output_key_mapping": str(data.get("output_key_mapping") or _C_DEFAULT_KEY_MAPPING),
+            "output_pattern_urls": str(data.get("output_pattern_urls") or _C_DEFAULT_PATTERN_URLS),
+        }
 
     def export_to_data_json(self) -> dict[str, Any]:
         """Serialize the project to a JSON-compatible dictionary.

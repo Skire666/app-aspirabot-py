@@ -99,7 +99,9 @@ class ExecutorView(ttk.Frame):
         frame = HorizontalLineFrame(parent, text="Profils disponibles")
         frame.pack(fill=tk.X)
 
-        self._listbox_profiles = tk.Listbox(frame, height=5, selectmode=tk.SINGLE, exportselection=False)
+        self._listbox_profiles = tk.Listbox(
+            frame, height=5, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
+        )
         self._listbox_profiles.pack(fill=tk.X, padx=5, pady=(0, 5))
         self._listbox_profiles.bind("<<ListboxSelect>>", self._on_listbox_profile_selected)
 
@@ -364,12 +366,12 @@ class ExecutorView(ttk.Frame):
         """Warmup URL row — optional URL to open before the run starts."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Préchauffe URL : ").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        ttk.Label(row, text="Préchauffe URL : ").pack(side=tk.LEFT, padx=5, pady=(0, 6))
         self._view_traces.append(
             (self._vm.warmup_url_var, self._vm.warmup_url_var.trace_add("write", lambda *_: self._vm.form_changed()))
         )
         ttk.Entry(row, textvariable=self._vm.warmup_url_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 6)
         )
 
     def _create_cfg_row5(self, parent: tk.Widget) -> None:
@@ -377,7 +379,7 @@ class ExecutorView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         ttk.Label(row, text="Erreurs globales max. avant mise en pause d'urgence :").pack(
-            side=tk.LEFT, padx=5, pady=(0, 5)
+            side=tk.LEFT, padx=5, pady=(0, 6)
         )
         self._view_traces.append(
             (
@@ -385,15 +387,15 @@ class ExecutorView(ttk.Frame):
                 self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=12).pack(side=tk.LEFT, pady=(0, 5))
+        ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=12).pack(side=tk.LEFT, pady=(0, 6))
 
     def _create_cfg_row6(self, parent: tk.Widget) -> None:
         """Row 6 — per-step error threshold with step selector."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Mettre en pause l'étape :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        ttk.Label(row, text="Mettre en pause l'étape :").pack(side=tk.LEFT, padx=5, pady=(0, 6))
         self._combo_steps = ttk.Combobox(row, state="readonly", width=35)
-        self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 6))
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
         self._view_traces.append(
             (
@@ -401,9 +403,9 @@ class ExecutorView(ttk.Frame):
                 self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Label(row, text=" après  ").pack(side=tk.LEFT)
-        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=10).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        ttk.Label(row, text="erreurs").pack(side=tk.LEFT)
+        ttk.Label(row, text=" après  ").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 6))
+        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=10).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 6))
+        ttk.Label(row, text="erreurs").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 6))
 
     def _create_launch_section(self, parent: tk.Widget) -> None:
         """Build the launch-trigger section."""
@@ -411,15 +413,15 @@ class ExecutorView(ttk.Frame):
         frame.pack(fill=tk.X)
 
         row = ttk.Frame(frame)
-        row.pack(fill=tk.X, padx=5, pady=(0, 5))
+        row.pack(fill=tk.X, padx=5, pady=(0, 6))
 
-        ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=5, pady=(0, 6))
         ttk.Label(row, textvariable=self._vm.verification_message_var, foreground="red").pack(
-            side=tk.LEFT, fill=tk.X, expand=True, pady=(0, 5)
+            side=tk.LEFT, fill=tk.X, expand=True, pady=(0, 6)
         )
 
         self._btn_launch = ttk.Button(row, text="Lancer le scraping", width=25, command=lambda: self._vm.launch())
-        self._btn_launch.pack(side=tk.RIGHT, padx=(10, 0), pady=(0, 5))
+        self._btn_launch.pack(side=tk.RIGHT, padx=(10, 0), pady=(0, 6))
 
     # ------------------------------------------------------------------
     # ViewModel bindings (trace_add for non-Var widgets)

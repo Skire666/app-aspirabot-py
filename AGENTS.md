@@ -1782,6 +1782,193 @@ to mutate (status/source) — never on widgets, which do not exist in the test.
 
 ---
 
+## SOLID Principles
+
+These five principles guide every design decision in this project. They reinforce — and are
+reinforced by — the MVP + ViewModel architecture. Violations of these principles will almost
+always coincide with violations of the layer rules above.
+
+---
+
+### S — Single Responsibility
+
+> *A class has one reason to change.*
+
+Each layer owns exactly one concern:
+
+| Layer | Single responsibility |
+|---|---|
+| `Model` | Represent a domain entity or value object |
+| `Repository` | Read and write persistent data |
+| `Service` | Enforce business rules and orchestrate repositories |
+| `ViewModel` | Hold and recompute observable UI state |
+| `Presenter` | Wire VM actions to service calls; reflect results back into VM Vars |
+| `View` | Build widgets and bind them to VM Vars |
+
+A class that straddles two layers (e.g. a Service that also reads a `tk.StringVar`, or a
+Presenter that talks directly to a `Repository`) has two reasons to change — split it.
+
+```python
+# BAD — Presenter re-implements a domain rule (two reasons to change)
+def _on_submit(self) -> None:
+    if not self._vm.url_var.get().startswith("https://"):
+        self._vm.error_message_var.set("URL invalide.")
+        return
+    self._service.start_scraping(...)
+
+# GOOD — rule belongs in the Service; Presenter only coordinates
+def _on_submit(self) -> None:
+    try:
+        self._service.start_scraping(self._vm.url_var.get())
+    except ScrapingError as e:
+        self._vm.error_message_var.set(str(e))
+```
+
+---
+
+### O — Open / Closed
+
+> *A class is open for extension and closed for modification.*
+
+New behaviour must be added by introducing a new class (or a new implementation of a
+Protocol), never by editing an existing one.
+
+- **Step executors** inherit `StepExecutorBase` and implement `_execute_step`; the base
+  class and the dispatch table remain untouched.
+- **Repositories** implement `IXxxRepository`; swapping a JSON repository for a database
+  one requires writing a new class, not modifying any Service.
+- **Validators** are added as new functions in a `validators/` file; existing validators
+  are never widened to cover unrelated domain objects.
+
+```python
+# GOOD — open for extension: add a new executor without touching existing code
+class ClickStepExecutor(StepExecutorBase):
+    """Executes a single click step."""
+
+    async def _execute_step(self, page: IWebPage, params: ClickParamsModel) -> None:
+        await page.click(params.selector)
+```
+
+---
+
+### L — Liskov Substitution
+
+> *Any implementation of an interface can replace another without breaking callers.*
+
+All inter-layer contracts are `typing.Protocol`s (in `interfaces/`). A Service that
+depends on `IScenarioRepository` must work correctly whether the concrete object is the
+production JSON repository, an in-memory fake, or a test stub.
+
+Practical rules:
+- A substitute implementation must honour every precondition and postcondition of the
+  Protocol method it satisfies.
+- Never add a side-channel method to a concrete class and call it from a Presenter — that
+  call would break with any other implementation.
+- Fakes used in tests are the best LSP check: if a fake cannot fully replace the real
+  object, the Protocol is wrong or the caller is too concrete.
+
+```python
+# interfaces/i_scenario_repository.py
+from typing import Protocol
+from models.scenario_model import ScenarioModel
+
+class IScenarioRepository(Protocol):
+    def find_by_id(self, id_scenario: str) -> ScenarioModel | None: ...
+    def save(self, scenario: ScenarioModel) -> None: ...
+
+# Test fake — valid substitute; no real I/O needed
+class FakeScenarioRepository:
+    def __init__(self) -> None:
+        self._store: dict[str, ScenarioModel] = {}
+
+    def find_by_id(self, id_scenario: str) -> ScenarioModel | None:
+        return self._store.get(id_scenario)
+
+    def save(self, scenario: ScenarioModel) -> None:
+        self._store[scenario.id_scenario] = scenario
+```
+
+---
+
+### I — Interface Segregation
+
+> *Clients must not be forced to depend on methods they do not use.*
+
+Keep Protocols narrow and role-focused. A Presenter that only needs to *read* scenarios
+should not receive a full `IScenarioRepository` that also exposes `save` and `delete`.
+
+- Define one Protocol per **role** (`IScenarioReader`, `IScenarioWriter`) and combine them
+  only when a consumer genuinely needs both.
+- A `Service` that only produces a result for the `Presenter` exposes only the method the
+  Presenter calls — not the full internal API of the class.
+- `ViewModel` binding hooks are already segregated: `bind_submit` and `bind_cancel` are
+  separate methods; the Presenter binds only what it handles.
+
+```python
+# BAD — fat interface forces every implementer to provide methods it may not need
+class IScenarioService(Protocol):
+    def get_scenario(self, id: str) -> ScenarioModel: ...
+    def save_scenario(self, ...) -> None: ...
+    def delete_scenario(self, id: str) -> None: ...
+    def export_scenarios(self, path: str) -> None: ...
+
+# GOOD — split by consumer role
+class IScenarioReader(Protocol):
+    def get_scenario(self, id_scenario: str) -> ScenarioModel: ...
+
+class IScenarioWriter(Protocol):
+    def save_scenario(self, name: str, url: str, active: bool) -> None: ...
+```
+
+---
+
+### D — Dependency Inversion
+
+> *High-level modules depend on abstractions; low-level modules implement them.*
+
+The dependency map in this project enforces this mechanically:
+
+- `Service` depends on `IXxxRepository` (the abstraction), not on the concrete JSON class.
+- `Presenter` depends on `IXxxService`, not on the concrete `XxxService`.
+- `View` depends on `ViewModel` (pure UI contract), not on any concrete Presenter or Service.
+
+Concrete objects are assembled **only** in `main.py` (the composition root) and injected
+via `__init__`. No layer may call `SomeConcreteClass()` on its own.
+
+```python
+# BAD — Service creates its own dependency (high-level depends on low-level)
+class ScenarioService:
+    def __init__(self) -> None:
+        self._repository = JsonScenarioRepository()  # ← hardcoded
+
+# GOOD — dependency injected via constructor; Service sees only the abstraction
+class ScenarioService:
+    def __init__(self, repository: IScenarioRepository) -> None:
+        self._repository = repository
+```
+
+```python
+# main.py — only place where concrete classes are instantiated
+repository = JsonScenarioRepository(path=DATA_DIR / "scenarios.json")
+service    = ScenarioService(repository=repository)
+vm         = ScenarioEditViewModel(master=root)
+presenter  = ScenarioEditPresenter(vm=vm, service=service)
+```
+
+---
+
+### SOLID — quick-reference table
+
+| Principle | Project manifestation | Warning sign |
+|---|---|---|
+| **S** — Single Responsibility | Each layer has one concern; class has one reason to change | A class imports from two non-adjacent layers |
+| **O** — Open / Closed | New step type = new executor subclass, no edits to existing ones | Adding an `if type == "new_type":` branch to an existing class |
+| **L** — Liskov Substitution | Protocol fakes work drop-in in tests | Test stub requires extra methods not in the Protocol |
+| **I** — Interface Segregation | Narrow role-focused Protocols | A Protocol method that only one consumer calls |
+| **D** — Dependency Inversion | `main.py` assembles concretes; layers see only Protocols | `SomeConcreteClass()` inside a Service or Presenter |
+
+---
+
 ## Do Not Modify Without Prior Discussion
 
 - The MVP + ViewModel layer structure — never mix responsibilities between layers.

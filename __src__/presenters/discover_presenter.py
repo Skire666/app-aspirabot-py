@@ -420,34 +420,39 @@ class DiscoverPresenter:
     def _on_save_profile_list(self) -> None:
         """Compare input/output URLs, create a new launch profile, and persist."""
         snap = self._vm.snapshot()
-
         if not snap.profile_id_scenario:
             self._vm.profile_save_result_var.set(C_DISCOVER_PROFILE_SAVE_ERROR.format(exc="Aucun profil sélectionné"))
             return
-
         profile_name = snap.profile_name_template.strip() or f"auto_{datetime.now().strftime('%Y-%m-%d_%Hh%Mm%Ss')}"
-
         try:
             computed: LaunchComputedModel = self._service.compute_new_launches(self._input_urls, self._output_urls)
         except AspirabotBaseError as e:
             self._logger.error("Erreur lors du calcul des URLs : %s", e, exc_info=True)
             self._vm.profile_save_result_var.set(C_DISCOVER_PROFILE_SAVE_ERROR.format(exc=str(e)))
             return
-
         if computed.new_url_count == 0:
             self._vm.profile_save_result_var.set(C_DISCOVER_PROFILE_SAVE_ZERO)
             return
+        self._persist_launch_model(snap.profile_id_scenario, profile_name, computed)
 
+    def _persist_launch_model(self, id_scenario: str, profile_name: str, computed: LaunchComputedModel) -> None:
+        """Build and save the launch model, then reflect the result in the VM.
+
+        Args:
+            id_scenario: Scenario whose profile list is updated.
+            profile_name: Human-readable name for the new launch profile entry.
+            computed: URL comparison result from compute_new_launches.
+        """
         try:
             launch_model = self._service.build_launch_model(
-                id_scenario=snap.profile_id_scenario, profile_name=profile_name, computed=computed
+                id_scenario=id_scenario, profile_name=profile_name, computed=computed
             )
-            self._profiles_service.update_profile_launch(snap.profile_id_scenario, launch_model)
+            self._profiles_service.update_profile_launch(id_scenario, launch_model)
             self._vm.profile_save_result_var.set(C_DISCOVER_PROFILE_SAVE_OK.format(count=computed.new_url_count))
             self._logger.info(
                 "Liste de lancement sauvegardée : %s nouvelles URLs pour scénario '%s'.",
                 computed.new_url_count,
-                snap.profile_id_scenario,
+                id_scenario,
             )
         except AspirabotBaseError as e:
             self._logger.error("Erreur lors de la sauvegarde du profil : %s", e, exc_info=True)
