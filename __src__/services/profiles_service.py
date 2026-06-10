@@ -153,7 +153,7 @@ class ProfilesService:
         self._repository.create_profiles(new_scenario)
         return new_profile_launch
 
-    def update_profile_launch(self, id_scenario: str, profile: LaunchModel) -> LaunchModel:
+    def update_profiles_launch_url_only(self, id_scenario: str, profile: LaunchModel) -> LaunchModel:
         """Stamp timestamps on *profile* and persist it as a new launch profile.
 
         Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
@@ -170,6 +170,34 @@ class ProfilesService:
         if self._repository.exists_scenarios(id_scenario):
             found: ProfilesModel = self._repository.read_profiles(id_scenario)
             found.update_profile_launch(profile)
+            self._repository.update_profiles(found)
+            return profile
+
+        new_profiles: ProfilesModel = ProfilesModel.get_default(id_scenario=id_scenario)
+        new_profiles.create_profile_launch(profile)
+        self._repository.create_profiles(new_profiles)
+        return profile
+
+    def update_profile_launch(
+        self, id_scenario: str, profile: LaunchModel, only_replace_url: bool = False
+    ) -> LaunchModel:
+        """Stamp timestamps on *profile* and persist it as a new launch profile.
+
+        Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
+        set both ``created_date_profile`` and ``modified_date_profile`` to the
+        current time before delegating to the repository.
+
+        Args:
+            id_scenario: Unique identifier of the scenario to which the profile belongs.
+            profile: The profile model to update.
+            only_replace_url: If True, only the URL of the profile will be updated.
+
+        Raises:
+            DatabaseUnavailableError: If the file cannot be written to disk.
+        """
+        if self._repository.exists_scenarios(id_scenario):
+            found: ProfilesModel = self._repository.read_profiles(id_scenario)
+            found.update_profile_launch(profile, only_replace_url)
             self._repository.update_profiles(found)
             return profile
 

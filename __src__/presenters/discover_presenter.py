@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from models.discover_model import DiscoverModel
@@ -17,7 +19,7 @@ from models.scenario_model import ScenarioModel
 from services.discover_service import DiscoverService
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
-from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
+from shared.constants import C_DEFAULT_PROFILE_NAME_TEMPLATE
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_DISCOVER_COMPUTE_OK,
@@ -58,7 +60,6 @@ class DiscoverPresenter:
         _scenarios_service: Service for listing available scenarios.
         _hub: The in-memory hub model, kept in sync with the repository.
         _computed: Result of the last compute_new_launches call, or None.
-        _selected_scenario: The scenario currently selected in the combobox.
     """
 
     def __init__(
@@ -84,7 +85,6 @@ class DiscoverPresenter:
 
         self._hub: DiscoversHubModel = DiscoversHubModel.get_default()
         self._computed: LaunchComputedModel | None = None
-        self._selected_scenario: ScenarioRowState | None = None
 
         # Wire all hooks
         vm.bind_create_project(self._on_create_project)
@@ -95,8 +95,6 @@ class DiscoverPresenter:
         vm.bind_browse_output_folder(self._on_browse_output_folder)
         vm.bind_open_input_folder(self._on_open_input_folder)
         vm.bind_open_output_folder(self._on_open_output_folder)
-        vm.bind_input_files_check_requested(self._on_input_files_check)
-        vm.bind_output_files_check_requested(self._on_output_files_check)
         vm.bind_compute_url_list(self._on_compute_url_list)
         vm.bind_save_profile_list(self._on_save_profile_list)
 
@@ -173,7 +171,11 @@ class DiscoverPresenter:
             self._vm.input_pattern_json_var.set("export*.json")
             self._vm.input_key_mapping_var.set("key_xxx")
             self._vm.input_pattern_urls_var.set("https*")
-            self._vm.output_folder_json_var.set("")
+            self._vm.input_files_check_var.set("--")
+            self._vm.input_urls_check_var.set("--")
+            self._vm.output_folder_json_var.set("--")
+            self._vm.output_files_check_var.set("--")
+            self._vm.output_urls_check_var.set("--")
             self._vm.output_pattern_json_var.set("export*.json")
             self._vm.output_key_mapping_var.set("key_xxx")
             self._vm.output_pattern_urls_var.set("https*")
@@ -233,6 +235,7 @@ class DiscoverPresenter:
         if not name:
             return
         try:
+            self._clear_form()
             project = self._service.create_project(self._hub, name)
             self._vm.new_project_name_var.set("")
             self._vm.selected_project_id_var.set(project.id_discover)
@@ -317,66 +320,73 @@ class DiscoverPresenter:
             self._logger.error("Erreur lors de l'ouverture du dossier de sortie : %s", e, exc_info=True)
 
     # -------------------------------------------------------------------------
-    # VM check hooks — file counts (synchronous, fast)
-    # -------------------------------------------------------------------------
-
-    def _on_input_files_check(self) -> None:
-        """Dispatch input file count to a background thread to avoid blocking the UI."""
-        snap = self._vm.snapshot()
-        threading.Thread(target=self._input_files_check_worker, args=(snap,), daemon=True).start()
-
-    def _input_files_check_worker(self, snap: DiscoverViewState) -> None:
-        """Background worker: count input JSON files and post the result to the main thread."""
-        try:
-            count = self._service.count_json_files(snap.input_folder_json, snap.input_pattern_json)
-            msg = C_DISCOVER_FILES_COUNT_ZERO if count == 0 else C_DISCOVER_FILES_COUNT_OK.format(count=count)
-        except Exception as exc:  # noqa: BLE001
-            msg = C_DISCOVER_FILES_COUNT_ERROR.format(exc=exc)
-        self._vm.post_to_main_thread(lambda: self._vm.input_files_check_var.set(msg))
-
-    def _on_output_files_check(self) -> None:
-        """Dispatch output file count to a background thread to avoid blocking the UI."""
-        snap = self._vm.snapshot()
-        threading.Thread(target=self._output_files_check_worker, args=(snap,), daemon=True).start()
-
-    def _output_files_check_worker(self, snap: DiscoverViewState) -> None:
-        """Background worker: count output JSON files and post the result to the main thread."""
-        try:
-            count = self._service.count_json_files(snap.output_folder_json, snap.output_pattern_json)
-            msg = C_DISCOVER_FILES_COUNT_ZERO if count == 0 else C_DISCOVER_FILES_COUNT_OK.format(count=count)
-        except Exception as exc:  # noqa: BLE001
-            msg = C_DISCOVER_FILES_COUNT_ERROR.format(exc=exc)
-        self._vm.post_to_main_thread(lambda: self._vm.output_files_check_var.set(msg))
-
-    # -------------------------------------------------------------------------
     # VM action handler — compute URL list (manual, async)
     # -------------------------------------------------------------------------
 
     def _on_compute_url_list(self) -> None:
         """Load input and output URLs then compute the new-launch list asynchronously."""
         snap = self._vm.snapshot()
+        self._vm.input_files_check_var.set(C_DISCOVER_URLS_COUNT_COMPUTING)
+        self._vm.output_files_check_var.set(C_DISCOVER_URLS_COUNT_COMPUTING)
         self._vm.input_urls_check_var.set(C_DISCOVER_URLS_COUNT_COMPUTING)
         self._vm.output_urls_check_var.set(C_DISCOVER_URLS_COUNT_COMPUTING)
         self._vm.input_is_valid_var.set(False)
         self._vm.output_is_valid_var.set(False)
         if not self._vm.profile_name_template_var.get().strip():
-            self._vm.profile_name_template_var.set(f"auto_{get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()}")
+            self._vm.profile_name_template_var.set(C_DEFAULT_PROFILE_NAME_TEMPLATE)
         self._computed = None
         self._vm.is_computing_var.set(True)
 
         threading.Thread(target=self._compute_worker, args=(snap,), daemon=True).start()
 
     def _compute_worker(self, snap: DiscoverViewState) -> None:
-        """Thread worker: fetch both URL lists, compute the diff, post result."""
-        input_urls, input_error = self._fetch_urls(
-            snap.input_folder_json, snap.input_pattern_json, snap.input_key_mapping, snap.input_pattern_urls
-        )
-        output_urls, output_error = self._fetch_urls(
-            snap.output_folder_json, snap.output_pattern_json, snap.output_key_mapping, snap.output_pattern_urls
-        )
+        """Thread worker: fetch input and output URL lists concurrently, then compute the diff.
+
+        Input and output scans are independent and run simultaneously in a two-worker
+        pool.  On cache hit (same files, same mtimes) each fetch returns instantly.
+        Elapsed time is measured over the full worker execution and logged at INFO.
+        """
+        t_start = time.perf_counter()
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            future_input_count = executor.submit(
+                self._count_json_files,
+                snap.input_folder_json,
+                snap.input_pattern_json,
+            )
+            future_output_count = executor.submit(
+                self._count_json_files,
+                snap.output_folder_json,
+                snap.output_pattern_json,
+            )
+            future_input = executor.submit(
+                self._fetch_urls,
+                snap.input_folder_json,
+                snap.input_pattern_json,
+                snap.input_key_mapping,
+                snap.input_pattern_urls,
+            )
+            future_output = executor.submit(
+                self._fetch_urls,
+                snap.output_folder_json,
+                snap.output_pattern_json,
+                snap.output_key_mapping,
+                snap.output_pattern_urls,
+            )
+            input_file_count, input_count_error = future_input_count.result()
+            output_file_count, output_count_error = future_output_count.result()
+            input_urls, input_error = future_input.result()
+            output_urls, output_error = future_output.result()
+
         computed = self._try_compute(input_urls, output_urls, input_error, output_error)
+        elapsed = time.perf_counter() - t_start
+
         self._vm.post_to_main_thread(
-            lambda: self._apply_compute_result(input_urls, output_urls, input_error, output_error, computed)
+            lambda: self._apply_compute_result(
+                input_file_count, input_count_error,
+                output_file_count, output_count_error,
+                input_urls, output_urls, input_error, output_error, computed, elapsed,
+            )
         )
 
     def _fetch_urls(self, folder: str, pattern_json: str, key_mapping: str, pattern_urls: str) -> tuple[list[str], str]:
@@ -400,18 +410,44 @@ class DiscoverPresenter:
 
     def _apply_compute_result(
         self,
+        input_file_count: int,
+        input_count_error: str,
+        output_file_count: int,
+        output_count_error: str,
         input_urls: list[str],
         output_urls: list[str],
         input_error: str,
         output_error: str,
         computed: LaunchComputedModel | None,
+        elapsed: float,
     ) -> None:
-        """Update VM Vars from compute results (runs on the main thread)."""
-        self._input_urls = input_urls
-        self._output_urls = output_urls
+        """Update VM Vars from compute results (runs on the main thread).
+
+        Args:
+            input_file_count: Number of JSON files found in the input folder.
+            input_count_error: Non-empty when the input file count failed.
+            output_file_count: Number of JSON files found in the output folder.
+            output_count_error: Non-empty when the output file count failed.
+            input_urls: URLs loaded from input files (transient, not stored).
+            output_urls: URLs loaded from output files (transient, not stored).
+            input_error: Non-empty when the input URL scan failed.
+            output_error: Non-empty when the output URL scan failed.
+            computed: Diff result, or None when a scan error occurred.
+            elapsed: Wall-clock seconds measured by ``_compute_worker``.
+        """
         self._computed = computed
+        self._set_input_files_var(input_file_count, input_count_error)
+        self._set_output_files_var(output_file_count, output_count_error)
         self._set_input_url_vars(input_urls, input_error)
         self._set_output_url_vars(output_urls, output_error)
+        status = "OK" if computed is not None else "KO (erreur de lecture)"
+        self._logger.info(
+            "Calcul terminé en %.3f s — %s (input : %s URL(s), output : %s URL(s)).",
+            elapsed,
+            status,
+            len(input_urls),
+            len(output_urls),
+        )
         if computed is not None:
             self._vm.check_result_computed_var.set(
                 C_DISCOVER_COMPUTE_OK.format(
@@ -448,6 +484,31 @@ class DiscoverPresenter:
             self._vm.output_urls_check_var.set(C_DISCOVER_URLS_COUNT_OK.format(count=len(urls)))
             self._vm.output_is_valid_var.set(True)
 
+    def _count_json_files(self, folder: str, pattern: str) -> tuple[int, str]:
+        """Count JSON files matching *pattern* in *folder*; return (count, error_message)."""
+        try:
+            return self._service.count_json_files(folder, pattern), ""
+        except Exception as exc:  # noqa: BLE001
+            return 0, str(exc)
+
+    def _set_input_files_var(self, count: int, error: str) -> None:
+        """Write input JSON file count/error to input_files_check_var."""
+        if error:
+            self._vm.input_files_check_var.set(C_DISCOVER_FILES_COUNT_ERROR.format(exc=error))
+        elif count == 0:
+            self._vm.input_files_check_var.set(C_DISCOVER_FILES_COUNT_ZERO)
+        else:
+            self._vm.input_files_check_var.set(C_DISCOVER_FILES_COUNT_OK.format(count=count))
+
+    def _set_output_files_var(self, count: int, error: str) -> None:
+        """Write output JSON file count/error to output_files_check_var."""
+        if error:
+            self._vm.output_files_check_var.set(C_DISCOVER_FILES_COUNT_ERROR.format(exc=error))
+        elif count == 0:
+            self._vm.output_files_check_var.set(C_DISCOVER_FILES_COUNT_ZERO)
+        else:
+            self._vm.output_files_check_var.set(C_DISCOVER_FILES_COUNT_OK.format(count=count))
+
     # -------------------------------------------------------------------------
     # VM action handler — save profile list
     # -------------------------------------------------------------------------
@@ -468,22 +529,22 @@ class DiscoverPresenter:
         if self._computed.new_url_count == 0:
             self._vm.check_result_computed_var.set(C_DISCOVER_PROFILE_SAVE_ZERO)
             return
-        profile_name = snap.profile_name_template.strip() or f"auto_{get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()}"
-        self._persist_launch_model(snap.profile_id_scenario, profile_name, self._computed)
+        profile_name = snap.profile_name_template.strip() or C_DEFAULT_PROFILE_NAME_TEMPLATE
+        self._persist_launch_model(snap.profile_id_scenario, profile_name, snap.output_folder_json, self._computed)
 
-    def _persist_launch_model(self, id_scenario: str, profile_name: str, computed: LaunchComputedModel) -> None:
+    def _persist_launch_model(
+        self, id_scenario: str, profile_name: str, output_folder: str, computed: LaunchComputedModel
+    ) -> None:
         """Build and save the launch model, then reflect the result in the VM.
 
         Args:
             id_scenario: Scenario whose profile list is updated.
             profile_name: Human-readable name for the new launch profile entry.
+            output_folder: The folder where the output JSON files are located.
             computed: URL comparison result from compute_new_launches.
         """
-        print("Tentative de sauvegarde du profil de lancement...")
         try:
-            launch_model = self._service.build_launch_model(
-                id_scenario=id_scenario, profile_name=profile_name, computed=computed
-            )
+            launch_model = self._service.build_launch_model(id_scenario, profile_name, output_folder, computed)
             self._profiles_service.update_profile_launch(id_scenario, launch_model)
             self._vm.check_result_computed_var.set(C_DISCOVER_PROFILE_SAVE_OK.format(count=computed.new_url_count))
             self._logger.info(
@@ -518,7 +579,6 @@ class DiscoverPresenter:
         Args:
             row: The selected ScenarioRowState, or None when deselected.
         """
-        self._selected_scenario = row
         self._vm.profile_id_scenario_var.set(row.id_file if row else "")
 
 

@@ -154,10 +154,6 @@ class DiscoverView(ttk.Frame):
         self._frame_profile = HorizontalLineFrame(parent, text="Mise à jour du profil")
         self._frame_profile.pack(fill=tk.BOTH, expand=True)
 
-        # Ligne 3 packée en premier pour s'ancrer au bas (règle pack : BOTTOM avant TOP)
-        row3 = ttk.Frame(self._frame_profile)
-        row3.pack(fill=tk.X, side=tk.BOTTOM, padx=4, pady=(6, 0))
-
         # Ligne 0 : scenario combobox
         row0 = ttk.Frame(self._frame_profile)
         row0.pack(fill=tk.X, padx=4)
@@ -173,18 +169,23 @@ class DiscoverView(ttk.Frame):
         # Ligne 1 : profile name entry
         row1 = ttk.Frame(self._frame_profile)
         row1.pack(fill=tk.X, padx=4, pady=(6, 0))
-        ttk.Label(row1, text="Nom du profil :", width=18).pack(side=tk.LEFT, padx=(0, 0))
-        ttk.Entry(row1, textvariable=self._vm.profile_name_template_var, width=34).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Label(row1, text="Nom du profil :", width=18).pack(side=tk.LEFT, padx=(0, 0), pady=6)
+        ttk.Entry(row1, textvariable=self._vm.profile_name_template_var, width=34).pack(
+            side=tk.LEFT, padx=(6, 0), pady=6
+        )
 
         # Ligne 2 : Calculer la liste button (sous le label "Nom du profil :")
         row2 = ttk.Frame(self._frame_profile)
         row2.pack(fill=tk.X, padx=4, pady=(4, 0))
-        self._btn_compute = ttk.Button(row2, text="Calculer la liste", command=self._vm.compute_url_list)
+        self._btn_compute = ttk.Button(row2, text="Calculer la liste", width=17, command=self._vm.compute_url_list)
         self._btn_compute.pack(side=tk.LEFT)
-        ttk.Label(row2, text="Vérification :").pack(side=tk.LEFT, padx=(22, 6), pady=6)
+        ttk.Label(row2, text="Vérification :").pack(side=tk.LEFT, padx=(8, 6), pady=6)
         ttk.Label(row2, textvariable=self._vm.check_result_computed_var).pack(side=tk.LEFT, padx=(6, 0), pady=6)
+
+        row3 = ttk.Frame(self._frame_profile)
+        row3.pack(fill=tk.X, padx=4)
         self._btn_save_list = ttk.Button(row3, text="Sauvegarder la liste", command=self._vm.save_profile_list)
-        self._btn_save_list.pack(side=tk.RIGHT, padx=(0, 0), pady=6)
+        self._btn_save_list.pack(side=tk.LEFT, padx=(0, 0), pady=6)
         ttk.Label(row3, textvariable=self._vm.save_profile_hint_var).pack(side=tk.LEFT, padx=(8, 0), pady=6)
 
         self._add_trace(self._vm.can_update_profile_var, lambda *_: self._sync_save_list_btn())

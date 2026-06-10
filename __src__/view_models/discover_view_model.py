@@ -10,7 +10,7 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
+from shared.constants import C_DEFAULT_PROFILE_NAME_TEMPLATE
 from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import (
     C_DISCOVER_SAVE_LIST_HINT_BOTH,
@@ -130,9 +130,7 @@ class DiscoverViewModel(ViewModelBase):
     def _init_profile_vars(self, master: tk.Misc) -> None:
         """Initialise Cadre 3 Vars (profile section)."""
         self.profile_id_scenario_var = tk.StringVar(master=master, value="")
-        self.profile_name_template_var = tk.StringVar(
-            master=master, value=f"auto_{get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()}"
-        )
+        self.profile_name_template_var = tk.StringVar(master=master, value=C_DEFAULT_PROFILE_NAME_TEMPLATE)
         self.check_result_computed_var = tk.StringVar(master=master, value="")
         self.can_update_profile_var = tk.BooleanVar(master=master, value=False)
         self.save_profile_hint_var = tk.StringVar(master=master, value="")
@@ -157,8 +155,6 @@ class DiscoverViewModel(ViewModelBase):
         self._on_browse_output_folder: Callable[[], None] | None = None
         self._on_open_input_folder: Callable[[], None] | None = None
         self._on_open_output_folder: Callable[[], None] | None = None
-        self._on_input_files_check_requested: Callable[[], None] | None = None
-        self._on_output_files_check_requested: Callable[[], None] | None = None
         self._on_compute_url_list: Callable[[], None] | None = None
         self._on_scenarios_changed: Callable[[], None] | None = None
         self._on_save_profile_list: Callable[[], None] | None = None
@@ -190,8 +186,6 @@ class DiscoverViewModel(ViewModelBase):
     def _recompute_derived(self) -> None:
         """Recompute all derived Vars and schedule verification hooks."""
         self._recompute_project_derived()
-        self._recompute_input_derived()
-        self._recompute_output_derived()
         input_ok = self.input_is_valid_var.get()
         output_ok = self.output_is_valid_var.get()
         name_ok = bool(self.profile_name_template_var.get().strip())
@@ -206,56 +200,6 @@ class DiscoverViewModel(ViewModelBase):
         self._set_if_changed(
             self.can_save_project_var, has_selected and self._build_form_hash() != self._saved_form_hash
         )
-
-    def _recompute_input_derived(self) -> None:
-        """Schedule file count check; reset URL validity when source fields change."""
-        if self.input_folder_json_var.get().strip() and self.input_pattern_json_var.get().strip():
-            self._schedule("input_files_check", 250, self._fire_input_files_check)
-        else:
-            self._set_if_changed(self.input_files_check_var, "")
-            self._set_if_changed(self.input_is_valid_var, False)
-
-        input_ready = (
-            bool(self.input_folder_json_var.get().strip())
-            and bool(self.input_pattern_json_var.get().strip())
-            and bool(self.input_key_mapping_var.get().strip())
-            and bool(self.input_pattern_urls_var.get().strip())
-        )
-        if input_ready:
-            h = self._build_input_urls_hash()
-            if h != self._input_urls_last_hash:
-                self._input_urls_last_hash = h
-                self._set_if_changed(self.input_urls_check_var, "")
-                self._set_if_changed(self.input_is_valid_var, False)
-        else:
-            self._input_urls_last_hash = ()
-            self._set_if_changed(self.input_urls_check_var, "")
-            self._set_if_changed(self.input_is_valid_var, False)
-
-    def _recompute_output_derived(self) -> None:
-        """Schedule file count check; reset URL validity when source fields change."""
-        if self.output_folder_json_var.get().strip() and self.output_pattern_json_var.get().strip():
-            self._schedule("output_files_check", 250, self._fire_output_files_check)
-        else:
-            self._set_if_changed(self.output_files_check_var, "")
-            self._set_if_changed(self.output_is_valid_var, False)
-
-        output_ready = (
-            bool(self.output_folder_json_var.get().strip())
-            and bool(self.output_pattern_json_var.get().strip())
-            and bool(self.output_key_mapping_var.get().strip())
-            and bool(self.output_pattern_urls_var.get().strip())
-        )
-        if output_ready:
-            h = self._build_output_urls_hash()
-            if h != self._output_urls_last_hash:
-                self._output_urls_last_hash = h
-                self._set_if_changed(self.output_urls_check_var, "")
-                self._set_if_changed(self.output_is_valid_var, False)
-        else:
-            self._output_urls_last_hash = ()
-            self._set_if_changed(self.output_urls_check_var, "")
-            self._set_if_changed(self.output_is_valid_var, False)
 
     # -------------------------------------------------------------------------
     # Dirty tracking
@@ -446,18 +390,6 @@ class DiscoverViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_open_output_folder = callback
 
-    def bind_input_files_check_requested(self, callback: Callable[[], None]) -> None:
-        """Register the Presenter handler for input file count; rejects double binding."""
-        if self._on_input_files_check_requested is not None:
-            raise CallbackNotDefinedError()
-        self._on_input_files_check_requested = callback
-
-    def bind_output_files_check_requested(self, callback: Callable[[], None]) -> None:
-        """Register the Presenter handler for output file count; rejects double binding."""
-        if self._on_output_files_check_requested is not None:
-            raise CallbackNotDefinedError()
-        self._on_output_files_check_requested = callback
-
     def bind_compute_url_list(self, callback: Callable[[], None]) -> None:
         """Register the Presenter handler for compute_url_list(); rejects double binding."""
         if self._on_compute_url_list is not None:
@@ -539,20 +471,6 @@ class DiscoverViewModel(ViewModelBase):
         if self._on_save_profile_list is None:
             raise CallbackNotDefinedError()
         self._on_save_profile_list()
-
-    # -------------------------------------------------------------------------
-    # Internal scheduled callbacks (fire bound hooks)
-    # -------------------------------------------------------------------------
-
-    def _fire_input_files_check(self) -> None:
-        """Fire the input files check hook when the debounce timer expires."""
-        if self._on_input_files_check_requested is not None:
-            self._on_input_files_check_requested()
-
-    def _fire_output_files_check(self) -> None:
-        """Fire the output files check hook when the debounce timer expires."""
-        if self._on_output_files_check_requested is not None:
-            self._on_output_files_check_requested()
 
 
 # EOF

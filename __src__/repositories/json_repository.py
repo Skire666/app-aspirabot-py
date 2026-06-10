@@ -1,18 +1,31 @@
 """Generic JSON file repository with a shared in-memory read cache.
 
 Provides JsonFileRepository for reading and writing JSON files.
-Already-loaded files are kept in a class-level cache keyed by resolved path;
-callers always receive a deep copy.  Serialisation transparently handles
-str, int, float, bool, None, date, datetime and time.
+Files are cached keyed by resolved path; the cache entry stores (mtime_ns, data)
+so freshness is checked by a single integer comparison rather than reloading.
+Writes invalidate the entry and trigger a fresh load on the next read.
+
+``read_list_from_path_ro`` returns the cached reference directly; callers MUST NOT
+mutate the result or any nested object.  ``read_from_path`` returns a deep copy
+for dict-rooted files when mutation by the caller is acceptable.
+
+The cache is bounded (``_MAX_CACHE_ENTRIES``) and evicts the oldest entry (FIFO)
+when the limit is reached.  Writes and evictions are protected by a module-level
+lock; reads use only GIL-safe dict.get() and are therefore lock-free on CPython.
+
+Serialisation transparently handles str, int, float, bool, None, date, datetime and time.
 """
 
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
 
+from __future__ import annotations
+
 import copy
 import json
 import logging
+import threading
 from datetime import date, datetime, time
 from enum import Enum
 from pathlib import Path
@@ -73,10 +86,15 @@ def _decode_hook(raw: dict[str, Any]) -> dict[str, Any] | date | datetime | time
 
 
 # -----------------------------------------------------------------------------
-# Module-level cache shared by all JsonFileRepository instances/subclasses
+# Module-level cache shared by all JsonFileRepository instances/subclasses.
+# Each entry maps a resolved path string to a 2-tuple: mtime in nanoseconds + parsed data.
+# Eviction: FIFO when count exceeds _MAX_CACHE_ENTRIES (Python 3.7+ dicts are insertion-ordered).
+# Thread safety: writes are locked; reads use GIL-safe dict.get (atomic on CPython).
 # -----------------------------------------------------------------------------
 
-_cache: dict[str, Any] = {}
+_MAX_CACHE_ENTRIES: int = 2048
+_file_cache: dict[str, tuple[int, Any]] = {}
+_cache_lock: threading.Lock = threading.Lock()
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -86,9 +104,14 @@ _cache: dict[str, Any] = {}
 class JsonFileRepository:
     """Read/write JSON files backed by a shared, path-keyed in-memory cache.
 
-    All instances and subclasses share the same module-level ``_cache`` dict
-    so any caller benefits from a previously loaded file.  Every ``read`` call
-    returns a deep copy to prevent accidental mutation of shared state.
+    All instances and subclasses share the same module-level ``_file_cache``.
+    Cache entries store ``(mtime_ns, data)``; on each read the stored mtime is
+    compared to the file's current mtime to detect changes with a single integer
+    comparison (no string concatenation).
+
+    ``read_from_path`` returns a deep copy so callers may mutate the result freely.
+    ``read_list_from_path_ro`` returns the cached reference without copying; its
+    caller **must not** mutate the list or any nested object.
 
     Supported value types beyond native JSON:
         ``date``, ``datetime``, ``time`` — encoded as ISO 8601 tagged objects.
@@ -105,10 +128,8 @@ class JsonFileRepository:
     def read_from_path(self, path: Path) -> dict[str, Any]:
         """Return the JSON content of *path*, loading from disk when needed.
 
-        On a cache hit a deep copy of the cached value is returned.
-        On a cache miss the file is read, stored in the cache, then a deep
-        copy is returned.  When the file does not exist ``{}`` is returned
-        and nothing is cached.
+        Returns a deep copy of the cached value so callers may mutate it freely.
+        Returns ``{}`` when the file does not exist (nothing cached).
 
         Args:
             path: Path to the JSON file to read.
@@ -121,30 +142,47 @@ class JsonFileRepository:
                 or contains invalid JSON.
         """
         resolved = path.resolve()
-
-        # File absent: nothing to cache, return empty dict.
         if not resolved.exists():
             self._logger.warning("Fichier JSON absent : '%s'.", resolved)
             return {}
 
-        key_cached = str(resolved) + str(Path(resolved).stat().st_mtime)
-
-        # Return a deep copy from cache on hit.
-        if key_cached in _cache:
-            self._logger.debug("Déjà chargé. Lecture du cache '%s'.", resolved)
-            return copy.deepcopy(_cache[key_cached])
-
-        # Load from disk, populate cache, return a deep copy.
-        data = self._load_from_disk(resolved)
-        _cache[key_cached] = data
+        data = self._get_or_load(resolved, known_mtime_ns=None)
         return cast(dict[str, Any], copy.deepcopy(data))
 
+    def read_list_from_path_ro(self, path: Path, known_mtime_ns: int | None = None) -> list[Any]:
+        """Return the JSON list content of *path* without copying.
+
+        The caller **must not** mutate the returned list or any nested object;
+        the returned reference is shared with the cache.
+
+        Pass *known_mtime_ns* (e.g. from a prior ``os.scandir()`` call) to skip
+        the ``stat()`` call entirely on cache hits — useful for bulk directory scans
+        where all mtimes are already available from a single directory pass.
+
+        Args:
+            path: Path to the JSON file containing a list at the root level.
+            known_mtime_ns: Pre-fetched mtime in nanoseconds, or ``None`` to stat
+                the file on demand.
+
+        Returns:
+            The cached list reference, or ``[]`` when the file is absent.
+
+        Raises:
+            JsonFileRepositoryError: When the file exists but is unreadable
+                or contains invalid JSON.
+        """
+        resolved = path.resolve()
+        if not resolved.exists():
+            self._logger.warning("Fichier JSON absent : '%s'.", resolved)
+            return []
+
+        return cast(list[Any], self._get_or_load(resolved, known_mtime_ns=known_mtime_ns))
+
     def write_from_dict(self, path: Path, data: dict[str, Any] | list[Any]) -> None:
-        """Serialise *data* to *path* as JSON and invalidate the cache entry.
+        """Serialise *data* to *path* as JSON and invalidate any cache entry.
 
         Parent directories are created automatically.  On success the cache
-        entry for this path is removed so the next ``read`` reflects the
-        persisted content.
+        entry for this path is removed so the next ``read`` reloads from disk.
 
         Args:
             path: Destination JSON file path.
@@ -165,51 +203,52 @@ class JsonFileRepository:
             self._logger.error("Impossible d'écrire '%s'.", resolved, exc_info=True)
             raise JsonFileRepositoryError(resolved, str(exc)) from exc
 
-        # Invalidate stale cache entries for this path (mtime-based keys may not
-        # change if write and prior read happen within the filesystem's time-resolution window).
-        path_prefix = str(resolved)
-        stale = [k for k in _cache if k.startswith(path_prefix)]
-        for k in stale:
-            del _cache[k]
-
-    def read_list_from_path(self, path: Path) -> list[Any]:
-        """Return the JSON list content of *path*, loading from disk when needed.
-
-        Mirrors ``read_from_path`` but expects the file root to be a JSON array.
-        On a cache hit a deep copy of the cached value is returned.
-        On a cache miss the file is read, stored in the cache, then a deep
-        copy is returned.  When the file does not exist ``[]`` is returned
-        and nothing is cached.
-
-        Args:
-            path: Path to the JSON file containing a list at the root level.
-
-        Returns:
-            A deep copy of the file's JSON list, or ``[]`` when absent.
-
-        Raises:
-            JsonFileRepositoryError: When the file exists but is unreadable
-                or contains invalid JSON.
-        """
-        resolved = path.resolve()
-
-        if not resolved.exists():
-            self._logger.warning("Fichier JSON absent : '%s'.", resolved)
-            return []
-
-        key_cached = str(resolved) + str(resolved.stat().st_mtime)
-
-        if key_cached in _cache:
-            self._logger.debug("Déjà chargé. Lecture du cache '%s'.", resolved)
-            return cast(list[Any], copy.deepcopy(_cache[key_cached]))
-
-        data = self._load_from_disk(resolved)
-        _cache[key_cached] = data
-        return cast(list[Any], copy.deepcopy(data))
+        # Invalidate cache for this path so the next read reflects persisted content.
+        key = str(resolved)
+        with _cache_lock:
+            _file_cache.pop(key, None)
 
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _get_or_load(self, resolved: Path, known_mtime_ns: int | None) -> dict[str, Any] | list[Any]:
+        """Return cached data or load from disk.
+
+        Uses *known_mtime_ns* when provided (e.g. from ``os.scandir()``) to avoid
+        a redundant ``stat()`` call.  Falls back to ``stat()`` otherwise.
+
+        The expensive disk read and JSON parse happen outside the lock so other
+        threads are not blocked.  Two threads may concurrently load the same file
+        on a cache miss; the second store simply overwrites the first (same data).
+
+        Args:
+            resolved: Fully resolved, existing file path.
+            known_mtime_ns: Pre-fetched mtime in nanoseconds, or ``None``.
+
+        Returns:
+            The cached (or freshly loaded) data object.
+        """
+        key = str(resolved)
+        current_mtime = known_mtime_ns if known_mtime_ns is not None else resolved.stat().st_mtime_ns
+
+        # Fast read-only check — GIL-safe on CPython, no lock needed.
+        entry = _file_cache.get(key)
+        if entry is not None and entry[0] == current_mtime:
+            self._logger.debug("Cache hit : '%s'.", resolved.name)
+            return entry[1]
+
+        # Cache miss or stale entry: load outside the lock.
+        data = self._load_from_disk(resolved)
+
+        # Store with lock; evict oldest entry (FIFO) when the cache is full.
+        with _cache_lock:
+            _file_cache[key] = (current_mtime, data)
+            if len(_file_cache) > _MAX_CACHE_ENTRIES:
+                oldest = next(iter(_file_cache))
+                del _file_cache[oldest]
+
+        return data
 
     def _load_from_disk(self, resolved: Path) -> dict[str, Any] | list[Any]:
         """Read and deserialise a JSON file; raises on I/O or parse errors.

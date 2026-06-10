@@ -15,17 +15,24 @@ from dataclasses import dataclass, field
 class LaunchComputedModel:
     """Result of comparing input and output URL sets in a Discover project.
 
+    Counts are stored as plain integers so the full URL lists do not stay in
+    memory after computation.  The caller of ``compute_new_launches`` owns the
+    lists and they are freed as soon as the caller's frame returns.
+
     Attributes:
-        input_urls: All URLs extracted from the input JSON files.
-        output_urls: All URLs extracted from the output JSON files.
+        input_total_count: Total number of input URLs including duplicates.
+        output_total_count: Total number of output URLs including duplicates.
+        output_unique_count_stored: Number of distinct output URLs, precomputed
+            from the output set during ``compute_new_launches``.
         new_entries: URLs present in the input but absent from the output,
             mapped to how many times each appears in the input.
         existing_entries: URLs already present in the output,
             mapped to how many times each appears there.
     """
 
-    input_urls: list[str] = field(default_factory=list)
-    output_urls: list[str] = field(default_factory=list)
+    input_total_count: int = 0
+    output_total_count: int = 0
+    output_unique_count_stored: int = 0
     new_entries: dict[str, int] = field(default_factory=dict)
     existing_entries: dict[str, int] = field(default_factory=dict)
 
@@ -40,11 +47,6 @@ class LaunchComputedModel:
         return len(self.existing_entries)
 
     @property
-    def input_total_count(self) -> int:
-        """Total number of input URLs including duplicates."""
-        return len(self.input_urls)
-
-    @property
     def input_unique_count(self) -> int:
         """Number of distinct input URLs."""
         return len(self.new_entries) + len(self.existing_entries)
@@ -55,19 +57,14 @@ class LaunchComputedModel:
         return self.input_total_count - self.input_unique_count
 
     @property
-    def output_total_count(self) -> int:
-        """Total number of output URLs including duplicates."""
-        return len(self.output_urls)
-
-    @property
     def output_unique_count(self) -> int:
         """Number of distinct output URLs."""
-        return len(set(self.output_urls))
+        return self.output_unique_count_stored
 
     @property
     def output_duplicate_count(self) -> int:
         """Number of duplicate occurrences in the output list."""
-        return self.output_total_count - self.output_unique_count
+        return self.output_total_count - self.output_unique_count_stored
 
 
 # EOF

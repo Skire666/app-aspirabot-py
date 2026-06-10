@@ -174,3 +174,57 @@ class TestJsonFileRepositoryWriteFromDict:
         second = repo.read_from_path(file)
         assert second["v"] == 2
         assert first["v"] == 1
+
+
+class TestJsonFileRepositoryReadListFromPathRo:
+    def test_absent_file_returns_empty_list(self, tmp_path: Path) -> None:
+        repo = JsonFileRepository()
+        result = repo.read_list_from_path_ro(tmp_path / "missing.json")
+        assert result == []
+
+    def test_reads_existing_list(self, tmp_path: Path) -> None:
+        file = tmp_path / "data.json"
+        file.write_text(json.dumps([1, 2, 3]), encoding="utf-8")
+        repo = JsonFileRepository()
+        result = repo.read_list_from_path_ro(file)
+        assert result == [1, 2, 3]
+
+    def test_returns_same_object_on_cache_hit(self, tmp_path: Path) -> None:
+        file = tmp_path / "data.json"
+        file.write_text(json.dumps([1, 2, 3]), encoding="utf-8")
+        repo = JsonFileRepository()
+        first = repo.read_list_from_path_ro(file)
+        second = repo.read_list_from_path_ro(file)
+        assert first is second
+
+    def test_known_mtime_hits_cache_without_extra_stat(self, tmp_path: Path) -> None:
+        file = tmp_path / "data.json"
+        file.write_text(json.dumps(["a", "b"]), encoding="utf-8")
+        repo = JsonFileRepository()
+        # Prime the cache with the real mtime.
+        mtime = file.stat().st_mtime_ns
+        first = repo.read_list_from_path_ro(file, known_mtime_ns=mtime)
+        # Same mtime → cache hit, same reference.
+        second = repo.read_list_from_path_ro(file, known_mtime_ns=mtime)
+        assert first is second
+        assert first == ["a", "b"]
+
+    def test_stale_mtime_reloads_from_disk(self, tmp_path: Path) -> None:
+        file = tmp_path / "data.json"
+        file.write_text(json.dumps([1]), encoding="utf-8")
+        repo = JsonFileRepository()
+        first = repo.read_list_from_path_ro(file)
+        assert first == [1]
+        # Overwrite: cache is invalidated by write_from_dict.
+        repo.write_from_dict(file, [2])
+        second = repo.read_list_from_path_ro(file)
+        assert second == [2]
+
+    def test_invalid_json_raises(self, tmp_path: Path) -> None:
+        from shared.exception_util import JsonFileRepositoryError
+
+        file = tmp_path / "bad.json"
+        file.write_text("not json {{{", encoding="utf-8")
+        repo = JsonFileRepository()
+        with pytest.raises(JsonFileRepositoryError):
+            repo.read_list_from_path_ro(file)

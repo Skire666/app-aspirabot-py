@@ -128,6 +128,11 @@ C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
 # Default threshold for considering a scraping step as having an error
 C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 1
 
+# ------------------------------------------------------------------------------
+
+C_DEFAULT_PROFILE_NAME_TEMPLATE: str = "auto_discovers_new"
+
+
 # -----------------------------------------------------------------------------
 
 # default color background
