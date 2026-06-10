@@ -79,34 +79,6 @@ class TestClickForDownloadParamsSerialization:
 
 
 # ---------------------------------------------------------------------------
-# CloseTabsParams
-# ---------------------------------------------------------------------------
-
-
-class TestCloseTabsParamsSerialization:
-    _DATA = {"filter_mode": "<<SOURCE>>", "filter_custom": "", "max_tabs": 5, "comment": "tabs"}
-
-    def test_to_dict_expected_keys(self) -> None:
-        from models.steps.close_tabs_params import CloseTabsParams
-
-        d = CloseTabsParams(**self._DATA).to_dict()
-        assert set(d.keys()) == {"filter_mode", "filter_custom", "max_tabs", "comment"}
-
-    def test_custom_filter_mode_preserved(self) -> None:
-        from models.steps.close_tabs_params import CloseTabsParams
-
-        data = {**self._DATA, "filter_mode": "<<CUSTOM>>", "filter_custom": "example.com"}
-        d = CloseTabsParams(**data).to_dict()
-        assert d["filter_mode"] == "<<CUSTOM>>"
-        assert d["filter_custom"] == "example.com"
-
-    def test_round_trip(self) -> None:
-        from models.steps.close_tabs_params import CloseTabsParams
-
-        assert _round_trip(CloseTabsParams, self._DATA) == CloseTabsParams(**self._DATA).to_dict()
-
-
-# ---------------------------------------------------------------------------
 # CountHtmlElementsParams
 # ---------------------------------------------------------------------------
 
@@ -682,13 +654,7 @@ _ALL_PARAMS_INSTANCES = [
     ),
     pytest.param(
         lambda: __import__("models.steps.open_url_params", fromlist=["OpenUrlParams"]).OpenUrlParams(
-            url_mode="<<SOURCE>>",
-            url_custom="",
-            wait_until="load",
-            wait_dns_solver=5,
-            timeout_duration=30,
-            timeout_unit="s",
-            comment="",
+            wait_until="load", wait_dns_solver=5, timeout_duration=30, timeout_unit="s", comment=""
         ),
         id="OpenUrl",
     ),

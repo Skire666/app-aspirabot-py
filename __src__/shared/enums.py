@@ -58,7 +58,7 @@ class StepTypeEnum(Enum):
     E_UNKNOWN = "UNKNOWN"
 
 
-class OpenUrlModeEnum(Enum):
+class FilterClosedEnum(Enum):
     """Enumerates the modes for determining the URL to open in an OPEN_URL step."""
 
     E_UNSET = "UNSET"
@@ -130,6 +130,7 @@ class UrlSourceTypeEnum(Enum):
     E_MANUAL = "MANUAL"
     E_FOLDER = "FOLDER"
     E_JSON = "JSON"
+    E_DISCOVER = "DISCOVER"
     E_UNKNOWN = "UNKNOWN"
 
 

@@ -26,7 +26,7 @@ from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFound
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
-_PREVIEW_LIMIT = 50
+_PREVIEW_LIMIT = 9_999_999
 
 
 def _collect_urls(obj: object, result: list[str]) -> None:

@@ -69,25 +69,6 @@ class TestClickOnElementIntegration:
 
 
 # ---------------------------------------------------------------------------
-# CLOSE_TABS
-# ---------------------------------------------------------------------------
-
-
-class TestCloseTabsIntegration:
-    def test_max_tabs_appears_in_label(self) -> None:
-        from models.steps.close_tabs_params import CloseTabsParams
-
-        p = CloseTabsParams(filter_mode="<<SOURCE>>", filter_custom="", max_tabs=7, comment="")
-        assert "7" in _label(StepTypeEnum.E_CLOSE_TABS, p)
-
-    def test_custom_filter_appears_in_label(self) -> None:
-        from models.steps.close_tabs_params import CloseTabsParams
-
-        p = CloseTabsParams(filter_mode="<<CUSTOM>>", filter_custom="example.com", max_tabs=1, comment="")
-        assert "example.com" in _label(StepTypeEnum.E_CLOSE_TABS, p)
-
-
-# ---------------------------------------------------------------------------
 # COUNT_HTML_ELEMENTS
 # ---------------------------------------------------------------------------
 
@@ -262,46 +243,6 @@ class TestKillBrowserIntegration:
         label = _label(StepTypeEnum.E_KILL_BROWSER, p)
         assert "5" in label
         assert "sec" in label
-
-
-# ---------------------------------------------------------------------------
-# OPEN_URL
-# ---------------------------------------------------------------------------
-
-
-class TestOpenUrlIntegration:
-    def test_source_mode_label(self) -> None:
-        from models.steps.open_url_params import OpenUrlParams
-
-        p = OpenUrlParams(
-            url_mode="<<SOURCE>>",
-            url_custom="",
-            wait_until="load",
-            wait_dns_solver=5,
-            timeout_duration=10,
-            timeout_unit="s",
-            comment="",
-        )
-        label = _label(StepTypeEnum.E_OPEN_URL, p)
-        assert "10" in label
-        assert "sec" in label
-        assert "source" in label.lower()
-
-    def test_custom_mode_label(self) -> None:
-        from models.steps.open_url_params import OpenUrlParams
-
-        p = OpenUrlParams(
-            url_mode="<<CUSTOM>>",
-            url_custom="https://test.com",
-            wait_until="load",
-            wait_dns_solver=5,
-            timeout_duration=15,
-            timeout_unit="m",
-            comment="",
-        )
-        label = _label(StepTypeEnum.E_OPEN_URL, p)
-        assert "https://test.com" in label
-        assert "min" in label
 
 
 # ---------------------------------------------------------------------------

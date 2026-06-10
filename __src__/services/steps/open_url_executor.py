@@ -13,8 +13,8 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.open_url_params import OpenUrlParams
-from shared.enums import OpenUrlModeEnum, StepExecutionResultEnum, StepTypeEnum
-from shared.exception_util import EmptyCustomUrlError, UrlSourceExhaustedError
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.exception_util import UrlSourceExhaustedError
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_ms
 
@@ -70,19 +70,12 @@ class OpenUrlExecutor(IStepExecutor):
             The URL to open.
 
         Raises:
-            EmptyCustomUrlError: If the URL mode is custom but the custom URL is empty.
             UrlSourceExhaustedError: If the URL mode is source but there are no more URLs.
         """
-        if p.url_mode == OpenUrlModeEnum.E_CUSTOM.value:
-            if not p.url_custom:
-                raise EmptyCustomUrlError()
-            target_url = p.url_custom
-        else:
-            # Consume the next URL from the injected source
-            if context.url_source is None or not context.url_source.load_url_if_available():
-                raise UrlSourceExhaustedError()
-            target_url = context.url_source.pop_url()
-        return target_url
+        # Consume the next URL from the injected source
+        if context.url_source is None or not context.url_source.load_url_if_available():
+            raise UrlSourceExhaustedError()
+        return context.url_source.pop_url()
 
 
 register_step_executor(OpenUrlExecutor())

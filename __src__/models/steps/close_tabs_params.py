@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator, model_validator
-from shared.enums import OpenUrlModeEnum
+from shared.enums import FilterClosedEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
@@ -40,13 +40,8 @@ class CloseTabsParams(BaseModel):
         if not isinstance(data, dict) or not info.context:
             return cast(dict[str, Any], data)
         d = cast(dict[str, Any], data)
-        if (
-            d.get("filter_mode") == OpenUrlModeEnum.E_CUSTOM.value
-            and not str(d.get("filter_custom", "")).strip()
-        ):
-            raise ValueError(
-                ERROR_TEMPLATES["close_tabs_filter_required"].format(step=step_label(info.context))
-            )
+        if d.get("filter_mode") == FilterClosedEnum.E_CUSTOM.value and not str(d.get("filter_custom", "")).strip():
+            raise ValueError(ERROR_TEMPLATES["close_tabs_filter_required"].format(step=step_label(info.context)))
         return d
 
     def to_dict(self) -> dict[str, Any]:

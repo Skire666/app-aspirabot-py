@@ -13,7 +13,7 @@ from shared.exception_util import UrlSourceExhaustedError
 # Constants
 # -----------------------------------------------------------------------------
 
-_PREVIEW_LIMIT = 50
+_PREVIEW_LIMIT = 9_999_999
 
 # -----------------------------------------------------------------------------
 # Class

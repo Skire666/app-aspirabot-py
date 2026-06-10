@@ -28,7 +28,7 @@ from shared.exception_util import (
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
-_PREVIEW_LIMIT = 50
+_PREVIEW_LIMIT = 9_999_999
 
 
 class FolderUrlSourceProvider(IUrlSourceProvider):

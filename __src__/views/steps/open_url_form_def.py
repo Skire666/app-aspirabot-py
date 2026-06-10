@@ -11,13 +11,8 @@ from tkinter import ttk
 from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
-from shared.constants import (
-    C_KEY_URL_MODE,
-    C_MAXIMUM_SIZE_IMAGE,
-    C_UNITS_TIME_ALLOWED_FOR_VIEW,
-    C_UNITS_TIME_DEFAULT_VIEW,
-)
-from shared.enums import OpenUrlModeEnum, StepTypeEnum, WaitUntilEnum
+from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_ALLOWED_FOR_VIEW, C_UNITS_TIME_DEFAULT_VIEW
+from shared.enums import StepTypeEnum, WaitUntilEnum
 from shared.parse_util import safe_int_from_dict
 from shared.step_registry import register_form
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL
@@ -26,13 +21,10 @@ from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MO
 # Constants
 # -----------------------------------------------------------------------------
 
-C_DEFAULT_URL_MODE = OpenUrlModeEnum.E_SOURCE.value
-C_DEFAULT_URL = "https://example.com/"
 C_DEFAULT_WAIT_UNTIL = WaitUntilEnum.E_IDLE.value
 C_DEFAULT_TIMEOUT_DURATION = 10
 C_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
-C_KEY_URL_CUSTOM = "url_custom"
 C_KEY_WAIT_UNTIL = "wait_until"
 C_KEY_WAIT_DNS_SOLVER = "wait_dns_solver"
 C_KEY_TIMEOUT_DURATION = "timeout_duration"
@@ -74,57 +66,23 @@ class OpenUrlFormDef(IStepFormDef):
 
         Args:
             frame: Parent frame to pack the row into.
-            widgets: Mutable mapping; populated with C_KEY_URL_MODE and C_KEY_URL_CUSTOM tk.Variables.
+            widgets: Mutable mapping.
         """
         line1 = ttk.Frame(frame)
         line1.pack(fill="x", pady=(0, 8))
 
-        url_mode_var = tk.StringVar(value=C_DEFAULT_URL_MODE)
-        url_custom_var = tk.StringVar(value=C_DEFAULT_URL)
-
         # Mode selection radio buttons
-        OpenUrlFormDef._build_url_mode_buttons(line1, url_mode_var)
-
-        url_entry = ttk.Entry(line1, textvariable=url_custom_var)
-        url_entry.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets[C_KEY_URL_MODE] = url_mode_var
-        widgets[C_KEY_URL_CUSTOM] = url_custom_var
-
-        # Keep the entry state in sync with the selected mode
-        OpenUrlFormDef._bind_url_mode_entry(url_mode_var, url_entry)
+        OpenUrlFormDef._build_url_mode_buttons(line1)
 
     @staticmethod
-    def _build_url_mode_buttons(line1: ttk.Frame, url_mode_var: tk.StringVar) -> None:
+    def _build_url_mode_buttons(line1: ttk.Frame) -> None:
         """Build the URL source radio buttons.
 
         Args:
             line1: Frame to pack the radio buttons into.
             url_mode_var: StringVar that receives the selected mode value.
         """
-        tk.Radiobutton(
-            line1, text="Lire la prochaine URL", variable=url_mode_var, value=OpenUrlModeEnum.E_SOURCE.value
-        ).pack(side=tk.LEFT, padx=(0, 20))
-
-        tk.Radiobutton(
-            line1, text="URL personnalisée", variable=url_mode_var, value=OpenUrlModeEnum.E_CUSTOM.value
-        ).pack(side=tk.LEFT, padx=(0, 5))
-
-    @staticmethod
-    def _bind_url_mode_entry(url_mode_var: tk.StringVar, url_entry: ttk.Entry) -> None:
-        """Synchronize the URL entry enabled state with the selected mode.
-
-        Args:
-            url_mode_var: StringVar holding the current URL mode.
-            url_entry: Entry widget to enable or disable based on the mode.
-        """
-
-        def _sync_url_entry_state(*_args: object) -> None:
-            state = "readonly" if url_mode_var.get() == OpenUrlModeEnum.E_SOURCE.value else "normal"
-            url_entry.configure(state=state)
-
-        # React to mode changes and initialize the current state
-        url_mode_var.trace_add("write", _sync_url_entry_state)
-        _sync_url_entry_state()
+        tk.Label(line1, text="Lire la prochaine URL dans la source si disponible").pack(side=tk.LEFT, padx=(0, 20))
 
     @staticmethod
     def _build_subform_wait_until(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -197,8 +155,6 @@ class OpenUrlFormDef(IStepFormDef):
             params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_URL_MODE].set(params_dict.get(C_KEY_URL_MODE, C_DEFAULT_URL_MODE))
-        widgets[C_KEY_URL_CUSTOM].set(params_dict.get(C_KEY_URL_CUSTOM, C_DEFAULT_URL))
         widgets[C_KEY_WAIT_UNTIL].set(params_dict.get(C_KEY_WAIT_UNTIL, C_DEFAULT_WAIT_UNTIL))
         widgets[C_KEY_WAIT_DNS_SOLVER].set(params_dict.get(C_KEY_WAIT_DNS_SOLVER, 6))
         widgets[C_KEY_TIMEOUT_DURATION].set(str(params_dict.get(C_KEY_TIMEOUT_DURATION, C_DEFAULT_TIMEOUT_DURATION)))
@@ -218,8 +174,6 @@ class OpenUrlFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         return {
-            C_KEY_URL_MODE: widgets[C_KEY_URL_MODE].get(),
-            C_KEY_URL_CUSTOM: widgets[C_KEY_URL_CUSTOM].get().strip(),
             C_KEY_WAIT_UNTIL: widgets[C_KEY_WAIT_UNTIL].get(),
             C_KEY_WAIT_DNS_SOLVER: safe_int_from_dict(widgets, C_KEY_WAIT_DNS_SOLVER, -1),
             C_KEY_TIMEOUT_DURATION: safe_int_from_dict(widgets, C_KEY_TIMEOUT_DURATION, -1),

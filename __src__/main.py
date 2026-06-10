@@ -23,6 +23,7 @@ from presenters.scenarios_presenter import ScenariosPresenter
 from presenters.scraping_presenter import ScrapingPresenter
 from presenters.splashscreen_presenter import SplashscreenPresenter
 from presenters.steps_list_presenter import StepsListPresenter
+from presenters.url_config_presenter import UrlConfigPresenter
 from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.discover_repository import DiscoverRepository
@@ -193,7 +194,9 @@ def _assemble_components(  # noqa: PLR0914
     scen_view, scen_pre, edit_view, edit_pr, steps_pr, scen_svc = _init_scenarios_components(
         main_view, prof_svc, prof_repo, startup_service.config_model, JsonFileRepository()
     )
-    exec_view, exec_pre = _init_executor_component(main_view, startup_service.config_model, scen_svc, prof_svc)
+    exec_view, exec_pre, tab4_disc_pr, url_cfg_pr = _init_executor_component(
+        main_view, startup_service.config_model, scen_svc, prof_svc, JsonFileRepository()
+    )
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc)
     dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
     disc_view, disc_pr = _init_discover_component(
@@ -204,7 +207,8 @@ def _assemble_components(  # noqa: PLR0914
         log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view, disc_view,
     ]
     presenters: list[object] = [
-        log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr, exec_pre, scrap_pre, dbg_p, disc_pr,
+        log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr,
+        exec_pre, tab4_disc_pr, url_cfg_pr, scrap_pre, dbg_p, disc_pr,
     ]
     return views, presenters
 
@@ -389,22 +393,45 @@ def _init_executor_component(
     config_model: AppConfigurationModel,
     scenario_service: ScenariosService,
     profiles_service: ProfilesService,
-) -> tuple[ExecutorView, ExecutorPresenter]:
-    """Create and wire the executor panel component.
+    json_repo: JsonFileRepository,
+) -> tuple[ExecutorView, ExecutorPresenter, DiscoverPresenter, UrlConfigPresenter]:
+    """Create and wire the executor panel component, including the tab-4 Discover panel.
 
     Args:
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the executor output folder.
         scenario_service: The scenario service for managing scenario data.
         profiles_service: The profiles service for managing profile data.
+        json_repo: Shared JSON repository injected into the tab-4 discover repository.
 
     Returns:
-        A (ExecutorView, ExecutorPresenter) tuple.
+        A (ExecutorView, ExecutorPresenter, tab4_DiscoverPresenter, UrlConfigPresenter) tuple.
     """
+    # Discover components for the "Découverte automatique" notebook tab.
+    tab4_repo = DiscoverRepository(config_model.folder_scenarios, json_repo)
+    tab4_service = DiscoverService(tab4_repo)
+    tab4_vm = DiscoverViewModel(master=main_view.content_area)
+    tab4_presenter = DiscoverPresenter(
+        vm=tab4_vm,
+        service=tab4_service,
+        profiles_service=profiles_service,
+        scenarios_service=scenario_service,
+    )
     vm = ExecutorViewModel(master=main_view.content_area)
-    executor_view = ExecutorView(main_view.content_area, vm=vm)
-    executor_presenter = ExecutorPresenter(vm=vm, scenarios_service=scenario_service, profiles_service=profiles_service)
-    return executor_view, executor_presenter
+    url_config_presenter = UrlConfigPresenter(vm=vm)
+    executor_view = ExecutorView(
+        main_view.content_area,
+        vm=vm,
+        discover_vm=tab4_vm,
+        discover_presenter=tab4_presenter,
+    )
+    executor_presenter = ExecutorPresenter(
+        vm=vm,
+        scenarios_service=scenario_service,
+        profiles_service=profiles_service,
+        url_config_presenter=url_config_presenter,
+    )
+    return executor_view, executor_presenter, tab4_presenter, url_config_presenter
 
 
 def _init_scraping_component(

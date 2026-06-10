@@ -350,14 +350,10 @@ class DiscoverPresenter:
 
         with ThreadPoolExecutor(max_workers=4) as executor:
             future_input_count = executor.submit(
-                self._count_json_files,
-                snap.input_folder_json,
-                snap.input_pattern_json,
+                self._count_json_files, snap.input_folder_json, snap.input_pattern_json
             )
             future_output_count = executor.submit(
-                self._count_json_files,
-                snap.output_folder_json,
-                snap.output_pattern_json,
+                self._count_json_files, snap.output_folder_json, snap.output_pattern_json
             )
             future_input = executor.submit(
                 self._fetch_urls,
@@ -383,9 +379,16 @@ class DiscoverPresenter:
 
         self._vm.post_to_main_thread(
             lambda: self._apply_compute_result(
-                input_file_count, input_count_error,
-                output_file_count, output_count_error,
-                input_urls, output_urls, input_error, output_error, computed, elapsed,
+                input_file_count,
+                input_count_error,
+                output_file_count,
+                output_count_error,
+                input_urls,
+                output_urls,
+                input_error,
+                output_error,
+                computed,
+                elapsed,
             )
         )
 
@@ -545,7 +548,7 @@ class DiscoverPresenter:
         """
         try:
             launch_model = self._service.build_launch_model(id_scenario, profile_name, output_folder, computed)
-            self._profiles_service.update_profile_launch(id_scenario, launch_model)
+            self._profiles_service.update_profile_launch(id_scenario, launch_model, True)
             self._vm.check_result_computed_var.set(C_DISCOVER_PROFILE_SAVE_OK.format(count=computed.new_url_count))
             self._logger.info(
                 "Liste de lancement sauvegardée : %s nouvelles URLs pour scénario '%s'.",

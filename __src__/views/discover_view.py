@@ -69,16 +69,17 @@ class DiscoverView(ttk.Frame):
 
     def _create_section_project(self, parent: tk.Frame) -> None:
         """Build the project creation and management section."""
-        frame = HorizontalLineFrame(parent, text="Créer un projet")
+        frame = tk.Frame(parent)
+        # frame = HorizontalLineFrame(parent, text="Créer un projet")
         frame.pack(fill=tk.X)
 
         # Ligne 0 : name + create
-        row0 = ttk.Frame(frame)
-        row0.pack(fill=tk.X, padx=4)
-        self._btn_create = ttk.Button(row0, text="Créer", command=self._vm.create_project)
-        self._btn_create.pack(side=tk.RIGHT, padx=(6, 0))
-        ttk.Label(row0, text="Nom du projet :").pack(side=tk.LEFT, pady=(2, 6))
-        ttk.Entry(row0, textvariable=self._vm.new_project_name_var, width=30).pack(fill=tk.X, padx=(6, 0), pady=(6, 0))
+        # row0 = ttk.Frame(frame)
+        # row0.pack(fill=tk.X, padx=4)
+        # self._btn_create = ttk.Button(row0, text="Créer", command=self._vm.create_project)
+        # self._btn_create.pack(side=tk.RIGHT, padx=(6, 0))
+        # ttk.Label(row0, text="Nom du projet :").pack(side=tk.LEFT, pady=(2, 6))
+        # ttk.Entry(row0, textvariable=self._vm.new_project_name_var, width=30).pack(fill=tk.X, padx=(6, 0), pady=(6, 0))
 
         # Ligne 1 : listbox
         row1 = ttk.Frame(frame)
@@ -343,7 +344,7 @@ class DiscoverView(ttk.Frame):
     def _sync_create_btn(self) -> None:
         """Enable/disable the Create button based on can_create_project_var."""
         state = tk.NORMAL if self._vm.can_create_project_var.get() else tk.DISABLED
-        self._btn_create.configure(state=state)
+        # self._btn_create.configure(state=state)
 
     def _sync_action_btns(self) -> None:
         """Enable/disable Rename and Delete buttons based on can_action_project_var."""

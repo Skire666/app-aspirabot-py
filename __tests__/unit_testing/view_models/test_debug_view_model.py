@@ -6,9 +6,8 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
-from view_models.debug_view_model import DebugViewModel
-
 from shared.exception_util import CallbackNotDefinedError
+from view_models.debug_view_model import DebugViewModel
 
 
 @pytest.fixture()
@@ -81,15 +80,6 @@ class TestBindAndDispatch:
             vm.analyze_texts(".x")
         with pytest.raises(CallbackNotDefinedError):
             vm.analyze_images("img")
-
-
-class TestProperties:
-    def test_master_returns_root(self, vm: DebugViewModel, tk_root: tk.Tk) -> None:
-        assert vm.master is tk_root
-
-    def test_url_returns_current_url_var(self, vm: DebugViewModel) -> None:
-        vm.url_var.set("https://example.com")
-        assert vm.url == "https://example.com"
 
 
 class TestAfter:

@@ -14,7 +14,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.close_tabs_params import CloseTabsParams
 from playwright.sync_api import Page
-from shared.enums import OpenUrlModeEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.enums import FilterClosedEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import CurrentPageClosedUnexpectedlyError, MissingUrlFilterError
 from shared.step_registry import register_step_executor
 
@@ -63,7 +63,7 @@ class CloseTabsExecutor(IStepExecutor):
         Raises:
             MissingUrlFilterError: When the resolved filter is empty.
         """
-        raw = p.filter_custom if p.filter_mode == OpenUrlModeEnum.E_CUSTOM.value else context.last_url_opened
+        raw = p.filter_custom if p.filter_mode == FilterClosedEnum.E_CUSTOM.value else context.last_url_opened
         filter_used = raw.strip().lower()
         if not filter_used:
             raise MissingUrlFilterError()

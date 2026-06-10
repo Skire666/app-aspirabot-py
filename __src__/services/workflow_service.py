@@ -12,6 +12,8 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps_context_model import StepsContext
 from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
 
+from __src__.shared.enums import StepTypeEnum
+
 
 class WorkflowService:
     """Validates scraping workflow step parameters via the step registry.
@@ -41,10 +43,14 @@ class WorkflowService:
         """
         try:
             steps_context = StepsContext.from_list(steps)
+            if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) <= 0:
+                return ["Une étape de type 'E_OPEN_URL' est requise."]
+            if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) <= 0:
+                return ["Une étape de type 'E_KILL_BROWSER' est requise."]
             if not step.params:
-                raise ValueError(f"Step {step.step_id} has no params to validate")
+                return [f"Step {step.step_id} has no params to validate"]
             if step.params.validate_with_context is None:
-                raise ValueError(f"Step {step.step_id} has params without validate_with_context method")
+                return [f"Step {step.step_id} has params without validate_with_context method"]
             return step.params.validate_with_context(step_index, steps_context, step.step_id)
         except NoExecutorsRegisteredError, ExecutorNotRegisteredError:
             return []

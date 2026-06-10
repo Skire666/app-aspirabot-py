@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
-from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
 from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL
-from shared.enums import OpenUrlModeEnum, WaitUntilEnum
+from shared.enums import WaitUntilEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
@@ -58,17 +58,6 @@ class OpenUrlParams(BaseModel):
         if v not in C_UNITS_TIME_ALLOWED_FOR_MODEL:
             raise ValueError(ERROR_TEMPLATES["open_url_timeout_unit_invalid"].format(step=step_label(info.context)))
         return v
-
-    @model_validator(mode="before")
-    @classmethod
-    def check_url_custom(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
-        """Validate that url_custom is set when url_mode is custom."""
-        if not isinstance(data, dict) or not info.context:
-            return cast(dict[str, Any], data)
-        d = cast(dict[str, Any], data)
-        if d.get("url_mode") == OpenUrlModeEnum.E_CUSTOM.value and not d.get("url_custom"):
-            raise ValueError(ERROR_TEMPLATES["open_url_url_required"].format(step=step_label(info.context)))
-        return d
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""

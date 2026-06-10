@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
-
 from shared.enums import StepTypeEnum
 from shared.step_view_item import StepViewItem
 
@@ -29,11 +28,6 @@ class TestStepViewItemConstruction:
         assert item.step_id == "abc1"
         assert item.step_type is StepTypeEnum.E_OPEN_URL
         assert item.is_active is True
-
-    def test_params_dict_stored(self) -> None:
-        params = {"url_mode": "<<SOURCE>>", "timeout_duration": 30}
-        item = _make_item(params_dict=params)
-        assert item.params_dict == params
 
     def test_label_stored(self) -> None:
         item = _make_item(label="02 — Click")

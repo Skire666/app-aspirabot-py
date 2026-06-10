@@ -57,7 +57,7 @@ class ExtractLinksParams(BaseModel):
         if not v.strip():
             raise ValueError(ERROR_TEMPLATES["extract_links_mapping_required"].format(step=step_label(info.context)))
         steps_context: StepsContext = info.context.get("steps_context")
-        if not steps_context.validate_params_mapping(v):
+        if steps_context.count_mapping_key(v) != 1:
             raise ValueError(
                 ERROR_TEMPLATES["extract_key_mapping_already_used"].format(step=step_label(info.context), value=v)
             )

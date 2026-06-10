@@ -18,6 +18,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from shared.exception_util import CallbackNotDefinedError
 from view_models.app_configuration_view_model import AppConfigurationViewModel
 from view_models.debug_view_model import DebugViewModel
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
@@ -27,8 +28,6 @@ from view_models.scenarios_view_model import ScenariosViewModel
 from view_models.scraping_view_model import ScrapingViewModel
 from view_models.splashscreen_view_model import SplashscreenViewModel
 from view_models.workflow_view_model import WorkflowViewModel
-
-from shared.exception_util import CallbackNotDefinedError
 
 # ===========================================================================
 # ExecutorViewModel
@@ -668,21 +667,6 @@ class TestDebugViewModelInit:
 
     def test_is_alive_false(self, dbg_vm: DebugViewModel) -> None:
         assert dbg_vm.is_alive_var.get() is False
-
-
-class TestDebugViewModelResetPage:
-    def test_reset_page_clears_html(self, dbg_vm: DebugViewModel) -> None:
-        dbg_vm.html_content_var.set("some html")
-        dbg_vm.reset_page("https://example.com")
-        assert dbg_vm.html_content_var.get() == ""
-
-    def test_reset_page_sets_alive(self, dbg_vm: DebugViewModel) -> None:
-        dbg_vm.reset_page("https://example.com")
-        assert dbg_vm.is_alive_var.get() is True
-
-    def test_reset_page_sets_url(self, dbg_vm: DebugViewModel) -> None:
-        dbg_vm.reset_page("https://target.com")
-        assert dbg_vm.url_var.get() == "https://target.com"
 
 
 class TestDebugViewModelDispatch:

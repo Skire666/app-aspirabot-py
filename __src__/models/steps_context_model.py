@@ -76,20 +76,24 @@ class StepsContext:
                 return idx
         return None
 
-    def validate_params_mapping(self, value_mapping: str) -> bool:
-        """Validate that the mapping string references existing steps in the context."""
+    def count_mapping_key(self, value_mapping: str) -> int:
+        """Count how many steps in the context use the given mapping string."""
         if not value_mapping.strip():
-            return False
+            return 0
+        found: int = 0
+        allowed = {StepTypeEnum.E_EXTRACT_TEXTS, StepTypeEnum.E_EXTRACT_LINKS, StepTypeEnum.E_EXTRACT_VARIABLE}
+        for _, step in enumerate(self.steps):
+            if step.step_type in allowed and step.params and step.params.mapping == value_mapping:
+                found += 1
+        return found  # Return the actual count, not a boolean
+
+    def count_type_step(self, step_type: StepTypeEnum) -> int:
+        """Count how many steps in the context have the given step type."""
         found: int = 0
         for _, step in enumerate(self.steps):
-            if (
-                step.step_type
-                in {StepTypeEnum.E_EXTRACT_TEXTS, StepTypeEnum.E_EXTRACT_LINKS, StepTypeEnum.E_EXTRACT_VARIABLE}
-                and step.params
-                and step.params.mapping == value_mapping
-            ):
+            if step.step_type.value == step_type.value:
                 found += 1
-        return found <= 1  # 2 or more -> ambiguous mapping, which is invalid
+        return found  # Return the actual count, not a boolean
 
 
 # EOF

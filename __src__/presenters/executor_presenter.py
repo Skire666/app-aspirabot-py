@@ -17,9 +17,9 @@ from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
+from presenters.url_config_presenter import UrlConfigPresenter
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
-from services.url_sources.url_source_factory import build_url_source_scenario
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
@@ -58,7 +58,11 @@ class ExecutorPresenter:
     """
 
     def __init__(
-        self, vm: ExecutorViewModel, scenarios_service: ScenariosService, profiles_service: ProfilesService
+        self,
+        vm: ExecutorViewModel,
+        scenarios_service: ScenariosService,
+        profiles_service: ProfilesService,
+        url_config_presenter: UrlConfigPresenter,
     ) -> None:
         """Register ViewModel callbacks and initialise internal state.
 
@@ -66,11 +70,13 @@ class ExecutorPresenter:
             vm: The executor ViewModel that owns all UI state.
             scenarios_service: Service providing scenario CRUD and listing.
             profiles_service: Service providing profile CRUD and listing.
+            url_config_presenter: Presenter that owns URL preview refresh logic.
         """
         self._logger = logging.getLogger(__name__)
         self._vm = vm
         self._svc_scenarios = scenarios_service
         self._svc_profiles = profiles_service
+        self._url_config_presenter = url_config_presenter
 
         self._current_scenario: ScenarioModel | None = None
         self._current_profiles_model: ProfilesModel | None = None
@@ -289,7 +295,7 @@ class ExecutorPresenter:
         self._push_profile_vars(profile, steps)
         self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
         self._set_dirty(False)
-        self._refresh_url_preview(profile)
+        self._url_config_presenter.refresh_preview_for_profile(profile)
         self._vm.is_profile_section_enabled_var.set(True)
 
     def _push_profile_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
@@ -381,77 +387,6 @@ class ExecutorPresenter:
         self._vm.is_delete_btn_enabled_var.set(False)
         self._vm.is_save_btn_enabled_var.set(False)
 
-    def _refresh_url_preview(self, profile: LaunchModel) -> None:
-        """Build URL previews from the profile source and push them to the VM."""
-        stype = profile.url_source_type
-        if stype == UrlSourceTypeEnum.E_FOLDER.value:
-            self._update_url_preview_shortcuts(profile.url_sources_folder_shortcuts, profile.url_sort_order_shortcuts)
-        elif stype == UrlSourceTypeEnum.E_JSON.value:
-            self._update_url_preview_jsons(profile.url_sources_folder_jsons, profile.url_sort_order_jsons)
-
-    def _refresh_url_preview_from_form(self) -> None:
-        """Build URL previews from the live VM state and push them to the VM."""
-        stype = self._vm.url_source_type_var.get()
-        if stype == UrlSourceTypeEnum.E_FOLDER.value:
-            self._update_url_preview_shortcuts(
-                self._vm.url_source_path_shortcuts_var.get().strip(), self._vm.url_sort_order_shortcuts_var.get()
-            )
-        elif stype == UrlSourceTypeEnum.E_JSON.value:
-            self._update_url_preview_jsons(
-                self._vm.url_source_path_jsons_var.get().strip(), self._vm.url_sort_order_jsons_var.get()
-            )
-
-    def _update_url_preview_shortcuts(self, path: str, sort_str: str) -> None:
-        """Fetch shortcuts-folder preview URLs and push them to the VM.
-
-        Args:
-            path: Folder path containing .url shortcut files.
-            sort_str: Raw sort-order string.
-        """
-        if not path:
-            self._vm.set_url_preview_shortcuts([])
-            return
-        try:
-            sort = self._parse_sort_order(sort_str)
-            provider = build_url_source_scenario(UrlSourceTypeEnum.E_FOLDER.value, path, sort)
-            self._vm.set_url_preview_shortcuts(provider.preview_url_listed())
-        except AspirabotBaseError:
-            self._logger.exception("Erreur lors de la prévisualisation des URLs (shortcuts)")
-            self._vm.set_url_preview_shortcuts([])
-
-    def _update_url_preview_jsons(self, path: str, sort_str: str) -> None:
-        """Fetch json-folder preview URLs and push them to the VM.
-
-        Args:
-            path: Folder path containing .json files.
-            sort_str: Raw sort-order string.
-        """
-        if not path:
-            self._vm.set_url_preview_jsons([])
-            return
-        try:
-            sort = self._parse_sort_order(sort_str)
-            provider = build_url_source_scenario(UrlSourceTypeEnum.E_JSON.value, path, sort)
-            self._vm.set_url_preview_jsons(provider.preview_url_listed())
-        except AspirabotBaseError:
-            self._logger.exception("Erreur lors de la prévisualisation des URLs (jsons)")
-            self._vm.set_url_preview_jsons([])
-
-    @staticmethod
-    def _parse_sort_order(value: str) -> UrlSortOrderEnum:
-        """Convert a sort-order string to its enum member.
-
-        Args:
-            value: A raw string matching a ``UrlSortOrderEnum`` value.
-
-        Returns:
-            The matching enum member, defaulting to ``E_MTIME_ASC``.
-        """
-        for member in UrlSortOrderEnum:
-            if member.value == value:
-                return member
-        return UrlSortOrderEnum.E_MTIME_ASC
-
     # ------------------------------------------------------------------
     # Profile CRUD
     # ------------------------------------------------------------------
@@ -532,7 +467,7 @@ class ExecutorPresenter:
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)
-        self._refresh_url_preview_from_form()
+        self._url_config_presenter.refresh_preview_from_vm()
 
     def _set_dirty(self, value: bool) -> None:
         self._is_dirty = value
@@ -551,7 +486,7 @@ class ExecutorPresenter:
         self._vm.verification_message_var.set(error or "")
         if error:
             return
-        self._save_before_launch()
+        self._on_save_profile()
         if self.on_request_launch_scraping and self._current_scenario and self._current_profile:
             self.on_request_launch_scraping(self._current_scenario, self._current_profile)
 
@@ -567,19 +502,6 @@ class ExecutorPresenter:
             return C_EXEC_NO_PROFILE
         self._apply_form_to_profile()
         return validate_launch_profile_first_error(self._current_profile)
-
-    def _save_before_launch(self) -> None:
-        """Increment usage stats and persist the profile before launching."""
-        if not self._current_profile or not self._current_scenario:
-            return
-        self._current_profile.increment_launch_count()
-        try:
-            self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
-            # faut update le cache de l'executor, car il ne relit pas après une modif du scéanrios.
-            self._current_scenario = self._svc_scenarios.read_scenario(self._current_scenario.id_file)
-        except AspirabotBaseError:
-            self._logger.exception("Erreur lors de la sauvegarde pré-lancement")
-        self._push_stats_vars(self._current_profile)
 
     def _on_open_export_folder(self) -> None:
         """Open the export folder from the live VM state via the service."""

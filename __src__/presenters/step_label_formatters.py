@@ -16,7 +16,7 @@ from collections.abc import Callable
 from typing import Any
 
 from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_ALLOWED_FOR_VIEW
-from shared.enums import OpenUrlModeEnum, StepTypeEnum
+from shared.enums import FilterClosedEnum, StepTypeEnum
 
 # -----------------------------------------------------------------------------
 # Module-level display mappings
@@ -99,8 +99,8 @@ def _fmt_click_on_element(params: dict[str, Any], _idx: int, _ctx: dict[str, int
 def _fmt_close_tabs(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for CLOSE_TABS."""
     max_tabs = params.get("max_tabs", 1)
-    filter_mode = params.get("filter_mode", OpenUrlModeEnum.E_SOURCE.value)
-    if filter_mode == OpenUrlModeEnum.E_CUSTOM.value:
+    filter_mode = params.get("filter_mode", FilterClosedEnum.E_SOURCE.value)
+    if filter_mode == FilterClosedEnum.E_CUSTOM.value:
         filter_custom = params.get("filter_custom", "")
         return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre URL : *{filter_custom}*"
     return f"Fermer les onglets  -  {max_tabs} onglet(s) max.\nFiltre : Garde l'URL de départ."
@@ -196,8 +196,8 @@ def _fmt_open_url(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> st
     timeout_duration = params.get("timeout_duration", 10)
     timeout_unit = params.get("timeout_unit", "")
     unit_display = _WAIT_UNIT_MODEL_TO_VIEW.get(timeout_unit, timeout_unit)
-    url_mode = params.get("url_mode", OpenUrlModeEnum.E_SOURCE.value)
-    if url_mode == OpenUrlModeEnum.E_SOURCE.value:
+    url_mode = params.get("url_mode", FilterClosedEnum.E_SOURCE.value)
+    if url_mode == FilterClosedEnum.E_SOURCE.value:
         url_used = "Prochaine URL dans la source"
     else:
         url_used = f"Url : {params.get('url_custom', '')}"

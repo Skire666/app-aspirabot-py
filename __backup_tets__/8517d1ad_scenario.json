@@ -34,8 +34,6 @@
                 "value": "2026-05-30T17:36:28.959851"
             },
             "params": {
-                "url_mode": "<<SOURCE>>",
-                "url_custom": "https://example.com/",
                 "wait_state": "networkidle",
                 "wait_dns_solver": 6,
                 "timeout_duration": 10,

@@ -32,8 +32,8 @@ _DND_VIRTUALIZE = True
 _DND_VIRTUALIZE_BUFFER = 2
 
 # Validation status colours
-_STATUS_COLOR_OK = "#1b5e20"
-_STATUS_COLOR_ERROR = "#b00020"
+_STATUS_COLOR_OK = "black"
+_STATUS_COLOR_ERROR = "red"
 
 # -----------------------------------------------------------------------------
 # Classes

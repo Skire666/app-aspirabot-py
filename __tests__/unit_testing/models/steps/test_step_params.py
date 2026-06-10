@@ -7,12 +7,10 @@ supplied — construction without context never raises (safe for deserialization
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
+from models.steps.open_url_params import OpenUrlParams
 from models.steps.section_params import SectionParams
 from models.steps.wait_fixed_time_params import WaitFixedTimeParams
-from models.steps.open_url_params import OpenUrlParams
-
+from pydantic import ValidationError
 
 # ---------------------------------------------------------------------------
 # SectionParams
@@ -35,23 +33,14 @@ class TestSectionParams:
 
     def test_with_context_rejects_empty_title(self) -> None:
         with pytest.raises(ValidationError):
-            SectionParams.model_validate(
-                {"title": "", "comment": ""},
-                context={"step_index": 0},
-            )
+            SectionParams.model_validate({"title": "", "comment": ""}, context={"step_index": 0})
 
     def test_with_context_rejects_whitespace_title(self) -> None:
         with pytest.raises(ValidationError):
-            SectionParams.model_validate(
-                {"title": "   ", "comment": ""},
-                context={"step_index": 0},
-            )
+            SectionParams.model_validate({"title": "   ", "comment": ""}, context={"step_index": 0})
 
     def test_with_context_accepts_valid_title(self) -> None:
-        p = SectionParams.model_validate(
-            {"title": "Valid Title", "comment": ""},
-            context={"step_index": 2},
-        )
+        p = SectionParams.model_validate({"title": "Valid Title", "comment": ""}, context={"step_index": 2})
         assert p.title == "Valid Title"
 
     def test_frozen_rejects_mutation(self) -> None:
@@ -77,16 +66,10 @@ class TestWaitFixedTimeParams:
 
     def test_with_context_rejects_negative_duration(self) -> None:
         with pytest.raises(ValidationError):
-            WaitFixedTimeParams.model_validate(
-                {"duration": -1, "unit": "s"},
-                context={"step_index": 0},
-            )
+            WaitFixedTimeParams.model_validate({"duration": -1, "unit": "s"}, context={"step_index": 0})
 
     def test_with_context_zero_duration_allowed(self) -> None:
-        p = WaitFixedTimeParams.model_validate(
-            {"duration": 0, "unit": "s"},
-            context={"step_index": 0},
-        )
+        p = WaitFixedTimeParams.model_validate({"duration": 0, "unit": "s"}, context={"step_index": 0})
         assert p.duration == 0
 
     def test_to_dict(self) -> None:
@@ -102,20 +85,7 @@ class TestWaitFixedTimeParams:
 
 
 class TestOpenUrlParams:
-    _BASE = {
-        "url_mode": "<<SOURCE>>",
-        "url_custom": "",
-        "wait_until": "load",
-        "wait_dns_solver": 5,
-        "timeout_duration": 30,
-        "timeout_unit": "s",
-        "comment": "",
-    }
-
-    def test_construction_without_context(self) -> None:
-        p = OpenUrlParams(**self._BASE)
-        assert p.url_mode == "<<SOURCE>>"
-        assert p.wait_dns_solver == 5
+    _BASE = {"wait_until": "load", "wait_dns_solver": 5, "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
 
     def test_to_dict_round_trip(self) -> None:
         p = OpenUrlParams(**self._BASE)
@@ -146,13 +116,3 @@ class TestOpenUrlParams:
         data = {**self._BASE, "timeout_unit": "hours"}
         with pytest.raises(ValidationError):
             OpenUrlParams.model_validate(data, context={"step_index": 0})
-
-    def test_with_context_rejects_custom_mode_without_url(self) -> None:
-        data = {**self._BASE, "url_mode": "<<CUSTOM>>", "url_custom": ""}
-        with pytest.raises(ValidationError):
-            OpenUrlParams.model_validate(data, context={"step_index": 0})
-
-    def test_with_context_accepts_custom_mode_with_url(self) -> None:
-        data = {**self._BASE, "url_mode": "<<CUSTOM>>", "url_custom": "https://example.com"}
-        p = OpenUrlParams.model_validate(data, context={"step_index": 0})
-        assert p.url_custom == "https://example.com"

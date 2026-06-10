@@ -5,7 +5,6 @@ from __future__ import annotations
 from shared.enums import (
     ExtractTargetEnum,
     ExtractTextHtmlEnum,
-    OpenUrlModeEnum,
     StepTypeEnum,
     TitleModuleEnum,
     UrlSortOrderEnum,
@@ -60,17 +59,6 @@ class TestStepTypeEnum:
         }
         member_names = {m.name for m in StepTypeEnum}
         assert expected.issubset(member_names)
-
-
-class TestOpenUrlModeEnum:
-    def test_source_value(self) -> None:
-        assert OpenUrlModeEnum.E_SOURCE.value == "<<SOURCE>>"
-
-    def test_custom_value(self) -> None:
-        assert OpenUrlModeEnum.E_CUSTOM.value == "<<CUSTOM>>"
-
-    def test_lookup_by_value(self) -> None:
-        assert OpenUrlModeEnum("<<SOURCE>>") is OpenUrlModeEnum.E_SOURCE
 
 
 class TestExtractEnums:

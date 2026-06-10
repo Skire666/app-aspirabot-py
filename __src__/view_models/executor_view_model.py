@@ -92,7 +92,7 @@ class ExecutorViewModel(ViewModelBase):
         self._init_form_vars(master)
         self._init_list_vars(master)
         self._init_callbacks()
-        # Wire derived panel visibility and url_count_manual_var.
+        # Wire derived panel visibility.
         self._register_trace(self.url_source_type_var, self._guarded_recompute)
         self._register_trace(self.manual_urls_var, self._guarded_recompute)
         # Wire derived section-active state.
@@ -148,8 +148,14 @@ class ExecutorViewModel(ViewModelBase):
         self.is_delete_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_save_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         # Status Vars — URL counts written when previews are pushed by the Presenter.
-        self.url_count_shortcuts_var = tk.StringVar(master=master, value="0 URL")
-        self.url_count_jsons_var = tk.StringVar(master=master, value="0 URL")
+        self.url_total_count_shortcuts_var = tk.StringVar(master=master, value="0")
+        self.url_count_shortcuts_unique_var = tk.StringVar(master=master, value="0")
+        self.url_count_shortcuts_duplicate_var = tk.StringVar(master=master, value="0")
+        self.url_count_shortcuts_empty_var = tk.StringVar(master=master, value="0")
+        self.url_total_count_jsons_var = tk.StringVar(master=master, value="0")
+        self.url_count_jsons_unique_var = tk.StringVar(master=master, value="0")
+        self.url_count_jsons_duplicate_var = tk.StringVar(master=master, value="0")
+        self.url_count_jsons_empty_var = tk.StringVar(master=master, value="0")
         # Scenario-level gate — True iff a scenario is currently selected.
         self.is_profile_cfg_accessible_var = tk.BooleanVar(master=master, value=False)
         # Derived Vars — panel visibility recomputed from url_source_type_var.
@@ -157,7 +163,10 @@ class ExecutorViewModel(ViewModelBase):
         self.is_folder_panel_visible_var = tk.BooleanVar(master=master, value=False)
         self.is_json_panel_visible_var = tk.BooleanVar(master=master, value=False)
         # Derived Var — URL count for manual mode, recomputed from manual_urls_var.
-        self.url_count_manual_var = tk.StringVar(master=master, value="0 URL")
+        self.url_total_count_manual_var = tk.StringVar(master=master, value="0")
+        self.url_count_manual_unique_var = tk.StringVar(master=master, value="0")
+        self.url_count_manual_dupplicate_var = tk.StringVar(master=master, value="0")
+        self.url_count_manual_empty_var = tk.StringVar(master=master, value="0")
         # Derived section-active Var — AND of is_profile_cfg_accessible_var and is_profile_section_enabled_var.
         self.is_profile_section_active_var = tk.BooleanVar(master=master, value=False)
 
@@ -215,8 +224,15 @@ class ExecutorViewModel(ViewModelBase):
         self._set_if_changed(self.is_folder_panel_visible_var, stype == UrlSourceTypeEnum.E_FOLDER.value)
         self._set_if_changed(self.is_json_panel_visible_var, stype == UrlSourceTypeEnum.E_JSON.value)
         raw = self.manual_urls_var.get()
-        count = sum(1 for line in raw.splitlines() if line.strip())
-        self._set_if_changed(self.url_count_manual_var, f"x{count} URL(s)")
+        lines = raw.splitlines()
+        non_empty = [line.strip() for line in lines if line.strip()]
+        total = len(non_empty)
+        duplicates = total - len(set(non_empty))
+        empty = len(lines) - total
+        self._set_if_changed(self.url_total_count_manual_var, str(total))
+        self._set_if_changed(self.url_count_manual_unique_var, str(len(set(non_empty))))
+        self._set_if_changed(self.url_count_manual_dupplicate_var, str(duplicates))
+        self._set_if_changed(self.url_count_manual_empty_var, str(empty))
 
     def _compute_profile_section_active(self) -> None:
         """Recompute is_profile_section_active_var from its two source Vars."""
@@ -314,7 +330,13 @@ class ExecutorViewModel(ViewModelBase):
             urls: New ordered URL strings read from the shortcuts folder.
         """
         self._url_preview_shortcuts = list(urls)
-        self.url_count_shortcuts_var.set(f"x{len(urls)} URL(s)")
+        non_empty = [u for u in urls if u.strip()]
+        empty = len(urls) - len(non_empty)
+        duplicates = len(non_empty) - len(set(non_empty))
+        self._set_if_changed(self.url_total_count_shortcuts_var, str(len(urls)))
+        self._set_if_changed(self.url_count_shortcuts_unique_var, str(len(set(non_empty))))
+        self._set_if_changed(self.url_count_shortcuts_duplicate_var, str(duplicates))
+        self._set_if_changed(self.url_count_shortcuts_empty_var, str(empty))
         self.url_preview_shortcuts_version_var.set(self.url_preview_shortcuts_version_var.get() + 1)
 
     def set_url_preview_jsons(self, urls: list[str]) -> None:
@@ -324,7 +346,13 @@ class ExecutorViewModel(ViewModelBase):
             urls: New ordered URL strings read from the jsons folder.
         """
         self._url_preview_jsons = list(urls)
-        self.url_count_jsons_var.set(f"x{len(urls)} URL(s)")
+        non_empty = [u for u in urls if u.strip()]
+        empty = len(urls) - len(non_empty)
+        duplicates = len(non_empty) - len(set(non_empty))
+        self._set_if_changed(self.url_total_count_jsons_var, str(len(urls)))
+        self._set_if_changed(self.url_count_jsons_unique_var, str(len(set(non_empty))))
+        self._set_if_changed(self.url_count_jsons_duplicate_var, str(duplicates))
+        self._set_if_changed(self.url_count_jsons_empty_var, str(empty))
         self.url_preview_jsons_version_var.set(self.url_preview_jsons_version_var.get() + 1)
 
     # ------------------------------------------------------------------
