@@ -147,10 +147,10 @@ class UrlConfigView(ttk.Frame):
     def _create_panel_folder(self) -> None:
         """Panel 2 — folder of .url shortcut files with preview and sort options."""
         self._panel_folder = ttk.Frame(self._panels_container)
+        self._create_folder_sort_row(self._panel_folder)
         self._create_folder_stats_row(self._panel_folder)
         self._create_folder_path_row(self._panel_folder)
         self._create_folder_preview_row(self._panel_folder)
-        self._create_folder_sort_row(self._panel_folder)
 
     def _create_folder_path_row(self, parent: tk.Widget) -> None:
         """Path entry row with browse button for the FOLDER source panel.
@@ -241,10 +241,10 @@ class UrlConfigView(ttk.Frame):
     def _create_panel_json(self) -> None:
         """Panel 3 — folder of .json files with preview and sort options."""
         self._panel_json = ttk.Frame(self._panels_container)
+        self._create_json_sort_row(self._panel_json)
         self._create_json_stats_row(self._panel_json)
         self._create_json_path_row(self._panel_json)
         self._create_json_preview_row(self._panel_json)
-        self._create_json_sort_row(self._panel_json)
 
     def _create_json_path_row(self, parent: tk.Widget) -> None:
         """Path entry row with browse button for the JSON source panel.

@@ -204,11 +204,29 @@ def _assemble_components(  # noqa: PLR0914
     )
     _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre, disc_pr)
     views: list[tk.Widget] = [
-        log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view, disc_view,
+        log_view,
+        profiles_view,
+        cfg_view,
+        scen_view,
+        edit_view,
+        exec_view,
+        scrap_view,
+        dbg_view,
+        disc_view,
     ]
     presenters: list[object] = [
-        log_pr, cfg_pr, prof_pr, scen_pre, edit_pr, steps_pr,
-        exec_pre, tab4_disc_pr, url_cfg_pr, scrap_pre, dbg_p, disc_pr,
+        log_pr,
+        cfg_pr,
+        prof_pr,
+        scen_pre,
+        edit_pr,
+        steps_pr,
+        exec_pre,
+        tab4_disc_pr,
+        url_cfg_pr,
+        scrap_pre,
+        dbg_p,
+        disc_pr,
     ]
     return views, presenters
 
@@ -412,19 +430,11 @@ def _init_executor_component(
     tab4_service = DiscoverService(tab4_repo)
     tab4_vm = DiscoverViewModel(master=main_view.content_area)
     tab4_presenter = DiscoverPresenter(
-        vm=tab4_vm,
-        service=tab4_service,
-        profiles_service=profiles_service,
-        scenarios_service=scenario_service,
+        vm=tab4_vm, service=tab4_service, profiles_service=profiles_service, scenarios_service=scenario_service
     )
     vm = ExecutorViewModel(master=main_view.content_area)
     url_config_presenter = UrlConfigPresenter(vm=vm)
-    executor_view = ExecutorView(
-        main_view.content_area,
-        vm=vm,
-        discover_vm=tab4_vm,
-        discover_presenter=tab4_presenter,
-    )
+    executor_view = ExecutorView(main_view.content_area, vm=vm, discover_vm=tab4_vm, discover_presenter=tab4_presenter)
     executor_presenter = ExecutorPresenter(
         vm=vm,
         scenarios_service=scenario_service,

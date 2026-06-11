@@ -10,7 +10,7 @@ from shared.enums import ExtractTargetEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsContext
+    from models.steps_context_model import StepsCollections
 
 _ALLOWED_TARGETS = frozenset({e.value for e in ExtractTargetEnum})
 
@@ -56,7 +56,7 @@ class ExtractLinksParams(BaseModel):
             return v
         if not v.strip():
             raise ValueError(ERROR_TEMPLATES["extract_links_mapping_required"].format(step=step_label(info.context)))
-        steps_context: StepsContext = info.context.get("steps_context")
+        steps_context: StepsCollections = info.context.get("steps_context")
         if steps_context.count_mapping_key(v) != 1:
             raise ValueError(
                 ERROR_TEMPLATES["extract_key_mapping_already_used"].format(step=step_label(info.context), value=v)
@@ -67,7 +67,7 @@ class ExtractLinksParams(BaseModel):
         """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
         return self.model_dump(mode="json")
 
-    def validate_with_context(self, step_index: int, steps_context: StepsContext, step_id: str) -> list[str]:
+    def validate_with_context(self, step_index: int, steps_context: StepsCollections, step_id: str) -> list[str]:
         """Validate params in workflow context and return French error strings."""
         ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": step_id}
         try:

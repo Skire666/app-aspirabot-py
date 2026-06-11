@@ -21,7 +21,7 @@ from view_models.executor_view_model import ExecutorViewModel, ProfileItem, Scen
 from views.components.column_combobox.column_combobox import ColumnCombobox
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
-from views.url_config_view import UrlConfigView
+from views.executor.url_config_view import UrlConfigView
 
 # -----------------------------------------------------------------------------
 # Class

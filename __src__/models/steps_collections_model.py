@@ -22,7 +22,7 @@ from shared.enums import StepTypeEnum
 
 
 @dataclass(frozen=True)
-class StepsContext:
+class StepsCollections:
     """Immutable snapshot of a workflow step list for cross-step operations.
 
     Wraps the ordered step sequence and exposes a typed lookup by step_id.
@@ -37,7 +37,7 @@ class StepsContext:
     steps: tuple[StepScrapingModel, ...]
 
     @classmethod
-    def from_list(cls, step_list: list[StepScrapingModel]) -> StepsContext:
+    def from_list(cls, step_list: list[StepScrapingModel]) -> StepsCollections:
         """Build a context snapshot from an ordered step list.
 
         Args:

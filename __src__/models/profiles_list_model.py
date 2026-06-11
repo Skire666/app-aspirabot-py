@@ -130,7 +130,7 @@ class ProfilesModel:
         self._append_or_replace_profile_launch(profile)
         self.mark_as_modified()
 
-    def update_profile_launch(self, profile: LaunchModel, only_replace_url: bool = False) -> None:
+    def update_profile_launch(self, profile: LaunchModel) -> None:
         """Update an existing profile in the list with new data.
 
         The profile to update is identified by matching the id_profile of the input profile.
@@ -144,7 +144,7 @@ class ProfilesModel:
         Raises:
             None.
         """
-        self._append_or_replace_profile_launch(profile, only_replace_url)
+        self._append_or_replace_profile_launch(profile)
         self.mark_as_modified()
 
     def delete_profile_by_id(self, id_profile: str) -> None:
@@ -208,7 +208,7 @@ class ProfilesModel:
         """
         self.modified_date_profile = datetime.now()
 
-    def _append_or_replace_profile_launch(self, updated_profile: LaunchModel, only_replace_url: bool = False) -> None:
+    def _append_or_replace_profile_launch(self, updated_profile: LaunchModel) -> None:
         """Update an existing profile in the list with new data.
 
         The profile to update is identified by matching the id_profile of the updated_profile.
@@ -218,15 +218,11 @@ class ProfilesModel:
         Args:
             updated_profile: A ProfileLaunchModel instance containing the updated data.
                 Its id_profile must match an existing profile in the list.
-            only_replace_url: If True, only the URL of the profile will be updated.
         """
         is_updated = False
         for idx, profile in enumerate(self.launch_profiles):
             if profile.id_profile == updated_profile.id_profile:
-                if only_replace_url:
-                    self.launch_profiles[idx].url_sources_list_manual = updated_profile.url_sources_list_manual
-                else:
-                    self.launch_profiles[idx] = updated_profile
+                self.launch_profiles[idx] = updated_profile
                 is_updated = True
                 break
         # no profile was updated, which means no matching id_profile was found

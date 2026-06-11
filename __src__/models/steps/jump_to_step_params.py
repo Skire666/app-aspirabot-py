@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, fie
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsContext
+    from models.steps_context_model import StepsCollections
 
 _ALLOWED_CONDITIONS = frozenset({"success", "failure", "always"})
 
@@ -57,7 +57,7 @@ class JumpToStepParams(BaseModel):
             return d  # field_validator will catch the empty case
         step = step_label(info.context)
         step_id = info.context.get("step_id", "")
-        steps_context: StepsContext = info.context.get("steps_context")
+        steps_context: StepsCollections = info.context.get("steps_context")
         if str(target) == str(step_id):
             raise ValueError(ERROR_TEMPLATES["jump_to_step_self_reference"].format(step=step))
         if steps_context is not None and steps_context.find_by_id(str(target)) is None:
@@ -68,7 +68,7 @@ class JumpToStepParams(BaseModel):
         """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
         return self.model_dump(mode="json")
 
-    def validate_with_context(self, step_index: int, steps_context: StepsContext, step_id: str) -> list[str]:
+    def validate_with_context(self, step_index: int, steps_context: StepsCollections, step_id: str) -> list[str]:
         """Validate params in workflow context and return French error strings."""
         ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": step_id}
         try:

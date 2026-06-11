@@ -11,7 +11,7 @@ from shared.enums import WaitUntilEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsContext
+    from models.steps_context_model import StepsCollections
 
 _DNS_SOLVER_WAIT_MAX = 30
 
@@ -63,7 +63,7 @@ class OpenUrlParams(BaseModel):
         """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
         return self.model_dump(mode="json")
 
-    def validate_with_context(self, step_index: int, steps_context: StepsContext, step_id: str) -> list[str]:
+    def validate_with_context(self, step_index: int, steps_context: StepsCollections, step_id: str) -> list[str]:
         """Validate params in workflow context and return French error strings."""
         ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": step_id}
         try:

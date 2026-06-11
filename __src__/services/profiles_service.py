@@ -178,9 +178,7 @@ class ProfilesService:
         self._repository.create_profiles(new_profiles)
         return profile
 
-    def update_profile_launch(
-        self, id_scenario: str, profile: LaunchModel, only_replace_url: bool = False
-    ) -> LaunchModel:
+    def update_profile_launch(self, id_scenario: str, profile: LaunchModel) -> LaunchModel:
         """Stamp timestamps on *profile* and persist it as a new launch profile.
 
         Calls :meth:`~models.profile_launch_model.ProfileLaunchModel.mark_as_created` to
@@ -190,14 +188,13 @@ class ProfilesService:
         Args:
             id_scenario: Unique identifier of the scenario to which the profile belongs.
             profile: The profile model to update.
-            only_replace_url: If True, only the URL of the profile will be updated.
 
         Raises:
             DatabaseUnavailableError: If the file cannot be written to disk.
         """
         if self._repository.exists_scenarios(id_scenario):
             found: ProfilesModel = self._repository.read_profiles(id_scenario)
-            found.update_profile_launch(profile, only_replace_url)
+            found.update_profile_launch(profile)
             self._repository.update_profiles(found)
             return profile
 

@@ -9,7 +9,7 @@ step registry.  The presenter calls validate_step() before persisting changes.
 # -----------------------------------------------------------------------------
 
 from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
+from models.steps_collections_model import StepsCollections
 from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
 
 from __src__.shared.enums import StepTypeEnum
@@ -42,7 +42,7 @@ class WorkflowService:
             A list of error messages; empty when the step is valid.
         """
         try:
-            steps_context = StepsContext.from_list(steps)
+            steps_context = StepsCollections.from_list(steps)
             if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) <= 0:
                 return ["Une étape de type 'E_OPEN_URL' est requise."]
             if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) <= 0:

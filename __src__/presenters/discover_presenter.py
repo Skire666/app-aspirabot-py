@@ -396,7 +396,7 @@ class DiscoverPresenter:
         """Load URLs from JSON files; return (urls, error_message)."""
         try:
             return self._service.load_urls_from_jsons(folder, pattern_json, key_mapping, pattern_urls), ""
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return [], str(exc)
 
     def _try_compute(
@@ -491,7 +491,7 @@ class DiscoverPresenter:
         """Count JSON files matching *pattern* in *folder*; return (count, error_message)."""
         try:
             return self._service.count_json_files(folder, pattern), ""
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return 0, str(exc)
 
     def _set_input_files_var(self, count: int, error: str) -> None:

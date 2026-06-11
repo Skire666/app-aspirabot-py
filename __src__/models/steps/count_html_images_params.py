@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, fie
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsContext
+    from models.steps_context_model import StepsCollections
 
 _ALLOWED_OPERATORS = frozenset({"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"})
 _ALLOWED_SUCCESS_IF = frozenset({"success", "failure"})
@@ -61,9 +61,7 @@ class CountHtmlImagesParams(BaseModel):
         if not info.context:
             return v
         if v < 0:
-            raise ValueError(
-                ERROR_TEMPLATES["count_html_images_value_negative"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["count_html_images_value_negative"].format(step=step_label(info.context)))
         return v
 
     @field_validator("success_if")
@@ -74,9 +72,7 @@ class CountHtmlImagesParams(BaseModel):
             return v
         if v not in _ALLOWED_SUCCESS_IF:
             raise ValueError(
-                ERROR_TEMPLATES["count_html_images_success_if_invalid"].format(
-                    step=step_label(info.context), value=v
-                )
+                ERROR_TEMPLATES["count_html_images_success_if_invalid"].format(step=step_label(info.context), value=v)
             )
         return v
 
@@ -88,9 +84,7 @@ class CountHtmlImagesParams(BaseModel):
             return v
         if v not in _ALLOWED_OPERATORS:
             raise ValueError(
-                ERROR_TEMPLATES["count_html_images_operator_invalid"].format(
-                    step=step_label(info.context), value=v
-                )
+                ERROR_TEMPLATES["count_html_images_operator_invalid"].format(step=step_label(info.context), value=v)
             )
         return v
 
@@ -130,7 +124,7 @@ class CountHtmlImagesParams(BaseModel):
         """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
         return self.model_dump(mode="json")
 
-    def validate_with_context(self, step_index: int, steps_context: StepsContext, step_id: str) -> list[str]:
+    def validate_with_context(self, step_index: int, steps_context: StepsCollections, step_id: str) -> list[str]:
         """Validate params in workflow context and return French error strings."""
         ctx: dict[str, Any] = {"step_index": step_index, "steps_context": steps_context, "step_id": step_id}
         try:
