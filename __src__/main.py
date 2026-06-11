@@ -402,7 +402,6 @@ def _init_executor_component(
     Returns:
         A (ExecutorView, ExecutorPresenter, tab4_DiscoverPresenter, UrlConfigPresenter) tuple.
     """
-    # Discover components for the "Découverte automatique" notebook tab.
     vm = ExecutorViewModel(master=main_view.content_area)
     url_config_presenter = UrlConfigPresenter(vm=vm)
     executor_view = ExecutorView(main_view.content_area, vm=vm)

@@ -5,10 +5,8 @@
 # -----------------------------------------------------------------------------
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
-from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.random_util import generate_rng_hexastring
 
 # -----------------------------------------------------------------------------
@@ -47,22 +45,13 @@ class DiscoverModel:
     """
 
     id_discover: str
-    project_name: str
-    input_folder_json: str
-    input_pattern_json: str
-    input_key_mapping: str
-    input_pattern_urls: str
-    output_folder_json: str
-    output_pattern_json: str
-    output_key_mapping: str
-    output_pattern_urls: str
-    profile_id_scenario: str
-    profile_name_template: str
-    created_date: datetime | None
-    modified_date: datetime | None
+    folder_json: str
+    pattern_json: str
+    key_mapping: str
+    pattern_urls: str
 
     @classmethod
-    def get_default(cls, name: str) -> DiscoverModel:
+    def get_default(cls) -> DiscoverModel:
         """Build a new project with default values.
 
         Args:
@@ -71,22 +60,12 @@ class DiscoverModel:
         Returns:
             A ready-to-use default DiscoverModel.
         """
-        now = datetime.now()
         return cls(
             id_discover=generate_rng_hexastring(_C_ID_SIZE),
-            project_name=name,
-            input_folder_json="",
-            input_pattern_json=_C_DEFAULT_PATTERN_JSON,
-            input_key_mapping=_C_DEFAULT_KEY_MAPPING,
-            input_pattern_urls=_C_DEFAULT_PATTERN_URLS,
-            output_folder_json="",
-            output_pattern_json=_C_DEFAULT_PATTERN_JSON,
-            output_key_mapping=_C_DEFAULT_KEY_MAPPING,
-            output_pattern_urls=_C_DEFAULT_PATTERN_URLS,
-            profile_id_scenario="",
-            profile_name_template=_C_DEFAULT_PROFILE_NAME_TEMPLATE.format(date=now.strftime("%Y-%m-%d %Hh%Mm%Ss")),
-            created_date=now,
-            modified_date=now,
+            folder_json="",
+            pattern_json=_C_DEFAULT_PATTERN_JSON,
+            key_mapping=_C_DEFAULT_KEY_MAPPING,
+            pattern_urls=_C_DEFAULT_PATTERN_URLS,
         )
 
     @classmethod
@@ -99,13 +78,7 @@ class DiscoverModel:
         Returns:
             A fully reconstructed DiscoverModel instance.
         """
-        return cls(
-            **cls._parse_basic_fields(data),
-            **cls._parse_input_fields(data),
-            **cls._parse_output_fields(data),
-            created_date=dict_with_key_to_optional_datetime(data, "created_date"),
-            modified_date=dict_with_key_to_optional_datetime(data, "modified_date"),
-        )
+        return cls(**cls._parse_basic_fields(data))
 
     @classmethod
     def _parse_basic_fields(cls, data: dict[str, Any]) -> dict[str, str]:
@@ -119,43 +92,10 @@ class DiscoverModel:
         """
         return {
             "id_discover": str(data.get("id_discover") or ""),
-            "project_name": str(data.get("project_name") or ""),
-            "profile_id_scenario": str(data.get("profile_id_scenario") or ""),
-            "profile_name_template": str(data.get("profile_name_template") or ""),
-        }
-
-    @classmethod
-    def _parse_input_fields(cls, data: dict[str, Any]) -> dict[str, str]:
-        """Extract input-section fields from *data*.
-
-        Args:
-            data: Raw dict from JSON deserialization.
-
-        Returns:
-            Partial keyword-argument dict for cls().
-        """
-        return {
-            "input_folder_json": str(data.get("input_folder_json") or ""),
-            "input_pattern_json": str(data.get("input_pattern_json") or _C_DEFAULT_PATTERN_JSON),
-            "input_key_mapping": str(data.get("input_key_mapping") or _C_DEFAULT_KEY_MAPPING),
-            "input_pattern_urls": str(data.get("input_pattern_urls") or _C_DEFAULT_PATTERN_URLS),
-        }
-
-    @classmethod
-    def _parse_output_fields(cls, data: dict[str, Any]) -> dict[str, str]:
-        """Extract output-section fields from *data*.
-
-        Args:
-            data: Raw dict from JSON deserialization.
-
-        Returns:
-            Partial keyword-argument dict for cls().
-        """
-        return {
-            "output_folder_json": str(data.get("output_folder_json") or ""),
-            "output_pattern_json": str(data.get("output_pattern_json") or _C_DEFAULT_PATTERN_JSON),
-            "output_key_mapping": str(data.get("output_key_mapping") or _C_DEFAULT_KEY_MAPPING),
-            "output_pattern_urls": str(data.get("output_pattern_urls") or _C_DEFAULT_PATTERN_URLS),
+            "folder_json": str(data.get("folder_json") or ""),
+            "pattern_json": str(data.get("pattern_json") or ""),
+            "key_mapping": str(data.get("key_mapping") or ""),
+            "pattern_urls": str(data.get("pattern_urls") or ""),
         }
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -166,30 +106,11 @@ class DiscoverModel:
         """
         return {
             "id_discover": self.id_discover,
-            "project_name": self.project_name,
-            "input_folder_json": self.input_folder_json,
-            "input_pattern_json": self.input_pattern_json,
-            "input_key_mapping": self.input_key_mapping,
-            "input_pattern_urls": self.input_pattern_urls,
-            "output_folder_json": self.output_folder_json,
-            "output_pattern_json": self.output_pattern_json,
-            "output_key_mapping": self.output_key_mapping,
-            "output_pattern_urls": self.output_pattern_urls,
-            "profile_id_scenario": self.profile_id_scenario,
-            "profile_name_template": self.profile_name_template,
-            "created_date": self.created_date,
-            "modified_date": self.modified_date,
+            "folder_json": self.folder_json,
+            "pattern_json": self.pattern_json,
+            "key_mapping": self.key_mapping,
+            "pattern_urls": self.pattern_urls,
         }
-
-    def mark_as_created(self) -> None:
-        """Set both creation and modification timestamps to now."""
-        now = datetime.now()
-        self.created_date = now
-        self.modified_date = now
-
-    def mark_as_modified(self) -> None:
-        """Update the modification timestamp to now."""
-        self.modified_date = datetime.now()
 
 
 # EOF
