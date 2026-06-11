@@ -19,7 +19,6 @@ _C_ID_SIZE: int = 16
 _C_DEFAULT_PATTERN_JSON: str = "export*.json"
 _C_DEFAULT_KEY_MAPPING: str = "key_xxx"
 _C_DEFAULT_PATTERN_URLS: str = "https*"
-_C_DEFAULT_PROFILE_NAME_TEMPLATE: str = "auto_discovers_new"
 
 # -----------------------------------------------------------------------------
 # Class

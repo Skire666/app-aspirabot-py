@@ -5,11 +5,6 @@ Four mutually exclusive RadioButtons select among:
     1. ``Liste manuelle``         — editable free-text URL list.
     2. ``Dossier avec URL``       — folder of .url shortcut files.
     3. ``Dossier avec JSON``      — folder of .json files.
-    4. ``Découverte automatique`` — embedded :class:`DiscoverView`.
-
-Purely passive: all state comes from ``ExecutorViewModel`` Vars;
-all user actions are forwarded to the VM action methods or to the
-child :class:`DiscoverView`.
 """
 
 # -----------------------------------------------------------------------------
@@ -22,13 +17,10 @@ from collections.abc import Callable
 from tkinter import filedialog, ttk
 from typing import Any
 
-from presenters.discover_presenter import DiscoverPresenter
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.operating_system_util import open_folder
-from view_models.discover_view_model import DiscoverViewModel
 from view_models.executor_view_model import ExecutorViewModel
 from views.components.folder_link_widget import FolderLinkWidget
-from views.discover_view import DiscoverView
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -50,25 +42,15 @@ class UrlConfigView(ttk.Frame):
         Panels — one frame per source, shown/hidden via pack/pack_forget.
     """
 
-    def __init__(
-        self,
-        parent: tk.Widget,
-        vm: ExecutorViewModel,
-        discover_vm: DiscoverViewModel,
-        discover_presenter: DiscoverPresenter,
-    ) -> None:
+    def __init__(self, parent: tk.Widget, vm: ExecutorViewModel) -> None:
         """Build the radio bar and bind to ViewModel Vars.
 
         Args:
             parent: Parent Tkinter container.
             vm: ExecutorViewModel owning all URL configuration state.
-            discover_vm: DiscoverViewModel for the discover panel.
-            discover_presenter: DiscoverPresenter for the discover panel.
         """
         super().__init__(parent)
         self._vm = vm
-        self._discover_vm = discover_vm
-        self._discover_presenter = discover_presenter
         self._view_traces: list[tuple[tk.Variable, str]] = []
         # Local var shared by the 4 radio buttons
         self._panel_var = tk.StringVar(master=self, value=UrlSourceTypeEnum.E_MANUAL.value)
@@ -92,7 +74,6 @@ class UrlConfigView(ttk.Frame):
         self._create_panel_manual()
         self._create_panel_folder()
         self._create_panel_json()
-        self._create_panel_discover()
 
     def _create_radio_bar(self, parent: tk.Widget) -> None:
         """Four radio buttons sharing _panel_var — one per content panel."""
@@ -147,9 +128,9 @@ class UrlConfigView(ttk.Frame):
     def _create_panel_folder(self) -> None:
         """Panel 2 — folder of .url shortcut files with preview and sort options."""
         self._panel_folder = ttk.Frame(self._panels_container)
-        self._create_folder_sort_row(self._panel_folder)
         self._create_folder_stats_row(self._panel_folder)
         self._create_folder_path_row(self._panel_folder)
+        self._create_folder_sort_row(self._panel_folder)
         self._create_folder_preview_row(self._panel_folder)
 
     def _create_folder_path_row(self, parent: tk.Widget) -> None:
@@ -186,14 +167,14 @@ class UrlConfigView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, pady=(0, 6))
+        left.pack(side=tk.LEFT, anchor=tk.NW, pady=6)
         preview_frame = ttk.Frame(row)
         preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self._txt_url_shortcuts = tk.Text(preview_frame, wrap=tk.NONE, state=tk.DISABLED, bg=C_BACKGROUND_GRAY)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_shortcuts.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_shortcuts.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
+        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=6)
 
     def _create_folder_stats_row(self, parent: tk.Widget) -> None:
         """Stats row (total / unique / duplicates / empty) for the FOLDER source panel.
@@ -220,7 +201,7 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(105, 5), pady=(0, 5))
+        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=5, pady=(0, 5))
         ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -241,9 +222,9 @@ class UrlConfigView(ttk.Frame):
     def _create_panel_json(self) -> None:
         """Panel 3 — folder of .json files with preview and sort options."""
         self._panel_json = ttk.Frame(self._panels_container)
-        self._create_json_sort_row(self._panel_json)
         self._create_json_stats_row(self._panel_json)
         self._create_json_path_row(self._panel_json)
+        self._create_json_sort_row(self._panel_json)
         self._create_json_preview_row(self._panel_json)
 
     def _create_json_path_row(self, parent: tk.Widget) -> None:
@@ -280,14 +261,14 @@ class UrlConfigView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, pady=(0, 5))
+        left.pack(side=tk.LEFT, anchor=tk.NW, pady=6)
         preview_frame = ttk.Frame(row)
         preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self._txt_url_jsons = tk.Text(preview_frame, wrap=tk.NONE, state=tk.DISABLED, bg=C_BACKGROUND_GRAY)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_jsons.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_jsons.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
+        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=6)
 
     def _create_json_stats_row(self, parent: tk.Widget) -> None:
         """Stats row (total / unique / duplicates / empty) for the JSON source panel.
@@ -314,7 +295,7 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=(105, 5), pady=(0, 5))
+        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=5, pady=(0, 5))
         ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -329,16 +310,6 @@ class UrlConfigView(ttk.Frame):
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
         ).pack(side=tk.LEFT, pady=(0, 5))
-
-    # ─── Panel 4 : Découverte automatique ────────────────────────────────────
-
-    def _create_panel_discover(self) -> None:
-        """Panel 4 — embedded DiscoverView panel."""
-        self._discover_tab_frame = ttk.Frame(self._panels_container)
-        self._discover_view = DiscoverView(
-            self._discover_tab_frame, vm=self._discover_vm, presenter=self._discover_presenter
-        )
-        self._discover_view.pack(fill=tk.BOTH, expand=True)
 
     # ------------------------------------------------------------------
     # ViewModel bindings
@@ -394,18 +365,11 @@ class UrlConfigView(ttk.Frame):
         self._write_readonly_text(self._txt_url_jsons, text)
 
     def _sync_section_enabled(self, *_: object) -> None:
-        """Enable or disable URL config widgets based on is_profile_section_active_var.
-
-        Panel 4 (DiscoverView) is intentionally excluded — it operates independently
-        of whether an executor profile is currently selected.
-        """
+        """Enable or disable URL config widgets based on is_profile_section_active_var."""
         enabled = self._vm.is_profile_section_active_var.get()
-        discover_tab = self._discover_tab_frame
 
         def _apply(widget: tk.Widget) -> None:
             for child in widget.winfo_children():
-                if child is discover_tab:
-                    continue
                 with contextlib.suppress(tk.TclError):
                     w: Any = child
                     if not enabled:
@@ -434,11 +398,8 @@ class UrlConfigView(ttk.Frame):
         """React to user radio-button click; switch panel and notify VM."""
         val = self._panel_var.get()
         self._show_panel(val)
-        if val == UrlSourceTypeEnum.E_DISCOVER.value:
-            self._discover_presenter.ensure_data_loaded()
-        else:
-            self._vm.url_source_type_var.set(val)
-            self._vm.form_changed()
+        self._vm.url_source_type_var.set(val)
+        self._vm.form_changed()
 
     def _on_manual_text_modified(self, _event: tk.Event) -> None:
         """Propagate manual-URL edits to the ViewModel and notify form changed."""
@@ -477,12 +438,10 @@ class UrlConfigView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def teardown(self) -> None:
-        """Detach all view-owned traces and teardown the embedded DiscoverView."""
+        """Detach all view-owned traces to prevent memory leaks when the view is destroyed."""
         for var, trace_id in self._view_traces:
             var.trace_remove("write", trace_id)
         self._view_traces.clear()
-        self._discover_view.teardown()
-        self._discover_vm.dispose()
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -498,7 +457,6 @@ class UrlConfigView(ttk.Frame):
             UrlSourceTypeEnum.E_MANUAL.value: self._panel_manual,
             UrlSourceTypeEnum.E_FOLDER.value: self._panel_folder,
             UrlSourceTypeEnum.E_JSON.value: self._panel_json,
-            UrlSourceTypeEnum.E_DISCOVER.value: self._discover_tab_frame,
         }
         target = panel_map.get(key)
         if target is None or target is self._current_panel:

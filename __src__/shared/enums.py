@@ -14,7 +14,6 @@ class TitleModuleEnum(Enum):
     """
 
     E_LOGS = "LOGS"
-    E_DISCOVER = "DECOUVRIR"
     E_PROFILES = "PROFILES"
     E_SCENARIOS = "SCENARIOS"
     E_WORKFLOW = "WORKFLOW"

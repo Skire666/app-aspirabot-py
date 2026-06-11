@@ -8,7 +8,6 @@ from shared.enums import StepTypeEnum, TitleModuleEnum
 from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_CONFIG,
     C_RESS_ICON_BLACK_DEBUG,
-    C_RESS_ICON_BLACK_DISCOVER,
     C_RESS_ICON_BLACK_EDITOR,
     C_RESS_ICON_BLACK_EXECUTOR,
     C_RESS_ICON_BLACK_FAQ,
@@ -18,7 +17,6 @@ from shared.resources_icons_util import (
     C_RESS_ICON_BLACK_SCRAPING,
     C_RESS_ICON_WHITE_CONFIG,
     C_RESS_ICON_WHITE_DEBUG,
-    C_RESS_ICON_WHITE_DISCOVER,
     C_RESS_ICON_WHITE_EDITOR,
     C_RESS_ICON_WHITE_EXECUTOR,
     C_RESS_ICON_WHITE_FAQ,
@@ -107,50 +105,6 @@ C_STEP_NOT_FOUND_FOR_UPDATE = "L'étape n'existe plus. Impossible de mettre à j
 C_SCENARIO_NOT_FOUND_BY_ID = "Le scénario avec l'ID '{id_file}' n'existe pas."
 
 # -----------------------------------------------------------------------------
-# Discover panel
-# -----------------------------------------------------------------------------
-
-# Project management labels
-C_DISCOVER_SAVED_DATE_FMT = "Sauvegardé le : {date}"
-C_DISCOVER_SAVED_DATE_EMPTY = "Sauvegardé le : --"
-C_DISCOVER_RENAME_DIALOG_TITLE = "Renommer le projet"
-C_DISCOVER_RENAME_DIALOG_MSG = "Nouveau nom du projet :"
-C_DISCOVER_DELETE_CONFIRM_TITLE = "Supprimer le projet"
-C_DISCOVER_DELETE_CONFIRM_MSG = "Êtes-vous sûr de vouloir supprimer le projet '{name}' ?"
-
-# Verification labels
-C_DISCOVER_FILES_COUNT_OK = "{count} fichier(s)"
-C_DISCOVER_FILES_COUNT_ZERO = "Aucun fichier"
-C_DISCOVER_FILES_COUNT_ERROR = "Erreur : {exc}"
-C_DISCOVER_URLS_COUNT_OK = "{count} URL(s)"
-C_DISCOVER_URLS_COUNT_ZERO = "Aucun URL"
-C_DISCOVER_URLS_COUNT_COMPUTING = "Calcul en cours..."
-C_DISCOVER_URLS_COUNT_ERROR = "Erreur : {exc}"
-
-# Compute result label
-C_DISCOVER_COMPUTE_OK = (
-    "Entrée : {in_unique} uniq. + {in_dupes} doub."
-    "   —   Sortie : {out_unique} uniq. + {out_dupes} doub."
-    "   —   {new_count} à ajouter"
-)
-
-# Profile save result labels
-C_DISCOVER_PROFILE_SAVE_OK = "{count} lien(s) ajouté(s) au profil."
-C_DISCOVER_PROFILE_SAVE_ZERO = "Aucun nouveau lien à ajouter."
-C_DISCOVER_PROFILE_SAVE_ERROR = "Erreur lors de la sauvegarde : {exc}"
-
-# Profile save button blocking hints
-C_DISCOVER_SAVE_LIST_HINT_INPUT = "URLs d'entrée non valides"
-C_DISCOVER_SAVE_LIST_HINT_OUTPUT = "URLs de sortie non valides"
-C_DISCOVER_SAVE_LIST_HINT_BOTH = "URLs d'entrée et de sortie indeterminées"
-C_DISCOVER_SAVE_LIST_HINT_NO_NAME = "Nom du profil vide"
-
-# Error messages
-C_DISCOVER_PROJECT_NAME_EMPTY = "Le nom du projet ne peut pas être vide."
-C_DISCOVER_SAVE_FAILED = "La sauvegarde a échoué : {exc}"
-C_DISCOVER_NO_PROFILE_SELECTED = "Veuillez sélectionner un profil."
-
-# -----------------------------------------------------------------------------
 # Labels
 # -----------------------------------------------------------------------------
 
@@ -159,7 +113,6 @@ C_DISCOVER_NO_PROFILE_SELECTED = "Veuillez sélectionner un profil."
 # Order of modules is determined by the order of entries in this dictionary.
 C_LISTING_MODULES: dict[TitleModuleEnum, tuple[str, str, str]] = {
     TitleModuleEnum.E_LOGS: ("Journal", C_RESS_ICON_BLACK_LOGS, C_RESS_ICON_WHITE_LOGS),
-    TitleModuleEnum.E_DISCOVER: ("Découvrir", C_RESS_ICON_BLACK_DISCOVER, C_RESS_ICON_WHITE_DISCOVER),
     TitleModuleEnum.E_PROFILES: ("Profils", C_RESS_ICON_BLACK_PROFILES, C_RESS_ICON_WHITE_PROFILES),
     TitleModuleEnum.E_SCENARIOS: ("Scénarios", C_RESS_ICON_BLACK_SCENARIOS, C_RESS_ICON_WHITE_SCENARIOS),
     TitleModuleEnum.E_WORKFLOW: ("Modifier", C_RESS_ICON_BLACK_EDITOR, C_RESS_ICON_WHITE_EDITOR),

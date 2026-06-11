@@ -15,8 +15,6 @@ from collections.abc import Callable
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any, cast
 
-from presenters.discover_presenter import DiscoverPresenter
-from view_models.discover_view_model import DiscoverViewModel
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
 from views.components.column_combobox.column_combobox import ColumnCombobox
 from views.components.folder_link_widget import FolderLinkWidget
@@ -42,19 +40,12 @@ class ExecutorView(ttk.Frame):
     Var or reacts to a version-trigger Var via ``trace_add``.
     """
 
-    def __init__(
-        self,
-        parent: tk.Widget,
-        vm: ExecutorViewModel,
-        discover_vm: DiscoverViewModel,
-        discover_presenter: DiscoverPresenter,
-    ) -> None:
+    def __init__(self, parent: tk.Widget, vm: ExecutorViewModel) -> None:
         """Build widget structure and bind to the ViewModel.
 
         Args:
             parent: Parent Tkinter container.
             vm: The ViewModel that owns all UI state for this panel.
-            discover_vm: DiscoverViewModel for the URL-config tab-4 discover panel.
             discover_presenter: DiscoverPresenter for the URL-config tab-4 discover panel.
         """
         super().__init__(parent)
@@ -68,7 +59,7 @@ class ExecutorView(ttk.Frame):
         # Cooldown guard for refresh button.
         self._refresh_cooldown: bool = False
 
-        self._create_widgets(discover_vm, discover_presenter)
+        self._create_widgets()
         self._bind_vm_vars()
         # Register View as the error-dialog provider for the Presenter.
         vm.bind_show_error(self.show_error)
@@ -77,7 +68,7 @@ class ExecutorView(ttk.Frame):
     # Widget construction
     # ------------------------------------------------------------------
 
-    def _create_widgets(self, discover_vm: DiscoverViewModel, discover_presenter: DiscoverPresenter) -> None:
+    def _create_widgets(self) -> None:
         """Build all sections in order."""
         outer = ttk.Frame(self)
         outer.pack(fill=tk.BOTH, expand=True)
@@ -85,7 +76,7 @@ class ExecutorView(ttk.Frame):
         self._create_scenario_section(outer)
         self._create_profiles_section(outer)
         self._create_basic_settings_section(outer)
-        self._create_url_settings_section(outer, discover_vm, discover_presenter)
+        self._create_url_settings_section(outer)
 
     def _create_scenario_section(self, parent: tk.Widget) -> None:
         """Build the scenario selection section."""
@@ -137,7 +128,7 @@ class ExecutorView(ttk.Frame):
 
     def _create_basic_settings_section(self, parent: tk.Widget) -> None:
         """Build the basic scenario settings section (dates, export folder, thresholds)."""
-        frame = HorizontalLineFrame(parent, text="Réglage de base du scénario")
+        frame = HorizontalLineFrame(parent, text="Réglage du scénario")
         frame.pack(fill=tk.X)
         container = ttk.Frame(frame)
         container.pack(fill=tk.X)
@@ -148,15 +139,11 @@ class ExecutorView(ttk.Frame):
         self._create_cfg_row6(container)
         self._create_cfg_row_warmup(container)
 
-    def _create_url_settings_section(
-        self, parent: tk.Widget, discover_vm: DiscoverViewModel, discover_presenter: DiscoverPresenter
-    ) -> None:
+    def _create_url_settings_section(self, parent: tk.Widget) -> None:
         """Build the URL settings section containing the UrlConfigView notebook."""
         frame = HorizontalLineFrame(parent, text="Réglage des URLs")
         frame.pack(fill=tk.X)
-        self._url_config_view = UrlConfigView(
-            frame, vm=self._vm, discover_vm=discover_vm, discover_presenter=discover_presenter
-        )
+        self._url_config_view = UrlConfigView(frame, vm=self._vm)
         self._url_config_view.pack(fill=tk.BOTH, expand=True)
 
     def _create_cfg_row0(self, parent: tk.Widget) -> None:
