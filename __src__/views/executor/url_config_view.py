@@ -7,14 +7,13 @@
 import contextlib
 import tkinter as tk
 from collections.abc import Callable
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, ttk
 from typing import Any
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
-from shared.i18n_fra import C_DISCOVER_DELETE_CONFIRM_MSG, C_DISCOVER_DELETE_CONFIRM_TITLE
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
-from views.components.data_grid.data_grid import DataGrid, GridColumn
+from views.components.editable_table.editable_table import ActionColumnDef, EditableTable, TableConfig, TextColumnDef
 from views.components.folder_link_widget import FolderLinkWidget
 
 # -----------------------------------------------------------------------------
@@ -23,14 +22,6 @@ from views.components.folder_link_widget import FolderLinkWidget
 
 C_BACKGROUND_GRAY = "#EAEAEA"
 
-_DISCOVER_GRID_COLUMNS: list[GridColumn] = [
-    GridColumn(id="dossier", title="Dossier (entrée)", width=200),
-    GridColumn(id="fichiers", title="Fichiers (regexp)", width=120),
-    GridColumn(id="mapping", title="Clé (Niv. 1)", width=100),
-    GridColumn(id="urls", title="URLs", width=100),
-    GridColumn(id="action_mod", title="", width=60, col_type="button", button_text="Modif."),
-    GridColumn(id="action_del", title="", width=60, col_type="button", button_text="Supp."),
-]
 
 # -----------------------------------------------------------------------------
 # Class
@@ -327,120 +318,35 @@ class UrlConfigView(ttk.Frame):
     def _create_panel_discover(self) -> None:
         """Panel 4 — IN grid, IN/OUT forms, and compute row for URL discovery."""
         self._panel_discover = ttk.Frame(self._panels_container)
-        self._create_discover_toolbar(self._panel_discover)
         self._create_discover_compute_row(self._panel_discover)
         self._create_discover_out_section(self._panel_discover)
         self._create_discover_grid(self._panel_discover)
 
-    def _create_discover_toolbar(self, parent: tk.Widget) -> None:
-        """Toolbar row with the [IN] add button above the discover grid.
-
-        Args:
-            parent: The DISCOVER panel frame to attach widgets to.
-        """
-        row = ttk.Frame(parent)
-        row.pack(fill=tk.X, padx=4, pady=(4, 2))
-        ttk.Button(row, text="+ Ajouter une source [IN]", command=self._on_add_discover_click).pack(side=tk.LEFT)
-
-    def _open_discover_popup(self) -> None:
-        """Open the modal [IN] Source dialog for creating or modifying a discover entry."""
-        size_h, size_w = 190, 600
-        popup = tk.Toplevel(self)
-        popup.title("Source [IN]")
-        popup.resizable(False, False)
-        popup.geometry(f"{size_w}x{size_h}")
-        popup.grab_set()
-
-        frame = ttk.LabelFrame(popup, text="Champs")
-        frame.pack(fill=tk.X, padx=8, pady=(8, 4))
-
-        def browse_in_folder() -> None:
-            folder = filedialog.askdirectory(title="Choisir le dossier [IN] source", parent=popup)
-            if folder:
-                self._vm.disc_in_folder_var.set(folder)
-
-        def make_row(label: str, var: tk.StringVar, browse_cb: Callable[[], None] | None = None) -> None:
-            r = ttk.Frame(frame)
-            r.pack(fill=tk.X, padx=4, pady=2)
-            ttk.Label(r, text=label, width=18, anchor=tk.W).pack(side=tk.LEFT)
-            ttk.Entry(r, textvariable=var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
-            if browse_cb:
-                ttk.Button(r, text="...", width=3, command=browse_cb).pack(side=tk.LEFT)
-
-        # create popup lines
-        make_row("Dossier d'entrée :", self._vm.disc_in_folder_var, browse_cb=browse_in_folder)
-        make_row("Fichiers (regexp) :", self._vm.disc_in_pattern_json_var)
-        make_row("Clé (Niv 1) :", self._vm.disc_in_key_mapping_var)
-        make_row("URLs (regexp) :", self._vm.disc_in_pattern_urls_var)
-
-        btn_row = ttk.Frame(popup)
-        btn_row.pack(fill=tk.X, padx=8, pady=(4, 8))
-
-        can_create = self._vm.can_create_discover_var.get()
-        can_modify = self._vm.can_modify_discover_var.get()
-
-        def do_create() -> None:
-            self._vm.add_discover()
-            self._vm.form_changed()
-            popup.destroy()
-
-        def do_modify() -> None:
-            self._vm.update_discover()
-            self._vm.form_changed()
-            popup.destroy()
-
-        ttk.Button(btn_row, text="Créer", command=do_create, state=tk.NORMAL if can_create else tk.DISABLED).pack(
-            side=tk.LEFT, padx=(0, 8)
-        )
-        ttk.Button(btn_row, text="Modifier", command=do_modify, state=tk.NORMAL if can_modify else tk.DISABLED).pack(
-            side=tk.LEFT, padx=(0, 8)
-        )
-        ttk.Button(btn_row, text="Annuler", command=popup.destroy).pack(side=tk.LEFT)
-
-        popup.update_idletasks()
-        x = self.winfo_rootx() + (self.winfo_width() - popup.winfo_width()) // 2
-        y = self.winfo_rooty() + (self.winfo_height() - popup.winfo_height()) // 2
-        popup.geometry(f"+{x}+{y}")
-
-    def _make_discover_field_row(
-        self,
-        parent: tk.Widget,
-        label: str,
-        var: tk.StringVar,
-        browse: bool = False,
-        browse_cb: Callable[[], None] | None = None,
-    ) -> ttk.Entry:
-        """Build one Label + Entry (+ optional browse button) row.
-
-        Also registers a form_changed trace on the var.
-
-        Args:
-            parent: Container frame to pack into.
-            label: Text for the left-side label.
-            var: StringVar to bind to the entry.
-            browse: When True, adds a "…" browse button.
-            browse_cb: Callback invoked by the browse button.
-
-        Returns:
-            The created Entry widget.
-        """
-        row = ttk.Frame(parent)
-        row.pack(fill=tk.X, padx=4, pady=1)
-        ttk.Label(row, text=label, width=12, anchor=tk.W).pack(side=tk.LEFT)
-        entry = ttk.Entry(row, textvariable=var)
-        entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
-        if browse and browse_cb:
-            ttk.Button(row, text="...", width=3, command=browse_cb).pack(side=tk.LEFT)
-        self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
-        return entry
-
     def _create_discover_grid(self, parent: tk.Widget) -> None:
-        """DataGrid [IN]: Modifier / Supprimer action buttons per row.
+        """EditableTable [IN]: Modifier action button per row; built-in delete delegates to VM.
 
         Args:
             parent: The DISCOVER panel frame to attach widgets to.
         """
-        self._grid_discover = DataGrid(parent, columns=_DISCOVER_GRID_COLUMNS, on_action=self._on_discover_action)
+        config = TableConfig(
+            columns=[
+                TextColumnDef(key="col_dossier", header="Dossier (entrée)", width=200, editable=True, sortable=True),
+                ActionColumnDef(
+                    key="action_browse",
+                    header="col_browsator",
+                    width=80,
+                    label="Parcourir",
+                    target_key="col_dossier",
+                    handler=self._on_discover_browse_action,
+                ),
+                TextColumnDef(key="col_fichiers", header="Fichiers (regexp)", width=120, editable=True, sortable=True),
+                TextColumnDef(key="col_mapping", header="Clé (Niv. 1)", width=100, editable=True, sortable=True),
+                TextColumnDef(key="col_urls", header="URLs", width=100, editable=True, sortable=True),
+            ],
+            confirm_delete=True,
+            on_change=self._on_discover_table_change,
+        )
+        self._grid_discover = EditableTable(parent, config=config)
         self._grid_discover.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
 
     def _create_discover_out_section(self, parent: tk.Widget) -> None:
@@ -525,24 +431,19 @@ class UrlConfigView(ttk.Frame):
         self._write_readonly_text(self._txt_url_jsons, text)
 
     def _sync_discovers_grid(self, *_: object) -> None:
-        """Rebuild the [IN] DataGrid from the current discovers rows snapshot."""
+        """Rebuild the [IN] EditableTable from the current discovers rows snapshot."""
         rows = self._vm.get_discovers_in_rows()
         data = [
             {
-                "dossier": r.folder_json,
-                "fichiers": r.pattern_json,
-                "mapping": r.key_mapping,
-                "urls": r.pattern_urls,
-                "__bound__": r.id_discover,
+                "col_dossier": r.folder_json,
+                "col_fichiers": r.pattern_json,
+                "col_mapping": r.key_mapping,
+                "col_urls": r.pattern_urls,
+                "__bound__": str(r.id_discover),
             }
             for r in rows
         ]
-        self._grid_discover.render_data(data)
-
-    def _on_add_discover_click(self) -> None:
-        """Reset the IN form to create-mode then open the popup."""
-        self._vm.prepare_new_discover()
-        self._open_discover_popup()
+        self._grid_discover.set_data(data)
 
     def _sync_section_enabled(self, *_: object) -> None:
         """Enable or disable URL config widgets based on is_profile_section_active_var."""
@@ -589,22 +490,33 @@ class UrlConfigView(ttk.Frame):
             self._vm.manual_urls_var.set(content)
             self._vm.form_changed()
 
-    def _on_discover_action(self, action_id: str, bound: object) -> None:
-        """Handle Modifier / Supprimer actions from the [IN] DataGrid.
+    def _on_discover_table_change(self, rows: list[dict[str, str]]) -> None:
+        """Delegate built-in row deletions to the VM.
+
+        Called by EditableTable.on_change after any mutation (delete / clear).
+        Compares remaining ``__bound__`` ids against the VM list and removes
+        any discover that is no longer present.
 
         Args:
-            action_id: "action_mod" or "action_del".
-            bound: The id_discover string from the row's __bound__.
+            rows: Remaining rows_data after the mutation.
         """
-        id_discover = str(bound)
-        if action_id == "action_mod":
-            self._vm.select_discover(id_discover)
-            self._open_discover_popup()
-        elif action_id == "action_del":
-            if messagebox.askyesno(
-                title=C_DISCOVER_DELETE_CONFIRM_TITLE, message=C_DISCOVER_DELETE_CONFIRM_MSG, parent=self
-            ):
-                self._vm.delete_discover(id_discover)
+        remaining_ids = {r.get("__bound__", "") for r in rows}
+        for vm_row in self._vm.get_discovers_in_rows():
+            if str(vm_row.id_discover) not in remaining_ids:
+                self._vm.delete_discover(str(vm_row.id_discover))
+
+    def _on_discover_browse_action(self, _row_idx: int, _row_data: dict[str, str]) -> str | None:
+        """Open a folder dialog and return the selected path to populate col_dossier.
+
+        The returned value is written to ``col_dossier`` by the EditableTable
+        ``target_key`` mechanism.
+
+        Args:
+            _row_idx: Zero-based row index (unused).
+            _row_data: Current row dict (unused).
+        """
+        folder = filedialog.askdirectory(title="Choisir le dossier [IN] source", parent=self)
+        return folder or None
 
     def _browse_shortcuts_folder(self) -> None:
         """Open a folder dialog and write the result to url_source_path_shortcuts_var."""

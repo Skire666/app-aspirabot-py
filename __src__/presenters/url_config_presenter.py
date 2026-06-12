@@ -49,9 +49,6 @@ class UrlConfigPresenter:
         self._computed_model: UrlsComputedModel | None = None
 
         # Register discover action callbacks on the VM.
-        vm.bind_add_discover(self._on_add_discover)
-        vm.bind_update_discover(self._on_update_discover)
-        vm.bind_delete_discover(self._on_delete_discover)
         vm.bind_select_discover(self._on_select_discover)
         vm.bind_compute_discovers(self._on_compute_discovers)
 
@@ -106,38 +103,6 @@ class UrlConfigPresenter:
     # ------------------------------------------------------------------
     # Discover action handlers — registered on the VM
     # ------------------------------------------------------------------
-
-    def _on_add_discover(self) -> None:
-        """Create a new DiscoverModel from the VM IN form and append it to the hub."""
-        new_model = self._build_discover_from_in_form()
-        self._current_hub.inputs.append(new_model)
-        self._current_hub.mark_as_modified()
-        self._push_discovers_in_rows()
-        self._clear_in_form()
-
-    def _on_update_discover(self) -> None:
-        """Update the row matching selected_discover_id_var with the current IN form."""
-        target_id = self._vm.selected_discover_id_var.get()
-        updated = self._build_discover_from_in_form(id_discover=target_id)
-        self._current_hub.inputs = [updated if m.id_discover == target_id else m for m in self._current_hub.inputs]
-        self._current_hub.mark_as_modified()
-        self._push_discovers_in_rows()
-        self._clear_in_form()
-        self._vm.selected_discover_id_var.set("")
-
-    def _on_delete_discover(self, id_discover: str) -> None:
-        """Remove the DiscoverModel with the given id from the hub.
-
-        Args:
-            id_discover: Identifier of the entry to delete.
-        """
-        self._current_hub.inputs = [m for m in self._current_hub.inputs if m.id_discover != id_discover]
-        self._current_hub.mark_as_modified()
-        self._push_discovers_in_rows()
-        # If the deleted row was being edited, reset to create mode.
-        if self._vm.selected_discover_id_var.get() == id_discover:
-            self._clear_in_form()
-            self._vm.selected_discover_id_var.set("")
 
     def _on_select_discover(self, id_discover: str) -> None:
         """Load the chosen IN row into the VM form and switch to edit mode.

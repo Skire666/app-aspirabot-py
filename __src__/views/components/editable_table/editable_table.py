@@ -6,7 +6,12 @@ from dataclasses import dataclass, field
 from tkinter import messagebox, ttk
 from typing import Any, Literal
 
-from __src__.shared.constants import C_COLOR_BLACK_FONT, C_COLOR_BLUE_HIGHLIGHT_LIGHT, C_COLOR_GRAY_BACKGROUND
+from shared.constants import (
+    C_COLOR_BLACK_FONT,
+    C_COLOR_BLUE_HIGHLIGHT_LIGHT,
+    C_COLOR_GRAY_BACKGROUND,
+    C_COLOR_GRAY_SEPARATOR,
+)
 
 # ── Component ─────────────────────────────────────────────────────────────────
 
@@ -14,17 +19,10 @@ _DEL_LABEL = "Supp."
 _ADD_LABEL = "Ajouter une ligne"
 _CLEAR_LABEL = "Effacer le tableau"
 
-_COLOR_ACTION = "#2980b9"
-_COLOR_DELETE = "#e74c3c"
-_COLOR_ADD_BG = "orange"
-_COLOR_CLEAR_BG = "#e74c3c"
-_COLOR_BTN_FG = "red"
-
 _COLOR_HEADER_BG = C_COLOR_GRAY_BACKGROUND
 _COLOR_HEADER_BG_ACTIVE = C_COLOR_BLUE_HIGHLIGHT_LIGHT
 _COLOR_HEADER_FG = C_COLOR_BLACK_FONT
-_COLOR_HEADER_BORDER = "red"
-_HEADER_HEIGHT = 27
+_COLOR_HEADER_BORDER = C_COLOR_GRAY_SEPARATOR
 _HEADER_MINIMUM_WIDTH = 30
 
 _COLOR_ROW_EVEN = "#ffffff"
@@ -135,8 +133,6 @@ class EditableTable(tk.Frame):
         to the "clam" theme makes Tk draw headings itself, so colour settings apply.
         """
         style = ttk.Style()
-        if style.theme_use() in {"vista", "winnative", "xpnative"}:
-            style.theme_use("clam")
 
         style.configure("EditableTable.Treeview", rowheight=28, font=("Segoe UI", 10))
         style.configure(
@@ -144,8 +140,10 @@ class EditableTable(tk.Frame):
             font=("Segoe UI", 10, "bold"),
             background=_COLOR_HEADER_BG,
             foreground=_COLOR_HEADER_FG,
-            relief="raised",
+            relief="flat",
+            borderwidth=0,
             lightcolor=_COLOR_HEADER_BG,
+            darkcolor=_COLOR_HEADER_BG,
         )
         style.map("EditableTable.Treeview.Heading", background=[("active", _COLOR_HEADER_BG_ACTIVE)])
 
@@ -159,30 +157,8 @@ class EditableTable(tk.Frame):
     def _build_top_bar(self) -> None:
         top = tk.Frame(self)
         top.pack(side="top", fill="x", padx=4, pady=(4, 0))
-        tk.Button(
-            top,
-            text=_CLEAR_LABEL,
-            command=self._on_clear,
-            bg=_COLOR_CLEAR_BG,
-            fg=_COLOR_BTN_FG,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2",
-        ).pack(side="right")
-        tk.Button(
-            top,
-            text=_ADD_LABEL,
-            command=self._on_add_row,
-            bg=_COLOR_ADD_BG,
-            fg=_COLOR_BTN_FG,
-            relief="flat",
-            bd=0,
-            padx=8,
-            pady=4,
-            cursor="hand2",
-        ).pack(side="left")
+        ttk.Button(top, text=_CLEAR_LABEL, command=self._on_clear).pack(side="right")
+        ttk.Button(top, text=_ADD_LABEL, command=self._on_add_row).pack(side="left")
 
     def _build_tree(self) -> None:
         self._tree_frame = tk.Frame(self)
@@ -236,7 +212,9 @@ class EditableTable(tk.Frame):
         n_seps = len(col_defs) - 1
 
         while len(self._sep_widgets) < n_seps:
-            self._sep_widgets.append(tk.Frame(self._tree_frame, width=1, bg=_COLOR_HEADER_BORDER))
+            sep = tk.Frame(self._tree_frame, width=1, bg=_COLOR_HEADER_BORDER, cursor="sb_h_double_arrow")
+            self._bind_sep_passthrough(sep)
+            self._sep_widgets.append(sep)
         while len(self._sep_widgets) > n_seps:
             self._sep_widgets.pop().destroy()
 
@@ -246,7 +224,26 @@ class EditableTable(tk.Frame):
                 x += self.tree.column(str(i), "width")
             except tk.TclError:
                 return
-            sep.place(x=x + 1, y=tree_y + _HEADER_HEIGHT, width=1, height=tree_h - _HEADER_HEIGHT)
+            sep.place(x=x + 1, y=tree_y, width=1, height=tree_h)
+
+    def _bind_sep_passthrough(self, sep: tk.Frame) -> None:
+        """Forward all mouse events from a separator strip to the Treeview at the matching coordinates."""
+
+        def _fwd(event: tk.Event, name: str) -> None:
+            x = event.x + sep.winfo_x() - self.tree.winfo_x()
+            y = event.y + sep.winfo_y() - self.tree.winfo_y()
+            self.tree.event_generate(name, x=x, y=y)
+
+        def _fwd_drag(event: tk.Event) -> None:
+            _fwd(event, "<B1-Motion>")
+            self._draw_column_separators()
+
+        sep.bind("<Motion>", lambda e: _fwd(e, "<Motion>"))
+        sep.bind("<Enter>", lambda e: _fwd(e, "<Motion>"))
+        sep.bind("<Leave>", lambda _: self.tree.event_generate("<Leave>"))
+        sep.bind("<Button-1>", lambda e: _fwd(e, "<Button-1>"))
+        sep.bind("<B1-Motion>", _fwd_drag)
+        sep.bind("<ButtonRelease-1>", lambda e: _fwd(e, "<ButtonRelease-1>"))
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 

@@ -10,9 +10,8 @@ step registry.  The presenter calls validate_step() before persisting changes.
 
 from models.step_scraping_model import StepScrapingModel
 from models.steps_collections_model import StepsCollections
+from shared.enums import StepTypeEnum
 from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
-
-from __src__.shared.enums import StepTypeEnum
 
 
 class WorkflowService:
