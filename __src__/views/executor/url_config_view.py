@@ -330,18 +330,18 @@ class UrlConfigView(ttk.Frame):
         """
         config = TableConfig(
             columns=[
-                TextColumnDef(key="col_dossier", header="Dossier (entrée)", width=200, editable=True, sortable=True),
+                TextColumnDef(key="col_dossier", header="Dossier (entrée)", width=180, editable=True, sortable=True),
                 ActionColumnDef(
                     key="action_browse",
-                    header="col_browsator",
-                    width=80,
-                    label="Parcourir",
+                    header="📂 ...",
+                    width=50,
+                    label="📂 ...",
                     target_key="col_dossier",
                     handler=self._on_discover_browse_action,
                 ),
                 TextColumnDef(key="col_fichiers", header="Fichiers (regexp)", width=120, editable=True, sortable=True),
                 TextColumnDef(key="col_mapping", header="Clé (Niv. 1)", width=100, editable=True, sortable=True),
-                TextColumnDef(key="col_urls", header="URLs", width=100, editable=True, sortable=True),
+                TextColumnDef(key="col_urls", header="URLs (regexp)", width=100, editable=True, sortable=True),
             ],
             confirm_delete=True,
             on_change=self._on_discover_table_change,
@@ -491,19 +491,16 @@ class UrlConfigView(ttk.Frame):
             self._vm.form_changed()
 
     def _on_discover_table_change(self, rows: list[dict[str, str]]) -> None:
-        """Delegate built-in row deletions to the VM.
+        """Keep VM discover rows in sync with the EditableTable on every mutation.
 
-        Called by EditableTable.on_change after any mutation (delete / clear).
-        Compares remaining ``__bound__`` ids against the VM list and removes
-        any discover that is no longer present.
+        Called by EditableTable.on_change after any inline edit, deletion, or
+        clear. Updates the VM silently (no version bump) so that the Presenter
+        can read the current state without triggering a table reload loop.
 
         Args:
-            rows: Remaining rows_data after the mutation.
+            rows: Full rows_data snapshot after the mutation.
         """
-        remaining_ids = {r.get("__bound__", "") for r in rows}
-        for vm_row in self._vm.get_discovers_in_rows():
-            if str(vm_row.id_discover) not in remaining_ids:
-                self._vm.delete_discover(str(vm_row.id_discover))
+        self._vm.update_discovers_table_state(rows)
 
     def _on_discover_browse_action(self, _row_idx: int, _row_data: dict[str, str]) -> str | None:
         """Open a folder dialog and return the selected path to populate col_dossier.

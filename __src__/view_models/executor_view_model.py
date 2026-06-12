@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY
+from shared.random_util import generate_rng_hexastring
 
 from view_models.view_model_base import ViewModelBase
 
@@ -422,6 +423,27 @@ class ExecutorViewModel(ViewModelBase):
         """
         self._discovers_in_rows = tuple(rows)
         self.discovers_in_version_var.set(self.discovers_in_version_var.get() + 1)
+
+    def update_discovers_table_state(self, rows: list[dict[str, str]]) -> None:
+        """Silently sync _discovers_in_rows from raw EditableTable row dicts.
+
+        Does NOT bump discovers_in_version_var to avoid triggering a table
+        reload feedback loop. Rows that carry a ``__bound__`` key reuse their
+        id_discover; rows without one receive a freshly generated identifier.
+
+        Args:
+            rows: Row dicts as returned by EditableTable.on_change.
+        """
+        self._discovers_in_rows = tuple(
+            DiscoverRowState(
+                id_discover=r.get("__bound__") or generate_rng_hexastring(16),
+                folder_json=r.get("col_dossier", ""),
+                pattern_json=r.get("col_fichiers", ""),
+                key_mapping=r.get("col_mapping", ""),
+                pattern_urls=r.get("col_urls", ""),
+            )
+            for r in rows
+        )
 
     # ------------------------------------------------------------------
     # Bind hooks — called once by the Presenter at composition time

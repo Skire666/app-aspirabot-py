@@ -212,8 +212,18 @@ class UrlConfigPresenter:
             A fresh DiscoversHubModel reflecting the current UI state.
         """
         out_model = self._build_discover_from_out_form()
+        inputs = [
+            DiscoverModel(
+                id_discover=r.id_discover,
+                folder_json=r.folder_json,
+                pattern_json=r.pattern_json,
+                key_mapping=r.key_mapping,
+                pattern_urls=r.pattern_urls,
+            )
+            for r in self._vm.get_discovers_in_rows()
+        ]
         return DiscoversHubModel(
-            inputs=list(self._current_hub.inputs),
+            inputs=inputs,
             output=out_model,
             created_date=self._current_hub.created_date,
             modified_date=self._current_hub.modified_date,

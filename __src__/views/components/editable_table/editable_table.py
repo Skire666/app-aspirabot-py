@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from tkinter import messagebox, ttk
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from shared.constants import (
     C_COLOR_BLACK_FONT,
@@ -15,7 +16,7 @@ from shared.constants import (
 
 # ── Component ─────────────────────────────────────────────────────────────────
 
-_DEL_LABEL = "Supp."
+_DEL_LABEL = "❌ Supp."
 _ADD_LABEL = "Ajouter une ligne"
 _CLEAR_LABEL = "Effacer le tableau"
 
@@ -24,9 +25,10 @@ _COLOR_HEADER_BG_ACTIVE = C_COLOR_BLUE_HIGHLIGHT_LIGHT
 _COLOR_HEADER_FG = C_COLOR_BLACK_FONT
 _COLOR_HEADER_BORDER = C_COLOR_GRAY_SEPARATOR
 _HEADER_MINIMUM_WIDTH = 30
+_ROW_HEIGHT = 30
 
-_COLOR_ROW_EVEN = "#ffffff"
-_COLOR_ROW_ODD = C_COLOR_GRAY_BACKGROUND
+_COLOR_ROW_EVEN = C_COLOR_GRAY_BACKGROUND
+_COLOR_ROW_ODD = "#ffffff"
 _COLOR_ROW_HOVER = C_COLOR_BLUE_HIGHLIGHT_LIGHT
 
 # ── Type definitions ──────────────────────────────────────────────────────────
@@ -100,6 +102,7 @@ class EditableTable(tk.Frame):
 
         self._text_cols: list[TextColumnDef] = [c for c in config.columns if isinstance(c, TextColumnDef)]
         self._action_cols: list[ActionColumnDef] = [c for c in config.columns if isinstance(c, ActionColumnDef)]
+        self._all_data_cols: list[ColumnDef] = list(config.columns)
         self._col_keys: list[str] = [c.key for c in self._text_cols]
 
         self.rows_data: list[dict[str, str]] = [dict(row) for row in config.initial_data]
@@ -107,6 +110,8 @@ class EditableTable(tk.Frame):
         self._edit_entry: tk.Entry | None = None
         self._edit_iid: str | None = None
         self._edit_col_idx: int | None = None
+        self._edit_tree_col: str | None = None
+        self._edit_global_click_id: str | None = None
         self._hovered_iid: str | None = None
 
         self._sort_col_key: str | None = config.default_sort_key
@@ -134,16 +139,9 @@ class EditableTable(tk.Frame):
         """
         style = ttk.Style()
 
-        style.configure("EditableTable.Treeview", rowheight=28, font=("Segoe UI", 10))
+        style.configure("EditableTable.Treeview", rowheight=_ROW_HEIGHT, font=("Segoe UI", 10))
         style.configure(
-            "EditableTable.Treeview.Heading",
-            font=("Segoe UI", 10, "bold"),
-            background=_COLOR_HEADER_BG,
-            foreground=_COLOR_HEADER_FG,
-            relief="flat",
-            borderwidth=0,
-            lightcolor=_COLOR_HEADER_BG,
-            darkcolor=_COLOR_HEADER_BG,
+            "EditableTable.Treeview.Heading", font=("Segoe UI", 10, "bold"), foreground=_COLOR_HEADER_FG, borderwidth=1
         )
         style.map("EditableTable.Treeview.Heading", background=[("active", _COLOR_HEADER_BG_ACTIVE)])
 
@@ -186,7 +184,12 @@ class EditableTable(tk.Frame):
         # affect their appearance.
         vsb = tk.Scrollbar(frame, orient="vertical", command=self.tree.yview)  # type: ignore[arg-type]
         hsb = tk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)  # type: ignore[arg-type]
-        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+        def _xscroll(first: float, last: float) -> None:
+            hsb.set(first, last)
+            self._draw_column_separators()
+
+        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=_xscroll)
         vsb.pack(side="right", fill="y")
         hsb.pack(side="bottom", fill="x")
         self.tree.pack(side="left", fill="both", expand=True)
@@ -212,19 +215,23 @@ class EditableTable(tk.Frame):
         n_seps = len(col_defs) - 1
 
         while len(self._sep_widgets) < n_seps:
-            sep = tk.Frame(self._tree_frame, width=1, bg=_COLOR_HEADER_BORDER, cursor="sb_h_double_arrow")
+            sep = tk.Frame(self._tree_frame, width=1, bg=_COLOR_HEADER_BORDER)
             self._bind_sep_passthrough(sep)
             self._sep_widgets.append(sep)
         while len(self._sep_widgets) > n_seps:
             self._sep_widgets.pop().destroy()
 
-        x = 0
+        col_defs = self._ordered_col_defs()
+        total_width = sum(self.tree.column(str(i), "width") for i in range(len(col_defs)))
+        scroll_offset = int(self.tree.xview()[0] * total_width)  # type: ignore[misc]
+
+        x = -scroll_offset
         for i, sep in enumerate(self._sep_widgets):
             try:
                 x += self.tree.column(str(i), "width")
             except tk.TclError:
                 return
-            sep.place(x=x + 1, y=tree_y, width=1, height=tree_h)
+            sep.place(x=x, y=tree_y + 22, width=1, height=tree_h - 22)
 
     def _bind_sep_passthrough(self, sep: tk.Frame) -> None:
         """Forward all mouse events from a separator strip to the Treeview at the matching coordinates."""
@@ -248,13 +255,13 @@ class EditableTable(tk.Frame):
     # ── Helpers ───────────────────────────────────────────────────────────────
 
     def _ordered_col_defs(self) -> list[ColumnDef]:
-        """Return column defs in display order: text → action → delete sentinel."""
+        """Return column defs in declaration order, followed by the delete sentinel."""
 
         class _DelCol(ColumnDef):
             pass
 
         del_col: ColumnDef = _DelCol(key="__del__", header="", width=120)
-        return [*self._text_cols, *self._action_cols, del_col]
+        return [*self._all_data_cols, del_col]
 
     def _col_count_text(self) -> int:
         return len(self._text_cols)
@@ -263,7 +270,7 @@ class EditableTable(tk.Frame):
         return len(self._action_cols)
 
     def _del_col_idx(self) -> int:
-        return self._col_count_text() + self._col_count_action()
+        return len(self._all_data_cols)
 
     @staticmethod
     def _iid_to_row_idx(iid: str) -> int | None:
@@ -334,10 +341,13 @@ class EditableTable(tk.Frame):
         self._hovered_iid = None
         self.tree.delete(*self.tree.get_children())
         for i, row in enumerate(self.rows_data):
-            action_labels = [ac.label for ac in self._action_cols]
-            values = (
-                [self._display(col, row.get(col.key, "")) for col in self._text_cols] + action_labels + [_DEL_LABEL]
-            )
+            values: list[str] = []
+            for col in self._all_data_cols:
+                if isinstance(col, TextColumnDef):
+                    values.append(self._display(col, row.get(col.key, "")))
+                else:
+                    values.append(cast(ActionColumnDef, col).label)
+            values.append(_DEL_LABEL)
             tag = "even" if i % 2 == 0 else "odd"
             self.tree.insert("", "end", iid=str(i), values=values, tags=(tag,))
 
@@ -372,8 +382,8 @@ class EditableTable(tk.Frame):
 
     def _update_sort_headers(self) -> None:
         """Reflect current sort column and direction in the heading texts."""
-        for i, col in enumerate(self._text_cols):
-            if not col.sortable:
+        for i, col in enumerate(self._all_data_cols):
+            if not isinstance(col, TextColumnDef) or not col.sortable:
                 continue
             cid = str(i)
             if col.key == self._sort_col_key:
@@ -385,6 +395,14 @@ class EditableTable(tk.Frame):
     def _on_motion(self, event: tk.Event) -> None:
         """Highlight the row under the cursor; restore the previous one."""
         iid = self.tree.identify_row(event.y) or None
+        col_str = self.tree.identify_column(event.x)
+        col_idx = self._col_id_at(col_str) if col_str else -1
+        is_action = iid is not None and (
+            col_idx == self._del_col_idx()
+            or (0 <= col_idx < len(self._all_data_cols) and isinstance(self._all_data_cols[col_idx], ActionColumnDef))
+        )
+        self.tree.configure(cursor="hand2" if is_action else "")
+
         if iid == self._hovered_iid:
             return
         if self._hovered_iid:
@@ -395,6 +413,7 @@ class EditableTable(tk.Frame):
 
     def _on_leave(self, _event: tk.Event) -> None:
         """Remove the hover highlight when the cursor leaves the Treeview."""
+        self.tree.configure(cursor="")
         if self._hovered_iid:
             self._restore_row_tag(self._hovered_iid)
             self._hovered_iid = None
@@ -415,22 +434,23 @@ class EditableTable(tk.Frame):
         if row_idx is None:
             return
 
-        n_text = self._col_count_text()
-        del_idx = self._del_col_idx()
+        self._dispatch_click(col_idx, iid, row_idx, tree_col)
 
-        if col_idx < n_text:
-            text_col = self._text_cols[col_idx]
-            if text_col.editable:
-                self._open_edit(iid, col_idx, row_idx, tree_col)
-            else:
-                self._close_edit(save=True)
-        elif n_text <= col_idx < del_idx:
-            self._close_edit(save=True)
-            action_col = self._action_cols[col_idx - n_text]
-            self._invoke_action(action_col, row_idx)
-        elif col_idx == del_idx:
+    def _dispatch_click(self, col_idx: int, iid: str, row_idx: int, tree_col: str) -> None:
+        del_idx = self._del_col_idx()
+        if col_idx == del_idx:
             self._close_edit(save=True)
             self._on_delete_row(row_idx)
+        elif col_idx < del_idx:
+            col_def = self._all_data_cols[col_idx]
+            if isinstance(col_def, TextColumnDef):
+                if col_def.editable:
+                    self._open_edit(iid, self._text_cols.index(col_def), row_idx, tree_col)
+                else:
+                    self._close_edit(save=True)
+            elif isinstance(col_def, ActionColumnDef):
+                self._close_edit(save=True)
+                self._invoke_action(col_def, row_idx)
 
     def _on_add_row(self) -> None:
         """Add a default row, scroll to it, and open its first editable cell."""
@@ -441,10 +461,13 @@ class EditableTable(tk.Frame):
         self.tree.see(new_iid)
         self.tree.selection_set(new_iid)
 
-        first_editable_idx = next((i for i, c in enumerate(self._text_cols) if c.editable), None)
-        if first_editable_idx is not None:
-            tree_col = f"#{first_editable_idx + 1}"
-            self.after(50, lambda: self._open_edit(new_iid, first_editable_idx, len(self.rows_data) - 1, tree_col))
+        first_editable_global = next(
+            (i for i, c in enumerate(self._all_data_cols) if isinstance(c, TextColumnDef) and c.editable), None
+        )
+        if first_editable_global is not None:
+            tree_col = f"#{first_editable_global + 1}"
+            text_col_idx = self._text_cols.index(cast(TextColumnDef, self._all_data_cols[first_editable_global]))
+            self.after(50, lambda: self._open_edit(new_iid, text_col_idx, len(self.rows_data) - 1, tree_col))
 
     def _on_clear(self) -> None:
         """Clear all rows, with optional confirmation dialog."""
@@ -489,11 +512,14 @@ class EditableTable(tk.Frame):
         entry.insert(0, current_value)
         entry.select_range(0, "end")
         entry.place(x=x, y=y, width=width, height=height)
-        entry.focus_set()
+        # Defer focus so the Treeview click event finishes before we steal focus back.
+        self.after(1, lambda: entry.focus_set() if self._edit_entry is entry else None)
 
         self._edit_entry = entry
         self._edit_iid = iid
         self._edit_col_idx = col_idx
+        self._edit_tree_col = tree_col
+        self._edit_global_click_id = self.winfo_toplevel().bind("<Button-1>", self._on_global_click, "+")
 
         def _save(*_: object) -> None:
             self._close_edit(save=True)
@@ -505,21 +531,45 @@ class EditableTable(tk.Frame):
         entry.bind("<FocusOut>", _save)
         entry.bind("<Escape>", _cancel)
 
+    def _on_global_click(self, event: tk.Event) -> None:
+        """Close the inline editor when a click lands outside the active Entry.
+
+        Clicks on self.tree are skipped: _on_click already handles close+reopen
+        for cell-to-cell navigation, and the toplevel binding fires *after* the
+        widget binding, which would close the freshly-opened second edit.
+        """
+        if self._edit_entry is None:
+            return
+        if event.widget is self.tree:
+            return
+        w: tk.Misc | None = event.widget
+        while w is not None:
+            if w is self._edit_entry:
+                return
+            w = getattr(w, "master", None)
+        self._close_edit(save=True)
+
     def _close_edit(self, *, save: bool) -> None:
         """Close the active inline editor, optionally writing the value back."""
         if self._edit_entry is None:
             return
 
-        if save and self._edit_iid is not None and self._edit_col_idx is not None:
+        if self._edit_global_click_id is not None:
+            with contextlib.suppress(tk.TclError):
+                self.winfo_toplevel().unbind("<Button-1>", self._edit_global_click_id)
+            self._edit_global_click_id = None
+
+        if save and self._edit_iid is not None and self._edit_col_idx is not None and self._edit_tree_col is not None:
             row_idx = self._iid_to_row_idx(self._edit_iid)
             if row_idx is not None and 0 <= row_idx < len(self.rows_data):
                 col = self._text_cols[self._edit_col_idx]
                 new_val = self._edit_entry.get()
                 self.rows_data[row_idx][col.key] = new_val
-                self.tree.set(self._edit_iid, f"#{self._edit_col_idx + 1}", self._display(col, new_val))
+                self.tree.set(self._edit_iid, self._edit_tree_col, self._display(col, new_val))
                 self._notify_change()
 
         self._edit_entry.destroy()
         self._edit_entry = None
         self._edit_iid = None
         self._edit_col_idx = None
+        self._edit_tree_col = None
