@@ -130,6 +130,7 @@ class UrlSourceTypeEnum(Enum):
     E_FOLDER = "FOLDER"
     E_JSON = "JSON"
     E_DISCOVER = "DISCOVER"
+    E_REVISITOR = "REVISITOR"
     E_UNKNOWN = "UNKNOWN"
 
 

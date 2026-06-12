@@ -85,12 +85,12 @@ class UrlConfigView(ttk.Frame):
         bar.pack(fill=tk.X, padx=4, pady=6)
         self._radio_buttons: list[ttk.Radiobutton] = []
         entries = [
-            ("Liste manuelle", UrlSourceTypeEnum.E_MANUAL.value),
+            ("Entrée manuelle", UrlSourceTypeEnum.E_MANUAL.value),
             ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER.value),
             ("Dossier avec JSON", UrlSourceTypeEnum.E_JSON.value),
-            ("Découverte automatique", UrlSourceTypeEnum.E_DISCOVER.value),
+            ("Lire les nouveautés", UrlSourceTypeEnum.E_DISCOVER.value),
         ]
-        tk.Label(bar, text="Choix de la source :").pack(side=tk.LEFT, padx=(0, 10))
+        tk.Label(bar, text="Source :").pack(side=tk.LEFT, padx=(0, 10))
         for label, value in entries:
             rb = ttk.Radiobutton(
                 bar, text=label, variable=self._panel_var, value=value, command=self._on_panel_var_changed
