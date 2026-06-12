@@ -260,6 +260,9 @@ class ScrapingPresenter:
         elif stype == UrlSourceTypeEnum.E_JSON.value:
             source_value = p.url_sources_folder_jsons or None
             sort_order = p.url_sort_order_jsons
+        elif stype == UrlSourceTypeEnum.E_DISCOVER.value:
+            source_value = p.url_sources_discover_urls or None
+            sort_order = ""
         else:
             source_value = None
             sort_order = ""

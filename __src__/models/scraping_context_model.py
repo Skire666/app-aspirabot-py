@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from models.app_configuration_model import AppConfigurationModel
-from models.extracted_data_model import ExtractedData, ExtractedItem
+from models.extracted_data_model import ExtractedData
 from models.step_scraping_model import StepScrapingModel
 from shared.enums import StepExecutionResultEnum
 
@@ -155,7 +155,7 @@ class ScrapingContextModel:
         if self.extracted_data is None:
             self.extracted_data = ExtractedData()
 
-        self.extracted_data.items.append(ExtractedItem(key=mapping_key, input=inp, values=vals, comment=com))
+        self.extracted_data.append_item(key=mapping_key, input=inp, values=vals, comment=com)
 
     def last_step_was_success(self) -> bool:
         """Helper to check if the last step execution was a success."""

@@ -25,7 +25,7 @@ C_KEY_NBR_LOOPS = "nbr_loops"
 C_KEY_DELAY_PAUSE = "delay_pause"
 C_KEY_COMMENT = "comment"
 
-C_LIMIT_GIVE_UP_SCROLLING = 3  # number of consecutive no-growth iterations before giving up on scrolling --- IGNORE ---
+C_LIMIT_GIVE_UP_SCROLLING = 4  # number of consecutive no-growth iterations before giving up on scrolling --- IGNORE ---
 
 # -----------------------------------------------------------------------------
 # Classes

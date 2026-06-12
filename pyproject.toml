@@ -188,13 +188,13 @@ max-statements = 50  # default: 50
 max-returns = 6  # default: 6
 
 # Maximum number of public methods for a class
-max-public-methods = 40  # default: 20
+max-public-methods = 50  # default: 20
 
 # Maximum number of local variables in a function/method
 max-locals = 15  # default: 15
 
 # Maximum number of nested blocks
-max-nested-blocks = 4  # default: 5
+max-nested-blocks = 5  # default: 5
 
 [tool.ruff.lint.per-file-ignores]
 

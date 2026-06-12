@@ -19,7 +19,7 @@ from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
 from shared.step_registry import register_step_executor
 
-C_LIMIT_GIVE_UP_SCROLLING = 3  # number of consecutive no-growth iterations before giving up on scrolling
+C_LIMIT_GIVE_UP_SCROLLING = 4  # number of consecutive no-growth iterations before giving up on scrolling
 
 
 class ScrollDownExecutor(IStepExecutor):
@@ -38,16 +38,21 @@ class ScrollDownExecutor(IStepExecutor):
         assert context.step_scraping_data is not None
         p = cast(ScrollDownParams, context.step_scraping_data.params)
         try:
-            consecutive_no_growth, previous_height = 0, self._get_page_height(browser)
+            consecutive_same_value_count = 0
+            height_previous = self._get_page_height(browser)
             for idx in range(p.nbr_loops):
                 if idx >= 1 and p.delay_pause >= 1:
                     time.sleep(p.delay_pause)
                 self._do_scroll(browser, p)
                 event_bus.log_step(context, f"Défilement de {p.pixels}px effectué.")
-                previous_height, consecutive_no_growth = self._is_page_growing(
-                    browser, previous_height, consecutive_no_growth
-                )
-                if consecutive_no_growth >= C_LIMIT_GIVE_UP_SCROLLING:
+                height_new = self._get_page_height(browser)
+                if height_new == height_previous:
+                    consecutive_same_value_count += 1
+                else:
+                    consecutive_same_value_count = 0
+                height_previous = height_new
+
+                if consecutive_same_value_count >= C_LIMIT_GIVE_UP_SCROLLING:
                     event_bus.log_step(context, "Page stabilisée, arrêt du défilement.")
                     break
         except Exception as exc:  # noqa: BLE001
@@ -67,14 +72,6 @@ class ScrollDownExecutor(IStepExecutor):
         if not success:
             return 0
         return int(str(values)) if values is not None else 0
-
-    def _is_page_growing(
-        self, browser: IWebBrowserService, previous_height: int, consecutive_no_growth: int
-    ) -> tuple[int, int]:
-        """Check if the page height is still growing after the scroll."""
-        new_height = self._get_page_height(browser)
-        growing = new_height > previous_height
-        return new_height if growing else previous_height, 0 if growing else consecutive_no_growth + 1
 
     @staticmethod
     def _do_scroll(browser: IWebBrowserService, p: ScrollDownParams) -> None:

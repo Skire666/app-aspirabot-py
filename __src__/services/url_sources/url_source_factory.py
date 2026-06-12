@@ -46,6 +46,8 @@ def build_url_source_scenario(
         return _build_folder(source_value, sort_order)
     if source_type == UrlSourceTypeEnum.E_JSON.value:
         return _build_json(source_value, sort_order)
+    if source_type == UrlSourceTypeEnum.E_DISCOVER.value:
+        return _build_manual(source_value)
 
     raise UnknownUrlSourceTypeError(source_type)
 

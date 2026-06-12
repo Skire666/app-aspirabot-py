@@ -195,10 +195,10 @@ class TestPreviewUrlListed:
         assert "http://a.com" in preview
         assert p.pop_url() == "http://a.com"  # cursor unchanged
 
-    def test_limited_to_10(self, tmp_path: Path) -> None:
+    def test_returns_all_urls(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", [f"http://{i}.com" for i in range(15)])
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert len(p.preview_url_listed()) == 10
+        assert len(p.preview_url_listed()) == 15
 
 
 class TestDisplayProgress:

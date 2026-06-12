@@ -30,9 +30,8 @@ from shared.i18n_fra import (
     C_EXEC_SAVE_ERROR,
     C_EXEC_SAVED_DATE_EMPTY,
     C_EXEC_SAVED_DATE_FMT,
-    C_EXEC_USED_DATE_EMPTY,
-    C_EXEC_USED_DATE_FMT,
     C_OPEN_EXPORT_FOLDER_ERROR,
+    C_STEP_TYPE_TO_LABELS,
 )
 from shared.parse_util import safe_int_from_str
 from validators.launch_validator import validate_launch_profile_first_error
@@ -316,13 +315,6 @@ class ExecutorPresenter:
             profile: The launch profile providing the values.
         """
         # Usage statistics
-        used_date = (
-            C_EXEC_USED_DATE_FMT.format(date=profile.used_date_profile.strftime(_DATE_FMT))
-            if profile.used_date_profile
-            else C_EXEC_USED_DATE_EMPTY
-        )
-        self._vm.used_date_var.set(used_date)
-        self._vm.launch_count_var.set(str(profile.launch_count))
         self._vm.current_profile_name_var.set(profile.profile_name)
         # Export folder
         self._vm.export_folder_var.set(profile.export_folder or "")
@@ -357,7 +349,7 @@ class ExecutorPresenter:
         self._vm.step_threshold_var.set(str(profile.emergency_stop_step_threshold))
         # Steps for the emergency-stop combobox
         step_items = [
-            StepItem(step_id=s.step_id, label=f"{i + 1}. {s.step_type.value} — {s.step_id}")
+            StepItem(step_id=s.step_id, label=f"{i + 1}.  #{s.step_id} - {C_STEP_TYPE_TO_LABELS.get(s.step_type)}")
             for i, s in enumerate(steps)
         ]
         self._vm.set_steps(step_items)
@@ -464,6 +456,10 @@ class ExecutorPresenter:
         self._current_profile.emergency_stop_threshold = safe_int_from_str(self._vm.global_threshold_var.get(), 0)
         self._current_profile.emergency_stop_step_threshold = safe_int_from_str(self._vm.step_threshold_var.get(), 0)
         self._current_profile.warmup_url = self._vm.warmup_url_var.get().strip()
+        # DISCOVER mode — persist hub config and carry computed URLs for the launch.
+        if self._vm.url_source_type_var.get() == UrlSourceTypeEnum.E_DISCOVER.value:
+            self._current_profile.discovers_hub = self._url_config_presenter.get_current_discovers_hub()
+            self._current_profile.url_sources_discover_urls = self._url_config_presenter.get_computed_discover_urls()
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)

@@ -25,7 +25,7 @@ from models.steps.jump_to_step_params import JumpToStepParams
 from models.steps.scroll_down_params import ScrollDownParams
 from models.steps.section_params import SectionParams
 from models.steps.wait_fixed_time_params import WaitFixedTimeParams
-from models.steps_context_model import StepsContext
+from models.steps_collections_model import StepsCollections as StepsContext
 from shared.enums import StepTypeEnum
 from pydantic import ValidationError
 

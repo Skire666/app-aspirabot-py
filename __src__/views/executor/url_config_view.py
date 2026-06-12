@@ -1,11 +1,4 @@
-"""Tkinter view for the URL source configuration panel.
-
-Four mutually exclusive RadioButtons select among:
-
-    1. ``Liste manuelle``         — editable free-text URL list.
-    2. ``Dossier avec URL``       — folder of .url shortcut files.
-    3. ``Dossier avec JSON``      — folder of .json files.
-"""
+"""Tkinter view for the URL source configuration panel."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -14,12 +7,14 @@ Four mutually exclusive RadioButtons select among:
 import contextlib
 import tkinter as tk
 from collections.abc import Callable
-from tkinter import filedialog, ttk
+from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.i18n_fra import C_DISCOVER_DELETE_CONFIRM_MSG, C_DISCOVER_DELETE_CONFIRM_TITLE
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
+from views.components.data_grid.data_grid import DataGrid, GridColumn
 from views.components.folder_link_widget import FolderLinkWidget
 
 # -----------------------------------------------------------------------------
@@ -27,6 +22,15 @@ from views.components.folder_link_widget import FolderLinkWidget
 # -----------------------------------------------------------------------------
 
 C_BACKGROUND_GRAY = "#EAEAEA"
+
+_DISCOVER_GRID_COLUMNS: list[GridColumn] = [
+    GridColumn(id="dossier", title="Dossier (entrée)", width=200),
+    GridColumn(id="fichiers", title="Fichiers (regexp)", width=120),
+    GridColumn(id="mapping", title="Clé (Niv. 1)", width=100),
+    GridColumn(id="urls", title="URLs", width=100),
+    GridColumn(id="action_mod", title="", width=60, col_type="button", button_text="Modif."),
+    GridColumn(id="action_del", title="", width=60, col_type="button", button_text="Supp."),
+]
 
 # -----------------------------------------------------------------------------
 # Class
@@ -37,7 +41,6 @@ class UrlConfigView(ttk.Frame):
     """Radio-button URL source configuration embedded in the executor panel.
 
     Sections:
-        Warmup URL row above the radio bar.
         Radio bar — four mutually exclusive source selectors.
         Panels — one frame per source, shown/hidden via pack/pack_forget.
     """
@@ -74,6 +77,7 @@ class UrlConfigView(ttk.Frame):
         self._create_panel_manual()
         self._create_panel_folder()
         self._create_panel_json()
+        self._create_panel_discover()
 
     def _create_radio_bar(self, parent: tk.Widget) -> None:
         """Four radio buttons sharing _panel_var — one per content panel."""
@@ -86,12 +90,12 @@ class UrlConfigView(ttk.Frame):
             ("Dossier avec JSON", UrlSourceTypeEnum.E_JSON.value),
             ("Découverte automatique", UrlSourceTypeEnum.E_DISCOVER.value),
         ]
-        tk.Label(bar, text="Choix de la source :").pack(side=tk.LEFT, padx=(0, 15))
+        tk.Label(bar, text="Choix de la source :").pack(side=tk.LEFT, padx=(0, 10))
         for label, value in entries:
             rb = ttk.Radiobutton(
                 bar, text=label, variable=self._panel_var, value=value, command=self._on_panel_var_changed
             )
-            rb.pack(side=tk.LEFT, padx=(0, 15))
+            rb.pack(side=tk.LEFT, padx=(0, 14))
             self._radio_buttons.append(rb)
 
     # ─── Panel 1 : Liste manuelle ─────────────────────────────────────────────
@@ -154,7 +158,7 @@ class UrlConfigView(ttk.Frame):
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_folder).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
-        ttk.Button(row, text="Parcourir", command=self._browse_shortcuts_folder).pack(
+        ttk.Button(row, text="...", width=3, command=self._browse_shortcuts_folder).pack(
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
         )
 
@@ -217,6 +221,13 @@ class UrlConfigView(ttk.Frame):
             command=lambda: self._vm.form_changed(),
         ).pack(side=tk.LEFT, pady=(0, 5))
 
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        ttk.Label(
+            row,
+            text="[IMPORTANT] - La date de modification est actualisée après chaque appel à OpenURL... (dès l'ouverture)",
+        ).pack(side=tk.LEFT, padx=5, pady=(0, 5))
+
     # ─── Panel 3 : Dossier avec JSON ─────────────────────────────────────────
 
     def _create_panel_json(self) -> None:
@@ -248,7 +259,7 @@ class UrlConfigView(ttk.Frame):
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_json).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
-        ttk.Button(row, text="Parcourir", command=self._browse_jsons_folder).pack(
+        ttk.Button(row, text="...", width=3, command=self._browse_jsons_folder).pack(
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
         )
 
@@ -311,6 +322,153 @@ class UrlConfigView(ttk.Frame):
             command=lambda: self._vm.form_changed(),
         ).pack(side=tk.LEFT, pady=(0, 5))
 
+    # ─── Panel 4 : Découverte automatique ────────────────────────────────────
+
+    def _create_panel_discover(self) -> None:
+        """Panel 4 — IN grid, IN/OUT forms, and compute row for URL discovery."""
+        self._panel_discover = ttk.Frame(self._panels_container)
+        self._create_discover_toolbar(self._panel_discover)
+        self._create_discover_compute_row(self._panel_discover)
+        self._create_discover_out_section(self._panel_discover)
+        self._create_discover_grid(self._panel_discover)
+
+    def _create_discover_toolbar(self, parent: tk.Widget) -> None:
+        """Toolbar row with the [IN] add button above the discover grid.
+
+        Args:
+            parent: The DISCOVER panel frame to attach widgets to.
+        """
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X, padx=4, pady=(4, 2))
+        ttk.Button(row, text="+ Ajouter une source [IN]", command=self._on_add_discover_click).pack(side=tk.LEFT)
+
+    def _open_discover_popup(self) -> None:
+        """Open the modal [IN] Source dialog for creating or modifying a discover entry."""
+        size_h, size_w = 190, 600
+        popup = tk.Toplevel(self)
+        popup.title("Source [IN]")
+        popup.resizable(False, False)
+        popup.geometry(f"{size_w}x{size_h}")
+        popup.grab_set()
+
+        frame = ttk.LabelFrame(popup, text="Champs")
+        frame.pack(fill=tk.X, padx=8, pady=(8, 4))
+
+        def browse_in_folder() -> None:
+            folder = filedialog.askdirectory(title="Choisir le dossier [IN] source", parent=popup)
+            if folder:
+                self._vm.disc_in_folder_var.set(folder)
+
+        def make_row(label: str, var: tk.StringVar, browse_cb: Callable[[], None] | None = None) -> None:
+            r = ttk.Frame(frame)
+            r.pack(fill=tk.X, padx=4, pady=2)
+            ttk.Label(r, text=label, width=18, anchor=tk.W).pack(side=tk.LEFT)
+            ttk.Entry(r, textvariable=var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+            if browse_cb:
+                ttk.Button(r, text="...", width=3, command=browse_cb).pack(side=tk.LEFT)
+
+        # create popup lines
+        make_row("Dossier d'entrée :", self._vm.disc_in_folder_var, browse_cb=browse_in_folder)
+        make_row("Fichiers (regexp) :", self._vm.disc_in_pattern_json_var)
+        make_row("Clé (Niv 1) :", self._vm.disc_in_key_mapping_var)
+        make_row("URLs (regexp) :", self._vm.disc_in_pattern_urls_var)
+
+        btn_row = ttk.Frame(popup)
+        btn_row.pack(fill=tk.X, padx=8, pady=(4, 8))
+
+        can_create = self._vm.can_create_discover_var.get()
+        can_modify = self._vm.can_modify_discover_var.get()
+
+        def do_create() -> None:
+            self._vm.add_discover()
+            self._vm.form_changed()
+            popup.destroy()
+
+        def do_modify() -> None:
+            self._vm.update_discover()
+            self._vm.form_changed()
+            popup.destroy()
+
+        ttk.Button(btn_row, text="Créer", command=do_create, state=tk.NORMAL if can_create else tk.DISABLED).pack(
+            side=tk.LEFT, padx=(0, 8)
+        )
+        ttk.Button(btn_row, text="Modifier", command=do_modify, state=tk.NORMAL if can_modify else tk.DISABLED).pack(
+            side=tk.LEFT, padx=(0, 8)
+        )
+        ttk.Button(btn_row, text="Annuler", command=popup.destroy).pack(side=tk.LEFT)
+
+        popup.update_idletasks()
+        x = self.winfo_rootx() + (self.winfo_width() - popup.winfo_width()) // 2
+        y = self.winfo_rooty() + (self.winfo_height() - popup.winfo_height()) // 2
+        popup.geometry(f"+{x}+{y}")
+
+    def _make_discover_field_row(
+        self,
+        parent: tk.Widget,
+        label: str,
+        var: tk.StringVar,
+        browse: bool = False,
+        browse_cb: Callable[[], None] | None = None,
+    ) -> ttk.Entry:
+        """Build one Label + Entry (+ optional browse button) row.
+
+        Also registers a form_changed trace on the var.
+
+        Args:
+            parent: Container frame to pack into.
+            label: Text for the left-side label.
+            var: StringVar to bind to the entry.
+            browse: When True, adds a "…" browse button.
+            browse_cb: Callback invoked by the browse button.
+
+        Returns:
+            The created Entry widget.
+        """
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X, padx=4, pady=1)
+        ttk.Label(row, text=label, width=12, anchor=tk.W).pack(side=tk.LEFT)
+        entry = ttk.Entry(row, textvariable=var)
+        entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+        if browse and browse_cb:
+            ttk.Button(row, text="...", width=3, command=browse_cb).pack(side=tk.LEFT)
+        self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
+        return entry
+
+    def _create_discover_grid(self, parent: tk.Widget) -> None:
+        """DataGrid [IN]: Modifier / Supprimer action buttons per row.
+
+        Args:
+            parent: The DISCOVER panel frame to attach widgets to.
+        """
+        self._grid_discover = DataGrid(parent, columns=_DISCOVER_GRID_COLUMNS, on_action=self._on_discover_action)
+        self._grid_discover.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+
+    def _create_discover_out_section(self, parent: tk.Widget) -> None:
+        """[OUT] form with 4 fields (reference — already-processed URLs).
+
+        Args:
+            parent: The DISCOVER panel frame to attach widgets to.
+        """
+        frame = tk.Frame(parent)
+        frame.pack(side=tk.BOTTOM, fill=tk.X, padx=4, pady=(2, 2))
+        ttk.Label(frame, text="Fichiers de sorties :").pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Entry(frame, textvariable=self._vm.disc_out_pattern_json_var, width=25).pack(side=tk.LEFT, padx=(0, 25))
+        ttk.Label(frame, text="Clé (Niv. 1) :").pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Entry(frame, textvariable=self._vm.disc_out_key_mapping_var, width=15).pack(side=tk.LEFT, padx=(0, 25))
+        ttk.Label(frame, text="URLs (regexp) :").pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Entry(frame, textvariable=self._vm.disc_out_pattern_urls_var, width=15).pack(side=tk.LEFT)
+
+    def _create_discover_compute_row(self, parent: tk.Widget) -> None:
+        """Compute button and verification status label.
+
+        Args:
+            parent: The DISCOVER panel frame to attach widgets to.
+        """
+        row = ttk.Frame(parent)
+        row.pack(side=tk.BOTTOM, fill=tk.X, padx=4, pady=(4, 6))
+        ttk.Button(row, text="Calculer la liste", command=self._vm.compute_discovers).pack(side=tk.LEFT, padx=(0, 12))
+        ttk.Label(row, textvariable=self._vm.discover_compute_message_var).pack(side=tk.LEFT)
+
     # ------------------------------------------------------------------
     # ViewModel bindings
     # ------------------------------------------------------------------
@@ -323,6 +481,7 @@ class UrlConfigView(ttk.Frame):
             (self._vm.url_preview_jsons_version_var, self._sync_jsons_preview),
             (self._vm.url_source_type_var, self._sync_panel_from_vm),
             (self._vm.is_profile_section_active_var, self._sync_section_enabled),
+            (self._vm.discovers_in_version_var, self._sync_discovers_grid),
         ]
         for var, cb in bindings:
             self._view_traces.append((var, var.trace_add("write", cb)))
@@ -340,6 +499,7 @@ class UrlConfigView(ttk.Frame):
             UrlSourceTypeEnum.E_MANUAL.value,
             UrlSourceTypeEnum.E_FOLDER.value,
             UrlSourceTypeEnum.E_JSON.value,
+            UrlSourceTypeEnum.E_DISCOVER.value,
         }:
             return
         # Programmatic .set() does NOT fire command= on radio buttons — no feedback loop.
@@ -363,6 +523,26 @@ class UrlConfigView(ttk.Frame):
         """Update the JSON read-only text widget from the jsons preview list."""
         text = "\n".join(self._vm.get_url_preview_jsons())
         self._write_readonly_text(self._txt_url_jsons, text)
+
+    def _sync_discovers_grid(self, *_: object) -> None:
+        """Rebuild the [IN] DataGrid from the current discovers rows snapshot."""
+        rows = self._vm.get_discovers_in_rows()
+        data = [
+            {
+                "dossier": r.folder_json,
+                "fichiers": r.pattern_json,
+                "mapping": r.key_mapping,
+                "urls": r.pattern_urls,
+                "__bound__": r.id_discover,
+            }
+            for r in rows
+        ]
+        self._grid_discover.render_data(data)
+
+    def _on_add_discover_click(self) -> None:
+        """Reset the IN form to create-mode then open the popup."""
+        self._vm.prepare_new_discover()
+        self._open_discover_popup()
 
     def _sync_section_enabled(self, *_: object) -> None:
         """Enable or disable URL config widgets based on is_profile_section_active_var."""
@@ -408,6 +588,23 @@ class UrlConfigView(ttk.Frame):
             content = self._txt_url_manual.get("1.0", tk.END)
             self._vm.manual_urls_var.set(content)
             self._vm.form_changed()
+
+    def _on_discover_action(self, action_id: str, bound: object) -> None:
+        """Handle Modifier / Supprimer actions from the [IN] DataGrid.
+
+        Args:
+            action_id: "action_mod" or "action_del".
+            bound: The id_discover string from the row's __bound__.
+        """
+        id_discover = str(bound)
+        if action_id == "action_mod":
+            self._vm.select_discover(id_discover)
+            self._open_discover_popup()
+        elif action_id == "action_del":
+            if messagebox.askyesno(
+                title=C_DISCOVER_DELETE_CONFIRM_TITLE, message=C_DISCOVER_DELETE_CONFIRM_MSG, parent=self
+            ):
+                self._vm.delete_discover(id_discover)
 
     def _browse_shortcuts_folder(self) -> None:
         """Open a folder dialog and write the result to url_source_path_shortcuts_var."""
@@ -457,6 +654,7 @@ class UrlConfigView(ttk.Frame):
             UrlSourceTypeEnum.E_MANUAL.value: self._panel_manual,
             UrlSourceTypeEnum.E_FOLDER.value: self._panel_folder,
             UrlSourceTypeEnum.E_JSON.value: self._panel_json,
+            UrlSourceTypeEnum.E_DISCOVER.value: self._panel_discover,
         }
         target = panel_map.get(key)
         if target is None or target is self._current_panel:

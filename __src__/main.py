@@ -4,8 +4,10 @@
 # Imports
 # -----------------------------------------------------------------------------
 
-import sys
+import contextlib
+import logging
 import tkinter as tk
+import traceback
 from tkinter import ttk
 
 import models.steps  # noqa: F401 - load registry entries
@@ -32,6 +34,7 @@ from repositories.scenarios_repository import ScenariosRepository
 from services.app_configuration_service import ConfigService
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
+from services.discover_service import DiscoverService
 from services.logging_service import LoggingService
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
@@ -63,6 +66,8 @@ from views.scenarios_view import ScenariosView
 from views.scraping_view import ScrapingView
 from views.splashscreen_view import SplashscreenView
 from views.workflow_view import WorkflowView
+
+logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 # Entry point
@@ -108,13 +113,19 @@ def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) ->
         config_model: Configuration model supplying sizing and style preferences.
     """
     root.title("Aspirabot")
-    root.geometry(config_model.gui_booting_size)
+
+    position = config_model.gui_booting_position
+    if position:
+        try:
+            x, y = position.split(",", 1)
+            root.geometry(f"{config_model.gui_booting_size}+{int(x)}+{int(y)}")
+        except Exception:
+            root.geometry(config_model.gui_booting_size)
+    else:
+        root.geometry(config_model.gui_booting_size)
 
     if config_model.gui_booting_fullscreen:
-        if sys.platform.startswith("win"):
-            root.state("zoomed")
-        else:
-            root.attributes("-zoomed", True)  # type: ignore[reportUnknownMemberType]
+        root.after(15, lambda: root.state("zoomed"))
 
     ttk.Style().configure("TButton", padding=(5, 5))
 
@@ -155,14 +166,6 @@ def _wire_all_navigation(
     executor_presenter.on_request_edit_scenario = on_executor_edit_scenario
     main_view.set_on_show(TitleModuleEnum.E_PROFILES, profiles_presenter.ensure_profiles_loaded)
     main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, executor_presenter.ensure_scenarios_loaded)
-
-
-def _build_and_wire_components(
-    root: tk.Tk, main_view: MainView, config_repo: AppConfigurationRepository, startup_service: StartupService
-) -> None:
-    """Instantiate all MVP groups, wire navigation, register views, and anchor presenters."""
-    views, presenters = _assemble_components(main_view, config_repo, startup_service)
-    _register_and_anchor(root, main_view, views, presenters)
 
 
 def _assemble_components(  # noqa: PLR0914
@@ -208,12 +211,69 @@ def _assemble_components(  # noqa: PLR0914
     return views, presenters
 
 
+_C_GEO_SPLIT_PARTS = 3  # "WxH+X+Y".split("+") must yield exactly 3 parts
+
+
+def _wire_geometry_persistence(root: tk.Tk, config_repo: AppConfigurationRepository) -> None:  # noqa: C901
+    """Poll window geometry every 200 ms and persist it debounced (500 ms).
+
+    Uses polling rather than <Configure> binding, which is unreliable for
+    move events on Windows multi-monitor setups. geometry() always returns
+    virtual-desktop coordinates, so the saved position is screen-global.
+    """
+    logger = logging.getLogger(__name__)
+    _pending: list[str | None] = [None]
+    last_geo: list[str] = [""]
+
+    def _save() -> None:
+        _pending[0] = None
+        try:
+            state_rt = root.state()
+            if state_rt in {"iconic", "withdrawn"}:
+                return
+            parts = root.geometry().split("+")  # "WxH+X+Y" → ["WxH", "X", "Y"]
+            if len(parts) != _C_GEO_SPLIT_PARTS:
+                return
+            config = config_repo.read_configuration()
+            config.gui_booting_size = parts[0]
+            config.gui_booting_position = f"{parts[1]},{parts[2]}"
+            config.gui_booting_fullscreen = state_rt == "zoomed"
+            config_repo.write_configuration(config)
+        except tk.TclError:
+            pass
+        except Exception:
+            logger.exception("Erreur lors de la sauvegarde de la géométrie")
+
+    def _poll() -> None:
+        try:
+            if root.state() not in {"iconic", "withdrawn"}:
+                geo = root.geometry()
+                if geo != last_geo[0]:  # only trigger save if geometry changed since last poll
+                    last_geo[0] = geo
+                    if _pending[0] is not None:  # already a save pending — reset the timer to debounce
+                        with contextlib.suppress(tk.TclError):
+                            root.after_cancel(_pending[0])
+                    _pending[0] = root.after(400, _save)
+        except tk.TclError:
+            return  # fenêtre en cours de destruction — arrêt du poll
+        root.after(200, _poll)
+
+    root.after(200, _poll)
+    root._force_save_geometry = _save  # type: ignore[attr-defined]
+
+
 def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, startup_service: StartupService) -> None:
     """Configure and reveal the main window after startup succeeds."""
-    _override_gui_and_style(root, startup_service.config_model)
-    main_view = _build_main_view(root)
-    _build_and_wire_components(root, main_view, config_repo, startup_service)
-    root.deiconify()
+    try:
+        _override_gui_and_style(root, startup_service.config_model)
+        main_view = _build_main_view(root)
+        views, presenters = _assemble_components(main_view, config_repo, startup_service)
+        root.deiconify()
+        _wire_geometry_persistence(root, config_repo)
+        _register_and_anchor(root, main_view, views, presenters)
+    except Exception:
+        traceback.print_exc()
+        root.destroy()
 
 
 def _build_main_view(root: tk.Tk) -> MainView:
@@ -403,7 +463,7 @@ def _init_executor_component(
         A (ExecutorView, ExecutorPresenter, tab4_DiscoverPresenter, UrlConfigPresenter) tuple.
     """
     vm = ExecutorViewModel(master=main_view.content_area)
-    url_config_presenter = UrlConfigPresenter(vm=vm)
+    url_config_presenter = UrlConfigPresenter(vm=vm, discover_service=DiscoverService())
     executor_view = ExecutorView(main_view.content_area, vm=vm)
     executor_presenter = ExecutorPresenter(
         vm=vm,
@@ -620,6 +680,9 @@ def _wire_teardown(root: tk.Tk, teardown_views: list[tk.Widget]) -> None:
     """
 
     def _on_close() -> None:
+        force_save = getattr(root, "_force_save_geometry", None)
+        if callable(force_save):
+            force_save()
         for view in teardown_views:
             teardown_fn = getattr(view, "teardown", None)
             if callable(teardown_fn):

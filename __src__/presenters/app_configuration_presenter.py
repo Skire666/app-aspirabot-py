@@ -112,6 +112,7 @@ class AppConfigurationPresenter:
             folder_scenarios=state.folder_scenarios,
             folder_scraping=state.folder_scraping,
             gui_booting_size=state.gui_booting_size,
+            gui_booting_position=state.gui_booting_position,
             gui_booting_fullscreen=state.gui_booting_fullscreen,
             browser_engine=state.browser_engine,
         )

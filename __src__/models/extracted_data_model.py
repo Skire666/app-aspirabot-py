@@ -1,68 +1,54 @@
-"""Extracted scraping data models."""
-
-# -----------------------------------------------------------------------------
-# Imports
-# -----------------------------------------------------------------------------
-
-from __future__ import annotations
-
-from dataclasses import dataclass, field
-from typing import Any, cast
-
-# -----------------------------------------------------------------------------
-# Models
-# -----------------------------------------------------------------------------
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class ExtractedItem:
-    """One extracted mapping entry: key name, selector/source, extracted values, comment."""
-
-    key: str
     input: str
-    values: list[str] = field(default_factory=list)
-    comment: str = field(default="")
+    values: list[Any]
+    comment: str = ""
 
 
-@dataclass
 class ExtractedData:
-    """All extracted items as a flat ordered list."""
+    def __init__(self):
+        self._fields: dict[str, ExtractedItem] = {}
 
-    items: list[ExtractedItem] = field(default_factory=list)
+    def append_item(self, key: str, input: str, values: list[Any], comment: str) -> None:
+        self._fields[key] = ExtractedItem(input=input, values=values, comment=comment)
 
-    def to_list(self) -> list[dict[str, Any]]:
-        """Serialize to a list of dicts for JSON export."""
-        return [
-            {"key": item.key, "input": item.input, "values": item.values, "comment": item.comment}
-            for item in self.items
-        ]
+    # --- Accès aux champs ---
 
-    @classmethod
-    def import_from_data_json(cls, data: list[Any]) -> ExtractedData:
-        """Reconstruct an ExtractedData instance from a list produced by to_list().
+    def __getitem__(self, key: str) -> ExtractedItem:
+        return self._fields[key]
 
-        Args:
-            data: Raw list loaded from a JSON file produced by to_list().
+    def __contains__(self, key: str) -> bool:
+        return key in self._fields
 
-        Returns:
-            A fully reconstructed ExtractedData instance; empty when data is invalid.
-        """
-        result: list[ExtractedItem] = []
-        for raw in data:
-            if not isinstance(raw, dict):
-                continue
-            raw_typed = cast(dict[str, object], raw)
-            raw_values = raw_typed.get("values")
-            typed_values: list[object] = cast(list[object], raw_values) if isinstance(raw_values, list) else []
-            result.append(
-                ExtractedItem(
-                    key=str(raw_typed.get("key") or ""),
-                    input=str(raw_typed.get("input") or ""),
-                    values=[str(v) for v in typed_values],
-                    comment=str(raw_typed.get("comment") or ""),
-                )
-            )
-        return cls(items=result)
+    def __iter__(self):
+        return iter(self._fields)
+
+    def get(self, key: str, default: ExtractedItem | None = None) -> ExtractedItem | None:
+        return self._fields.get(key, default)
+
+    def keys(self):
+        return self._fields.keys()
+
+    def values(self):
+        return self._fields.values()
+
+    def items(self):
+        return self._fields.items()
+
+    def to_dict(self) -> dict[str, dict[str, Any]]:
+        """Convert the extracted data to a dictionary format suitable for JSON serialization."""
+        return {
+            key: {"input": item.input, "values": item.values, "comment": item.comment}
+            for key, item in self._fields.items()
+        }
+
+    def is_empty(self) -> bool:
+        """Check if there are no extracted items."""
+        return not (self._fields and len(self._fields) >= 1)
 
 
 # EOF

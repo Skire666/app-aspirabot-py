@@ -26,7 +26,7 @@ def _build(data: dict[str, Any]) -> ExtractTextsParams:
         selector=data.get("selector", ""),
         extract_mode=data.get("extract_mode", ExtractTextHtmlEnum.E_INNER_TEXT.value),
         target=data.get("target", ExtractTargetEnum.E_ALL.value),
-        mapping=data.get("mapping", "key_name"),
+        mapping=data.get("mapping", "urls"),
         comment=data.get("comment", ""),
     )
 

@@ -44,7 +44,7 @@ class StepsCollections:
             step_list: Current ordered workflow steps.
 
         Returns:
-            An immutable StepsContext wrapping the given steps.
+            An immutable StepsCollections wrapping the given steps.
         """
         return cls(steps=tuple(step_list))
 

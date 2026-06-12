@@ -140,11 +140,11 @@ class TestPreviewUrlListed:
         assert "http://a.com" in preview
         assert p.pop_url() == "http://a.com"  # cursor unchanged
 
-    def test_limited_to_10(self, tmp_path: Path) -> None:
+    def test_returns_all_urls(self, tmp_path: Path) -> None:
         for i in range(15):
             _write_url_file(tmp_path, f"{i:02d}.url", f"http://{i}.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        assert len(p.preview_url_listed()) == 10
+        assert len(p.preview_url_listed()) == 15
 
 
 class TestDisplayProgressTupleText:

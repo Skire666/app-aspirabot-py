@@ -103,7 +103,7 @@ class ExecutorView(ttk.Frame):
         frame.pack(fill=tk.X)
 
         self._listbox_profiles = tk.Listbox(
-            frame, height=5, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
+            frame, height=4, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
         )
         self._listbox_profiles.pack(fill=tk.X, padx=5, pady=(0, 5))
         self._listbox_profiles.bind("<<ListboxSelect>>", self._on_listbox_profile_selected)
@@ -133,10 +133,8 @@ class ExecutorView(ttk.Frame):
         container = ttk.Frame(frame)
         container.pack(fill=tk.X)
         self._basic_settings_grid = container
-        self._create_cfg_row0(container)
         self._create_cfg_row1(container)
         self._create_cfg_row5(container)
-        self._create_cfg_row6(container)
         self._create_cfg_row_warmup(container)
 
     def _create_url_settings_section(self, parent: tk.Widget) -> None:
@@ -145,15 +143,6 @@ class ExecutorView(ttk.Frame):
         frame.pack(fill=tk.X)
         self._url_config_view = UrlConfigView(frame, vm=self._vm)
         self._url_config_view.pack(fill=tk.BOTH, expand=True)
-
-    def _create_cfg_row0(self, parent: tk.Widget) -> None:
-        """Row 0 — usage statistics (last used date, launch count)."""
-        row = ttk.Frame(parent)
-        row.pack(fill=tk.X)
-        ttk.Label(row, text="Dernier usage :").pack(side=tk.LEFT, padx=(5, 16), pady=(0, 5))
-        ttk.Label(row, textvariable=self._vm.used_date_var).pack(side=tk.LEFT, padx=(0, 30), pady=(0, 5))
-        ttk.Label(row, text="Lancements :").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        ttk.Label(row, textvariable=self._vm.launch_count_var).pack(side=tk.LEFT, pady=(0, 5))
 
     def _create_cfg_row1(self, parent: tk.Widget) -> None:
         """Row 1 — export folder path, browse button, open-folder button."""
@@ -164,7 +153,7 @@ class ExecutorView(ttk.Frame):
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=lambda: self._vm.open_export_folder()).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
-        ttk.Button(row, text="Parcourir", command=self._browse_export_folder).pack(
+        ttk.Button(row, text="...", width=3, command=self._browse_export_folder).pack(
             side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
         )
         self._view_traces.append(
@@ -181,24 +170,20 @@ class ExecutorView(ttk.Frame):
         """Row 5 — global error threshold."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Erreurs globales max. avant mise en pause d'urgence :").pack(
-            side=tk.LEFT, padx=5, pady=(0, 6)
-        )
+        ttk.Label(row, text="Pause forcée si").pack(side=tk.LEFT, padx=5, pady=(0, 5))
         self._view_traces.append(
             (
                 self._vm.global_threshold_var,
                 self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=12).pack(side=tk.LEFT, pady=(0, 6))
+        ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=7).pack(side=tk.LEFT, pady=(0, 5))
 
-    def _create_cfg_row6(self, parent: tk.Widget) -> None:
-        """Row 6 — per-step error threshold with step selector."""
-        row = ttk.Frame(parent)
-        row.pack(fill=tk.X)
-        ttk.Label(row, text="Mettre en pause l'étape :").pack(side=tk.LEFT, padx=5, pady=6)
+        ttk.Label(row, text="erreurs globales OU si").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=7).pack(side=tk.LEFT, pady=(0, 5))
+        ttk.Label(row, text="erreurs dans l'étape ").pack(side=tk.LEFT, padx=5, pady=(0, 5))
         self._combo_steps = ttk.Combobox(row, state="readonly", width=35)
-        self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=6)
+        self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
         self._view_traces.append(
             (
@@ -206,9 +191,6 @@ class ExecutorView(ttk.Frame):
                 self._vm.step_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Label(row, text=" après  ").pack(side=tk.LEFT, padx=(0, 5), pady=6)
-        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=10).pack(side=tk.LEFT, padx=(0, 5), pady=6)
-        ttk.Label(row, text="erreurs").pack(side=tk.LEFT, padx=(0, 5), pady=6)
 
     def _create_cfg_row_warmup(self, parent: tk.Widget) -> None:
         """Warmup URL row — optional URL loaded before the scraping run starts."""

@@ -66,8 +66,9 @@ class AppConfigurationView(ttk.Frame):
         self._add_path_row(frame, 2, "Dossier scénarios", self._vm.folder_scenarios_var)
         self._add_path_row(frame, 3, "Dossier scraping", self._vm.folder_scraping_var)
         self._add_text_row(frame, 4, "Taille fenêtre libre (WxH)", self._vm.gui_booting_size_var)
-        self._add_bool_row(frame, 5, "Démarrer en plein écran", self._vm.gui_booting_fullscreen_var)
-        self._add_enum_row_browser_engine(frame, 6, "Moteur de navigation", self._vm.browser_engine_var)
+        self._add_text_row(frame, 5, "Position fenêtre (X,Y)", self._vm.gui_booting_position_var)
+        self._add_bool_row(frame, 6, "Démarrer en plein écran", self._vm.gui_booting_fullscreen_var)
+        self._add_enum_row_browser_engine(frame, 7, "Moteur de navigation", self._vm.browser_engine_var)
 
         return frame
 
@@ -114,7 +115,7 @@ class AppConfigurationView(ttk.Frame):
         """Add a path entry row with a Browse button."""
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
         ttk.Entry(frame, textvariable=var).grid(row=row, column=1, sticky="ew", padx=5, pady=5)
-        ttk.Button(frame, text="Parcourir", command=lambda: self._browse_directory(var)).grid(
+        ttk.Button(frame, text="...", width=3, command=lambda: self._browse_directory(var)).grid(
             row=row, column=2, sticky="e", padx=5, pady=5
         )
 
@@ -149,6 +150,7 @@ class AppConfigurationView(ttk.Frame):
             self._vm.folder_scenarios_var,
             self._vm.folder_scraping_var,
             self._vm.gui_booting_size_var,
+            self._vm.gui_booting_position_var,
             self._vm.gui_booting_fullscreen_var,
             self._vm.browser_engine_var,
         ):

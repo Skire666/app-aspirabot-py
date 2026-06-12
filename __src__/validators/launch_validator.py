@@ -12,6 +12,7 @@ from models.launcher_model import LaunchModel
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
 from shared.enums import UrlSourceTypeEnum
 from shared.i18n_fra import (
+    C_DISCOVER_NO_URLS_COMPUTED,
     C_EXEC_FOLDER_URL_SOURCE_EMPTY,
     C_EXEC_INVALID_GLOBAL_THRESHOLD,
     C_EXEC_INVALID_STEP_THRESHOLD,
@@ -35,9 +36,10 @@ class _LaunchValidationSchema(BaseModel):
 
     export_folder: str
     url_source_type: str
-    url_sources_list_manual: list
+    url_sources_list_manual: list[str]
     url_sources_folder_shortcuts: str
     url_sources_folder_jsons: str
+    url_sources_discover_urls: list[str]
     emergency_stop_threshold: int
     emergency_stop_step_id: str
     emergency_stop_step_threshold: int
@@ -83,6 +85,8 @@ class _LaunchValidationSchema(BaseModel):
             raise ValueError(C_EXEC_FOLDER_URL_SOURCE_EMPTY)
         if self.url_source_type == UrlSourceTypeEnum.E_JSON.value and not self.url_sources_folder_jsons:
             raise ValueError(C_EXEC_FOLDER_URL_SOURCE_EMPTY)
+        if self.url_source_type == UrlSourceTypeEnum.E_DISCOVER.value and not self.url_sources_discover_urls:
+            raise ValueError(C_DISCOVER_NO_URLS_COMPUTED)
         return self
 
 
@@ -107,6 +111,7 @@ def validate_launch_profile(profile: LaunchModel) -> list[str]:
             url_sources_list_manual=profile.url_sources_list_manual,
             url_sources_folder_shortcuts=profile.url_sources_folder_shortcuts or "",
             url_sources_folder_jsons=profile.url_sources_folder_jsons or "",
+            url_sources_discover_urls=profile.url_sources_discover_urls,
             emergency_stop_threshold=profile.emergency_stop_threshold,
             emergency_stop_step_id=profile.emergency_stop_step_id or "",
             emergency_stop_step_threshold=profile.emergency_stop_step_threshold,

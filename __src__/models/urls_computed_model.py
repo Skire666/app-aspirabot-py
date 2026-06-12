@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class LaunchComputedModel:
+class UrlsComputedModel:
     """Result of comparing input and output URL sets in a Discover project.
 
     Counts are stored as plain integers so the full URL lists do not stay in
@@ -33,8 +33,9 @@ class LaunchComputedModel:
     input_total_count: int = 0
     output_total_count: int = 0
     output_unique_count_stored: int = 0
+    input_entries: dict[str, int] = field(default_factory=dict)
+    output_entries: dict[str, int] = field(default_factory=dict)
     new_entries: dict[str, int] = field(default_factory=dict)
-    existing_entries: dict[str, int] = field(default_factory=dict)
 
     @property
     def new_url_count(self) -> int:
@@ -43,13 +44,13 @@ class LaunchComputedModel:
 
     @property
     def existing_url_count(self) -> int:
-        """Total number of distinct URLs that already exist in the output."""
-        return len(self.existing_entries)
+        """Number of IN URLs that were already present in the output."""
+        return len(self.input_entries) - len(self.new_entries)
 
     @property
     def input_unique_count(self) -> int:
         """Number of distinct input URLs."""
-        return len(self.new_entries) + len(self.existing_entries)
+        return len(self.input_entries)
 
     @property
     def input_duplicate_count(self) -> int:

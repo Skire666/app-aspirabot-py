@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, fie
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsCollections
+    from models.steps_collections_model import StepsCollections
 
 _ALLOWED_OPERATORS = frozenset({"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"})
 _ALLOWED_SUCCESS_IF = frozenset({"success", "failure"})

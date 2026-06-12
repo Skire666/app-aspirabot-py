@@ -9,9 +9,9 @@ from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, fie
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsCollections
+    from models.steps_collections_model import StepsCollections
 
-_C_MAX_LOOPS = 99
+_C_MAX_LOOPS = 999
 _C_MAX_PAUSE = 99
 
 
@@ -38,7 +38,7 @@ class ScrollDownParams(BaseModel):
     @field_validator("nbr_loops")
     @classmethod
     def check_nbr_loops(cls, v: int, info: ValidationInfo) -> int:
-        """Reject loop counts outside [1, 99]."""
+        """Reject loop counts outside [1, 999]."""
         if not info.context:
             return v
         if not (1 <= v <= _C_MAX_LOOPS):

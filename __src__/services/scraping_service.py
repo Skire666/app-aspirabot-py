@@ -263,7 +263,7 @@ class ScrapingService:
             self._event_bus.fire_context_init()
             self._browser_service.get_workflow_page()
             self._event_bus.fire_workflow_init()
-            self._run_warmup_url()
+            self._run_warmup_url_if_available()
             if not self._context.cancel_event.is_set():
                 self._run_all_steps(scenario.steps)
         finally:
@@ -272,7 +272,7 @@ class ScrapingService:
 
         return self._context.cancel_event.is_set()
 
-    def _run_warmup_url(self) -> None:
+    def _run_warmup_url_if_available(self) -> None:
         """Navigate to the warmup URL and block until the user clicks Reprendre.
 
         Does nothing when ``_warmup_url`` is empty or when the run is already cancelled.

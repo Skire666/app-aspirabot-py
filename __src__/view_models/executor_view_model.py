@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import CallbackNotDefinedError
-from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY, C_EXEC_USED_DATE_EMPTY
+from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY
 
 from view_models.view_model_base import ViewModelBase
 
@@ -65,6 +65,25 @@ class StepItem:
     label: str
 
 
+@dataclass(frozen=True)
+class DiscoverRowState:
+    """One row in the discover [IN] grid — primitives only, no domain Model.
+
+    Attributes:
+        id_discover: Stable identifier of the underlying DiscoverModel.
+        folder_json: Folder path displayed in the grid.
+        pattern_json: File glob pattern displayed in the grid.
+        key_mapping: JSON key displayed in the grid.
+        pattern_urls: URL glob pattern displayed in the grid.
+    """
+
+    id_discover: str
+    folder_json: str
+    pattern_json: str
+    key_mapping: str
+    pattern_urls: str
+
+
 # -----------------------------------------------------------------------------
 # ViewModel
 # -----------------------------------------------------------------------------
@@ -98,6 +117,8 @@ class ExecutorViewModel(ViewModelBase):
         # Wire derived section-active state.
         self._register_trace(self.is_profile_cfg_accessible_var, self._guarded_recompute)
         self._register_trace(self.is_profile_section_enabled_var, self._guarded_recompute)
+        # Wire discover derived state.
+        self._register_trace(self.selected_discover_id_var, self._guarded_recompute)
         self._guarded_recompute()
 
     def _init_form_vars(self, master: tk.Misc) -> None:
@@ -123,12 +144,23 @@ class ExecutorViewModel(ViewModelBase):
         self.url_source_path_jsons_var = tk.StringVar(master=master, value="")
         self.url_sort_order_shortcuts_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
+        # Discover mode — IN form fields.
+        self.disc_in_folder_var = tk.StringVar(master=master, value="")
+        self.disc_in_pattern_json_var = tk.StringVar(master=master, value="export*.json")
+        self.disc_in_key_mapping_var = tk.StringVar(master=master, value="key_xxx")
+        self.disc_in_pattern_urls_var = tk.StringVar(master=master, value="https*")
+        # Discover mode — OUT form fields.
+        self.disc_out_pattern_json_var = tk.StringVar(master=master, value="export*.json")
+        self.disc_out_key_mapping_var = tk.StringVar(master=master, value="key_xxx")
+        self.disc_out_pattern_urls_var = tk.StringVar(master=master, value="https*")
+        # Currently edited discover row id ("" = create mode).
+        self.selected_discover_id_var = tk.StringVar(master=master, value="")
+        # Status Var — written by the Presenter after compute or on error.
+        self.discover_compute_message_var = tk.StringVar(master=master, value="")
         self.global_threshold_var = tk.StringVar(master=master, value="1")
         self.step_threshold_var = tk.StringVar(master=master, value="0")
         self.warmup_url_var = tk.StringVar(master=master, value="")
         # Display Vars — Presenter writes, View binds via textvariable=.
-        self.used_date_var = tk.StringVar(master=master, value=C_EXEC_USED_DATE_EMPTY)
-        self.launch_count_var = tk.StringVar(master=master, value="0")
         self.saved_date_var = tk.StringVar(master=master, value=C_EXEC_SAVED_DATE_EMPTY)
         self.verification_message_var = tk.StringVar(master=master, value="")
         # Pre-filled in rename / delete dialogs.
@@ -169,6 +201,9 @@ class ExecutorViewModel(ViewModelBase):
         self.url_count_manual_empty_var = tk.StringVar(master=master, value="0")
         # Derived section-active Var — AND of is_profile_cfg_accessible_var and is_profile_section_enabled_var.
         self.is_profile_section_active_var = tk.BooleanVar(master=master, value=False)
+        # Derived Discover Vars — recomputed from selected_discover_id_var.
+        self.can_create_discover_var = tk.BooleanVar(master=master, value=True)
+        self.can_modify_discover_var = tk.BooleanVar(master=master, value=False)
 
     def _init_list_vars(self, master: tk.Misc) -> None:
         """Initialise list data attributes with version-trigger IntVars.
@@ -192,6 +227,9 @@ class ExecutorViewModel(ViewModelBase):
         self.url_preview_jsons_version_var = tk.IntVar(master=master, value=0)
         # Version trigger for the manual text widget (bumped by set_manual_urls).
         self.manual_urls_version_var = tk.IntVar(master=master, value=0)
+        # Discover [IN] rows (non-Var) with version-trigger IntVar.
+        self._discovers_in_rows: tuple[DiscoverRowState, ...] = ()
+        self.discovers_in_version_var = tk.IntVar(master=master, value=0)
 
     def _init_callbacks(self) -> None:
         """Initialise all Presenter callback slots to None."""
@@ -207,6 +245,12 @@ class ExecutorViewModel(ViewModelBase):
         self._on_launch: Callable[[], None] | None = None
         self._on_open_export_folder: Callable[[], None] | None = None
         self._on_show_error: Callable[[str, str], None] | None = None
+        # Discover action callbacks.
+        self._on_add_discover: Callable[[], None] | None = None
+        self._on_update_discover: Callable[[], None] | None = None
+        self._on_delete_discover: Callable[[str], None] | None = None
+        self._on_select_discover: Callable[[str], None] | None = None
+        self._on_compute_discovers: Callable[[], None] | None = None
 
     # ------------------------------------------------------------------
     # Derived state (via ViewModelBase gate)
@@ -216,6 +260,7 @@ class ExecutorViewModel(ViewModelBase):
         """Recompute all derived Vars from their source Vars."""
         self._compute_url_source_state()
         self._compute_profile_section_active()
+        self._compute_discover_state()
 
     def _compute_url_source_state(self) -> None:
         """Recompute panel visibility and manual URL count from their source Vars."""
@@ -238,6 +283,12 @@ class ExecutorViewModel(ViewModelBase):
         """Recompute is_profile_section_active_var from its two source Vars."""
         active = self.is_profile_cfg_accessible_var.get() and self.is_profile_section_enabled_var.get()
         self._set_if_changed(self.is_profile_section_active_var, active)
+
+    def _compute_discover_state(self) -> None:
+        """Recompute can_create/can_modify from selected_discover_id_var."""
+        in_edit_mode = bool(self.selected_discover_id_var.get())
+        self._set_if_changed(self.can_create_discover_var, not in_edit_mode)
+        self._set_if_changed(self.can_modify_discover_var, in_edit_mode)
 
     # ------------------------------------------------------------------
     # List accessors
@@ -282,6 +333,14 @@ class ExecutorViewModel(ViewModelBase):
             A copy of the internal jsons preview list.
         """
         return list(self._url_preview_jsons)
+
+    def get_discovers_in_rows(self) -> tuple[DiscoverRowState, ...]:
+        """Return the current discover [IN] rows as an immutable tuple.
+
+        Returns:
+            Snapshot of the internal row collection.
+        """
+        return self._discovers_in_rows
 
     # ------------------------------------------------------------------
     # List mutators — called by Presenter to push new data
@@ -354,6 +413,15 @@ class ExecutorViewModel(ViewModelBase):
         self._set_if_changed(self.url_count_jsons_duplicate_var, str(duplicates))
         self._set_if_changed(self.url_count_jsons_empty_var, str(empty))
         self.url_preview_jsons_version_var.set(self.url_preview_jsons_version_var.get() + 1)
+
+    def set_discovers_in_rows(self, rows: list[DiscoverRowState]) -> None:
+        """Replace the discover [IN] row collection and bump the version trigger.
+
+        Args:
+            rows: New ordered list of DiscoverRowState items.
+        """
+        self._discovers_in_rows = tuple(rows)
+        self.discovers_in_version_var.set(self.discovers_in_version_var.get() + 1)
 
     # ------------------------------------------------------------------
     # Bind hooks — called once by the Presenter at composition time
@@ -481,6 +549,56 @@ class ExecutorViewModel(ViewModelBase):
         if self._on_show_error is not None:
             raise CallbackNotDefinedError()
         self._on_show_error = cb
+
+    def bind_add_discover(self, cb: Callable[[], None]) -> None:
+        """Register the handler for add_discover().
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_add_discover is not None:
+            raise CallbackNotDefinedError()
+        self._on_add_discover = cb
+
+    def bind_update_discover(self, cb: Callable[[], None]) -> None:
+        """Register the handler for update_discover().
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_update_discover is not None:
+            raise CallbackNotDefinedError()
+        self._on_update_discover = cb
+
+    def bind_delete_discover(self, cb: Callable[[str], None]) -> None:
+        """Register the handler for delete_discover(id_discover).
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_delete_discover is not None:
+            raise CallbackNotDefinedError()
+        self._on_delete_discover = cb
+
+    def bind_select_discover(self, cb: Callable[[str], None]) -> None:
+        """Register the handler for select_discover(id_discover).
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_select_discover is not None:
+            raise CallbackNotDefinedError()
+        self._on_select_discover = cb
+
+    def bind_compute_discovers(self, cb: Callable[[], None]) -> None:
+        """Register the handler for compute_discovers().
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_compute_discovers is not None:
+            raise CallbackNotDefinedError()
+        self._on_compute_discovers = cb
 
     # ------------------------------------------------------------------
     # Action methods — called by the View on user interaction
@@ -620,6 +738,71 @@ class ExecutorViewModel(ViewModelBase):
         """
         if self._on_show_error is not None:
             self._on_show_error(title, message)
+
+    def add_discover(self) -> None:
+        """Dispatch an add-discover request (create mode).
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_add_discover is None:
+            raise CallbackNotDefinedError()
+        self._on_add_discover()
+
+    def update_discover(self) -> None:
+        """Dispatch an update-discover request (edit mode).
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_update_discover is None:
+            raise CallbackNotDefinedError()
+        self._on_update_discover()
+
+    def delete_discover(self, id_discover: str) -> None:
+        """Dispatch a delete-discover request for the given id.
+
+        Args:
+            id_discover: The identifier of the DiscoverModel to delete.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_delete_discover is None:
+            raise CallbackNotDefinedError()
+        self._on_delete_discover(id_discover)
+
+    def select_discover(self, id_discover: str) -> None:
+        """Dispatch a select-discover request to load a row into the IN form.
+
+        Args:
+            id_discover: The identifier of the DiscoverModel to load for editing.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_select_discover is None:
+            raise CallbackNotDefinedError()
+        self._on_select_discover(id_discover)
+
+    def compute_discovers(self) -> None:
+        """Dispatch the URL computation request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_compute_discovers is None:
+            raise CallbackNotDefinedError()
+        self._on_compute_discovers()
+
+    def prepare_new_discover(self) -> None:
+        """Reset the IN form to create-mode (clear fields, deselect any row)."""
+        with self.batch_update():
+            self.selected_discover_id_var.set("")
+            self.disc_in_folder_var.set("")
+            self.disc_in_pattern_json_var.set("export*.json")
+            self.disc_in_key_mapping_var.set("key_xxx")
+            self.disc_in_pattern_urls_var.set("https*")
 
 
 # EOF

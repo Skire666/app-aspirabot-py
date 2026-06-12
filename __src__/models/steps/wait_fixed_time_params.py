@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, fie
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsCollections
+    from models.steps_collections_model import StepsCollections
 
 
 class WaitFixedTimeParams(BaseModel):

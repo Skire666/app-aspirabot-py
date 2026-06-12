@@ -207,6 +207,16 @@ class InvalidGuiBootingSizeError(AspirabotBaseError):
         )
 
 
+class InvalidGuiBootingPositionError(AspirabotBaseError):
+    """Raised when the GUI booting position string is not in the expected X,Y format."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__(
+            "Position de démarrage GUI invalide. Format attendu : 'X,Y' avec des valeurs entières."
+        )
+
+
 class InvalidBrowserEngineError(AspirabotBaseError):
     """Raised when the configured browser engine is not a valid option."""
 
@@ -981,6 +991,23 @@ class ColumnNotFoundError(ValueError, AspirabotBaseError):
             key: The column key that was not found.
         """
         super().__init__(f"Colonne introuvable : '{key}'")
+
+
+# -----------------------------------------------------------------------------
+# Discover errors
+# -----------------------------------------------------------------------------
+
+
+class DiscoverComputeError(RuntimeError, AspirabotBaseError):
+    """Raised when the URL discovery computation fails."""
+
+    def __init__(self, reason: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            reason: Short description of the failure.
+        """
+        super().__init__(f"Erreur lors du calcul de découverte : {reason}")
 
 
 # EOF

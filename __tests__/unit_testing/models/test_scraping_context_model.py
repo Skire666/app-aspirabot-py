@@ -1,11 +1,12 @@
-"""Tests for models/scraping_context_model.py."""
+"""Tests for models/scraping_context_model.py and models/extracted_data_model.py."""
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock
 
 from models.app_configuration_model import AppConfigurationModel
-from models.scraping_context_model import ExtractedData, KeyData, ScrapingContextModel, UrlData
+from models.extracted_data_model import ExtractedData, ExtractedItem
+from models.scraping_context_model import ScrapingContextModel
 
 
 def _make_config() -> AppConfigurationModel:
@@ -23,54 +24,48 @@ def _make_context() -> ScrapingContextModel:
 
 
 # ---------------------------------------------------------------------------
-# KeyData / UrlData / ExtractedData
+# ExtractedItem
 # ---------------------------------------------------------------------------
 
 
-class TestKeyData:
+class TestExtractedItem:
     def test_init(self) -> None:
-        kd = KeyData(input=".selector", comment="my comment", values=["val1"])
-        assert kd.input == ".selector"
-        assert kd.comment == "my comment"
-        assert kd.values == ["val1"]
+        item = ExtractedItem(key="title", input=".selector", comment="my comment", values=["val1"])
+        assert item.key == "title"
+        assert item.input == ".selector"
+        assert item.comment == "my comment"
+        assert item.values == ["val1"]
 
     def test_empty_values_default(self) -> None:
-        kd = KeyData(input="x", comment="c")
-        assert kd.values == []
+        item = ExtractedItem(key="k", input="x", comment="c")
+        assert item.values == []
 
 
-class TestUrlData:
-    def test_empty_keys_default(self) -> None:
-        ud = UrlData()
-        assert ud.keys == {}
-
-    def test_set_key(self) -> None:
-        ud = UrlData()
-        ud.keys["title"] = KeyData(input=".h1", comment="", values=["Hello"])
-        assert "title" in ud.keys
+# ---------------------------------------------------------------------------
+# ExtractedData
+# ---------------------------------------------------------------------------
 
 
 class TestExtractedData:
-    def test_empty_urls_default(self) -> None:
+    def test_empty_items_default(self) -> None:
         ed = ExtractedData()
-        assert ed.urls == {}
+        assert ed.items == []
 
-    def test_to_dict_empty(self) -> None:
+    def test_to_list_empty(self) -> None:
         ed = ExtractedData()
-        assert ed.to_dict() == {}
+        assert ed.to_list() == []
 
-    def test_to_dict_with_data(self) -> None:
+    def test_to_list_with_data(self) -> None:
         ed = ExtractedData()
-        ed.urls["http://example.com"] = UrlData()
-        ed.urls["http://example.com"].keys["title"] = KeyData(input=".h1", comment="test", values=["Hello", "World"])
-        d = ed.to_dict()
-        assert "http://example.com" in d
-        assert "title" in d["http://example.com"]
-        assert d["http://example.com"]["title"]["values"] == ["Hello", "World"]
+        ed.items.append(ExtractedItem(key="title", input=".h1", comment="test", values=["Hello", "World"]))
+        result = ed.to_list()
+        assert len(result) == 1
+        assert result[0]["key"] == "title"
+        assert result[0]["values"] == ["Hello", "World"]
 
 
 # ---------------------------------------------------------------------------
-# ScrapingContextModel
+# ScrapingContextModel — reset_before_new_process
 # ---------------------------------------------------------------------------
 
 
@@ -98,15 +93,20 @@ class TestResetBeforeNewProcess:
     def test_resets_extracted_data(self) -> None:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
-        ctx.extracted_data.urls["x"] = UrlData()
+        ctx.extracted_data.items.append(ExtractedItem(key="k", input="x", comment="", values=["v"]))
         ctx.reset_before_new_process([])
-        assert ctx.extracted_data.urls == {}
+        assert ctx.extracted_data.items == []
 
     def test_clears_downloaded_urls(self) -> None:
         ctx = _make_context()
         ctx.downloaded_urls = {"http://old.com"}
         ctx.reset_before_new_process([])
         assert ctx.downloaded_urls == set()
+
+
+# ---------------------------------------------------------------------------
+# ScrapingContextModel — prepare_step_execution
+# ---------------------------------------------------------------------------
 
 
 class TestPrepareStepExecution:
@@ -132,25 +132,32 @@ class TestPrepareStepExecution:
         assert ctx.end_process is False
 
 
+# ---------------------------------------------------------------------------
+# ScrapingContextModel — push_extracted_values
+# ---------------------------------------------------------------------------
+
+
 class TestPushExtractedValues:
-    def test_creates_url_entry_if_absent(self) -> None:
+    def test_appends_item_to_extracted_data(self) -> None:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
-        ctx.last_url_opened = "http://example.com"
         ctx.push_extracted_values("title", ".h1", "comment", ["Hello"])
-        assert "http://example.com" in ctx.extracted_data.urls
+        assert len(ctx.extracted_data.items) == 1
+        assert ctx.extracted_data.items[0].key == "title"
 
     def test_stores_values_under_key(self) -> None:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
-        ctx.last_url_opened = "http://test.com"
         ctx.push_extracted_values("price", ".price", "", ["$99"])
-        kd = ctx.extracted_data.urls["http://test.com"].keys["price"]
-        assert kd.values == ["$99"]
+        item = ctx.extracted_data.items[0]
+        assert item.key == "price"
+        assert item.values == ["$99"]
 
-    def test_uses_no_url_when_last_url_empty(self) -> None:
+    def test_multiple_pushes_append_in_order(self) -> None:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
-        ctx.last_url_opened = ""
-        ctx.push_extracted_values("k", ".s", "", [])
-        assert "no_url" in ctx.extracted_data.urls
+        ctx.push_extracted_values("k1", "s1", "", ["a"])
+        ctx.push_extracted_values("k2", "s2", "", ["b"])
+        assert len(ctx.extracted_data.items) == 2
+        assert ctx.extracted_data.items[0].key == "k1"
+        assert ctx.extracted_data.items[1].key == "k2"

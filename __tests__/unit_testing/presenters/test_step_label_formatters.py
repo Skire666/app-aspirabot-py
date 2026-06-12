@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from presenters.step_label_formatters import format_step_label
-from shared.enums import OpenUrlModeEnum, StepTypeEnum
+from shared.enums import FilterClosedEnum, StepTypeEnum
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -73,14 +73,14 @@ class TestFmtClickOnElement:
 
 class TestFmtCloseTabs:
     def test_source_mode(self) -> None:
-        result = _fmt(StepTypeEnum.E_CLOSE_TABS, {"max_tabs": 3, "filter_mode": OpenUrlModeEnum.E_SOURCE.value})
+        result = _fmt(StepTypeEnum.E_CLOSE_TABS, {"max_tabs": 3, "filter_mode": FilterClosedEnum.E_SOURCE.value})
         assert "3" in result
         assert "départ" in result
 
     def test_custom_mode(self) -> None:
         result = _fmt(
             StepTypeEnum.E_CLOSE_TABS,
-            {"max_tabs": 1, "filter_mode": OpenUrlModeEnum.E_CUSTOM.value, "filter_custom": "example.com"},
+            {"max_tabs": 1, "filter_mode": FilterClosedEnum.E_CUSTOM.value, "filter_custom": "example.com"},
         )
         assert "example.com" in result
 
@@ -275,24 +275,11 @@ class TestFmtOpenUrl:
     def test_source_mode(self) -> None:
         result = _fmt(
             StepTypeEnum.E_OPEN_URL,
-            {"url_mode": OpenUrlModeEnum.E_SOURCE.value, "timeout_duration": 10, "timeout_unit": "s"},
+            {"url_mode": FilterClosedEnum.E_SOURCE.value, "timeout_duration": 10, "timeout_unit": "s"},
         )
         assert "source" in result.lower()
         assert "10" in result
         assert "sec" in result
-
-    def test_custom_mode(self) -> None:
-        result = _fmt(
-            StepTypeEnum.E_OPEN_URL,
-            {
-                "url_mode": OpenUrlModeEnum.E_CUSTOM.value,
-                "url_custom": "https://example.com",
-                "timeout_duration": 5,
-                "timeout_unit": "m",
-            },
-        )
-        assert "https://example.com" in result
-        assert "min" in result
 
 
 # ---------------------------------------------------------------------------

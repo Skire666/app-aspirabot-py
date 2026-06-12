@@ -8,11 +8,12 @@ session: export folder, URL source mode with per-mode values, and usage statisti
 # Imports
 # -----------------------------------------------------------------------------
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from models.discovers_hub_model import DiscoversHubModel
 from shared.constants import (
     C_CURRENT_WORKING_DIR,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
@@ -73,6 +74,10 @@ class LaunchModel:
     emergency_stop_step_threshold: int = 0
     # Optional URL to open before the run starts; execution waits for user resume.
     warmup_url: str = ""
+    # Discover mode — persisted hub configuration.
+    discovers_hub: DiscoversHubModel | None = None
+    # Transient — computed at runtime before launch, never serialized.
+    url_sources_discover_urls: list[str] = field(default_factory=list)
 
     @classmethod
     def get_default(cls, id_scenario: str) -> LaunchModel:
@@ -150,6 +155,11 @@ class LaunchModel:
             emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
             emergency_stop_step_threshold=int(data.get("emergency_stop_step_threshold", 0)),
             warmup_url=cls._get_str(data, "warmup_url"),
+            discovers_hub=(
+                DiscoversHubModel.import_from_data_json(data["discovers_hub"])
+                if isinstance(data.get("discovers_hub"), dict)
+                else None
+            ),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -178,6 +188,7 @@ class LaunchModel:
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
             "warmup_url": self.warmup_url,
+            "discovers_hub": self.discovers_hub.export_to_data_json() if self.discovers_hub else None,
         }
 
     @classmethod

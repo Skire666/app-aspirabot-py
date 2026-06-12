@@ -1,4 +1,4 @@
-"""Tests for models/steps_context_model.py."""
+"""Tests for models/steps_collections_model.py."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from models.step_scraping_model import StepScrapingModel
-from models.steps_context_model import StepsContext
+from models.steps_collections_model import StepsCollections as StepsContext
 
 
 # ---------------------------------------------------------------------------

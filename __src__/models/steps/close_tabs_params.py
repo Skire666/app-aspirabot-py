@@ -10,7 +10,7 @@ from shared.enums import FilterClosedEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsCollections
+    from models.steps_collections_model import StepsCollections
 
 
 class CloseTabsParams(BaseModel):

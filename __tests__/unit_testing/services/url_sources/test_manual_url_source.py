@@ -84,11 +84,11 @@ class TestPreviewUrlListed:
         p = ManualUrlSourceProvider([])
         assert p.preview_url_listed() == []
 
-    def test_returns_up_to_10(self) -> None:
+    def test_returns_all_urls(self) -> None:
         urls = [f"http://{i}.com" for i in range(15)]
         p = ManualUrlSourceProvider(urls)
         preview = p.preview_url_listed()
-        assert len(preview) == 10
+        assert len(preview) == 15
 
     def test_preview_from_current_cursor(self) -> None:
         urls = ["http://a.com", "http://b.com", "http://c.com"]

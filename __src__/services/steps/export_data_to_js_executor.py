@@ -40,13 +40,13 @@ class ExportDataToJsExecutor(IStepExecutor):
         assert context.step_scraping_data is not None
         p = cast(ExportDataToJsParams, context.step_scraping_data.params)
         try:
-            if not context.extracted_data or not context.extracted_data.items:
+            if not context.extracted_data or context.extracted_data.is_empty():
                 raise NoDataToExportError()  # noqa: TRY301
             if str(context.folder_export) in {".", ""}:
                 raise ExportFolderNotConfiguredError()  # noqa: TRY301
             timestamp = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
             dest = context.folder_export / f"{p.prefix_file}_{timestamp}.json"
-            self._json_repo.write_from_dict(dest, context.extracted_data.to_list())
+            self._json_repo.write_from_dict(dest, context.extracted_data.to_dict())
             event_bus.log_step(context, f"Export vers fichier JSON. Préfixe : {p.prefix_file}.")
             context.reset_exported_data()
         except Exception as exc:  # noqa: BLE001

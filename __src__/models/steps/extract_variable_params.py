@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, fie
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
-    from models.steps_context_model import StepsCollections
+    from models.steps_collections_model import StepsCollections
 
 C_ALLOWED_VARIABLES: frozenset[str] = frozenset({"datetime_now", "last_url_full", "last_url_domain", "last_url_cutted"})
 

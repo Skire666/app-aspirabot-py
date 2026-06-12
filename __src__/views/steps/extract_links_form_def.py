@@ -89,7 +89,7 @@ class ExtractLinksFormDef(IStepFormDef):
         widgets[C_KEY_TARGET_EXTRACTED] = target_var
 
         ttk.Label(row2, text="Clé/Mapping :").pack(side=tk.LEFT, padx=(0, 5))
-        mapping_var = tk.StringVar(value="key_name")
+        mapping_var = tk.StringVar(value="urls")
         ttk.Entry(row2, textvariable=mapping_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_MAPPING] = mapping_var
 

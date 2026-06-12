@@ -28,6 +28,7 @@ from shared.exception_util import (
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
     InvalidFolderScrapingError,
+    InvalidGuiBootingPositionError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
 )
@@ -38,6 +39,9 @@ from shared.exception_util import (
 
 # number of parts to split the GUI booting process -> "WxH"
 _C_NBR_PARTS_GUI_BOOTING_SIZE = 2
+
+# number of parts to split the GUI booting position -> "X,Y"
+_C_NBR_PARTS_GUI_BOOTING_POSITION = 2
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -64,6 +68,7 @@ class AppConfigurationModel:
     _folder_scenarios: Path
     _folder_scraping: Path
     _gui_booting_size: str
+    _gui_booting_position: str
     _gui_booting_fullscreen: bool
     _browser_engine: str
     chromium_persistant_dir: str
@@ -80,6 +85,7 @@ class AppConfigurationModel:
         folder_scenarios: Path | str = C_DATA_DEFAULT_FOLDER_SCENARIO,
         folder_scraping: Path | str = C_DATA_DEFAULT_FOLDER_SCRAPING,
         gui_booting_size: str = C_APP_DEFAULT_SIZE_GUI,
+        gui_booting_position: str = "",
         gui_booting_fullscreen: bool = False,
         browser_engine: str = C_BROWSER_ENGINE_DEFAULT,
         chromium_persistant_dir: str = C_CHROMIUM_PROFILE_DIR,
@@ -91,6 +97,7 @@ class AppConfigurationModel:
         self.folder_scenarios = folder_scenarios
         self.folder_scraping = folder_scraping
         self.gui_booting_size = gui_booting_size
+        self.gui_booting_position = gui_booting_position
         self.gui_booting_fullscreen = gui_booting_fullscreen
         self.browser_engine = browser_engine
         self.chromium_persistant_dir = chromium_persistant_dir
@@ -104,6 +111,7 @@ class AppConfigurationModel:
             "folder_scenarios": str(self.folder_scenarios),
             "folder_scraping": str(self.folder_scraping),
             "gui_booting_size": self.gui_booting_size,
+            "gui_booting_position": self.gui_booting_position,
             "gui_booting_fullscreen": self.gui_booting_fullscreen,
             "browser_engine": self.browser_engine,
             "chromium_persistant_dir": self.chromium_persistant_dir,
@@ -178,6 +186,31 @@ class AppConfigurationModel:
         if not all(part.isdigit() for part in value.split("x")):
             raise InvalidGuiBootingSizeError()
         self._gui_booting_size = value
+
+    @property
+    def gui_booting_position(self) -> str:
+        """Returns the default position of the GUI at booting as 'X,Y'."""
+        return self._gui_booting_position
+
+    @gui_booting_position.setter
+    def gui_booting_position(self, value: str | None) -> None:
+        """Sets the default position of the GUI at booting.
+
+        An empty string or None means no position is applied (OS decides).
+        A non-empty value must be two comma-separated integers, e.g. '100,200'.
+        """
+        if value is None or str(value).strip() == "":
+            self._gui_booting_position = ""
+            return
+        parts = str(value).split(",")
+        if len(parts) != _C_NBR_PARTS_GUI_BOOTING_POSITION:
+            raise InvalidGuiBootingPositionError()
+        try:
+            int(parts[0].strip())
+            int(parts[1].strip())
+        except ValueError as exc:
+            raise InvalidGuiBootingPositionError() from exc
+        self._gui_booting_position = value
 
     @property
     def gui_booting_fullscreen(self) -> bool:
