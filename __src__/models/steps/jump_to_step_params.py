@@ -60,7 +60,7 @@ class JumpToStepParams(BaseModel):
         steps_context: StepsCollections = info.context.get("steps_context")
         if str(target) == str(step_id):
             raise ValueError(ERROR_TEMPLATES["jump_to_step_self_reference"].format(step=step))
-        if steps_context is not None and steps_context.find_by_id(str(target)) is None:
+        if steps_context.find_by_id(str(target)) is None:
             raise ValueError(ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step, value=target))
         return d
 

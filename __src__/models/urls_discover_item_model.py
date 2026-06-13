@@ -24,7 +24,7 @@ _C_DEFAULT_PATTERN_URLS: str = "https*"
 
 
 @dataclass
-class DiscoverModel:
+class UrlsDiscoverItemModel:
     """Settings for one Discover project.
 
     Attributes:
@@ -51,7 +51,7 @@ class DiscoverModel:
     pattern_urls: str
 
     @classmethod
-    def get_default(cls) -> DiscoverModel:
+    def get_default(cls) -> UrlsDiscoverItemModel:
         """Build a new project with default values.
 
         Args:
@@ -69,7 +69,7 @@ class DiscoverModel:
         )
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> DiscoverModel:
+    def import_from_data_json(cls, data: dict[str, Any]) -> UrlsDiscoverItemModel:
         """Reconstruct a DiscoverModel from a JSON-compatible dictionary.
 
         Args:

@@ -150,7 +150,7 @@ class TestPreviewUrlListed:
 class TestDisplayProgressTupleText:
     def test_not_loaded_text(self, tmp_path: Path) -> None:
         p = FolderUrlSourceProvider(str(tmp_path))
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "non chargé" in text
 
     def test_progress_shown_after_consumption(self, tmp_path: Path) -> None:
@@ -158,7 +158,7 @@ class TestDisplayProgressTupleText:
         _write_url_file(tmp_path, "b.url", "http://b.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
         p.pop_url()
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "1" in text
         assert "2" in text
 
@@ -166,7 +166,7 @@ class TestDisplayProgressTupleText:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         p = FolderUrlSourceProvider(str(tmp_path))
         p.pop_url()
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "plus aucune" in text
 
 

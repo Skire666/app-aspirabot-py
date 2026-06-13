@@ -15,6 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from models.urls_folder_racs_model import UrlsFolderRacsModel
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import (
     UrlSourceExhaustedError,
@@ -28,10 +29,10 @@ from shared.exception_util import (
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
-_PREVIEW_LIMIT = 9_999_999
+_PREVIEW_LIMIT = 99_999
 
 
-class FolderUrlSourceProvider(IUrlSourceProvider):
+class UrlsFolderRacsService(IUrlSourceProvider):
     """Iterates over .txt files in a folder, reading the first non-empty line.
 
     Files are sorted by name. Each file is opened only when its turn arrives.
@@ -39,15 +40,15 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
     A one-URL look-ahead buffer makes ``load_url_if_available()`` accurate.
     """
 
-    def __init__(self, folder_path: str, sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC) -> None:
+    def __init__(self, source: UrlsFolderRacsModel) -> None:
         """Store the folder path without scanning it yet.
 
         Args:
             folder_path: Absolute or relative path to the URL source folder.
             sort_order: Strategy used to order .url files before iteration.
         """
-        self._folder_path: str = folder_path
-        self._sort_order: UrlSortOrderEnum = sort_order
+        self._folder_path: str = source.folder_racs
+        self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum(source.orders_racs)
         self._file_paths: list[Path] | None = None
         self._index: int = 0
         self._buffered: object = _SENTINEL
@@ -148,7 +149,7 @@ class FolderUrlSourceProvider(IUrlSourceProvider):
 
         return result
 
-    def display_progress_tuple_text(self) -> str:
+    def get_progress_text(self) -> str:
         """Return a string describing the current progress for display purposes.
 
         Returns:

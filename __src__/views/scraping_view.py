@@ -12,14 +12,13 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
 
+from shared.app_global_state import MyButton
 from shared.constants import C_COLOR_ORANGE_BLINKING
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.i18n_fra import C_SCRAPING_CANCEL_CONFIRM_MSG, C_SCRAPING_CANCEL_CONFIRM_TITLE
 from view_models.scraping_view_model import ScrapingViewModel
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
-
-from __src__.shared.app_global_state import MyButton
 
 # -----------------------------------------------------------------------------
 # Constants

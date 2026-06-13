@@ -55,19 +55,19 @@ class TestSetStepsAndUrlPreview:
 
 class TestDerivedStateRecompute:
     def test_url_source_manual_shows_manual_panel(self, vm: ExecutorViewModel) -> None:
-        vm.url_source_type_var.set("MANUAL")
+        vm.urls_source_type_var.set("MANUAL_LIST")
         assert vm.is_manual_panel_visible_var.get() is True
         assert vm.is_folder_panel_visible_var.get() is False
         assert vm.is_json_panel_visible_var.get() is False
 
     def test_url_source_folder_shows_folder_panel(self, vm: ExecutorViewModel) -> None:
-        vm.url_source_type_var.set("FOLDER")
+        vm.urls_source_type_var.set("FOLDER_RACS")
         assert vm.is_folder_panel_visible_var.get() is True
         assert vm.is_manual_panel_visible_var.get() is False
         assert vm.is_json_panel_visible_var.get() is False
 
     def test_url_source_json_shows_json_panel(self, vm: ExecutorViewModel) -> None:
-        vm.url_source_type_var.set("JSON")
+        vm.urls_source_type_var.set("FOLDER_JSONS")
         assert vm.is_json_panel_visible_var.get() is True
         assert vm.is_manual_panel_visible_var.get() is False
         assert vm.is_folder_panel_visible_var.get() is False

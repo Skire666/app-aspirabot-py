@@ -48,7 +48,7 @@ class UrlConfigView(ttk.Frame):
         self._vm = vm
         self._view_traces: list[tuple[tk.Variable, str]] = []
         # Local var shared by the 4 radio buttons
-        self._panel_var = tk.StringVar(master=self, value=UrlSourceTypeEnum.E_MANUAL.value)
+        self._panel_var = tk.StringVar(master=self, value=UrlSourceTypeEnum.E_MANUAL_LIST.value)
         # Currently visible panel; None until first _show_panel call.
         self._current_panel: ttk.Frame | None = None
 
@@ -77,10 +77,10 @@ class UrlConfigView(ttk.Frame):
         bar.pack(fill=tk.X)
         self._radio_buttons: list[ttk.Radiobutton] = []
         entries = [
-            ("Entrée manuelle", UrlSourceTypeEnum.E_MANUAL.value),
-            ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER.value),
-            ("Dossier avec JSON", UrlSourceTypeEnum.E_JSON.value),
-            ("Lire les nouveautés", UrlSourceTypeEnum.E_DISCOVER.value),
+            ("Entrée manuelle", UrlSourceTypeEnum.E_MANUAL_LIST.value),
+            ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER_RACS.value),
+            ("Dossier avec JSON", UrlSourceTypeEnum.E_FOLDER_JSONS.value),
+            ("Lire les nouveautés", UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value),
         ]
         MyLabel(bar, text="Source :").pack_left()
         for label, value in entries:
@@ -140,11 +140,11 @@ class UrlConfigView(ttk.Frame):
         MyLabel(row, text="Chemin :").pack_left()
         self._view_traces.append(
             (
-                self._vm.url_source_path_shortcuts_var,
-                self._vm.url_source_path_shortcuts_var.trace_add("write", lambda *_: self._vm.form_changed()),
+                self._vm.urls_path_folder_racs_var,
+                self._vm.urls_path_folder_racs_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        MyEntry(row, textvariable=self._vm.url_source_path_shortcuts_var).pack_left(fill=tk.X, expand=True)
+        MyEntry(row, textvariable=self._vm.urls_path_folder_racs_var).pack_left(fill=tk.X, expand=True)
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_folder).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
@@ -239,11 +239,11 @@ class UrlConfigView(ttk.Frame):
         ttk.Label(row, text="Chemin :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
         self._view_traces.append(
             (
-                self._vm.url_source_path_jsons_var,
-                self._vm.url_source_path_jsons_var.trace_add("write", lambda *_: self._vm.form_changed()),
+                self._vm.urls_path_folder_jsons_var,
+                self._vm.urls_path_folder_jsons_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Entry(row, textvariable=self._vm.url_source_path_jsons_var).pack(
+        ttk.Entry(row, textvariable=self._vm.urls_path_folder_jsons_var).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
         )
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_json).pack(
@@ -390,7 +390,7 @@ class UrlConfigView(ttk.Frame):
             (self._vm.manual_urls_version_var, self._sync_manual_text),
             (self._vm.url_preview_shortcuts_version_var, self._sync_shortcuts_preview),
             (self._vm.url_preview_jsons_version_var, self._sync_jsons_preview),
-            (self._vm.url_source_type_var, self._sync_panel_from_vm),
+            (self._vm.urls_source_type_var, self._sync_panel_from_vm),
             (self._vm.is_profile_section_active_var, self._sync_section_enabled),
             (self._vm.discovers_in_version_var, self._sync_discovers_grid),
         ]
@@ -404,13 +404,13 @@ class UrlConfigView(ttk.Frame):
     # ------------------------------------------------------------------
 
     def _sync_panel_from_vm(self, *_: object) -> None:
-        """Sync the active panel and radio selection to url_source_type_var."""
-        stype = self._vm.url_source_type_var.get()
+        """Sync the active panel and radio selection to urls_source_type_var."""
+        stype = self._vm.urls_source_type_var.get()
         if stype not in {
-            UrlSourceTypeEnum.E_MANUAL.value,
-            UrlSourceTypeEnum.E_FOLDER.value,
-            UrlSourceTypeEnum.E_JSON.value,
-            UrlSourceTypeEnum.E_DISCOVER.value,
+            UrlSourceTypeEnum.E_MANUAL_LIST.value,
+            UrlSourceTypeEnum.E_FOLDER_RACS.value,
+            UrlSourceTypeEnum.E_FOLDER_JSONS.value,
+            UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value,
         }:
             return
         # Programmatic .set() does NOT fire command= on radio buttons — no feedback loop.
@@ -484,7 +484,7 @@ class UrlConfigView(ttk.Frame):
         """React to user radio-button click; switch panel and notify VM."""
         val = self._panel_var.get()
         self._show_panel(val)
-        self._vm.url_source_type_var.set(val)
+        self._vm.urls_source_type_var.set(val)
         self._vm.form_changed()
 
     def _on_manual_text_modified(self, _event: tk.Event) -> None:
@@ -521,26 +521,26 @@ class UrlConfigView(ttk.Frame):
         return folder or None
 
     def _browse_shortcuts_folder(self) -> None:
-        """Open a folder dialog and write the result to url_source_path_shortcuts_var."""
+        """Open a folder dialog and write the result to urls_path_folder_racs_var."""
         folder = filedialog.askdirectory(title="Choisir le dossier source (URL)", parent=self)
         if folder:
-            self._vm.url_source_path_shortcuts_var.set(folder)
+            self._vm.urls_path_folder_racs_var.set(folder)
 
     def _open_shortcuts_folder(self) -> None:
         """Open the shortcuts folder in the OS file explorer."""
-        path = self._vm.url_source_path_shortcuts_var.get()
+        path = self._vm.urls_path_folder_racs_var.get()
         if path:
             open_folder(path)
 
     def _browse_jsons_folder(self) -> None:
-        """Open a folder dialog and write the result to url_source_path_jsons_var."""
+        """Open a folder dialog and write the result to urls_path_folder_jsons_var."""
         folder = filedialog.askdirectory(title="Choisir le dossier source (JSON)", parent=self)
         if folder:
-            self._vm.url_source_path_jsons_var.set(folder)
+            self._vm.urls_path_folder_jsons_var.set(folder)
 
     def _open_shortcuts_json(self) -> None:
         """Open the shortcuts folder in the OS file explorer."""
-        path = self._vm.url_source_path_jsons_var.get()
+        path = self._vm.urls_path_folder_jsons_var.get()
         if path:
             open_folder(path)
 
@@ -565,10 +565,10 @@ class UrlConfigView(ttk.Frame):
             key: A UrlSourceTypeEnum value.
         """
         panel_map: dict[str, ttk.Frame] = {
-            UrlSourceTypeEnum.E_MANUAL.value: self._panel_manual,
-            UrlSourceTypeEnum.E_FOLDER.value: self._panel_folder,
-            UrlSourceTypeEnum.E_JSON.value: self._panel_json,
-            UrlSourceTypeEnum.E_DISCOVER.value: self._panel_discover,
+            UrlSourceTypeEnum.E_MANUAL_LIST.value: self._panel_manual,
+            UrlSourceTypeEnum.E_FOLDER_RACS.value: self._panel_folder,
+            UrlSourceTypeEnum.E_FOLDER_JSONS.value: self._panel_json,
+            UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value: self._panel_discover,
         }
         target = panel_map.get(key)
         if target is None or target is self._current_panel:

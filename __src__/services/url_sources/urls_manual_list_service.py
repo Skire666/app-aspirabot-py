@@ -7,34 +7,35 @@
 from __future__ import annotations
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from models.urls_manual_list_model import UrlsManualListModel
 from shared.exception_util import UrlSourceExhaustedError
 
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
 
-_PREVIEW_LIMIT = 9_999_999
+_PREVIEW_LIMIT = 99_999
 
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
 
-class ManualUrlSourceProvider(IUrlSourceProvider):
+class UrlsManualListService(IUrlSourceProvider):
     """Iterates over an explicit list of URLs supplied at construction time.
 
     Empty strings are filtered out at construction. Iteration is index-based
     so ``reset()`` simply rewinds the index to zero without re-parsing.
     """
 
-    def __init__(self, urls: list[str]) -> None:
+    def __init__(self, source: UrlsManualListModel) -> None:
         """Initialize with a list of URL strings.
 
         Args:
             urls: Raw list of URLs; blank entries are discarded.
         """
         # Filter empty strings at construction time.
-        self._urls: list[str] = [u for u in urls if u]
+        self._urls: list[str] = source.urls
         self._index: int = 0
 
     def load_url_if_available(self) -> bool:
@@ -101,7 +102,7 @@ class ManualUrlSourceProvider(IUrlSourceProvider):
         """
         return self._urls[self._index : self._index + _PREVIEW_LIMIT]
 
-    def display_progress_tuple_text(self) -> str:
+    def get_progress_text(self) -> str:
         """Return a human-readable progress string for display in the journal.
 
         Returns:

@@ -32,7 +32,6 @@ from repositories.scenarios_repository import ScenariosRepository
 from services.app_configuration_service import ConfigService
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
-from services.discover_service import DiscoverService
 from services.logging_service import LoggingService
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
@@ -163,9 +162,7 @@ def _assemble_components(  # noqa: PLR0914
     scen_view, scen_pre, edit_view, edit_pr, steps_pr, scen_svc = _init_scenarios_components(
         main_view, prof_svc, prof_repo, startup_service.config_model, JsonFileRepository()
     )
-    exec_view, exec_pre, url_cfg_pr = _init_executor_component(
-        main_view, startup_service.config_model, scen_svc, prof_svc, JsonFileRepository()
-    )
+    exec_view, exec_pre, url_cfg_pr = _init_executor_component(main_view, scen_svc, prof_svc)
     scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc)
     dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
     _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre)
@@ -368,11 +365,7 @@ def _init_debug_component(main_view: MainView, config_model: AppConfigurationMod
 
 
 def _init_executor_component(
-    main_view: MainView,
-    config_model: AppConfigurationModel,
-    scenario_service: ScenariosService,
-    profiles_service: ProfilesService,
-    json_repo: JsonFileRepository,
+    main_view: MainView, scenario_service: ScenariosService, profiles_service: ProfilesService
 ) -> tuple[ExecutorView, ExecutorPresenter, UrlConfigPresenter]:
     """Create and wire the executor panel component, including the tab-4 Discover panel.
 
@@ -387,7 +380,7 @@ def _init_executor_component(
         A (ExecutorView, ExecutorPresenter, tab4_DiscoverPresenter, UrlConfigPresenter) tuple.
     """
     vm = ExecutorViewModel(master=main_view.content_area)
-    url_config_presenter = UrlConfigPresenter(vm=vm, discover_service=DiscoverService())
+    url_config_presenter = UrlConfigPresenter(vm=vm)
     executor_view = ExecutorView(main_view.content_area, vm=vm)
     executor_presenter = ExecutorPresenter(
         vm=vm,

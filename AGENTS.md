@@ -23,7 +23,6 @@ __src__/
 ├── repositories/   # Data read/write layer (files, JSON…)
 ├── services/       # Business logic and domain rules
 ├── interfaces/     # Protocol-based contracts
-├── validators/     # Pydantic-based domain validators (launch profile)
 ├── shared/         # Cross-cutting utilities (enums, i18n, helpers)
 └── main.py         # Application entry point and composition root
 ```
@@ -59,8 +58,8 @@ __src__/
 |-----------------|--------------------------------------------------------------|----------------------------------------------------------|
 | `View`          | `ViewModel`, `interfaces/`, `shared/`, `tkinter`             | `Service`, `Repository`, `Model`, `Presenter`            |
 | `ViewModel`     | `shared/`, `tkinter`                                         | `View`, `Presenter`, `Service`, `Repository`, `Model`    |
-| `Presenter`     | `ViewModel`, `Service`, `Model`, `interfaces/`, `shared/`, `validators/` | `View`, `Repository`, `tkinter`              |
-| `Service`       | `Repository`, `Model`, `interfaces/`, `shared/`, `validators/` | `View`, `ViewModel`, `Presenter`, `tkinter`            |
+| `Presenter`     | `ViewModel`, `Service`, `Model`, `interfaces/`, `shared/`    | `View`, `Repository`, `tkinter`              |
+| `Service`       | `Repository`, `Model`, `interfaces/`, `shared/`              | `View`, `ViewModel`, `Presenter`, `tkinter`            |
 | `Repository`    | `Model`, `shared/`                                           | `View`, `ViewModel`, `Presenter`, `Service`, `tkinter`   |
 | `Model`         | `shared/`, `pydantic` (infrastructure only)                  | `View`, `ViewModel`, `Presenter`, `Service`, `Repository` |
 | `ViewModel` (Vars only) | `tkinter`                                            | `Service`, `Repository`, `Model`                         |
@@ -85,7 +84,6 @@ Every Python file in an MVP layer is suffixed with its layer name. This makes la
 | `presenters/`   | `_presenter.py`     | `executor_presenter.py`                |
 | `view_models/`  | `_view_model.py`    | `scenario_edit_view_model.py`          |
 | `views/`        | `_view.py`          | `scenario_edit_view.py`                |
-| `validators/`   | `_validator.py`     | `launch_validator.py`                  |
 | `interfaces/`   | `i_*.py`            | `i_scraping_view.py`                   |
 
 The class inside a file is always the PascalCase counterpart of the file name (e.g. `provider_model.py` → `ProviderModel`, `scenario_edit_view_model.py` → `ScenarioEditViewModel`).
@@ -1299,31 +1297,6 @@ self._vm.error_message_var.set("\n".join(messages))
 
 ---
 
-## Validators — Pydantic V2
-
-All domain-level validation is handled by **Pydantic V2**. No validation logic is
-allowed inline in Presenters, Services, ViewModels, or Views.
-
-Pydantic validation will grow to cover all domain objects. This section is the authoritative
-reference for how to write, place, and consume validators in this project regardless of context.
-
----
-
-### Decision framework — where to place validators
-
-The placement depends on whether the domain object is a Pydantic model or a plain dataclass:
-
-| Object type | Validator placement | Trigger |
-|---|---|---|
-| `BaseModel` subclass (frozen, value object) | Directly inside the class via `@field_validator` / `@model_validator` | `model_validate(data, context=ctx)` |
-| `@dataclass` (mutable, owns business methods) | Standalone `_<Domain>ValidationSchema` in `validators/<domain>_validator.py` | Public `validate_<domain>(obj)` function |
-
-**Rule of thumb:** if the object will ever be mutated after construction, or has factory
-classmethods (`get_default`, `import_from_json`, …), keep it as a dataclass and create a
-standalone schema. If the object is immutable and purely structural, make it a `BaseModel`.
-
----
-
 ### Pattern A — Validators embedded in the model
 
 Use this pattern when the domain object **is** a Pydantic `BaseModel`.
@@ -1432,113 +1405,6 @@ constraints that depend on valid field values rather than raw input.
 Use this pattern when the domain object **is** a `@dataclass`. The schema is a private
 Pydantic model that mirrors the fields of the dataclass and is only instantiated transiently.
 
-#### File structure
-
-```
-validators/
-└── <domain>_validator.py      # one file per validated dataclass (or logical group)
-```
-
-#### Internal schema + public API
-
-```python
-# validators/profile_validator.py
-from __future__ import annotations
-
-from pydantic import BaseModel, ValidationError, field_validator, model_validator
-from typing import Self
-
-from models.profile_model import ProfileModel
-from shared.i18n_fra import C_EXPORT_FOLDER_REQUIRED, C_THRESHOLD_INVALID
-
-_MAX_THRESHOLD = 9_999_999
-
-
-class _ProfileValidationSchema(BaseModel):
-    """Internal validation schema — never import this class directly."""
-
-    export_folder: str
-    threshold: int
-    ...
-
-    @field_validator("export_folder")
-    @classmethod
-    def check_export_folder(cls, v: str) -> str:
-        """Reject empty or whitespace-only export paths."""
-        if not v or not v.strip():
-            raise ValueError(C_EXPORT_FOLDER_REQUIRED)
-        return v
-
-    @field_validator("threshold")
-    @classmethod
-    def check_threshold(cls, v: int) -> int:
-        """Reject thresholds outside the accepted range."""
-        if not (isinstance(v, int) and 1 <= v <= _MAX_THRESHOLD):
-            raise ValueError(C_THRESHOLD_INVALID)
-        return v
-
-    @model_validator(mode="after")
-    def check_cross_fields(self) -> Self:
-        """Cross-field rule on the validated instance."""
-        ...
-        return self
-
-
-def _extract_errors(exc: ValidationError) -> list[str]:
-    return [
-        str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
-        for err in exc.errors()
-    ]
-
-
-# ── Public API ──────────────────────────────────────────────────────────────
-
-def validate_profile(profile: ProfileModel) -> list[str]:
-    """Validate *profile* and return all French error messages.
-
-    Args:
-        profile: The profile to validate.
-
-    Returns:
-        Ordered list of error strings; empty when valid.
-    """
-    try:
-        _ProfileValidationSchema(
-            export_folder=profile.export_folder or "",
-            threshold=profile.threshold,
-            ...
-        )
-        return []
-    except ValidationError as exc:
-        return _extract_errors(exc)
-
-
-def validate_profile_first_error(profile: ProfileModel) -> str | None:
-    """Return the first error message, or ``None`` when valid.
-
-    Args:
-        profile: The profile to validate.
-
-    Returns:
-        First French error string, or None when valid.
-    """
-    errors = validate_profile(profile)
-    return errors[0] if errors else None
-```
-
-The two public functions (`validate_<domain>` and `validate_<domain>_first_error`) are
-the **only** exported symbols. The schema class is always private (underscore prefix).
-
-#### Usage in a Presenter
-
-```python
-from validators.profile_validator import validate_profile_first_error
-
-def _validate_before_save(self) -> str | None:
-    self._apply_form_to_model()
-    return validate_profile_first_error(self._current_profile)
-```
-
 ---
 
 ### Validator type reference
@@ -1591,25 +1457,6 @@ def check_target(cls, v: str, info: ValidationInfo) -> str:
 
 ---
 
-### Error message extraction
-
-Pydantic wraps every `raise ValueError(msg)` into `"Value error, <msg>"` in `err["msg"]`.
-Always extract the original message via `err["ctx"]["error"]`:
-
-```python
-def _extract_errors(exc: ValidationError) -> list[str]:
-    """Extract French error strings from a Pydantic ValidationError."""
-    return [
-        str(err["ctx"]["error"]) if "ctx" in err and "error" in err["ctx"] else err["msg"]
-        for err in exc.errors()
-    ]
-```
-
-This helper must be defined locally in every `validators/<domain>_validator.py` and in
-every service/base that wraps a `model_validate` call.
-
----
-
 ### Error messages — always from `shared/i18n_fra.py`
 
 Every `raise ValueError(...)` inside a validator must reference a constant from
@@ -1658,30 +1505,6 @@ def _refresh_step_validation(self, step_index: int) -> None:
     except ValidationError as exc:
         self._view.set_error(_extract_errors(exc)[0])
 ```
-
----
-
-### File and naming conventions
-
-| Artifact | Location | Naming rule |
-|---|---|---|
-| Embedded validator method | Inside the `BaseModel` subclass | `check_<field_or_rule>` |
-| Standalone schema (internal) | `validators/<domain>_validator.py` | `_<Domain>ValidationSchema` (private) |
-| Public validation functions | `validators/<domain>_validator.py` | `validate_<domain>`, `validate_<domain>_first_error` |
-| Error extraction helper | Local to each validator file or base class | `_extract_errors(exc)` |
-
----
-
-### Dependency rules
-
-| Layer | May import from |
-|---|---|
-| `BaseModel` subclass (in `models/`) | `pydantic`, `shared/` |
-| Standalone validator schema (in `validators/`) | `pydantic`, `models/`, `shared/` |
-| `Presenter` | `validators/` (public functions only) |
-| `Service` | `validators/` (public functions only) |
-
-Validators must **never** import from `View`, `Presenter`, `ViewModel`, or `Repository`.
 
 ---
 
@@ -1837,8 +1660,6 @@ Protocol), never by editing an existing one.
   class and the dispatch table remain untouched.
 - **Repositories** implement `IXxxRepository`; swapping a JSON repository for a database
   one requires writing a new class, not modifying any Service.
-- **Validators** are added as new functions in a `validators/` file; existing validators
-  are never widened to cover unrelated domain objects.
 
 ```python
 # GOOD — open for extension: add a new executor without touching existing code

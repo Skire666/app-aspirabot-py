@@ -14,7 +14,7 @@
             "id_scenario": "a73b70fa",
             "profile_name": "FilmGame - Lister vidéos",
             "export_folder": "E:\\app-life-selector\\Youtube\\FilmGame - Export - Chaines",
-            "url_source_type": "MANUAL",
+            "urls_source_type": "MANUAL",
             "url_sources_list_manual": [
                 "https://www.youtube.com/user/godofwarlefilm/videos"
             ],

@@ -1,19 +1,22 @@
 """Domain model for a scraping launch profile.
 
 A launch profile stores user-configured parameters for a single scraping
-session: export folder, URL source mode with per-mode values, and usage statistics.
+session: export folder, URL source mode with per-mode sub-models, and usage statistics.
 """
 
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from models.discovers_hub_model import DiscoversHubModel
+from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
+from models.urls_folder_jsons_model import UrlsFolderJsonsModel
+from models.urls_folder_racs_model import UrlsFolderRacsModel
+from models.urls_manual_list_model import UrlsManualListModel
 from shared.constants import (
     C_CURRENT_WORKING_DIR,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
@@ -21,6 +24,7 @@ from shared.constants import (
     C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID,
 )
 from shared.datetime_util import dict_with_key_to_optional_datetime
+from shared.enums import UrlSourceTypeEnum
 from shared.random_util import generate_rng_hexastring
 
 # -----------------------------------------------------------------------------
@@ -40,44 +44,39 @@ class LaunchModel:
     """Stores user-configured parameters for a scraping session.
 
     A profile captures the export folder, URL source mode and the per-mode
-    values, as well as usage statistics (launch count and last-used date).
+    sub-models, as well as usage statistics (launch count and last-used date).
 
     Attributes:
         id_profile: Unique identifier as a hex string.
         id_scenario: Human-readable scenario name.
+        profile_name: Display name of the profile.
         export_folder: Absolute path of the export destination folder.
-        url_source_type: One of "MANUAL", "FOLDER", "JSON", or "" when unset.
-        url_sources_list_manual: Explicit URL list for MANUAL mode.
-        url_sources_folder_shortcuts: Folder path for FOLDER mode (.url files).
-        url_sources_folder_jsons: Folder path for JSON mode (.json files).
-        url_sort_order_shortcuts: Sort order string for FOLDER mode.
-        url_sort_order_jsons: Sort order string for JSON mode.
+        urls_source_type: One of "MANUAL_LIST", "FOLDER_RACS", "FOLDER_JSONS", "CALC_NEW", or "" when unset.
+        urls_manual_list: URL source configuration for MANUAL_LIST mode.
+        urls_folder_racs: URL source configuration for FOLDER_RACS (.url shortcuts) mode.
+        urls_folder_jsons: URL source configuration for FOLDER_JSONS mode.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
         launch_count: Number of times the profile was launched.
+        used_date_profile: Timestamp of the last launch, or None when never launched.
     """
 
     id_profile: str
     id_scenario: str
     profile_name: str
     export_folder: str
-    url_source_type: str
-    url_sources_list_manual: list[str]
-    url_sources_folder_shortcuts: str
-    url_sources_folder_jsons: str
-    emergency_stop_threshold: int
+    urls_source_type: UrlSourceTypeEnum
+    urls_manual_list: UrlsManualListModel
+    urls_folder_racs: UrlsFolderRacsModel
+    urls_folder_jsons: UrlsFolderJsonsModel
+    urls_discover_entries: UrlsDiscoverEntriesModel
     launch_count: int
     used_date_profile: datetime | None
-    url_sort_order_shortcuts: str = ""
-    url_sort_order_jsons: str = ""
-    # Per-step emergency stop: step ID to monitor and its error threshold.
-    emergency_stop_step_id: str = ""
-    emergency_stop_step_threshold: int = 0
     # Optional URL to open before the run starts; execution waits for user resume.
-    warmup_url: str = ""
-    # Discover mode — persisted hub configuration.
-    discovers_hub: DiscoversHubModel | None = None
-    # Transient — computed at runtime before launch, never serialized.
-    url_sources_discover_urls: list[str] = field(default_factory=list)
+    warmup_url: str
+    # Per-step emergency stop: step ID to monitor and its error threshold.
+    emergency_stop_threshold: int
+    emergency_stop_step_id: str
+    emergency_stop_step_threshold: int
 
     @classmethod
     def get_default(cls, id_scenario: str) -> LaunchModel:
@@ -87,42 +86,25 @@ class LaunchModel:
             id_scenario: Human-readable scenario name.
 
         Returns:
-            ProfileLaunchModel: A ready-to-use default profile.
-
-        Raises:
-            None.
+            A ready-to-use default LaunchModel.
         """
         return cls(
             id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID),
             id_scenario=id_scenario,
             profile_name="Nouveau profil",
             export_folder=_C_DEFAULT_EXPORT_FOLDER,
-            url_source_type="",
-            url_sources_list_manual=[],
-            url_sources_folder_shortcuts="",
-            url_sources_folder_jsons="",
+            urls_source_type=UrlSourceTypeEnum.E_MANUAL_LIST,
+            urls_manual_list=UrlsManualListModel.get_default(),
+            urls_folder_racs=UrlsFolderRacsModel.get_default(),
+            urls_folder_jsons=UrlsFolderJsonsModel.get_default(),
+            urls_discover_entries=UrlsDiscoverEntriesModel.get_default(),
             emergency_stop_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             launch_count=0,
             used_date_profile=None,
-            url_sort_order_shortcuts="",
-            url_sort_order_jsons="",
             emergency_stop_step_id="",
             emergency_stop_step_threshold=1,
             warmup_url="",
         )
-
-    @staticmethod
-    def _get_str(data: dict[str, Any], key: str) -> str:
-        """Extract a string field from *data*, defaulting to empty string when absent or falsy.
-
-        Args:
-            data: Raw dict from JSON deserialization.
-            key: Dict key to look up.
-
-        Returns:
-            The value converted to str, or empty string if missing or falsy.
-        """
-        return str(data.get(key) or "")
 
     @classmethod
     def import_from_data_json(cls, data: dict[str, Any]) -> LaunchModel:
@@ -132,76 +114,64 @@ class LaunchModel:
             data: A dict produced by ``export_to_data_json``.
 
         Returns:
-            ProfileLaunchModel: A fully reconstructed profile instance.
-
-        Raises:
-            None.
+            A fully reconstructed LaunchModel instance.
         """
-        raw_manual = data.get("url_sources_list_manual")
         return cls(
-            id_profile=cls._get_str(data, "id_profile"),
-            id_scenario=cls._get_str(data, "id_scenario"),
-            profile_name=cls._get_str(data, "profile_name"),
-            export_folder=cls._get_str(data, "export_folder"),
-            url_source_type=cls._get_str(data, "url_source_type"),
-            url_sources_list_manual=raw_manual if isinstance(raw_manual, list) else [],
-            url_sources_folder_shortcuts=cls._get_str(data, "url_sources_folder_shortcuts"),
-            url_sources_folder_jsons=cls._get_str(data, "url_sources_folder_jsons"),
+            id_profile=str(data.get("id_profile") or ""),
+            id_scenario=str(data.get("id_scenario") or ""),
+            profile_name=str(data.get("profile_name") or ""),
+            export_folder=str(data.get("export_folder") or ""),
+            urls_source_type=UrlSourceTypeEnum(data.get("urls_source_type")),
+            urls_manual_list=UrlsManualListModel.import_from_data_json(data),
+            urls_folder_racs=UrlsFolderRacsModel.import_from_data_json(data),
+            urls_folder_jsons=UrlsFolderJsonsModel.import_from_data_json(data),
+            urls_discover_entries=UrlsDiscoverEntriesModel.import_from_data_json(data),
             emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
             launch_count=int(data.get("launch_count", 0)),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
-            url_sort_order_shortcuts=cls._get_str(data, "url_sort_order_shortcuts"),
-            url_sort_order_jsons=cls._get_str(data, "url_sort_order_jsons"),
             emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
             emergency_stop_step_threshold=int(data.get("emergency_stop_step_threshold", 0)),
-            warmup_url=cls._get_str(data, "warmup_url"),
-            discovers_hub=(
-                DiscoversHubModel.import_from_data_json(data["discovers_hub"])
-                if isinstance(data.get("discovers_hub"), dict)
-                else None
-            ),
+            warmup_url=str(data.get("warmup_url") or ""),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
         """Serialize the profile to a JSON-compatible dictionary.
 
-        Returns:
-            dict: A dictionary representation of the profile.
+        The URL source sub-models are flattened into the same dict level to
+        maintain backward compatibility with existing persisted files.
 
-        Raises:
-            None.
+        Returns:
+            A JSON-compatible dictionary representation of the profile.
         """
         return {
             "id_profile": self.id_profile,
             "id_scenario": self.id_scenario,
             "profile_name": self.profile_name,
             "export_folder": self.export_folder,
-            "url_source_type": self.url_source_type,
-            "url_sources_list_manual": self.url_sources_list_manual,
-            "url_sources_folder_shortcuts": self.url_sources_folder_shortcuts,
-            "url_sources_folder_jsons": self.url_sources_folder_jsons,
-            "url_sort_order_shortcuts": self.url_sort_order_shortcuts,
-            "url_sort_order_jsons": self.url_sort_order_jsons,
+            "urls_source_type": self.urls_source_type,
+            **self.urls_manual_list.export_to_data_json(),
+            **self.urls_folder_racs.export_to_data_json(),
+            **self.urls_folder_jsons.export_to_data_json(),
             "emergency_stop_threshold": self.emergency_stop_threshold,
             "launch_count": self.launch_count,
             "used_date_profile": self.used_date_profile,
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
             "warmup_url": self.warmup_url,
-            "discovers_hub": self.discovers_hub.export_to_data_json() if self.discovers_hub else None,
+            "discovers_hub": self.urls_discover_entries.export_to_data_json(),
         }
 
     @classmethod
     def copy_business(cls, source: LaunchModel) -> LaunchModel:
         """Creates a duplicate of *source* with a new ID, a 'Copie de' name prefix, and fresh timestamps.
 
-        Steps and launch profiles are deep-copied so the duplicate is fully independent.
+        Deep-copies all sub-models so the duplicate is fully independent.
 
         Args:
-            source: The scenario to duplicate.
+            source: The profile to duplicate.
 
         Returns:
-            A new unsaved ScenarioModel ready to be persisted.
+            A new unsaved LaunchModel ready to be persisted.
         """
         import copy
 
@@ -214,9 +184,6 @@ class LaunchModel:
         """Increment the launch counter and update the last-used timestamp.
 
         Returns:
-            None.
-
-        Raises:
             None.
         """
         self.launch_count += 1

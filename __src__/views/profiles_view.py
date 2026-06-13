@@ -23,7 +23,7 @@ DATA_GRID_COLUMNS: list[GridColumn] = [
     GridColumn(id="action_delete", title="Supp.", width=55, col_type="button", button_text="Supp."),
     GridColumn(id="profile_name", title="Nom du profil", width=160),
     GridColumn(id="scenario_name", title="Scénario", width=150),
-    GridColumn(id="url_source_type", title="Source", width=100),
+    GridColumn(id="urls_source_type", title="Source", width=100),
     GridColumn(id="used_date_profile", title="Dernier usage", width=140, format=C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM),
     GridColumn(id="launch_count", title="Utilisés", width=100),
     GridColumn(id="id_profile", title="ID Profil", width=85),

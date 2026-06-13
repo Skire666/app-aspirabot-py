@@ -122,7 +122,7 @@ class ProfilesPresenter:
                     "__bound__": p,
                     "profile_name": p.profile_name,
                     "scenario_name": self._service_profile.get_scenario_name(p.id_scenario),
-                    "url_source_type": p.url_source_type,
+                    "urls_source_type": p.urls_source_type,
                     "used_date_profile": p.used_date_profile.strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM)
                     if p.used_date_profile
                     else "",

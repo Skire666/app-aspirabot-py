@@ -15,7 +15,6 @@ from collections.abc import Callable
 from pathlib import Path
 
 from interfaces.i_step_executor import IStepExecutor
-from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.app_configuration_model import AppConfigurationModel
 from models.scenario_model import ScenarioModel
@@ -27,32 +26,12 @@ from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
 from services.scraping_event_bus import ScrapingEventBus
-from services.url_sources.url_source_factory import build_url_source_scenario
+from services.url_sources.urls_source_factory import build_urls_source
 from services.workflow_service import WorkflowService
-from shared.enums import StepExecutionResultEnum, StepTypeEnum, UrlSortOrderEnum, WaitUntilEnum
+from shared.enums import StepExecutionResultEnum, StepTypeEnum, WaitUntilEnum
 from shared.exception_util import ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 from shared.step_registry import get_step_executor
-
-# -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
-
-
-def _parse_sort_order(value: str) -> UrlSortOrderEnum:
-    """Convert a raw sort-order string to its enum member, defaulting to E_MTIME_ASC.
-
-    Args:
-        value: A string matching one of the ``UrlSortOrderEnum`` values, or blank.
-
-    Returns:
-        The matching ``UrlSortOrderEnum`` member, or ``E_MTIME_ASC`` as fallback.
-    """
-    for member in UrlSortOrderEnum:
-        if member.value == value:
-            return member
-    return UrlSortOrderEnum.E_MTIME_ASC
-
 
 # -----------------------------------------------------------------------------
 # Class
@@ -148,9 +127,7 @@ class ScrapingService:
         self._statistics.start_timer()
 
         # Build and attach the URL source when requested, forwarding sort order.
-        self._context.url_source = self._build_url_source(
-            config.url_source_type, config.url_source_value, config.url_sort_order
-        )
+        self._context.url_source = build_urls_source(config)
         self._context.folder_export = Path(config.export_folder)
 
         # Create a fresh browser service instance for each run via the injected factory.
@@ -213,26 +190,6 @@ class ScrapingService:
         except OSError:
             self._logger.exception("Impossible d'écrire le fichier journal dans %s", folder)
             return None
-
-    @staticmethod
-    def _build_url_source(
-        source_type: str, source_value: list[str] | str | None, sort_order_str: str = ""
-    ) -> IUrlSourceProvider | None:
-        """Build the URL source provider when type and value are supplied.
-
-        Args:
-            source_type: One of ``"manual"``, ``"folder"``, or ``"json"``.
-            source_value: Matching value for the given type, or None.
-            sort_order_str: Raw string matching a ``UrlSortOrderEnum`` value;
-                defaults to ``E_MTIME_ASC`` when blank or unrecognised.
-
-        Returns:
-            A concrete ``IUrlSourceProvider`` or ``None``.
-        """
-        if not (source_type and source_value is not None):
-            return None
-        sort_order = _parse_sort_order(sort_order_str)
-        return build_url_source_scenario(source_type, source_value, sort_order)
 
     @property
     def current_stats(self) -> ScrapingStatisticsModel:

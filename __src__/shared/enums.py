@@ -126,11 +126,10 @@ class UrlSourceTypeEnum(Enum):
     """Enumerates the supported URL source provider types."""
 
     E_UNSET = "UNSET"
-    E_MANUAL = "MANUAL"
-    E_FOLDER = "FOLDER"
-    E_JSON = "JSON"
-    E_DISCOVER = "DISCOVER"
-    E_REVISITOR = "REVISITOR"
+    E_MANUAL_LIST = "MANUAL_LIST"
+    E_FOLDER_RACS = "FOLDER_RACS"
+    E_FOLDER_JSONS = "FOLDER_JSONS"
+    E_DISCOVER_ENTRIES = "DISCOVER_ENTRIES"
     E_UNKNOWN = "UNKNOWN"
 
 

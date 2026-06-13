@@ -13,39 +13,39 @@ from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownUrlSour
 
 class TestBuildUrlSourceScenario:
     def test_manual_with_list_returns_manual_provider(self) -> None:
-        provider = build_url_source_scenario("MANUAL", ["http://example.com"])
+        provider = build_url_source_scenario("MANUAL_LIST", ["http://example.com"])
         assert isinstance(provider, ManualUrlSourceProvider)
 
     def test_manual_with_empty_list(self) -> None:
-        provider = build_url_source_scenario("MANUAL", [])
+        provider = build_url_source_scenario("MANUAL_LIST", [])
         assert isinstance(provider, ManualUrlSourceProvider)
         assert not provider.load_url_if_available()
 
     def test_manual_with_str_raises_type_error(self) -> None:
         with pytest.raises(InvalidUrlSourceValueTypeError):
-            build_url_source_scenario("MANUAL", "/some/path")  # type: ignore[arg-type]
+            build_url_source_scenario("MANUAL_LIST", "/some/path")  # type: ignore[arg-type]
 
     def test_folder_with_str_returns_folder_provider(self, tmp_path: object) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as d:
-            provider = build_url_source_scenario("FOLDER", d)
+            provider = build_url_source_scenario("FOLDER_RACS", d)
             assert isinstance(provider, FolderUrlSourceProvider)
 
     def test_folder_with_list_raises_type_error(self) -> None:
         with pytest.raises(InvalidUrlSourceValueTypeError):
-            build_url_source_scenario("FOLDER", ["http://x.com"])  # type: ignore[arg-type]
+            build_url_source_scenario("FOLDER_RACS", ["http://x.com"])  # type: ignore[arg-type]
 
     def test_json_with_str_returns_json_provider(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as d:
-            provider = build_url_source_scenario("JSON", d)
+            provider = build_url_source_scenario("FOLDER_JSONS", d)
             assert isinstance(provider, JsonUrlSourceProvider)
 
     def test_json_with_list_raises_type_error(self) -> None:
         with pytest.raises(InvalidUrlSourceValueTypeError):
-            build_url_source_scenario("JSON", ["url"])  # type: ignore[arg-type]
+            build_url_source_scenario("FOLDER_JSONS", ["url"])  # type: ignore[arg-type]
 
     def test_unknown_type_raises(self) -> None:
         with pytest.raises(UnknownUrlSourceTypeError):
@@ -55,6 +55,6 @@ class TestBuildUrlSourceScenario:
         import tempfile
 
         with tempfile.TemporaryDirectory() as d:
-            provider = build_url_source_scenario("FOLDER", d, UrlSortOrderEnum.E_NAME_ASC)
+            provider = build_url_source_scenario("FOLDER_RACS", d, UrlSortOrderEnum.E_NAME_ASC)
             assert isinstance(provider, FolderUrlSourceProvider)
             assert provider._sort_order is UrlSortOrderEnum.E_NAME_ASC

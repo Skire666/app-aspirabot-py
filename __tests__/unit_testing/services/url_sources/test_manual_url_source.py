@@ -106,23 +106,23 @@ class TestPreviewUrlListed:
 class TestDisplayProgressTupleText:
     def test_empty_provider(self) -> None:
         p = ManualUrlSourceProvider([])
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "non chargée" in text
 
     def test_progress_before_consumption(self) -> None:
         p = ManualUrlSourceProvider(["http://a.com", "http://b.com"])
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "0" in text
         assert "2" in text
 
     def test_progress_after_consuming_one(self) -> None:
         p = ManualUrlSourceProvider(["http://a.com", "http://b.com"])
         p.pop_url()
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "1" in text
 
     def test_exhausted_message(self) -> None:
         p = ManualUrlSourceProvider(["http://a.com"])
         p.pop_url()
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "plus aucune" in text

@@ -43,8 +43,8 @@ class TestExecutorViewModelInit:
     def test_export_folder_var_exists(self, exec_vm: ExecutorViewModel) -> None:
         assert isinstance(exec_vm.export_folder_var, tk.StringVar)
 
-    def test_url_source_type_var_defaults_to_manual(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.url_source_type_var.get() == "MANUAL"
+    def test_urls_source_type_var_defaults_to_manual(self, exec_vm: ExecutorViewModel) -> None:
+        assert exec_vm.urls_source_type_var.get() == "MANUAL_LIST"
 
     def test_initial_scenarios_empty(self, exec_vm: ExecutorViewModel) -> None:
         assert exec_vm.get_scenarios() == []
@@ -116,29 +116,29 @@ class TestExecutorViewModelListMutators:
 
 class TestExecutorViewModelDerivedUrlSourceState:
     def test_manual_source_shows_manual_panel(self, exec_vm: ExecutorViewModel) -> None:
-        exec_vm.url_source_type_var.set("MANUAL")
+        exec_vm.urls_source_type_var.set("MANUAL_LIST")
         assert exec_vm.is_manual_panel_visible_var.get() is True
 
     def test_manual_source_hides_folder_and_json_panels(self, exec_vm: ExecutorViewModel) -> None:
-        exec_vm.url_source_type_var.set("MANUAL")
+        exec_vm.urls_source_type_var.set("MANUAL_LIST")
         assert exec_vm.is_folder_panel_visible_var.get() is False
         assert exec_vm.is_json_panel_visible_var.get() is False
 
     def test_folder_source_shows_folder_panel(self, exec_vm: ExecutorViewModel) -> None:
-        exec_vm.url_source_type_var.set("FOLDER")
+        exec_vm.urls_source_type_var.set("FOLDER_RACS")
         assert exec_vm.is_folder_panel_visible_var.get() is True
 
     def test_folder_source_hides_manual_and_json_panels(self, exec_vm: ExecutorViewModel) -> None:
-        exec_vm.url_source_type_var.set("FOLDER")
+        exec_vm.urls_source_type_var.set("FOLDER_RACS")
         assert exec_vm.is_manual_panel_visible_var.get() is False
         assert exec_vm.is_json_panel_visible_var.get() is False
 
     def test_json_source_shows_json_panel(self, exec_vm: ExecutorViewModel) -> None:
-        exec_vm.url_source_type_var.set("JSON")
+        exec_vm.urls_source_type_var.set("FOLDER_JSONS")
         assert exec_vm.is_json_panel_visible_var.get() is True
 
     def test_json_source_hides_manual_and_folder_panels(self, exec_vm: ExecutorViewModel) -> None:
-        exec_vm.url_source_type_var.set("JSON")
+        exec_vm.urls_source_type_var.set("FOLDER_JSONS")
         assert exec_vm.is_manual_panel_visible_var.get() is False
         assert exec_vm.is_folder_panel_visible_var.get() is False
 

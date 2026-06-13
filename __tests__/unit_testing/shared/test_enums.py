@@ -74,13 +74,13 @@ class TestExtractEnums:
 
 class TestUrlSourceTypeEnum:
     def test_manual_value(self) -> None:
-        assert UrlSourceTypeEnum.E_MANUAL.value == "MANUAL"
+        assert UrlSourceTypeEnum.E_MANUAL_LIST.value == "MANUAL_LIST"
 
     def test_folder_value(self) -> None:
-        assert UrlSourceTypeEnum.E_FOLDER.value == "FOLDER"
+        assert UrlSourceTypeEnum.E_FOLDER_RACS.value == "FOLDER_RACS"
 
     def test_json_value(self) -> None:
-        assert UrlSourceTypeEnum.E_JSON.value == "JSON"
+        assert UrlSourceTypeEnum.E_FOLDER_JSONS.value == "FOLDER_JSONS"
 
 
 class TestUrlSortOrderEnum:

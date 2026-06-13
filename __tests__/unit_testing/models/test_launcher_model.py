@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
 from models.launcher_model import LaunchModel
+from models.urls_folder_jsons_model import LauncherFolderJsonsModel
+from models.urls_folder_racs_model import LauncherFolderRacsModel
+from models.urls_manual_list_model import LauncherManualListModel
 
 
 def _make_profile(**kwargs: object) -> LaunchModel:
@@ -15,20 +16,36 @@ def _make_profile(**kwargs: object) -> LaunchModel:
         "id_scenario": "scen001",
         "profile_name": "My Profile",
         "export_folder": "/tmp/export",
-        "url_source_type": "MANUAL",
+        "urls_source_type": "MANUAL_LIST",
         "url_sources_list_manual": ["http://example.com"],
         "url_sources_folder_shortcuts": "",
+        "url_sort_order_shortcuts": "",
         "url_sources_folder_jsons": "",
+        "url_sort_order_jsons": "",
         "emergency_stop_threshold": 5,
         "launch_count": 0,
         "used_date_profile": None,
-        "url_sort_order_shortcuts": "",
-        "url_sort_order_jsons": "",
         "emergency_stop_step_id": "",
         "emergency_stop_step_threshold": 1,
     }
     defaults.update(kwargs)
-    return LaunchModel(**defaults)  # type: ignore[arg-type]
+    manual_list = LauncherManualListModel(
+        url_sources_list_manual=defaults.pop("url_sources_list_manual")  # type: ignore[arg-type]
+    )
+    folder_racs = LauncherFolderRacsModel(
+        url_sources_folder_shortcuts=defaults.pop("url_sources_folder_shortcuts"),  # type: ignore[arg-type]
+        url_sort_order_shortcuts=defaults.pop("url_sort_order_shortcuts"),  # type: ignore[arg-type]
+    )
+    folder_jsons = LauncherFolderJsonsModel(
+        url_sources_folder_jsons=defaults.pop("url_sources_folder_jsons"),  # type: ignore[arg-type]
+        url_sort_order_jsons=defaults.pop("url_sort_order_jsons"),  # type: ignore[arg-type]
+    )
+    return LaunchModel(
+        **defaults,  # type: ignore[arg-type]
+        manual_list=manual_list,
+        folder_racs=folder_racs,
+        folder_jsons=folder_jsons,
+    )
 
 
 class TestGetDefault:
@@ -64,10 +81,19 @@ class TestExportToDataJson:
         profile = _make_profile()
         result = profile.export_to_data_json()
         for key in (
-            "id_profile", "id_scenario", "profile_name", "export_folder",
-            "url_source_type", "url_sources_list_manual", "url_sources_folder_shortcuts",
-            "url_sources_folder_jsons", "url_sort_order_shortcuts", "url_sort_order_jsons",
-            "emergency_stop_threshold", "launch_count", "used_date_profile",
+            "id_profile",
+            "id_scenario",
+            "profile_name",
+            "export_folder",
+            "urls_source_type",
+            "url_sources_list_manual",
+            "url_sources_folder_shortcuts",
+            "url_sources_folder_jsons",
+            "url_sort_order_shortcuts",
+            "url_sort_order_jsons",
+            "emergency_stop_threshold",
+            "launch_count",
+            "used_date_profile",
         ):
             assert key in result
 
@@ -86,17 +112,17 @@ class TestImportFromDataJson:
             "id_scenario": "y",
             "profile_name": "P",
             "export_folder": "/tmp",
-            "url_source_type": "MANUAL",
+            "urls_source_type": "MANUAL_LIST",
             "emergency_stop_threshold": 1,
             "launch_count": 0,
             "used_date_profile": None,
         }
         result = LaunchModel.import_from_data_json(data)
-        assert result.url_sort_order_shortcuts == ""
-        assert result.url_sort_order_jsons == ""
-        assert result.url_sources_list_manual == []
-        assert result.url_sources_folder_shortcuts == ""
-        assert result.url_sources_folder_jsons == ""
+        assert result.folder_racs.url_sort_order_shortcuts == ""
+        assert result.folder_jsons.url_sort_order_jsons == ""
+        assert result.manual_list.url_sources_list_manual == []
+        assert result.folder_racs.url_sources_folder_shortcuts == ""
+        assert result.folder_jsons.url_sources_folder_jsons == ""
         assert result.emergency_stop_step_id == ""
 
 

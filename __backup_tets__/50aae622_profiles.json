@@ -14,7 +14,7 @@
             "id_scenario": "50aae622",
             "profile_name": "Youtube - liste manuelle",
             "export_folder": "E:/app-life-selector/Youtube/FilmGame - Export - Fiches",
-            "url_source_type": "MANUAL",
+            "urls_source_type": "MANUAL",
             "url_sources_list_manual": [
                 "https://www.youtube.com/watch?v=hLQl3WQQoQ0&list=RDhLQl3WQQoQ0&start_radio=1",
                 "https://www.youtube.com/watch?v=GjZLHxmUBZM",

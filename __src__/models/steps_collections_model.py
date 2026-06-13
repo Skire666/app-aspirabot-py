@@ -83,7 +83,7 @@ class StepsCollections:
         found: int = 0
         allowed = {StepTypeEnum.E_EXTRACT_TEXTS, StepTypeEnum.E_EXTRACT_LINKS, StepTypeEnum.E_EXTRACT_VARIABLE}
         for _, step in enumerate(self.steps):
-            if step.step_type in allowed and step.params and step.params.mapping == value_mapping:
+            if step.step_type in allowed and step.params and step.params.mapping == value_mapping:  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
                 found += 1
         return found  # Return the actual count, not a boolean
 

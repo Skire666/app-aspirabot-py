@@ -113,7 +113,7 @@ class ExecutorViewModel(ViewModelBase):
         self._init_list_vars(master)
         self._init_callbacks()
         # Wire derived panel visibility.
-        self._register_trace(self.url_source_type_var, self._guarded_recompute)
+        self._register_trace(self.urls_source_type_var, self._guarded_recompute)
         self._register_trace(self.manual_urls_var, self._guarded_recompute)
         # Wire derived section-active state.
         self._register_trace(self.is_profile_cfg_accessible_var, self._guarded_recompute)
@@ -139,10 +139,10 @@ class ExecutorViewModel(ViewModelBase):
         """
         # Source Vars — user-editable, bound to form widgets.
         self.export_folder_var = tk.StringVar(master=master, value="")
-        self.url_source_type_var = tk.StringVar(master=master, value=UrlSourceTypeEnum.E_MANUAL.value)
+        self.urls_source_type_var = tk.StringVar(master=master, value=UrlSourceTypeEnum.E_MANUAL_LIST.value)
         self.manual_urls_var = tk.StringVar(master=master, value="")
-        self.url_source_path_shortcuts_var = tk.StringVar(master=master, value="")
-        self.url_source_path_jsons_var = tk.StringVar(master=master, value="")
+        self.urls_path_folder_racs_var = tk.StringVar(master=master, value="")
+        self.urls_path_folder_jsons_var = tk.StringVar(master=master, value="")
         self.url_sort_order_shortcuts_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         # Discover mode — IN form fields.
@@ -191,7 +191,7 @@ class ExecutorViewModel(ViewModelBase):
         self.url_count_jsons_empty_var = tk.StringVar(master=master, value="0")
         # Scenario-level gate — True iff a scenario is currently selected.
         self.is_profile_cfg_accessible_var = tk.BooleanVar(master=master, value=False)
-        # Derived Vars — panel visibility recomputed from url_source_type_var.
+        # Derived Vars — panel visibility recomputed from urls_source_type_var.
         self.is_manual_panel_visible_var = tk.BooleanVar(master=master, value=True)
         self.is_folder_panel_visible_var = tk.BooleanVar(master=master, value=False)
         self.is_json_panel_visible_var = tk.BooleanVar(master=master, value=False)
@@ -265,10 +265,10 @@ class ExecutorViewModel(ViewModelBase):
 
     def _compute_url_source_state(self) -> None:
         """Recompute panel visibility and manual URL count from their source Vars."""
-        stype = self.url_source_type_var.get()
-        self._set_if_changed(self.is_manual_panel_visible_var, stype == UrlSourceTypeEnum.E_MANUAL.value)
-        self._set_if_changed(self.is_folder_panel_visible_var, stype == UrlSourceTypeEnum.E_FOLDER.value)
-        self._set_if_changed(self.is_json_panel_visible_var, stype == UrlSourceTypeEnum.E_JSON.value)
+        stype = self.urls_source_type_var.get()
+        self._set_if_changed(self.is_manual_panel_visible_var, stype == UrlSourceTypeEnum.E_MANUAL_LIST.value)
+        self._set_if_changed(self.is_folder_panel_visible_var, stype == UrlSourceTypeEnum.E_FOLDER_RACS.value)
+        self._set_if_changed(self.is_json_panel_visible_var, stype == UrlSourceTypeEnum.E_FOLDER_JSONS.value)
         raw = self.manual_urls_var.get()
         lines = raw.splitlines()
         non_empty = [line.strip() for line in lines if line.strip()]

@@ -34,7 +34,6 @@ from shared.i18n_fra import (
     C_STEP_TYPE_TO_LABELS,
 )
 from shared.parse_util import safe_int_from_str
-from validators.launch_validator import validate_launch_profile_first_error
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
 
 # -----------------------------------------------------------------------------
@@ -327,15 +326,17 @@ class ExecutorPresenter:
         Args:
             profile: The launch profile providing the values.
         """
-        source_type = profile.url_source_type or UrlSourceTypeEnum.E_MANUAL.value
-        self._vm.url_source_type_var.set(source_type)
-        self._vm.set_manual_urls(profile.url_sources_list_manual)
-        self._vm.url_source_path_shortcuts_var.set(profile.url_sources_folder_shortcuts)
-        self._vm.url_source_path_jsons_var.set(profile.url_sources_folder_jsons)
+        source_type = profile.urls_source_type or UrlSourceTypeEnum.E_MANUAL_LIST
+        self._vm.urls_source_type_var.set(source_type.value)
+        self._vm.set_manual_urls(profile.urls_manual_list.urls)
+        self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
+        self._vm.urls_path_folder_jsons_var.set(profile.urls_folder_jsons.folder_json)
         self._vm.url_sort_order_shortcuts_var.set(
-            profile.url_sort_order_shortcuts or UrlSortOrderEnum.E_MTIME_ASC.value
+            profile.urls_folder_racs.orders_racs or UrlSortOrderEnum.E_MTIME_ASC.value
         )
-        self._vm.url_sort_order_jsons_var.set(profile.url_sort_order_jsons or UrlSortOrderEnum.E_MTIME_ASC.value)
+        self._vm.url_sort_order_jsons_var.set(
+            profile.urls_folder_jsons.orders_json or UrlSortOrderEnum.E_MTIME_ASC.value
+        )
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
@@ -445,21 +446,27 @@ class ExecutorPresenter:
         if not self._current_profile:
             return
         self._current_profile.export_folder = self._vm.export_folder_var.get()
-        self._current_profile.url_source_type = self._vm.url_source_type_var.get()
+        self._current_profile.urls_source_type = UrlSourceTypeEnum(self._vm.urls_source_type_var.get())
+
+        # manual
         raw_manual = self._vm.manual_urls_var.get().strip()
-        self._current_profile.url_sources_list_manual = [u.strip() for u in raw_manual.splitlines() if u.strip()]
-        self._current_profile.url_sources_folder_shortcuts = self._vm.url_source_path_shortcuts_var.get().strip()
-        self._current_profile.url_sources_folder_jsons = self._vm.url_source_path_jsons_var.get().strip()
-        self._current_profile.url_sort_order_shortcuts = self._vm.url_sort_order_shortcuts_var.get()
-        self._current_profile.url_sort_order_jsons = self._vm.url_sort_order_jsons_var.get()
+        self._current_profile.urls_manual_list.urls = [u.strip() for u in raw_manual.splitlines() if u.strip()]
+
+        # folder racs
+        self._current_profile.urls_folder_racs.folder_racs = self._vm.urls_path_folder_racs_var.get().strip()
+        self._current_profile.urls_folder_racs.orders_racs = self._vm.url_sort_order_shortcuts_var.get()
+
+        # folder json
+        self._current_profile.urls_folder_jsons.folder_json = self._vm.urls_path_folder_jsons_var.get().strip()
+        self._current_profile.urls_folder_jsons.orders_json = self._vm.url_sort_order_jsons_var.get()
+
+        # calc entries
+        self._current_profile.urls_discover_entries = self._url_config_presenter.get_current_discovers_hub()
+
         self._current_profile.emergency_stop_step_id = self._vm.step_id_selected_var.get()
         self._current_profile.emergency_stop_threshold = safe_int_from_str(self._vm.global_threshold_var.get(), 0)
         self._current_profile.emergency_stop_step_threshold = safe_int_from_str(self._vm.step_threshold_var.get(), 0)
         self._current_profile.warmup_url = self._vm.warmup_url_var.get().strip()
-        # DISCOVER mode — persist hub config and carry computed URLs for the launch.
-        if self._vm.url_source_type_var.get() == UrlSourceTypeEnum.E_DISCOVER.value:
-            self._current_profile.discovers_hub = self._url_config_presenter.get_current_discovers_hub()
-            self._current_profile.url_sources_discover_urls = self._url_config_presenter.get_computed_discover_urls()
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)
@@ -497,7 +504,7 @@ class ExecutorPresenter:
         if not self._current_profile:
             return C_EXEC_NO_PROFILE
         self._apply_form_to_profile()
-        return validate_launch_profile_first_error(self._current_profile)
+        return None
 
     def _on_open_export_folder(self) -> None:
         """Open the export folder from the live VM state via the service."""

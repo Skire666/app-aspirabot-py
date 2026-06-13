@@ -371,7 +371,7 @@ class TestParameterizedExceptions:
         err = InvalidDurationError(-5)
         assert "-5" in str(err)
 
-    def test_unknown_url_source_type_contains_type(self) -> None:
+    def test_unknown_urls_source_type_contains_type(self) -> None:
         err = UnknownUrlSourceTypeError("csv")
         assert "csv" in str(err)
 

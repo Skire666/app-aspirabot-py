@@ -11,8 +11,6 @@ so that renaming a message string or changing a constructor signature is caught.
 
 from __future__ import annotations
 
-import pytest
-
 from shared.exception_util import (
     AspirabotBaseError,
     BlankStringError,
@@ -44,8 +42,8 @@ from shared.exception_util import (
     InvalidBrowserEngineError,
     InvalidDurationError,
     InvalidFolderLogsError,
-    InvalidFolderScrapingError,
     InvalidFolderScenariosError,
+    InvalidFolderScrapingError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
     InvalidLruCacheCapacityError,
@@ -82,15 +80,14 @@ from shared.exception_util import (
     UrlSourceExhaustedError,
     UrlSourceFileNotFoundError,
     UrlSourceFilesNotDiscoveredError,
-    UrlSourceNoUrlBufferedError,
     UrlSourceNotReadyError,
+    UrlSourceNoUrlBufferedError,
     ValueMustBeNonNegativeError,
     ValueMustBePositiveAndEvenError,
     ValueMustBePositiveError,
     ValueTooLargeError,
     ValueTooSmallError,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helper
@@ -461,7 +458,7 @@ class TestStepExecutionErrors:
 
 
 class TestUrlSourceErrors:
-    def test_unknown_url_source_type(self) -> None:
+    def test_unknown_urls_source_type(self) -> None:
         exc = UnknownUrlSourceTypeError("magic")
         assert "magic" in _msg(exc)
 
@@ -499,7 +496,7 @@ class TestUrlSourceErrors:
 
 class TestRegistryErrors:
     def test_executor_not_registered(self) -> None:
-        from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
+        from shared.exception_util import ExecutorNotRegisteredError
 
         exc = ExecutorNotRegisteredError("OPEN_URL")
         assert isinstance(exc, ValueError)

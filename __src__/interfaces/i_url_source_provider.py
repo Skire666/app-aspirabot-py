@@ -59,7 +59,7 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
-    def display_progress_tuple_text(self) -> str:
+    def get_progress_text(self) -> str:
         """Return a human-readable string summarising the provider's current state.
 
         Returns:

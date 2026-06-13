@@ -204,14 +204,14 @@ class TestPreviewUrlListed:
 class TestDisplayProgress:
     def test_not_loaded(self, tmp_path: Path) -> None:
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert "non chargé" in p.display_progress_tuple_text()
+        assert "non chargé" in p.get_progress_text()
 
     def test_after_loading(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
         _write_json(tmp_path, "b.json", ["http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
         p.load_url_if_available()  # triggers discovery but buffers from first file
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         # After has_next, at least one file has been indexed
         assert "fichier" in text
 

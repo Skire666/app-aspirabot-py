@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import cast
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from models.urls_folder_jsons_model import UrlsFolderJsonsModel
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFoundError, UrlSourceFilesNotDiscoveredError
 
@@ -26,7 +27,7 @@ from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFound
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
-_PREVIEW_LIMIT = 9_999_999
+_PREVIEW_LIMIT = 99_999
 
 
 def _collect_urls(obj: object, result: list[str]) -> None:
@@ -47,7 +48,7 @@ def _collect_urls(obj: object, result: list[str]) -> None:
 # -----------------------------------------------------------------------------
 
 
-class JsonUrlSourceProvider(IUrlSourceProvider):
+class UrlsFolderJsonsService(IUrlSourceProvider):
     """Iterates over .json files in a folder, yielding every HTTP URL found.
 
     Files are sorted by modification time (oldest first).  Within each file,
@@ -55,19 +56,16 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
     A one-URL look-ahead buffer makes ``load_url_if_available()`` accurate.
     """
 
-    def __init__(self, folder_path: str, sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC) -> None:
+    def __init__(self, source: UrlsFolderJsonsModel) -> None:
         """Store the folder path without scanning it yet.
 
         Args:
-            folder_path: Absolute or relative path to the JSON source folder.
-            sort_order: Strategy used to order .json files before iteration.
+            source: A ``UrlsFolderJsonsModel`` instance with the folder path and sort order.
         """
-        self._folder_path: str = folder_path
-        self._sort_order: UrlSortOrderEnum = sort_order
+        self._folder_path: str = source.folder_json
+        self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum(source.orders_json)
         self._file_paths: list[Path] | None = None
         self._file_index: int = 0
-        # Remaining URLs from the current file, stored in reverse order so
-        # pop() is O(1).
         self._pending_urls: list[str] = []
         self._buffered: object = _SENTINEL
 
@@ -168,7 +166,7 @@ class JsonUrlSourceProvider(IUrlSourceProvider):
 
         return result
 
-    def display_progress_tuple_text(self) -> str:
+    def get_progress_text(self) -> str:
         """Return a string describing the current progress for display purposes.
 
         Returns:

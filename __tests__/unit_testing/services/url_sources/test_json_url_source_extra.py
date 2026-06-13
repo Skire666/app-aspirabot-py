@@ -63,7 +63,7 @@ class TestMtimeDescSortOrder:
 
 
 class TestExhaustedDisplayText:
-    """Cover line 168: 'plus aucune URL' in display_progress_tuple_text."""
+    """Cover line 168: 'plus aucune URL' in get_progress_text."""
 
     def test_exhausted_shows_no_more_url(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com"])
@@ -71,7 +71,7 @@ class TestExhaustedDisplayText:
         p.pop_url()
         # Advance through all files
         assert not p.load_url_if_available()
-        text = p.display_progress_tuple_text()
+        text = p.get_progress_text()
         assert "plus aucune" in text
 
 

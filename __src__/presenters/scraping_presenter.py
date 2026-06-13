@@ -232,8 +232,8 @@ class ScrapingPresenter:
         """Entry point for the scraping worker thread."""
         if not self._scenario or not self._profile:
             return
-        config = self._build_run_config()
-        handlers = self._build_run_handlers()
+        config: WorkflowRunConfigModel = self._build_run_config()
+        handlers: WorkflowRunHandlers = self._build_run_handlers()
         try:
             report = self._service_scraping.run_workflow(self._scenario, config, handlers)
         except AspirabotBaseError:
@@ -250,28 +250,23 @@ class ScrapingPresenter:
         """
         assert self._profile is not None
         p = self._profile
-        stype = p.url_source_type
-        if stype == UrlSourceTypeEnum.E_MANUAL.value:
-            source_value: list[str] | str | None = p.url_sources_list_manual
-            sort_order = ""
-        elif stype == UrlSourceTypeEnum.E_FOLDER.value:
-            source_value = p.url_sources_folder_shortcuts or None
-            sort_order = p.url_sort_order_shortcuts
-        elif stype == UrlSourceTypeEnum.E_JSON.value:
-            source_value = p.url_sources_folder_jsons or None
-            sort_order = p.url_sort_order_jsons
-        elif stype == UrlSourceTypeEnum.E_DISCOVER.value:
-            source_value = p.url_sources_discover_urls or None
-            sort_order = ""
+        stype = p.urls_source_type.value
+
+        # factory
+        if stype == UrlSourceTypeEnum.E_MANUAL_LIST.value:
+            source_value = p.urls_manual_list
+        elif stype == UrlSourceTypeEnum.E_FOLDER_RACS.value:
+            source_value = p.urls_folder_racs
+        elif stype == UrlSourceTypeEnum.E_FOLDER_JSONS.value:
+            source_value = p.urls_folder_jsons
+        elif stype == UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value:
+            source_value = p.urls_discover_entries
         else:
-            source_value = None
-            sort_order = ""
+            raise ValueError(f"Unknown URL source type: {stype!s}")
+
+        # result
         return WorkflowRunConfigModel(
-            url_source_type=stype,
-            url_source_value=source_value,
-            export_folder=p.export_folder,
-            url_sort_order=sort_order,
-            warmup_url=p.warmup_url.strip(),
+            urls_source_provider=source_value, export_folder=p.export_folder, warmup_url=p.warmup_url.strip()
         )
 
     def _build_run_handlers(self) -> WorkflowRunHandlers:

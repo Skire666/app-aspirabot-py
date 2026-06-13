@@ -11,7 +11,6 @@ Regression scope (replaces the former url_source_value single-field tests):
 from __future__ import annotations
 
 import pytest
-
 from models.launcher_model import LaunchModel
 
 # ---------------------------------------------------------------------------
@@ -29,7 +28,7 @@ _BASE_DATA: dict = {
     "id_scenario": "my_scenario",
     "profile_name": "Mon profil",
     "export_folder": "/tmp/export",
-    "url_source_type": "MANUAL",
+    "urls_source_type": "MANUAL_LIST",
     "emergency_stop_threshold": 5,
     "launch_count": 0,
     "used_date_profile": None,
@@ -52,7 +51,7 @@ class TestImportFromDataJsonFieldTypes:
         """url_sources_list_manual must be deserialized as list[str]."""
         data = _data(url_sources_list_manual=_URLS)
         model = LaunchModel.import_from_data_json(data)
-        assert isinstance(model.url_sources_list_manual, list), (
+        assert isinstance(model.manual_list.url_sources_list_manual, list), (
             "url_sources_list_manual doit être list après import"
         )
 
@@ -60,23 +59,23 @@ class TestImportFromDataJsonFieldTypes:
         """URL list content must be identical after deserialization."""
         data = _data(url_sources_list_manual=_URLS)
         model = LaunchModel.import_from_data_json(data)
-        assert model.url_sources_list_manual == _URLS
+        assert model.manual_list.url_sources_list_manual == _URLS
 
     def test_folder_shortcuts_remains_str(self) -> None:
         """url_sources_folder_shortcuts must be deserialized as str."""
         path = "/data/shortcuts"
-        data = _data(url_source_type="FOLDER", url_sources_folder_shortcuts=path)
+        data = _data(urls_source_type="FOLDER_RACS", url_sources_folder_shortcuts=path)
         model = LaunchModel.import_from_data_json(data)
-        assert isinstance(model.url_sources_folder_shortcuts, str)
-        assert model.url_sources_folder_shortcuts == path
+        assert isinstance(model.folder_racs.url_sources_folder_shortcuts, str)
+        assert model.folder_racs.url_sources_folder_shortcuts == path
 
     def test_folder_jsons_remains_str(self) -> None:
         """url_sources_folder_jsons must be deserialized as str."""
         path = "/data/jsons"
-        data = _data(url_source_type="JSON", url_sources_folder_jsons=path)
+        data = _data(urls_source_type="FOLDER_JSONS", url_sources_folder_jsons=path)
         model = LaunchModel.import_from_data_json(data)
-        assert isinstance(model.url_sources_folder_jsons, str)
-        assert model.url_sources_folder_jsons == path
+        assert isinstance(model.folder_jsons.url_sources_folder_jsons, str)
+        assert model.folder_jsons.url_sources_folder_jsons == path
 
 
 # ---------------------------------------------------------------------------
@@ -90,23 +89,23 @@ class TestRoundTripFields:
         data = _data(url_sources_list_manual=_URLS)
         original = LaunchModel.import_from_data_json(data)
         restored = LaunchModel.import_from_data_json(original.export_to_data_json())
-        assert restored.url_sources_list_manual == _URLS
+        assert restored.manual_list.url_sources_list_manual == _URLS
 
     def test_roundtrip_folder_shortcuts_is_lossless(self) -> None:
         """Round-trip must preserve url_sources_folder_shortcuts."""
         path = "/mnt/shortcuts"
-        data = _data(url_source_type="FOLDER", url_sources_folder_shortcuts=path)
+        data = _data(urls_source_type="FOLDER_RACS", url_sources_folder_shortcuts=path)
         original = LaunchModel.import_from_data_json(data)
         restored = LaunchModel.import_from_data_json(original.export_to_data_json())
-        assert restored.url_sources_folder_shortcuts == path
+        assert restored.folder_racs.url_sources_folder_shortcuts == path
 
     def test_roundtrip_folder_jsons_is_lossless(self) -> None:
         """Round-trip must preserve url_sources_folder_jsons."""
         path = "/mnt/jsons"
-        data = _data(url_source_type="JSON", url_sources_folder_jsons=path)
+        data = _data(urls_source_type="FOLDER_JSONS", url_sources_folder_jsons=path)
         original = LaunchModel.import_from_data_json(data)
         restored = LaunchModel.import_from_data_json(original.export_to_data_json())
-        assert restored.url_sources_folder_jsons == path
+        assert restored.folder_jsons.url_sources_folder_jsons == path
 
 
 # ---------------------------------------------------------------------------
@@ -118,17 +117,17 @@ class TestMissingFieldDefaults:
     def test_missing_list_manual_defaults_to_empty_list(self) -> None:
         """Absent url_sources_list_manual must default to [], not raise."""
         model = LaunchModel.import_from_data_json(_data())
-        assert model.url_sources_list_manual == []
+        assert model.manual_list.url_sources_list_manual == []
 
     def test_missing_folder_shortcuts_defaults_to_empty_str(self) -> None:
         """Absent url_sources_folder_shortcuts must default to ''."""
         model = LaunchModel.import_from_data_json(_data())
-        assert model.url_sources_folder_shortcuts == ""
+        assert model.folder_racs.url_sources_folder_shortcuts == ""
 
     def test_missing_folder_jsons_defaults_to_empty_str(self) -> None:
         """Absent url_sources_folder_jsons must default to ''."""
         model = LaunchModel.import_from_data_json(_data())
-        assert model.url_sources_folder_jsons == ""
+        assert model.folder_jsons.url_sources_folder_jsons == ""
 
 
 # ---------------------------------------------------------------------------
@@ -138,20 +137,13 @@ class TestMissingFieldDefaults:
 
 @pytest.mark.parametrize(
     "shortcuts_order, jsons_order",
-    [
-        ("mtime_asc", "mtime_desc"),
-        ("mtime_desc", "mtime_asc"),
-        ("", ""),
-    ],
+    [("mtime_asc", "mtime_desc"), ("mtime_desc", "mtime_asc"), ("", "")],
     ids=["asc-desc", "desc-asc", "empty-both"],
 )
 def test_sort_order_fields_round_trip(shortcuts_order: str, jsons_order: str) -> None:
     """Both sort order fields must survive a round-trip unchanged."""
-    data = _data(
-        url_sort_order_shortcuts=shortcuts_order,
-        url_sort_order_jsons=jsons_order,
-    )
+    data = _data(url_sort_order_shortcuts=shortcuts_order, url_sort_order_jsons=jsons_order)
     original = LaunchModel.import_from_data_json(data)
     restored = LaunchModel.import_from_data_json(original.export_to_data_json())
-    assert restored.url_sort_order_shortcuts == shortcuts_order
-    assert restored.url_sort_order_jsons == jsons_order
+    assert restored.folder_racs.url_sort_order_shortcuts == shortcuts_order
+    assert restored.folder_jsons.url_sort_order_jsons == jsons_order

@@ -61,8 +61,11 @@ C_EXEC_SAVE_ERROR = "La sauvegarde du profil a échoué. Vos modifications n'ont
 
 # Discover panel — validation and status messages
 C_DISCOVER_NO_ENTRIES_IN = "Veuillez ajouter au moins une entrée [IN] dans le tableau."
+C_DISCOVER_NO_ENTRIES_OUT = "Veuillez alimenter la sortie [OUT]."
 C_DISCOVER_NO_URLS_COMPUTED = "Aucune nouvelle URL trouvée. Cliquez sur 'Calculer la liste' d'abord."
-C_DISCOVER_COMPUTE_SUCCESS = "Succès : {new} nouvelle(s) URL(s) | IN : {total_in} unique(s) | OUT : {total_out} unique(s)"
+C_DISCOVER_COMPUTE_SUCCESS = (
+    "Succès : {new} nouvelle(s) URL(s) | IN : {total_in} unique(s) | OUT : {total_out} unique(s)"
+)
 C_DISCOVER_COMPUTE_ERROR = "Erreur lors du calcul : {exc}"
 C_DISCOVER_DELETE_CONFIRM_TITLE = "Confirmer la suppression"
 C_DISCOVER_DELETE_CONFIRM_MSG = "Supprimer cette entrée [IN] ?"
