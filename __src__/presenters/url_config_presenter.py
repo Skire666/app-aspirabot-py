@@ -10,11 +10,13 @@ Called by ExecutorPresenter when a profile is loaded or any URL-source field cha
 
 import logging
 
+from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.launcher_model import LaunchModel
 from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.urls_discover_item_model import UrlsDiscoverItemModel
+from models.urls_folder_racs_model import UrlsFolderRacsModel
 from services.url_sources.urls_discover_entries_service import UrlsDiscoverEntriesService
-from services.url_sources.urls_source_factory import build_urls_source
+from services.url_sources.urls_folder_racs_service import UrlsFolderRacsService
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
@@ -25,9 +27,8 @@ from shared.i18n_fra import (
 )
 from view_models.executor_view_model import DiscoverRowState, ExecutorViewModel
 
-from __src__.interfaces.i_url_source_provider import IUrlSourceProvider
-from __src__.models.urls_folder_racs_model import UrlsFolderRacsModel
-from __src__.services.url_sources.urls_folder_racs_service import UrlsFolderRacsService
+from __src__.models.urls_folder_jsons_model import UrlsFolderJsonsModel
+from __src__.services.url_sources.urls_folder_jsons_service import UrlsFolderJsonsService
 
 # -----------------------------------------------------------------------------
 # Class
@@ -82,6 +83,7 @@ class UrlConfigPresenter:
     def refresh_preview_from_vm(self) -> None:
         """Build URL previews from the live VM state and push them to the VM."""
         stype = self._vm.urls_source_type_var.get()
+        print(f"refresh_preview_from_vm: stype={stype}")
         if stype == UrlSourceTypeEnum.E_FOLDER_RACS.value:
             self._update_url_preview_shortcuts(
                 self._vm.urls_path_folder_racs_var.get().strip(), self._vm.url_sort_order_shortcuts_var.get()
@@ -112,17 +114,13 @@ class UrlConfigPresenter:
         model = next((m for m in self._discover_entries.inputs if m.id_discover == id_discover), None)
         if model is None:
             return
-        with self._vm.batch_update():
-            self._vm.disc_in_folder_var.set(model.folder_json)
-            self._vm.disc_in_pattern_json_var.set(model.pattern_json)
-            self._vm.disc_in_key_mapping_var.set(model.key_mapping)
-            self._vm.disc_in_pattern_urls_var.set(model.pattern_urls)
         # Signal edit mode — this triggers the derived can_create/can_modify recompute.
         self._vm.selected_discover_id_var.set(id_discover)
 
     def _on_compute_discovers(self) -> None:
         """Run the discovery computation and push the result to the VM."""
         hub = self._build_hub_from_vm()
+        print(f"_on_compute_discovers: building hub from {len(hub.inputs)} IN rows")
         if not hub.inputs:
             self._vm.discover_compute_message_var.set(C_DISCOVER_NO_ENTRIES_IN)
             return
@@ -156,7 +154,6 @@ class UrlConfigPresenter:
         self._discover_entries = hub
         self._push_discovers_in_rows()
         self._load_out_form(hub.output)
-        self._clear_in_form()
         self._vm.selected_discover_id_var.set("")
         self._vm.discover_compute_message_var.set("")
 
@@ -173,24 +170,6 @@ class UrlConfigPresenter:
             for m in self._discover_entries.inputs
         ]
         self._vm.set_discovers_in_rows(rows)
-
-    def _build_discover_from_in_form(self, id_discover: str = "") -> UrlsDiscoverItemModel:
-        """Build a DiscoverModel from the current VM IN form Vars.
-
-        Args:
-            id_discover: If provided, reuses this identifier; otherwise generates a new one.
-
-        Returns:
-            A DiscoverModel populated with the current form values.
-        """
-        model = UrlsDiscoverItemModel.get_default()
-        if id_discover:
-            model.id_discover = id_discover
-        model.folder_json = self._vm.disc_in_folder_var.get().strip()
-        model.pattern_json = self._vm.disc_in_pattern_json_var.get().strip()
-        model.key_mapping = self._vm.disc_in_key_mapping_var.get().strip()
-        model.pattern_urls = self._vm.disc_in_pattern_urls_var.get().strip()
-        return model
 
     def _build_discover_from_out_form(self) -> UrlsDiscoverItemModel:
         """Build a DiscoverModel from the current VM OUT form Vars.
@@ -211,6 +190,7 @@ class UrlConfigPresenter:
         Returns:
             A fresh DiscoversHubModel reflecting the current UI state.
         """
+        print(f"_build_hub_from_vm: building hub from {len(self._vm.get_discovers_in_rows())} IN rows")
         out_model = self._build_discover_from_out_form()
         inputs = [
             UrlsDiscoverItemModel(
@@ -223,14 +203,6 @@ class UrlConfigPresenter:
             for r in self._vm.get_discovers_in_rows()
         ]
         return UrlsDiscoverEntriesModel(inputs=inputs, output=out_model)
-
-    def _clear_in_form(self) -> None:
-        """Reset the IN form Vars to empty/default values."""
-        with self._vm.batch_update():
-            self._vm.disc_in_folder_var.set("")
-            self._vm.disc_in_pattern_json_var.set("export*.json")
-            self._vm.disc_in_key_mapping_var.set("key_xxx")
-            self._vm.disc_in_pattern_urls_var.set("https*")
 
     def _load_out_form(self, model: UrlsDiscoverItemModel | None) -> None:
         """Populate the OUT form Vars from a DiscoverModel.
@@ -248,39 +220,40 @@ class UrlConfigPresenter:
     # Private helpers — URL preview (shortcuts / jsons)
     # ------------------------------------------------------------------
 
-    def _update_url_preview_shortcuts(self, path: str, sort_str: str) -> None:
+    def _update_url_preview_shortcuts(self, path_racs: str, sort_str: str) -> None:
         """Fetch shortcuts-folder preview URLs and push them to the VM.
 
         Args:
-            path: Folder path containing .url shortcut files.
+            path_racs: Folder path containing .url shortcut files.
             sort_str: Raw sort-order string.
         """
-        if not path:
+        print(f"_update_url_preview_shortcuts: path_racs={path_racs}, sort_str={sort_str}")
+        if not path_racs:
             self._vm.set_url_preview_shortcuts([])
             return
         try:
             sort = self._parse_sort_order(sort_str)
-            source = UrlsFolderRacsModel()
-            # source = UrlsFolderRacsModel(folder_racs=path, orders_racs=sort.value)
+            source = UrlsFolderRacsModel(folder_racs=path_racs, orders_racs=sort.value)
             provider: IUrlSourceProvider = UrlsFolderRacsService(source)
             self._vm.set_url_preview_shortcuts(provider.preview_url_listed())
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la prévisualisation des URLs (shortcuts)")
             self._vm.set_url_preview_shortcuts([])
 
-    def _update_url_preview_jsons(self, path: str, sort_str: str) -> None:
+    def _update_url_preview_jsons(self, path_jsons: str, sort_str: str) -> None:
         """Fetch json-folder preview URLs and push them to the VM.
 
         Args:
-            path: Folder path containing .json files.
+            path_jsons: Folder path containing .json files.
             sort_str: Raw sort-order string.
         """
-        if not path:
+        if not path_jsons:
             self._vm.set_url_preview_jsons([])
             return
         try:
             sort = self._parse_sort_order(sort_str)
-            provider: IUrlSourceProvider = build_urls_source(UrlSourceTypeEnum.E_FOLDER_JSONS.value, path, sort)
+            source = UrlsFolderJsonsModel(path_jsons, sort.value)
+            provider: IUrlSourceProvider = UrlsFolderJsonsService(source)
             self._vm.set_url_preview_jsons(provider.preview_url_listed())
         except AspirabotBaseError:
             self._logger.exception("Erreur lors de la prévisualisation des URLs (jsons)")

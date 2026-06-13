@@ -470,6 +470,7 @@ class ExecutorPresenter:
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)
+        print(f"_on_form_changed: profile {self._current_profile.id_profile if self._current_profile else 'None'}")
         self._url_config_presenter.refresh_preview_from_vm()
 
     def _set_dirty(self, value: bool) -> None:

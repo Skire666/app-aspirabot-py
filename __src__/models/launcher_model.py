@@ -121,11 +121,13 @@ class LaunchModel:
             id_scenario=str(data.get("id_scenario") or ""),
             profile_name=str(data.get("profile_name") or ""),
             export_folder=str(data.get("export_folder") or ""),
-            urls_source_type=UrlSourceTypeEnum(data.get("urls_source_type")),
+            urls_source_type=UrlSourceTypeEnum(data.get("urls_source_type", UrlSourceTypeEnum.E_MANUAL_LIST)),
             urls_manual_list=UrlsManualListModel.import_from_data_json(data),
             urls_folder_racs=UrlsFolderRacsModel.import_from_data_json(data),
             urls_folder_jsons=UrlsFolderJsonsModel.import_from_data_json(data),
-            urls_discover_entries=UrlsDiscoverEntriesModel.import_from_data_json(data),
+            urls_discover_entries=UrlsDiscoverEntriesModel.import_from_data_json(
+                data.get("urls_discover_entries") or {}
+            ),
             emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
             launch_count=int(data.get("launch_count", 0)),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
@@ -158,7 +160,7 @@ class LaunchModel:
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
             "warmup_url": self.warmup_url,
-            "discovers_hub": self.urls_discover_entries.export_to_data_json(),
+            "urls_discover_entries": self.urls_discover_entries.export_to_data_json(),
         }
 
     @classmethod

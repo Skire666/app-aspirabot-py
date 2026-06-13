@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
+from shared.enums import UrlSourceTypeEnum
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -37,6 +38,15 @@ class UrlsFolderRacsModel(IUrlsSourceModel):
         """
         self.folder_racs = folder_racs
         self.orders_racs = orders_racs
+
+    @classmethod
+    def get_type_source(cls) -> UrlSourceTypeEnum:
+        """Return the type of the URL source.
+
+        Returns:
+            The type of the URL source.
+        """
+        return UrlSourceTypeEnum.E_FOLDER_RACS
 
     @classmethod
     def get_default(cls) -> UrlsFolderRacsModel:

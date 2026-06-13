@@ -145,11 +145,6 @@ class ExecutorViewModel(ViewModelBase):
         self.urls_path_folder_jsons_var = tk.StringVar(master=master, value="")
         self.url_sort_order_shortcuts_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
-        # Discover mode — IN form fields.
-        self.disc_in_folder_var = tk.StringVar(master=master, value="")
-        self.disc_in_pattern_json_var = tk.StringVar(master=master, value="export*.json")
-        self.disc_in_key_mapping_var = tk.StringVar(master=master, value="key_xxx")
-        self.disc_in_pattern_urls_var = tk.StringVar(master=master, value="https*")
         # Discover mode — OUT form fields.
         self.disc_out_pattern_json_var = tk.StringVar(master=master, value="export*.json")
         self.disc_out_key_mapping_var = tk.StringVar(master=master, value="key_xxx")
@@ -816,15 +811,6 @@ class ExecutorViewModel(ViewModelBase):
         if self._on_compute_discovers is None:
             raise CallbackNotDefinedError()
         self._on_compute_discovers()
-
-    def prepare_new_discover(self) -> None:
-        """Reset the IN form to create-mode (clear fields, deselect any row)."""
-        with self.batch_update():
-            self.selected_discover_id_var.set("")
-            self.disc_in_folder_var.set("")
-            self.disc_in_pattern_json_var.set("export*.json")
-            self.disc_in_key_mapping_var.set("key_xxx")
-            self.disc_in_pattern_urls_var.set("https*")
 
 
 # EOF

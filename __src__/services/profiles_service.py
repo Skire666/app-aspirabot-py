@@ -139,19 +139,17 @@ class ProfilesService:
         Raises:
             DatabaseUnavailableError: If the file cannot be written to disk.
         """
-        new_profile_launch = LaunchModel.get_default(id_scenario)
-        new_profile_launch.profile_name = profile_name
-
         if self._repository.exists_scenarios(id_scenario):
+            new_profile_launch = LaunchModel.get_default(id_scenario)
+            new_profile_launch.profile_name = profile_name
             found = self._repository.read_profiles(id_scenario)
             found.create_profile_launch(new_profile_launch)
             self._repository.update_profiles(found)
             return new_profile_launch
 
         new_scenario = ProfilesModel.get_default(id_scenario=id_scenario)
-        new_scenario.create_profile_launch(new_profile_launch)
         self._repository.create_profiles(new_scenario)
-        return new_profile_launch
+        return new_scenario.get_most_recently_used_profile()  # pyright: ignore[reportReturnType]
 
     def update_profiles_launch_url_only(self, id_scenario: str, profile: LaunchModel) -> LaunchModel:
         """Stamp timestamps on *profile* and persist it as a new launch profile.

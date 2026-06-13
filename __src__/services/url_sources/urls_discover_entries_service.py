@@ -37,11 +37,9 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
 
     def __init__(self, source: UrlsDiscoverEntriesModel) -> None:
         """Initialise the logger."""
-        assert source.output is not None, "OUT DiscoverModel must be provided"
-
         self._logger = logging.getLogger(__name__)
-        self.payloads_inputs: list[UrlsDiscoverItemModel] = source.inputs
-        self.payloads_target: UrlsDiscoverItemModel = source.output
+        self.payloads_inputs: list[UrlsDiscoverItemModel] | None = source.inputs
+        self.payloads_target: UrlsDiscoverItemModel | None = source.output
 
         # results compute
         self.input_total_count: int = 0
@@ -110,6 +108,8 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
     def reset(self) -> None:
         """Rewind to the first new URL; the discovered set is preserved."""
         self.last_length_compute = -1
+        if self.payloads_inputs is None or self.payloads_target is None:
+            raise ValueError("Both input and output sources must be set before resetting.")
         self.update_sources_and_compute(self.payloads_inputs, self.payloads_target)
 
     def get_progress_text(self) -> str:
@@ -141,6 +141,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             DiscoverFolderNotFoundError: If any configured folder does not exist.
             DiscoverComputeError: If an unrecoverable error occurs during computation.
         """
+        assert self.payloads_inputs is not None, "IN DiscoverModel(s) must be provided"
         self._logger.info("Calcul de découverte démarré (%d source(s) IN)", len(self.payloads_inputs))
 
         # --- Collect IN URLs ---
@@ -173,6 +174,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
     # ------------------------------------------------------------------
 
     def _collect_input_entries(self) -> None:
+        assert self.payloads_inputs is not None, "IN DiscoverModel(s) must be provided"
         self.input_entries = {}
         self.input_total_count = 0
         for discover in self.payloads_inputs:
@@ -191,6 +193,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         )
 
     def _collect_output_entries(self) -> None:
+        assert self.payloads_target is not None, "OUT DiscoverModel must be provided"
         self.output_entries = {}
         self.output_total_count = 0
         try:

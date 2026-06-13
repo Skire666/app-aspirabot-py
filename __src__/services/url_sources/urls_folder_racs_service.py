@@ -127,6 +127,9 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         Raises:
             None.
         """
+        print(
+            f"preview_url_listed: called, _index={self._index}, _buffered={self._buffered}, _file_paths={self._file_paths}"
+        )
         try:
             self._ensure_discovered()
         except UrlSourceFileNotFoundError:
@@ -135,6 +138,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         if self._file_paths is None:
             return []
 
+        print(f"preview_url_listed: _file_paths discovered, count={len(self._file_paths)}")
         result: list[str] = []
 
         if self._buffered is not _SENTINEL:
@@ -147,6 +151,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
             if url:
                 result.append(url)
 
+        print(f"preview_url_listed: returning {len(result)} URLs (limit {_PREVIEW_LIMIT})")
         return result
 
     def get_progress_text(self) -> str:
