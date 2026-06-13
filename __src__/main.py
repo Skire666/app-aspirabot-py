@@ -4,11 +4,9 @@
 # Imports
 # -----------------------------------------------------------------------------
 
-import contextlib
 import logging
 import tkinter as tk
 import traceback
-from tkinter import ttk
 
 import models.steps  # noqa: F401 - load registry entries
 import presenters.steps  # noqa: F401 - load registry entries (params builders)
@@ -43,6 +41,7 @@ from services.startup_service import StartupService
 from services.workflow_service import WorkflowService
 
 # Bootstrap: import all step packages to populate the central registry.
+from shared.app_global_state import app_state
 from shared.constants import C_APP_CONFIG_FILE
 from shared.enums import TitleModuleEnum
 from shared.path_util import get_current_working_directory
@@ -103,31 +102,6 @@ def main() -> None:
 # -----------------------------------------------------------------------------
 # Main application wiring
 # -----------------------------------------------------------------------------
-
-
-def _override_gui_and_style(root: tk.Tk, config_model: AppConfigurationModel) -> None:
-    """Apply window title, geometry, fullscreen state, and global widget style.
-
-    Args:
-        root: The root Tk window to configure.
-        config_model: Configuration model supplying sizing and style preferences.
-    """
-    root.title("Aspirabot")
-
-    position = config_model.gui_booting_position
-    if position:
-        try:
-            x, y = position.split(",", 1)
-            root.geometry(f"{config_model.gui_booting_size}+{int(x)}+{int(y)}")
-        except Exception:
-            root.geometry(config_model.gui_booting_size)
-    else:
-        root.geometry(config_model.gui_booting_size)
-
-    if config_model.gui_booting_fullscreen:
-        root.after(15, lambda: root.state("zoomed"))
-
-    ttk.Style().configure("TButton", padding=(5, 5))
 
 
 def _wire_all_navigation(
@@ -211,65 +185,15 @@ def _assemble_components(  # noqa: PLR0914
     return views, presenters
 
 
-_C_GEO_SPLIT_PARTS = 3  # "WxH+X+Y".split("+") must yield exactly 3 parts
-
-
-def _wire_geometry_persistence(root: tk.Tk, config_repo: AppConfigurationRepository) -> None:  # noqa: C901
-    """Poll window geometry every 200 ms and persist it debounced (500 ms).
-
-    Uses polling rather than <Configure> binding, which is unreliable for
-    move events on Windows multi-monitor setups. geometry() always returns
-    virtual-desktop coordinates, so the saved position is screen-global.
-    """
-    logger = logging.getLogger(__name__)
-    _pending: list[str | None] = [None]
-    last_geo: list[str] = [""]
-
-    def _save() -> None:
-        _pending[0] = None
-        try:
-            state_rt = root.state()
-            if state_rt in {"iconic", "withdrawn"}:
-                return
-            parts = root.geometry().split("+")  # "WxH+X+Y" → ["WxH", "X", "Y"]
-            if len(parts) != _C_GEO_SPLIT_PARTS:
-                return
-            config = config_repo.read_configuration()
-            config.gui_booting_size = parts[0]
-            config.gui_booting_position = f"{parts[1]},{parts[2]}"
-            config.gui_booting_fullscreen = state_rt == "zoomed"
-            config_repo.write_configuration(config)
-        except tk.TclError:
-            pass
-        except Exception:
-            logger.exception("Erreur lors de la sauvegarde de la géométrie")
-
-    def _poll() -> None:
-        try:
-            if root.state() not in {"iconic", "withdrawn"}:
-                geo = root.geometry()
-                if geo != last_geo[0]:  # only trigger save if geometry changed since last poll
-                    last_geo[0] = geo
-                    if _pending[0] is not None:  # already a save pending — reset the timer to debounce
-                        with contextlib.suppress(tk.TclError):
-                            root.after_cancel(_pending[0])
-                    _pending[0] = root.after(400, _save)
-        except tk.TclError:
-            return  # fenêtre en cours de destruction — arrêt du poll
-        root.after(200, _poll)
-
-    root.after(200, _poll)
-    root._force_save_geometry = _save  # type: ignore[attr-defined]
-
-
 def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, startup_service: StartupService) -> None:
     """Configure and reveal the main window after startup succeeds."""
     try:
-        _override_gui_and_style(root, startup_service.config_model)
         main_view = _build_main_view(root)
+        app_state.setup(root, main_view.show_view, main_view.set_tab_state)
+        app_state.override_gui_and_style(startup_service.config_model)
         views, presenters = _assemble_components(main_view, config_repo, startup_service)
         root.deiconify()
-        _wire_geometry_persistence(root, config_repo)
+        app_state.wire_geometry_persistence(config_repo)
         _register_and_anchor(root, main_view, views, presenters)
     except Exception:
         traceback.print_exc()
@@ -521,54 +445,20 @@ def _wire_scenario_navigation(
 
     def on_request_create_scenario() -> None:
         workflow_presenter.create_new()
-        _open_workflow_tab(main_view)
+        app_state.open_workflow_tab()
 
     def on_request_edit_scenario(id_file: str) -> None:
         if workflow_presenter.load_scenario(id_file):
-            _open_workflow_tab(main_view)
+            app_state.open_workflow_tab()
 
     def on_edit_done() -> None:
         scenario_presenter.ensure_profiles_loaded()
-        _close_workflow_tab(main_view)
+        app_state.close_workflow_tab()
 
     scenario_presenter.on_request_create_scenario = on_request_create_scenario
     scenario_presenter.on_request_edit_scenario = on_request_edit_scenario
     workflow_presenter.set_on_done_callback(on_edit_done)
     main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
-
-
-def _open_workflow_tab(main_view: MainView) -> None:
-    """Enable the workflow tab and disable sibling tabs.
-
-    Args:
-        main_view: Navigation shell managing tab visibility.
-    """
-    main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.NORMAL)
-    for mod in (
-        TitleModuleEnum.E_SCENARIOS,
-        TitleModuleEnum.E_PROFILES,
-        TitleModuleEnum.E_EXECUTOR,
-        TitleModuleEnum.E_SCRAPING,
-    ):
-        main_view.set_tab_state(mod, tk.DISABLED)
-    main_view.show_view(TitleModuleEnum.E_WORKFLOW)
-
-
-def _close_workflow_tab(main_view: MainView) -> None:
-    """Disable the workflow tab and re-enable sibling tabs.
-
-    Args:
-        main_view: Navigation shell managing tab visibility.
-    """
-    main_view.set_tab_state(TitleModuleEnum.E_WORKFLOW, tk.DISABLED)
-    for mod in (
-        TitleModuleEnum.E_SCENARIOS,
-        TitleModuleEnum.E_PROFILES,
-        TitleModuleEnum.E_EXECUTOR,
-        TitleModuleEnum.E_SCRAPING,
-    ):
-        main_view.set_tab_state(mod, tk.NORMAL)
-    main_view.show_view(TitleModuleEnum.E_SCENARIOS)
 
 
 def _wire_scraping_navigation(

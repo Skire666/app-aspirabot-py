@@ -14,7 +14,7 @@ from shared.constants import (
     C_COLOR_BLACK_FONT,
     C_COLOR_BLUE_HIGHLIGHT_DARK,
     C_COLOR_BLUE_HIGHLIGHT_LIGHT,
-    C_COLOR_GRAY_SEPARATOR,
+    C_COLOR_GRAY_SEPARATOR_ON_GRAY,
 )
 
 # ── Layout ────────────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ COL_HOV_BG: str = C_COLOR_BLUE_HIGHLIGHT_LIGHT
 COL_SEL_BG: str = C_COLOR_BLUE_HIGHLIGHT_DARK
 COL_FG: str = C_COLOR_BLACK_FONT
 COL_SEL_FG: str = "#ffffff"
-COL_BORDER: str = C_COLOR_GRAY_SEPARATOR
+COL_BORDER: str = C_COLOR_GRAY_SEPARATOR_ON_GRAY
 
 # ── Button ────────────────────────────────────────────────────────────────────
 

@@ -46,9 +46,9 @@ class FolderLinkWidget(tk.Frame):
 
         self._link = tk.Label(self, text=self._path or "--")
         if title.strip():
-            self._link.pack(side="left", padx=(4, 0))
+            self._link.pack(side="left", padx=(4, 0), pady=4)
         else:
-            self._link.pack(side="left")
+            self._link.pack(side="left", pady=4)
 
         self._apply_style()
         self._bind_events()

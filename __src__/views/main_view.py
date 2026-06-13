@@ -8,12 +8,8 @@ import tkinter as tk
 from collections.abc import Callable
 from tkinter import ttk
 
-from shared.constants import (
-    C_COLOR_GRAY_SEPARATOR,
-)
-from shared.i18n_fra import (
-    TitleModuleEnum,
-)
+from shared.constants import C_COLOR_GRAY_SEPARATOR_ON_GRAY
+from shared.i18n_fra import TitleModuleEnum
 from views.side_bar_view import SideBarView
 
 # -----------------------------------------------------------------------------
@@ -45,11 +41,11 @@ class MainView(ttk.Frame):
         self.sidebar_view.pack(side=tk.LEFT, fill=tk.Y)
 
         # Thin vertical line separating the sidebar from the content area
-        separator = tk.Frame(self, width=1, bg=C_COLOR_GRAY_SEPARATOR)
-        separator.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5))
+        separator = tk.Frame(self, width=1, bg=C_COLOR_GRAY_SEPARATOR_ON_GRAY)
+        separator.pack(side=tk.LEFT, fill=tk.Y)
 
         self.content_area = ttk.Frame(self)
-        self.content_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5), pady=(0, 5))
+        self.content_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10)
 
     def add_view(self, module: TitleModuleEnum, view_widget: tk.Widget) -> None:
         """Registers a view corresponding to a sidebar module button.

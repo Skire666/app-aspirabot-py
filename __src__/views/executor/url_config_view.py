@@ -10,6 +10,7 @@ from collections.abc import Callable
 from tkinter import filedialog, ttk
 from typing import Any
 
+from shared.app_global_state import MyButton, MyEntry, MyLabel
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
@@ -73,7 +74,7 @@ class UrlConfigView(ttk.Frame):
     def _create_radio_bar(self, parent: tk.Widget) -> None:
         """Four radio buttons sharing _panel_var — one per content panel."""
         bar = ttk.Frame(parent)
-        bar.pack(fill=tk.X, padx=4, pady=6)
+        bar.pack(fill=tk.X)
         self._radio_buttons: list[ttk.Radiobutton] = []
         entries = [
             ("Entrée manuelle", UrlSourceTypeEnum.E_MANUAL.value),
@@ -81,12 +82,12 @@ class UrlConfigView(ttk.Frame):
             ("Dossier avec JSON", UrlSourceTypeEnum.E_JSON.value),
             ("Lire les nouveautés", UrlSourceTypeEnum.E_DISCOVER.value),
         ]
-        tk.Label(bar, text="Source :").pack(side=tk.LEFT, padx=(0, 10))
+        MyLabel(bar, text="Source :").pack_left()
         for label, value in entries:
             rb = ttk.Radiobutton(
                 bar, text=label, variable=self._panel_var, value=value, command=self._on_panel_var_changed
             )
-            rb.pack(side=tk.LEFT, padx=(0, 14))
+            rb.pack(side=tk.LEFT, padx=(0, 15))
             self._radio_buttons.append(rb)
 
     # ─── Panel 1 : Liste manuelle ─────────────────────────────────────────────
@@ -97,15 +98,15 @@ class UrlConfigView(ttk.Frame):
 
         # Stats row — packed first so it claims its space before expand kicks in.
         stats = ttk.Frame(self._panel_manual)
-        stats.pack(side=tk.BOTTOM, fill=tk.X, pady=6)
-        ttk.Label(stats, text="Nombre total d'URLs :").pack(side=tk.LEFT, padx=(5, 8))
-        ttk.Label(stats, textvariable=self._vm.url_total_count_manual_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Uniques :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_manual_unique_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Doublons :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_manual_dupplicate_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Lignes vides :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_manual_empty_var).pack(side=tk.LEFT)
+        stats.pack(side=tk.BOTTOM, fill=tk.X)
+        MyLabel(stats, text="Nombre total d'URLs :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_total_count_manual_var, width=10).pack_left()
+        MyLabel(stats, text="Uniques :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_manual_unique_var, width=10).pack_left()
+        MyLabel(stats, text="Doublons :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_manual_dupplicate_var, width=10).pack_left()
+        MyLabel(stats, text="Lignes vides :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_manual_empty_var, width=10).pack_left()
 
         # Text area fills the remaining space above the stats row.
         inner = ttk.Frame(self._panel_manual)
@@ -115,7 +116,7 @@ class UrlConfigView(ttk.Frame):
         scrollbar = ttk.Scrollbar(inner, orient=tk.VERTICAL, command=self._txt_url_manual.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_manual.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_manual.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=6, pady=(0, 5))
+        self._txt_url_manual.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=6)
         self._txt_url_manual.bind("<<Modified>>", self._on_manual_text_modified)
 
     # ─── Panel 2 : Dossier avec URL ──────────────────────────────────────────
@@ -136,16 +137,14 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Chemin :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        MyLabel(row, text="Chemin :").pack_left()
         self._view_traces.append(
             (
                 self._vm.url_source_path_shortcuts_var,
                 self._vm.url_source_path_shortcuts_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Entry(row, textvariable=self._vm.url_source_path_shortcuts_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
-        )
+        MyEntry(row, textvariable=self._vm.url_source_path_shortcuts_var).pack_left(fill=tk.X, expand=True)
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_folder).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
@@ -169,7 +168,7 @@ class UrlConfigView(ttk.Frame):
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_shortcuts.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_shortcuts.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=6)
+        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=6)
 
     def _create_folder_stats_row(self, parent: tk.Widget) -> None:
         """Stats row (total / unique / duplicates / empty) for the FOLDER source panel.
@@ -179,14 +178,14 @@ class UrlConfigView(ttk.Frame):
         """
         stats = ttk.Frame(parent)
         stats.pack(side=tk.BOTTOM, fill=tk.X, pady=6)
-        ttk.Label(stats, text="Nombre total d'URLs :").pack(side=tk.LEFT, padx=(5, 8))
-        ttk.Label(stats, textvariable=self._vm.url_total_count_shortcuts_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Uniques :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_shortcuts_unique_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Doublons :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_shortcuts_duplicate_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Lignes vides :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_shortcuts_empty_var).pack(side=tk.LEFT)
+        MyLabel(stats, text="Nombre total d'URLs :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_total_count_shortcuts_var, width=10).pack_left()
+        MyLabel(stats, text="Uniques :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_shortcuts_unique_var, width=10).pack_left()
+        MyLabel(stats, text="Doublons :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_shortcuts_duplicate_var, width=10).pack_left()
+        MyLabel(stats, text="Lignes vides :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_shortcuts_empty_var, width=10).pack_left()
 
     def _create_folder_sort_row(self, parent: tk.Widget) -> None:
         """Sort-order RadioButtons row for the FOLDER source panel.
@@ -196,7 +195,7 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
         ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -214,10 +213,10 @@ class UrlConfigView(ttk.Frame):
 
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(
+        MyLabel(
             row,
             text="[IMPORTANT] - La date de modification est actualisée après chaque appel à OpenURL... (dès l'ouverture)",
-        ).pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        ).pack_left()
 
     # ─── Panel 3 : Dossier avec JSON ─────────────────────────────────────────
 
@@ -270,7 +269,7 @@ class UrlConfigView(ttk.Frame):
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_jsons.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_jsons.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=6)
+        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=6)
 
     def _create_json_stats_row(self, parent: tk.Widget) -> None:
         """Stats row (total / unique / duplicates / empty) for the JSON source panel.
@@ -280,14 +279,14 @@ class UrlConfigView(ttk.Frame):
         """
         stats = ttk.Frame(parent)
         stats.pack(side=tk.BOTTOM, fill=tk.X, pady=6)
-        ttk.Label(stats, text="Nombre total d'URLs :").pack(side=tk.LEFT, padx=(5, 8))
-        ttk.Label(stats, textvariable=self._vm.url_total_count_jsons_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Uniques :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_jsons_unique_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Doublons :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_jsons_duplicate_var).pack(side=tk.LEFT, padx=(0, 50))
-        ttk.Label(stats, text="Lignes vides :").pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(stats, textvariable=self._vm.url_count_jsons_empty_var).pack(side=tk.LEFT)
+        MyLabel(stats, text="Nombre total d'URLs :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_total_count_jsons_var, width=10).pack_left()
+        MyLabel(stats, text="Uniques :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_jsons_unique_var, width=10).pack_left()
+        MyLabel(stats, text="Doublons :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_jsons_duplicate_var, width=10).pack_left()
+        MyLabel(stats, text="Lignes vides :").pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_jsons_empty_var, width=10).pack_left()
 
     def _create_json_sort_row(self, parent: tk.Widget) -> None:
         """Sort-order RadioButtons row for the JSON source panel.
@@ -297,7 +296,7 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Ordre de lecture :", width=15).pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
         ttk.Radiobutton(
             row,
             text="Lire récemment modifié",
@@ -347,7 +346,7 @@ class UrlConfigView(ttk.Frame):
             on_change=self._on_discover_table_change,
         )
         self._grid_discover = EditableTable(parent, config=config)
-        self._grid_discover.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        self._grid_discover.pack(fill=tk.BOTH, expand=True)
 
     def _create_discover_out_section(self, parent: tk.Widget) -> None:
         """[OUT] form with 4 fields (reference — already-processed URLs).
@@ -356,13 +355,19 @@ class UrlConfigView(ttk.Frame):
             parent: The DISCOVER panel frame to attach widgets to.
         """
         frame = tk.Frame(parent)
-        frame.pack(side=tk.BOTTOM, fill=tk.X, padx=4, pady=(2, 2))
-        ttk.Label(frame, text="Fichiers de sorties :").pack(side=tk.LEFT, padx=(0, 2))
-        ttk.Entry(frame, textvariable=self._vm.disc_out_pattern_json_var, width=25).pack(side=tk.LEFT, padx=(0, 25))
-        ttk.Label(frame, text="Clé (Niv. 1) :").pack(side=tk.LEFT, padx=(0, 2))
-        ttk.Entry(frame, textvariable=self._vm.disc_out_key_mapping_var, width=15).pack(side=tk.LEFT, padx=(0, 25))
-        ttk.Label(frame, text="URLs (regexp) :").pack(side=tk.LEFT, padx=(0, 2))
-        ttk.Entry(frame, textvariable=self._vm.disc_out_pattern_urls_var, width=15).pack(side=tk.LEFT)
+        frame.pack(side=tk.BOTTOM, fill=tk.X)
+        for var in (
+            self._vm.disc_out_pattern_json_var,
+            self._vm.disc_out_key_mapping_var,
+            self._vm.disc_out_pattern_urls_var,
+        ):
+            self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
+        MyLabel(frame, text="Fichiers de sorties :").pack_left()
+        MyEntry(frame, textvariable=self._vm.disc_out_pattern_json_var, width=25).pack_left()
+        MyLabel(frame, text="Clé (Niv. 1) :").pack_left()
+        MyEntry(frame, textvariable=self._vm.disc_out_key_mapping_var, width=15).pack_left()
+        MyLabel(frame, text="URLs (regexp) :").pack_left()
+        MyEntry(frame, textvariable=self._vm.disc_out_pattern_urls_var, width=15).pack_left()
 
     def _create_discover_compute_row(self, parent: tk.Widget) -> None:
         """Compute button and verification status label.
@@ -371,9 +376,9 @@ class UrlConfigView(ttk.Frame):
             parent: The DISCOVER panel frame to attach widgets to.
         """
         row = ttk.Frame(parent)
-        row.pack(side=tk.BOTTOM, fill=tk.X, padx=4, pady=(4, 6))
-        ttk.Button(row, text="Calculer la liste", command=self._vm.compute_discovers).pack(side=tk.LEFT, padx=(0, 12))
-        ttk.Label(row, textvariable=self._vm.discover_compute_message_var).pack(side=tk.LEFT)
+        row.pack(side=tk.BOTTOM, fill=tk.X)
+        MyButton(row, text="Calculer la liste", command=self._vm.compute_discovers).pack_left()
+        MyLabel(row, textvariable=self._vm.discover_compute_message_var).pack_left()
 
     # ------------------------------------------------------------------
     # ViewModel bindings

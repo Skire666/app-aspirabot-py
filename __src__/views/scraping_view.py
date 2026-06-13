@@ -19,6 +19,8 @@ from view_models.scraping_view_model import ScrapingViewModel
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
 
+from __src__.shared.app_global_state import MyButton
+
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
@@ -79,7 +81,7 @@ class ScrapingView(ttk.Frame):
 
     def _create_info_section(self, parent: tk.Widget) -> None:
         """Section 1 — launch context (scenario, profile, folder)."""
-        frame = HorizontalLineFrame(parent, text="Informations sur le lancement")
+        frame = HorizontalLineFrame(parent, text="Informations sur le lancement", first_line=True)
         frame.pack(fill=tk.X)
         grid = ttk.Frame(frame)
         grid.pack(fill=tk.X, padx=5, pady=(0, 5))
@@ -112,7 +114,6 @@ class ScrapingView(ttk.Frame):
             ("Statistiques OpenURL :", self._vm.stat_open_url_var),
             ("Statistiques ClickOn :", self._vm.stat_click_var),
             ("Démarrage :", self._vm.stat_started_var),
-            ("Étape en cours :", self._vm.stat_step_var),
         ]
         for i, (label, var) in enumerate(rows):
             ttk.Label(grid, text=label).grid(row=i, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
@@ -125,20 +126,20 @@ class ScrapingView(ttk.Frame):
         row = ttk.Frame(frame)
         row.pack(padx=5, pady=(0, 5), anchor=tk.W)
 
-        self._btn_launch = ttk.Button(
+        self._btn_launch = MyButton(
             row, text="Lancer le scraping", command=lambda: self._vm.launch(), state=tk.DISABLED
         )
-        self._btn_launch.pack(side=tk.LEFT, padx=(0, 5))
+        self._btn_launch.pack_left()
 
-        self._btn_cancel = ttk.Button(row, text="Annuler (kill)", command=self._on_cancel_click, state=tk.DISABLED)
-        self._btn_cancel.pack(side=tk.LEFT, padx=(0, 5))
+        self._btn_cancel = MyButton(row, text="Annuler (kill)", command=self._on_cancel_click, state=tk.DISABLED)
+        self._btn_cancel.pack_left()
 
-        self._btn_pause = ttk.Button(row, text="Mettre en pause", command=lambda: self._vm.pause(), state=tk.DISABLED)
-        self._btn_pause.pack(side=tk.LEFT, padx=(0, 5))
+        self._btn_pause = MyButton(row, text="Mettre en pause", command=lambda: self._vm.pause(), state=tk.DISABLED)
+        self._btn_pause.pack_left()
 
         self._btn_resume = tk.Button(row, text="Reprendre", command=lambda: self._vm.resume(), state=tk.DISABLED)
         self._btn_resume_default_bg: str = self._btn_resume.cget("background")
-        self._btn_resume.pack(side=tk.LEFT)
+        self._btn_resume.pack(side=tk.LEFT, padx=(5, 0))
 
     def _create_journal_section(self, parent: tk.Widget) -> None:
         """Section 4 — scrollable read-only journal."""

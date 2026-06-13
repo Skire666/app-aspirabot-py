@@ -93,7 +93,7 @@ class WorkflowView(ttk.Frame):
         Args:
             parent: Container widget using a grid layout.
         """
-        info_lf = HorizontalLineFrame(parent, text="Informations")
+        info_lf = HorizontalLineFrame(parent, text="Informations", first_line=True)
         info_lf.grid(row=0, column=0, columnspan=2, sticky="nwes", padx=(5, 5))
 
         line1 = ttk.Frame(info_lf)

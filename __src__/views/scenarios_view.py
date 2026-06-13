@@ -7,6 +7,7 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from shared.app_global_state import MyButton
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from view_models.scenarios_view_model import ScenariosViewModel
 from views.components.data_grid.data_grid import DataGrid, GridColumn
@@ -63,25 +64,22 @@ class ScenariosView(ttk.Frame):
 
     def _create_actions_widgets(self) -> None:
         """Constructs the top action bar with Create and Validate buttons."""
-        top_frame = HorizontalLineFrame(self, text="Actions")
+        top_frame = HorizontalLineFrame(self, text="Actions", first_line=True)
         top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_create = ttk.Button(top_frame, text="Créer un scénario", command=lambda: self._vm.create())
-        self._btn_create.pack(side=tk.LEFT, padx=(5, 10))
+        self._btn_create = MyButton(top_frame, text="Créer un scénario", command=lambda: self._vm.create())
+        self._btn_create.pack_left()
 
-        self._btn_validate = ttk.Button(top_frame, text="Valider les scénarios", command=lambda: self._vm.validate())
-        self._btn_validate.pack(side=tk.LEFT, padx=(0, 10))
+        self._btn_validate = MyButton(top_frame, text="Valider les scénarios", command=lambda: self._vm.validate())
+        self._btn_validate.pack_left()
 
     def _create_grid_widgets(self) -> None:
         """Constructs the scenario list DataGrid."""
         top_frame = HorizontalLineFrame(self, text="Liste des scénarios")
         top_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=lambda: self._vm.refresh())
-        self._btn_refresh.pack(side=tk.LEFT, padx=(5, 40), pady=(0, 5))
-
-        self._lbl_counter = ttk.Label(top_frame, text="Aucun scénario")
-        self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
+        self._btn_refresh = MyButton(top_frame, text="Actualiser", command=lambda: self._vm.refresh())
+        self._btn_refresh.pack_left()
 
         self._btn_open_folder = FolderLinkWidget(
             top_frame,
@@ -119,13 +117,6 @@ class ScenariosView(ttk.Frame):
     def _sync_scenarios(self, *_: object) -> None:
         """Re-render the DataGrid and counter from the ViewModel data."""
         scenarios = self._vm.get_scenarios()
-        count = len(scenarios)
-        if count == 0:
-            self._lbl_counter.config(text="Trouvé : Aucun scénario")
-        elif count == 1:
-            self._lbl_counter.config(text="Trouvé : 1 scénario")
-        else:
-            self._lbl_counter.config(text=f"Trouvé : {count} scénarios")
 
         self._btn_open_folder.set_path(self._vm.get_folder_path())
         self.grid.render_data(scenarios)
@@ -134,8 +125,6 @@ class ScenariosView(ttk.Frame):
         """Mirror is_validation_running_var onto the validate button state."""
         if self._vm.is_validation_running_var.get():
             self._btn_validate.config(state=tk.DISABLED)
-            status = self._vm.validation_status_text_var.get()
-            self._lbl_counter.config(text=status or "Validation en cours...")
             self.update_idletasks()
         else:
             self._btn_validate.config(state=tk.NORMAL)

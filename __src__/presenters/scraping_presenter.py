@@ -430,7 +430,7 @@ class ScrapingPresenter:
         self._append_journal(
             f"{ts} | Clics : total={rp.clicks_executed} | OK={rp.clicks_success} | KO={rp.clicks_failed}"
         )
-        self._append_journal(f"{ts} | Annulé : {'oui' if rp.cancelled else 'non'}")
+        self._append_journal(f"{ts} | Annulé par l'utilisateur : {'oui' if rp.cancelled else 'non'}")
 
         duration_in_min = (
             (rp.finished_at - rp.started_at).total_seconds() / 60 if rp.started_at and rp.finished_at else 0
@@ -470,34 +470,15 @@ class ScrapingPresenter:
         num_tabs, page0_url = ctx.browser_stats
         self._vm.stat_browser_tabs_var.set(f"{num_tabs} onglet(s) | {page0_url}")
         self._vm.stat_global_var.set(
-            f"Total exec : {stats.steps_executed} | OK : {stats.steps_success} | KO : {stats.steps_failed}"
+            f"Total exec : {stats.steps_executed}  |  OK : {stats.steps_success}  |  KO : {stats.steps_failed}"
         )
         self._vm.stat_open_url_var.set(
-            f"Open URL : {stats.open_urls_executed} | OK : {stats.open_urls_success} | KO : {stats.open_urls_failed}"
+            f"Open URL : {stats.open_urls_executed}  |  OK : {stats.open_urls_success}  |  KO : {stats.open_urls_failed}"
         )
         self._vm.stat_click_var.set(
-            f"Clicks : {stats.clicks_executed} | OK : {stats.clicks_success} | KO : {stats.clicks_failed}"
+            f"Clicks : {stats.clicks_executed}  |  OK : {stats.clicks_success}  |  KO : {stats.clicks_failed}"
         )
         self._vm.stat_started_var.set("  |  ".join(parts))
-        self._vm.stat_step_var.set(self._describe_current_step(ctx) or "—")
-
-    @staticmethod
-    def _describe_current_step(ctx: ScrapingContextModel) -> str:
-        """Build a short human-readable description of the current step.
-
-        Args:
-            ctx: The live scraping context.
-
-        Returns:
-            A short descriptive string.
-        """
-        if not ctx.step_scraping_data:
-            return ""
-        step_ids = ctx.step_id_by_index
-        step_idx = len(step_ids) - 1  # Last step started.
-        if step_ids:
-            return f"Étape {step_idx + 1}/{len(step_ids)}"
-        return ""
 
 
 # EOF

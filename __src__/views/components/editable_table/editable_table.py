@@ -11,7 +11,7 @@ from shared.constants import (
     C_COLOR_BLACK_FONT,
     C_COLOR_BLUE_HIGHLIGHT_LIGHT,
     C_COLOR_GRAY_BACKGROUND,
-    C_COLOR_GRAY_SEPARATOR,
+    C_COLOR_GRAY_SEPARATOR_ON_WHITE,
 )
 
 # ── Component ─────────────────────────────────────────────────────────────────
@@ -23,9 +23,9 @@ _CLEAR_LABEL = "Effacer le tableau"
 _COLOR_HEADER_BG = C_COLOR_GRAY_BACKGROUND
 _COLOR_HEADER_BG_ACTIVE = C_COLOR_BLUE_HIGHLIGHT_LIGHT
 _COLOR_HEADER_FG = C_COLOR_BLACK_FONT
-_COLOR_HEADER_BORDER = C_COLOR_GRAY_SEPARATOR
+_COLOR_HEADER_BORDER = C_COLOR_GRAY_SEPARATOR_ON_WHITE
 _HEADER_MINIMUM_WIDTH = 30
-_ROW_HEIGHT = 30
+_ROW_HEIGHT = 26
 
 _COLOR_ROW_EVEN = C_COLOR_GRAY_BACKGROUND
 _COLOR_ROW_ODD = "#ffffff"
@@ -44,7 +44,7 @@ class ColumnDef:
 
     key: str
     header: str
-    width: int = 150
+    width: int = 40
     type: ColumnType = "text"
 
 
@@ -67,7 +67,7 @@ class ActionColumnDef(ColumnDef):
     label: str = "Action"
     target_key: str = ""
     handler: ActionHandler | None = None
-    width: int = 110
+    width: int = 40
 
 
 @dataclass
@@ -154,7 +154,7 @@ class EditableTable(tk.Frame):
 
     def _build_top_bar(self) -> None:
         top = tk.Frame(self)
-        top.pack(side="top", fill="x", padx=4, pady=(4, 0))
+        top.pack(side="top", fill="x", padx=4, pady=6)
         ttk.Button(top, text=_CLEAR_LABEL, command=self._on_clear).pack(side="right")
         ttk.Button(top, text=_ADD_LABEL, command=self._on_add_row).pack(side="left")
 
@@ -260,7 +260,7 @@ class EditableTable(tk.Frame):
         class _DelCol(ColumnDef):
             pass
 
-        del_col: ColumnDef = _DelCol(key="__del__", header="", width=120)
+        del_col: ColumnDef = _DelCol(key="__del__", header="", width=40)
         return [*self._all_data_cols, del_col]
 
     def _col_count_text(self) -> int:

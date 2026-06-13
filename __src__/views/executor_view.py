@@ -15,6 +15,7 @@ from collections.abc import Callable
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any, cast
 
+from shared.app_global_state import MyButton, MyCombobox, MyEntry, MyLabel, MyListbox
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
 from views.components.column_combobox.column_combobox import ColumnCombobox
 from views.components.folder_link_widget import FolderLinkWidget
@@ -80,14 +81,14 @@ class ExecutorView(ttk.Frame):
 
     def _create_scenario_section(self, parent: tk.Widget) -> None:
         """Build the scenario selection section."""
-        frame = HorizontalLineFrame(parent, text="Liste des scénarios")
+        frame = HorizontalLineFrame(parent, text="Liste des scénarios", first_line=True)
         frame.pack(fill=tk.X)
 
-        self._btn_edit = ttk.Button(frame, text="Modifier", command=self._on_edit_clicked)
-        self._btn_edit.pack(side=tk.RIGHT, padx=(0, 5))
+        self._btn_edit = MyButton(frame, text="Modifier", command=self._on_edit_clicked)
+        self._btn_edit.pack_right()
 
-        self._btn_refresh = ttk.Button(frame, text="Rafraîchir", command=self._on_refresh_clicked)
-        self._btn_refresh.pack(side=tk.RIGHT, padx=(0, 5))
+        self._btn_refresh = MyButton(frame, text="Rafraîchir", command=self._on_refresh_clicked)
+        self._btn_refresh.pack_right()
 
         self._combo_scenarios = ColumnCombobox(frame)
         self._combo_scenarios.add_column("scenario_name", lambda m: m.scenario_name, width=140)
@@ -95,36 +96,38 @@ class ExecutorView(ttk.Frame):
         self._combo_scenarios.add_column("id_file", lambda m: m.id_file, width=25)
         self._combo_scenarios.set_display_column("scenario_name")
         self._combo_scenarios.bind("<<ComboboxSelected>>", self._on_combo_scenario_changed)
-        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(6))
+        self._combo_scenarios.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
     def _create_profiles_section(self, parent: tk.Widget) -> None:
         """Build the available-profiles section."""
         frame = HorizontalLineFrame(parent, text="Profils disponibles")
         frame.pack(fill=tk.X)
 
-        self._listbox_profiles = tk.Listbox(
-            frame, height=4, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
+        row1 = ttk.Frame(frame)
+        row1.pack(fill=tk.X)
+        self._listbox_profiles = MyListbox(
+            row1, height=4, selectmode=tk.SINGLE, exportselection=False, activestyle="none"
         )
-        self._listbox_profiles.pack(fill=tk.X, padx=5, pady=(0, 5))
+        self._listbox_profiles.pack_left(fill=tk.X, expand=True)
         self._listbox_profiles.bind("<<ListboxSelect>>", self._on_listbox_profile_selected)
 
-        btn_row = ttk.Frame(frame)
-        btn_row.pack(fill=tk.X, pady=(0, 5))
+        row2 = ttk.Frame(frame)
+        row2.pack(fill=tk.X)
 
-        self._btn_new = ttk.Button(btn_row, text="Nouveau", command=self._on_new_clicked)
-        self._btn_new.pack(side=tk.LEFT, padx=5)
+        self._btn_new = MyButton(row2, text="Nouveau", command=self._on_new_clicked)
+        self._btn_new.pack_left()
 
-        self._btn_rename = ttk.Button(btn_row, text="Renommer", command=self._on_rename_clicked)
-        self._btn_rename.pack(side=tk.LEFT, padx=(0, 5))
+        self._btn_rename = MyButton(row2, text="Renommer", command=self._on_rename_clicked)
+        self._btn_rename.pack_left()
 
-        self._btn_delete = ttk.Button(btn_row, text="Supprimer", command=self._on_delete_clicked)
-        self._btn_delete.pack(side=tk.LEFT, padx=(0, 5))
+        self._btn_delete = MyButton(row2, text="Supprimer", command=self._on_delete_clicked)
+        self._btn_delete.pack_left()
 
-        self._btn_save = ttk.Button(btn_row, text="Sauvegarder", command=lambda: self._vm.save_profile())
-        self._btn_save.pack(side=tk.LEFT, padx=(0, 5))
+        self._btn_save = MyButton(row2, text="Sauvegarder", command=lambda: self._vm.save_profile())
+        self._btn_save.pack_left()
 
-        self._lbl_saved = ttk.Label(btn_row, textvariable=self._vm.saved_date_var)
-        self._lbl_saved.pack(side=tk.RIGHT, padx=5)
+        self._lbl_saved = MyLabel(row2, textvariable=self._vm.saved_date_var)
+        self._lbl_saved.pack_right()
 
     def _create_basic_settings_section(self, parent: tk.Widget) -> None:
         """Build the basic scenario settings section (dates, export folder, thresholds)."""
@@ -133,8 +136,8 @@ class ExecutorView(ttk.Frame):
         container = ttk.Frame(frame)
         container.pack(fill=tk.X)
         self._basic_settings_grid = container
-        self._create_cfg_row1(container)
-        self._create_cfg_row5(container)
+        self._create_folder(container)
+        self._create_treshold_error(container)
         self._create_cfg_row_warmup(container)
 
     def _create_url_settings_section(self, parent: tk.Widget) -> None:
@@ -144,46 +147,42 @@ class ExecutorView(ttk.Frame):
         self._url_config_view = UrlConfigView(frame, vm=self._vm)
         self._url_config_view.pack(fill=tk.BOTH, expand=True)
 
-    def _create_cfg_row1(self, parent: tk.Widget) -> None:
+    def _create_folder(self, parent: tk.Widget) -> None:
         """Row 1 — export folder path, browse button, open-folder button."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Dossier d'export :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        MyLabel(row, text="Dossier d'export :").pack_left()
 
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=lambda: self._vm.open_export_folder()).pack(
-            side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
+            side=tk.RIGHT
         )
-        ttk.Button(row, text="...", width=3, command=self._browse_export_folder).pack(
-            side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
-        )
+        MyButton(row, text="...", width=3, command=self._browse_export_folder).pack_right()
         self._view_traces.append(
             (
                 self._vm.export_folder_var,
                 self._vm.export_folder_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Entry(row, textvariable=self._vm.export_folder_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
-        )
+        MyEntry(row, textvariable=self._vm.export_folder_var).pack_left(fill=tk.X, expand=True)
 
-    def _create_cfg_row5(self, parent: tk.Widget) -> None:
+    def _create_treshold_error(self, parent: tk.Widget) -> None:
         """Row 5 — global error threshold."""
         row = ttk.Frame(parent)
-        row.pack(fill=tk.X)
-        ttk.Label(row, text="Pause forcée si").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        row.pack(fill=tk.X, pady=6)
+        MyLabel(row, text="Pause forcée si").pack_left()
         self._view_traces.append(
             (
                 self._vm.global_threshold_var,
                 self._vm.global_threshold_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Entry(row, textvariable=self._vm.global_threshold_var, width=7).pack(side=tk.LEFT, pady=(0, 5))
+        MyEntry(row, textvariable=self._vm.global_threshold_var, width=7).pack_left()
 
-        ttk.Label(row, text="erreurs globales OU si").pack(side=tk.LEFT, padx=5, pady=(0, 5))
-        ttk.Entry(row, textvariable=self._vm.step_threshold_var, width=7).pack(side=tk.LEFT, pady=(0, 5))
-        ttk.Label(row, text="erreurs dans l'étape ").pack(side=tk.LEFT, padx=5, pady=(0, 5))
-        self._combo_steps = ttk.Combobox(row, state="readonly", width=35)
-        self._combo_steps.pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        MyLabel(row, text="erreurs globales OU si").pack_left()
+        MyEntry(row, textvariable=self._vm.step_threshold_var, width=7).pack_left()
+        MyLabel(row, text="erreurs dans l'étape ").pack_left()
+        self._combo_steps = MyCombobox(row, state="readonly", width=35)
+        self._combo_steps.pack_left()
         self._combo_steps.bind("<<ComboboxSelected>>", self._on_step_selected)
         self._view_traces.append(
             (
@@ -196,26 +195,22 @@ class ExecutorView(ttk.Frame):
         """Warmup URL row — optional URL loaded before the scraping run starts."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Préchauffe URL : ").pack(side=tk.LEFT, padx=5, pady=(6, 0))
+        MyLabel(row, text="Préchauffe URL : ").pack_left()
         self._view_traces.append(
             (self._vm.warmup_url_var, self._vm.warmup_url_var.trace_add("write", lambda *_: self._vm.form_changed()))
         )
-        ttk.Entry(row, textvariable=self._vm.warmup_url_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(6, 0)
-        )
+        MyEntry(row, textvariable=self._vm.warmup_url_var).pack_left(fill=tk.X, expand=True)
 
     def _create_launch_section(self, parent: tk.Widget) -> None:
         """Build the launch-trigger section."""
-        row = ttk.Frame(parent)
-        row.pack(fill=tk.X, side=tk.BOTTOM, padx=5)
+        row = HorizontalLineFrame(parent, text="Pilotage")
+        row.pack(fill=tk.X, side=tk.BOTTOM)
 
-        ttk.Label(row, text="Vérification :").pack(side=tk.LEFT, padx=0, pady=6)
-        ttk.Label(row, textvariable=self._vm.verification_message_var, foreground="red").pack(
-            side=tk.LEFT, fill=tk.X, expand=True, pady=6
-        )
+        MyLabel(row, text="Vérification :").pack_left()
+        MyLabel(row, textvariable=self._vm.verification_message_var, foreground="red").pack_left(fill=tk.X, expand=True)
 
-        self._btn_launch = ttk.Button(row, text="Lancer le scraping", width=25, command=lambda: self._vm.launch())
-        self._btn_launch.pack(side=tk.RIGHT, padx=(10, 0), pady=6)
+        self._btn_launch = MyButton(row, text="Lancer le scraping", width=25, command=lambda: self._vm.launch())
+        self._btn_launch.pack_right()
 
     # ------------------------------------------------------------------
     # ViewModel bindings (trace_add for non-Var widgets)

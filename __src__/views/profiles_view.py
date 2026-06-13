@@ -7,6 +7,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from shared.app_global_state import MyButton
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
 from view_models.profiles_view_model import ProfilesViewModel
 from views.components.data_grid.data_grid import DataGrid, GridColumn
@@ -56,28 +57,22 @@ class ProfilesView(ttk.Frame):
 
     def _create_widgets(self) -> None:
         """Build the top bar and DataGrid."""
-        top_frame = HorizontalLineFrame(self, text="Liste des profils de lancement")
-        top_frame.pack(side=tk.TOP, fill=tk.X)
+        row1 = HorizontalLineFrame(self, text="Liste des profils de lancement", first_line=True)
+        row1.pack(side=tk.TOP, fill=tk.X)
 
-        self._btn_refresh = ttk.Button(top_frame, text="Actualiser", command=lambda: self._vm.refresh())
-        self._btn_refresh.pack(side=tk.LEFT, padx=(5, 40), pady=(0, 5))
-
-        self._lbl_counter = ttk.Label(top_frame, text="Aucun profil")
-        self._lbl_counter.pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
+        self._btn_refresh = MyButton(row1, text="Actualiser", command=lambda: self._vm.refresh())
+        self._btn_refresh.pack_left()
 
         self._btn_open_folder = FolderLinkWidget(
-            top_frame,
-            title="Dossier des profiles :",
-            path="Cliquer pour ouvrir",
-            callback=lambda: self._vm.open_folder(),
+            row1, title="Dossier des profiles :", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder()
         )
-        self._btn_open_folder.pack(side=tk.RIGHT, padx=(0, 10), pady=(0, 5))
+        self._btn_open_folder.pack(side=tk.RIGHT)
 
         self._grid = DataGrid(
             self, columns=DATA_GRID_COLUMNS, on_sort=lambda col, asc: self._vm.sort(col, asc), on_action=self._on_action
         )
         self._grid.set_sort_state("used_date_profile", True)
-        self._grid.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self._grid.pack(fill=tk.BOTH, expand=True, pady=6)
 
     def _bind_vm_vars(self) -> None:
         """Register trace listeners on ViewModel Vars; ids stored for teardown."""
@@ -95,13 +90,6 @@ class ProfilesView(ttk.Frame):
     def _sync_profiles(self, *_: object) -> None:
         """Re-render the DataGrid and counter from the ViewModel data."""
         profiles = self._vm.get_profiles()
-        count = len(profiles)
-        if count == 0:
-            self._lbl_counter.config(text="Trouvé : Aucun profil")
-        elif count == 1:
-            self._lbl_counter.config(text="Trouvé : 1 profil")
-        else:
-            self._lbl_counter.config(text=f"Trouvé : {count} profils")
 
         self._btn_open_folder.set_path(self._vm.get_folder_path())
         self._grid.render_data(profiles)

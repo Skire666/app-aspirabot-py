@@ -56,7 +56,7 @@ class FaqView(ttk.Frame):
         # Treeview listing the FAQ categories and items
         self._tree = ttk.Treeview(parent, show="tree", selectmode="browse", height=18)
         self._tree.column("#0", width=180, minwidth=180, stretch=False)
-        self._tree.pack(fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
+        self._tree.pack(fill=tk.BOTH, expand=True, pady=5)
         self._tree.bind("<<TreeviewSelect>>", self._on_select)
 
     def _build_right_panel(self) -> None:
