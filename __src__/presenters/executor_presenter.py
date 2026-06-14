@@ -328,7 +328,7 @@ class ExecutorPresenter:
         """
         source_type = profile.urls_source_type or UrlSourceTypeEnum.E_MANUAL_LIST
         self._vm.urls_source_type_var.set(source_type.value)
-        self._vm.set_manual_urls(profile.urls_manual_list.urls)
+        self._vm.set_manual_urls(profile.urls_manual_list.get_urls())
         self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
         self._vm.urls_path_folder_jsons_var.set(profile.urls_folder_jsons.folder_json)
         self._vm.url_sort_order_shortcuts_var.set(
@@ -449,8 +449,8 @@ class ExecutorPresenter:
         self._current_profile.urls_source_type = UrlSourceTypeEnum(self._vm.urls_source_type_var.get())
 
         # manual
-        raw_manual = self._vm.manual_urls_var.get().strip()
-        self._current_profile.urls_manual_list.urls = [u.strip() for u in raw_manual.splitlines() if u.strip()]
+        raw_manual: list[str] = self._vm.manual_urls_var.get().strip().splitlines()
+        self._current_profile.urls_manual_list.append_urls(raw_manual)
 
         # folder racs
         self._current_profile.urls_folder_racs.folder_racs = self._vm.urls_path_folder_racs_var.get().strip()
@@ -505,6 +505,10 @@ class ExecutorPresenter:
         if not self._current_profile:
             return C_EXEC_NO_PROFILE
         self._apply_form_to_profile()
+        error_msg = str(self._current_profile.is_valid())
+        print(f"validation result: {error_msg}")
+        if error_msg:
+            return error_msg
         return None
 
     def _on_open_export_folder(self) -> None:

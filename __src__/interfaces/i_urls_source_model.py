@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from shared.enums import UrlSourceTypeEnum
+from shared.error_code import ErrorCode
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -28,6 +29,14 @@ class IUrlsSourceModel(Protocol):
 
         Returns:
             The type of the URL source.
+        """
+        ...
+
+    def is_valid(self) -> ErrorCode | None:
+        """Check if the URL source model is valid.
+
+        Returns:
+            The error code if the model is invalid, None otherwise.
         """
         ...
 

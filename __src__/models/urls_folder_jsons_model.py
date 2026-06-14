@@ -11,6 +11,9 @@ from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from shared.enums import UrlSourceTypeEnum
+from shared.error_code import ErrorCode
+from shared.errors.urls_folder_jsons_error import ErrorCodeUFJ
+from shared.path_util import count_files_in_folder, folder_exists
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -36,8 +39,8 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
             folder_json: Absolute path of the folder containing .json files.
             orders_json: Sort order applied when reading the .json files.
         """
-        self.folder_json = folder_json
-        self.orders_json = orders_json
+        self.folder_json = folder_json.strip()
+        self.orders_json = orders_json.strip()
 
     @classmethod
     def get_type_source(cls) -> UrlSourceTypeEnum:
@@ -76,6 +79,29 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
             A dict containing folder_json and orders_json keys.
         """
         return {"folder_json": self.folder_json, "orders_json": self.orders_json}
+
+    def is_valid(self) -> ErrorCode | None:
+        """Check if the URL source model is valid.
+
+        Returns:
+            The error code if the model is invalid, None otherwise.
+        """
+        error: ErrorCode | None = None
+
+        if not self.folder_json or not self.folder_json.strip():
+            error = ErrorCodeUFJ.UFJ_1001
+        elif len(self.folder_json.strip()) <= 1:
+            error = ErrorCodeUFJ.UFJ_1002
+        elif not self.orders_json:
+            error = ErrorCodeUFJ.UFJ_1003
+        elif len(self.orders_json.strip()) <= 1 or self.orders_json == "UNSET":
+            error = ErrorCodeUFJ.UFJ_1004
+        elif not folder_exists(self.folder_json):
+            error = ErrorCodeUFJ.UFJ_1005
+        elif count_files_in_folder(self.folder_json, ".json") <= 0:
+            error = ErrorCodeUFJ.UFJ_1006
+
+        return error
 
 
 # EOF

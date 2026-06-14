@@ -14,8 +14,10 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.launcher_model import LaunchModel
 from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.urls_discover_item_model import UrlsDiscoverItemModel
+from models.urls_folder_jsons_model import UrlsFolderJsonsModel
 from models.urls_folder_racs_model import UrlsFolderRacsModel
 from services.url_sources.urls_discover_entries_service import UrlsDiscoverEntriesService
+from services.url_sources.urls_folder_jsons_service import UrlsFolderJsonsService
 from services.url_sources.urls_folder_racs_service import UrlsFolderRacsService
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
@@ -26,9 +28,6 @@ from shared.i18n_fra import (
     C_DISCOVER_NO_ENTRIES_OUT,
 )
 from view_models.executor_view_model import DiscoverRowState, ExecutorViewModel
-
-from __src__.models.urls_folder_jsons_model import UrlsFolderJsonsModel
-from __src__.services.url_sources.urls_folder_jsons_service import UrlsFolderJsonsService
 
 # -----------------------------------------------------------------------------
 # Class
@@ -70,6 +69,9 @@ class UrlConfigPresenter:
         Args:
             profile: The profile whose URL source drives the preview.
         """
+        self._discover_entries = UrlsDiscoverEntriesModel.get_default()
+        self._vm.set_discovers_in_rows([])
+
         stype = profile.urls_source_type.value
         if stype == UrlSourceTypeEnum.E_FOLDER_RACS.value:
             self._update_url_preview_shortcuts(

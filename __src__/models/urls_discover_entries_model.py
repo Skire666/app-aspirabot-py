@@ -10,6 +10,8 @@ from typing import Any, cast
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_discover_item_model import UrlsDiscoverItemModel
 from shared.enums import UrlSourceTypeEnum
+from shared.error_code import ErrorCode
+from shared.errors.urls_discover_entries_error import ErrorCodeUDE
 
 # -----------------------------------------------------------------------------
 # Class
@@ -90,6 +92,29 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
             "inputs": [p.export_to_data_json() for p in self.inputs],
             "output": self.output.export_to_data_json() if self.output else None,
         }
+
+    def is_valid(self) -> ErrorCode | None:
+        """Check if the URL source model is valid.
+
+        Returns:
+            The error code if the model is invalid, None otherwise.
+        """
+        error: ErrorCode | None = None
+
+        if len(self.inputs) <= 0:
+            error = ErrorCodeUDE.UDE_1001
+        elif self.output is None:
+            error = ErrorCodeUDE.UDE_1003
+        elif not self.output.is_valid():
+            error = ErrorCodeUDE.UDE_1004
+        else:
+            for p in self.inputs:
+                sub_error = p.is_valid()
+                if sub_error is not None:
+                    error = sub_error
+                    break
+
+        return error
 
 
 # EOF

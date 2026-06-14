@@ -11,6 +11,9 @@ from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from shared.enums import UrlSourceTypeEnum
+from shared.error_code import ErrorCode
+from shared.errors.urls_folder_racs_error import ErrorCodeUFR
+from shared.path_util import count_files_in_folder, folder_exists
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -36,8 +39,8 @@ class UrlsFolderRacsModel(IUrlsSourceModel):
             folder_racs: Absolute path of the folder containing .url files.
             orders_racs: Sort order applied when reading the .url files.
         """
-        self.folder_racs = folder_racs
-        self.orders_racs = orders_racs
+        self.folder_racs = folder_racs.strip()
+        self.orders_racs = orders_racs.strip()
 
     @classmethod
     def get_type_source(cls) -> UrlSourceTypeEnum:
@@ -76,6 +79,29 @@ class UrlsFolderRacsModel(IUrlsSourceModel):
             A dict containing folder_racs and orders_racs keys.
         """
         return {"folder_racs": self.folder_racs, "orders_racs": self.orders_racs}
+
+    def is_valid(self) -> ErrorCode | None:
+        """Check if the URL source model is valid.
+
+        Returns:
+            The error code if the model is invalid, None otherwise.
+        """
+        error: ErrorCode | None = None
+
+        if not self.folder_racs or not self.folder_racs.strip():
+            error = ErrorCodeUFR.UFR_1001
+        elif len(self.folder_racs.strip()) <= 1:
+            error = ErrorCodeUFR.UFR_1002
+        elif not self.orders_racs:
+            error = ErrorCodeUFR.UFR_1003
+        elif len(self.orders_racs.strip()) <= 1 or self.orders_racs == "UNSET":
+            error = ErrorCodeUFR.UFR_1004
+        elif not folder_exists(self.folder_racs):
+            error = ErrorCodeUFR.UFR_1005
+        elif count_files_in_folder(self.folder_racs, ".url") <= 0:
+            error = ErrorCodeUFR.UFR_1006
+
+        return error
 
 
 # EOF

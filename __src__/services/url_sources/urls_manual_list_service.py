@@ -35,7 +35,7 @@ class UrlsManualListService(IUrlSourceProvider):
             urls: Raw list of URLs; blank entries are discarded.
         """
         # Filter empty strings at construction time.
-        self._urls: list[str] = source.urls
+        self._urls: list[str] = source.get_urls()
         self._index: int = 0
 
     def load_url_if_available(self) -> bool:

@@ -11,6 +11,15 @@ from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from shared.enums import UrlSourceTypeEnum
+from shared.error_code import ErrorCode
+from shared.errors.urls_manual_list_error import ErrorCodeUML
+
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+
+# Minimum length for a valid URL (e.g., "http", "x.com", "g.co", "x.ai", etc.)
+C_MINIMUM_URL_LENGTH = 4
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -25,7 +34,7 @@ class UrlsManualListModel(IUrlsSourceModel):
         urls: Ordered list of URLs entered by the user.
     """
 
-    urls: list[str]
+    _urls: list[str]
 
     def __init__(self, urls: list[str] | None = None) -> None:
         """Initialize the model with an optional list of URLs.
@@ -33,7 +42,39 @@ class UrlsManualListModel(IUrlsSourceModel):
         Args:
             urls: Ordered list of URLs entered by the user.
         """
-        self.urls = urls if urls is not None else []
+        self._urls = []
+        if urls is not None:
+            self.append_urls(urls)
+
+    def get_urls(self) -> list[str]:
+        """Return the list of URLs.
+
+        Returns:
+            The ordered list of URLs entered by the user.
+        """
+        return self._urls
+
+    def append_url(self, url: str) -> None:
+        """Append a new URL to the list.
+
+        Args:
+            url: The URL to append.
+        """
+        if url.strip():  # Only append non-empty URLs
+            self._urls.append(url.strip())
+
+    def append_urls(self, urls: list[str]) -> None:
+        """Append multiple URLs to the list.
+
+        Args:
+            urls: The list of URLs to append.
+        """
+        for url in urls:
+            self.append_url(url)
+
+    def clear_urls(self) -> None:
+        """Clear the list of URLs."""
+        self._urls.clear()
 
     @classmethod
     def get_type_source(cls) -> UrlSourceTypeEnum:
@@ -72,7 +113,22 @@ class UrlsManualListModel(IUrlsSourceModel):
         Returns:
             A dict containing the url_sources_list_manual key.
         """
-        return {"url_sources_list_manual": self.urls}
+        return {"url_sources_list_manual": self._urls}
+
+    def is_valid(self) -> ErrorCode | None:
+        """Check if the URL source model is valid.
+
+        Returns:
+            The error code if the model is invalid, None otherwise.
+        """
+        error: ErrorCode | None = None
+
+        if not self._urls:
+            error = ErrorCodeUML.UML_1001
+        elif any(len(url.strip()) < C_MINIMUM_URL_LENGTH for url in self._urls):
+            error = ErrorCodeUML.UML_1002
+
+        return error
 
 
 # EOF

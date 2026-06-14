@@ -24,6 +24,34 @@ class TitleModuleEnum(Enum):
     E_OPTIONS = "OPTIONS"
 
 
+class ErrorSeverityEnum(Enum):
+    """Enumerates the severity levels for error messages.
+
+    These levels are used to categorize and prioritize error handling.
+    """
+
+    E_UNSET = "UNSET"
+    E_WARNING = "WARNING"  # Non-critical issue; workflow can continue
+    E_ERROR = "ERROR"  # Critical issue; workflow may be affected
+    E_FATAL = "FATAL"  # Severe issue; workflow must stop immediately
+    E_UNKNOWN = "UNKNOWN"  # Unknown severity level
+
+
+class ErrorDataEnum(Enum):
+    """Sub-category for data validation errors."""
+
+    E_UNSET = "UNSET"  # valeur par défaut
+    E_MISSING = "MISSING"  # donnée absente
+    E_TYPE = "TYPE"  # mauvais type
+    E_FORMAT = "FORMAT"  # mauvais format/pattern
+    E_RANGE = "RANGE"  # hors bornes
+    E_INCONSISTENCY = "INCONSISTENCY"  # contradiction entre champs
+    E_DUPLICATE = "DUPLICATE"  # valeur en double
+    E_PERMISSION = "PERMISSION"  # accès non autorisé
+    E_STALE = "STALE"  # donnée périmée
+    E_UNKNOWN = "UNKNOWN"  # type d'erreur inconnu
+
+
 class StepTypeEnum(Enum):
     """Enumerates all supported scraping step types.
 
@@ -136,10 +164,12 @@ class UrlSourceTypeEnum(Enum):
 class UrlSortOrderEnum(Enum):
     """Enumerates the file ordering strategies for folder-based URL sources."""
 
+    E_UNSET = "UNSET"
     E_MTIME_ASC = "mtime_asc"  # oldest modified first (default)
     E_MTIME_DESC = "mtime_desc"  # newest modified first
     E_NAME_ASC = "name_asc"  # alphabetical by filename
     E_NAME_DESC = "name_desc"  # reverse alphabetical
+    E_UNKNOWN = "UNKNOWN"
 
 
 class WaitUntilEnum(Enum):

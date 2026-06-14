@@ -25,6 +25,7 @@ from shared.constants import (
 )
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import UrlSourceTypeEnum
+from shared.error_code import ErrorCode
 from shared.random_util import generate_rng_hexastring
 
 # -----------------------------------------------------------------------------
@@ -190,6 +191,21 @@ class LaunchModel:
         """
         self.launch_count += 1
         self.used_date_profile = datetime.now()
+
+    def is_valid(self) -> ErrorCode | None:
+        error: ErrorCode | None = None
+        stype = self.urls_source_type.value
+
+        if UrlSourceTypeEnum.E_MANUAL_LIST.value == stype:
+            error = self.urls_manual_list.is_valid()
+        if UrlSourceTypeEnum.E_FOLDER_RACS.value == stype:
+            error = self.urls_folder_racs.is_valid()
+        if UrlSourceTypeEnum.E_FOLDER_JSONS.value == stype:
+            error = self.urls_folder_jsons.is_valid()
+        if UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value == stype:
+            error = self.urls_discover_entries.is_valid()
+
+        return error
 
 
 # EOF

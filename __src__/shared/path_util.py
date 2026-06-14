@@ -56,4 +56,32 @@ def make_all_folders_if_not_exists(path: Path | str, *, is_file_path: bool | Non
     target_path.mkdir(parents=True, exist_ok=True)
 
 
+def folder_exists(path: Path | str) -> bool:
+    """Check if a folder exists at the given path.
+
+    Args:
+        path: The path to check.
+
+    Returns:
+        bool: True if the folder exists, False otherwise.
+    """
+    return Path(path).is_dir()
+
+
+def count_files_in_folder(path: Path | str, file_extension: str) -> int:
+    """Count the number of files with a specific extension in a folder.
+
+    Args:
+        path: The path to the folder.
+        file_extension: The file extension to count.
+
+    Returns:
+        int: The number of files with the specified extension.
+    """
+    folder_path = Path(path)
+    if not folder_path.is_dir():
+        return 0
+    return len(list(folder_path.glob(f"*.{file_extension}")))
+
+
 # EOF
