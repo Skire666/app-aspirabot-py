@@ -29,7 +29,6 @@ class AppConfigViewState:
         folder_scraping: Path to the scraping output folder.
         gui_booting_size: Window geometry string (e.g. ``"1400x900"``).
         gui_booting_fullscreen: True when the app should start in fullscreen mode.
-        browser_engine: Selected browser engine identifier.
     """
 
     log_level_enum: str
@@ -70,13 +69,10 @@ class AppConfigurationViewModel(ViewModelBase):
         self.gui_booting_size_var = tk.StringVar(master=master, value="")
         self.gui_booting_position_var = tk.StringVar(master=master, value="")
         self.gui_booting_fullscreen_var = tk.BooleanVar(master=master, value=False)
-        self.browser_engine_var = tk.StringVar(master=master, value="")
 
         # Combo option lists with version triggers
         self._log_level_options: list[str] = []
         self.log_level_options_version_var = tk.IntVar(master=master, value=0)
-        self._browser_engine_options: list[str] = []
-        self.browser_engine_options_version_var = tk.IntVar(master=master, value=0)
 
         # Status Vars — Presenter writes, View traces for button enable/disable
         self.is_cancel_enabled_var = tk.BooleanVar(master=master, value=False)
@@ -111,23 +107,6 @@ class AppConfigurationViewModel(ViewModelBase):
         self._log_level_options = list(options)
         self.log_level_options_version_var.set(self.log_level_options_version_var.get() + 1)
 
-    def get_browser_engine_options(self) -> list[str]:
-        """Return the current list of valid browser engine values.
-
-        Returns:
-            A copy of the internal option list.
-        """
-        return list(self._browser_engine_options)
-
-    def set_browser_engine_options(self, options: list[str]) -> None:
-        """Replace the browser-engine option list and increment the version trigger.
-
-        Args:
-            options: New ordered list of browser engine choice strings.
-        """
-        self._browser_engine_options = list(options)
-        self.browser_engine_options_version_var.set(self.browser_engine_options_version_var.get() + 1)
-
     # ------------------------------------------------------------------
     # Snapshot
     # ------------------------------------------------------------------
@@ -146,7 +125,6 @@ class AppConfigurationViewModel(ViewModelBase):
             gui_booting_size=self.gui_booting_size_var.get(),
             gui_booting_position=self.gui_booting_position_var.get(),
             gui_booting_fullscreen=self.gui_booting_fullscreen_var.get(),
-            browser_engine=self.browser_engine_var.get(),
         )
 
     # ------------------------------------------------------------------
@@ -172,7 +150,6 @@ class AppConfigurationViewModel(ViewModelBase):
             self.gui_booting_size_var.set(_str("gui_booting_size"))
             self.gui_booting_position_var.set(_str("gui_booting_position"))
             self.gui_booting_fullscreen_var.set(bool(data.get("gui_booting_fullscreen")))
-            self.browser_engine_var.set(_str("browser_engine"))
 
     # ------------------------------------------------------------------
     # Presenter binding hooks

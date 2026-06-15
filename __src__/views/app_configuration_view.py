@@ -67,7 +67,6 @@ class AppConfigurationView(ttk.Frame):
         self._add_text_row(frame, 4, "Taille fenêtre libre (WxH)", self._vm.gui_booting_size_var)
         self._add_text_row(frame, 5, "Position fenêtre (X,Y)", self._vm.gui_booting_position_var)
         self._add_bool_row(frame, 6, "Démarrer en plein écran", self._vm.gui_booting_fullscreen_var)
-        self._add_enum_row_browser_engine(frame, 7, "Moteur de navigation", self._vm.browser_engine_var)
 
         return frame
 
@@ -94,15 +93,6 @@ class AppConfigurationView(ttk.Frame):
         combo = ttk.Combobox(frame, textvariable=var, state="readonly")
         combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
         self._log_level_combo = combo
-
-    def _add_enum_row_browser_engine(
-        self, frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar
-    ) -> None:
-        """Add a browser-engine combobox row."""
-        ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=5, pady=5)
-        combo = ttk.Combobox(frame, textvariable=var, state="readonly")
-        combo.grid(row=row, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
-        self._browser_engine_combo = combo
 
     @staticmethod
     def _add_text_row(frame: ttk.Frame | ttk.LabelFrame, row: int, label: str, var: tk.StringVar) -> None:
@@ -151,7 +141,6 @@ class AppConfigurationView(ttk.Frame):
             self._vm.gui_booting_size_var,
             self._vm.gui_booting_position_var,
             self._vm.gui_booting_fullscreen_var,
-            self._vm.browser_engine_var,
         ):
             self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
 
@@ -159,7 +148,6 @@ class AppConfigurationView(ttk.Frame):
         bindings: list[tuple[tk.Variable, Callable[..., object]]] = [
             (self._vm.is_cancel_enabled_var, self._sync_cancel_btn),
             (self._vm.log_level_options_version_var, self._sync_log_level_options),
-            (self._vm.browser_engine_options_version_var, self._sync_browser_engine_options),
         ]
         for var, cb in bindings:
             self._view_traces.append((var, var.trace_add("write", cb)))
@@ -188,15 +176,6 @@ class AppConfigurationView(ttk.Frame):
         self._log_level_combo.configure(values=options)
         if options and self._vm.log_level_var.get() not in options:
             self._vm.log_level_var.set(options[0])
-
-    def _sync_browser_engine_options(self, *_: object) -> None:
-        """Update the browser-engine combobox values from the ViewModel."""
-        if self._browser_engine_combo is None:
-            return
-        options = self._vm.get_browser_engine_options()
-        self._browser_engine_combo.configure(values=options)
-        if options and self._vm.browser_engine_var.get() not in options:
-            self._vm.browser_engine_var.set(options[0])
 
     # ------------------------------------------------------------------
     # Dialog providers — registered on ViewModel

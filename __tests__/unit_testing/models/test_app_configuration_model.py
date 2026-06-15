@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 from models.app_configuration_model import AppConfigurationModel
 from shared.exception_util import (
-    InvalidBrowserEngineError,
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
     InvalidFolderScrapingError,
@@ -113,20 +112,6 @@ class TestGuiBootingSize:
             _make_config(gui_booting_size="1920")
 
 
-class TestBrowserEngine:
-    def test_playwright_valid(self) -> None:
-        cfg = _make_config(browser_engine="Playwright")
-        assert cfg.browser_engine == "Playwright"
-
-    def test_invalid_engine_raises(self) -> None:
-        with pytest.raises(InvalidBrowserEngineError):
-            _make_config(browser_engine="Firefox")
-
-    def test_lowercase_playwright_raises(self) -> None:
-        with pytest.raises(InvalidBrowserEngineError):
-            _make_config(browser_engine="playwright")
-
-
 class TestToDict:
     def test_returns_dict(self) -> None:
         cfg = _make_config()
@@ -143,7 +128,6 @@ class TestToDict:
             "folder_scraping",
             "gui_booting_size",
             "gui_booting_fullscreen",
-            "browser_engine",
             "chromium_persistant_dir",
             "chromium_extensions_dir",
         }

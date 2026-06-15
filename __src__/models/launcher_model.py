@@ -193,6 +193,11 @@ class LaunchModel:
         self.used_date_profile = datetime.now()
 
     def is_valid(self) -> ErrorCode | None:
+        """Validate the active URL source sub-model and return the first error found.
+
+        Returns:
+            The first validation ErrorCode, or None if the profile is valid.
+        """
         error: ErrorCode | None = None
         stype = self.urls_source_type.value
 
@@ -205,7 +210,6 @@ class LaunchModel:
         if UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value == stype:
             error = self.urls_discover_entries.is_valid()
 
-        print(f"DEBUG: LaunchModel.is_valid() -> {error}")
         return error
 
 

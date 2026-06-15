@@ -109,7 +109,6 @@ class AppConfigurationPresenter:
             gui_booting_size=state.gui_booting_size,
             gui_booting_position=state.gui_booting_position,
             gui_booting_fullscreen=state.gui_booting_fullscreen,
-            browser_engine=state.browser_engine,
         )
 
     def _apply_configuration(self, config: AppConfigurationModel) -> None:

@@ -36,7 +36,6 @@ from shared.exception_util import (
     ImageNotDownloadedError,
     ImageWaitTimeoutError,
     InvalidBooleanError,
-    InvalidBrowserEngineError,
     InvalidDurationError,
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
@@ -72,7 +71,6 @@ from shared.exception_util import (
     StringTooLongError,
     StringTooShortError,
     UnknownUrlSourceTypeError,
-    UnsupportedBrowserEngineError,
     UnsupportedClickModeError,
     UnsupportedOperatingSystemError,
     UrlNavigationMismatchError,
@@ -238,14 +236,6 @@ class TestParameterizedExceptions:
         err = InvalidLogLevelError(["DEBUG", "INFO"])
         assert "DEBUG" in str(err)
         assert "INFO" in str(err)
-
-    def test_invalid_browser_engine_contains_options(self) -> None:
-        err = InvalidBrowserEngineError(["Playwright", "Chromium"])
-        assert "Playwright" in str(err)
-
-    def test_unsupported_browser_engine_contains_engine(self) -> None:
-        err = UnsupportedBrowserEngineError("Firefox")
-        assert "Firefox" in str(err)
 
     def test_invalid_scenario_json_content_contains_filename(self) -> None:
         err = InvalidScenarioJsonContentError("my_file.json")

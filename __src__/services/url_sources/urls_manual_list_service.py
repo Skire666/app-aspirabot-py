@@ -32,7 +32,7 @@ class UrlsManualListService(IUrlSourceProvider):
         """Initialize with a list of URL strings.
 
         Args:
-            urls: Raw list of URLs; blank entries are discarded.
+            source: The URL list model providing raw URL strings.
         """
         # Filter empty strings at construction time.
         self._urls: list[str] = source.get_urls()

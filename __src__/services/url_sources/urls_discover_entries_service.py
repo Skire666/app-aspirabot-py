@@ -19,7 +19,7 @@ from typing import cast
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.urls_discover_item_model import UrlsDiscoverItemModel
-from shared.exception_util import DiscoverFolderNotFoundError
+from shared.exception_util import AspirabotBaseError, DiscoverFolderNotFoundError, UrlSourceExhaustedError
 
 # -----------------------------------------------------------------------------
 # Class
@@ -100,7 +100,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             The next new URL string.
         """
         if not self.load_url_if_available():
-            raise StopIteration("No new URLs available")
+            raise UrlSourceExhaustedError()
         url = next(iter(self.new_entries))
         self.new_entries.remove(url)
         return url
@@ -109,7 +109,8 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         """Rewind to the first new URL; the discovered set is preserved."""
         self.last_length_compute = -1
         if self.payloads_inputs is None or self.payloads_target is None:
-            raise ValueError("Both input and output sources must be set before resetting.")
+            msg = "Les sources d'entrée et de sortie doivent être définies avant la réinitialisation."
+            raise AspirabotBaseError(msg)
         self.update_sources_and_compute(self.payloads_inputs, self.payloads_target)
 
     def get_progress_text(self) -> str:

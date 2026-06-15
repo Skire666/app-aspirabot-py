@@ -18,6 +18,8 @@ from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
 
+_C_ABNORMAL_PAGE_COUNT = 2
+
 
 class KillBrowserExecutor(IStepExecutor):
     """Executor for the end process scraping step."""
@@ -39,7 +41,7 @@ class KillBrowserExecutor(IStepExecutor):
             if delay > 0:
                 time.sleep(delay)
             event_bus.log_step(context, "Arrêt du processus demandé.")
-            if len(browser.get_all_pages()) >= 2:
+            if len(browser.get_all_pages()) >= _C_ABNORMAL_PAGE_COUNT:
                 event_bus.log_step(context, "Comportement anormal détect : Plusieurs onglets ouverts.")
                 event_bus.log_step(context, "Fermeture interrompue. Le navigateur reste ouvert pour investigation.")
                 self._do_pause(context, event_bus)

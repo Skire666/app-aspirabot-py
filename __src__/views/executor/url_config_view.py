@@ -215,7 +215,10 @@ class UrlConfigView(ttk.Frame):
         row.pack(fill=tk.X)
         MyLabel(
             row,
-            text="[IMPORTANT] - La date de modification est actualisée après chaque appel à OpenURL... (dès l'ouverture)",
+            text=(
+                "[IMPORTANT] - La date de modification est actualisée"
+                " après chaque appel à OpenURL... (dès l'ouverture)"
+            ),
         ).pack_left()
 
     # ─── Panel 3 : Dossier avec JSON ─────────────────────────────────────────

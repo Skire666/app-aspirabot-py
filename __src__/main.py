@@ -192,7 +192,7 @@ def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, start
         root.deiconify()
         app_state.wire_geometry_persistence(config_repo)
         _register_and_anchor(root, main_view, views, presenters)
-    except Exception:
+    except Exception:  # noqa: BLE001
         traceback.print_exc()
         root.destroy()
 

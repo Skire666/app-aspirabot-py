@@ -26,10 +26,14 @@ _C_GEO_SPLIT_PARTS = 3  # "WxH+X+Y".split("+") must yield exactly 3 parts
 
 
 class PackMixin:
+    """Mixin that adds pack_left() and pack_right() convenience methods to any tk.Widget subclass."""
+
     def pack_left(self: tk.Widget, **kwargs: Any) -> None:  # pyright: ignore[reportGeneralTypeIssues]
+        """Pack this widget to the left with standard horizontal padding."""
         self.pack(side=tk.LEFT, padx=(0, 6), pady=4, **kwargs)
 
     def pack_right(self: tk.Widget, **kwargs: Any) -> None:  # pyright: ignore[reportGeneralTypeIssues]
+        """Pack this widget to the right with standard horizontal padding."""
         self.pack(side=tk.RIGHT, padx=(0, 6), pady=4, **kwargs)
 
 
@@ -37,9 +41,11 @@ class MyButton(ttk.Button):
     """ttk.Button with pack_left() and pack_right() helpers."""
 
     def pack_left(self: tk.Widget, **kwargs: Any) -> None:
+        """Pack this button to the left with reduced vertical padding."""
         self.pack(side=tk.LEFT, padx=(0, 6), pady=2, **kwargs)
 
     def pack_right(self: tk.Widget, **kwargs: Any) -> None:
+        """Pack this button to the right with reduced vertical padding."""
         self.pack(side=tk.RIGHT, padx=(0, 6), pady=2, **kwargs)
 
 

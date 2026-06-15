@@ -163,6 +163,7 @@ class EditableTable(tk.Frame):
         ttk.Button(top, text=_ADD_LABEL, command=self._on_add_row).pack(side="left")
 
     def _build_tree(self) -> None:
+        """Build the Treeview frame, columns, scrollbars, row tags, and event bindings."""
         self._tree_frame = tk.Frame(self)
         self._tree_frame.pack(side="top", fill="both", expand=True, padx=4, pady=4)
         frame = self._tree_frame
@@ -173,7 +174,19 @@ class EditableTable(tk.Frame):
         self.tree = ttk.Treeview(
             frame, columns=col_ids, show="headings", style="EditableTable.Treeview", selectmode="browse"
         )
+        self._setup_tree_columns(all_cols, col_ids)
+        self._attach_scrollbars(frame)
+        self.tree.tag_configure("even", background=_COLOR_ROW_EVEN)
+        self.tree.tag_configure("odd", background=_COLOR_ROW_ODD)
+        self.tree.tag_configure("hover", background=_COLOR_ROW_HOVER)
+        self.tree.bind("<Button-1>", self._on_click)
+        self.tree.bind("<Motion>", self._on_motion)
+        self.tree.bind("<Leave>", self._on_leave)
+        self.tree.bind("<Configure>", lambda _: self.after_idle(self._draw_column_separators))
+        self.tree.bind("<B1-Motion>", lambda _: self._draw_column_separators())
 
+    def _setup_tree_columns(self, all_cols: list[ColumnDef], col_ids: list[str]) -> None:
+        """Configure headings and column widths on ``self.tree``."""
         last_idx = len(all_cols) - 1
         for i, col_def in enumerate(all_cols):
             cid = col_ids[i]
@@ -183,9 +196,12 @@ class EditableTable(tk.Frame):
                 self.tree.heading(cid, text=col_def.header)
             self.tree.column(cid, width=col_def.width, minwidth=_HEADER_MINIMUM_WIDTH, stretch=i == last_idx)
 
-        # tk.Scrollbar (classic widget) uses native OS rendering regardless of the
-        # active ttk theme, so switching to "clam" for heading colours does not
-        # affect their appearance.
+    def _attach_scrollbars(self, frame: tk.Frame) -> None:
+        """Create vertical and horizontal scrollbars and pack them around ``self.tree``.
+
+        Uses tk.Scrollbar (classic widget) for native OS rendering that is
+        unaffected by the active ttk theme.
+        """
         vsb = tk.Scrollbar(frame, orient="vertical", command=self.tree.yview)  # type: ignore[arg-type]
         hsb = tk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)  # type: ignore[arg-type]
 
@@ -197,16 +213,6 @@ class EditableTable(tk.Frame):
         vsb.pack(side="right", fill="y")
         hsb.pack(side="bottom", fill="x")
         self.tree.pack(side="left", fill="both", expand=True)
-
-        self.tree.tag_configure("even", background=_COLOR_ROW_EVEN)
-        self.tree.tag_configure("odd", background=_COLOR_ROW_ODD)
-        self.tree.tag_configure("hover", background=_COLOR_ROW_HOVER)
-
-        self.tree.bind("<Button-1>", self._on_click)
-        self.tree.bind("<Motion>", self._on_motion)
-        self.tree.bind("<Leave>", self._on_leave)
-        self.tree.bind("<Configure>", lambda _: self.after_idle(self._draw_column_separators))
-        self.tree.bind("<B1-Motion>", lambda _: self._draw_column_separators())
 
     def _draw_column_separators(self) -> None:
         """Place 1-px Frame strips at each column boundary; reuses existing widgets for performance."""

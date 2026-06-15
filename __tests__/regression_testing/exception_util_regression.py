@@ -72,7 +72,6 @@ from shared.exception_util import (
     StringTooLongError,
     StringTooShortError,
     UnknownUrlSourceTypeError,
-    UnsupportedBrowserEngineError,
     UnsupportedClickModeError,
     UnsupportedOperatingSystemError,
     UrlNavigationMismatchError,
@@ -222,10 +221,6 @@ class TestConfigurationErrors:
     def test_failed_to_initialize_logging(self) -> None:
         exc = FailedToInitializeLoggingDuringRuntimeError()
         assert isinstance(exc, AspirabotBaseError)
-
-    def test_unsupported_browser_engine(self) -> None:
-        exc = UnsupportedBrowserEngineError("webkit")
-        assert "webkit" in _msg(exc)
 
     def test_configuration_not_loaded_without_action(self) -> None:
         exc = ConfigurationNotLoadedError()

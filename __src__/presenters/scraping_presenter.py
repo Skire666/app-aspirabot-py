@@ -262,7 +262,8 @@ class ScrapingPresenter:
         elif stype == UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value:
             source_value = p.urls_discover_entries
         else:
-            raise ValueError(f"Unknown URL source type: {stype!s}")
+            msg = f"Type de source URL inconnu : {stype!s}"
+            raise AspirabotBaseError(msg)
 
         # result
         return WorkflowRunConfigModel(
@@ -468,7 +469,8 @@ class ScrapingPresenter:
             f"Total exec : {stats.steps_executed}  |  OK : {stats.steps_success}  |  KO : {stats.steps_failed}"
         )
         self._vm.stat_open_url_var.set(
-            f"Open URL : {stats.open_urls_executed}  |  OK : {stats.open_urls_success}  |  KO : {stats.open_urls_failed}"
+            f"Open URL : {stats.open_urls_executed}"
+            f"  |  OK : {stats.open_urls_success}  |  KO : {stats.open_urls_failed}"
         )
         self._vm.stat_click_var.set(
             f"Clicks : {stats.clicks_executed}  |  OK : {stats.clicks_success}  |  KO : {stats.clicks_failed}"

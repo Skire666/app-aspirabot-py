@@ -44,8 +44,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         """Store the folder path without scanning it yet.
 
         Args:
-            folder_path: Absolute or relative path to the URL source folder.
-            sort_order: Strategy used to order .url files before iteration.
+            source: A ``UrlsFolderRacsModel`` instance with the folder path and sort order.
         """
         self._folder_path: str = source.folder_racs
         self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum(source.orders_racs)
@@ -127,9 +126,6 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         Raises:
             None.
         """
-        print(
-            f"preview_url_listed: called, _index={self._index}, _buffered={self._buffered}, _file_paths={self._file_paths}"
-        )
         try:
             self._ensure_discovered()
         except UrlSourceFileNotFoundError:
@@ -138,7 +134,6 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         if self._file_paths is None:
             return []
 
-        print(f"preview_url_listed: _file_paths discovered, count={len(self._file_paths)}")
         result: list[str] = []
 
         if self._buffered is not _SENTINEL:

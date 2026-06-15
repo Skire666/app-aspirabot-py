@@ -6,6 +6,7 @@ from enum import Enum
 
 from shared.enums import ErrorSeverityEnum
 from shared.error_code import ErrorCode
+from shared.exception_util import AspirabotBaseError
 
 
 class ErrorCodeUML(ErrorCode, Enum):
@@ -30,7 +31,8 @@ class ErrorCodeUML(ErrorCode, Enum):
         for error_code in ErrorCodeUML:
             if error_code.code == code:
                 return error_code
-        raise ValueError(f"Code d'erreur inconnu: {code}")
+        msg = f"Code d'erreur inconnu : {code}"
+        raise AspirabotBaseError(msg)
 
 
 # EOF
