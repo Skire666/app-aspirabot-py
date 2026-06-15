@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import contextlib
@@ -573,3 +577,6 @@ class EditableTable(tk.Frame):
         self._edit_iid = None
         self._edit_col_idx = None
         self._edit_tree_col = None
+
+
+# EOF

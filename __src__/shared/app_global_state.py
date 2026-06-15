@@ -1,5 +1,9 @@
 """Application-wide singleton with navigation helpers, dialogs, and widget extensions."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import contextlib
@@ -270,3 +274,6 @@ class AppGlobalState:
 
 # Module-level singleton — importez directement `app_state` dans le reste du code.
 app_state = AppGlobalState()
+
+
+# EOF

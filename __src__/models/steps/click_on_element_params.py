@@ -1,5 +1,9 @@
 """Typed parameter model for the CLICK_ON_ELEMENT step."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any

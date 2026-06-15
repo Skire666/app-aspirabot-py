@@ -1,5 +1,9 @@
 """Contract for typed step parameter models."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Protocol, Self

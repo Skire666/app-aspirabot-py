@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 from shared.enums import ErrorSeverityEnum
@@ -32,3 +36,6 @@ class ErrorCodeUDI(ErrorCode, Enum):
             if error_code.code == code:
                 return error_code
         raise ValueError(f"Code d'erreur inconnu: {code}")
+
+
+# EOF
