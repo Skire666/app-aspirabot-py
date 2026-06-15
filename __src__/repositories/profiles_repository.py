@@ -132,7 +132,7 @@ class ProfilesRepository:
         scenario_data = self._json_repo.read_from_path(full_filepath)
 
         if not scenario_data:
-            self._logger.warning("Le fichier %s est vide.", full_filepath)
+            self._logger.debug("Le fichier %s est vide.", full_filepath)
             raise ProfileDataMissingError(id_scenario)
 
         scenario_model = ProfilesModel.import_from_data_json(scenario_data)

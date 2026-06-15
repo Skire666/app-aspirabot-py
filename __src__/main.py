@@ -27,6 +27,7 @@ from presenters.workflow_presenter import WorkflowPresenter
 from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
+from repositories.log_repository import LogRepository
 from repositories.profiles_repository import ProfilesRepository
 from repositories.scenarios_repository import ScenariosRepository
 from services.app_configuration_service import ConfigService
@@ -37,6 +38,10 @@ from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
+from services.sourcing_urls.urls_discover_entries_service import UrlsDiscoverEntriesService
+from services.sourcing_urls.urls_folder_jsons_service import UrlsFolderJsonsService
+from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsService
+from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
 from services.startup_service import StartupService
 from services.workflow_service import WorkflowService
 
@@ -84,7 +89,11 @@ def main() -> None:
 
     config_file_path = get_current_working_directory() / C_APP_CONFIG_FILE
     config_repo = AppConfigurationRepository(config_file_path)
-    startup_service = StartupService(config_repo)
+    startup_service = StartupService(
+        config_repo,
+        log_repo_factory=LogRepository,
+        logging_service_factory=LoggingService,
+    )
 
     # Build ViewModel before the View so both receive the same instance.
     splash_vm = SplashscreenViewModel(master=root)
@@ -361,7 +370,14 @@ def _init_debug_component(main_view: MainView, config_model: AppConfigurationMod
     """
     debug_vm = DebugViewModel(master=main_view.content_area)
     debug_view = DebugView(main_view.content_area, vm=debug_vm)
-    debug_presenter = DebugPresenter(vm=debug_vm, debug_service=DebugBrowserService(), config_model=config_model)
+    debug_presenter = DebugPresenter(
+        vm=debug_vm,
+        debug_service=DebugBrowserService(),
+        browser_factory=lambda: BrowserPlaywrightService(
+            chromium_persistant_dir=config_model.chromium_persistant_dir,
+            chromium_extensions_dir=config_model.chromium_extensions_dir,
+        ),
+    )
     return debug_view, debug_presenter
 
 
@@ -381,7 +397,12 @@ def _init_executor_component(
         A (ExecutorView, ExecutorPresenter, tab4_DiscoverPresenter, UrlConfigPresenter) tuple.
     """
     vm = ExecutorViewModel(master=main_view.content_area)
-    sourcing = SourcingUrlsService()
+    sourcing = SourcingUrlsService(
+        provider_manual=UrlsManualListService(),
+        provider_folder_racs=UrlsFolderRacsService(),
+        provider_folder_jsons=UrlsFolderJsonsService(),
+        provider_discover=UrlsDiscoverEntriesService(json_repository=JsonFileRepository()),
+    )
     url_config_presenter = UrlConfigPresenter(vm=vm, sourcing_urls=sourcing)
     executor_view = ExecutorView(main_view.content_area, vm=vm)
     executor_presenter = ExecutorPresenter(

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from shared.exception_util import CallbackNotDefinedError
+from shared.i18n_fra import C_CONFIG_LAST_WRITE_EMPTY
 
 from view_models.view_model_base import ViewModelBase
 
@@ -76,7 +77,7 @@ class AppConfigurationViewModel(ViewModelBase):
 
         # Status Vars — Presenter writes, View traces for button enable/disable
         self.is_cancel_enabled_var = tk.BooleanVar(master=master, value=False)
-        self.last_write_time_var = tk.StringVar(master=master, value="Dernière écriture : --")
+        self.last_write_time_var = tk.StringVar(master=master, value=C_CONFIG_LAST_WRITE_EMPTY)
 
         # Presenter callback slots
         self._on_save: Callable[[], None] | None = None

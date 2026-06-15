@@ -212,9 +212,7 @@ class InvalidGuiBootingPositionError(AspirabotBaseError):
 
     def __init__(self) -> None:
         """Initialize the error message."""
-        super().__init__(
-            "Position de démarrage GUI invalide. Format attendu : 'X,Y' avec des valeurs entières."
-        )
+        super().__init__("Position de démarrage GUI invalide. Format attendu : 'X,Y' avec des valeurs entières.")
 
 
 class InvalidBrowserEngineError(AspirabotBaseError):
@@ -659,6 +657,14 @@ class InvalidDurationError(ValueError, AspirabotBaseError):
         super().__init__(f"Durée invalide (doit être >= 0) : {duration}")
 
 
+class OpenUrlTimeoutError(RuntimeError, AspirabotBaseError):
+    """Raised when the open URL step times out."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Échec de l'ouverture de l'URL après timeout (augmenter la durée).")
+
+
 class OpenUrlTooManyRetriesError(RuntimeError, AspirabotBaseError):
     """Raised when the open URL step fails after all retries are exhausted."""
 
@@ -724,6 +730,14 @@ class UrlSourceNoUrlBufferedError(UrlSourceNotReadyError):
     def __init__(self) -> None:
         """Initialize the error message."""
         super().__init__("aucune URL bufferisée")
+
+
+class UrlSourceLauncherNotInitializedError(UrlSourceNotReadyError):
+    """Raised when a URL source operation is called before a launcher context has been set."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("launcher non initialisé")
 
 
 class UrlSourceExhaustedError(ValueError, AspirabotBaseError):
@@ -1008,6 +1022,18 @@ class DiscoverComputeError(RuntimeError, AspirabotBaseError):
             reason: Short description of the failure.
         """
         super().__init__(f"Erreur lors du calcul de découverte : {reason}")
+
+
+class UrlPageCheckMismatchError(AspirabotBaseError):
+    """Raised when the current page URL does not match the expected URL components."""
+
+    def __init__(self, details: str) -> None:
+        """Initialize with the pipe-separated mismatch descriptions.
+
+        Args:
+            details: Pipe-separated list of component mismatches.
+        """
+        super().__init__(f"URL non conforme. {details}")
 
 
 # EOF

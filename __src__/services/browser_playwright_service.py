@@ -20,7 +20,12 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 from shared.constants import C_STR_ERROR_JS_EVALUATION
 from shared.converter_util import convert_wait_until_to_literals
 from shared.enums import WaitUntilEnum
-from shared.exception_util import BrowserAlreadyLaunchedError, BrowserNotLaunchedError, OpenUrlTooManyRetriesError
+from shared.exception_util import (
+    BrowserAlreadyLaunchedError,
+    BrowserNotLaunchedError,
+    OpenUrlTimeoutError,
+    OpenUrlTooManyRetriesError,
+)
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -279,7 +284,9 @@ class BrowserPlaywrightService(IWebBrowserService):
             time.sleep(wait_dns_solver_sec)  # Wait before retrying DNS resolution
             self._workflow_page.reload(wait_until=cast_wait_time, timeout=timeout_ms)
             return nav_retries, False
-        print(f"Erreur de navigation non récupérable : {msg}")
+        if "Timeout" in msg:
+            raise OpenUrlTimeoutError from exp  # Let the caller handle timeout exceptions; they may want to abort or retry differently.
+        self._logger.error("Erreur de navigation non récupérable : %s", msg)
         raise OpenUrlTooManyRetriesError() from exp
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
@@ -304,7 +311,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             try:
                 result = page.evaluate(script)
             except Exception as exc:
-                self._logger.warning("Échec évaluation script, tentative %d/%d : %s", attempt, retries, exc)
+                self._logger.info("Échec évaluation script, tentative %d/%d : %s", attempt, retries, exc)
                 if attempt == retries:
                     # if this was the last attempt, re-raise the exception to signal failure
                     raise

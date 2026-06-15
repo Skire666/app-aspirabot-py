@@ -14,7 +14,6 @@ from tkinter import messagebox, ttk
 
 from shared.app_global_state import MyButton
 from shared.constants import C_COLOR_ORANGE_BLINKING
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.i18n_fra import C_SCRAPING_CANCEL_CONFIRM_MSG, C_SCRAPING_CANCEL_CONFIRM_TITLE
 from view_models.scraping_view_model import ScrapingViewModel
 from views.components.folder_link_widget import FolderLinkWidget
@@ -236,27 +235,11 @@ class ScrapingView(ttk.Frame):
         self._btn_resume.configure(bg=bg)
         self.after(_BLINK_INTERVAL_MS, self._blink_resume)
 
-    @staticmethod
-    def _journal_tag(line: str) -> str:
-        if StepTypeEnum.E_OPEN_URL.value in line:
-            return "tag_open"
-        if StepExecutionResultEnum.E_SUCCESS.value in line:
-            return "tag_success"
-        if StepExecutionResultEnum.E_SKIPPED.value in line or StepExecutionResultEnum.E_WARNING.value in line:
-            return "tag_warning"
-        if (
-            "Excp" in line
-            or StepExecutionResultEnum.E_ERROR.value in line
-            or StepExecutionResultEnum.E_FATAL.value in line
-        ):
-            return "tag_error"
-        return ""
-
     def _sync_journal_append(self, *_: object) -> None:
         """Append the latest line from journal_append_var to the Text widget."""
         line = self._vm.journal_append_var.get()
         if line:
-            tag = self._journal_tag(line)
+            tag = self._vm.journal_tag_var.get()
             self._txt_journal.configure(state=tk.NORMAL)
             self._txt_journal.insert(tk.END, line + "\n", tag or ())
             self._txt_journal.see(tk.END)

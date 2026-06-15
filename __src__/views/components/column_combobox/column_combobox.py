@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import tkinter as tk
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from tkinter import font as tkfont
 from tkinter import ttk
 from typing import Any
@@ -180,7 +180,7 @@ class ColumnCombobox(tk.Frame):
                     cache[col.key] = ""
         self._row_cache.append(cache)
 
-    def add_items(self, objects: list[Any]) -> None:
+    def add_items(self, objects: Sequence[Any]) -> None:
         """Append multiple items in one batch (preferred for large datasets).
 
         Args:

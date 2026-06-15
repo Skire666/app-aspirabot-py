@@ -21,7 +21,12 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_folder_jsons_model import UrlsFolderJsonsModel
 from shared.enums import UrlSortOrderEnum
-from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFoundError, UrlSourceFilesNotDiscoveredError
+from shared.exception_util import (
+    InvalidUrlSourceValueTypeError,
+    UrlSourceExhaustedError,
+    UrlSourceFileNotFoundError,
+    UrlSourceFilesNotDiscoveredError,
+)
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -91,7 +96,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
             self._pending_urls = []
             self._buffered = _SENTINEL
         else:
-            raise TypeError(f"Expected UrlsFolderJsonsModel, got {type(model).__name__}")
+            raise InvalidUrlSourceValueTypeError("folder_jsons", "UrlsFolderJsonsModel", type(model).__name__)
 
     def loads_urls(self) -> bool:
         """Return True when at least one URL remains available.

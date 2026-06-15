@@ -14,6 +14,7 @@ clears page Vars and marks the session alive before each new browser session.
 import tkinter as tk
 from collections.abc import Callable
 
+from shared.enums import ExtractTextHtmlEnum
 from shared.exception_util import CallbackNotDefinedError
 
 from view_models.view_model_base import ViewModelBase
@@ -240,6 +241,69 @@ class DebugViewModel(ViewModelBase):
         if self._on_close is None:
             raise CallbackNotDefinedError()
         self._on_close()
+
+    # ------------------------------------------------------------------
+    # Result formatters (pure, no Playwright or UI calls)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def format_text_results(selector: str, results: list[dict[str, object]]) -> str:
+        """Format text analysis results into a human-readable string.
+
+        Args:
+            selector: The CSS selector that was queried.
+            results: List of dicts from DebugBrowserService.analyze_texts().
+
+        Returns:
+            Multi-line formatted string ready for display.
+        """
+        if not results:
+            return f"Sélecteur : {selector!r}\nAucun élément trouvé."
+
+        lines: list[str] = [f"Sélecteur : {selector!r}", f"Nombre total : {len(results)}", ""]
+        for i, el in enumerate(results, 1):
+            str_inner_txt = str(el.get(ExtractTextHtmlEnum.E_INNER_TEXT.value, "")).strip()
+            str_txt_content = str(el.get(ExtractTextHtmlEnum.E_TEXT_CONTENT.value, "")).strip()
+            str_inner_html = str(el.get(ExtractTextHtmlEnum.E_INNER_HTML.value, "")).strip()
+            str_outer_html = str(el.get(ExtractTextHtmlEnum.E_OUTER_HTML.value, "")).strip()
+            str_input_val = str(el.get(ExtractTextHtmlEnum.E_INPUT_VALUE.value, "")).strip()
+            lines += [
+                f"[{i}]",
+                f"   innerText x{len(str_inner_txt)} \t : {str_inner_txt}",
+                f"   textContent x{len(str_txt_content)} \t : {str_txt_content}",
+                f"   innerHTML x{len(str_inner_html)} \t : {str_inner_html}",
+                f"   outerHTML x{len(str_outer_html)} \t : {str_outer_html}",
+                f"   value x{len(str_input_val)} \t : {str_input_val}",
+                "",
+            ]
+        return "\n".join(lines)
+
+    @staticmethod
+    def format_image_results(selector: str, results: list[dict[str, object]]) -> str:
+        """Format image analysis results into a human-readable string.
+
+        Args:
+            selector: The CSS selector used for the query.
+            results: List of dicts from DebugBrowserService.analyze_images().
+
+        Returns:
+            Multi-line formatted string ready for display.
+        """
+        if not results:
+            return f"Sélecteur : {selector!r}\nAucune image trouvée."
+
+        lines: list[str] = [f"Sélecteur : {selector!r}", f"Nombre total : {len(results)}", ""]
+        for i, img in enumerate(results, 1):
+            lines += [
+                f"[{i}]",
+                f"  src             : {img.get('src', '')}",
+                f"  alt             : {img.get('alt', '')}",
+                f"  Taille réelle   : {img.get('naturalWidth', 0)} x {img.get('naturalHeight', 0)} px",
+                f"  Taille affichée : {img.get('clientWidth', 0)} x {img.get('clientHeight', 0)} px",
+                f"  Extension       : {img.get('ext', '')}",
+                "",
+            ]
+        return "\n".join(lines)
 
 
 # EOF

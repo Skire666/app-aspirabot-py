@@ -21,13 +21,20 @@ import queue
 import threading
 from collections.abc import Callable
 
-from models.app_configuration_model import AppConfigurationModel
 from playwright.sync_api import Page
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
-from shared.enums import ExtractTextHtmlEnum, WaitUntilEnum
+from shared.enums import WaitUntilEnum
 from shared.exception_util import AspirabotBaseError
-from shared.i18n_fra import C_DEBUG_DNS_DELAY_INVALID, C_DEBUG_TIMEOUT_INVALID, C_DEBUG_URL_EMPTY
+from shared.i18n_fra import (
+    C_DEBUG_DNS_DELAY_INVALID,
+    C_DEBUG_IMAGES_ERROR,
+    C_DEBUG_LOADING,
+    C_DEBUG_REFRESH_ERROR,
+    C_DEBUG_TEXTS_ERROR,
+    C_DEBUG_TIMEOUT_INVALID,
+    C_DEBUG_URL_EMPTY,
+)
 from view_models.debug_view_model import DebugViewModel
 
 # -----------------------------------------------------------------------------
@@ -71,18 +78,21 @@ class DebugPresenter:
     """
 
     def __init__(
-        self, vm: DebugViewModel, debug_service: DebugBrowserService, config_model: AppConfigurationModel
+        self,
+        vm: DebugViewModel,
+        debug_service: DebugBrowserService,
+        browser_factory: Callable[[], BrowserPlaywrightService],
     ) -> None:
         """Initialises the presenter and binds all ViewModel callbacks.
 
         Args:
             vm: The merged DebugViewModel for the debug module.
             debug_service: Service providing DOM inspection utilities.
-            config_model: Application configuration supplying Chromium paths.
+            browser_factory: Callable that creates a fresh BrowserPlaywrightService per session.
         """
         self._logger = logging.getLogger(__name__)
         self._vm = vm
-        self._config_model = config_model
+        self._browser_factory = browser_factory
         self._debug_browser: BrowserPlaywrightService | None = None
         self._debug_service: DebugBrowserService = debug_service
         self._debug_queue: queue.Queue[Callable[[Page], None] | None] = queue.Queue()
@@ -146,14 +156,11 @@ class DebugPresenter:
         self._close_debug_session()
         # Fresh queue — old worker reads None from its own (now unreferenced) queue.
         self._debug_queue = queue.Queue()
-        self._debug_browser = BrowserPlaywrightService(
-            chromium_persistant_dir=self._config_model.chromium_persistant_dir,
-            chromium_extensions_dir=self._config_model.chromium_extensions_dir,
-        )
+        self._debug_browser = self._browser_factory()
 
         # Reset page Vars and open the inspection.
         self._vm.reset_page(url)
-        self._vm.html_content_var.set("Chargement en cours…")
+        self._vm.html_content_var.set(C_DEBUG_LOADING)
         self._vm.open_debug_page()
 
         self._debug_thread = threading.Thread(target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True)
@@ -279,9 +286,9 @@ class DebugPresenter:
         try:
             html = self._debug_service.get_html_content(page)
             self._push_html(html)
-        except Exception as exc:
+        except Exception:
             self._logger.exception("Échec du rafraîchissement debug")
-            self._push_html(f"Erreur lors du rafraîchissement : {exc}")
+            self._push_html(C_DEBUG_REFRESH_ERROR)
 
     def _task_analyze_texts(self, page: Page, selector: str) -> None:
         """Runs text analysis and pushes formatted results to the ViewModel.
@@ -292,10 +299,10 @@ class DebugPresenter:
         """
         try:
             result = self._debug_service.analyze_texts(page, selector)
-            self._push_text_results(self._format_text_results(selector, result))
-        except Exception as exc:
+            self._push_text_results(self._vm.format_text_results(selector, result))
+        except Exception:
             self._logger.exception("Échec de l'analyse des textes")
-            self._push_text_results(f"Erreur : {exc}")
+            self._push_text_results(C_DEBUG_TEXTS_ERROR)
 
     def _task_analyze_images(self, page: Page, selector: str) -> None:
         """Runs image analysis and pushes formatted results to the ViewModel.
@@ -306,76 +313,10 @@ class DebugPresenter:
         """
         try:
             results = self._debug_service.analyze_images(page, selector)
-            self._push_image_results(self._format_image_results(selector, results))
-        except AspirabotBaseError as exc:
+            self._push_image_results(self._vm.format_image_results(selector, results))
+        except AspirabotBaseError:
             self._logger.exception("Échec de l'analyse des images")
-            self._push_image_results(f"Erreur : {exc}")
-
-    # -----------------------------------------------------------------------
-    # Formatters (pure functions — no Playwright or UI calls)
-    # -----------------------------------------------------------------------
-
-    @staticmethod
-    def _format_text_results(selector: str, results: list[dict[str, object]]) -> str:
-        """Formats text analysis results into a human-readable string.
-
-        Args:
-            selector: The CSS selector that was queried.
-            results: List of dicts from DebugBrowserService.analyze_texts().
-
-        Returns:
-            Multi-line formatted string ready for display.
-        """
-        if not results:
-            return f"Sélecteur : {selector!r}\nAucun élément trouvé."
-
-        lines: list[str] = [f"Sélecteur : {selector!r}", f"Nombre total : {len(results)}", ""]
-
-        for i, el in enumerate(results, 1):
-            str_inner_txt = str(el.get(ExtractTextHtmlEnum.E_INNER_TEXT.value, "")).strip()
-            str_txt_content = str(el.get(ExtractTextHtmlEnum.E_TEXT_CONTENT.value, "")).strip()
-            str_inner_html = str(el.get(ExtractTextHtmlEnum.E_INNER_HTML.value, "")).strip()
-            str_outer_html = str(el.get(ExtractTextHtmlEnum.E_OUTER_HTML.value, "")).strip()
-            str_input_val = str(el.get(ExtractTextHtmlEnum.E_INPUT_VALUE.value, "")).strip()
-
-            lines += [
-                f"[{i}]",
-                f"   innerText x{len(str_inner_txt)} \t : {str_inner_txt}",
-                f"   textContent x{len(str_txt_content)} \t : {str_txt_content}",
-                f"   innerHTML x{len(str_inner_html)} \t : {str_inner_html}",
-                f"   outerHTML x{len(str_outer_html)} \t : {str_outer_html}",
-                f"   value x{len(str_input_val)} \t : {str_input_val}",
-                "",
-            ]
-
-        return "\n".join(lines)
-
-    @staticmethod
-    def _format_image_results(selector: str, results: list[dict[str, object]]) -> str:
-        """Formats image analysis results into a human-readable string.
-
-        Args:
-            selector: The CSS selector used for the query.
-            results: List of dicts from DebugBrowserService.analyze_images().
-
-        Returns:
-            Multi-line formatted string ready for display.
-        """
-        if not results:
-            return f"Sélecteur : {selector!r}\nAucune image trouvée."
-
-        lines: list[str] = [f"Sélecteur : {selector!r}", f"Nombre total : {len(results)}", ""]
-        for i, img in enumerate(results, 1):
-            lines += [
-                f"[{i}]",
-                f"  src             : {img.get('src', '')}",
-                f"  alt             : {img.get('alt', '')}",
-                f"  Taille réelle   : {img.get('naturalWidth', 0)} x {img.get('naturalHeight', 0)} px",
-                f"  Taille affichée : {img.get('clientWidth', 0)} x {img.get('clientHeight', 0)} px",
-                f"  Extension       : {img.get('ext', '')}",
-                "",
-            ]
-        return "\n".join(lines)
+            self._push_image_results(C_DEBUG_IMAGES_ERROR)
 
 
 # EOF

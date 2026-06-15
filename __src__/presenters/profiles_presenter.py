@@ -13,9 +13,9 @@ from typing import Any
 from models.launcher_model import LaunchModel
 from services.profiles_service import ProfilesService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM
-from shared.dialog_util import ask_delete_profile_confirmation
 from shared.exception_util import AspirabotBaseError
 from view_models.profiles_view_model import ProfilesViewModel
+from views.dialog_util import ask_delete_profile_confirmation
 
 # -----------------------------------------------------------------------------
 # Classes

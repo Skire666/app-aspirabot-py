@@ -20,8 +20,8 @@ from collections.abc import Callable
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
+from interfaces.i_log_repository import ILogRepository
 from models.log_entry_model import LogEntryModel
-from repositories.log_repository import LogRepository
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -110,7 +110,7 @@ class LoggingService:
         - The root logger level is synchronized with the configured level.
     """
 
-    def __init__(self, log_file: str, log_level: str, log_repository: LogRepository) -> None:
+    def __init__(self, log_file: str, log_level: str, log_repository: ILogRepository) -> None:
         """Initialize the logging service with file, level and in-memory storage.
 
         Configures the root logger with a rotating file handler and removes any

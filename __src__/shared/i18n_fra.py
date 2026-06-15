@@ -79,6 +79,20 @@ C_EXEC_USED_DATE_EMPTY = "--"
 C_DEBUG_URL_EMPTY = "L'URL ne peut pas être vide."
 C_DEBUG_TIMEOUT_INVALID = "Le timeout doit être un entier entre 1 et 30 secondes."
 C_DEBUG_DNS_DELAY_INVALID = "Le délai d'attente DNS doit être un entier entre 1 et 30 secondes."
+C_DEBUG_REFRESH_ERROR = "Erreur lors du rafraîchissement."
+C_DEBUG_TEXTS_ERROR = "Erreur lors de l'analyse des textes."
+C_DEBUG_IMAGES_ERROR = "Erreur lors de l'analyse des images."
+C_DEBUG_LOADING = "Chargement en cours…"
+
+# Configuration panel — last-write timestamp label
+C_CONFIG_LAST_WRITE_EMPTY = "Dernière écriture : --"
+C_CONFIG_LAST_WRITE_FMT = "Dernière écriture : {date}"
+
+# Confirmation dialogs (shared)
+C_DIALOG_CONFIRM_TITLE = "Confirmer"
+C_DIALOG_DUPLICATE_SCENARIO_MSG = "Voulez-vous dupliquer ce scénario ?"
+C_DIALOG_DELETE_SCENARIO_MSG = "Voulez-vous vraiment supprimer ce scénario ?"
+C_DIALOG_DELETE_PROFILE_MSG = "Voulez-vous vraiment supprimer le profil « {profile_name} » ?"
 
 # Scraping panel — no URL source confirmation dialog
 C_SCRAPING_NO_URL_SOURCE_TITLE = "Aucune source d'URLs"

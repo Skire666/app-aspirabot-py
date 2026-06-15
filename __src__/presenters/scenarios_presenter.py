@@ -15,7 +15,6 @@ from datetime import datetime
 
 from models.scenario_model import ScenarioModel
 from services.scenarios_service import ScenariosService
-from shared.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_DELETE_SCENARIO_FAILED,
@@ -23,6 +22,7 @@ from shared.i18n_fra import (
     C_WORKFLOW_ALREADY_ACTIVE_WARNING,
 )
 from view_models.scenarios_view_model import ScenariosViewModel
+from views.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
 
 
 class ScenariosPresenter:

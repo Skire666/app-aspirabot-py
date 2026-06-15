@@ -160,7 +160,7 @@ class DownloadResult:
     def warn(self, message: str) -> None:
         """Record a warning and log it."""
         self.warnings.append(message)
-        _logger.warning(message)
+        _logger.info(message)
 
     def fail(self, message: str) -> None:
         """Record an error and log it."""
@@ -185,29 +185,29 @@ def download_youtube_data(
     result: DownloadResult = DownloadResult()
 
     url_youtube = clean_youtube_url(url_youtube)
-    print(f"Début du téléchargement YouTube : url='{url_youtube}'")
+    _logger.debug("Début du téléchargement YouTube : url='%s'", url_youtube)
     if not _safe_validate(url_youtube, output_dir, get_basic_data, get_srt, result):
         event_bus.log_step(ctx, f"Paramètres invalides : {result.errors[-1]}")
         return result
-    print("Validation des paramètres réussie.")
+    _logger.debug("Validation des paramètres réussie.")
     out_path = _safe_prepare_dir(output_dir, result)
     if out_path is None:
         return result
 
-    print("Préparation du répertoire de sortie.")
+    _logger.debug("Préparation du répertoire de sortie.")
     # basic info extraction (also serves as a validation step before attempting subs download)
     all_infos = _safe_fetch_info(url_youtube, result)
     if all_infos is None:
         return result
     video_id = str(all_infos.get("id") or "unknown")
 
-    print(f"Extraction des informations vidéo : {video_id}")
+    _logger.debug("Extraction des informations vidéo : %s", video_id)
     # choices
     if get_basic_data:
-        print(f"Enregistrement des données basiques : {video_id}")
+        _logger.debug("Enregistrement des données basiques : %s", video_id)
         _safe_save_basic_data(all_infos, out_path, video_id, result, event_bus, ctx)
     if get_srt:
-        print(f"Téléchargement des sous-titres : {video_id}")
+        _logger.debug("Téléchargement des sous-titres : %s", video_id)
         _safe_download_subtitles(url_youtube, all_infos, out_path, video_id, result, event_bus, ctx)
 
     return result

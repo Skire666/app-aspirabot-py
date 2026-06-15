@@ -11,6 +11,7 @@ from models.app_configuration_model import AppConfigurationModel
 from services.app_configuration_service import ConfigService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from shared.exception_util import AspirabotBaseError
+from shared.i18n_fra import C_CONFIG_LAST_WRITE_FMT
 from view_models.app_configuration_view_model import AppConfigurationViewModel, AppConfigViewState
 
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -137,7 +138,7 @@ class AppConfigurationPresenter:
     def _refresh_last_write_time(self) -> None:
         """Pulls the last-write timestamp and pushes it to the view."""
         last_write = self._service.get_last_write_time()
-        self._vm.last_write_time_var.set(f"Dernière écriture : {self._format_last_write_time(last_write)}")
+        self._vm.last_write_time_var.set(C_CONFIG_LAST_WRITE_FMT.format(date=self._format_last_write_time(last_write)))
 
     @staticmethod
     def _format_last_write_time(last_write: datetime | None) -> str:

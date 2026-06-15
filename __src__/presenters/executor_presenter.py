@@ -20,6 +20,7 @@ from models.step_scraping_model import StepScrapingModel
 from presenters.url_config_presenter import UrlConfigPresenter
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
+from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
@@ -35,8 +36,6 @@ from shared.i18n_fra import (
 )
 from shared.parse_util import safe_int_from_str
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
-
-from __src__.services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 
 # -----------------------------------------------------------------------------
 # Module-level constant
@@ -214,12 +213,12 @@ class ExecutorPresenter:
         try:
             self._current_profiles_model = self._svc_profiles.read_profiles(id_scenario)
         except AspirabotBaseError:
-            self._logger.info("Aucun profil trouvé pour %s — création d'un profil par défaut.", id_scenario)
+            self._logger.exception("Aucun profil trouvé pour %s — création d'un profil par défaut.", id_scenario)
             self._current_profiles_model = self._ensure_default_profile(id_scenario)
             return []
         profiles = self._current_profiles_model.launch_profiles if self._current_profiles_model else []
         if not profiles:
-            self._logger.info("Liste vide pour %s — création d'un profil par défaut.", id_scenario)
+            self._logger.error("Liste vide pour %s — création d'un profil par défaut.", id_scenario)
             self._current_profiles_model = self._ensure_default_profile(id_scenario)
             return []
         return profiles

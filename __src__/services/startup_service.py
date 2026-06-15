@@ -5,6 +5,8 @@
 # -----------------------------------------------------------------------------
 
 import time
+from collections.abc import Callable
+from pathlib import Path
 
 from models.app_configuration_model import AppConfigurationModel
 from repositories.app_configuration_repository import AppConfigurationRepository
@@ -39,17 +41,25 @@ class StartupService:
         _logging_service: Populated after initialize_logging() succeeds.
     """
 
-    def __init__(self, config_repo: AppConfigurationRepository) -> None:
-        """Initialize the startup service with a configuration repository.
+    def __init__(
+        self,
+        config_repo: AppConfigurationRepository,
+        log_repo_factory: Callable[[Path], LogRepository],
+        logging_service_factory: Callable[..., LoggingService],
+    ) -> None:
+        """Initialize the startup service with injected collaborators.
 
         Args:
             config_repo: Repository used to read and ensure the config file exists.
+            log_repo_factory: Callable that creates a LogRepository given the log folder path.
+            logging_service_factory: Callable that creates a LoggingService given its parameters.
         """
-        # Store injected repository for use across the startup steps.
         self._config_repo = config_repo
+        self._log_repo_factory = log_repo_factory
+        self._logging_service_factory = logging_service_factory
         self._config_model: AppConfigurationModel | None = None
         self._logging_service: LoggingService | None = None
-        self._time_starting = time.time()  # Track when the startup sequence begins for timing purposes.
+        self._time_starting = time.time()
 
     # -----------------------------------------------------------------------------
     # Startup steps
@@ -98,10 +108,9 @@ class StartupService:
             raise ConfigurationNotLoadedError("initialize_logging()")
 
         try:
-            # Derive the log file path from the configured folder.
             log_file_path = self._config_model.folder_logs / C_LOGS_FILE_NAME_WITH_EXT
-            log_repository = LogRepository(self._config_model.folder_logs)
-            self._logging_service = LoggingService(
+            log_repository = self._log_repo_factory(self._config_model.folder_logs)
+            self._logging_service = self._logging_service_factory(
                 str(log_file_path), self._config_model.log_level_enum, log_repository
             )
         except (OSError, ValueError) as exc:

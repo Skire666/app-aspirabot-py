@@ -90,7 +90,7 @@ class DiscoverRowState:
 # -----------------------------------------------------------------------------
 
 
-class ExecutorViewModel(ViewModelBase):
+class ExecutorViewModel(ViewModelBase):  # noqa: PLR0904
     """UI state and action hooks for the executor panel.
 
     All UI state lives here as ``tk.*Var`` instances.  Lists (scenarios,
@@ -290,45 +290,59 @@ class ExecutorViewModel(ViewModelBase):
     # List accessors
     # ------------------------------------------------------------------
 
-    def get_scenarios(self) -> list[ScenarioItem]:
-        """Return a snapshot of the current scenario list.
+    def get_scenarios(self) -> tuple[ScenarioItem, ...]:
+        """Return an immutable snapshot of the current scenario list.
 
         Returns:
-            A copy of the internal scenario list.
+            A tuple copy of the internal scenario list.
         """
-        return list(self._scenarios)
+        return tuple(self._scenarios)
 
-    def get_profiles(self) -> list[ProfileItem]:
-        """Return a snapshot of the current profile list.
+    def get_profiles(self) -> tuple[ProfileItem, ...]:
+        """Return an immutable snapshot of the current profile list.
 
         Returns:
-            A copy of the internal profile list.
+            A tuple copy of the internal profile list.
         """
-        return list(self._profiles)
+        return tuple(self._profiles)
 
-    def get_steps(self) -> list[StepItem]:
-        """Return a snapshot of the current step list.
+    def get_steps(self) -> tuple[StepItem, ...]:
+        """Return an immutable snapshot of the current step list.
 
         Returns:
-            A copy of the internal step list.
+            A tuple copy of the internal step list.
         """
-        return list(self._steps)
+        return tuple(self._steps)
 
-    def get_url_preview_shortcuts(self) -> list[str]:
-        """Return a snapshot of the FOLDER-mode URL preview list.
+    def get_url_preview_shortcuts(self) -> tuple[str, ...]:
+        """Return an immutable snapshot of the FOLDER-mode URL preview list.
 
         Returns:
-            A copy of the internal shortcuts preview list.
+            A tuple copy of the internal shortcuts preview list.
         """
-        return list(self._url_preview_shortcuts)
+        return tuple(self._url_preview_shortcuts)
 
-    def get_url_preview_jsons(self) -> list[str]:
-        """Return a snapshot of the JSON-mode URL preview list.
+    def get_url_preview_jsons(self) -> tuple[str, ...]:
+        """Return an immutable snapshot of the JSON-mode URL preview list.
 
         Returns:
-            A copy of the internal jsons preview list.
+            A tuple copy of the internal jsons preview list.
         """
-        return list(self._url_preview_jsons)
+        return tuple(self._url_preview_jsons)
+
+    def get_profile_index_by_id(self, id_profile: str) -> int | None:
+        """Return the list index of the profile matching *id_profile*, or None."""
+        for idx, item in enumerate(self._profiles):
+            if item.id_profile == id_profile:
+                return idx
+        return None
+
+    def get_step_index_by_id(self, step_id: str) -> int | None:
+        """Return the list index of the step matching *step_id*, or None."""
+        for idx, item in enumerate(self._steps):
+            if item.step_id == step_id:
+                return idx
+        return None
 
     def get_discovers_in_rows(self) -> tuple[DiscoverRowState, ...]:
         """Return the current discover [IN] rows as an immutable tuple.

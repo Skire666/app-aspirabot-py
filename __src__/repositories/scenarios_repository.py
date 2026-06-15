@@ -117,7 +117,7 @@ class ScenariosRepository:
         scenario_data = self._json_repo.read_from_path(full_filepath)
 
         if not scenario_data:
-            self._logger.warning("Le fichier %s est vide.", full_filepath)
+            self._logger.debug("Le fichier %s est vide.", full_filepath)
             raise ScenarioDataMissingError(id_file)
 
         scenario_model = self._dict_to_scenario_model(scenario_data)

@@ -13,10 +13,10 @@ automatic timestamp stamping and step context injection.
 import logging
 from pathlib import Path
 
+from interfaces.i_profiles_repository import IProfilesRepository
+from interfaces.i_scenarios_repository import IScenariosRepository
 from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
-from repositories.profiles_repository import ProfilesRepository
-from repositories.scenarios_repository import ScenariosRepository
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -42,19 +42,19 @@ class ScenariosService:
         _repository: class:`ScenariosRepository`.
     """
 
-    def __init__(self, repository_scen: ScenariosRepository, repository_prof: ProfilesRepository) -> None:
+    def __init__(self, repository_scen: IScenariosRepository, repository_prof: IProfilesRepository) -> None:
         """Initialise the service with its required repository dependency.
 
         Args:
             repository_scen: Any object that satisfies the
-                :class:`ScenariosRepository`
+                :class:`IScenariosRepository`
                 protocol. Typically injected by the application's composition root.
             repository_prof: The repository for managing profile data.
         """
         # Configure a named logger so log records are traceable to this module.
         self._logger = logging.getLogger(__name__)
-        self._repository_scenarios: ScenariosRepository = repository_scen
-        self._repository_profiles: ProfilesRepository = repository_prof
+        self._repository_scenarios: IScenariosRepository = repository_scen
+        self._repository_profiles: IProfilesRepository = repository_prof
 
     # -------------------------------------------------------------------------
     # Read operations

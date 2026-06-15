@@ -400,7 +400,7 @@ class ScrapingService:
         if isinstance(pending_jump, int):
             if 0 <= pending_jump < len(self._context.step_id_by_index):
                 return pending_jump
-            self._logger.warning("JUMP_TO_STEP : index invalide %s.", pending_jump)
+            self._logger.info("JUMP_TO_STEP : index invalide %s.", pending_jump)
             return current_index + 1
 
         # After the int branch above, pending_jump is narrowed to str.
@@ -408,7 +408,7 @@ class ScrapingService:
         next_index = self._context.step_index_by_id.get(pending_jump)
         if next_index is not None:
             return next_index
-        self._logger.warning("JUMP_TO_STEP : step_id introuvable %s.", pending_jump)
+        self._logger.info("JUMP_TO_STEP : step_id introuvable %s.", pending_jump)
         return current_index + 1
 
     # ------------------------------------------------------------------
@@ -440,8 +440,6 @@ class ScrapingService:
             executor: IStepExecutor = get_step_executor(step.step_type)
             result = executor.execute_logical(self._browser_service, self._context, self._event_bus)
         except Exception:
-            # Log the exception and set the step result to failure
-            print(f"Erreur lors de l'exécution de l'étape {step.step_id} :")
             self._logger.exception("Erreur lors de l'exécution de l'étape %s", step.step_id)
             return StepExecutionResultEnum.E_ERROR
         else:

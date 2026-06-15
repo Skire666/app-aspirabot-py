@@ -87,11 +87,13 @@ def count_files_in_folder(path: Path | str, file_extension: str) -> int:
 
 
 def path_has_valid_syntax(path_str: str) -> bool:
+    """Return True if *path_str* is syntactically valid for the current OS, False otherwise."""
     try:
         Path(path_str)
-        return True
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return False
+    else:
+        return True
 
 
 # EOF

@@ -15,6 +15,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.check_url_page_params import CheckUrlPageParams
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.exception_util import UrlPageCheckMismatchError
 from shared.step_registry import register_step_executor
 
 # -----------------------------------------------------------------------------
@@ -53,7 +54,7 @@ class CheckUrlPageExecutor(IStepExecutor):
 
             # check errors
             if mismatches:
-                raise ValueError("URL non conforme. " + " | ".join(mismatches))  # noqa: TRY301
+                raise UrlPageCheckMismatchError(" | ".join(mismatches))  # noqa: TRY301
             checks: list[str] = []
             if p.check_domain:
                 checks.append("Domaine OK")

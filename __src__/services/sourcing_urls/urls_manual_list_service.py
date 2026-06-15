@@ -9,7 +9,7 @@ from __future__ import annotations
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_manual_list_model import UrlsManualListModel
-from shared.exception_util import UrlSourceExhaustedError
+from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceExhaustedError
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -53,7 +53,7 @@ class UrlsManualListService(IUrlSourceProvider):
             self._urls = model.get_urls()
             self._index = 0
         else:
-            raise TypeError(f"Expected UrlsManualListModel, got {type(model).__name__}")
+            raise InvalidUrlSourceValueTypeError("manual_list", "UrlsManualListModel", type(model).__name__)
 
     def loads_urls(self) -> bool:
         """Return True when more URLs remain.

@@ -12,6 +12,7 @@ are empty.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -19,6 +20,7 @@ from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_folder_racs_model import UrlsFolderRacsModel
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import (
+    InvalidUrlSourceValueTypeError,
     UrlSourceExhaustedError,
     UrlSourceFileNotFoundError,
     UrlSourceFilesNotDiscoveredError,
@@ -47,6 +49,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         Args:
             source: A ``UrlsFolderRacsModel`` instance with the folder path and sort order.
         """
+        self._logger = logging.getLogger(__name__)
         self._file_paths: list[Path] | None = None
         self._index: int = 0
         self._buffered: object = _SENTINEL
@@ -73,7 +76,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
             self._index = 0
             self._buffered = _SENTINEL
         else:
-            raise TypeError(f"Expected UrlsFolderRacsModel, got {type(model).__name__}")
+            raise InvalidUrlSourceValueTypeError("folder_racs", "UrlsFolderRacsModel", type(model).__name__)
 
     def loads_urls(self) -> bool:
         """Return True when at least one URL remains available.
@@ -165,7 +168,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
             if url:
                 result.append(url)
 
-        print(f"preview_url_listed: returning {len(result)} URLs (limit {_PREVIEW_LIMIT})")
+        self._logger.debug("Aperçu URL : %s URLs retournées (limite %s)", len(result), _PREVIEW_LIMIT)
         return result
 
     def get_progress_text(self) -> str:

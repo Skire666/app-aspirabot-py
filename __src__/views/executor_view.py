@@ -54,8 +54,8 @@ class ExecutorView(ttk.Frame):
         self._view_traces: list[tuple[tk.Variable, str]] = []
 
         # Local rendering caches — refreshed from VM list data on version changes.
-        self._profile_items: list[ProfileItem] = []
-        self._step_items: list[StepItem] = []
+        self._profile_items: tuple[ProfileItem, ...] = ()
+        self._step_items: tuple[StepItem, ...] = ()
 
         # Cooldown guard for refresh button.
         self._refresh_cooldown: bool = False
@@ -280,12 +280,11 @@ class ExecutorView(ttk.Frame):
     def _sync_profile_selection(self, *_: object) -> None:
         """Select the listbox row matching selected_profile_id_var."""
         target_id = self._vm.selected_profile_id_var.get()
-        for idx, item in enumerate(self._profile_items):
-            if item.id_profile == target_id:
-                self._listbox_profiles.selection_clear(0, tk.END)
-                self._listbox_profiles.selection_set(idx)
-                self._listbox_profiles.see(idx)
-                return
+        idx = self._vm.get_profile_index_by_id(target_id)
+        if idx is not None:
+            self._listbox_profiles.selection_clear(0, tk.END)
+            self._listbox_profiles.selection_set(idx)
+            self._listbox_profiles.see(idx)
 
     def _sync_steps(self, *_: object) -> None:
         """Re-render the emergency-stop combobox from the ViewModel step list."""
@@ -295,11 +294,11 @@ class ExecutorView(ttk.Frame):
     def _sync_step_selection(self, *_: object) -> None:
         """Select the step combobox entry matching step_id_selected_var."""
         target_id = self._vm.step_id_selected_var.get()
-        for idx, s in enumerate(self._step_items):
-            if s.step_id == target_id:
-                self._combo_steps.current(idx)
-                return
-        self._combo_steps.set("")
+        idx = self._vm.get_step_index_by_id(target_id)
+        if idx is not None:
+            self._combo_steps.current(idx)
+        else:
+            self._combo_steps.set("")
 
     def _sync_profiles_list_enabled(self, *_: object) -> None:
         """Enable or disable the profile listbox and Nouveau button."""

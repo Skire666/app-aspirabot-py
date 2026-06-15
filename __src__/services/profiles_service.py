@@ -7,9 +7,9 @@
 import logging
 from pathlib import Path
 
+from interfaces.i_profiles_repository import IProfilesRepository
 from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
-from repositories.profiles_repository import ProfilesRepository
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -26,7 +26,7 @@ class ProfilesService:
         _repository: Repository used to read scenario data from disk.
     """
 
-    def __init__(self, repository: ProfilesRepository) -> None:
+    def __init__(self, repository: IProfilesRepository) -> None:
         """Initialize the service with its scenario repository.
 
         Args:
@@ -217,8 +217,8 @@ class ProfilesService:
             found.delete_profile_by_id(id_profile)
             self._repository.update_profiles(found)
         else:
-            self._logger.warning(
-                f"Impossible de supprimer le profil '{id_profile}'. Scénario inexistant '{id_scenario}'."
+            self._logger.info(
+                "Impossible de supprimer le profil '%s'. Scénario inexistant '%s'.", id_profile, id_scenario
             )
 
     def get_scenario_name(self, id_scenario: str) -> str:

@@ -143,7 +143,7 @@ class JsonFileRepository:
         """
         resolved = path.resolve()
         if not resolved.exists():
-            self._logger.warning("Fichier JSON absent : '%s'.", resolved)
+            self._logger.debug("Fichier JSON absent : '%s'.", resolved)
             return {}
 
         data = self._get_or_load(resolved, known_mtime_ns=None)
@@ -173,7 +173,7 @@ class JsonFileRepository:
         """
         resolved = path.resolve()
         if not resolved.exists():
-            self._logger.warning("Fichier JSON absent : '%s'.", resolved)
+            self._logger.debug("Fichier JSON absent : '%s'.", resolved)
             return []
 
         return cast(list[Any], self._get_or_load(resolved, known_mtime_ns=known_mtime_ns))

@@ -15,12 +15,17 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import cast
 
+from interfaces.i_json_file_repository import IJsonFileRepository
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.urls_discover_item_model import UrlsDiscoverItemModel
-from repositories.json_repository import JsonFileRepository
-from shared.exception_util import AspirabotBaseError, DiscoverFolderNotFoundError, UrlSourceExhaustedError
+from shared.exception_util import (
+    AspirabotBaseError,
+    DiscoverFolderNotFoundError,
+    InvalidUrlSourceValueTypeError,
+    UrlSourceExhaustedError,
+)
 
 # -----------------------------------------------------------------------------
 # Class
@@ -36,8 +41,12 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
     get the set of already-processed URLs.  The difference gives new_entries.
     """
 
-    def __init__(self) -> None:
-        """Initialise the logger."""
+    def __init__(self, json_repository: IJsonFileRepository) -> None:
+        """Initialise the logger and store the injected JSON repository.
+
+        Args:
+            json_repository: Repository used to read JSON files during discovery.
+        """
         self._logger = logging.getLogger(__name__)
         self.payloads_inputs: list[UrlsDiscoverItemModel] | None = None
         self.payloads_target: UrlsDiscoverItemModel | None = None
@@ -51,7 +60,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         self.new_entries: set[str] = set()
         self.last_length_compute: int = -1
 
-        self._json_repository = JsonFileRepository()
+        self._json_repository = json_repository
 
     def setup_model(self, model: IUrlsSourceModel) -> None:
         """Initialize the provider with a raw model containing unprocessed data.
@@ -67,7 +76,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             self.payloads_inputs = model.inputs
             self.payloads_target = model.output
         else:
-            raise TypeError(f"Expected UrlsDiscoverEntriesModel, got {type(model).__name__}")
+            raise InvalidUrlSourceValueTypeError("discover_entries", "UrlsDiscoverEntriesModel", type(model).__name__)
 
     def update_sources_and_compute(
         self, source_inputs: list[UrlsDiscoverItemModel], source_target: UrlsDiscoverItemModel
@@ -90,7 +99,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             self.payloads_target = source_target
             self._collect_output_entries()
         if not inputs_are_same or not output_is_same or self.last_length_compute != len(self.new_entries):
-            self._compute_new_urls()
+            self._compute_new_entries()
 
     # ------------------------------------------------------------------
     # Public API
@@ -103,7 +112,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             True if at least one new URL is available; False otherwise.
         """
         if len(self.new_entries) <= 0:
-            self._compute_new_urls()
+            self._compute_all_stuff()
         return len(self.new_entries) >= 1
 
     def preview_next_url(self) -> str | None:
@@ -154,7 +163,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
     # Private
     # ------------------------------------------------------------------
 
-    def _compute_new_urls(self) -> None:
+    def _compute_all_stuff(self) -> None:
         """Run the full discovery computation for the given hub.
 
         Args:
@@ -257,7 +266,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             key=lambda f: f.name,
         )
 
-        self._logger.info(f"Collecte de {len(files)} fichier(s) dans {folder}")
+        self._logger.info("Collecte de %d fichier(s) dans %s", len(files), folder)
 
         urls: list[str] = []
         for file_path in files:

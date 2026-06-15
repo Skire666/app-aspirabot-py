@@ -1,28 +1,35 @@
+"""Tkinter confirmation dialogs shared between scenario and profile presenters."""
+
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
 
 from tkinter import messagebox
 
+from shared.i18n_fra import (
+    C_DIALOG_CONFIRM_TITLE,
+    C_DIALOG_DELETE_PROFILE_MSG,
+    C_DIALOG_DELETE_SCENARIO_MSG,
+    C_DIALOG_DUPLICATE_SCENARIO_MSG,
+)
 
-@staticmethod
+
 def ask_duplicate_scenario_confirmation() -> bool:
     """Prompts the user for duplication confirmation.
 
     Returns:
         True if user confirmed the duplication, False otherwise.
     """
-    return messagebox.askyesno("Confirmer", "Voulez-vous dupliquer ce scénario ?")
+    return messagebox.askyesno(C_DIALOG_CONFIRM_TITLE, C_DIALOG_DUPLICATE_SCENARIO_MSG)
 
 
-@staticmethod
 def ask_delete_scenario_confirmation() -> bool:
     """Prompts the user for deletion confirmation.
 
     Returns:
         True if user confirmed the deletion, False otherwise.
     """
-    return messagebox.askyesno("Confirmer", "Voulez-vous vraiment supprimer ce scénario ?")
+    return messagebox.askyesno(C_DIALOG_CONFIRM_TITLE, C_DIALOG_DELETE_SCENARIO_MSG)
 
 
 def ask_delete_profile_confirmation(profile_name: str) -> bool:
@@ -34,7 +41,7 @@ def ask_delete_profile_confirmation(profile_name: str) -> bool:
     Returns:
         True if user confirmed the deletion, False otherwise.
     """
-    return messagebox.askyesno("Confirmer", f"Voulez-vous vraiment supprimer le profil « {profile_name} » ?")
+    return messagebox.askyesno(C_DIALOG_CONFIRM_TITLE, C_DIALOG_DELETE_PROFILE_MSG.format(profile_name=profile_name))
 
 
 # EOF

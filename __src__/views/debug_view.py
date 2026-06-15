@@ -23,7 +23,7 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 
 _SPIN_MIN: int = 1
 _SPIN_MAX: int = 30
-_DEFAULT_TIMEOUT: int = 8
+_DEFAULT_TIMEOUT: int = 12
 _DEFAULT_DNS_DELAY: int = 5
 
 # -----------------------------------------------------------------------------

@@ -7,6 +7,7 @@
 import tkinter as tk
 from collections.abc import Callable
 
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import CallbackNotDefinedError
 
 from view_models.view_model_base import ViewModelBase
@@ -81,6 +82,7 @@ class ScrapingViewModel(ViewModelBase):
         self.stat_started_var = tk.StringVar(master=master, value="—")
         # Journal Vars — incremental append / full clear signals.
         self.journal_append_var = tk.StringVar(master=master, value="")
+        self.journal_tag_var = tk.StringVar(master=master, value="")
         self.journal_version_var = tk.IntVar(master=master, value=0)
         self.journal_clear_var = tk.IntVar(master=master, value=0)
         self.journal_path_var = tk.StringVar(master=master, value="Fichier journal : —")
@@ -108,12 +110,30 @@ class ScrapingViewModel(ViewModelBase):
     # Journal helpers
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _compute_journal_tag(line: str) -> str:
+        """Return the canvas tag name for *line* based on its content."""
+        if StepTypeEnum.E_OPEN_URL.value in line:
+            return "tag_open"
+        if StepExecutionResultEnum.E_SUCCESS.value in line:
+            return "tag_success"
+        if StepExecutionResultEnum.E_SKIPPED.value in line or StepExecutionResultEnum.E_WARNING.value in line:
+            return "tag_warning"
+        if (
+            "Excp" in line
+            or StepExecutionResultEnum.E_ERROR.value in line
+            or StepExecutionResultEnum.E_FATAL.value in line
+        ):
+            return "tag_error"
+        return ""
+
     def append_journal(self, line: str) -> None:
         """Signal the View to append one line to the journal widget.
 
         Args:
             line: The pre-formatted journal entry.
         """
+        self.journal_tag_var.set(self._compute_journal_tag(line))
         self.journal_append_var.set(line)
         self.journal_version_var.set(self.journal_version_var.get() + 1)
 

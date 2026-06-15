@@ -1677,7 +1677,7 @@ class ClickStepExecutor(StepExecutorBase):
 > *Any implementation of an interface can replace another without breaking callers.*
 
 All inter-layer contracts are `typing.Protocol`s (in `interfaces/`). A Service that
-depends on `IScenarioRepository` must work correctly whether the concrete object is the
+depends on `IScenario` must work correctly whether the concrete object is the
 production JSON repository, an in-memory fake, or a test stub.
 
 Practical rules:

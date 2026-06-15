@@ -97,7 +97,7 @@ class AppConfigurationRepository:
         """
         # Check if the configuration file already exists.
         if not Path(self._full_pathfile).exists():
-            self._logger.info(
+            self._logger.debug(
                 "Fichier de configuration introuvable, création du fichier par défaut : %s", self._full_pathfile
             )
             default_data = AppConfigurationModel()
