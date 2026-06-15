@@ -163,8 +163,8 @@ def _assemble_components(  # noqa: PLR0914
     scen_view, scen_pre, edit_view, edit_pr, steps_pr, scen_svc = _init_scenarios_components(
         main_view, prof_svc, prof_repo, startup_service.config_model, JsonFileRepository()
     )
-    exec_view, exec_pre, url_cfg_pr = _init_executor_component(main_view, scen_svc, prof_svc)
-    scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc)
+    exec_view, exec_pre, url_cfg_pr, sourcing = _init_executor_component(main_view, scen_svc, prof_svc)
+    scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc, sourcing)
     dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
     _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre)
     views: list[tk.Widget] = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
@@ -367,7 +367,7 @@ def _init_debug_component(main_view: MainView, config_model: AppConfigurationMod
 
 def _init_executor_component(
     main_view: MainView, scenario_service: ScenariosService, profiles_service: ProfilesService
-) -> tuple[ExecutorView, ExecutorPresenter, UrlConfigPresenter]:
+) -> tuple[ExecutorView, ExecutorPresenter, UrlConfigPresenter, SourcingUrlsService]:
     """Create and wire the executor panel component, including the tab-4 Discover panel.
 
     Args:
@@ -389,12 +389,16 @@ def _init_executor_component(
         scenarios_service=scenario_service,
         profiles_service=profiles_service,
         url_config_presenter=url_config_presenter,
+        sourcing_urls=sourcing,
     )
-    return executor_view, executor_presenter, url_config_presenter
+    return executor_view, executor_presenter, url_config_presenter, sourcing
 
 
 def _init_scraping_component(
-    main_view: MainView, config_model: AppConfigurationModel, scenarios_service: ScenariosService
+    main_view: MainView,
+    config_model: AppConfigurationModel,
+    scenarios_service: ScenariosService,
+    sourcing_urls: SourcingUrlsService,
 ) -> tuple[ScrapingView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
@@ -402,6 +406,7 @@ def _init_scraping_component(
         main_view: Main container providing the content area as parent.
         config_model: Configuration model supplying the scraping output folder.
         scenarios_service: The scenarios service for managing scenario data.
+        sourcing_urls: The URL sourcing service.
 
     Returns:
         A (ScrapingView, ScrapingPresenter) tuple.
@@ -418,7 +423,7 @@ def _init_scraping_component(
         ),
         journal_repository=JournalRepository(),
     )
-    scraping_presenter = ScrapingPresenter(scraping_vm, scraping_service, scenarios_service)
+    scraping_presenter = ScrapingPresenter(scraping_vm, scraping_service, scenarios_service, sourcing_urls)
     return scraping_view, scraping_presenter
 
 

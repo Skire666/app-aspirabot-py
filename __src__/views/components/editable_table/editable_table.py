@@ -117,6 +117,8 @@ class EditableTable(tk.Frame):
         self._edit_tree_col: str | None = None
         self._edit_global_click_id: str | None = None
         self._hovered_iid: str | None = None
+        # Interaction gate — False while the parent section is disabled.
+        self._interactive_enabled: bool = True
 
         self._sort_col_key: str | None = config.default_sort_key
         self._sort_ascending: bool = config.default_sort_ascending
@@ -159,8 +161,10 @@ class EditableTable(tk.Frame):
     def _build_top_bar(self) -> None:
         top = tk.Frame(self)
         top.pack(side="top", fill="x", padx=4, pady=6)
-        ttk.Button(top, text=_CLEAR_LABEL, command=self._on_clear).pack(side="right")
-        ttk.Button(top, text=_ADD_LABEL, command=self._on_add_row).pack(side="left")
+        self._btn_clear = ttk.Button(top, text=_CLEAR_LABEL, command=self._on_clear)
+        self._btn_clear.pack(side="right")
+        self._btn_add = ttk.Button(top, text=_ADD_LABEL, command=self._on_add_row)
+        self._btn_add.pack(side="left")
 
     def _build_tree(self) -> None:
         """Build the Treeview frame, columns, scrollbars, row tags, and event bindings."""
@@ -300,6 +304,22 @@ class EditableTable(tk.Frame):
 
     # ── Public API ────────────────────────────────────────────────────────────
 
+    def set_enabled(self, enabled: bool) -> None:
+        """Enable or disable all interactive elements of the table.
+
+        Disabling suppresses click events on the Treeview (edit, delete, action
+        columns) as well as the Add-row and Clear-all toolbar buttons.  The
+        Treeview's ``<Button-1>`` binding is a raw event binding that ignores the
+        ttk ``state`` option, so a dedicated flag is required.
+
+        Args:
+            enabled: True to allow interaction; False to block it.
+        """
+        self._interactive_enabled = enabled
+        state = tk.NORMAL if enabled else tk.DISABLED
+        self._btn_add.configure(state=state)
+        self._btn_clear.configure(state=state)
+
     def get_data(self) -> list[dict[str, str]]:
         """Return a copy of the current rows data."""
         return [dict(row) for row in self.rows_data]
@@ -381,6 +401,8 @@ class EditableTable(tk.Frame):
 
     def _sort_by(self, col_key: str) -> None:
         """Sort rows by *col_key*, toggling direction on repeated calls."""
+        if not self._interactive_enabled:
+            return
         self._close_edit(save=True)
         if self._sort_col_key == col_key:
             self._sort_ascending = not self._sort_ascending
@@ -430,6 +452,8 @@ class EditableTable(tk.Frame):
 
     def _on_click(self, event: tk.Event) -> None:
         """Route a single click to the appropriate handler based on column index."""
+        if not self._interactive_enabled:
+            return
         region = self.tree.identify_region(event.x, event.y)
         if region != "cell":
             return
@@ -464,6 +488,8 @@ class EditableTable(tk.Frame):
 
     def _on_add_row(self) -> None:
         """Add a default row, scroll to it, and open its first editable cell."""
+        if not self._interactive_enabled:
+            return
         self.add_row()
         if not self.rows_data:
             return
@@ -481,6 +507,8 @@ class EditableTable(tk.Frame):
 
     def _on_clear(self) -> None:
         """Clear all rows, with optional confirmation dialog."""
+        if not self._interactive_enabled:
+            return
         if self.config.confirm_clear and not messagebox.askyesno(
             "Confirmation", "Effacer toutes les lignes ?", parent=self
         ):

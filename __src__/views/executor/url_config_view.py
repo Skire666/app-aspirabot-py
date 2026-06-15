@@ -469,6 +469,9 @@ class UrlConfigView(ttk.Frame):
                 _apply(child)  # type: ignore[arg-type]
 
         _apply(self)
+        # EditableTable's Treeview uses raw event bindings that ignore ttk state —
+        # call set_enabled() so its interaction gate is properly toggled.
+        self._grid_discover.set_enabled(enabled)
         # Readonly preview widgets must stay disabled even when the section is active.
         if enabled:
             self._txt_url_shortcuts.configure(state=tk.DISABLED)

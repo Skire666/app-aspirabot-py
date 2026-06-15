@@ -106,13 +106,13 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             self._compute_new_urls()
         return len(self.new_entries) >= 1
 
-    def preview_next_url(self) -> str:
+    def preview_next_url(self) -> str | None:
         """Return the next new URL without advancing the internal cursor.
 
         Returns:
             The next new URL string, or an empty string if no new URLs remain.
         """
-        return next(iter(self.new_entries), "<_no_url_>")
+        return next(iter(self.new_entries), None)
 
     def pop_url(self) -> str:
         """Drain the look-ahead buffer and return the next new URL.

@@ -85,6 +85,11 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         if isinstance(model, UrlsFolderJsonsModel):
             self._folder_path = model.folder_jsons
             self._sort_order = UrlSortOrderEnum(model.orders_jsons)
+            # Reset discovery so that a new folder is re-scanned on next access.
+            self._file_paths = None
+            self._file_index = 0
+            self._pending_urls = []
+            self._buffered = _SENTINEL
         else:
             raise TypeError(f"Expected UrlsFolderJsonsModel, got {type(model).__name__}")
 
@@ -103,7 +108,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         self._fill_one_url_if_empty()
         return self._buffered is not _SENTINEL
 
-    def preview_next_url(self) -> str:
+    def preview_next_url(self) -> str | None:
         """Return the next URL without advancing the internal cursor.
 
         Returns:
@@ -112,7 +117,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         Raises:
             FileNotFoundError: If the folder does not exist on first access.
         """
-        return str(self._buffered) if self._buffered is not _SENTINEL else "<_no_url_>"
+        return str(self._buffered) if self._buffered is not _SENTINEL else None
 
     def pop_url(self) -> str:
         """Drain the look-ahead buffer and return the next URL.

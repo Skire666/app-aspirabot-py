@@ -5,6 +5,10 @@ from services.sourcing_urls.urls_folder_jsons_service import UrlsFolderJsonsServ
 from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsService
 from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
 from shared.enums import UrlSourceTypeEnum
+from shared.error_code import ErrorCode
+from shared.errors.sourcing_urls_service_error import ErrorCodeSUS
+
+from __src__.shared.path_util import path_has_valid_syntax
 
 
 class SourcingUrlsService:
@@ -28,8 +32,7 @@ class SourcingUrlsService:
         assert self._export_folder, "Export folder has not been set."
         return self._export_folder
 
-    def get_warmup_url(self) -> str:
-        assert self._warmup_url is not None, "Warmup URL has not been set."
+    def get_warmup_url(self) -> str | None:
         return self._warmup_url
 
     def get_provider_urls(self) -> IUrlSourceProvider:
@@ -58,9 +61,14 @@ class SourcingUrlsService:
     def get_provider_folder_jsons(self) -> UrlsFolderJsonsService:
         return self._provider_folder_jsons
 
-    def setup_context_scraping(self, launcher: LaunchModel) -> None:
+    def set_context_scraping(self, launcher: LaunchModel, export_folder: str, warmup_url: str | None) -> None:
+
         self._launcher = launcher
+        self._export_folder = export_folder
+        self._warmup_url = warmup_url
         ustype = launcher.urls_source_type
+
+        print(f"Export folder: {export_folder}, Warmup URL: {warmup_url}, Source type: {ustype}")
 
         if ustype is UrlSourceTypeEnum.E_MANUAL_LIST:
             self._provider_manual.setup_model(launcher.urls_manual_list)
@@ -76,3 +84,33 @@ class SourcingUrlsService:
             self._provider_discover.loads_urls()  # Preload and validate URLs
         else:
             raise ValueError(f"Unsupported URL source type: {ustype}")
+
+    def is_valid(self) -> ErrorCode | None:
+        """Validate the current context and return the first error found.
+
+        Returns:
+            The first validation ErrorCode, or None if the context is valid.
+        """
+        error: ErrorCode | None = None
+
+        if self._launcher is None:
+            error = ErrorCodeSUS.SUS_1001
+        elif self._launcher.urls_source_type not in {
+            UrlSourceTypeEnum.E_MANUAL_LIST,
+            UrlSourceTypeEnum.E_FOLDER_RACS,
+            UrlSourceTypeEnum.E_FOLDER_JSONS,
+            UrlSourceTypeEnum.E_DISCOVER_ENTRIES,
+        }:
+            error = ErrorCodeSUS.SUS_1002
+        elif not self._export_folder or not self._export_folder.strip():
+            error = ErrorCodeSUS.SUS_1003
+        elif not path_has_valid_syntax(self._export_folder):
+            error = ErrorCodeSUS.SUS_1004
+        elif not self.get_provider_urls().loads_urls():
+            error = ErrorCodeSUS.SUS_1005
+        elif not self.get_provider_urls().preview_next_url():
+            error = ErrorCodeSUS.SUS_1006
+        elif len(self.get_provider_urls().preview_next_url() or "") <= 3:
+            error = ErrorCodeSUS.SUS_1007
+
+        return error

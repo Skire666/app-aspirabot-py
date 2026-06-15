@@ -74,7 +74,11 @@ class ScrapingPresenter:
     """
 
     def __init__(
-        self, vm: ScrapingViewModel, service_scraping: ScrapingService, scenarios_service: ScenariosService
+        self,
+        vm: ScrapingViewModel,
+        service_scraping: ScrapingService,
+        scenarios_service: ScenariosService,
+        sourcing_urls: SourcingUrlsService,
     ) -> None:
         """Wire ViewModel callbacks and initialise per-run state.
 
@@ -82,6 +86,7 @@ class ScrapingPresenter:
             vm: The live scraping panel ViewModel.
             service_scraping: The scraping orchestration service.
             scenarios_service: The scenarios service for managing scenario data.
+            sourcing_urls: The URL sourcing service.
         """
         self._logger = logging.getLogger(__name__)
         self._vm = vm
@@ -91,7 +96,7 @@ class ScrapingPresenter:
         # Session context set by set_launch_context().
         self._scenario: ScenarioModel | None = None
         self._profile: LaunchModel | None = None
-        self._sourcing_urls: SourcingUrlsService = SourcingUrlsService()
+        self._sourcing_urls: SourcingUrlsService = sourcing_urls
 
         # Threading handles for the current run.
         self._cancel_event: threading.Event = threading.Event()
@@ -337,8 +342,8 @@ class ScrapingPresenter:
         if stype == StepTypeEnum.E_YOUTUBE_DDL:
             return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Utilisé : {context.last_url_opened}"
         if stype == StepTypeEnum.E_OPEN_URL:
-            next_url = context.url_source.preview_next_url() if context.url_source else "<_no_preview_url_>"
-            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Prochaine : {next_url}"
+            next_url = context.url_source.preview_next_url() if context.url_source else None
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Prochaine : {next_url!s}"
         if stype == StepTypeEnum.E_SCROLL_DOWN:
             ts = get_time_now_hh_mm_ss()
             scroll_params = cast(ScrollDownParams, step.params)

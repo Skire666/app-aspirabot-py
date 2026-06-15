@@ -68,6 +68,10 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         if isinstance(model, UrlsFolderRacsModel):
             self._folder_path = model.folder_racs
             self._sort_order = UrlSortOrderEnum(model.orders_racs)
+            # Reset discovery so that a new folder is re-scanned on next access.
+            self._file_paths = None
+            self._index = 0
+            self._buffered = _SENTINEL
         else:
             raise TypeError(f"Expected UrlsFolderRacsModel, got {type(model).__name__}")
 
@@ -87,7 +91,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         self._fill_one_url_if_empty()  # update uniquement si == _SENTINEL
         return self._buffered is not _SENTINEL
 
-    def preview_next_url(self) -> str:
+    def preview_next_url(self) -> str | None:
         """Return the next URL without advancing the internal cursor.
 
         Returns:
@@ -96,7 +100,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         Raises:
             FileNotFoundError: If the folder does not exist on first access.
         """
-        return str(self._buffered) if self._buffered is not _SENTINEL else "<_no_url_>"
+        return str(self._buffered) if self._buffered is not _SENTINEL else None
 
     def pop_url(self) -> str:
         """Drain the look-ahead buffer and return the next URL.
@@ -275,12 +279,12 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         Raises:
             None.
         """
-        # TODO PCO : marche pas.
         with Path(file_path).open(encoding="utf-8") as f:
             for ligne in f:
-                if ligne.startswith("URL="):
-                    url = ligne.strip().removeprefix("URL=")
-                    if url and url.strip():
+                stripped = ligne.strip()
+                if stripped and stripped.startswith("URL="):
+                    url = stripped.removeprefix("URL=")
+                    if url and len(url.strip()) >= 1:
                         return url.strip()
         return ""
 

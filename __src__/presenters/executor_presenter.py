@@ -36,6 +36,8 @@ from shared.i18n_fra import (
 from shared.parse_util import safe_int_from_str
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
 
+from __src__.services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
+
 # -----------------------------------------------------------------------------
 # Module-level constant
 # -----------------------------------------------------------------------------
@@ -61,6 +63,7 @@ class ExecutorPresenter:
         scenarios_service: ScenariosService,
         profiles_service: ProfilesService,
         url_config_presenter: UrlConfigPresenter,
+        sourcing_urls: SourcingUrlsService,
     ) -> None:
         """Register ViewModel callbacks and initialise internal state.
 
@@ -69,12 +72,14 @@ class ExecutorPresenter:
             scenarios_service: Service providing scenario CRUD and listing.
             profiles_service: Service providing profile CRUD and listing.
             url_config_presenter: Presenter that owns URL preview refresh logic.
+            sourcing_urls: The URL sourcing service.
         """
         self._logger = logging.getLogger(__name__)
         self._vm = vm
         self._svc_scenarios = scenarios_service
         self._svc_profiles = profiles_service
         self._url_config_presenter = url_config_presenter
+        self._sourcing_urls = sourcing_urls
 
         self._current_scenario: ScenarioModel | None = None
         self._current_profiles_model: ProfilesModel | None = None
@@ -292,8 +297,10 @@ class ExecutorPresenter:
         steps = self._current_scenario.steps if self._current_scenario else []
         self._push_profile_vars(profile, steps)
         self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
-        self._set_dirty(False)
         self._url_config_presenter.refresh_preview_for_profile(profile)
+        # Reset dirty after all Vars are pushed — view traces on source Vars fire form_changed()
+        # during the push above, so dirty must be cleared after the full load, not before.
+        self._set_dirty(False)
         self._vm.is_profile_section_enabled_var.set(True)
 
     def _push_profile_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
@@ -375,6 +382,7 @@ class ExecutorPresenter:
         self._current_profile = None
         self._vm.current_profile_name_var.set("")
         self._vm.export_folder_var.set("")
+        self._url_config_presenter.clear_url_state()
         self._vm.is_profile_section_enabled_var.set(False)
         self._vm.is_rename_btn_enabled_var.set(False)
         self._vm.is_delete_btn_enabled_var.set(False)
@@ -471,7 +479,6 @@ class ExecutorPresenter:
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)
-        print(f"_on_form_changed: profile {self._current_profile.id_profile if self._current_profile else 'None'}")
         self._url_config_presenter.refresh_preview_from_vm()
 
     def _set_dirty(self, value: bool) -> None:
@@ -507,6 +514,14 @@ class ExecutorPresenter:
             return C_EXEC_NO_PROFILE
         self._apply_form_to_profile()
         error = self._current_profile.is_valid()
+        if error:
+            return str(error)
+        self._sourcing_urls.set_context_scraping(
+            launcher=self._current_profile,
+            export_folder=self._vm.export_folder_var.get().strip(),
+            warmup_url=self._vm.warmup_url_var.get().strip() or None,
+        )
+        error = self._sourcing_urls.is_valid()
         if error:
             return str(error)
         return None

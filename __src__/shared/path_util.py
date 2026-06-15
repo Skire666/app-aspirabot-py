@@ -86,4 +86,12 @@ def count_files_in_folder(path: Path | str, file_extension: str) -> int:
     return len(list(folder_path.glob(f"*{file_extension}")))
 
 
+def path_has_valid_syntax(path_str: str) -> bool:
+    try:
+        Path(path_str)
+        return True
+    except ValueError, TypeError:
+        return False
+
+
 # EOF
