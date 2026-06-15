@@ -205,6 +205,7 @@ class LaunchModel:
         if UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value == stype:
             error = self.urls_discover_entries.is_valid()
 
+        print(f"DEBUG: LaunchModel.is_valid() -> {error}")
         return error
 
 

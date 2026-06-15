@@ -81,7 +81,9 @@ def count_files_in_folder(path: Path | str, file_extension: str) -> int:
     folder_path = Path(path)
     if not folder_path.is_dir():
         return 0
-    return len(list(folder_path.glob(f"*.{file_extension}")))
+    if not file_extension.startswith("."):
+        file_extension = f".{file_extension}"
+    return len(list(folder_path.glob(f"*{file_extension}")))
 
 
 # EOF

@@ -98,7 +98,7 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
             error = ErrorCodeUFJ.UFJ_1004
         elif not folder_exists(self.folder_json):
             error = ErrorCodeUFJ.UFJ_1005
-        elif count_files_in_folder(self.folder_json, ".json") <= 0:
+        elif count_files_in_folder(self.folder_json, "json") <= 0:
             error = ErrorCodeUFJ.UFJ_1006
 
         return error

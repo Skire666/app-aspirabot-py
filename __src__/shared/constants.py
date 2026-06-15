@@ -70,10 +70,6 @@ C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID: int = 8  # must be even (aka % 2 == 0)
 
 # -----------------------------------------------------------------------------
 
-# Supported browser engine identifiers for the scraping service.
-C_BROWSER_ENGINE_PLAYWRIGHT: str = "Playwright"
-C_BROWSER_ENGINE_DEFAULT: str = C_BROWSER_ENGINE_PLAYWRIGHT
-
 # Default paths for the persistent Chromium profile and the uBlock extension.
 C_CHROMIUM_PROFILE_DIR: str = "chromium_tmp"
 C_CHROMIUM_EXTENSIONS_DIR: str = "extensions/uBlock0_chromium"

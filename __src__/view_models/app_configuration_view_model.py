@@ -39,7 +39,6 @@ class AppConfigViewState:
     gui_booting_size: str
     gui_booting_position: str
     gui_booting_fullscreen: bool
-    browser_engine: str
 
 
 # -----------------------------------------------------------------------------

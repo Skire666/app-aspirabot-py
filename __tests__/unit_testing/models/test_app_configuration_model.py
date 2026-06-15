@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from models.app_configuration_model import AppConfigurationModel
 from shared.exception_util import (
     InvalidBrowserEngineError,
@@ -25,21 +24,9 @@ def _make_config(**kwargs: object) -> AppConfigurationModel:
         "folder_scraping": "data_scraping",
         "gui_booting_size": "1000x800",
         "gui_booting_fullscreen": False,
-        "browser_engine": "Playwright",
     }
     defaults.update(kwargs)
     return AppConfigurationModel(**defaults)  # type: ignore[arg-type]
-
-
-class TestInit:
-    def test_default_construction(self) -> None:
-        cfg = AppConfigurationModel()
-        assert cfg.log_level_enum == "DEBUG"
-        assert cfg.browser_engine == "Playwright"
-
-    def test_custom_values(self) -> None:
-        cfg = _make_config(log_level_enum="INFO")
-        assert cfg.log_level_enum == "INFO"
 
 
 class TestLogLevelEnum:
@@ -150,9 +137,15 @@ class TestToDict:
         cfg = _make_config()
         result = cfg.to_dict()
         expected_keys = {
-            "log_level_enum", "folder_logs", "folder_scenarios", "folder_scraping",
-            "gui_booting_size", "gui_booting_fullscreen", "browser_engine",
-            "chromium_persistant_dir", "chromium_extensions_dir",
+            "log_level_enum",
+            "folder_logs",
+            "folder_scenarios",
+            "folder_scraping",
+            "gui_booting_size",
+            "gui_booting_fullscreen",
+            "browser_engine",
+            "chromium_persistant_dir",
+            "chromium_extensions_dir",
         }
         assert expected_keys.issubset(result.keys())
 

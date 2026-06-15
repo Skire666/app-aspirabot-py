@@ -10,3 +10,7 @@ class ErrorCode:
     code: str
     user_message: str
     severity: ErrorSeverityEnum
+
+    def __str__(self) -> str:
+        """Retourne une représentation textuelle de l'ErrorCode."""
+        return f"{self.code}: {self.user_message}"

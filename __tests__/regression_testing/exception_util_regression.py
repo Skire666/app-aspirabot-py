@@ -39,7 +39,6 @@ from shared.exception_util import (
     ImageNotDownloadedError,
     ImageWaitTimeoutError,
     InvalidBooleanError,
-    InvalidBrowserEngineError,
     InvalidDurationError,
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
@@ -211,10 +210,6 @@ class TestConfigurationErrors:
         exc = InvalidGuiBootingSizeError()
         assert isinstance(exc, AspirabotBaseError)
         assert "LARGEURxHAUTEUR" in _msg(exc) or "format" in _msg(exc).lower()
-
-    def test_invalid_browser_engine(self) -> None:
-        exc = InvalidBrowserEngineError(["chromium", "firefox"])
-        assert "chromium" in _msg(exc)
 
     def test_failed_to_load_configuration(self) -> None:
         exc = FailedToLoadConfigurationDuringRuntimeError()

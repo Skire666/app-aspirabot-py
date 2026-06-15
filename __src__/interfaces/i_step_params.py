@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, Self
+from typing import Protocol, Self
+
+from models.steps_collections_model import StepsCollections
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -28,7 +30,7 @@ class IStepParams(Protocol):
         """Validate and construct the params model from a dict."""
         ...
 
-    def validate_with_context(self, step_index: int, steps_context: Any, step_id: str) -> list[str]:
+    def validate_with_context(self, step_index: int, steps_context: StepsCollections, step_id: str) -> list[str]:
         """Validate params in workflow context and return French error strings.
 
         Returns:

@@ -450,6 +450,7 @@ class ExecutorPresenter:
 
         # manual
         raw_manual: list[str] = self._vm.manual_urls_var.get().strip().splitlines()
+        self._current_profile.urls_manual_list.clear_urls()
         self._current_profile.urls_manual_list.append_urls(raw_manual)
 
         # folder racs
@@ -505,10 +506,9 @@ class ExecutorPresenter:
         if not self._current_profile:
             return C_EXEC_NO_PROFILE
         self._apply_form_to_profile()
-        error_msg = str(self._current_profile.is_valid())
-        print(f"validation result: {error_msg}")
-        if error_msg:
-            return error_msg
+        error = self._current_profile.is_valid()
+        if error:
+            return str(error)
         return None
 
     def _on_open_export_folder(self) -> None:

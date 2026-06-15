@@ -127,7 +127,7 @@ class UrlsDiscoverItemModel:
             error = ErrorCodeUDI.UDI_1001
         elif not folder_exists(self.folder_json):
             error = ErrorCodeUDI.UDI_1003
-        elif count_files_in_folder(self.folder_json, ".json") <= 0:
+        elif count_files_in_folder(self.folder_json, "json") <= 0:
             error = ErrorCodeUDI.UDI_1004
         elif not self.pattern_json or not self.pattern_json.strip():
             error = ErrorCodeUDI.UDI_1005

@@ -9,15 +9,11 @@ from datetime import datetime
 
 from models.app_configuration_model import AppConfigurationModel
 from services.app_configuration_service import ConfigService
-from shared.constants import C_BROWSER_ENGINE_PLAYWRIGHT
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from shared.exception_util import AspirabotBaseError
 from view_models.app_configuration_view_model import AppConfigurationViewModel, AppConfigViewState
 
 _LOG_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-
-# Camoufox fonctionne, Scrapling change rien comparé à playwright
-_BROWSER_ENGINE_OPTIONS = [C_BROWSER_ENGINE_PLAYWRIGHT]
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -44,7 +40,6 @@ class AppConfigurationPresenter:
         self._vm.bind_cancel(self._on_cancel)
         self._vm.bind_form_changed(self._on_form_change)
         self._vm.set_log_level_options(_LOG_LEVEL_OPTIONS)
-        self._vm.set_browser_engine_options(_BROWSER_ENGINE_OPTIONS)
         self._load_configuration()
 
     def _load_configuration(self) -> None:
@@ -143,9 +138,7 @@ class AppConfigurationPresenter:
     def _refresh_last_write_time(self) -> None:
         """Pulls the last-write timestamp and pushes it to the view."""
         last_write = self._service.get_last_write_time()
-        self._vm.last_write_time_var.set(
-            f"Dernière écriture : {self._format_last_write_time(last_write)}"
-        )
+        self._vm.last_write_time_var.set(f"Dernière écriture : {self._format_last_write_time(last_write)}")
 
     @staticmethod
     def _format_last_write_time(last_write: datetime | None) -> str:

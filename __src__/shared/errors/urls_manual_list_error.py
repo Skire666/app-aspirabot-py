@@ -1,10 +1,10 @@
 from enum import Enum
 
-from enums import ErrorSeverityEnum
+from shared.enums import ErrorSeverityEnum
 from shared.error_code import ErrorCode
 
 
-class ErrorCodeUML(Enum, ErrorCode):
+class ErrorCodeUML(ErrorCode, Enum):
     """Error codes for UrlsManualListModel."""
 
     # wrong

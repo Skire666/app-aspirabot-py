@@ -105,14 +105,18 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
             error = ErrorCodeUDE.UDE_1001
         elif self.output is None:
             error = ErrorCodeUDE.UDE_1003
-        elif not self.output.is_valid():
-            error = ErrorCodeUDE.UDE_1004
-        else:
+
+        if error is None:
             for p in self.inputs:
                 sub_error = p.is_valid()
                 if sub_error is not None:
                     error = sub_error
                     break
+
+            assert self.output is not None
+
+            if error is None:
+                error = self.output.is_valid()
 
         return error
 

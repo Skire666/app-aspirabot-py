@@ -13,8 +13,8 @@ class ExtractedData:
     def __init__(self):
         self._fields: dict[str, ExtractedItem] = {}
 
-    def append_item(self, key: str, input: str, values: list[Any], comment: str) -> None:
-        self._fields[key] = ExtractedItem(input=input, values=values, comment=comment)
+    def append_item(self, key: str, input_css: str, values: list[Any], comment: str) -> None:
+        self._fields[key] = ExtractedItem(input=input_css, values=values, comment=comment)
 
     # --- Accès aux champs ---
 

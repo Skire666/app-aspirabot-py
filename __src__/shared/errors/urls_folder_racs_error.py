@@ -1,10 +1,10 @@
 from enum import Enum
 
-from enums import ErrorSeverityEnum
+from shared.enums import ErrorSeverityEnum
 from shared.error_code import ErrorCode
 
 
-class ErrorCodeUFR(Enum, ErrorCode):
+class ErrorCodeUFR(ErrorCode, Enum):
     """Error codes for UrlsFolderRacsModel."""
 
     # wrong

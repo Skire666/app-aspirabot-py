@@ -14,8 +14,6 @@ from pathlib import Path
 
 from shared.constants import (
     C_APP_DEFAULT_SIZE_GUI,
-    C_BROWSER_ENGINE_DEFAULT,
-    C_BROWSER_ENGINE_PLAYWRIGHT,
     C_CHROMIUM_EXTENSIONS_DIR,
     C_CHROMIUM_PROFILE_DIR,
     C_DATA_DEFAULT_FOLDER_SCENARIO,
@@ -24,7 +22,6 @@ from shared.constants import (
     C_LOGS_DEFAULT_LEVEL_TRACE,
 )
 from shared.exception_util import (
-    InvalidBrowserEngineError,
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
     InvalidFolderScrapingError,
@@ -70,7 +67,6 @@ class AppConfigurationModel:
     _gui_booting_size: str
     _gui_booting_position: str
     _gui_booting_fullscreen: bool
-    _browser_engine: str
     chromium_persistant_dir: str
     chromium_extensions_dir: str
 
@@ -87,7 +83,6 @@ class AppConfigurationModel:
         gui_booting_size: str = C_APP_DEFAULT_SIZE_GUI,
         gui_booting_position: str = "",
         gui_booting_fullscreen: bool = False,
-        browser_engine: str = C_BROWSER_ENGINE_DEFAULT,
         chromium_persistant_dir: str = C_CHROMIUM_PROFILE_DIR,
         chromium_extensions_dir: str = C_CHROMIUM_EXTENSIONS_DIR,
     ) -> None:
@@ -99,7 +94,6 @@ class AppConfigurationModel:
         self.gui_booting_size = gui_booting_size
         self.gui_booting_position = gui_booting_position
         self.gui_booting_fullscreen = gui_booting_fullscreen
-        self.browser_engine = browser_engine
         self.chromium_persistant_dir = chromium_persistant_dir
         self.chromium_extensions_dir = chromium_extensions_dir
 
@@ -113,7 +107,6 @@ class AppConfigurationModel:
             "gui_booting_size": self.gui_booting_size,
             "gui_booting_position": self.gui_booting_position,
             "gui_booting_fullscreen": self.gui_booting_fullscreen,
-            "browser_engine": self.browser_engine,
             "chromium_persistant_dir": self.chromium_persistant_dir,
             "chromium_extensions_dir": self.chromium_extensions_dir,
         }
@@ -221,30 +214,6 @@ class AppConfigurationModel:
     def gui_booting_fullscreen(self, value: bool) -> None:
         """Sets whether the GUI should start in fullscreen mode."""
         self._gui_booting_fullscreen = value
-
-    @property
-    def browser_engine(self) -> str:
-        """Returns the browser engine identifier used for scraping.
-
-        Returns:
-            str: One of ``"playwright"`` or ``"scrapling"``.
-        """
-        return self._browser_engine
-
-    @browser_engine.setter
-    def browser_engine(self, value: str) -> None:
-        """Sets the browser engine, validating against the allowed identifiers.
-
-        Args:
-            value: Engine identifier — must be ``"playwright"`` or ``"scrapling"``.
-
-        Raises:
-            ValueError: If the value is not a supported engine identifier.
-        """
-        valid = [C_BROWSER_ENGINE_PLAYWRIGHT]
-        if value not in valid:
-            raise InvalidBrowserEngineError(valid)
-        self._browser_engine = value
 
 
 # EOF

@@ -41,7 +41,7 @@ class WorkflowService:
             A list of error messages; empty when the step is valid.
         """
         try:
-            steps_context = StepsCollections.from_list(steps)
+            steps_context: StepsCollections = StepsCollections.from_list(steps)
             if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) <= 0:
                 return ["Une étape de type 'E_OPEN_URL' est requise."]
             if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) <= 0:

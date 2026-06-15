@@ -1,10 +1,10 @@
 from enum import Enum
 
-from enums import ErrorSeverityEnum
+from shared.enums import ErrorSeverityEnum
 from shared.error_code import ErrorCode
 
 
-class ErrorCodeUFJ(Enum, ErrorCode):
+class ErrorCodeUFJ(ErrorCode, Enum):
     """Error codes for UrlsFolderJsonsModel."""
 
     # wrong

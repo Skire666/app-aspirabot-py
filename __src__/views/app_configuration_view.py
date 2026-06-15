@@ -31,7 +31,6 @@ class AppConfigurationView(ttk.Frame):
         self._view_traces: list[tuple[tk.Variable, str]] = []
 
         self._log_level_combo: ttk.Combobox | None = None
-        self._browser_engine_combo: ttk.Combobox | None = None
         self._btn_cancel: ttk.Button | None = None
         self._btn_save: ttk.Button | None = None
 

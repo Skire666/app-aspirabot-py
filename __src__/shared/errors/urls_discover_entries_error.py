@@ -1,17 +1,15 @@
 from enum import Enum
 
-from enums import ErrorSeverityEnum
+from shared.enums import ErrorSeverityEnum
 from shared.error_code import ErrorCode
 
 
-class ErrorCodeUDE(Enum, ErrorCode):
+class ErrorCodeUDE(ErrorCode, Enum):
     """Error codes for UrlsDiscoverEntriesModel."""
 
     # wrong
     UDE_1001 = ("#UDE-1001", "Aucune entrée disponible.", ErrorSeverityEnum.E_ERROR)
-    UDE_1002 = ("#UDE-1002", "Une ou plusieurs entrées sont invalides.", ErrorSeverityEnum.E_ERROR)
     UDE_1003 = ("#UDE-1003", "Aucune sortie définie.", ErrorSeverityEnum.E_ERROR)
-    UDE_1004 = ("#UDE-1004", "La sortie est invalide.", ErrorSeverityEnum.E_ERROR)
 
     # ???
     UDE_9999 = ("#UDE-9999", "Erreur inconnue.", ErrorSeverityEnum.E_UNKNOWN)

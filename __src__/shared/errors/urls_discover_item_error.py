@@ -4,7 +4,7 @@ from shared.enums import ErrorSeverityEnum
 from shared.error_code import ErrorCode
 
 
-class ErrorCodeUDI(Enum, ErrorCode):
+class ErrorCodeUDI(ErrorCode, Enum):
     """Error codes for UrlsFolderJsonsModel."""
 
     # wrong
@@ -12,7 +12,7 @@ class ErrorCodeUDI(Enum, ErrorCode):
     UDI_1003 = ("#UDI-1003", "Le dossier n'existe pas.", ErrorSeverityEnum.E_ERROR)
     UDI_1004 = ("#UDI-1004", "Le dossier ne contient aucun fichier JSON.", ErrorSeverityEnum.E_ERROR)
     UDI_1005 = ("#UDI-1005", "Le regexp pour les fichiers JSON est vide.", ErrorSeverityEnum.E_ERROR)
-    UDI_1006 = ("#UDI-1006", "Le regexp pour les fichiers JSON doit terminer par '.json'.", ErrorSeverityEnum.E_ERROR)
+    UDI_1006 = ("#UDI-1006", "Le regexp pour les fichiers JSON doit terminer par 'json'.", ErrorSeverityEnum.E_ERROR)
     UDI_1007 = ("#UDI-1007", "La clé de mappage est vide.", ErrorSeverityEnum.E_ERROR)
     UDI_1008 = ("#UDI-1008", "Le regexp pour les URLs est vide.", ErrorSeverityEnum.E_ERROR)
 
