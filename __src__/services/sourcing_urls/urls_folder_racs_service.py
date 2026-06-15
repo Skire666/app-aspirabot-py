@@ -15,6 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_folder_racs_model import UrlsFolderRacsModel
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import (
@@ -40,14 +41,12 @@ class UrlsFolderRacsService(IUrlSourceProvider):
     A one-URL look-ahead buffer makes ``load_url_if_available()`` accurate.
     """
 
-    def __init__(self, source: UrlsFolderRacsModel) -> None:
+    def __init__(self) -> None:
         """Store the folder path without scanning it yet.
 
         Args:
             source: A ``UrlsFolderRacsModel`` instance with the folder path and sort order.
         """
-        self._folder_path: str = source.folder_racs
-        self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum(source.orders_racs)
         self._file_paths: list[Path] | None = None
         self._index: int = 0
         self._buffered: object = _SENTINEL
@@ -56,7 +55,23 @@ class UrlsFolderRacsService(IUrlSourceProvider):
     # IUrlSourceProvider
     # ------------------------------------------------------------------
 
-    def load_url_if_available(self) -> bool:
+    def setup_model(self, model: IUrlsSourceModel) -> None:
+        """Initialize the provider with a raw model containing unprocessed data.
+
+        This method is called by the presenter after the user configures the
+        URL source, but before any scraping run starts. The provider can parse
+        and store relevant data from the model for later use during the run.
+
+        Args:
+            model: The raw URL source model containing unprocessed data.
+        """
+        if isinstance(model, UrlsFolderRacsModel):
+            self._folder_path = model.folder_racs
+            self._sort_order = UrlSortOrderEnum(model.orders_racs)
+        else:
+            raise TypeError(f"Expected UrlsFolderRacsModel, got {type(model).__name__}")
+
+    def loads_urls(self) -> bool:
         """Return True when at least one URL remains available.
 
         Triggers lazy folder discovery and fills the look-ahead buffer
@@ -93,7 +108,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
             StopIteration: When all files have been consumed.
             FileNotFoundError: If the folder does not exist on first access.
         """
-        if not self.load_url_if_available():
+        if not self.loads_urls():
             raise UrlSourceExhaustedError()
 
         url = str(self._buffered)
@@ -113,7 +128,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         self._index = 0
         self._buffered = _SENTINEL
 
-    def preview_url_listed(self) -> list[str]:
+    def preview_all_urls(self) -> list[str]:
         """Return up to 50 upcoming URLs without altering any internal state.
 
         Reads ahead through files using a local index, leaving ``_index``

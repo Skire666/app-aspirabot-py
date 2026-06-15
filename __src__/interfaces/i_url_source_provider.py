@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from interfaces.i_urls_source_model import IUrlsSourceModel
+
 # -----------------------------------------------------------------------------
 # Interface
 # -----------------------------------------------------------------------------
@@ -24,7 +26,19 @@ class IUrlSourceProvider(Protocol):
     can be reused across multiple workflow runs without being reconstructed.
     """
 
-    def load_url_if_available(self) -> bool:
+    def setup_model(self, model: IUrlsSourceModel) -> None:
+        """Initialize the provider with a raw model containing unprocessed data.
+
+        This method is called by the presenter after the user configures the
+        URL source, but before any scraping run starts. The provider can parse
+        and store relevant data from the model for later use during the run.
+
+        Args:
+            model: The raw URL source model containing unprocessed data.
+        """
+        ...
+
+    def loads_urls(self) -> bool:
         """Return True if at least one URL remains to be consumed.
 
         Returns:
@@ -32,11 +46,11 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
-    def preview_next_url(self) -> str:
+    def preview_next_url(self) -> str | None:
         """Return the next URL without advancing the internal cursor.
 
         Returns:
-            The next URL string, or an empty string if no URLs remain.
+            The next URL string, or None if no URLs remain.
         """
         ...
 
@@ -67,7 +81,7 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
-    def preview_url_listed(self) -> list[str]:
+    def preview_all_urls(self) -> list[str]:
         """Return up to 50 upcoming URLs without altering any internal state.
 
         The current cursor position, look-ahead buffer, and underlying data

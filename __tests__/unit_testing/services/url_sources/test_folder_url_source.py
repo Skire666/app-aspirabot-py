@@ -126,17 +126,17 @@ class TestSortOrders:
 class TestPreviewUrlListed:
     def test_empty_folder_returns_empty(self, tmp_path: Path) -> None:
         p = FolderUrlSourceProvider(str(tmp_path))
-        assert p.preview_url_listed() == []
+        assert p.preview_all_urls() == []
 
     def test_non_existent_folder_returns_empty(self) -> None:
         p = FolderUrlSourceProvider("/path/does/not/exist")
-        assert p.preview_url_listed() == []
+        assert p.preview_all_urls() == []
 
     def test_returns_urls_without_advancing_cursor(self, tmp_path: Path) -> None:
         _write_url_file(tmp_path, "a.url", "http://a.com")
         _write_url_file(tmp_path, "b.url", "http://b.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        preview = p.preview_url_listed()
+        preview = p.preview_all_urls()
         assert "http://a.com" in preview
         assert p.pop_url() == "http://a.com"  # cursor unchanged
 
@@ -144,7 +144,7 @@ class TestPreviewUrlListed:
         for i in range(15):
             _write_url_file(tmp_path, f"{i:02d}.url", f"http://{i}.com")
         p = FolderUrlSourceProvider(str(tmp_path), UrlSortOrderEnum.E_NAME_ASC)
-        assert len(p.preview_url_listed()) == 15
+        assert len(p.preview_all_urls()) == 15
 
 
 class TestDisplayProgressTupleText:

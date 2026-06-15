@@ -29,8 +29,8 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         orders_json: Sort order applied when reading the .json files.
     """
 
-    folder_json: str
-    orders_json: str
+    folder_jsons: str
+    orders_jsons: str
 
     def __init__(self, folder_json: str = "", orders_json: str = "") -> None:
         """Initialize the model with optional folder path and sort order.
@@ -39,8 +39,8 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
             folder_json: Absolute path of the folder containing .json files.
             orders_json: Sort order applied when reading the .json files.
         """
-        self.folder_json = folder_json.strip()
-        self.orders_json = orders_json.strip()
+        self.folder_jsons = folder_json.strip()
+        self.orders_jsons = orders_json.strip()
 
     @classmethod
     def get_type_source(cls) -> UrlSourceTypeEnum:
@@ -78,7 +78,7 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         Returns:
             A dict containing folder_json and orders_json keys.
         """
-        return {"folder_json": self.folder_json, "orders_json": self.orders_json}
+        return {"folder_json": self.folder_jsons, "orders_json": self.orders_jsons}
 
     def is_valid(self) -> ErrorCode | None:
         """Check if the URL source model is valid.
@@ -88,17 +88,17 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         """
         error: ErrorCode | None = None
 
-        if not self.folder_json or not self.folder_json.strip():
+        if not self.folder_jsons or not self.folder_jsons.strip():
             error = ErrorCodeUFJ.UFJ_1001
-        elif len(self.folder_json.strip()) <= 1:
+        elif len(self.folder_jsons.strip()) <= 1:
             error = ErrorCodeUFJ.UFJ_1002
-        elif not self.orders_json:
+        elif not self.orders_jsons:
             error = ErrorCodeUFJ.UFJ_1003
-        elif len(self.orders_json.strip()) <= 1 or self.orders_json == "UNSET":
+        elif len(self.orders_jsons.strip()) <= 1 or self.orders_jsons == "UNSET":
             error = ErrorCodeUFJ.UFJ_1004
-        elif not folder_exists(self.folder_json):
+        elif not folder_exists(self.folder_jsons):
             error = ErrorCodeUFJ.UFJ_1005
-        elif count_files_in_folder(self.folder_json, "json") <= 0:
+        elif count_files_in_folder(self.folder_jsons, "json") <= 0:
             error = ErrorCodeUFJ.UFJ_1006
 
         return error

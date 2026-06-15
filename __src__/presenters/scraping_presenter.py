@@ -22,12 +22,12 @@ from models.scraping_context_model import ScrapingContextModel
 from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps.scroll_down_params import ScrollDownParams
-from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
+from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM, get_time_now_hh_mm_ss
-from shared.enums import EventScrapingEnum, StepTypeEnum, UrlSourceTypeEnum
+from shared.enums import EventScrapingEnum, StepTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
@@ -91,6 +91,7 @@ class ScrapingPresenter:
         # Session context set by set_launch_context().
         self._scenario: ScenarioModel | None = None
         self._profile: LaunchModel | None = None
+        self._sourcing_urls: SourcingUrlsService = SourcingUrlsService()
 
         # Threading handles for the current run.
         self._cancel_event: threading.Event = threading.Event()
@@ -232,43 +233,14 @@ class ScrapingPresenter:
         """Entry point for the scraping worker thread."""
         if not self._scenario or not self._profile:
             return
-        config: WorkflowRunConfigModel = self._build_run_config()
-        handlers: WorkflowRunHandlers = self._build_run_handlers()
         try:
-            report = self._service_scraping.run_workflow(self._scenario, config, handlers)
+            handlers: WorkflowRunHandlers = self._build_run_handlers()
+            report = self._service_scraping.run_workflow(self._scenario, self._sourcing_urls, handlers)
         except AspirabotBaseError:
             self._logger.exception("Erreur critique pendant le scraping")
             report = None
 
         self._vm.after(0, lambda: self._on_run_finished(report))
-
-    def _build_run_config(self) -> WorkflowRunConfigModel:
-        """Build the immutable run configuration from the current profile.
-
-        Returns:
-            A ``WorkflowRunConfigModel`` ready for ``ScrapingService.run_workflow``.
-        """
-        assert self._profile is not None
-        p = self._profile
-        stype = p.urls_source_type.value
-
-        # factory
-        if stype == UrlSourceTypeEnum.E_MANUAL_LIST.value:
-            source_value = p.urls_manual_list
-        elif stype == UrlSourceTypeEnum.E_FOLDER_RACS.value:
-            source_value = p.urls_folder_racs
-        elif stype == UrlSourceTypeEnum.E_FOLDER_JSONS.value:
-            source_value = p.urls_folder_jsons
-        elif stype == UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value:
-            source_value = p.urls_discover_entries
-        else:
-            msg = f"Type de source URL inconnu : {stype!s}"
-            raise AspirabotBaseError(msg)
-
-        # result
-        return WorkflowRunConfigModel(
-            urls_source_provider=source_value, export_folder=p.export_folder, warmup_url=p.warmup_url.strip()
-        )
 
     def _build_run_handlers(self) -> WorkflowRunHandlers:
         """Build the threading handlers from the current thresholds.

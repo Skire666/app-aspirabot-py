@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import cast
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_folder_jsons_model import UrlsFolderJsonsModel
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import UrlSourceExhaustedError, UrlSourceFileNotFoundError, UrlSourceFilesNotDiscoveredError
@@ -56,14 +57,12 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
     A one-URL look-ahead buffer makes ``load_url_if_available()`` accurate.
     """
 
-    def __init__(self, source: UrlsFolderJsonsModel) -> None:
+    def __init__(self) -> None:
         """Store the folder path without scanning it yet.
 
         Args:
             source: A ``UrlsFolderJsonsModel`` instance with the folder path and sort order.
         """
-        self._folder_path: str = source.folder_json
-        self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum(source.orders_json)
         self._file_paths: list[Path] | None = None
         self._file_index: int = 0
         self._pending_urls: list[str] = []
@@ -73,7 +72,23 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
     # IUrlSourceProvider
     # ------------------------------------------------------------------
 
-    def load_url_if_available(self) -> bool:
+    def setup_model(self, model: IUrlsSourceModel) -> None:
+        """Initialize the provider with a raw model containing unprocessed data.
+
+        This method is called by the presenter after the user configures the
+        URL source, but before any scraping run starts. The provider can parse
+        and store relevant data from the model for later use during the run.
+
+        Args:
+            model: The raw URL source model containing unprocessed data.
+        """
+        if isinstance(model, UrlsFolderJsonsModel):
+            self._folder_path = model.folder_jsons
+            self._sort_order = UrlSortOrderEnum(model.orders_jsons)
+        else:
+            raise TypeError(f"Expected UrlsFolderJsonsModel, got {type(model).__name__}")
+
+    def loads_urls(self) -> bool:
         """Return True when at least one URL remains available.
 
         Triggers lazy folder discovery and fills the look-ahead buffer.
@@ -109,7 +124,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
             UrlSourceExhaustedError: When all files have been consumed.
             UrlSourceFileNotFoundError: If the folder does not exist on first access.
         """
-        if not self.load_url_if_available():
+        if not self.loads_urls():
             raise UrlSourceExhaustedError()
         url = str(self._buffered)
         self._buffered = _SENTINEL
@@ -125,7 +140,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         self._pending_urls = []
         self._buffered = _SENTINEL
 
-    def preview_url_listed(self) -> list[str]:
+    def preview_all_urls(self) -> list[str]:
         """Return up to 50 upcoming URLs without altering any internal state.
 
         Drains the look-ahead buffer and pending list virtually, then peeks

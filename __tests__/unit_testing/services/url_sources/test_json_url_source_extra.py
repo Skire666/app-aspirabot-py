@@ -26,7 +26,7 @@ class TestPreviewWithBufferedUrl:
         assert p.load_url_if_available()
 
         # _buffered is now set to "http://a.com"
-        preview = p.preview_url_listed()
+        preview = p.preview_all_urls()
 
         # The buffered URL should appear first in the preview
         assert "http://a.com" in preview
@@ -37,7 +37,7 @@ class TestPreviewWithBufferedUrl:
 
         # Fill buffer + pending
         assert p.load_url_if_available()
-        preview = p.preview_url_listed()
+        preview = p.preview_all_urls()
 
         assert "http://a.com" in preview
         assert "http://b.com" in preview

@@ -73,7 +73,7 @@ class OpenUrlExecutor(IStepExecutor):
             UrlSourceExhaustedError: If the URL mode is source but there are no more URLs.
         """
         # Consume the next URL from the injected source
-        if context.url_source is None or not context.url_source.load_url_if_available():
+        if context.url_source is None or not context.url_source.loads_urls():
             raise UrlSourceExhaustedError()
         return context.url_source.pop_url()
 

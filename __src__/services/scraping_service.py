@@ -21,12 +21,11 @@ from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
-from models.workflow_run_config_model import WorkflowRunConfigModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.journal_repository import JournalRepository
 from repositories.json_repository import JsonFileRepository
 from services.scraping_event_bus import ScrapingEventBus
-from services.url_sources.urls_source_factory import build_urls_source
+from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from services.workflow_service import WorkflowService
 from shared.enums import StepExecutionResultEnum, StepTypeEnum, WaitUntilEnum
 from shared.exception_util import ExportFolderNotADirectoryError
@@ -98,14 +97,13 @@ class ScrapingService:
     # ------------------------------------------------------------------
 
     def run_workflow(
-        self, scenario: ScenarioModel, config: WorkflowRunConfigModel, handlers: WorkflowRunHandlers
+        self, scenario: ScenarioModel, sourcing_urls: SourcingUrlsService, handlers: WorkflowRunHandlers
     ) -> ScrapingStatisticsModel:
         """Execute all steps of a scenario workflow sequentially.
 
         Args:
             scenario: The scenario model containing the steps to execute.
-            config: Source and export configuration for this run — URL source
-                type/value and the export folder path.
+            sourcing_urls: The service responsible for providing URLs.
             handlers: Threading signals and observer callbacks — cancel/pause
                 events, step logging, user-wait hook, and emergency stop.
 
@@ -123,12 +121,12 @@ class ScrapingService:
         self._on_emergency_stop = handlers.on_emergency_stop
         self._emergency_stop_step_id = handlers.emergency_stop_step_id
         self._emergency_stop_step_threshold = handlers.emergency_stop_step_threshold
-        self._warmup_url = config.warmup_url.strip()
+        self._warmup_url = sourcing_urls.get_warmup_url()
         self._statistics.start_timer()
 
         # Build and attach the URL source when requested, forwarding sort order.
-        self._context.url_source = build_urls_source(config)
-        self._context.folder_export = Path(config.export_folder)
+        self._context.url_source = sourcing_urls.get_provider_urls()
+        self._context.folder_export = Path(sourcing_urls.get_export_folder())
 
         # Create a fresh browser service instance for each run via the injected factory.
         self._browser_service = self._browser_service_factory()

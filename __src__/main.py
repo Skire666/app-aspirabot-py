@@ -36,6 +36,7 @@ from services.logging_service import LoggingService
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
+from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from services.startup_service import StartupService
 from services.workflow_service import WorkflowService
 
@@ -380,7 +381,8 @@ def _init_executor_component(
         A (ExecutorView, ExecutorPresenter, tab4_DiscoverPresenter, UrlConfigPresenter) tuple.
     """
     vm = ExecutorViewModel(master=main_view.content_area)
-    url_config_presenter = UrlConfigPresenter(vm=vm)
+    sourcing = SourcingUrlsService()
+    url_config_presenter = UrlConfigPresenter(vm=vm, sourcing_urls=sourcing)
     executor_view = ExecutorView(main_view.content_area, vm=vm)
     executor_presenter = ExecutorPresenter(
         vm=vm,

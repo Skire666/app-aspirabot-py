@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_manual_list_model import UrlsManualListModel
 from shared.exception_util import UrlSourceExhaustedError
 
@@ -28,17 +29,33 @@ class UrlsManualListService(IUrlSourceProvider):
     so ``reset()`` simply rewinds the index to zero without re-parsing.
     """
 
-    def __init__(self, source: UrlsManualListModel) -> None:
+    def __init__(self) -> None:
         """Initialize with a list of URL strings.
 
         Args:
             source: The URL list model providing raw URL strings.
         """
         # Filter empty strings at construction time.
-        self._urls: list[str] = source.get_urls()
+        self._urls: list[str] = []
         self._index: int = 0
 
-    def load_url_if_available(self) -> bool:
+    def setup_model(self, model: IUrlsSourceModel) -> None:
+        """Initialize the provider with a raw model containing unprocessed data.
+
+        This method is called by the presenter after the user configures the
+        URL source, but before any scraping run starts. The provider can parse
+        and store relevant data from the model for later use during the run.
+
+        Args:
+            model: The raw URL source model containing unprocessed data.
+        """
+        if isinstance(model, UrlsManualListModel):
+            self._urls = model.get_urls()
+            self._index = 0
+        else:
+            raise TypeError(f"Expected UrlsManualListModel, got {type(model).__name__}")
+
+    def loads_urls(self) -> bool:
         """Return True when more URLs remain.
 
         Returns:
@@ -47,18 +64,18 @@ class UrlsManualListService(IUrlSourceProvider):
         Raises:
             None.
         """
-        return self._index < len(self._urls)
+        return len(self._urls) >= 1 and self._index < len(self._urls)
 
-    def preview_next_url(self) -> str:
+    def preview_next_url(self) -> str | None:
         """Return the next URL without advancing the internal cursor.
 
         Returns:
-            The next URL string, or an empty string if no URLs remain.
+            The next URL string, or None if no URLs remain.
 
         Raises:
             FileNotFoundError: If the folder does not exist on first access.
         """
-        return self._urls[self._index] if 0 <= self._index < len(self._urls) else "<_no_url_>"
+        return self._urls[self._index] if 0 <= self._index < len(self._urls) else None
 
     def pop_url(self) -> str:
         """Return the next URL and advance the cursor.
@@ -69,13 +86,13 @@ class UrlsManualListService(IUrlSourceProvider):
         Raises:
             StopIteration: When all URLs have been consumed.
         """
-        if not self.load_url_if_available():
+        if not self.loads_urls():
             raise UrlSourceExhaustedError()
 
         # Advance index after fetching.
         url = self._urls[self._index]
         self._index += 1
-        while not url.strip() and self.load_url_if_available():
+        while not url.strip() and self.loads_urls():
             url = self._urls[self._index]
             self._index += 1
         return url
@@ -91,7 +108,7 @@ class UrlsManualListService(IUrlSourceProvider):
         """
         self._index = 0
 
-    def preview_url_listed(self) -> list[str]:
+    def preview_all_urls(self) -> list[str]:
         """Return up to 50 upcoming URLs from the current cursor position.
 
         Returns:

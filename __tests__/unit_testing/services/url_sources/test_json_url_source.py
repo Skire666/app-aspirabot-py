@@ -182,23 +182,23 @@ class TestSortOrders:
 class TestPreviewUrlListed:
     def test_empty_folder(self, tmp_path: Path) -> None:
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert p.preview_url_listed() == []
+        assert p.preview_all_urls() == []
 
     def test_non_existent_folder_returns_empty(self) -> None:
         p = JsonUrlSourceProvider("/nonexistent")
-        assert p.preview_url_listed() == []
+        assert p.preview_all_urls() == []
 
     def test_returns_urls_without_advancing(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", ["http://a.com", "http://b.com"])
         p = JsonUrlSourceProvider(str(tmp_path))
-        preview = p.preview_url_listed()
+        preview = p.preview_all_urls()
         assert "http://a.com" in preview
         assert p.pop_url() == "http://a.com"  # cursor unchanged
 
     def test_returns_all_urls(self, tmp_path: Path) -> None:
         _write_json(tmp_path, "a.json", [f"http://{i}.com" for i in range(15)])
         p = JsonUrlSourceProvider(str(tmp_path))
-        assert len(p.preview_url_listed()) == 15
+        assert len(p.preview_all_urls()) == 15
 
 
 class TestDisplayProgress:

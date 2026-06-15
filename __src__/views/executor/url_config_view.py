@@ -77,9 +77,9 @@ class UrlConfigView(ttk.Frame):
         bar.pack(fill=tk.X)
         self._radio_buttons: list[ttk.Radiobutton] = []
         entries = [
-            ("Entrée manuelle", UrlSourceTypeEnum.E_MANUAL_LIST.value),
-            ("Dossier avec URL", UrlSourceTypeEnum.E_FOLDER_RACS.value),
-            ("Dossier avec JSON", UrlSourceTypeEnum.E_FOLDER_JSONS.value),
+            ("Saisie manuelle", UrlSourceTypeEnum.E_MANUAL_LIST.value),
+            ("Dossier avec '.url'", UrlSourceTypeEnum.E_FOLDER_RACS.value),
+            ("Dossier avec '.json'", UrlSourceTypeEnum.E_FOLDER_JSONS.value),
             ("Lire les nouveautés", UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value),
         ]
         MyLabel(bar, text="Source :").pack_left()
@@ -216,8 +216,7 @@ class UrlConfigView(ttk.Frame):
         MyLabel(
             row,
             text=(
-                "[IMPORTANT] - La date de modification est actualisée"
-                " après chaque appel à OpenURL... (dès l'ouverture)"
+                "[IMPORTANT] - La date de modification est actualisée après chaque appel à OpenURL... (dès l'ouverture)"
             ),
         ).pack_left()
 

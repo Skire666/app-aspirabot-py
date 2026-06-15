@@ -10,15 +10,16 @@ filters them with a glob pattern, and computes which IN URLs are absent from OUT
 
 from __future__ import annotations
 
-import json
 import logging
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import cast
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
+from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.urls_discover_item_model import UrlsDiscoverItemModel
+from repositories.json_repository import JsonFileRepository
 from shared.exception_util import AspirabotBaseError, DiscoverFolderNotFoundError, UrlSourceExhaustedError
 
 # -----------------------------------------------------------------------------
@@ -35,11 +36,11 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
     get the set of already-processed URLs.  The difference gives new_entries.
     """
 
-    def __init__(self, source: UrlsDiscoverEntriesModel) -> None:
+    def __init__(self) -> None:
         """Initialise the logger."""
         self._logger = logging.getLogger(__name__)
-        self.payloads_inputs: list[UrlsDiscoverItemModel] | None = source.inputs
-        self.payloads_target: UrlsDiscoverItemModel | None = source.output
+        self.payloads_inputs: list[UrlsDiscoverItemModel] | None = None
+        self.payloads_target: UrlsDiscoverItemModel | None = None
 
         # results compute
         self.input_total_count: int = 0
@@ -49,6 +50,24 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         self.output_entries: dict[str, int] = {}
         self.new_entries: set[str] = set()
         self.last_length_compute: int = -1
+
+        self._json_repository = JsonFileRepository()
+
+    def setup_model(self, model: IUrlsSourceModel) -> None:
+        """Initialize the provider with a raw model containing unprocessed data.
+
+        This method is called by the presenter after the user configures the
+        URL source, but before any scraping run starts. The provider can parse
+        and store relevant data from the model for later use during the run.
+
+        Args:
+            model: The raw URL source model containing unprocessed data.
+        """
+        if isinstance(model, UrlsDiscoverEntriesModel):
+            self.payloads_inputs = model.inputs
+            self.payloads_target = model.output
+        else:
+            raise TypeError(f"Expected UrlsDiscoverEntriesModel, got {type(model).__name__}")
 
     def update_sources_and_compute(
         self, source_inputs: list[UrlsDiscoverItemModel], source_target: UrlsDiscoverItemModel
@@ -71,19 +90,21 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             self.payloads_target = source_target
             self._collect_output_entries()
         if not inputs_are_same or not output_is_same or self.last_length_compute != len(self.new_entries):
-            self.compute_new_urls()
+            self._compute_new_urls()
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def load_url_if_available(self) -> bool:
+    def loads_urls(self) -> bool:
         """Return True when at least one new URL remains available.
 
         Returns:
             True if at least one new URL is available; False otherwise.
         """
-        return len(self.new_entries) > 0
+        if len(self.new_entries) <= 0:
+            self._compute_new_urls()
+        return len(self.new_entries) >= 1
 
     def preview_next_url(self) -> str:
         """Return the next new URL without advancing the internal cursor.
@@ -99,7 +120,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         Returns:
             The next new URL string.
         """
-        if not self.load_url_if_available():
+        if not self.loads_urls():
             raise UrlSourceExhaustedError()
         url = next(iter(self.new_entries))
         self.new_entries.remove(url)
@@ -121,7 +142,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         """
         return f"{len(self.new_entries) - self.last_length_compute} / {self.last_length_compute} URL(s)"
 
-    def preview_url_listed(self) -> list[str]:
+    def preview_all_urls(self) -> list[str]:
         """Return a list of all new URLs without advancing the internal cursor.
 
         Returns:
@@ -129,7 +150,11 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         """
         return list(self.new_entries)
 
-    def compute_new_urls(self) -> None:
+    # ------------------------------------------------------------------
+    # Private
+    # ------------------------------------------------------------------
+
+    def _compute_new_urls(self) -> None:
         """Run the full discovery computation for the given hub.
 
         Args:
@@ -169,10 +194,6 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         # choose efficient set difference
         out_set = set(self.output_entries)
         self.new_entries = {url for url in self.input_entries if url not in out_set}
-
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
 
     def _collect_input_entries(self) -> None:
         assert self.payloads_inputs is not None, "IN DiscoverModel(s) must be provided"
@@ -255,11 +276,9 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         Returns:
             List of matching URL strings; empty on parse error.
         """
-        try:
-            with file_path.open(encoding="utf-8") as fh:
-                data = json.load(fh)
-        except (json.JSONDecodeError, OSError) as exc:
-            self._logger.debug("Lecture ignorée (%s) : %s", file_path.name, exc)
+        data = self._json_repository.read_from_path(file_path)
+
+        if not data:
             return []
 
         candidates: list[str] = []

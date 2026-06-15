@@ -330,12 +330,12 @@ class ExecutorPresenter:
         self._vm.urls_source_type_var.set(source_type.value)
         self._vm.set_manual_urls(profile.urls_manual_list.get_urls())
         self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
-        self._vm.urls_path_folder_jsons_var.set(profile.urls_folder_jsons.folder_json)
+        self._vm.urls_path_folder_jsons_var.set(profile.urls_folder_jsons.folder_jsons)
         self._vm.url_sort_order_shortcuts_var.set(
             profile.urls_folder_racs.orders_racs or UrlSortOrderEnum.E_MTIME_ASC.value
         )
         self._vm.url_sort_order_jsons_var.set(
-            profile.urls_folder_jsons.orders_json or UrlSortOrderEnum.E_MTIME_ASC.value
+            profile.urls_folder_jsons.orders_jsons or UrlSortOrderEnum.E_MTIME_ASC.value
         )
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
@@ -458,8 +458,8 @@ class ExecutorPresenter:
         self._current_profile.urls_folder_racs.orders_racs = self._vm.url_sort_order_shortcuts_var.get()
 
         # folder json
-        self._current_profile.urls_folder_jsons.folder_json = self._vm.urls_path_folder_jsons_var.get().strip()
-        self._current_profile.urls_folder_jsons.orders_json = self._vm.url_sort_order_jsons_var.get()
+        self._current_profile.urls_folder_jsons.folder_jsons = self._vm.urls_path_folder_jsons_var.get().strip()
+        self._current_profile.urls_folder_jsons.orders_jsons = self._vm.url_sort_order_jsons_var.get()
 
         # calc entries
         self._current_profile.urls_discover_entries = self._url_config_presenter.get_current_discovers_hub()

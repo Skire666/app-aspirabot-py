@@ -82,24 +82,24 @@ class TestReset:
 class TestPreviewUrlListed:
     def test_empty_provider(self) -> None:
         p = ManualUrlSourceProvider([])
-        assert p.preview_url_listed() == []
+        assert p.preview_all_urls() == []
 
     def test_returns_all_urls(self) -> None:
         urls = [f"http://{i}.com" for i in range(15)]
         p = ManualUrlSourceProvider(urls)
-        preview = p.preview_url_listed()
+        preview = p.preview_all_urls()
         assert len(preview) == 15
 
     def test_preview_from_current_cursor(self) -> None:
         urls = ["http://a.com", "http://b.com", "http://c.com"]
         p = ManualUrlSourceProvider(urls)
         p.pop_url()
-        preview = p.preview_url_listed()
+        preview = p.preview_all_urls()
         assert preview == ["http://b.com", "http://c.com"]
 
     def test_preview_does_not_advance_cursor(self) -> None:
         p = ManualUrlSourceProvider(["http://a.com", "http://b.com"])
-        p.preview_url_listed()
+        p.preview_all_urls()
         assert p.pop_url() == "http://a.com"
 
 
