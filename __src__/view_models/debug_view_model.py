@@ -54,7 +54,7 @@ class DebugViewModel(ViewModelBase):
         self.is_alive_var = tk.BooleanVar(master=master, value=False)
 
         # Presenter callback slots
-        self._on_start: Callable[[str, str, str], None] | None = None
+        self._on_start: Callable[[str, str, str, str], None] | None = None
         self._on_open_debug_page: Callable[[], None] | None = None
         self._on_refresh: Callable[[], None] | None = None
         self._on_analyze_texts: Callable[[str], None] | None = None
@@ -98,11 +98,11 @@ class DebugViewModel(ViewModelBase):
     # Presenter binding hooks
     # ------------------------------------------------------------------
 
-    def bind_start(self, cb: Callable[[str, str, str], None]) -> None:
+    def bind_start(self, cb: Callable[[str, str, str, str], None]) -> None:
         """Register the handler invoked when the user clicks Lancer.
 
         Args:
-            cb: Called with (url, timeout_raw, dns_delay_raw) as raw widget strings.
+            cb: Called with (url, timeout_raw, dns_delay_raw, wait_until_raw) as raw widget strings.
 
         Raises:
             AspirabotBaseError: If the hook is already bound.
@@ -171,20 +171,21 @@ class DebugViewModel(ViewModelBase):
     # Action methods — called by the View
     # ------------------------------------------------------------------
 
-    def start(self, url: str, timeout_raw: str, dns_delay_raw: str) -> None:
+    def start(self, url: str, timeout_raw: str, dns_delay_raw: str, wait_until_raw: str) -> None:
         """Dispatch a start-session request with raw widget values for the Presenter.
 
         Args:
             url: The URL string from the entry widget.
             timeout_raw: Raw spinbox string for the navigation timeout.
             dns_delay_raw: Raw spinbox string for the DNS-resolution wait.
+            wait_until_raw: Raw combobox string for the page-state condition.
 
         Raises:
             AspirabotBaseError: If the hook is not bound.
         """
         if self._on_start is None:
             raise CallbackNotDefinedError()
-        self._on_start(url, timeout_raw, dns_delay_raw)
+        self._on_start(url, timeout_raw, dns_delay_raw, wait_until_raw)
 
     def open_debug_page(self) -> None:
         """Ask the View to open the inspection Toplevel bound to this VM.

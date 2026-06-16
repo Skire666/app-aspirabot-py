@@ -55,6 +55,14 @@ class FaqTextTextHint:
                 "Le refresh ne change pas la dernière URL ouverte.\n"
                 "Donc si redirection il y a eu, le filtre peut planter\n"
             ),
+            "Navigateur bloqué": (
+                "Si l'ouverture d'une URL se fait sans l'event 'networkidle' (soit commit, dom, load)'\n"
+                "Alors le contexte est vérouillé. Impossible de naviguer manuellement.\n"
+                "Tant que bloqué : On peut ouvrir et fermer des onglets, mais toutes les pages moulinent.\n"
+                "Déclencher un refresh via le code ou une prochaine étape, redébloque le contexte (1 fois).\n"
+                "Mise à part l'état de page 'networkidle', rien ne solutionne le problème (aucun code)\n"
+                "Le refresh ou étape exécuter ne sont que des contournements. En 2 mois, jamais trouvé mieux\n"
+            ),
             "Consommer une URL": (
                 "Si la source est cablé en mode 'dossier'\n"
                 "Va lire le plus vieux '.url', et update sa date modif à chaque OpenURL\n"

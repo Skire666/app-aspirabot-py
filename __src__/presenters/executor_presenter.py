@@ -513,15 +513,19 @@ class ExecutorPresenter:
             return C_EXEC_NO_PROFILE
         self._apply_form_to_profile()
         error = self._current_profile.is_valid()
-        if error:
+        if error and error.is_fatal_or_error():
+            self._vm.discover_compute_message_var.set(error.user_message)
             return str(error)
+        if error and error.is_warning():
+            self._vm.discover_compute_message_var.set(error.user_message)
         self._sourcing_urls.set_context_scraping(
             launcher=self._current_profile,
             export_folder=self._vm.export_folder_var.get().strip(),
             warmup_url=self._vm.warmup_url_var.get().strip() or None,
         )
         error = self._sourcing_urls.is_valid()
-        if error:
+        if error and error.is_fatal_or_error():
+            self._vm.discover_compute_message_var.set(error.user_message)
             return str(error)
         return None
 

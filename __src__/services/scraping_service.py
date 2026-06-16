@@ -121,7 +121,7 @@ class ScrapingService:
         self._on_emergency_stop = handlers.on_emergency_stop
         self._emergency_stop_step_id = handlers.emergency_stop_step_id
         self._emergency_stop_step_threshold = handlers.emergency_stop_step_threshold
-        self._warmup_url = sourcing_urls.get_warmup_url()
+        self._warmup_url = sourcing_urls.get_warmup_url() or ""
         self._statistics.start_timer()
 
         # Build and attach the URL source when requested, forwarding sort order.

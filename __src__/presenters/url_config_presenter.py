@@ -11,18 +11,13 @@ Called by ExecutorPresenter when a profile is loaded or any URL-source field cha
 import logging
 
 from models.launcher_model import LaunchModel
-from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
-from models.urls_discover_item_model import UrlsDiscoverItemModel
-from models.urls_folder_jsons_model import UrlsFolderJsonsModel
-from models.urls_folder_racs_model import UrlsFolderRacsModel
+from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
+from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
+from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
+from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.enums import UrlSourceTypeEnum
-from shared.i18n_fra import (
-    C_DISCOVER_COMPUTE_ERROR,
-    C_DISCOVER_COMPUTE_SUCCESS,
-    C_DISCOVER_NO_ENTRIES_IN,
-    C_DISCOVER_NO_ENTRIES_OUT,
-)
+from shared.i18n_fra import C_DISCOVER_COMPUTE_ERROR, C_DISCOVER_COMPUTE_SUCCESS
 from shared.random_util import generate_rng_hexastring
 from view_models.executor_view_model import DiscoverRowState, ExecutorViewModel
 
@@ -66,9 +61,9 @@ class UrlConfigPresenter:
         self._vm.set_discovers_in_rows([])
         source_type = profile.urls_source_type
         if source_type == UrlSourceTypeEnum.E_FOLDER_RACS:
-            self._refresh_shortcuts_preview_from_model(profile.urls_folder_racs)
+            self._refresh_folder_racs_from_model(profile.urls_folder_racs)
         elif source_type == UrlSourceTypeEnum.E_FOLDER_JSONS:
-            self._refresh_jsons_preview_from_model(profile.urls_folder_jsons)
+            self._refresh_folder_jsons_from_model(profile.urls_folder_jsons)
         elif source_type == UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
             self._load_discover_hub_into_vm(profile.urls_discover_entries)
 
@@ -89,13 +84,13 @@ class UrlConfigPresenter:
                 folder_racs=self._vm.urls_path_folder_racs_var.get().strip(),
                 orders_racs=self._vm.url_sort_order_shortcuts_var.get(),
             )
-            self._refresh_shortcuts_preview_from_model(model)
+            self._refresh_folder_racs_from_model(model)
         elif source_type == UrlSourceTypeEnum.E_FOLDER_JSONS:
             model = UrlsFolderJsonsModel(
                 folder_json=self._vm.urls_path_folder_jsons_var.get().strip(),
                 orders_json=self._vm.url_sort_order_jsons_var.get(),
             )
-            self._refresh_jsons_preview_from_model(model)
+            self._refresh_folder_jsons_from_model(model)
 
     def get_current_discovers_hub(self) -> UrlsDiscoverEntriesModel:
         """Return the current discover hub, built from the latest VM state.
@@ -124,12 +119,12 @@ class UrlConfigPresenter:
     def _on_compute_discovers(self) -> None:
         """Run the discovery computation and push the result count to the VM."""
         hub = self._build_discover_hub_from_vm()
-        if not hub.inputs:
-            self._vm.discover_compute_message_var.set(C_DISCOVER_NO_ENTRIES_IN)
+        error = hub.is_valid()
+        if error and error.is_fatal_or_error():
+            self._vm.discover_compute_message_var.set(error.user_message)
             return
-        if hub.output is None:
-            self._vm.discover_compute_message_var.set(C_DISCOVER_NO_ENTRIES_OUT)
-            return
+        if error and error.is_warning():
+            self._vm.discover_compute_message_var.set(error.user_message)
         try:
             discover_svc = self._sourcing_urls.get_provider_discover()
             discover_svc.update_sources_and_compute(hub.inputs, hub.output)
@@ -155,7 +150,7 @@ class UrlConfigPresenter:
     # Private — preview helpers
     # ------------------------------------------------------------------
 
-    def _refresh_shortcuts_preview_from_model(self, model: UrlsFolderRacsModel) -> None:
+    def _refresh_folder_racs_from_model(self, model: UrlsFolderRacsModel) -> None:
         """Scan the FOLDER (.url) source and push the preview list to the VM.
 
         Args:
@@ -170,7 +165,7 @@ class UrlConfigPresenter:
             urls = []
         self._vm.set_url_preview_shortcuts(urls)
 
-    def _refresh_jsons_preview_from_model(self, model: UrlsFolderJsonsModel) -> None:
+    def _refresh_folder_jsons_from_model(self, model: UrlsFolderJsonsModel) -> None:
         """Scan the JSON source folder and push the preview list to the VM.
 
         Args:
@@ -198,8 +193,7 @@ class UrlConfigPresenter:
         Args:
             hub: The discover hub loaded from the current profile.
         """
-        if hub.output is not None:
-            self._out_discover_id = hub.output.id_discover
+        self._out_discover_id = hub.output.id_discover
 
         rows: list[DiscoverRowState] = [
             DiscoverRowState(
@@ -213,10 +207,9 @@ class UrlConfigPresenter:
         ]
         self._vm.set_discovers_in_rows(rows)
 
-        if hub.output is not None:
-            self._vm.disc_out_pattern_json_var.set(hub.output.pattern_json)
-            self._vm.disc_out_key_mapping_var.set(hub.output.key_mapping)
-            self._vm.disc_out_pattern_urls_var.set(hub.output.pattern_urls)
+        self._vm.disc_out_pattern_json_var.set(hub.output.pattern_json)
+        self._vm.disc_out_key_mapping_var.set(hub.output.key_mapping)
+        self._vm.disc_out_pattern_urls_var.set(hub.output.pattern_urls)
 
         self._vm.discover_compute_message_var.set("")
 

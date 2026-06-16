@@ -24,7 +24,7 @@ class TitleModuleEnum(Enum):
     E_OPTIONS = "OPTIONS"
 
 
-class ErrorSeverityEnum(Enum):
+class SeverityEnum(Enum):
     """Enumerates the severity levels for error messages.
 
     These levels are used to categorize and prioritize error handling.

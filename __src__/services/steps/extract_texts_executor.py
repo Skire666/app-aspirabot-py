@@ -48,7 +48,7 @@ class ExtractTextsExecutor(IStepExecutor):
             page = browser.get_workflow_page()
             elements: list[ElementHandle] = page.query_selector_all(p.selector)
             if not elements:
-                return StepExecutionResultEnum.E_SUCCESS
+                return StepExecutionResultEnum.E_ERROR
             selected: list[ElementHandle] = (
                 [elements[0]]
                 if p.target == ExtractTargetEnum.E_FIRST
@@ -59,7 +59,7 @@ class ExtractTextsExecutor(IStepExecutor):
             texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
             context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
             debug_one_item = texts[0] if texts and texts[0] else "<no text>"
-            event_bus.log_step(context, f"Extrait x{len(texts)} texte(s) | Debug='{debug_one_item}'.")
+            event_bus.log_step(context, f"x{len(texts)} texte(s) | str[:25] ='{debug_one_item[:25]}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

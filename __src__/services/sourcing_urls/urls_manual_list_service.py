@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
-from models.urls_manual_list_model import UrlsManualListModel
+from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceExhaustedError
 
 # -----------------------------------------------------------------------------

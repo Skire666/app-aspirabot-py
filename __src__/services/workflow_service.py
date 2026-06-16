@@ -42,10 +42,10 @@ class WorkflowService:
         """
         try:
             steps_context: StepsCollections = StepsCollections.from_list(steps)
-            if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) <= 0:
-                return ["Une étape de type 'E_OPEN_URL' est requise."]
-            if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) <= 0:
-                return ["Une étape de type 'E_KILL_BROWSER' est requise."]
+            if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) != 1:
+                return ["Une SEULE étape de type 'E_OPEN_URL' est requise."]
+            if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) != 1:
+                return ["Une SEULE étape de type 'E_KILL_BROWSER' est requise."]
             if not step.params:
                 return [f"Step {step.step_id} has no params to validate"]
             if step.params.validate_with_context is None:

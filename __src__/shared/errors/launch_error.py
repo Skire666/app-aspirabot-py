@@ -9,20 +9,15 @@ from shared.error_code import ErrorCode
 from shared.exception_util import AspirabotBaseError
 
 
-class ErrorCodeSUS(ErrorCode, Enum):
+class ErrorCodeLAM(ErrorCode, Enum):
     """Error codes for SourcingUrlsService."""
 
-    # wrong
-    SUS_1001 = ("#SUS-1001", "Aucun profil de lancement défini.", SeverityEnum.E_ERROR)
-    SUS_1002 = ("#SUS-1002", "Le type de source d'URLs n'est pas supporté.", SeverityEnum.E_ERROR)
-    SUS_1003 = ("#SUS-1003", "Le chemin d'export est vide.", SeverityEnum.E_ERROR)
-    SUS_1004 = ("#SUS-1004", "Le chemin d'export est invalide.", SeverityEnum.E_ERROR)
-    SUS_1005 = ("#SUS-1005", "La liste des URLs à consommer est vide.", SeverityEnum.E_ERROR)
-    SUS_1006 = ("#SUS-1006", "La 1ère URL à consommer est vide.", SeverityEnum.E_ERROR)
-    SUS_1007 = ("#SUS-1007", "La 1ère URL à consommer possède 3 caractères ou moins.", SeverityEnum.E_ERROR)
+    # wrong§
+    LAM_1001 = ("#LAM-1001", "Aucun type de source défini.", SeverityEnum.E_ERROR)
+    LAM_1002 = ("#LAM-1002", "L'ID du scénario est vide.", SeverityEnum.E_ERROR)
 
     # ???
-    SUS_9999 = ("#SUS-9999", "Erreur inconnue.", SeverityEnum.E_UNKNOWN)
+    LAM_9999 = ("#LAM-9999", "Erreur inconnue.", SeverityEnum.E_UNKNOWN)
 
     def __init__(self, code: str, user_message: str, severity: SeverityEnum) -> None:
         """Initialize the error code with its attributes."""
@@ -33,7 +28,7 @@ class ErrorCodeSUS(ErrorCode, Enum):
     @classmethod
     def from_code(cls, code: str) -> ErrorCode:
         """Retourne l'instance de l'ErrorCode correspondant au code donné."""
-        for error_code in ErrorCodeSUS:
+        for error_code in ErrorCodeLAM:
             if error_code.code == code:
                 return error_code
         msg = f"Code d'erreur inconnu : {code}"

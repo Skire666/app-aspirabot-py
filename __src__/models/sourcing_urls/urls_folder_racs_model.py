@@ -98,7 +98,7 @@ class UrlsFolderRacsModel(IUrlsSourceModel):
             error = ErrorCodeUFR.UFR_1004
         elif not folder_exists(self.folder_racs):
             error = ErrorCodeUFR.UFR_1005
-        elif count_files_in_folder(self.folder_racs, "url") <= 0:
+        elif count_files_in_folder(self.folder_racs, ".url") <= 0:
             error = ErrorCodeUFR.UFR_1006
 
         return error

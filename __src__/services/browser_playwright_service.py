@@ -200,7 +200,7 @@ class BrowserPlaywrightService(IWebBrowserService):
 
             # Close in reverse-creation order: context → browser → playwright.
             if self._context is not None:
-                self._context.close()
+                self._context.close()  # crash if browser was closed by user
                 self._context = None
 
             if self._browser is not None:
@@ -285,7 +285,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             self._workflow_page.reload(wait_until=cast_wait_time, timeout=timeout_ms)
             return nav_retries, False
         if "Timeout" in msg:
-            raise OpenUrlTimeoutError from exp  # Let the caller handle timeout exceptions; they may want to abort or retry differently.
+            raise OpenUrlTimeoutError from exp
         self._logger.error("Erreur de navigation non récupérable : %s", msg)
         raise OpenUrlTooManyRetriesError() from exp
 

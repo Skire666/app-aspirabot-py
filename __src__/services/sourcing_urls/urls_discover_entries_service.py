@@ -18,8 +18,8 @@ from typing import cast
 from interfaces.i_json_file_repository import IJsonFileRepository
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
-from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
-from models.urls_discover_item_model import UrlsDiscoverItemModel
+from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
+from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
 from shared.exception_util import (
     AspirabotBaseError,
     DiscoverFolderNotFoundError,
@@ -58,7 +58,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         self.input_entries: dict[str, int] = {}
         self.output_entries: dict[str, int] = {}
         self.new_entries: set[str] = set()
-        self.last_length_compute: int = -1
+        self.current_index: int = 0
 
         self._json_repository = json_repository
 
@@ -93,13 +93,18 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         output_is_same = self.payloads_target == source_target
 
         if not inputs_are_same:
+            self._logger.info("MAJ sources d'entrée pour la découverte (%d source(s) IN)", len(source_inputs))
             self.payloads_inputs = source_inputs
             self._collect_input_entries()
         if not output_is_same:
+            self._logger.info("MAJ sources de sortie pour la découverte (source OUT)")
             self.payloads_target = source_target
             self._collect_output_entries()
-        if not inputs_are_same or not output_is_same or self.last_length_compute != len(self.new_entries):
+        if not inputs_are_same or not output_is_same:
+            self._logger.info("Modification des sources détectée, recalcul des nouvelles entrées")
             self._compute_new_entries()
+        else:
+            self._logger.info("Aucune modification des sources, pas de recalcul nécessaire")
 
     # ------------------------------------------------------------------
     # Public API
@@ -132,12 +137,13 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         if not self.loads_urls():
             raise UrlSourceExhaustedError()
         url = next(iter(self.new_entries))
+        self.current_index += 1
         self.new_entries.remove(url)
         return url
 
     def reset(self) -> None:
         """Rewind to the first new URL; the discovered set is preserved."""
-        self.last_length_compute = -1
+        self.current_index = 0
         if self.payloads_inputs is None or self.payloads_target is None:
             msg = "Les sources d'entrée et de sortie doivent être définies avant la réinitialisation."
             raise AspirabotBaseError(msg)
@@ -149,7 +155,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         Returns:
             A string summarizing the counts of input, output, and new URLs.
         """
-        return f"{len(self.new_entries) - self.last_length_compute} / {self.last_length_compute} URL(s)"
+        return f"{self.current_index} / {len(self.new_entries)} URL(s)"
 
     def preview_all_urls(self) -> list[str]:
         """Return a list of all new URLs without advancing the internal cursor.
@@ -213,8 +219,6 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             self.input_total_count += len(urls)
             for url in urls:
                 self.input_entries[url] = self.input_entries.get(url, 0) + 1
-
-        self.last_length_compute = len(self.new_entries)
 
         # len
         self._logger.info(

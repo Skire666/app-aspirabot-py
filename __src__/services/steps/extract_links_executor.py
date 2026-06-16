@@ -48,7 +48,7 @@ class ExtractLinksExecutor(IStepExecutor):
             page = browser.get_workflow_page()
             elements: list[ElementHandle] = page.query_selector_all(p.selector)
             if not elements:
-                return StepExecutionResultEnum.E_SUCCESS
+                return StepExecutionResultEnum.E_ERROR
             selected: list[ElementHandle] = (
                 [elements[0]]
                 if p.target == ExtractTargetEnum.E_FIRST
@@ -61,7 +61,7 @@ class ExtractLinksExecutor(IStepExecutor):
             links: list[str] = self._get_all_links_from_elements(selected, base_url, p.cutted_ampersand)
             context.push_extracted_values(p.mapping, p.selector, p.comment, links)
             debug_one_item = links[0] if links and links[0] else "<no link>"
-            event_bus.log_step(context, f"Extrait x{len(links)} lien(s) | Debug='{debug_one_item}'.")
+            event_bus.log_step(context, f"x{len(links)} lien(s) | str[:25] ='{debug_one_item[:25]}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

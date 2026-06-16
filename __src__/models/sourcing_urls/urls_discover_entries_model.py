@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
-from models.urls_discover_item_model import UrlsDiscoverItemModel
+from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
 from shared.enums import UrlSourceTypeEnum
 from shared.error_code import ErrorCode
 from shared.errors.urls_discover_entries_error import ErrorCodeUDE
@@ -29,7 +29,7 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
     """
 
     inputs: list[UrlsDiscoverItemModel]
-    output: UrlsDiscoverItemModel | None = None
+    output: UrlsDiscoverItemModel
 
     def __init__(
         self, inputs: list[UrlsDiscoverItemModel] | None = None, output: UrlsDiscoverItemModel | None = None
@@ -41,7 +41,7 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
             output: Optional output DiscoverModel instance.
         """
         self.inputs = inputs if inputs is not None else []
-        self.output = output
+        self.output = output if output is not None else UrlsDiscoverItemModel.get_default()
 
     @classmethod
     def get_type_source(cls) -> UrlSourceTypeEnum:
@@ -103,12 +103,12 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
 
         if len(self.inputs) <= 0:
             error = ErrorCodeUDE.UDE_1001
-        elif self.output is None:
+        elif len(self.output.id_discover) <= 0:
             error = ErrorCodeUDE.UDE_1003
 
         if error is None:
             for p in self.inputs:
-                sub_error = p.is_valid()
+                sub_error = p.is_valid_inputs()
                 if sub_error is not None:
                     error = sub_error
                     break
@@ -116,7 +116,7 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
             assert self.output is not None
 
             if error is None:
-                error = self.output.is_valid()
+                error = self.output.is_valid_output()
 
         return error
 

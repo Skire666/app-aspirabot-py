@@ -24,6 +24,7 @@ from collections.abc import Callable
 from playwright.sync_api import Page
 from services.browser_playwright_service import BrowserPlaywrightService
 from services.debug_browser_service import DebugBrowserService
+from shared.converter_util import convert_str_to_wait_until
 from shared.enums import WaitUntilEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
@@ -134,7 +135,7 @@ class DebugPresenter:
     # Debug session — entry point
     # -----------------------------------------------------------------------
 
-    def _on_debug_start(self, url: str, timeout_raw: str, dns_delay_raw: str) -> None:
+    def _on_debug_start(self, url: str, timeout_raw: str, dns_delay_raw: str, wait_until_raw: str) -> None:
         """Validates inputs then opens a debug browser session.
 
         Sets vm.error_message_var and returns early on invalid inputs.
@@ -144,6 +145,7 @@ class DebugPresenter:
             url: The URL to open in the debug browser.
             timeout_raw: Raw spinbox string for the navigation timeout (1-30 s).
             dns_delay_raw: Raw spinbox string for the DNS-resolution wait (1-30 s).
+            wait_until_raw: Raw combobox string for the page-state condition.
         """
         errors = self._validate_debug_inputs(url, timeout_raw, dns_delay_raw)
         if errors:
@@ -152,6 +154,7 @@ class DebugPresenter:
         self._vm.error_message_var.set("")
         timeout = int(timeout_raw)
         dns_delay = int(dns_delay_raw)
+        wait_until = convert_str_to_wait_until(wait_until_raw)
 
         self._close_debug_session()
         # Fresh queue — old worker reads None from its own (now unreferenced) queue.
@@ -163,7 +166,9 @@ class DebugPresenter:
         self._vm.html_content_var.set(C_DEBUG_LOADING)
         self._vm.open_debug_page()
 
-        self._debug_thread = threading.Thread(target=self._browser_worker, args=(url, timeout, dns_delay), daemon=True)
+        self._debug_thread = threading.Thread(
+            target=self._browser_worker, args=(url, timeout, dns_delay, wait_until), daemon=True
+        )
         self._debug_thread.start()
 
     def _close_debug_session(self) -> None:
@@ -178,7 +183,7 @@ class DebugPresenter:
     # Browser worker (long-lived thread)
     # -----------------------------------------------------------------------
 
-    def _browser_worker(self, url: str, timeout: int, dns_delay: int) -> None:
+    def _browser_worker(self, url: str, timeout: int, dns_delay: int, wait_until: WaitUntilEnum) -> None:
         """Long-lived browser thread — the only thread that calls Playwright.
 
         Launches the browser, navigates to url, pushes the initial HTML, then
@@ -189,6 +194,7 @@ class DebugPresenter:
             url: The URL to navigate to on startup.
             timeout: Navigation timeout in seconds (converted to ms internally).
             dns_delay: DNS resolution wait passed to safe_goto_url.
+            wait_until: Page-state condition to consider navigation complete.
         """
         if not self._debug_browser:
             self._logger.error("Worker démarré sans instance de navigateur.")
@@ -196,7 +202,7 @@ class DebugPresenter:
 
         try:
             self._debug_browser.launch()
-            self._debug_browser.safe_goto_url(url, WaitUntilEnum.E_IDLE, timeout * 1000, dns_delay)
+            self._debug_browser.safe_goto_url(url, wait_until, timeout * 1000, dns_delay)
             page = self._debug_browser.get_workflow_page()
             html = self._debug_service.get_html_content(page)
             self._push_html(html)

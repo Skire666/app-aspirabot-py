@@ -13,10 +13,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from models.urls_discover_entries_model import UrlsDiscoverEntriesModel
-from models.urls_folder_jsons_model import UrlsFolderJsonsModel
-from models.urls_folder_racs_model import UrlsFolderRacsModel
-from models.urls_manual_list_model import UrlsManualListModel
+from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
+from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
+from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
+from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from shared.constants import (
     C_CURRENT_WORKING_DIR,
     C_DATA_DEFAULT_FOLDER_SCRAPING,
@@ -26,6 +26,7 @@ from shared.constants import (
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import UrlSourceTypeEnum
 from shared.error_code import ErrorCode
+from shared.errors.launch_error import ErrorCodeLAM
 from shared.random_util import generate_rng_hexastring
 
 # -----------------------------------------------------------------------------
@@ -199,15 +200,18 @@ class LaunchModel:
             The first validation ErrorCode, or None if the profile is valid.
         """
         error: ErrorCode | None = None
-        stype = self.urls_source_type.value
 
-        if UrlSourceTypeEnum.E_MANUAL_LIST.value == stype:
+        if len(self.id_scenario.strip()) <= 0:
+            error = ErrorCodeLAM.LAM_1002
+        elif self.urls_source_type in {UrlSourceTypeEnum.E_UNSET, UrlSourceTypeEnum.E_UNKNOWN}:
+            error = ErrorCodeLAM.LAM_1001  # No source type defined
+        elif self.urls_source_type is UrlSourceTypeEnum.E_MANUAL_LIST:
             error = self.urls_manual_list.is_valid()
-        if UrlSourceTypeEnum.E_FOLDER_RACS.value == stype:
+        elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_RACS:
             error = self.urls_folder_racs.is_valid()
-        if UrlSourceTypeEnum.E_FOLDER_JSONS.value == stype:
+        elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_JSONS:
             error = self.urls_folder_jsons.is_valid()
-        if UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value == stype:
+        elif self.urls_source_type is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
             error = self.urls_discover_entries.is_valid()
 
         return error

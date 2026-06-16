@@ -9,20 +9,20 @@ from shared.error_code import ErrorCode
 from shared.exception_util import AspirabotBaseError
 
 
-class ErrorCodeSUS(ErrorCode, Enum):
-    """Error codes for SourcingUrlsService."""
+class ErrorCodeUDO(ErrorCode, Enum):
+    """Error codes for UrlsFolderJsonsModel."""
 
     # wrong
-    SUS_1001 = ("#SUS-1001", "Aucun profil de lancement défini.", SeverityEnum.E_ERROR)
-    SUS_1002 = ("#SUS-1002", "Le type de source d'URLs n'est pas supporté.", SeverityEnum.E_ERROR)
-    SUS_1003 = ("#SUS-1003", "Le chemin d'export est vide.", SeverityEnum.E_ERROR)
-    SUS_1004 = ("#SUS-1004", "Le chemin d'export est invalide.", SeverityEnum.E_ERROR)
-    SUS_1005 = ("#SUS-1005", "La liste des URLs à consommer est vide.", SeverityEnum.E_ERROR)
-    SUS_1006 = ("#SUS-1006", "La 1ère URL à consommer est vide.", SeverityEnum.E_ERROR)
-    SUS_1007 = ("#SUS-1007", "La 1ère URL à consommer possède 3 caractères ou moins.", SeverityEnum.E_ERROR)
+    UDO_1001 = ("#UDO-1001", "Aucune dossier [OUT] disponible.", SeverityEnum.E_ERROR)
+    UDO_1003 = ("#UDO-1003", "Dossier [OUT] n'existe pas.", SeverityEnum.E_ERROR)
+    UDO_1004 = ("#UDO-1004", "Dossier [OUT] ne contient aucun fichier JSON.", SeverityEnum.E_WARNING)
+    UDO_1005 = ("#UDO-1005", "Regexp [OUT] des fichiers JSON est vide.", SeverityEnum.E_ERROR)
+    UDO_1006 = ("#UDO-1006", "Regexp [OUT] des fichiers JSON doit terminer par '.json'.", SeverityEnum.E_ERROR)
+    UDO_1007 = ("#UDO-1007", "Clé de mappage [OUT] est vide.", SeverityEnum.E_ERROR)
+    UDO_1008 = ("#UDO-1008", "Regexp pour les URLs [OUT] est vide.", SeverityEnum.E_ERROR)
 
     # ???
-    SUS_9999 = ("#SUS-9999", "Erreur inconnue.", SeverityEnum.E_UNKNOWN)
+    UDO_9999 = ("#UDO-9999", "Erreur inconnue.", SeverityEnum.E_UNKNOWN)
 
     def __init__(self, code: str, user_message: str, severity: SeverityEnum) -> None:
         """Initialize the error code with its attributes."""
@@ -33,7 +33,7 @@ class ErrorCodeSUS(ErrorCode, Enum):
     @classmethod
     def from_code(cls, code: str) -> ErrorCode:
         """Retourne l'instance de l'ErrorCode correspondant au code donné."""
-        for error_code in ErrorCodeSUS:
+        for error_code in ErrorCodeUDO:
             if error_code.code == code:
                 return error_code
         msg = f"Code d'erreur inconnu : {code}"

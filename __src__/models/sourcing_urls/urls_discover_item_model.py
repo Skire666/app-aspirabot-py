@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from shared.error_code import ErrorCode
-from shared.errors.urls_discover_item_error import ErrorCodeUDI
+from shared.errors.urls_discover_inputs_error import ErrorCodeUDI
+from shared.errors.urls_discover_output_error import ErrorCodeUDO
 from shared.path_util import count_files_in_folder, folder_exists
 from shared.random_util import generate_rng_hexastring
 
@@ -115,7 +116,7 @@ class UrlsDiscoverItemModel:
             "pattern_urls": self.pattern_urls,
         }
 
-    def is_valid(self) -> ErrorCode | None:
+    def is_valid_inputs(self) -> ErrorCode | None:
         """Check if the URL source model is valid.
 
         Returns:
@@ -127,16 +128,45 @@ class UrlsDiscoverItemModel:
             error = ErrorCodeUDI.UDI_1001
         elif not folder_exists(self.folder_json):
             error = ErrorCodeUDI.UDI_1003
-        elif count_files_in_folder(self.folder_json, "json") <= 0:
+        elif count_files_in_folder(self.folder_json, ".json") <= 0:
             error = ErrorCodeUDI.UDI_1004
         elif not self.pattern_json or not self.pattern_json.strip():
             error = ErrorCodeUDI.UDI_1005
-        elif not self.pattern_json.strip().endswith("json"):
+        elif not self.pattern_json.strip().endswith(".json"):
             error = ErrorCodeUDI.UDI_1006
         elif not self.key_mapping or not self.key_mapping.strip():
             error = ErrorCodeUDI.UDI_1007
         elif not self.pattern_urls or not self.pattern_urls.strip():
             error = ErrorCodeUDI.UDI_1008
+
+        return error
+
+    def is_valid_output(self) -> ErrorCode | None:
+        """Check if the URL source model is valid.
+
+        Returns:
+            The error code if the model is invalid, None otherwise.
+        """
+        error: ErrorCode | None = None
+
+        # error
+        if not self.folder_json or not self.folder_json.strip():
+            error = ErrorCodeUDO.UDO_1001
+        elif not folder_exists(self.folder_json):
+            error = ErrorCodeUDO.UDO_1003
+        elif not self.pattern_json or not self.pattern_json.strip():
+            error = ErrorCodeUDO.UDO_1005
+        elif not self.pattern_json.strip().endswith(".json"):
+            error = ErrorCodeUDO.UDO_1006
+        elif not self.key_mapping or not self.key_mapping.strip():
+            error = ErrorCodeUDO.UDO_1007
+        elif not self.pattern_urls or not self.pattern_urls.strip():
+            error = ErrorCodeUDO.UDO_1008
+
+        # warning
+        if error is None and count_files_in_folder(self.folder_json, ".json") <= 0:
+            # if empty, may be its the first time, so no entries at the beginning
+            error = ErrorCodeUDO.UDO_1004
 
         return error
 

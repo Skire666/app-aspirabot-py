@@ -133,17 +133,11 @@ class SourcingUrlsService:
         Raises:
             UnknownUrlSourceTypeError: When the launcher source type is not supported.
         """
+        assert launcher is not None, "Launcher context must be provided and valid."
         self._launcher = launcher
         self._export_folder = export_folder
         self._warmup_url = warmup_url
         ustype = launcher.urls_source_type
-
-        self._logger.debug(
-            "Dossier d'export : %s, URL warmup : %s, type source : %s",
-            export_folder,
-            warmup_url,
-            ustype,
-        )
 
         if ustype is UrlSourceTypeEnum.E_MANUAL_LIST:
             self._provider_manual.setup_model(launcher.urls_manual_list)

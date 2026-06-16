@@ -45,7 +45,7 @@ class OpenUrlExecutor(IStepExecutor):
         assert context.step_scraping_data is not None
         p = cast(OpenUrlParams, context.step_scraping_data.params)
         try:
-            target_url = self._extract_next_url_used(context, p)
+            target_url = self._extract_next_url_used(context, p, event_bus)
             # obligé de le mettre avant de goto
             # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
             context.last_url_opened = target_url
@@ -59,12 +59,13 @@ class OpenUrlExecutor(IStepExecutor):
             return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
-    def _extract_next_url_used(context: ScrapingContextModel, p: OpenUrlParams) -> str:
+    def _extract_next_url_used(context: ScrapingContextModel, p: OpenUrlParams, event_bus: IScrapingEventBus) -> str:
         """Extract the next URL to open based on the step parameters and context.
 
         Args:
             context: The current scraping context, which may contain a URL source scenario.
             p: The parameters for the open URL step, including mode and custom URL.
+            event_bus: The event bus for logging intermediate steps.
 
         Returns:
             The URL to open.
@@ -74,8 +75,11 @@ class OpenUrlExecutor(IStepExecutor):
         """
         # Consume the next URL from the injected source
         if context.url_source is None or not context.url_source.loads_urls():
+            event_bus.log_step(context, "Aucune URL disponible dans la source.")
             raise UrlSourceExhaustedError()
-        return context.url_source.pop_url()
+        url_readed = context.url_source.pop_url()
+        event_bus.log_step(context, f"Progression : {context.url_source.get_progress_text()}")
+        return url_readed
 
 
 register_step_executor(OpenUrlExecutor())
