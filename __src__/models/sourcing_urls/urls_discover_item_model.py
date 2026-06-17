@@ -7,13 +7,12 @@
 from dataclasses import dataclass
 from typing import Any
 
+from shared.enums import SeverityEnum
 from shared.errors.urls_discover_inputs_error import ErrorCodeUDI
 from shared.errors.urls_discover_output_error import ErrorCodeUDO
 from shared.path_util import count_files_in_folder, folder_exists
 from shared.random_util import generate_rng_hexastring
-
-from __src__.shared.enums import SeverityEnum
-from __src__.shared.validation_result import ValidationResult
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -163,19 +162,24 @@ class UrlsDiscoverItemModel:
 
     def _append_output_errors(self, vr: ValidationResult) -> None:
         """Append output-related error checks to the provided ValidationResult."""
-        print(f"E) Checking output for project {self.id_discover}...")
+        # folder_json
         if not self.folder_json or not self.folder_json.strip():
             vr.append(ErrorCodeUDO.UDO_1001, SeverityEnum.E_ERROR)
         elif not folder_exists(self.folder_json):
             vr.append(ErrorCodeUDO.UDO_1003, SeverityEnum.E_ERROR)
-        elif not self.pattern_json or not self.pattern_json.strip():
-            print(f"F) pattern_json is empty for project {self.id_discover}.")
+
+        # pattern_json
+        if not self.pattern_json or not self.pattern_json.strip():
             vr.append(ErrorCodeUDO.UDO_1005, SeverityEnum.E_ERROR)
         elif not self.pattern_json.strip().endswith(".json"):
             vr.append(ErrorCodeUDO.UDO_1006, SeverityEnum.E_ERROR)
-        elif not self.key_mapping or not self.key_mapping.strip():
+
+        # key_mapping
+        if not self.key_mapping or not self.key_mapping.strip():
             vr.append(ErrorCodeUDO.UDO_1007, SeverityEnum.E_ERROR)
-        elif not self.pattern_urls or not self.pattern_urls.strip():
+
+        # pattern_urls
+        if not self.pattern_urls or not self.pattern_urls.strip():
             vr.append(ErrorCodeUDO.UDO_1008, SeverityEnum.E_ERROR)
 
 

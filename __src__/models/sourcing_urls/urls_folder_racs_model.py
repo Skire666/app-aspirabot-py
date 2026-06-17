@@ -12,9 +12,8 @@ from typing import Any
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_folder_racs_error import ErrorCodeUFR
-from shared.path_util import count_files_in_folder, folder_exists
-
-from __src__.shared.validation_result import ValidationResult
+from shared.path_util import count_files_in_folder, folder_exists, path_has_valid_syntax
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -91,7 +90,7 @@ class UrlsFolderRacsModel(IUrlsSourceModel):
 
         if not self.folder_racs or not self.folder_racs.strip():
             rs.append(ErrorCodeUFR.UFR_1001, SeverityEnum.E_ERROR)
-        elif len(self.folder_racs.strip()) <= 1:
+        elif not path_has_valid_syntax(self.folder_racs):
             rs.append(ErrorCodeUFR.UFR_1002, SeverityEnum.E_ERROR)
         elif not self.orders_racs:
             rs.append(ErrorCodeUFR.UFR_1003, SeverityEnum.E_ERROR)

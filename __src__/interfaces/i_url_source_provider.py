@@ -92,5 +92,13 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
+    def count_urls(self) -> int:
+        """Return the total number of URLs available in this source.
+
+        Returns:
+            The total number of URLs available in this source.
+        """
+        ...
+
 
 # EOF

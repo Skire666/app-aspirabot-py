@@ -106,7 +106,6 @@ class AppConfigurationPresenter:
             log_level_enum=state.log_level_enum,
             folder_logs=state.folder_logs,
             folder_scenarios=state.folder_scenarios,
-            folder_scraping=state.folder_scraping,
             gui_booting_size=state.gui_booting_size,
             gui_booting_position=state.gui_booting_position,
             gui_booting_fullscreen=state.gui_booting_fullscreen,

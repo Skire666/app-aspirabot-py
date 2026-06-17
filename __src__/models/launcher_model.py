@@ -10,32 +10,19 @@ session: export folder, URL source mode with per-mode sub-models, and usage stat
 
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
 from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
-from shared.constants import (
-    C_CURRENT_WORKING_DIR,
-    C_DATA_DEFAULT_FOLDER_SCRAPING,
-    C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
-    C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID,
-)
+from shared.constants import C_DEFAULT_THRESHOLD_ERROR_SCRAPING, C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.launch_error import ErrorCodeLAM
+from shared.path_util import path_has_valid_syntax
 from shared.random_util import generate_rng_hexastring
-
-from __src__.shared.validation_result import ValidationResult
-
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-# Default export folder: project root / data_scraping.
-_C_DEFAULT_EXPORT_FOLDER: str = str(Path(C_CURRENT_WORKING_DIR) / C_DATA_DEFAULT_FOLDER_SCRAPING)
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -95,7 +82,7 @@ class LaunchModel:
             id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID),
             id_scenario=id_scenario,
             profile_name="Nouveau profil",
-            export_folder=_C_DEFAULT_EXPORT_FOLDER,
+            export_folder="",
             urls_source_type=UrlSourceTypeEnum.E_MANUAL_LIST,
             urls_manual_list=UrlsManualListModel.get_default(),
             urls_folder_racs=UrlsFolderRacsModel.get_default(),
@@ -206,14 +193,26 @@ class LaunchModel:
             vr.append(ErrorCodeLAM.LAM_1002, SeverityEnum.E_ERROR)
         elif self.urls_source_type in {UrlSourceTypeEnum.E_UNSET, UrlSourceTypeEnum.E_UNKNOWN}:
             vr.append(ErrorCodeLAM.LAM_1001, SeverityEnum.E_ERROR)
-        elif self.urls_source_type is UrlSourceTypeEnum.E_MANUAL_LIST:
+        elif not self.export_folder or not self.export_folder.strip():
+            vr.append(ErrorCodeLAM.LAM_1003, SeverityEnum.E_ERROR)
+        elif not path_has_valid_syntax(self.export_folder):
+            vr.append(ErrorCodeLAM.LAM_1004, SeverityEnum.E_ERROR)
+        elif self.export_folder in {".", "./"}:
+            vr.append(ErrorCodeLAM.LAM_1005, SeverityEnum.E_ERROR)
+        elif self.export_folder.startswith("/"):
+            vr.append(ErrorCodeLAM.LAM_1006, SeverityEnum.E_ERROR)
+
+        if vr.has_errors_or_fatals():
+            return vr
+
+        # sub object
+        if self.urls_source_type is UrlSourceTypeEnum.E_MANUAL_LIST:
             vr.extend(self.urls_manual_list.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_RACS:
             vr.extend(self.urls_folder_racs.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_JSONS:
             vr.extend(self.urls_folder_jsons.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            print(f"A) Validating discover entries for profile {self.id_profile}...")
             vr.extend(self.urls_discover_entries.validate())
 
         return vr

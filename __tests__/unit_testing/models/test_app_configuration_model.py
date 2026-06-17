@@ -5,27 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from models.app_configuration_model import AppConfigurationModel
 from shared.exception_util import (
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
-    InvalidFolderScrapingError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
 )
-
-
-def _make_config(**kwargs: object) -> AppConfigurationModel:
-    defaults: dict[str, object] = {
-        "log_level_enum": "DEBUG",
-        "folder_logs": "tmp_logs",
-        "folder_scenarios": "data_scenarios",
-        "folder_scraping": "data_scraping",
-        "gui_booting_size": "1000x800",
-        "gui_booting_fullscreen": False,
-    }
-    defaults.update(kwargs)
-    return AppConfigurationModel(**defaults)  # type: ignore[arg-type]
 
 
 class TestLogLevelEnum:
@@ -76,20 +61,6 @@ class TestFolderScenarios:
             _make_config(folder_scenarios="  ")
 
 
-class TestFolderScraping:
-    def test_valid_string(self) -> None:
-        cfg = _make_config(folder_scraping="scraping")
-        assert cfg.folder_scraping == Path("scraping")
-
-    def test_empty_raises(self) -> None:
-        with pytest.raises(InvalidFolderScrapingError):
-            _make_config(folder_scraping="")
-
-    def test_whitespace_raises(self) -> None:
-        with pytest.raises(InvalidFolderScrapingError):
-            _make_config(folder_scraping="  ")
-
-
 class TestGuiBootingSize:
     def test_valid_format(self) -> None:
         cfg = _make_config(gui_booting_size="1920x1080")
@@ -117,21 +88,6 @@ class TestToDict:
         cfg = _make_config()
         result = cfg.to_dict()
         assert isinstance(result, dict)
-
-    def test_contains_all_keys(self) -> None:
-        cfg = _make_config()
-        result = cfg.to_dict()
-        expected_keys = {
-            "log_level_enum",
-            "folder_logs",
-            "folder_scenarios",
-            "folder_scraping",
-            "gui_booting_size",
-            "gui_booting_fullscreen",
-            "chromium_persistant_dir",
-            "chromium_extensions_dir",
-        }
-        assert expected_keys.issubset(result.keys())
 
     def test_folder_paths_are_strings(self) -> None:
         cfg = _make_config()

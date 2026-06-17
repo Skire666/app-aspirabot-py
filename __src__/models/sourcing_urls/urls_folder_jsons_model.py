@@ -12,9 +12,8 @@ from typing import Any
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_folder_jsons_error import ErrorCodeUFJ
-from shared.path_util import count_files_in_folder, folder_exists
-
-from __src__.shared.validation_result import ValidationResult
+from shared.path_util import count_files_in_folder, folder_exists, path_has_valid_syntax
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -91,7 +90,7 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
 
         if not self.folder_jsons or not self.folder_jsons.strip():
             rs.append(ErrorCodeUFJ.UFJ_1001, SeverityEnum.E_ERROR)
-        elif len(self.folder_jsons.strip()) <= 1:
+        elif not path_has_valid_syntax(self.folder_jsons):
             rs.append(ErrorCodeUFJ.UFJ_1002, SeverityEnum.E_ERROR)
         elif not self.orders_jsons:
             rs.append(ErrorCodeUFJ.UFJ_1003, SeverityEnum.E_ERROR)

@@ -182,7 +182,7 @@ class AppConfigurationRepository:
             with Path(self._full_pathfile).open(encoding="utf-8") as file:
                 # Parse JSON with UTF-8 encoding to handle special characters.
                 return AppConfigurationModel(**json.load(file))
-        except OSError, json.JSONDecodeError:
+        except Exception:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             # Return defaults as a safe fallback.
             return AppConfigurationModel()

@@ -14,8 +14,7 @@ from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.sourcing_urls_service_error import ErrorCodeSUS
 from shared.exception_util import UnknownUrlSourceTypeError, UrlSourceLauncherNotInitializedError
 from shared.path_util import path_has_valid_syntax
-
-from __src__.shared.validation_result import ValidationResult
+from shared.validation_result import ValidationResult
 
 _C_MIN_URL_LENGTH = 3  # URLs shorter than this are treated as empty/invalid.
 
@@ -180,12 +179,23 @@ class SourcingUrlsService:
             rs.append(ErrorCodeSUS.SUS_1003, SeverityEnum.E_ERROR)
         elif not path_has_valid_syntax(self._export_folder):
             rs.append(ErrorCodeSUS.SUS_1004, SeverityEnum.E_ERROR)
+        elif self._export_folder.strip() in {".", "./"}:
+            rs.append(ErrorCodeSUS.SUS_1008, SeverityEnum.E_ERROR)
+        elif self._export_folder.strip().startswith("/"):
+            rs.append(ErrorCodeSUS.SUS_1009, SeverityEnum.E_ERROR)
         elif not self.get_provider_urls().loads_urls():
             rs.append(ErrorCodeSUS.SUS_1005, SeverityEnum.E_ERROR)
         elif not self.get_provider_urls().preview_next_url():
             rs.append(ErrorCodeSUS.SUS_1006, SeverityEnum.E_ERROR)
         elif len(self.get_provider_urls().preview_next_url() or "") <= _C_MIN_URL_LENGTH:
             rs.append(ErrorCodeSUS.SUS_1007, SeverityEnum.E_ERROR)
+
+        if not rs.has_errors_or_fatals():
+            count = self.get_provider_urls().count_urls()
+            if count == 0:
+                rs.append(ErrorCodeSUS.SUS_1010, SeverityEnum.E_ERROR)
+            elif count > 100:
+                rs.append(ErrorCodeSUS.SUS_1011, SeverityEnum.E_WARNING)
 
         return rs
 

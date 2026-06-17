@@ -32,7 +32,6 @@ from shared.exception_util import (
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
-_PREVIEW_LIMIT = 99_999
 
 
 class UrlsFolderRacsService(IUrlSourceProvider):
@@ -51,6 +50,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         """
         self._logger = logging.getLogger(__name__)
         self._file_paths: list[Path] | None = None
+        self._counted_urls: int = 0
         self._index: int = 0
         self._buffered: object = _SENTINEL
 
@@ -153,8 +153,10 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         except UrlSourceFileNotFoundError:
             return []
 
-        if self._file_paths is None:
+        if not self._files_are_loaded():
             return []
+
+        assert self._file_paths is not None
 
         result: list[str] = []
 
@@ -162,14 +164,26 @@ class UrlsFolderRacsService(IUrlSourceProvider):
             result.append(str(self._buffered))
 
         peek = self._index
-        while len(result) < _PREVIEW_LIMIT and peek < len(self._file_paths):
+        while peek < len(self._file_paths):
             url = self._read_url_from_file(self._file_paths[peek])
             peek += 1
             if url:
                 result.append(url)
 
-        self._logger.debug("Aperçu URL : %s URLs retournées (limite %s)", len(result), _PREVIEW_LIMIT)
+        self._counted_urls = len(result)
+
         return result
+
+    def count_urls(self) -> int:
+        """Return the total number of URLs available in this source.
+
+        Returns:
+            The total number of URLs available in this source.
+
+        Raises:
+            None.
+        """
+        return self._counted_urls
 
     def get_progress_text(self) -> str:
         """Return a string describing the current progress for display purposes.
@@ -180,8 +194,10 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         Raises:
             None.
         """
-        if self._file_paths is None:
+        if not self._files_are_loaded():
             return "Dossier : non chargé"
+        assert self._file_paths is not None
+
         remaining = len(self._file_paths) - self._index
         if remaining > 0:
             return f"Dossier : {self._index} / {len(self._file_paths)} consommé(s)"
@@ -190,6 +206,14 @@ class UrlsFolderRacsService(IUrlSourceProvider):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _files_are_loaded(self) -> bool:
+        """Return True if the folder has been scanned and file paths are stored.
+
+        Returns:
+            True when the folder has been scanned and file paths are stored.
+        """
+        return self._file_paths is not None
 
     def _ensure_discovered(self) -> None:
         """Scan the folder on first access and populate the sorted file list.
@@ -217,10 +241,6 @@ class UrlsFolderRacsService(IUrlSourceProvider):
         match self._sort_order:
             case UrlSortOrderEnum.E_MTIME_DESC:
                 return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
-            case UrlSortOrderEnum.E_NAME_ASC:
-                return sorted(files, key=lambda f: f.name)
-            case UrlSortOrderEnum.E_NAME_DESC:
-                return sorted(files, key=lambda f: f.name, reverse=True)
             case _:  # E_MTIME_ASC (default)
                 return sorted(files, key=lambda f: f.stat().st_mtime)
 

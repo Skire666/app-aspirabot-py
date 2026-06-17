@@ -2,6 +2,8 @@
 # Imports
 # -----------------------------------------------------------------------------
 
+import os
+import re
 import string
 from pathlib import Path
 
@@ -86,14 +88,47 @@ def count_files_in_folder(path: Path | str, file_extension: str) -> int:
     return len(list(folder_path.glob(f"*{file_extension}")))
 
 
+# Caractères interdits dans les noms de fichiers/dossiers Windows
+_INVALID_CHARS_PATTERN = re.compile(r'[<>:"|?*\x00-\x1f]')
+
+# Noms réservés par Windows (quelle que soit l'extension)
+_RESERVED_NAMES = {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
+
+
 def path_has_valid_syntax(path_str: str) -> bool:
-    """Return True if *path_str* is syntactically valid for the current OS, False otherwise."""
-    try:
-        Path(path_str)
-    except (ValueError, TypeError):
+    """Return True if *path_str* is syntactically valid for Windows, False otherwise."""
+    if not path_str:
         return False
-    else:
-        return True
+
+    # Sépare le lecteur (ex: "C:") du reste du chemin, s'il existe
+    drive, rest = os.path.splitdrive(path_str)
+    if drive and not re.fullmatch(r"[a-zA-Z]:", drive):
+        return False
+
+    # Découpe en composants, en gérant les deux séparateurs possibles
+    parts = rest.replace("/", "\\").split("\\")
+
+    for part in parts:
+        if not part:
+            continue  # composant vide (séparateurs successifs), on ignore
+
+        if _INVALID_CHARS_PATTERN.search(part):
+            return False
+
+        # Un nom ne peut pas se terminer par un espace ou un point
+        # (sauf "." et ".." qui sont des composants spéciaux)
+        if part not in (".", "..") and part != part.rstrip(" ."):
+            return False
+
+        # Vérifie les noms réservés, en ignorant l'extension éventuelle
+        base_name = part.split(".")[0].upper()
+        if base_name in _RESERVED_NAMES:
+            return False
+
+    # Limite historique de Windows (255 caractères chemin complet)
+    # Peut être désactivée via une clé de registre (LongPathsEnabled),
+    # donc à ajuster selon votre contexte si besoin.
+    return not len(path_str) > 255
 
 
 # EOF

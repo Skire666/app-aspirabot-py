@@ -63,6 +63,10 @@ class ValidationResult:
         """Return True if there are any validation errors or fatals, False otherwise."""
         return self.count_errors > 0 or self.count_fatals > 0
 
+    def has_warnings(self) -> bool:
+        """Return True if there are any validation warnings, False otherwise."""
+        return self.count_warnings > 0
+
     def compute_displayable_issues(self, nbr_max: int = 2) -> str:
         """Compute a displayable string of validation issues."""
         if not self.issues:

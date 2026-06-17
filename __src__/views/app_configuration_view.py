@@ -63,7 +63,6 @@ class AppConfigurationView(ttk.Frame):
         self._add_enum_row_log(frame, 0, "Niveau log", self._vm.log_level_var)
         self._add_path_row(frame, 1, "Dossier logs", self._vm.folder_logs_var)
         self._add_path_row(frame, 2, "Dossier scénarios", self._vm.folder_scenarios_var)
-        self._add_path_row(frame, 3, "Dossier scraping", self._vm.folder_scraping_var)
         self._add_text_row(frame, 4, "Taille fenêtre libre (WxH)", self._vm.gui_booting_size_var)
         self._add_text_row(frame, 5, "Position fenêtre (X,Y)", self._vm.gui_booting_position_var)
         self._add_bool_row(frame, 6, "Démarrer en plein écran", self._vm.gui_booting_fullscreen_var)
@@ -137,7 +136,6 @@ class AppConfigurationView(ttk.Frame):
             self._vm.log_level_var,
             self._vm.folder_logs_var,
             self._vm.folder_scenarios_var,
-            self._vm.folder_scraping_var,
             self._vm.gui_booting_size_var,
             self._vm.gui_booting_position_var,
             self._vm.gui_booting_fullscreen_var,

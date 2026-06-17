@@ -13,7 +13,6 @@ Discovery is lazy: the folder is scanned only on the first ``load_url_if_availab
 from __future__ import annotations
 
 import json
-from itertools import islice
 from pathlib import Path
 from typing import cast
 
@@ -33,7 +32,6 @@ from shared.exception_util import (
 # -----------------------------------------------------------------------------
 
 _SENTINEL = object()
-_PREVIEW_LIMIT = 99_999
 
 
 def _collect_urls(obj: object, result: list[str]) -> None:
@@ -71,6 +69,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         self._file_paths: list[Path] | None = None
         self._file_index: int = 0
         self._pending_urls: list[str] = []
+        self._counted_urls: int = 0
         self._buffered: object = _SENTINEL
 
     # ------------------------------------------------------------------
@@ -174,22 +173,27 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
 
         result: list[str] = []
 
-        if self._buffered is not _SENTINEL:
-            result.append(str(self._buffered))
-
         # _pending_urls is stored reversed; iterate from end to get original order.
         for url in reversed(self._pending_urls):
-            if len(result) >= _PREVIEW_LIMIT:
-                break
             result.append(url)
 
-        peek = self._file_index
-        while len(result) < _PREVIEW_LIMIT and peek < len(self._file_paths):
-            needed = _PREVIEW_LIMIT - len(result)
-            result.extend(islice(self._extract_urls_from_file(self._file_paths[peek]), needed))
-            peek += 1
+        idx = self._file_index
+        while idx < len(self._file_paths):
+            urls_from_file = self._extract_urls_from_file(self._file_paths[idx])
+            result.extend(urls_from_file)
+            idx += 1
+
+        self._counted_urls = len(result)
 
         return result
+
+    def count_urls(self) -> int:
+        """Return the total number of URLs available in this source.
+
+        Returns:
+            The total number of URLs available in this source.
+        """
+        return self._counted_urls
 
     def get_progress_text(self) -> str:
         """Return a string describing the current progress for display purposes.
@@ -213,7 +217,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         Raises:
             UrlSourceFileNotFoundError: If the folder path does not exist.
         """
-        if self._file_paths is not None:
+        if self._file_paths and len(self._file_paths) >= 1:
             return
         self._file_paths = self._discover_files()
 
@@ -233,10 +237,6 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         match self._sort_order:
             case UrlSortOrderEnum.E_MTIME_DESC:
                 return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
-            case UrlSortOrderEnum.E_NAME_ASC:
-                return sorted(files, key=lambda f: f.name)
-            case UrlSortOrderEnum.E_NAME_DESC:
-                return sorted(files, key=lambda f: f.name, reverse=True)
             case _:  # E_MTIME_ASC (default)
                 return sorted(files, key=lambda f: f.stat().st_mtime)
 

@@ -13,8 +13,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from shared.enums import UrlSourceTypeEnum
-
-from __src__.shared.validation_result import ValidationResult
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Interface

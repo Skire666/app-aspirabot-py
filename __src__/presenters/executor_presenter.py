@@ -23,6 +23,7 @@ from services.scenarios_service import ScenariosService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
 from shared.enums import SeverityEnum, UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.errors.executor_error import ErrorCodeEXE
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
@@ -33,10 +34,9 @@ from shared.i18n_fra import (
     C_STEP_TYPE_TO_LABELS,
 )
 from shared.parse_util import safe_int_from_str
+from shared.validation_result import ValidationResult
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
-
-from __src__.shared.errors.executor_error import ErrorCodeEXE
-from __src__.shared.validation_result import ValidationResult
+from views.dialog_util import ask_launch_scraping_confirmation
 
 # -----------------------------------------------------------------------------
 # Module-level constant
@@ -500,6 +500,13 @@ class ExecutorPresenter:
             msg = rs.compute_displayable_issues(2)
             self._vm.verification_message_var.set(msg)
         if rs.has_errors_or_fatals():
+            return
+        continue_process = True
+        if rs.has_warnings():
+            msg = rs.compute_displayable_issues(10)
+            continue_process = ask_launch_scraping_confirmation(msg)
+            self._vm.verification_message_var.set(msg)
+        if not continue_process:
             return
         self._on_save_profile()
         if self.on_request_launch_scraping and self._current_scenario and self._current_profile:

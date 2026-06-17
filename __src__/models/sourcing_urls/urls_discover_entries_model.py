@@ -11,8 +11,7 @@ from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
 from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_discover_entries_error import ErrorCodeUDE
-
-from __src__.shared.validation_result import ValidationResult
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Class
@@ -115,7 +114,6 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
             if sub_vr.has_issues():
                 vr.extend(sub_vr)
 
-        print(f"B) Validating output for hub with {len(self.inputs)} projects...")
         vr.extend(self.output.validate_output())
 
         return vr

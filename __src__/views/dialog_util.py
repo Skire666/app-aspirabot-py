@@ -44,4 +44,15 @@ def ask_delete_profile_confirmation(profile_name: str) -> bool:
     return messagebox.askyesno(C_DIALOG_CONFIRM_TITLE, C_DIALOG_DELETE_PROFILE_MSG.format(profile_name=profile_name))
 
 
+def ask_launch_scraping_confirmation(warning_msg: str) -> bool:
+    """Prompts the user for launching scraping confirmation.
+
+    Returns:
+        True if user confirmed the launch, False otherwise.
+    """
+    return messagebox.askyesno(
+        C_DIALOG_CONFIRM_TITLE, f"{warning_msg}\n\nÊtes-vous sûr de vouloir lancer le scraping ?"
+    )
+
+
 # EOF

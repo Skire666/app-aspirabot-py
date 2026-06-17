@@ -42,7 +42,6 @@ from shared.exception_util import (
     InvalidDurationError,
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
-    InvalidFolderScrapingError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
     InvalidLruCacheCapacityError,
@@ -199,10 +198,6 @@ class TestConfigurationErrors:
 
     def test_invalid_folder_scenarios(self) -> None:
         exc = InvalidFolderScenariosError()
-        assert isinstance(exc, AspirabotBaseError)
-
-    def test_invalid_folder_scraping(self) -> None:
-        exc = InvalidFolderScrapingError()
         assert isinstance(exc, AspirabotBaseError)
 
     def test_invalid_gui_booting_size(self) -> None:

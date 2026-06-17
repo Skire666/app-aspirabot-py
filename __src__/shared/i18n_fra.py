@@ -49,7 +49,6 @@ C_SCRAPING_STATUS_RUNNING = "Scraping en cours"
 C_SCRAPING_EXPORT_WRITE_ERROR = "Impossible d'écrire le fichier :\n{exc}"
 
 # Executor panel — validation messages
-C_EXEC_NO_SCENARIO = "Veuillez sélectionner un scénario."
 C_EXEC_NO_PROFILE = "Veuillez sélectionner un profil de lancement."
 C_EXEC_NO_EXPORT_FOLDER = "Le dossier d'export est requis."
 C_EXEC_NO_URL_SOURCE = "Veuillez configurer une source d'URL."

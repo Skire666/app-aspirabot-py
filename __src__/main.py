@@ -90,9 +90,7 @@ def main() -> None:
     config_file_path = get_current_working_directory() / C_APP_CONFIG_FILE
     config_repo = AppConfigurationRepository(config_file_path)
     startup_service = StartupService(
-        config_repo,
-        log_repo_factory=LogRepository,
-        logging_service_factory=LoggingService,
+        config_repo, log_repo_factory=LogRepository, logging_service_factory=LoggingService
     )
 
     # Build ViewModel before the View so both receive the same instance.

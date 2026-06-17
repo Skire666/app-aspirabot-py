@@ -167,8 +167,6 @@ class UrlSortOrderEnum(Enum):
     E_UNSET = "UNSET"
     E_MTIME_ASC = "mtime_asc"  # oldest modified first (default)
     E_MTIME_DESC = "mtime_desc"  # newest modified first
-    E_NAME_ASC = "name_asc"  # alphabetical by filename
-    E_NAME_DESC = "name_desc"  # reverse alphabetical
     E_UNKNOWN = "UNKNOWN"
 
 

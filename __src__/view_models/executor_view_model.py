@@ -13,12 +13,12 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from shared.constants import C_SIZE_HEXASTRING_DISCOVER_ID
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY
 from shared.random_util import generate_rng_hexastring
 
-from __src__.shared.constants import C_SIZE_HEXASTRING_DISCOVER_ID
 from view_models.view_model_base import ViewModelBase
 
 # -----------------------------------------------------------------------------

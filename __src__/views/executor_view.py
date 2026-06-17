@@ -204,7 +204,7 @@ class ExecutorView(ttk.Frame):
     def _create_launch_section(self, parent: tk.Widget) -> None:
         """Build the launch-trigger section."""
         row = HorizontalLineFrame(parent, text="Pilotage")
-        row.pack(fill=tk.X, side=tk.BOTTOM)
+        row.pack(fill=tk.X, side=tk.BOTTOM, pady=(0, 12))
 
         MyLabel(row, text="Vérification :").pack_left()
         MyLabel(row, textvariable=self._vm.verification_message_var, foreground="red").pack_left(fill=tk.X, expand=True)

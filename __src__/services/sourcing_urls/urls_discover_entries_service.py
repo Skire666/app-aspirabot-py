@@ -15,7 +15,6 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import cast
 
-from interfaces.i_json_file_repository import IJsonFileRepository
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
@@ -26,6 +25,8 @@ from shared.exception_util import (
     InvalidUrlSourceValueTypeError,
     UrlSourceExhaustedError,
 )
+
+from __src__.repositories.json_repository import JsonFileRepository
 
 # -----------------------------------------------------------------------------
 # Class
@@ -41,7 +42,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
     get the set of already-processed URLs.  The difference gives new_entries.
     """
 
-    def __init__(self, json_repository: IJsonFileRepository) -> None:
+    def __init__(self, json_repository: JsonFileRepository) -> None:
         """Initialise the logger and store the injected JSON repository.
 
         Args:
@@ -164,6 +165,14 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             A list of new URL strings.
         """
         return list(self.new_entries)
+
+    def count_urls(self) -> int:
+        """Return the total number of new URLs available.
+
+        Returns:
+            The total number of new URLs available.
+        """
+        return len(self.new_entries)
 
     # ------------------------------------------------------------------
     # Private

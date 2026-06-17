@@ -27,7 +27,6 @@ class AppConfigViewState:
         log_level_enum: Currently selected log-level string.
         folder_logs: Path to the logs folder.
         folder_scenarios: Path to the scenarios folder.
-        folder_scraping: Path to the scraping output folder.
         gui_booting_size: Window geometry string (e.g. ``"1400x900"``).
         gui_booting_fullscreen: True when the app should start in fullscreen mode.
     """
@@ -35,7 +34,6 @@ class AppConfigViewState:
     log_level_enum: str
     folder_logs: str
     folder_scenarios: str
-    folder_scraping: str
     gui_booting_size: str
     gui_booting_position: str
     gui_booting_fullscreen: bool
@@ -66,7 +64,6 @@ class AppConfigurationViewModel(ViewModelBase):
         self.log_level_var = tk.StringVar(master=master, value="")
         self.folder_logs_var = tk.StringVar(master=master, value="")
         self.folder_scenarios_var = tk.StringVar(master=master, value="")
-        self.folder_scraping_var = tk.StringVar(master=master, value="")
         self.gui_booting_size_var = tk.StringVar(master=master, value="")
         self.gui_booting_position_var = tk.StringVar(master=master, value="")
         self.gui_booting_fullscreen_var = tk.BooleanVar(master=master, value=False)
@@ -122,7 +119,6 @@ class AppConfigurationViewModel(ViewModelBase):
             log_level_enum=self.log_level_var.get(),
             folder_logs=self.folder_logs_var.get(),
             folder_scenarios=self.folder_scenarios_var.get(),
-            folder_scraping=self.folder_scraping_var.get(),
             gui_booting_size=self.gui_booting_size_var.get(),
             gui_booting_position=self.gui_booting_position_var.get(),
             gui_booting_fullscreen=self.gui_booting_fullscreen_var.get(),
@@ -147,7 +143,6 @@ class AppConfigurationViewModel(ViewModelBase):
             self.log_level_var.set(_str("log_level_enum"))
             self.folder_logs_var.set(_str("folder_logs"))
             self.folder_scenarios_var.set(_str("folder_scenarios"))
-            self.folder_scraping_var.set(_str("folder_scraping"))
             self.gui_booting_size_var.set(_str("gui_booting_size"))
             self.gui_booting_position_var.set(_str("gui_booting_position"))
             self.gui_booting_fullscreen_var.set(bool(data.get("gui_booting_fullscreen")))

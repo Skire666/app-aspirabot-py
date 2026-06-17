@@ -12,8 +12,7 @@ from typing import Any
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_manual_list_error import ErrorCodeUML
-
-from __src__.shared.validation_result import ValidationResult
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Constants

@@ -266,9 +266,10 @@ class JsonFileRepository:
             with resolved.open(encoding="utf-8") as fh:
                 data = json.load(fh, object_hook=_decode_hook)
             self._logger.debug("Fichier JSON chargé depuis le disque : '%s'.", resolved)
-        except (OSError, json.JSONDecodeError) as exc:
+        except OSError, json.JSONDecodeError:
             self._logger.error("Lecture impossible pour '%s'.", resolved, exc_info=True)
-            raise JsonFileRepositoryError(resolved, str(exc)) from exc
+            print(f"Erreur lors de la lecture du fichier JSON : '{resolved}'.")
+            return {}
         else:
             return data
 

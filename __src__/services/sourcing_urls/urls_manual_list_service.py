@@ -12,12 +12,6 @@ from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceExhaustedError
 
 # -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-_PREVIEW_LIMIT = 99_999
-
-# -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
@@ -117,7 +111,18 @@ class UrlsManualListService(IUrlSourceProvider):
         Raises:
             None.
         """
-        return self._urls[self._index : self._index + _PREVIEW_LIMIT]
+        return self._urls
+
+    def count_urls(self) -> int:
+        """Return the total number of URLs in the list.
+
+        Returns:
+            The total number of URLs.
+
+        Raises:
+            None.
+        """
+        return len(self._urls)
 
     def get_progress_text(self) -> str:
         """Return a human-readable progress string for display in the journal.
