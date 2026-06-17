@@ -10,10 +10,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
-from shared.enums import UrlSourceTypeEnum
-from shared.error_code import ErrorCode
+from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_folder_racs_error import ErrorCodeUFR
 from shared.path_util import count_files_in_folder, folder_exists
+
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -80,28 +81,28 @@ class UrlsFolderRacsModel(IUrlsSourceModel):
         """
         return {"folder_racs": self.folder_racs, "orders_racs": self.orders_racs}
 
-    def is_valid(self) -> ErrorCode | None:
+    def validate(self) -> ValidationResult:
         """Check if the URL source model is valid.
 
         Returns:
-            The error code if the model is invalid, None otherwise.
+            A ValidationResult instance containing any validation issues.
         """
-        error: ErrorCode | None = None
+        rs = ValidationResult()
 
         if not self.folder_racs or not self.folder_racs.strip():
-            error = ErrorCodeUFR.UFR_1001
+            rs.append(ErrorCodeUFR.UFR_1001, SeverityEnum.E_ERROR)
         elif len(self.folder_racs.strip()) <= 1:
-            error = ErrorCodeUFR.UFR_1002
+            rs.append(ErrorCodeUFR.UFR_1002, SeverityEnum.E_ERROR)
         elif not self.orders_racs:
-            error = ErrorCodeUFR.UFR_1003
+            rs.append(ErrorCodeUFR.UFR_1003, SeverityEnum.E_ERROR)
         elif len(self.orders_racs.strip()) <= 1 or self.orders_racs == "UNSET":
-            error = ErrorCodeUFR.UFR_1004
+            rs.append(ErrorCodeUFR.UFR_1004, SeverityEnum.E_ERROR)
         elif not folder_exists(self.folder_racs):
-            error = ErrorCodeUFR.UFR_1005
+            rs.append(ErrorCodeUFR.UFR_1005, SeverityEnum.E_ERROR)
         elif count_files_in_folder(self.folder_racs, ".url") <= 0:
-            error = ErrorCodeUFR.UFR_1006
+            rs.append(ErrorCodeUFR.UFR_1006, SeverityEnum.E_ERROR)
 
-        return error
+        return rs
 
 
 # EOF

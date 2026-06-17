@@ -1,5 +1,9 @@
 """Protocol contract for scenario storage repositories."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from pathlib import Path

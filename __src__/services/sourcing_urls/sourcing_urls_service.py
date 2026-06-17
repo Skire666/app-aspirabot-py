@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import logging
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -6,11 +10,12 @@ from services.sourcing_urls.urls_discover_entries_service import UrlsDiscoverEnt
 from services.sourcing_urls.urls_folder_jsons_service import UrlsFolderJsonsService
 from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsService
 from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
-from shared.enums import UrlSourceTypeEnum
-from shared.error_code import ErrorCode
+from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.sourcing_urls_service_error import ErrorCodeSUS
 from shared.exception_util import UnknownUrlSourceTypeError, UrlSourceLauncherNotInitializedError
 from shared.path_util import path_has_valid_syntax
+
+from __src__.shared.validation_result import ValidationResult
 
 _C_MIN_URL_LENGTH = 3  # URLs shorter than this are treated as empty/invalid.
 
@@ -154,32 +159,35 @@ class SourcingUrlsService:
         else:
             raise UnknownUrlSourceTypeError(str(ustype))
 
-    def is_valid(self) -> ErrorCode | None:
-        """Validate the current context and return the first error found.
+    def validate(self) -> ValidationResult:
+        """Validate the current context and return any validation issues.
 
         Returns:
-            The first validation ErrorCode, or None if the context is valid.
+            A ValidationResult instance containing any validation issues.
         """
-        error: ErrorCode | None = None
+        rs = ValidationResult()
 
         if self._launcher is None:
-            error = ErrorCodeSUS.SUS_1001
+            rs.append(ErrorCodeSUS.SUS_1001, SeverityEnum.E_ERROR)
         elif self._launcher.urls_source_type not in {
             UrlSourceTypeEnum.E_MANUAL_LIST,
             UrlSourceTypeEnum.E_FOLDER_RACS,
             UrlSourceTypeEnum.E_FOLDER_JSONS,
             UrlSourceTypeEnum.E_DISCOVER_ENTRIES,
         }:
-            error = ErrorCodeSUS.SUS_1002
+            rs.append(ErrorCodeSUS.SUS_1002, SeverityEnum.E_ERROR)
         elif not self._export_folder or not self._export_folder.strip():
-            error = ErrorCodeSUS.SUS_1003
+            rs.append(ErrorCodeSUS.SUS_1003, SeverityEnum.E_ERROR)
         elif not path_has_valid_syntax(self._export_folder):
-            error = ErrorCodeSUS.SUS_1004
+            rs.append(ErrorCodeSUS.SUS_1004, SeverityEnum.E_ERROR)
         elif not self.get_provider_urls().loads_urls():
-            error = ErrorCodeSUS.SUS_1005
+            rs.append(ErrorCodeSUS.SUS_1005, SeverityEnum.E_ERROR)
         elif not self.get_provider_urls().preview_next_url():
-            error = ErrorCodeSUS.SUS_1006
+            rs.append(ErrorCodeSUS.SUS_1006, SeverityEnum.E_ERROR)
         elif len(self.get_provider_urls().preview_next_url() or "") <= _C_MIN_URL_LENGTH:
-            error = ErrorCodeSUS.SUS_1007
+            rs.append(ErrorCodeSUS.SUS_1007, SeverityEnum.E_ERROR)
 
-        return error
+        return rs
+
+
+# EOF

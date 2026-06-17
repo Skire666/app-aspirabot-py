@@ -1,5 +1,9 @@
 """Protocol contract for log storage repositories."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable

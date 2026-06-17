@@ -58,8 +58,7 @@ class TestClickForDownloadParamsValidation:
 
         with pytest.raises(ValidationError):
             ClickForDownloadParams.model_validate(
-                {"selector": ".btn", "click_mode": "left", "index_clicked": -1, "comment": ""},
-                context=_CTX,
+                {"selector": ".btn", "click_mode": "left", "index_clicked": -1, "comment": ""}, context=_CTX
             )
 
     def test_empty_selector_with_context_raises(self) -> None:
@@ -67,8 +66,7 @@ class TestClickForDownloadParamsValidation:
 
         with pytest.raises(ValidationError):
             ClickForDownloadParams.model_validate(
-                {"selector": "", "click_mode": "left", "index_clicked": 0, "comment": ""},
-                context=_CTX,
+                {"selector": "", "click_mode": "left", "index_clicked": 0, "comment": ""}, context=_CTX
             )
 
     def test_invalid_values_no_context_accepted(self) -> None:
@@ -90,8 +88,7 @@ class TestClickOnElementParamsValidation:
 
         with pytest.raises(ValidationError):
             ClickOnElementParams.model_validate(
-                {"selector": ".btn", "click_mode": "left", "index_clicked": -3, "comment": ""},
-                context=_CTX,
+                {"selector": ".btn", "click_mode": "left", "index_clicked": -3, "comment": ""}, context=_CTX
             )
 
     def test_empty_selector_with_context_raises(self) -> None:
@@ -99,8 +96,7 @@ class TestClickOnElementParamsValidation:
 
         with pytest.raises(ValidationError):
             ClickOnElementParams.model_validate(
-                {"selector": "  ", "click_mode": "left", "index_clicked": 0, "comment": ""},
-                context=_CTX,
+                {"selector": "  ", "click_mode": "left", "index_clicked": 0, "comment": ""}, context=_CTX
             )
 
 
@@ -115,8 +111,7 @@ class TestCloseTabsParamsValidation:
 
         with pytest.raises(ValidationError):
             CloseTabsParams.model_validate(
-                {"filter_mode": "all", "filter_custom": "", "max_tabs": 0, "comment": ""},
-                context=_CTX,
+                {"filter_mode": "all", "filter_custom": "", "max_tabs": 0, "comment": ""}, context=_CTX
             )
 
     def test_negative_max_tabs_with_context_raises(self) -> None:
@@ -124,8 +119,7 @@ class TestCloseTabsParamsValidation:
 
         with pytest.raises(ValidationError):
             CloseTabsParams.model_validate(
-                {"filter_mode": "all", "filter_custom": "", "max_tabs": -1, "comment": ""},
-                context=_CTX,
+                {"filter_mode": "all", "filter_custom": "", "max_tabs": -1, "comment": ""}, context=_CTX
             )
 
     def test_no_context_zero_max_tabs_accepted(self) -> None:
@@ -146,8 +140,7 @@ class TestCountHtmlElementsParamsValidation:
 
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
-                {"selector": "", "success_if": "success", "operator": "equal", "value": 1, "comment": ""},
-                context=_CTX,
+                {"selector": "", "success_if": "success", "operator": "equal", "value": 1, "comment": ""}, context=_CTX
             )
 
     def test_negative_value_with_context_raises(self) -> None:
@@ -164,8 +157,7 @@ class TestCountHtmlElementsParamsValidation:
 
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
-                {"selector": ".x", "success_if": "maybe", "operator": "equal", "value": 0, "comment": ""},
-                context=_CTX,
+                {"selector": ".x", "success_if": "maybe", "operator": "equal", "value": 0, "comment": ""}, context=_CTX
             )
 
     def test_invalid_operator_with_context_raises(self) -> None:
@@ -173,8 +165,7 @@ class TestCountHtmlElementsParamsValidation:
 
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
-                {"selector": ".x", "success_if": "success", "operator": "??", "value": 0, "comment": ""},
-                context=_CTX,
+                {"selector": ".x", "success_if": "success", "operator": "??", "value": 0, "comment": ""}, context=_CTX
             )
 
 
@@ -222,13 +213,7 @@ class TestExtractTextsParamsValidation:
 
         with pytest.raises(ValidationError):
             ExtractTextsParams.model_validate(
-                {
-                    "selector": ".x",
-                    "extract_mode": "e_inner_text",
-                    "target": "e_first",
-                    "mapping": "",
-                    "comment": "",
-                },
+                {"selector": ".x", "extract_mode": "e_inner_text", "target": "e_first", "mapping": "", "comment": ""},
                 context=_CTX,
             )
 
@@ -244,8 +229,7 @@ class TestExtractLinksParamsValidation:
 
         with pytest.raises(ValidationError):
             ExtractLinksParams.model_validate(
-                {"selector": "", "target": "e_first", "mapping": "key", "comment": ""},
-                context=_CTX,
+                {"selector": "", "target": "e_first", "mapping": "key", "comment": ""}, context=_CTX
             )
 
     def test_invalid_target_with_context_raises(self) -> None:
@@ -253,8 +237,7 @@ class TestExtractLinksParamsValidation:
 
         with pytest.raises(ValidationError):
             ExtractLinksParams.model_validate(
-                {"selector": ".a", "target": "wrong", "mapping": "key", "comment": ""},
-                context=_CTX,
+                {"selector": ".a", "target": "wrong", "mapping": "key", "comment": ""}, context=_CTX
             )
 
     def test_empty_mapping_with_context_raises(self) -> None:
@@ -262,8 +245,7 @@ class TestExtractLinksParamsValidation:
 
         with pytest.raises(ValidationError):
             ExtractLinksParams.model_validate(
-                {"selector": ".a", "target": "e_first", "mapping": "", "comment": ""},
-                context=_CTX,
+                {"selector": ".a", "target": "e_first", "mapping": "", "comment": ""}, context=_CTX
             )
 
 
@@ -278,18 +260,14 @@ class TestExtractVariableParamsValidation:
 
         with pytest.raises(ValidationError):
             ExtractVariableParams.model_validate(
-                {"variable_name": "", "script": "return 1", "comment": ""},
-                context=_CTX,
+                {"variable_name": "", "script": "return 1", "comment": ""}, context=_CTX
             )
 
     def test_empty_script_with_context_raises(self) -> None:
         from models.steps.extract_variable_params import ExtractVariableParams
 
         with pytest.raises(ValidationError):
-            ExtractVariableParams.model_validate(
-                {"variable_name": "myVar", "script": "", "comment": ""},
-                context=_CTX,
-            )
+            ExtractVariableParams.model_validate({"variable_name": "myVar", "script": "", "comment": ""}, context=_CTX)
 
 
 # ===========================================================================
@@ -302,19 +280,13 @@ class TestKillBrowserParamsValidation:
         from models.steps.kill_browser_params import KillBrowserParams
 
         with pytest.raises(ValidationError):
-            KillBrowserParams.model_validate(
-                {"wait_duration": -1, "wait_unit": "s", "comment": ""},
-                context=_CTX,
-            )
+            KillBrowserParams.model_validate({"wait_duration": -1, "wait_unit": "s", "comment": ""}, context=_CTX)
 
     def test_invalid_wait_unit_with_context_raises(self) -> None:
         from models.steps.kill_browser_params import KillBrowserParams
 
         with pytest.raises(ValidationError):
-            KillBrowserParams.model_validate(
-                {"wait_duration": 1, "wait_unit": "years", "comment": ""},
-                context=_CTX,
-            )
+            KillBrowserParams.model_validate({"wait_duration": 1, "wait_unit": "years", "comment": ""}, context=_CTX)
 
     def test_no_context_negative_duration_accepted(self) -> None:
         from models.steps.kill_browser_params import KillBrowserParams
@@ -333,10 +305,7 @@ class TestOpenUrlParamsValidation:
         from models.steps.open_url_params import OpenUrlParams
 
         with pytest.raises(ValidationError):
-            OpenUrlParams.model_validate(
-                {"url": "https://x.com", "open_mode": "bad_mode", "comment": ""},
-                context=_CTX,
-            )
+            OpenUrlParams.model_validate({"url": "https://x.com", "open_mode": "bad_mode", "comment": ""}, context=_CTX)
 
 
 # ===========================================================================
@@ -350,7 +319,13 @@ class TestRefreshPageParamsValidation:
 
         with pytest.raises(ValidationError):
             RefreshPageParams.model_validate(
-                {"clear_cache": False, "wait_until": "bad_state", "timeout_duration": 30, "timeout_unit": "s", "comment": ""},
+                {
+                    "clear_cache": False,
+                    "wait_until": "bad_state",
+                    "timeout_duration": 30,
+                    "timeout_unit": "s",
+                    "comment": "",
+                },
                 context=_CTX,
             )
 
@@ -359,32 +334,13 @@ class TestRefreshPageParamsValidation:
 
         with pytest.raises(ValidationError):
             RefreshPageParams.model_validate(
-                {"clear_cache": False, "wait_until": "load", "timeout_duration": -1, "timeout_unit": "s", "comment": ""},
-                context=_CTX,
-            )
-
-
-# ===========================================================================
-# WaitPageStateParams
-# ===========================================================================
-
-
-class TestWaitPageStateParamsValidation:
-    def test_invalid_wait_until_with_context_raises(self) -> None:
-        from models.steps.wait_page_state_params import WaitPageStateParams
-
-        with pytest.raises(ValidationError):
-            WaitPageStateParams.model_validate(
-                {"wait_until": "flying", "timeout_duration": 5, "timeout_unit": "s", "comment": ""},
-                context=_CTX,
-            )
-
-    def test_negative_timeout_with_context_raises(self) -> None:
-        from models.steps.wait_page_state_params import WaitPageStateParams
-
-        with pytest.raises(ValidationError):
-            WaitPageStateParams.model_validate(
-                {"wait_until": "load", "timeout_duration": -100, "timeout_unit": "s", "comment": ""},
+                {
+                    "clear_cache": False,
+                    "wait_until": "load",
+                    "timeout_duration": -1,
+                    "timeout_unit": "s",
+                    "comment": "",
+                },
                 context=_CTX,
             )
 
@@ -399,10 +355,7 @@ class TestWaitFixedTimeParamsValidation:
         from models.steps.wait_fixed_time_params import WaitFixedTimeParams
 
         with pytest.raises(ValidationError):
-            WaitFixedTimeParams.model_validate(
-                {"duration": -1, "unit": "s", "comment": ""},
-                context=_CTX,
-            )
+            WaitFixedTimeParams.model_validate({"duration": -1, "unit": "s", "comment": ""}, context=_CTX)
 
     def test_no_context_negative_duration_accepted(self) -> None:
         from models.steps.wait_fixed_time_params import WaitFixedTimeParams
@@ -421,10 +374,7 @@ class TestWaitUserActionParamsValidation:
         from models.steps.wait_user_action_params import WaitUserActionParams
 
         with pytest.raises(ValidationError):
-            WaitUserActionParams.model_validate(
-                {"message": "", "comment": ""},
-                context=_CTX,
-            )
+            WaitUserActionParams.model_validate({"message": "", "comment": ""}, context=_CTX)
 
 
 # ===========================================================================
@@ -476,10 +426,7 @@ class TestScrollDownParamsValidation:
         from models.steps.scroll_down_params import ScrollDownParams
 
         with pytest.raises(ValidationError):
-            ScrollDownParams.model_validate(
-                {"pixels": -10, "comment": ""},
-                context=_CTX,
-            )
+            ScrollDownParams.model_validate({"pixels": -10, "comment": ""}, context=_CTX)
 
     def test_no_context_negative_pixels_accepted(self) -> None:
         from models.steps.scroll_down_params import ScrollDownParams

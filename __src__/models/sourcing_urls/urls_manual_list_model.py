@@ -10,9 +10,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
-from shared.enums import UrlSourceTypeEnum
-from shared.error_code import ErrorCode
+from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_manual_list_error import ErrorCodeUML
+
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -115,20 +116,20 @@ class UrlsManualListModel(IUrlsSourceModel):
         """
         return {"url_sources_list_manual": self._urls}
 
-    def is_valid(self) -> ErrorCode | None:
+    def validate(self) -> ValidationResult:
         """Check if the URL source model is valid.
 
         Returns:
-            The error code if the model is invalid, None otherwise.
+            A ValidationResult instance containing any validation issues.
         """
-        error: ErrorCode | None = None
+        rs = ValidationResult()
 
         if not self._urls:
-            error = ErrorCodeUML.UML_1001
+            rs.append(ErrorCodeUML.UML_1001, SeverityEnum.E_ERROR)
         elif any(len(url.strip()) < C_MINIMUM_URL_LENGTH for url in self._urls):
-            error = ErrorCodeUML.UML_1002
+            rs.append(ErrorCodeUML.UML_1002, SeverityEnum.E_ERROR)
 
-        return error
+        return rs
 
 
 # EOF

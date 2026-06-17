@@ -6,15 +6,16 @@
 from shared.error_code import ErrorCode
 
 
-class ErrorCodeLAM(ErrorCode):
+class ErrorCodeEXE(ErrorCode):
     """Error codes for SourcingUrlsService."""
 
     # wrong
-    LAM_1001 = "Aucun type de source défini."
-    LAM_1002 = "L'ID du scénario est vide."
+    EXE_1001 = "Aucun scénario sélectionné."
+    EXE_1002 = "Aucun profil de lancement sélectionné."
+    EXE_1003 = "Aucun typologie sélectionnée pour la source."
 
     # ???
-    LAM_9999 = "Erreur inconnue."
+    EXE_9999 = "Erreur inconnue."
 
 
 # EOF

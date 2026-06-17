@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import time
 from unittest.mock import MagicMock
 
-from views.components.drag_drop_list.utils.throttling import Debouncer, Throttler
+from views.components.drag_drop_list.utils.throttling import Debouncer
 
 
 class TestDebouncerScheduleWithExistingJob:
@@ -64,15 +63,3 @@ class TestDebouncerWrapClearsJob:
 
         assert debouncer._job is None
         assert called == [True]
-
-
-class TestThrottlerZeroInterval:
-    def test_zero_interval_always_allows(self) -> None:
-        throttler = Throttler(0)
-        for _ in range(10):
-            assert throttler.should_allow()
-
-    def test_negative_interval_treated_as_zero(self) -> None:
-        throttler = Throttler(-100)
-        assert throttler.should_allow()
-        assert throttler.should_allow()

@@ -427,7 +427,7 @@ def halstead_metrics(node: ast.AST) -> HalsteadResult:
 
 
 # --------------------------------------------------------------------------- #
-# Maintainability index (radon variant, normalized 0-100)
+# Maintainability index (radon variant, normalized 0 - 100)
 # --------------------------------------------------------------------------- #
 def _iter_functions(tree: ast.AST) -> list[FunctionNode]:
     """Return all function definitions found in a tree."""
@@ -450,7 +450,7 @@ def _count_sloc_comments(source_lines: list[str]) -> tuple[int, int]:
 
 
 def maintainability_index(source_lines: list[str], tree: ast.Module) -> float:
-    """Compute the radon-style maintainability index (0-100) for a module.
+    """Compute the radon-style maintainability index (0 - 100) for a module.
 
     G uses the McCabe complexity already available via the mccabe library,
     summed over the module's functions.

@@ -13,7 +13,8 @@ from __future__ import annotations
 from typing import Protocol
 
 from shared.enums import UrlSourceTypeEnum
-from shared.error_code import ErrorCode
+
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Interface
@@ -32,11 +33,11 @@ class IUrlsSourceModel(Protocol):
         """
         ...
 
-    def is_valid(self) -> ErrorCode | None:
+    def validate(self) -> ValidationResult:
         """Check if the URL source model is valid.
 
         Returns:
-            The error code if the model is invalid, None otherwise.
+            The validation result containing any errors.
         """
         ...
 

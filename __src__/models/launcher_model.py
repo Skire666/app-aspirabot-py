@@ -24,10 +24,11 @@ from shared.constants import (
     C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID,
 )
 from shared.datetime_util import dict_with_key_to_optional_datetime
-from shared.enums import UrlSourceTypeEnum
-from shared.error_code import ErrorCode
+from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.launch_error import ErrorCodeLAM
 from shared.random_util import generate_rng_hexastring
+
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -193,28 +194,29 @@ class LaunchModel:
         self.launch_count += 1
         self.used_date_profile = datetime.now()
 
-    def is_valid(self) -> ErrorCode | None:
+    def validate(self) -> ValidationResult:
         """Validate the active URL source sub-model and return the first error found.
 
         Returns:
             The first validation ErrorCode, or None if the profile is valid.
         """
-        error: ErrorCode | None = None
+        vr = ValidationResult()
 
         if len(self.id_scenario.strip()) <= 0:
-            error = ErrorCodeLAM.LAM_1002
+            vr.append(ErrorCodeLAM.LAM_1002, SeverityEnum.E_ERROR)
         elif self.urls_source_type in {UrlSourceTypeEnum.E_UNSET, UrlSourceTypeEnum.E_UNKNOWN}:
-            error = ErrorCodeLAM.LAM_1001  # No source type defined
+            vr.append(ErrorCodeLAM.LAM_1001, SeverityEnum.E_ERROR)
         elif self.urls_source_type is UrlSourceTypeEnum.E_MANUAL_LIST:
-            error = self.urls_manual_list.is_valid()
+            vr.extend(self.urls_manual_list.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_RACS:
-            error = self.urls_folder_racs.is_valid()
+            vr.extend(self.urls_folder_racs.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_JSONS:
-            error = self.urls_folder_jsons.is_valid()
+            vr.extend(self.urls_folder_jsons.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            error = self.urls_discover_entries.is_valid()
+            print(f"A) Validating discover entries for profile {self.id_profile}...")
+            vr.extend(self.urls_discover_entries.validate())
 
-        return error
+        return vr
 
 
 # EOF

@@ -18,6 +18,7 @@ from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY
 from shared.random_util import generate_rng_hexastring
 
+from __src__.shared.constants import C_SIZE_HEXASTRING_DISCOVER_ID
 from view_models.view_model_base import ViewModelBase
 
 # -----------------------------------------------------------------------------
@@ -90,7 +91,7 @@ class DiscoverRowState:
 # -----------------------------------------------------------------------------
 
 
-class ExecutorViewModel(ViewModelBase):  # noqa: PLR0904
+class ExecutorViewModel(ViewModelBase):
     """UI state and action hooks for the executor panel.
 
     All UI state lives here as ``tk.*Var`` instances.  Lists (scenarios,
@@ -152,7 +153,6 @@ class ExecutorViewModel(ViewModelBase):  # noqa: PLR0904
         # Currently edited discover row id ("" = create mode).
         self.selected_discover_id_var = tk.StringVar(master=master, value="")
         # Status Var — written by the Presenter after compute or on error.
-        self.discover_compute_message_var = tk.StringVar(master=master, value="")
         self.global_threshold_var = tk.StringVar(master=master, value="1")
         self.step_threshold_var = tk.StringVar(master=master, value="0")
         self.warmup_url_var = tk.StringVar(master=master, value="")
@@ -246,7 +246,6 @@ class ExecutorViewModel(ViewModelBase):  # noqa: PLR0904
         self._on_update_discover: Callable[[], None] | None = None
         self._on_delete_discover: Callable[[str], None] | None = None
         self._on_select_discover: Callable[[str], None] | None = None
-        self._on_compute_discovers: Callable[[], None] | None = None
 
     # ------------------------------------------------------------------
     # Derived state (via ViewModelBase gate)
@@ -445,7 +444,7 @@ class ExecutorViewModel(ViewModelBase):  # noqa: PLR0904
         """
         self._discovers_in_rows = tuple(
             DiscoverRowState(
-                id_discover=r.get("__bound__") or generate_rng_hexastring(16),
+                id_discover=r.get("__bound__") or generate_rng_hexastring(C_SIZE_HEXASTRING_DISCOVER_ID),
                 folder_json=r.get("col_dossier", ""),
                 pattern_json=r.get("col_fichiers", ""),
                 key_mapping=r.get("col_mapping", ""),
@@ -620,16 +619,6 @@ class ExecutorViewModel(ViewModelBase):  # noqa: PLR0904
         if self._on_select_discover is not None:
             raise CallbackNotDefinedError()
         self._on_select_discover = cb
-
-    def bind_compute_discovers(self, cb: Callable[[], None]) -> None:
-        """Register the handler for compute_discovers().
-
-        Raises:
-            AspirabotBaseError: If the hook is already bound.
-        """
-        if self._on_compute_discovers is not None:
-            raise CallbackNotDefinedError()
-        self._on_compute_discovers = cb
 
     # ------------------------------------------------------------------
     # Action methods — called by the View on user interaction
@@ -815,16 +804,6 @@ class ExecutorViewModel(ViewModelBase):  # noqa: PLR0904
         if self._on_select_discover is None:
             raise CallbackNotDefinedError()
         self._on_select_discover(id_discover)
-
-    def compute_discovers(self) -> None:
-        """Dispatch the URL computation request.
-
-        Raises:
-            AspirabotBaseError: If the hook is not bound.
-        """
-        if self._on_compute_discovers is None:
-            raise CallbackNotDefinedError()
-        self._on_compute_discovers()
 
 
 # EOF

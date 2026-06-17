@@ -22,12 +22,10 @@ from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
-from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.enums import SeverityEnum, UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
-    C_EXEC_NO_PROFILE,
-    C_EXEC_NO_SCENARIO,
     C_EXEC_SAVE_ERROR,
     C_EXEC_SAVED_DATE_EMPTY,
     C_EXEC_SAVED_DATE_FMT,
@@ -36,6 +34,9 @@ from shared.i18n_fra import (
 )
 from shared.parse_util import safe_int_from_str
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
+
+from __src__.shared.errors.executor_error import ErrorCodeEXE
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Module-level constant
@@ -493,41 +494,47 @@ class ExecutorPresenter:
 
     def _on_launch_clicked(self) -> None:
         """Validate the profile and trigger the scraping hand-off."""
-        error: str | None = self._validate_launch()
-        self._vm.verification_message_var.set(error or "")
-        if error:
+        self._vm.verification_message_var.set("--")
+        rs: ValidationResult = self._validate_launch()
+        if rs.has_issues():  # warning, error, or fatal
+            msg = rs.compute_displayable_issues(2)
+            self._vm.verification_message_var.set(msg)
+        if rs.has_errors_or_fatals():
             return
         self._on_save_profile()
         if self.on_request_launch_scraping and self._current_scenario and self._current_profile:
             self.on_request_launch_scraping(self._current_scenario, self._current_profile)
 
-    def _validate_launch(self) -> str | None:
+    def _validate_launch(self) -> ValidationResult:
         """Run all pre-launch checks: guard conditions then domain validation.
 
         Returns:
             The first French error message, or None when valid.
         """
+        # check selection
+        rs = ValidationResult()
         if not self._current_scenario:
-            return C_EXEC_NO_SCENARIO
+            rs.append(ErrorCodeEXE.EXE_1001, SeverityEnum.E_ERROR)
         if not self._current_profile:
-            return C_EXEC_NO_PROFILE
+            rs.append(ErrorCodeEXE.EXE_1002, SeverityEnum.E_ERROR)
+        if rs.has_errors_or_fatals():
+            return rs
+
+        # check profile in selection
         self._apply_form_to_profile()
-        error = self._current_profile.is_valid()
-        if error and error.is_fatal_or_error():
-            self._vm.discover_compute_message_var.set(error.user_message)
-            return str(error)
-        if error and error.is_warning():
-            self._vm.discover_compute_message_var.set(error.user_message)
+        rs.extend(self._current_profile.validate())  # pyright: ignore[reportOptionalMemberAccess]
+        if rs.has_errors_or_fatals():
+            return rs
+
+        # check sourcing data in profile
         self._sourcing_urls.set_context_scraping(
-            launcher=self._current_profile,
+            launcher=self._current_profile,  # pyright: ignore[reportArgumentType]
             export_folder=self._vm.export_folder_var.get().strip(),
             warmup_url=self._vm.warmup_url_var.get().strip() or None,
         )
-        error = self._sourcing_urls.is_valid()
-        if error and error.is_fatal_or_error():
-            self._vm.discover_compute_message_var.set(error.user_message)
-            return str(error)
-        return None
+        rs.extend(self._sourcing_urls.validate())
+
+        return rs
 
     def _on_open_export_folder(self) -> None:
         """Open the export folder from the live VM state via the service."""

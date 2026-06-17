@@ -7,11 +7,13 @@
 from dataclasses import dataclass
 from typing import Any
 
-from shared.error_code import ErrorCode
 from shared.errors.urls_discover_inputs_error import ErrorCodeUDI
 from shared.errors.urls_discover_output_error import ErrorCodeUDO
 from shared.path_util import count_files_in_folder, folder_exists
 from shared.random_util import generate_rng_hexastring
+
+from __src__.shared.enums import SeverityEnum
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -116,59 +118,65 @@ class UrlsDiscoverItemModel:
             "pattern_urls": self.pattern_urls,
         }
 
-    def is_valid_inputs(self) -> ErrorCode | None:
+    def validate_inputs(self) -> ValidationResult:
         """Check if the URL source model is valid.
 
         Returns:
-            The error code if the model is invalid, None otherwise.
+            The validation result containing any errors.
         """
-        error: ErrorCode | None = None
+        vr = ValidationResult()
 
         if not self.folder_json or not self.folder_json.strip():
-            error = ErrorCodeUDI.UDI_1001
+            vr.append(ErrorCodeUDI.UDI_1001, SeverityEnum.E_ERROR)
         elif not folder_exists(self.folder_json):
-            error = ErrorCodeUDI.UDI_1003
+            vr.append(ErrorCodeUDI.UDI_1003, SeverityEnum.E_ERROR)
         elif count_files_in_folder(self.folder_json, ".json") <= 0:
-            error = ErrorCodeUDI.UDI_1004
+            vr.append(ErrorCodeUDI.UDI_1004, SeverityEnum.E_ERROR)
         elif not self.pattern_json or not self.pattern_json.strip():
-            error = ErrorCodeUDI.UDI_1005
+            vr.append(ErrorCodeUDI.UDI_1005, SeverityEnum.E_ERROR)
         elif not self.pattern_json.strip().endswith(".json"):
-            error = ErrorCodeUDI.UDI_1006
+            vr.append(ErrorCodeUDI.UDI_1006, SeverityEnum.E_ERROR)
         elif not self.key_mapping or not self.key_mapping.strip():
-            error = ErrorCodeUDI.UDI_1007
+            vr.append(ErrorCodeUDI.UDI_1007, SeverityEnum.E_ERROR)
         elif not self.pattern_urls or not self.pattern_urls.strip():
-            error = ErrorCodeUDI.UDI_1008
+            vr.append(ErrorCodeUDI.UDI_1008, SeverityEnum.E_ERROR)
 
-        return error
+        return vr
 
-    def is_valid_output(self) -> ErrorCode | None:
+    def validate_output(self) -> ValidationResult:
         """Check if the URL source model is valid.
 
         Returns:
-            The error code if the model is invalid, None otherwise.
+            The validation result containing any errors.
         """
-        error: ErrorCode | None = None
+        rs = ValidationResult()
 
         # error
-        if not self.folder_json or not self.folder_json.strip():
-            error = ErrorCodeUDO.UDO_1001
-        elif not folder_exists(self.folder_json):
-            error = ErrorCodeUDO.UDO_1003
-        elif not self.pattern_json or not self.pattern_json.strip():
-            error = ErrorCodeUDO.UDO_1005
-        elif not self.pattern_json.strip().endswith(".json"):
-            error = ErrorCodeUDO.UDO_1006
-        elif not self.key_mapping or not self.key_mapping.strip():
-            error = ErrorCodeUDO.UDO_1007
-        elif not self.pattern_urls or not self.pattern_urls.strip():
-            error = ErrorCodeUDO.UDO_1008
+        self._append_output_errors(rs)
 
         # warning
-        if error is None and count_files_in_folder(self.folder_json, ".json") <= 0:
+        if not rs.has_errors_or_fatals() and count_files_in_folder(self.folder_json, ".json") <= 0:
             # if empty, may be its the first time, so no entries at the beginning
-            error = ErrorCodeUDO.UDO_1004
+            rs.append(ErrorCodeUDO.UDO_1004, SeverityEnum.E_WARNING)
 
-        return error
+        return rs
+
+    def _append_output_errors(self, vr: ValidationResult) -> None:
+        """Append output-related error checks to the provided ValidationResult."""
+        print(f"E) Checking output for project {self.id_discover}...")
+        if not self.folder_json or not self.folder_json.strip():
+            vr.append(ErrorCodeUDO.UDO_1001, SeverityEnum.E_ERROR)
+        elif not folder_exists(self.folder_json):
+            vr.append(ErrorCodeUDO.UDO_1003, SeverityEnum.E_ERROR)
+        elif not self.pattern_json or not self.pattern_json.strip():
+            print(f"F) pattern_json is empty for project {self.id_discover}.")
+            vr.append(ErrorCodeUDO.UDO_1005, SeverityEnum.E_ERROR)
+        elif not self.pattern_json.strip().endswith(".json"):
+            vr.append(ErrorCodeUDO.UDO_1006, SeverityEnum.E_ERROR)
+        elif not self.key_mapping or not self.key_mapping.strip():
+            vr.append(ErrorCodeUDO.UDO_1007, SeverityEnum.E_ERROR)
+        elif not self.pattern_urls or not self.pattern_urls.strip():
+            vr.append(ErrorCodeUDO.UDO_1008, SeverityEnum.E_ERROR)
 
 
 # EOF

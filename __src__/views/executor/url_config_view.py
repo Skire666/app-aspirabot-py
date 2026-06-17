@@ -10,7 +10,7 @@ from collections.abc import Callable
 from tkinter import filedialog, ttk
 from typing import Any
 
-from shared.app_global_state import MyButton, MyEntry, MyLabel
+from shared.app_global_state import MyEntry, MyLabel
 from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
@@ -319,7 +319,6 @@ class UrlConfigView(ttk.Frame):
     def _create_panel_discover(self) -> None:
         """Panel 4 — IN grid, IN/OUT forms, and compute row for URL discovery."""
         self._panel_discover = ttk.Frame(self._panels_container)
-        self._create_discover_compute_row(self._panel_discover)
         self._create_discover_out_section(self._panel_discover)
         self._create_discover_grid(self._panel_discover)
 
@@ -370,17 +369,6 @@ class UrlConfigView(ttk.Frame):
         MyEntry(frame, textvariable=self._vm.disc_out_key_mapping_var, width=15).pack_left()
         MyLabel(frame, text="URLs (regexp) :").pack_left()
         MyEntry(frame, textvariable=self._vm.disc_out_pattern_urls_var, width=15).pack_left()
-
-    def _create_discover_compute_row(self, parent: tk.Widget) -> None:
-        """Compute button and verification status label.
-
-        Args:
-            parent: The DISCOVER panel frame to attach widgets to.
-        """
-        row = ttk.Frame(parent)
-        row.pack(side=tk.BOTTOM, fill=tk.X)
-        MyButton(row, text="Calculer la liste", command=self._vm.compute_discovers).pack_left()
-        MyLabel(row, textvariable=self._vm.discover_compute_message_var).pack_left()
 
     # ------------------------------------------------------------------
     # ViewModel bindings

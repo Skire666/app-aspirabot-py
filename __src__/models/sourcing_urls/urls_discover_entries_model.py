@@ -9,9 +9,10 @@ from typing import Any, cast
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
-from shared.enums import UrlSourceTypeEnum
-from shared.error_code import ErrorCode
+from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_discover_entries_error import ErrorCodeUDE
+
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Class
@@ -93,32 +94,31 @@ class UrlsDiscoverEntriesModel(IUrlsSourceModel):
             "output": self.output.export_to_data_json() if self.output else None,
         }
 
-    def is_valid(self) -> ErrorCode | None:
-        """Check if the URL source model is valid.
+    def validate(self) -> ValidationResult:
+        """Check the URL source model for errors.
 
         Returns:
-            The error code if the model is invalid, None otherwise.
+            A ValidationResult containing any validation issues.
         """
-        error: ErrorCode | None = None
+        vr = ValidationResult()
 
         if len(self.inputs) <= 0:
-            error = ErrorCodeUDE.UDE_1001
+            vr.append(ErrorCodeUDE.UDE_1001, SeverityEnum.E_ERROR)
         elif len(self.output.id_discover) <= 0:
-            error = ErrorCodeUDE.UDE_1003
+            vr.append(ErrorCodeUDE.UDE_1003, SeverityEnum.E_ERROR)
 
-        if error is None:
-            for p in self.inputs:
-                sub_error = p.is_valid_inputs()
-                if sub_error is not None:
-                    error = sub_error
-                    break
+        if vr.has_errors_or_fatals():
+            return vr
 
-            assert self.output is not None
+        for p in self.inputs:
+            sub_vr = p.validate_inputs()
+            if sub_vr.has_issues():
+                vr.extend(sub_vr)
 
-            if error is None:
-                error = self.output.is_valid_output()
+        print(f"B) Validating output for hub with {len(self.inputs)} projects...")
+        vr.extend(self.output.validate_output())
 
-        return error
+        return vr
 
 
 # EOF

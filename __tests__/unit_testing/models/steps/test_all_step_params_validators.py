@@ -36,29 +36,34 @@ class TestClickOnElementParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.click_on_element_params import ClickOnElementParams
+
         p = _validate(ClickOnElementParams, self._BASE)
         assert p.selector == ".btn"
 
     def test_empty_selector_raises(self) -> None:
         from models.steps.click_on_element_params import ClickOnElementParams
+
         data = {**self._BASE, "selector": ""}
         with pytest.raises(ValidationError):
             _validate(ClickOnElementParams, data)
 
     def test_negative_index_raises(self) -> None:
         from models.steps.click_on_element_params import ClickOnElementParams
+
         data = {**self._BASE, "index_clicked": -1}
         with pytest.raises(ValidationError):
             _validate(ClickOnElementParams, data)
 
     def test_zero_index_valid(self) -> None:
         from models.steps.click_on_element_params import ClickOnElementParams
+
         data = {**self._BASE, "index_clicked": 0}
         p = _validate(ClickOnElementParams, data)
         assert p.index_clicked == 0
 
     def test_no_context_accepts_invalid(self) -> None:
         from models.steps.click_on_element_params import ClickOnElementParams
+
         p = ClickOnElementParams(selector="", click_mode="normal", index_clicked=-9, comment="")
         assert p.selector == ""
 
@@ -68,16 +73,19 @@ class TestClickForDownloadParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.click_for_download_params import ClickForDownloadParams
+
         p = _validate(ClickForDownloadParams, self._BASE)
         assert p.selector == ".dl-btn"
 
     def test_empty_selector_raises(self) -> None:
         from models.steps.click_for_download_params import ClickForDownloadParams
+
         with pytest.raises(ValidationError):
             _validate(ClickForDownloadParams, {**self._BASE, "selector": ""})
 
     def test_negative_index_raises(self) -> None:
         from models.steps.click_for_download_params import ClickForDownloadParams
+
         with pytest.raises(ValidationError):
             _validate(ClickForDownloadParams, {**self._BASE, "index_clicked": -1})
 
@@ -92,21 +100,25 @@ class TestCloseTabsParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.close_tabs_params import CloseTabsParams
+
         p = _validate(CloseTabsParams, self._BASE)
         assert p.max_tabs == 5
 
     def test_zero_max_tabs_raises(self) -> None:
         from models.steps.close_tabs_params import CloseTabsParams
+
         with pytest.raises(ValidationError):
             _validate(CloseTabsParams, {**self._BASE, "max_tabs": 0})
 
     def test_negative_max_tabs_raises(self) -> None:
         from models.steps.close_tabs_params import CloseTabsParams
+
         with pytest.raises(ValidationError):
             _validate(CloseTabsParams, {**self._BASE, "max_tabs": -1})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.close_tabs_params import CloseTabsParams
+
         p = CloseTabsParams(filter_mode="url_source", filter_custom="", max_tabs=-5, comment="")
         assert p.max_tabs == -5
 
@@ -121,21 +133,25 @@ class TestCountHtmlElementsParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.count_html_elements_params import CountHtmlElementsParams
+
         p = _validate(CountHtmlElementsParams, self._BASE)
         assert p.selector == ".item"
 
     def test_empty_selector_raises(self) -> None:
         from models.steps.count_html_elements_params import CountHtmlElementsParams
+
         with pytest.raises(ValidationError):
             _validate(CountHtmlElementsParams, {**self._BASE, "selector": ""})
 
     def test_negative_value_raises(self) -> None:
         from models.steps.count_html_elements_params import CountHtmlElementsParams
+
         with pytest.raises(ValidationError):
             _validate(CountHtmlElementsParams, {**self._BASE, "value": -1})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.count_html_elements_params import CountHtmlElementsParams
+
         p = CountHtmlElementsParams(selector="", success_if="bad", operator=">=", value=-1, comment="")
         assert p.value == -1
 
@@ -150,16 +166,19 @@ class TestExportDataToJsParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.export_data_to_js_params import ExportDataToJsParams
+
         p = _validate(ExportDataToJsParams, self._BASE)
         assert p.prefix_file == "export_"
 
     def test_empty_prefix_raises(self) -> None:
         from models.steps.export_data_to_js_params import ExportDataToJsParams
+
         with pytest.raises(ValidationError):
             _validate(ExportDataToJsParams, {"prefix_file": "", "comment": ""})
 
     def test_no_context_accepts_empty(self) -> None:
         from models.steps.export_data_to_js_params import ExportDataToJsParams
+
         p = ExportDataToJsParams(prefix_file="", comment="")
         assert p.prefix_file == ""
 
@@ -174,21 +193,25 @@ class TestExtractLinksParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
+
         p = _validate(ExtractLinksParams, self._BASE)
         assert p.selector == "a"
 
     def test_empty_selector_raises(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
+
         with pytest.raises(ValidationError):
             _validate(ExtractLinksParams, {**self._BASE, "selector": ""})
 
     def test_empty_mapping_raises(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
+
         with pytest.raises(ValidationError):
             _validate(ExtractLinksParams, {**self._BASE, "mapping": ""})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
+
         p = ExtractLinksParams(selector="", target="all", mapping="", comment="")
         assert p.selector == ""
 
@@ -203,21 +226,25 @@ class TestExtractTextsParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.extract_texts_params import ExtractTextsParams
+
         p = _validate(ExtractTextsParams, self._BASE)
         assert p.selector == ".title"
 
     def test_empty_selector_raises(self) -> None:
         from models.steps.extract_texts_params import ExtractTextsParams
+
         with pytest.raises(ValidationError):
             _validate(ExtractTextsParams, {**self._BASE, "selector": ""})
 
     def test_empty_mapping_raises(self) -> None:
         from models.steps.extract_texts_params import ExtractTextsParams
+
         with pytest.raises(ValidationError):
             _validate(ExtractTextsParams, {**self._BASE, "mapping": ""})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.extract_texts_params import ExtractTextsParams
+
         p = ExtractTextsParams(selector="", extract_mode="innerText", target="first", mapping="", comment="")
         assert p.selector == ""
 
@@ -232,21 +259,25 @@ class TestExtractVariableParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.extract_variable_params import ExtractVariableParams
+
         p = _validate(ExtractVariableParams, self._BASE)
         assert p.variable == "last_url"
 
     def test_empty_variable_raises(self) -> None:
         from models.steps.extract_variable_params import ExtractVariableParams
+
         with pytest.raises(ValidationError):
             _validate(ExtractVariableParams, {"variable": "", "mapping": "k", "comment": ""})
 
     def test_empty_mapping_raises(self) -> None:
         from models.steps.extract_variable_params import ExtractVariableParams
+
         with pytest.raises(ValidationError):
             _validate(ExtractVariableParams, {"variable": "v", "mapping": "", "comment": ""})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.extract_variable_params import ExtractVariableParams
+
         p = ExtractVariableParams(variable="", mapping="", comment="")
         assert p.variable == ""
 
@@ -261,21 +292,25 @@ class TestKillBrowserParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.kill_browser_params import KillBrowserParams
+
         p = _validate(KillBrowserParams, self._BASE)
         assert p.wait_duration == 5
 
     def test_negative_duration_raises(self) -> None:
         from models.steps.kill_browser_params import KillBrowserParams
+
         with pytest.raises(ValidationError):
             _validate(KillBrowserParams, {**self._BASE, "wait_duration": -1})
 
     def test_invalid_unit_raises(self) -> None:
         from models.steps.kill_browser_params import KillBrowserParams
+
         with pytest.raises(ValidationError):
             _validate(KillBrowserParams, {**self._BASE, "wait_unit": "hours"})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.kill_browser_params import KillBrowserParams
+
         p = KillBrowserParams(wait_duration=-1, wait_unit="invalid", comment="")
         assert p.wait_duration == -1
 
@@ -290,21 +325,25 @@ class TestRefreshPageParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
+
         p = _validate(RefreshPageParams, self._BASE)
         assert p.timeout_duration == 30
 
     def test_zero_timeout_raises(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
+
         with pytest.raises(ValidationError):
             _validate(RefreshPageParams, {**self._BASE, "timeout_duration": 0})
 
     def test_invalid_unit_raises(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
+
         with pytest.raises(ValidationError):
             _validate(RefreshPageParams, {**self._BASE, "timeout_unit": "days"})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.refresh_page_params import RefreshPageParams
+
         p = RefreshPageParams(clear_cache=False, wait_until="load", timeout_duration=0, timeout_unit="days", comment="")
         assert p.timeout_duration == 0
 
@@ -317,18 +356,21 @@ class TestRefreshPageParams:
 class TestScrollDownParams:
     def test_valid_passes(self) -> None:
         from models.steps.scroll_down_params import ScrollDownParams
+
         p = _validate(ScrollDownParams, {"pixels": 100, "comment": ""})
         assert p.pixels == 100
 
     def test_negative_pixels_raises(self) -> None:
         from models.steps.scroll_down_params import ScrollDownParams
+
         with pytest.raises(ValidationError):
             _validate(ScrollDownParams, {"pixels": -1, "comment": ""})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.scroll_down_params import ScrollDownParams
-        p = ScrollDownParams(pixels=-100, comment="")
-        assert p.pixels == -100
+
+        p = ScrollDownParams(pixels=-99, comment="")
+        assert p.pixels == -99
 
 
 # ---------------------------------------------------------------------------
@@ -341,21 +383,25 @@ class TestWaitPageStateParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
+
         p = _validate(WaitPageStateParams, self._BASE)
         assert p.timeout_duration == 30
 
     def test_zero_timeout_raises(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
+
         with pytest.raises(ValidationError):
             _validate(WaitPageStateParams, {**self._BASE, "timeout_duration": 0})
 
     def test_invalid_unit_raises(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
+
         with pytest.raises(ValidationError):
             _validate(WaitPageStateParams, {**self._BASE, "timeout_unit": "hours"})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.wait_page_state_params import WaitPageStateParams
+
         p = WaitPageStateParams(wait_until="load", timeout_duration=0, timeout_unit="bad", comment="")
         assert p.timeout_duration == 0
 
@@ -370,16 +416,19 @@ class TestYoutubeTranscriptsParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
+
         p = _validate(YoutubeTranscriptsParams, self._BASE)
         assert p.title == "Video Title"
 
     def test_empty_title_raises(self) -> None:
         from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
+
         with pytest.raises(ValidationError):
             _validate(YoutubeTranscriptsParams, {**self._BASE, "title": ""})
 
     def test_no_context_accepts_empty_title(self) -> None:
         from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
+
         p = YoutubeTranscriptsParams(title="", comment="", basic_info=False, ddl_srt=False)
         assert p.title == ""
 
@@ -391,40 +440,50 @@ class TestYoutubeTranscriptsParams:
 
 class TestWaitHtmlElementsParams:
     _BASE = {
-        "selector": ".item", "operator": "equal", "quantity": 1,
-        "retry_delay": 1, "retry_unit": "s", "retry_max": 10, "comment": ""
+        "selector": ".item",
+        "operator": "equal",
+        "quantity": 1,
+        "retry_delay": 1,
+        "retry_unit": "s",
+        "retry_max": 10,
+        "comment": "",
     }
 
     def test_valid_passes(self) -> None:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
+
         p = _validate(WaitHtmlElementsParams, self._BASE)
         assert p.selector == ".item"
 
     def test_empty_selector_raises(self) -> None:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
+
         with pytest.raises(ValidationError):
             _validate(WaitHtmlElementsParams, {**self._BASE, "selector": ""})
 
     def test_negative_quantity_raises(self) -> None:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
+
         with pytest.raises(ValidationError):
             _validate(WaitHtmlElementsParams, {**self._BASE, "quantity": -1})
 
     def test_negative_retry_delay_raises(self) -> None:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
+
         with pytest.raises(ValidationError):
             _validate(WaitHtmlElementsParams, {**self._BASE, "retry_delay": -1})
 
     def test_invalid_retry_unit_raises(self) -> None:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
+
         with pytest.raises(ValidationError):
             _validate(WaitHtmlElementsParams, {**self._BASE, "retry_unit": "years"})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.wait_html_elements_params import WaitHtmlElementsParams
+
         p = WaitHtmlElementsParams(
-            selector="", operator=">=", quantity=-1,
-            retry_delay=-1, retry_unit="bad", retry_max=0, comment=""
+            selector="", operator=">=", quantity=-1, retry_delay=-1, retry_unit="bad", retry_max=0, comment=""
         )
         assert p.selector == ""
 
@@ -439,20 +498,24 @@ class TestWaitUserActionParams:
 
     def test_valid_passes(self) -> None:
         from models.steps.wait_user_action_params import WaitUserActionParams
+
         p = _validate(WaitUserActionParams, self._BASE)
         assert p.wait_duration == 30
 
     def test_negative_duration_raises(self) -> None:
         from models.steps.wait_user_action_params import WaitUserActionParams
+
         with pytest.raises(ValidationError):
             _validate(WaitUserActionParams, {**self._BASE, "wait_duration": -1})
 
     def test_invalid_unit_raises(self) -> None:
         from models.steps.wait_user_action_params import WaitUserActionParams
+
         with pytest.raises(ValidationError):
             _validate(WaitUserActionParams, {**self._BASE, "wait_unit": "days"})
 
     def test_no_context_no_raise(self) -> None:
         from models.steps.wait_user_action_params import WaitUserActionParams
+
         p = WaitUserActionParams(condition="continue", wait_duration=-1, wait_unit="days", comment="")
         assert p.wait_duration == -1

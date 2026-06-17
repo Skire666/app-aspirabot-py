@@ -10,10 +10,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
-from shared.enums import UrlSourceTypeEnum
-from shared.error_code import ErrorCode
+from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.urls_folder_jsons_error import ErrorCodeUFJ
 from shared.path_util import count_files_in_folder, folder_exists
+
+from __src__.shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -80,28 +81,28 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         """
         return {"folder_json": self.folder_jsons, "orders_json": self.orders_jsons}
 
-    def is_valid(self) -> ErrorCode | None:
+    def validate(self) -> ValidationResult:
         """Check if the URL source model is valid.
 
         Returns:
-            The error code if the model is invalid, None otherwise.
+            A ValidationResult instance containing any validation issues.
         """
-        error: ErrorCode | None = None
+        rs = ValidationResult()
 
         if not self.folder_jsons or not self.folder_jsons.strip():
-            error = ErrorCodeUFJ.UFJ_1001
+            rs.append(ErrorCodeUFJ.UFJ_1001, SeverityEnum.E_ERROR)
         elif len(self.folder_jsons.strip()) <= 1:
-            error = ErrorCodeUFJ.UFJ_1002
+            rs.append(ErrorCodeUFJ.UFJ_1002, SeverityEnum.E_ERROR)
         elif not self.orders_jsons:
-            error = ErrorCodeUFJ.UFJ_1003
+            rs.append(ErrorCodeUFJ.UFJ_1003, SeverityEnum.E_ERROR)
         elif len(self.orders_jsons.strip()) <= 1 or self.orders_jsons == "UNSET":
-            error = ErrorCodeUFJ.UFJ_1004
+            rs.append(ErrorCodeUFJ.UFJ_1004, SeverityEnum.E_ERROR)
         elif not folder_exists(self.folder_jsons):
-            error = ErrorCodeUFJ.UFJ_1005
+            rs.append(ErrorCodeUFJ.UFJ_1005, SeverityEnum.E_ERROR)
         elif count_files_in_folder(self.folder_jsons, ".json") <= 0:
-            error = ErrorCodeUFJ.UFJ_1006
+            rs.append(ErrorCodeUFJ.UFJ_1006, SeverityEnum.E_ERROR)
 
-        return error
+        return rs
 
 
 # EOF

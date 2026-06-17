@@ -2,37 +2,18 @@
 # Imports
 # -----------------------------------------------------------------------------
 
-from enum import Enum
-
-from shared.enums import SeverityEnum
 from shared.error_code import ErrorCode
-from shared.exception_util import AspirabotBaseError
 
 
-class ErrorCodeUML(ErrorCode, Enum):
+class ErrorCodeUML(ErrorCode):
     """Error codes for UrlsManualListModel."""
 
     # wrong
-    UML_1001 = ("#UML-1001", "Aucune URL disponible.", SeverityEnum.E_ERROR)
-    UML_1002 = ("#UML-1002", "Une ou plusieurs URLs possèdent 3 caractères ou moins.", SeverityEnum.E_ERROR)
+    UML_1001 = "Aucune URL disponible."
+    UML_1002 = "Une ou plusieurs URLs possèdent 3 caractères ou moins."
 
     # ???
-    UML_9999 = ("#UML-9999", "Erreur inconnue.", SeverityEnum.E_UNKNOWN)
-
-    def __init__(self, code: str, user_message: str, severity: SeverityEnum) -> None:
-        """Initialize the error code with its attributes."""
-        self.code = code
-        self.user_message = user_message
-        self.severity = severity
-
-    @classmethod
-    def from_code(cls, code: str) -> ErrorCode:
-        """Retourne l'instance de l'ErrorCode correspondant au code donné."""
-        for error_code in ErrorCodeUML:
-            if error_code.code == code:
-                return error_code
-        msg = f"Code d'erreur inconnu : {code}"
-        raise AspirabotBaseError(msg)
+    UML_9999 = "Erreur inconnue."
 
 
 # EOF

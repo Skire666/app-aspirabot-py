@@ -16,8 +16,8 @@ from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
 from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
 from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
+from shared.constants import C_SIZE_HEXASTRING_DISCOVER_ID
 from shared.enums import UrlSourceTypeEnum
-from shared.i18n_fra import C_DISCOVER_COMPUTE_ERROR, C_DISCOVER_COMPUTE_SUCCESS
 from shared.random_util import generate_rng_hexastring
 from view_models.executor_view_model import DiscoverRowState, ExecutorViewModel
 
@@ -44,9 +44,7 @@ class UrlConfigPresenter:
         self._logger = logging.getLogger(__name__)
         self._sourcing_urls = sourcing_urls
         # Stable ID for the single OUT discover item — preserved across profile load/save cycles.
-        self._out_discover_id: str = generate_rng_hexastring(16)
-
-        vm.bind_compute_discovers(self._on_compute_discovers)
+        self._out_discover_id: str = generate_rng_hexastring(C_SIZE_HEXASTRING_DISCOVER_ID)
 
     # ------------------------------------------------------------------
     # Public API — called by ExecutorPresenter
@@ -110,33 +108,10 @@ class UrlConfigPresenter:
         self._vm.set_url_preview_shortcuts([])
         self._vm.set_url_preview_jsons([])
         self._vm.set_discovers_in_rows([])
-        self._vm.discover_compute_message_var.set("")
 
     # ------------------------------------------------------------------
     # Private — VM action callbacks
     # ------------------------------------------------------------------
-
-    def _on_compute_discovers(self) -> None:
-        """Run the discovery computation and push the result count to the VM."""
-        hub = self._build_discover_hub_from_vm()
-        error = hub.is_valid()
-        if error and error.is_fatal_or_error():
-            self._vm.discover_compute_message_var.set(error.user_message)
-            return
-        if error and error.is_warning():
-            self._vm.discover_compute_message_var.set(error.user_message)
-        try:
-            discover_svc = self._sourcing_urls.get_provider_discover()
-            discover_svc.update_sources_and_compute(hub.inputs, hub.output)
-            msg = C_DISCOVER_COMPUTE_SUCCESS.format(
-                new=len(discover_svc.new_entries),
-                total_in=len(discover_svc.input_entries),
-                total_out=len(discover_svc.output_entries),
-            )
-            self._vm.discover_compute_message_var.set(msg)
-        except Exception as exc:
-            self._logger.error("Erreur lors du calcul discover : %s", exc, exc_info=True)
-            self._vm.discover_compute_message_var.set(C_DISCOVER_COMPUTE_ERROR.format(exc=exc))
 
     def _on_select_discover(self, id_discover: str) -> None:
         """Load the chosen IN row into the VM form and switch to edit mode.
@@ -210,8 +185,6 @@ class UrlConfigPresenter:
         self._vm.disc_out_pattern_json_var.set(hub.output.pattern_json)
         self._vm.disc_out_key_mapping_var.set(hub.output.key_mapping)
         self._vm.disc_out_pattern_urls_var.set(hub.output.pattern_urls)
-
-        self._vm.discover_compute_message_var.set("")
 
     def _build_discover_hub_from_vm(self) -> UrlsDiscoverEntriesModel:
         """Assemble a UrlsDiscoverEntriesModel from the current VM grid and OUT form.
