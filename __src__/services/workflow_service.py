@@ -50,6 +50,7 @@ class WorkflowService:
                 return [f"Step {step.step_id} has no params to validate"]
             if step.params.validate_with_context is None:
                 return [f"Step {step.step_id} has params without validate_with_context method"]
+
             return step.params.validate_with_context(step_index, steps_context, step.step_id)
         except NoExecutorsRegisteredError, ExecutorNotRegisteredError:
             return []

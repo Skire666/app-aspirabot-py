@@ -92,7 +92,7 @@ class LaunchModel:
             launch_count=0,
             used_date_profile=None,
             emergency_stop_step_id="",
-            emergency_stop_step_threshold=1,
+            emergency_stop_step_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             warmup_url="",
         )
 
@@ -189,6 +189,8 @@ class LaunchModel:
         """
         vr = ValidationResult()
 
+        print(f"{self.emergency_stop_step_id}")
+
         if len(self.id_scenario.strip()) <= 0:
             vr.append(ErrorCodeLAM.LAM_1002, SeverityEnum.E_ERROR)
         elif self.urls_source_type in {UrlSourceTypeEnum.E_UNSET, UrlSourceTypeEnum.E_UNKNOWN}:
@@ -201,6 +203,12 @@ class LaunchModel:
             vr.append(ErrorCodeLAM.LAM_1005, SeverityEnum.E_ERROR)
         elif self.export_folder.startswith("/"):
             vr.append(ErrorCodeLAM.LAM_1006, SeverityEnum.E_ERROR)
+        elif self.emergency_stop_threshold <= 1:
+            vr.append(ErrorCodeLAM.LAM_1007, SeverityEnum.E_ERROR)
+        elif self.emergency_stop_step_threshold <= 1:
+            vr.append(ErrorCodeLAM.LAM_1008, SeverityEnum.E_ERROR)
+        elif not self.emergency_stop_step_id or not self.emergency_stop_step_id.strip():
+            vr.append(ErrorCodeLAM.LAM_1009, SeverityEnum.E_ERROR)
 
         if vr.has_errors_or_fatals():
             return vr

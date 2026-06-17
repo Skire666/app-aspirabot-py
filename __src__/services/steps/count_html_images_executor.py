@@ -40,7 +40,7 @@ class CountHtmlImagesExecutor(IStepExecutor):
             step_success = condition_met if p.success_if == "success" else not condition_met
             if not step_success:
                 raise CountHtmlImagesConditionNotMetError(len(all_images), p.operator, str(p.value))  # noqa: TRY301
-            event_bus.log_step(context, f"Trouvé {len(all_images)} image(s), condition vérifiée.")
+            event_bus.log_step(context, f"Trouvé x{len(all_images)} image(s), condition vérifiée.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

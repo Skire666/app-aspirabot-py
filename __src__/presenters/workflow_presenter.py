@@ -128,6 +128,8 @@ class WorkflowPresenter:
                 self._vm.show_error(errors[0])
                 return
 
+            self._workflow_presenter._view.set_validation_status("", False)
+
             # Merge ViewModel snapshot into the scenario model.
             state = self._vm.snapshot()
             self._current_scenario.scenario_name = state.scenario_name

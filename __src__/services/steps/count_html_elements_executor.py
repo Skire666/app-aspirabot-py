@@ -44,7 +44,7 @@ class CountHtmlElementsExecutor(IStepExecutor):
             step_success = condition_met if p.success_if == "success" else not condition_met
             if not step_success:
                 raise CountHtmlElementsConditionNotMetError(count, p.operator, str(p.value))  # noqa: TRY301
-            msg = f"Trouvé {count} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
+            msg = f"Trouvé x{count} élément(s) pour le sélecteur '{p.selector!r}', condition vérifiée."
             event_bus.log_step(context, msg)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")

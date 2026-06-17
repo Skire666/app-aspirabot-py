@@ -60,9 +60,6 @@ C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 # Default folders for data storage (relative to current working directory)
 C_DATA_DEFAULT_FOLDER_SCENARIO: str = "data_scenarios"
 
-# Default folder for scraping data exports (relative to current working directory)
-C_DATA_DEFAULT_FOLDER_SCRAPING: str = "data_scraping"
-
 # size of the hex string used for generating unique IDs (e.g., for workflow items)
 C_SIZE_HEXASTRING_DISCOVER_ID: int = 4  # must be even (aka % 2 == 0)
 C_SIZE_HEXASTRING_WORKFLOW_ITEM_ID: int = 4  # must be even (aka % 2 == 0)
@@ -120,7 +117,7 @@ C_UNITS_TIME_ALLOWED_FOR_MODEL: list[str] = ["m", "s", "ms"]
 C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
 
 # Default threshold for considering a scraping step as having an error
-C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 1
+C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 200
 
 # ------------------------------------------------------------------------------
 

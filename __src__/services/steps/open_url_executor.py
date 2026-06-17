@@ -51,7 +51,7 @@ class OpenUrlExecutor(IStepExecutor):
             context.last_url_opened = target_url
             timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
             browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
-            event_bus.log_step(context, f"Ouvert : {target_url}")
+            event_bus.log_step(context, f"Ouvert : '{target_url}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

@@ -48,7 +48,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
                 if i == p.retry_max - 1:  # i=5 -> max=6
                     raise CountHtmlImagesConditionNotMetError(count, p.operator, str(p.quantity))  # noqa: TRY301
                 time.sleep(nbr_delay_in_sec)
-            event_bus.log_step(context, f"Trouvé {count} image(s), condition vérifiée.")
+            event_bus.log_step(context, f"Trouvé x{count} image(s), condition vérifiée.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

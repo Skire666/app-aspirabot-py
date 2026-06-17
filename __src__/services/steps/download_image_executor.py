@@ -67,7 +67,7 @@ class DownloadImageExecutor(IStepExecutor):
                 downloaded_count += 1
             if downloaded_count == 0:
                 raise ImageNotDownloadedError(len(targets))  # noqa: TRY301
-            event_bus.log_step(context, f"Téléchargé {downloaded_count} image(s).")
+            event_bus.log_step(context, f"Téléchargé x{downloaded_count} image(s).")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

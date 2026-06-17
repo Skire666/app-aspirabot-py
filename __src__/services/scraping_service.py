@@ -288,7 +288,7 @@ class ScrapingService:
             self._context.pause_event.wait()
             if self._context.cancel_event.is_set():
                 break
-            i = self._run_one_step(steps[i], i)  # i+1 dedans
+            i = self._run_one_step(steps[i], i)  # le i+1 est fait dedans (ou JUMP_TO_STEP)
             if i >= len(steps):
                 self._context.end_process = True
             # manual or automatic end-of-process

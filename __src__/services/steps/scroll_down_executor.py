@@ -44,7 +44,7 @@ class ScrollDownExecutor(IStepExecutor):
                 if idx >= 1 and p.delay_pause >= 1:
                     time.sleep(p.delay_pause)
                 self._do_scroll(browser, p)
-                event_bus.log_step(context, f"Défilement de {p.pixels}px effectué.")
+                event_bus.log_step(context, f"Défilement de '{p.pixels}px' effectué.")
                 height_new = self._get_page_height(browser)
                 if height_new == height_previous:
                     consecutive_same_value_count += 1

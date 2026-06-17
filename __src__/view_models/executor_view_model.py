@@ -153,8 +153,8 @@ class ExecutorViewModel(ViewModelBase):
         # Currently edited discover row id ("" = create mode).
         self.selected_discover_id_var = tk.StringVar(master=master, value="")
         # Status Var — written by the Presenter after compute or on error.
-        self.global_threshold_var = tk.StringVar(master=master, value="1")
-        self.step_threshold_var = tk.StringVar(master=master, value="0")
+        self.global_threshold_var = tk.StringVar(master=master, value="")
+        self.step_threshold_var = tk.StringVar(master=master, value="")
         self.warmup_url_var = tk.StringVar(master=master, value="")
         # Display Vars — Presenter writes, View binds via textvariable=.
         self.saved_date_var = tk.StringVar(master=master, value=C_EXEC_SAVED_DATE_EMPTY)

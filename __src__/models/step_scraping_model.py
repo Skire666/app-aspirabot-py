@@ -109,5 +109,23 @@ class StepScrapingModel:
         """Update the step's modified date to the current time."""
         self.modified_date = datetime.now()
 
+    def is_jump_to_step(self) -> bool:
+        """Check if this step is a JUMP_TO_STEP type.
+
+        Returns:
+            True if the step_type is StepTypeEnum.E_JUMP_TO_STEP, else False.
+        """
+        return self.step_type == StepTypeEnum.E_JUMP_TO_STEP
+
+    def if_jump_get_target_string(self) -> str | None:
+        """If this step is a JUMP_TO_STEP, return the target step ID string.
+
+        Returns:
+            The target step ID if this is a JUMP_TO_STEP, else None.
+        """
+        if self.is_jump_to_step():
+            return getattr(self.params, "target_hexastring", None)
+        return None
+
 
 # EOF

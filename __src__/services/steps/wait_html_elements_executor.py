@@ -39,16 +39,16 @@ class WaitHtmlElementsExecutor(IStepExecutor):
         try:
             page = browser.get_workflow_page()
             nbr_delay_in_sec = convert_to_sec(p.retry_delay, p.retry_unit)
-            counted_items: int = -1
+            count: int = -1
             for i in range(p.retry_max):
-                counted_items = page.locator(p.selector).count()
-                condition_met = evaluate_count_condition(counted_items, p.operator, p.quantity)
+                count = page.locator(p.selector).count()
+                condition_met = evaluate_count_condition(count, p.operator, p.quantity)
                 if condition_met:
                     break
                 if i == p.retry_max - 1:  # i=5 -> max=6
-                    raise CountHtmlElementsConditionNotMetError(counted_items, p.operator, str(p.quantity))  # noqa: TRY301
+                    raise CountHtmlElementsConditionNotMetError(count, p.operator, str(p.quantity))  # noqa: TRY301
                 time.sleep(nbr_delay_in_sec)
-            msg = f"Trouvé {counted_items} élément(s) pour le sélecteur {p.selector!r}, condition vérifiée."
+            msg = f"Trouvé x{count} élément(s) pour le sélecteur '{p.selector!r}', condition vérifiée."
             event_bus.log_step(context, msg)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")

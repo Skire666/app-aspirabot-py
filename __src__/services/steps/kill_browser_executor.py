@@ -42,7 +42,7 @@ class KillBrowserExecutor(IStepExecutor):
                 time.sleep(delay)
             event_bus.log_step(context, "Arrêt du processus demandé.")
             if len(browser.get_all_pages()) >= _C_ABNORMAL_PAGE_COUNT:
-                event_bus.log_step(context, "Comportement anormal détect : Plusieurs onglets ouverts.")
+                event_bus.log_step(context, "Comportement anormal détecté : Plusieurs onglets ouverts.")
                 event_bus.log_step(context, "Fermeture interrompue. Le navigateur reste ouvert pour investigation.")
                 self._do_pause(context, event_bus)
             browser.close_all_tabs()
