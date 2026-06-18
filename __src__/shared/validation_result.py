@@ -78,7 +78,7 @@ class ValidationResult:
             if nbr_pushed >= nbr_max:
                 break
             if issue.severity == severity:
-                concat += f"{label}: {issue.message}\n"
+                concat += f"{label}: {issue.code} - {issue.message}\n"
                 nbr_pushed += 1
         return concat, nbr_pushed
 
@@ -93,9 +93,7 @@ class ValidationResult:
                 SeverityEnum.E_FATAL, "Critique", nbr_max, concat, nbr_pushed
             )
         if self.count_errors > 0 and nbr_pushed < nbr_max:
-            concat, nbr_pushed = self._collect_issues_up_to(
-                SeverityEnum.E_ERROR, "Erreur", nbr_max, concat, nbr_pushed
-            )
+            concat, nbr_pushed = self._collect_issues_up_to(SeverityEnum.E_ERROR, "Erreur", nbr_max, concat, nbr_pushed)
         if self.count_warnings > 0 and nbr_pushed < nbr_max:
             concat, nbr_pushed = self._collect_issues_up_to(
                 SeverityEnum.E_WARNING, "Avertissement", nbr_max, concat, nbr_pushed

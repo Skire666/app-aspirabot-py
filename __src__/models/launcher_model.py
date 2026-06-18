@@ -173,7 +173,6 @@ class LaunchModel:
         Returns:
             None.
         """
-        print(f"DEBUG: Incrementing launch count for profile {self.profile_name} (scenario {self.id_scenario})")
         self.used_date_profile = datetime.now()
 
     def _validate_id_and_source(self, vr: ValidationResult) -> bool:

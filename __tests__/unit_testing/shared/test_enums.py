@@ -2,14 +2,7 @@
 
 from __future__ import annotations
 
-from shared.enums import (
-    ExtractTargetEnum,
-    ExtractTextHtmlEnum,
-    StepTypeEnum,
-    TitleModuleEnum,
-    UrlSortOrderEnum,
-    UrlSourceTypeEnum,
-)
+from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum, TitleModuleEnum, UrlSourceTypeEnum
 
 
 class TestTitleModuleEnum:
@@ -81,12 +74,3 @@ class TestUrlSourceTypeEnum:
 
     def test_json_value(self) -> None:
         assert UrlSourceTypeEnum.E_FOLDER_JSONS.value == "FOLDER_JSONS"
-
-
-class TestUrlSortOrderEnum:
-    def test_mtime_asc_is_default_value(self) -> None:
-        assert UrlSortOrderEnum.E_MTIME_ASC.value == "mtime_asc"
-
-    def test_all_four_members(self) -> None:
-        assert len(UrlSortOrderEnum) == 4
-

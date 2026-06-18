@@ -136,6 +136,7 @@ class UrlConfigPresenter:
         provider = self._sourcing_urls.get_provider_folder_racs()
         try:
             provider.setup_model(model)
+            provider.loads_urls()
             urls = provider.preview_all_urls()
         except Exception as exc:
             self._logger.error("Erreur lors de la prévisualisation du dossier .url : %s", exc, exc_info=True)
@@ -151,6 +152,7 @@ class UrlConfigPresenter:
         provider = self._sourcing_urls.get_provider_folder_jsons()
         try:
             provider.setup_model(model)
+            provider.loads_urls()
             urls = provider.preview_all_urls()
         except Exception as exc:
             self._logger.error("Erreur lors de la prévisualisation du dossier .json : %s", exc, exc_info=True)

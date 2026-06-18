@@ -19,14 +19,13 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
+from repositories.json_repository import JsonFileRepository
 from shared.exception_util import (
     AspirabotBaseError,
     DiscoverFolderNotFoundError,
     InvalidUrlSourceValueTypeError,
     UrlSourceExhaustedError,
 )
-
-from __src__.repositories.json_repository import JsonFileRepository
 
 # -----------------------------------------------------------------------------
 # Class

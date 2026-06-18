@@ -21,14 +21,8 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
 from shared.enums import UrlSortOrderEnum
-from shared.exception_util import (
-    InvalidUrlSourceValueTypeError,
-    UrlSourceExhaustedError,
-    UrlSourceFileNotFoundError,
-    UrlSourceFilesNotDiscoveredError,
-)
-
-from __src__.shared.path_util import list_files
+from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceExhaustedError, UrlSourceFileNotFoundError
+from shared.path_util import list_files
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -74,8 +68,8 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         """
         self._folder_path: str = ""
         self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC
-        self._date_modified_start: datetime | None = None
-        self._date_modified_end: datetime | None = None
+        self._date_modified_newest: datetime | None = None
+        self._date_modified_oldest: datetime | None = None
         self._file_paths: list[tuple[Path, datetime]] | None = None
         self._urls: list[str] = []
         self._index: int = 0
@@ -100,8 +94,10 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
             self.clear()
             self._folder_path = model.folder_jsons
             self._sort_order = UrlSortOrderEnum(model.orders_jsons)
-            self._date_modified_start = model.date_modified_start.to_datetime()
-            self._date_modified_end = model.date_modified_end.to_datetime()
+            self._date_modified_newest = model.date_modified_start.to_datetime()
+            self._date_modified_oldest = model.date_modified_end.to_datetime()
+            print("_date_modified_newest:", self._date_modified_newest)
+            print("_date_modified_oldest:", self._date_modified_oldest)
         else:
             raise InvalidUrlSourceValueTypeError("folder_jsons", "UrlsFolderJsonsModel", type(model).__name__)
 
@@ -109,8 +105,8 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         """Reset the provider to its initial state, clearing any cached data."""
         self._folder_path = ""
         self._sort_order = UrlSortOrderEnum.E_MTIME_ASC
-        self._date_modified_start = None
-        self._date_modified_end = None
+        self._date_modified_newest = None
+        self._date_modified_oldest = None
         self._file_paths = None
         self._urls = []
         self._index_url = 0
@@ -118,13 +114,27 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         self._buffered = _SENTINEL
 
     def loads_urls(self) -> bool:
-        # TODO PCO
+        """Discover files and return True when at least one URL remains to be consumed."""
+        if not self._is_loaded:
+            self._discover_and_load()
+            self._index_url = 0
+            self._is_loaded = True
+            self._buffered = self._urls[0] if self._urls else _SENTINEL
+        return self._buffered is not _SENTINEL
 
     def preview_next_url(self) -> str | None:
-        # TODO PCO
+        """Return the next URL without advancing the internal cursor."""
+        return str(self._buffered) if self._buffered is not _SENTINEL else None
 
     def pop_url(self) -> str:
-        # TODO PCO
+        """Return the next URL and advance the internal cursor."""
+        if not self.loads_urls():
+            raise UrlSourceExhaustedError()
+
+        url = str(self._buffered)
+        self._index_url += 1
+        self._buffered = self._urls[self._index_url] if self._index_url < len(self._urls) else _SENTINEL
+        return url
 
     def reset(self) -> None:
         """Rewind to the first file; the discovered path list is preserved.
@@ -136,7 +146,10 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         self._buffered = _SENTINEL
 
     def preview_all_urls(self) -> list[str]:
-        # TODO PCO
+        """Return up to 50 upcoming URLs without altering any internal state."""
+        assert self._is_loaded, "Cannot preview all URLs before calling loads_urls()"
+
+        return self._urls
 
     def count_urls(self) -> int:
         """Return the total number of URLs available in this source.
@@ -154,9 +167,9 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         """
         if self._file_paths is None:
             return "JSON : non chargé"
-        if self._index_url >= len(self._file_paths):
+        if self._index_url >= self.count_urls():
             return "JSON : plus aucune URL"
-        return f"JSON : {self._index_url} / {len(self._file_paths)} fichier(s) consommé(s)"
+        return f"JSON : {self._index_url} / {self.count_urls()} URLs consommé(s)"
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -176,6 +189,42 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         self._file_paths = new_files
         return True
 
+    def _collect_url_mtimes(self) -> dict[str, datetime]:
+        """Scan all files and build a url→mtime map; duplicates keep the newest mtime."""
+        assert self._file_paths is not None
+        url_mtime: dict[str, datetime] = {}
+        for file_path, mtime in self._file_paths:
+            for url in self._extract_urls_from_file(file_path):
+                if url not in url_mtime or mtime > url_mtime[url]:
+                    url_mtime[url] = mtime
+
+        return url_mtime
+
+    def _filter_and_sort_urls(self, url_mtime: dict[str, datetime]) -> list[str]:
+        """Apply date range filter and sort order; return the final ordered URL list."""
+        filtered = [
+            (url, dt)
+            for url, dt in url_mtime.items()
+            if (self._date_modified_newest is None or dt <= self._date_modified_newest)
+            and (self._date_modified_oldest is None or dt >= self._date_modified_oldest)
+        ]
+        reverse = self._sort_order == UrlSortOrderEnum.E_MTIME_DESC
+        filtered.sort(key=lambda x: x[1], reverse=reverse)
+
+        return [url for url, _ in filtered]
+
+    def _discover_and_load(self) -> None:
+        """Scan the folder, deduplicate URLs (keeping newest mtime), filter and sort."""
+        try:
+            found = self._files_are_loaded()
+        except ValueError as err:
+            raise UrlSourceFileNotFoundError(self._folder_path) from err
+
+        if not found:
+            return
+
+        url_mtime = self._collect_url_mtimes()
+        self._urls = self._filter_and_sort_urls(url_mtime)
 
     @staticmethod
     def _extract_urls_from_file(file_path: Path) -> list[str]:
