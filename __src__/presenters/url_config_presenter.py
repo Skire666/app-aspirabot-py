@@ -17,7 +17,7 @@ from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
 from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.constants import C_SIZE_HEXASTRING_DISCOVER_ID
-from shared.enums import UrlSourceTypeEnum
+from shared.enums import RelativeDateEnum, UrlSourceTypeEnum
 from shared.random_util import generate_rng_hexastring
 from view_models.executor_view_model import DiscoverRowState, ExecutorViewModel
 
@@ -87,6 +87,8 @@ class UrlConfigPresenter:
             model = UrlsFolderJsonsModel(
                 folder_json=self._vm.urls_path_folder_jsons_var.get().strip(),
                 orders_json=self._vm.url_sort_order_jsons_var.get(),
+                date_modified_start=RelativeDateEnum.view_to_enum(self._vm.json_date_modified_start_var.get()),
+                date_modified_end=RelativeDateEnum.view_to_enum(self._vm.json_date_modified_end_var.get()),
             )
             self._refresh_folder_jsons_from_model(model)
 
@@ -185,6 +187,21 @@ class UrlConfigPresenter:
         self._vm.disc_out_pattern_json_var.set(hub.output.pattern_json)
         self._vm.disc_out_key_mapping_var.set(hub.output.key_mapping)
         self._vm.disc_out_pattern_urls_var.set(hub.output.pattern_urls)
+
+    @staticmethod
+    def _display_to_relative_date_value(display: str) -> str:
+        """Convert a RelativeDateEnum French display string to its stored raw value.
+
+        Args:
+            display: French display string shown in the combobox.
+
+        Returns:
+            The raw enum value string, or E_UNSET value when display is unrecognised.
+        """
+        for member in RelativeDateEnum:
+            if member.enum_to_view() == display:
+                return member.value
+        return RelativeDateEnum.E_UNSET.value
 
     def _build_discover_hub_from_vm(self) -> UrlsDiscoverEntriesModel:
         """Assemble a UrlsDiscoverEntriesModel from the current VM grid and OUT form.

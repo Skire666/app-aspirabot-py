@@ -15,6 +15,9 @@ class ErrorCodeUFJ(ErrorCode):
     UFJ_1004 = "L'ordre de tri est invalide."
     UFJ_1005 = "Le dossier '.json' n'existe pas."
     UFJ_1006 = "Le dossier ne contient aucun fichier '.json'."
+    UFJ_1007 = "Date de modif. de début est vide."
+    UFJ_1008 = "Date de modif. de fin est vide."
+    UFJ_1009 = "Date de modif. de début postérieure à date de modif. de fin."
 
     # ???
     UFJ_9999 = "Erreur inconnue."

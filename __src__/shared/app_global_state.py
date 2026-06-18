@@ -65,6 +65,10 @@ class MyListbox(PackMixin, tk.Listbox):
     """tk.Listbox with pack_left() and pack_right() helpers."""
 
 
+class MyRadioButton(PackMixin, ttk.Radiobutton):
+    """ttk.Radiobutton with pack_left() and pack_right() helpers."""
+
+
 # ---------------------------------------------------------------------------
 # AppGlobalState
 # ---------------------------------------------------------------------------

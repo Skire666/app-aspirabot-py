@@ -22,7 +22,7 @@ from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
-from shared.enums import SeverityEnum, UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.enums import RelativeDateEnum, SeverityEnum, UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.errors.executor_error import ErrorCodeEXE
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
@@ -344,6 +344,8 @@ class ExecutorPresenter:
         self._vm.url_sort_order_jsons_var.set(
             profile.urls_folder_jsons.orders_jsons or UrlSortOrderEnum.E_MTIME_ASC.value
         )
+        self._vm.json_date_modified_start_var.set(profile.urls_folder_jsons.date_modified_start.enum_to_view())
+        self._vm.json_date_modified_end_var.set(profile.urls_folder_jsons.date_modified_end.enum_to_view())
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
@@ -470,6 +472,12 @@ class ExecutorPresenter:
         # folder json
         self._current_profile.urls_folder_jsons.folder_jsons = self._vm.urls_path_folder_jsons_var.get().strip()
         self._current_profile.urls_folder_jsons.orders_jsons = self._vm.url_sort_order_jsons_var.get()
+        self._current_profile.urls_folder_jsons.date_modified_start = RelativeDateEnum.view_to_enum(
+            self._vm.json_date_modified_start_var.get()
+        )
+        self._current_profile.urls_folder_jsons.date_modified_end = RelativeDateEnum.view_to_enum(
+            self._vm.json_date_modified_end_var.get()
+        )
 
         # calc entries
         self._current_profile.urls_discover_entries = self._url_config_presenter.get_current_discovers_hub()

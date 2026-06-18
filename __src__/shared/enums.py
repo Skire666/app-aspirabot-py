@@ -2,6 +2,7 @@
 # Imports
 # -----------------------------------------------------------------------------
 
+from datetime import datetime, timedelta
 from enum import Enum
 
 
@@ -171,6 +172,131 @@ class UrlSourceTypeEnum(Enum):
         if self is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
             return "Découverte auto."
         return "Type inconnu"
+
+
+class RelativeDateEnum(Enum):
+    """Enumerates the relative date options for filtering files in a folder-based URL source."""
+
+    E_UNSET = "UNSET"
+    E_LAST_0D = "LAST_0D"  # now
+    E_LAST_3D = "LAST_3D"  # LAST 3 DAYS
+    E_LAST_1W = "LAST_1W"  # LAST 7 DAYS
+    E_LAST_3W = "LAST_3W"  # LAST 14 DAYS
+    E_LAST_1M = "LAST_1M"  # LAST 30 DAYS
+    E_LAST_3M = "LAST_3M"  # LAST 90 DAYS
+    E_LAST_1Y = "LAST_1Y"  # LAST 1 YEAR
+    E_LAST_3Y = "LAST_3Y"  # LAST 2 YEARS
+    E_LAST_99 = "LAST_99"  # LAST 99 YEARS
+    E_UNKNOWN = "UNKNOWN"
+
+    def enum_to_view(self) -> str:
+        if self is RelativeDateEnum.E_LAST_0D:
+            return "Maintenant"
+        if self is RelativeDateEnum.E_LAST_3D:
+            return "3 derniers jours"
+        if self is RelativeDateEnum.E_LAST_1W:
+            return "1 semaine"
+        if self is RelativeDateEnum.E_LAST_3W:
+            return "3 semaines"
+        if self is RelativeDateEnum.E_LAST_1M:
+            return "1 mois"
+        if self is RelativeDateEnum.E_LAST_3M:
+            return "3 mois"
+        if self is RelativeDateEnum.E_LAST_1Y:
+            return "1 an"
+        if self is RelativeDateEnum.E_LAST_3Y:
+            return "3 ans"
+        if self is RelativeDateEnum.E_LAST_99:
+            return "99 ans"
+        return ""
+
+    @classmethod
+    def view_to_enum(cls, value: str) -> RelativeDateEnum:
+        """Convert a string value to the corresponding RelativeDateEnum member.
+
+        Args:
+            value: The string representation of the relative date.
+
+        Returns:
+            The corresponding RelativeDateEnum member, or E_UNKNOWN if not found.
+        """
+        if value == "Maintenant":
+            return cls.E_LAST_0D
+        if value == "3 derniers jours":
+            return cls.E_LAST_3D
+        if value == "1 semaine":
+            return cls.E_LAST_1W
+        if value == "3 semaines":
+            return cls.E_LAST_3W
+        if value == "1 mois":
+            return cls.E_LAST_1M
+        if value == "3 mois":
+            return cls.E_LAST_3M
+        if value == "1 an":
+            return cls.E_LAST_1Y
+        if value == "3 ans":
+            return cls.E_LAST_3Y
+        if value == "99 ans":
+            return cls.E_LAST_99
+        return cls.E_UNKNOWN
+
+    def is_lower_than(self, right: RelativeDateEnum) -> bool:
+        """Determine if this enum member represents a lower (earlier) relative date than another.
+
+        Args:
+            other: Another RelativeDateEnum member to compare against.
+
+        Returns:
+            True if this member is lower than the other; False otherwise.
+        """
+        order = [
+            RelativeDateEnum.E_UNSET,
+            RelativeDateEnum.E_LAST_0D,
+            RelativeDateEnum.E_LAST_3D,
+            RelativeDateEnum.E_LAST_1W,
+            RelativeDateEnum.E_LAST_3W,
+            RelativeDateEnum.E_LAST_1M,
+            RelativeDateEnum.E_LAST_3M,
+            RelativeDateEnum.E_LAST_1Y,
+            RelativeDateEnum.E_LAST_3Y,
+            RelativeDateEnum.E_LAST_99,
+            RelativeDateEnum.E_UNKNOWN,
+        ]
+        return order.index(self) < order.index(right)
+
+    def is_valid(self) -> bool:
+        """Check if the enum member is a valid relative date (not UNSET or UNKNOWN).
+
+        Returns:
+            True if the member is valid; False otherwise.
+        """
+        return self not in {RelativeDateEnum.E_UNSET, RelativeDateEnum.E_UNKNOWN}
+
+    def to_datetime(self) -> datetime:
+        """Convert the relative date enum to an actual datetime object.
+
+        Returns:
+            A datetime object representing the relative date.
+            If the enum is E_UNSET or E_UNKNOWN, returns None.
+        """
+        now = datetime.now()
+        if self is RelativeDateEnum.E_LAST_0D:
+            return now
+        if self is RelativeDateEnum.E_LAST_3D:
+            return now - timedelta(days=3)
+        if self is RelativeDateEnum.E_LAST_1W:
+            return now - timedelta(weeks=1)
+        if self is RelativeDateEnum.E_LAST_3W:
+            return now - timedelta(weeks=3)
+        if self is RelativeDateEnum.E_LAST_1M:
+            return now - timedelta(days=30)
+        if self is RelativeDateEnum.E_LAST_3M:
+            return now - timedelta(days=90)
+        if self is RelativeDateEnum.E_LAST_1Y:
+            return now - timedelta(days=365)
+        if self is RelativeDateEnum.E_LAST_3Y:
+            return now - timedelta(days=1095)
+        return now - timedelta(days=36135)  # Approx. 99 years
 
 
 class UrlSortOrderEnum(Enum):

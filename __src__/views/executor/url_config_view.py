@@ -10,8 +10,8 @@ from collections.abc import Callable
 from tkinter import filedialog, ttk
 from typing import Any
 
-from shared.app_global_state import MyEntry, MyLabel
-from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.app_global_state import MyButton, MyCombobox, MyEntry, MyLabel, MyRadioButton
+from shared.enums import RelativeDateEnum, UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
 from views.components.editable_table.editable_table import ActionColumnDef, EditableTable, TableConfig, TextColumnDef
@@ -148,9 +148,7 @@ class UrlConfigView(ttk.Frame):
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_folder).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
-        ttk.Button(row, text="...", width=3, command=self._browse_shortcuts_folder).pack(
-            side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
-        )
+        MyButton(row, text="...", width=3, command=self._browse_shortcuts_folder).pack_right()
 
     def _create_folder_preview_row(self, parent: tk.Widget) -> None:
         """Preview row with URL count and scrolled text for the FOLDER source panel.
@@ -196,20 +194,20 @@ class UrlConfigView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
-        ttk.Radiobutton(
+        MyRadioButton(
             row,
             text="Lire récemment modifié",
             variable=self._vm.url_sort_order_shortcuts_var,
             value=UrlSortOrderEnum.E_MTIME_DESC.value,
             command=lambda: self._vm.form_changed(),
-        ).pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
-        ttk.Radiobutton(
+        ).pack_left()
+        MyRadioButton(
             row,
             text="Lire les plus anciens",
             variable=self._vm.url_sort_order_shortcuts_var,
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
-        ).pack(side=tk.LEFT, pady=(0, 5))
+        ).pack_left()
 
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
@@ -228,6 +226,7 @@ class UrlConfigView(ttk.Frame):
         self._create_json_stats_row(self._panel_json)
         self._create_json_path_row(self._panel_json)
         self._create_json_sort_row(self._panel_json)
+        self._create_json_dates_between(self._panel_json)
         self._create_json_preview_row(self._panel_json)
 
     def _create_json_path_row(self, parent: tk.Widget) -> None:
@@ -238,7 +237,7 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        ttk.Label(row, text="Chemin :").pack(side=tk.LEFT, padx=5, pady=(0, 5))
+        MyLabel(row, text="Chemin :").pack_left()
         self._view_traces.append(
             (
                 self._vm.urls_path_folder_jsons_var,
@@ -251,9 +250,7 @@ class UrlConfigView(ttk.Frame):
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_json).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
-        ttk.Button(row, text="...", width=3, command=self._browse_jsons_folder).pack(
-            side=tk.RIGHT, padx=(0, 5), pady=(0, 5)
-        )
+        MyButton(row, text="...", width=3, command=self._browse_jsons_folder).pack_right()
 
     def _create_json_preview_row(self, parent: tk.Widget) -> None:
         """Preview row with URL count and scrolled text for the JSON source panel.
@@ -299,20 +296,50 @@ class UrlConfigView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
-        ttk.Radiobutton(
+        MyRadioButton(
             row,
             text="Lire récemment modifié",
             variable=self._vm.url_sort_order_jsons_var,
             value=UrlSortOrderEnum.E_MTIME_DESC.value,
             command=lambda: self._vm.form_changed(),
-        ).pack(side=tk.LEFT, padx=(0, 10), pady=(0, 5))
-        ttk.Radiobutton(
+        ).pack_left()
+        MyRadioButton(
             row,
             text="Lire les plus anciens",
             variable=self._vm.url_sort_order_jsons_var,
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
-        ).pack(side=tk.LEFT, pady=(0, 5))
+        ).pack_left()
+
+    def _create_json_dates_between(self, parent: tk.Widget) -> None:
+        """Date-range filter row for the JSON source panel.
+
+        Args:
+            parent: The JSON panel frame to attach widgets to.
+        """
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        date_values = [e.enum_to_view() for e in RelativeDateEnum if e is not RelativeDateEnum.E_UNKNOWN]
+        MyLabel(row, text="URLs dont les JSONs ont été modifiés entre").pack_left()
+        MyCombobox(
+            row, textvariable=self._vm.json_date_modified_start_var, values=date_values, state="readonly", width=20
+        ).pack_left()
+        self._view_traces.append(
+            (
+                self._vm.json_date_modified_start_var,
+                self._vm.json_date_modified_start_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
+        MyLabel(row, text="et").pack_left()
+        MyCombobox(
+            row, textvariable=self._vm.json_date_modified_end_var, values=date_values, state="readonly", width=20
+        ).pack_left()
+        self._view_traces.append(
+            (
+                self._vm.json_date_modified_end_var,
+                self._vm.json_date_modified_end_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
 
     # ─── Panel 4 : Découverte automatique ────────────────────────────────────
 

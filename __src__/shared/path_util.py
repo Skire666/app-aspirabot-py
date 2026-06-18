@@ -5,6 +5,7 @@
 import os
 import re
 import string
+from datetime import datetime
 from pathlib import Path
 
 ALLOWED = set(string.ascii_letters + string.digits + "-_. ()")
@@ -130,6 +131,25 @@ def path_has_valid_syntax(path_str: str) -> bool:
 
     # Limite historique de Windows, désactivable via LongPathsEnabled.
     return len(path_str) <= _C_MAX_PATH_LENGTH
+
+
+def list_files(folder: str, extension: str) -> list[tuple[Path, datetime]]:
+    """List files in a folder with a specific extension and return their paths and last modified times."""
+    folder_path = Path(folder)
+
+    if not folder_path.is_dir():
+        raise ValueError(f"The provided path '{folder}' is not a valid directory.")
+
+    if not extension.startswith("."):
+        extension = "." + extension
+
+    # no recursive, just the files in the folder (not subfolders)
+    files_found = [f for f in folder_path.iterdir() if f.is_file() and f.suffix == extension]
+
+    if not files_found:
+        return []
+
+    return [(f, datetime.fromtimestamp(f.stat().st_mtime)) for f in files_found]
 
 
 # EOF
