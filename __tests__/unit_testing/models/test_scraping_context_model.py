@@ -30,14 +30,13 @@ def _make_context() -> ScrapingContextModel:
 
 class TestExtractedItem:
     def test_init(self) -> None:
-        item = ExtractedItem(key="title", input=".selector", comment="my comment", values=["val1"])
-        assert item.key == "title"
+        item = ExtractedItem(input=".selector", comment="my comment", values=["val1"])
         assert item.input == ".selector"
         assert item.comment == "my comment"
         assert item.values == ["val1"]
 
-    def test_empty_values_default(self) -> None:
-        item = ExtractedItem(key="k", input="x", comment="c")
+    def test_empty_values(self) -> None:
+        item = ExtractedItem(input="x", comment="c", values=[])
         assert item.values == []
 
 
@@ -49,19 +48,18 @@ class TestExtractedItem:
 class TestExtractedData:
     def test_empty_items_default(self) -> None:
         ed = ExtractedData()
-        assert ed.items == []
+        assert list(ed.items()) == []
 
-    def test_to_list_empty(self) -> None:
+    def test_to_dict_empty(self) -> None:
         ed = ExtractedData()
-        assert ed.to_list() == []
+        assert ed.to_dict() == {}
 
-    def test_to_list_with_data(self) -> None:
+    def test_to_dict_with_data(self) -> None:
         ed = ExtractedData()
-        ed.items.append(ExtractedItem(key="title", input=".h1", comment="test", values=["Hello", "World"]))
-        result = ed.to_list()
+        ed.append_item("title", ".h1", ["Hello", "World"], "test")
+        result = ed.to_dict()
         assert len(result) == 1
-        assert result[0]["key"] == "title"
-        assert result[0]["values"] == ["Hello", "World"]
+        assert result["title"]["values"] == ["Hello", "World"]
 
 
 # ---------------------------------------------------------------------------
@@ -93,9 +91,9 @@ class TestResetBeforeNewProcess:
     def test_resets_extracted_data(self) -> None:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
-        ctx.extracted_data.items.append(ExtractedItem(key="k", input="x", comment="", values=["v"]))
+        ctx.extracted_data.append_item("k", "x", ["v"], "")
         ctx.reset_before_new_process([])
-        assert ctx.extracted_data.items == []
+        assert list(ctx.extracted_data.items()) == []
 
     def test_clears_downloaded_urls(self) -> None:
         ctx = _make_context()
@@ -142,22 +140,19 @@ class TestPushExtractedValues:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
         ctx.push_extracted_values("title", ".h1", "comment", ["Hello"])
-        assert len(ctx.extracted_data.items) == 1
-        assert ctx.extracted_data.items[0].key == "title"
+        assert "title" in ctx.extracted_data
+        assert ctx.extracted_data["title"].values == ["Hello"]
 
     def test_stores_values_under_key(self) -> None:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
         ctx.push_extracted_values("price", ".price", "", ["$99"])
-        item = ctx.extracted_data.items[0]
-        assert item.key == "price"
-        assert item.values == ["$99"]
+        assert "price" in ctx.extracted_data
+        assert ctx.extracted_data["price"].values == ["$99"]
 
     def test_multiple_pushes_append_in_order(self) -> None:
         ctx = _make_context()
         ctx.extracted_data = ExtractedData()
         ctx.push_extracted_values("k1", "s1", "", ["a"])
         ctx.push_extracted_values("k2", "s2", "", ["b"])
-        assert len(ctx.extracted_data.items) == 2
-        assert ctx.extracted_data.items[0].key == "k1"
-        assert ctx.extracted_data.items[1].key == "k2"
+        assert list(ctx.extracted_data.keys()) == ["k1", "k2"]

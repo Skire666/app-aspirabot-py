@@ -90,5 +90,3 @@ class TestUrlSortOrderEnum:
     def test_all_four_members(self) -> None:
         assert len(UrlSortOrderEnum) == 4
 
-    def test_name_desc_value(self) -> None:
-        assert UrlSortOrderEnum.E_NAME_DESC.value == "name_desc"

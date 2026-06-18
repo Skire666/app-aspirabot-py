@@ -38,22 +38,22 @@ class TestExecutorViewModelInit:
         assert hasattr(vm, "current_profile_name_var")
 
     def test_scenarios_empty(self, vm: ExecutorViewModel) -> None:
-        assert vm.get_scenarios() == []
+        assert vm.get_scenarios() == ()
 
     def test_profiles_empty(self, vm: ExecutorViewModel) -> None:
-        assert vm.get_profiles() == []
+        assert vm.get_profiles() == ()
 
 
 class TestDataSettersAndGetters:
     def test_set_and_get_scenarios(self, vm: ExecutorViewModel) -> None:
         items = [ScenarioItem(id_file="s1", scenario_name="S1", scenario_desc="")]
         vm.set_scenarios(items)
-        assert vm.get_scenarios() == items
+        assert vm.get_scenarios() == tuple(items)
 
     def test_set_and_get_profiles(self, vm: ExecutorViewModel) -> None:
         items = [ProfileItem(id_profile="p1", profile_name="P1")]
         vm.set_profiles(items)
-        assert vm.get_profiles() == items
+        assert vm.get_profiles() == tuple(items)
 
 
 class TestBindAndDispatch:

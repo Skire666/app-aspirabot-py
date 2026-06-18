@@ -47,26 +47,26 @@ class TestExecutorViewModelInit:
         assert exec_vm.urls_source_type_var.get() == "MANUAL_LIST"
 
     def test_initial_scenarios_empty(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.get_scenarios() == []
+        assert exec_vm.get_scenarios() == ()
 
     def test_initial_profiles_empty(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.get_profiles() == []
+        assert exec_vm.get_profiles() == ()
 
     def test_initial_steps_empty(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.get_steps() == []
+        assert exec_vm.get_steps() == ()
 
     def test_initial_url_preview_shortcuts_empty(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.get_url_preview_shortcuts() == []
+        assert exec_vm.get_url_preview_shortcuts() == ()
 
     def test_initial_url_preview_jsons_empty(self, exec_vm: ExecutorViewModel) -> None:
-        assert exec_vm.get_url_preview_jsons() == []
+        assert exec_vm.get_url_preview_jsons() == ()
 
 
 class TestExecutorViewModelListMutators:
     def test_set_scenarios_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
         items = [ScenarioItem("s1", "Scen A", "desc")]
         exec_vm.set_scenarios(items)
-        assert exec_vm.get_scenarios() == items
+        assert exec_vm.get_scenarios() == tuple(items)
 
     def test_set_scenarios_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
         v0 = exec_vm.scenarios_version_var.get()
@@ -76,7 +76,7 @@ class TestExecutorViewModelListMutators:
     def test_set_profiles_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
         items = [ProfileItem("p1", "Prof A")]
         exec_vm.set_profiles(items)
-        assert exec_vm.get_profiles() == items
+        assert exec_vm.get_profiles() == tuple(items)
 
     def test_set_profiles_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
         v0 = exec_vm.profiles_version_var.get()
@@ -86,7 +86,7 @@ class TestExecutorViewModelListMutators:
     def test_set_steps_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
         items = [StepItem("st1", "Step label")]
         exec_vm.set_steps(items)
-        assert exec_vm.get_steps() == items
+        assert exec_vm.get_steps() == tuple(items)
 
     def test_set_steps_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
         v0 = exec_vm.steps_version_var.get()
@@ -96,7 +96,7 @@ class TestExecutorViewModelListMutators:
     def test_set_url_preview_shortcuts_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
         urls = ["https://a.com", "https://b.com"]
         exec_vm.set_url_preview_shortcuts(urls)
-        assert exec_vm.get_url_preview_shortcuts() == urls
+        assert exec_vm.get_url_preview_shortcuts() == tuple(urls)
 
     def test_set_url_preview_shortcuts_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
         v0 = exec_vm.url_preview_shortcuts_version_var.get()
@@ -106,7 +106,7 @@ class TestExecutorViewModelListMutators:
     def test_set_url_preview_jsons_replaces_list(self, exec_vm: ExecutorViewModel) -> None:
         urls = ["https://a.com"]
         exec_vm.set_url_preview_jsons(urls)
-        assert exec_vm.get_url_preview_jsons() == urls
+        assert exec_vm.get_url_preview_jsons() == tuple(urls)
 
     def test_set_url_preview_jsons_bumps_version(self, exec_vm: ExecutorViewModel) -> None:
         v0 = exec_vm.url_preview_jsons_version_var.get()
@@ -673,8 +673,8 @@ class TestDebugViewModelDispatch:
     def test_start_dispatches(self, dbg_vm: DebugViewModel) -> None:
         cb = MagicMock()
         dbg_vm.bind_start(cb)
-        dbg_vm.start("https://x.com", "30000", "0")
-        cb.assert_called_once_with("https://x.com", "30000", "0")
+        dbg_vm.start("https://x.com", "30000", "0", "load")
+        cb.assert_called_once_with("https://x.com", "30000", "0", "load")
 
     def test_refresh_dispatches(self, dbg_vm: DebugViewModel) -> None:
         cb = MagicMock()
@@ -701,7 +701,7 @@ class TestDebugViewModelDispatch:
         cb.assert_called_once()
 
     def test_unbound_actions_raise(self, dbg_vm: DebugViewModel) -> None:
-        for call in [lambda: dbg_vm.start("x", "0", "0"), lambda: dbg_vm.refresh(), lambda: dbg_vm.close()]:
+        for call in [lambda: dbg_vm.start("x", "0", "0", "load"), lambda: dbg_vm.refresh(), lambda: dbg_vm.close()]:
             with pytest.raises(CallbackNotDefinedError):
                 call()
 

@@ -5,12 +5,24 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from models.app_configuration_model import AppConfigurationModel
 from shared.exception_util import (
     InvalidFolderLogsError,
     InvalidFolderScenariosError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
 )
+
+
+def _make_config(**kwargs) -> AppConfigurationModel:
+    defaults: dict = {
+        "log_level_enum": "INFO",
+        "folder_logs": "logs",
+        "folder_scenarios": "scenarios",
+        "gui_booting_size": "1280x720",
+    }
+    defaults.update(kwargs)
+    return AppConfigurationModel(**defaults)
 
 
 class TestLogLevelEnum:

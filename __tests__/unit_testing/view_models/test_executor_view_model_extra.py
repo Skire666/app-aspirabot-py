@@ -31,26 +31,25 @@ class TestSetStepsAndUrlPreview:
     def test_set_steps_stores_and_increments_version(self, vm: ExecutorViewModel) -> None:
         steps = [StepItem(step_id="s1", label="L1")]
         vm.set_steps(steps)
-        assert vm.get_steps() == steps
+        assert vm.get_steps() == tuple(steps)
         assert vm.steps_version_var.get() == 1
 
     def test_set_url_preview_shortcuts_stores_and_increments_version(self, vm: ExecutorViewModel) -> None:
         urls = ["http://a.com", "http://b.com"]
         vm.set_url_preview_shortcuts(urls)
-        assert vm.get_url_preview_shortcuts() == urls
+        assert vm.get_url_preview_shortcuts() == tuple(urls)
         assert vm.url_preview_shortcuts_version_var.get() == 1
 
     def test_set_url_preview_jsons_stores_and_increments_version(self, vm: ExecutorViewModel) -> None:
         urls = ["http://x.com"]
         vm.set_url_preview_jsons(urls)
-        assert vm.get_url_preview_jsons() == urls
+        assert vm.get_url_preview_jsons() == tuple(urls)
         assert vm.url_preview_jsons_version_var.get() == 1
 
-    def test_get_url_preview_shortcuts_returns_copy(self, vm: ExecutorViewModel) -> None:
+    def test_get_url_preview_shortcuts_returns_immutable(self, vm: ExecutorViewModel) -> None:
         vm.set_url_preview_shortcuts(["http://a.com"])
         result = vm.get_url_preview_shortcuts()
-        result.append("http://extra.com")
-        assert vm.get_url_preview_shortcuts() == ["http://a.com"]
+        assert result == ("http://a.com",)
 
 
 class TestDerivedStateRecompute:

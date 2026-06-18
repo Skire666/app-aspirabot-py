@@ -10,8 +10,10 @@ from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
 from presenters.executor_presenter import ExecutorPresenter
+from presenters.url_config_presenter import UrlConfigPresenter
 from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
+from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.exception_util import ProfileNotFoundError, ScenarioNotFoundError
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem
 
@@ -26,7 +28,15 @@ def _make_presenter() -> tuple[ExecutorPresenter, MagicMock, MagicMock, MagicMoc
     vm = MagicMock()
     svc_scen = MagicMock(spec=ScenariosService)
     svc_prof = MagicMock(spec=ProfilesService)
-    p = ExecutorPresenter(vm=vm, scenarios_service=svc_scen, profiles_service=svc_prof)
+    url_config = MagicMock(spec=UrlConfigPresenter)
+    sourcing = MagicMock(spec=SourcingUrlsService)
+    p = ExecutorPresenter(
+        vm=vm,
+        scenarios_service=svc_scen,
+        profiles_service=svc_prof,
+        url_config_presenter=url_config,
+        sourcing_urls=sourcing,
+    )
     return p, vm, svc_scen, svc_prof
 
 

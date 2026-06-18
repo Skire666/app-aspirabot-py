@@ -50,13 +50,13 @@ class TestValidateStep:
         assert result == ["Field required"]
 
     def test_returns_empty_list_on_no_executors_registered(self) -> None:
-        step = _make_step()
-        result = WorkflowService.validate_step(0, step, [])
+        target, steps = _make_full_steps(validate_errors=[])
+        result = WorkflowService.validate_step(0, target, steps)
         assert result == []
 
     def test_returns_empty_list_on_executor_not_registered(self) -> None:
-        step = _make_step()
-        result = WorkflowService.validate_step(0, step, [])
+        target, steps = _make_full_steps(validate_errors=[])
+        result = WorkflowService.validate_step(0, target, steps)
         assert result == []
 
     def test_passes_step_index_to_executor(self) -> None:

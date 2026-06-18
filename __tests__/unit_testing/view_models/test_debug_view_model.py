@@ -33,8 +33,8 @@ class TestBindAndDispatch:
     def test_start_dispatches(self, vm: DebugViewModel) -> None:
         cb = MagicMock()
         vm.bind_start(cb)
-        vm.start("http://example.com", "30", "5")
-        cb.assert_called_once_with("http://example.com", "30", "5")
+        vm.start("http://example.com", "30", "5", "load")
+        cb.assert_called_once_with("http://example.com", "30", "5", "load")
 
     def test_close_dispatches(self, vm: DebugViewModel) -> None:
         cb = MagicMock()
@@ -69,7 +69,7 @@ class TestBindAndDispatch:
     def test_unbound_primary_actions_raise(self, vm: DebugViewModel) -> None:
         """Primary action methods raise AspirabotBaseError when no handler is bound."""
         with pytest.raises(CallbackNotDefinedError):
-            vm.start("http://x.com", "30", "5")
+            vm.start("http://x.com", "30", "5", "load")
         with pytest.raises(CallbackNotDefinedError):
             vm.close()
         with pytest.raises(CallbackNotDefinedError):

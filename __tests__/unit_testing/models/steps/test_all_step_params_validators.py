@@ -189,7 +189,7 @@ class TestExportDataToJsParams:
 
 
 class TestExtractLinksParams:
-    _BASE = {"selector": "a", "target": "all", "mapping": "links", "comment": ""}
+    _BASE = {"selector": "a", "target": "all", "mapping": "links", "cutted_ampersand": False, "comment": ""}
 
     def test_valid_passes(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
@@ -212,7 +212,7 @@ class TestExtractLinksParams:
     def test_no_context_no_raise(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
 
-        p = ExtractLinksParams(selector="", target="all", mapping="", comment="")
+        p = ExtractLinksParams(selector="", target="all", mapping="", cutted_ampersand=False, comment="")
         assert p.selector == ""
 
 
@@ -255,13 +255,13 @@ class TestExtractTextsParams:
 
 
 class TestExtractVariableParams:
-    _BASE = {"variable": "last_url", "mapping": "data_key", "comment": ""}
+    _BASE = {"variable": "last_url_full", "mapping": "data_key", "comment": ""}
 
     def test_valid_passes(self) -> None:
         from models.steps.extract_variable_params import ExtractVariableParams
 
         p = _validate(ExtractVariableParams, self._BASE)
-        assert p.variable == "last_url"
+        assert p.variable == "last_url_full"
 
     def test_empty_variable_raises(self) -> None:
         from models.steps.extract_variable_params import ExtractVariableParams

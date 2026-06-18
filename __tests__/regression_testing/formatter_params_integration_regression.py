@@ -171,7 +171,7 @@ class TestExtractLinksIntegration:
     def test_selector_and_mapping_in_label(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
 
-        p = ExtractLinksParams(selector="a.nav", target="all", mapping="nav_links", comment="")
+        p = ExtractLinksParams(selector="a.nav", target="all", mapping="nav_links", cutted_ampersand=False, comment="")
         label = _label(StepTypeEnum.E_EXTRACT_LINKS, p)
         assert "a.nav" in label
         assert "nav_links" in label

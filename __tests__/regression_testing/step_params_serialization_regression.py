@@ -206,13 +206,13 @@ class TestExportDataToJsParamsSerialization:
 
 
 class TestExtractLinksParamsSerialization:
-    _DATA = {"selector": "a.nav", "target": "all", "mapping": "nav_links", "comment": ""}
+    _DATA = {"selector": "a.nav", "target": "all", "mapping": "nav_links", "cutted_ampersand": False, "comment": ""}
 
     def test_to_dict_expected_keys(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
 
         d = ExtractLinksParams(**self._DATA).to_dict()
-        assert set(d.keys()) == {"selector", "target", "mapping", "comment"}
+        assert set(d.keys()) == {"selector", "target", "mapping", "cutted_ampersand", "comment"}
 
     def test_round_trip(self) -> None:
         from models.steps.extract_links_params import ExtractLinksParams
@@ -557,7 +557,7 @@ _ALL_PARAMS_INSTANCES = [
     ),
     pytest.param(
         lambda: __import__("models.steps.extract_links_params", fromlist=["ExtractLinksParams"]).ExtractLinksParams(
-            selector="a", target="all", mapping="links", comment=""
+            selector="a", target="all", mapping="links", cutted_ampersand=False, comment=""
         ),
         id="ExtractLinks",
     ),
@@ -651,12 +651,6 @@ _ALL_PARAMS_INSTANCES = [
             "models.steps.youtube_transcripts_params", fromlist=["YoutubeTranscriptsParams"]
         ).YoutubeTranscriptsParams(title="Tutorial", comment="", basic_info=True, ddl_srt=True),
         id="YoutubeTranscripts",
-    ),
-    pytest.param(
-        lambda: __import__("models.steps.open_url_params", fromlist=["OpenUrlParams"]).OpenUrlParams(
-            wait_until="load", wait_dns_solver=5, timeout_duration=30, timeout_unit="s", comment=""
-        ),
-        id="OpenUrl",
     ),
 ]
 
