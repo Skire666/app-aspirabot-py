@@ -225,7 +225,7 @@ class _DataGridDrawingMixin:
         """
         s = cast(Any, self)
         value = row_data.get(col.id)
-        text = format_cell_value(value, col.format)
+        text = format_cell_value(value, col.format, col.formatter)
         s.body_canvas.create_text(
             x0 + 8,
             y0 + (s._row_height / 2),

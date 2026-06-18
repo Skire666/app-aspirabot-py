@@ -6,9 +6,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 # -----------------------------------------------------------------------------
 # Column definition
@@ -34,6 +35,7 @@ class GridColumn:
     width: int = 120
     col_type: Literal["text", "button"] = "text"
     format: str | None = None
+    formatter: Callable[[Any], str] | None = None
     button_text: str | None = None
     visible: bool = True
 
@@ -58,27 +60,31 @@ def build_offsets(widths: list[int]) -> list[int]:
     return offsets
 
 
-def format_cell_value(value: object, fmt: str | None) -> str:
-    """Format a cell value for display, applying an optional strftime format.
+def format_cell_value(value: object, fmt: str | None, formatter: Callable[[Any], str] | None = None) -> str:
+    """Format a cell value for display.
 
     Args:
         value: The raw cell value from the row dict.
-        fmt: Optional strftime format string; skipped when None or empty.
+        fmt: Optional strftime format string applied to date values.
+        formatter: Optional callable that transforms any value to a display string.
+            Takes priority over *fmt* when provided.
 
     Returns:
         A display string for the cell.
     """
+    if formatter is not None:
+        return formatter(value)
+    if value is None:
+        return ""
     if not fmt:
-        return "" if value is None else str(value)
+        return str(value)
     if hasattr(value, "strftime"):
         return value.strftime(fmt)  # type: ignore[union-attr]
     if isinstance(value, str):
         try:
             return datetime.fromisoformat(value).strftime(fmt)
         except ValueError:
-            return value
-    if value is None:
-        return ""
+            pass
     return str(value)
 
 

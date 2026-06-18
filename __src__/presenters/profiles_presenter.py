@@ -126,7 +126,6 @@ class ProfilesPresenter:
                     "used_date_profile": p.used_date_profile.strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM)
                     if p.used_date_profile
                     else "",
-                    "launch_count": str(p.launch_count),
                     "id_profile": p.id_profile,
                     "id_scenario": p.id_scenario,
                 }
@@ -141,11 +140,6 @@ class ProfilesPresenter:
         def key_fn(t: LaunchModel) -> str:
             profile = t
             value = getattr(profile, col, None)
-            if col == "launch_count":
-                try:
-                    return f"{int(value or 0):020d}"
-                except TypeError, ValueError:
-                    return "0" * 20
             return str(value or "").casefold()
 
         return sorted(tuples, key=key_fn, reverse=not self._sort_ascending)

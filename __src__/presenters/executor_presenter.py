@@ -428,12 +428,14 @@ class ExecutorPresenter:
         self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
         self._clear_profile_form()
 
-    def _on_save_profile(self) -> None:
+    def _on_save_profile(self, set_launched_date: bool | None = None) -> None:
         if not self._current_profile or not self._current_scenario:
             return
         self._apply_form_to_profile()
         saved_id = self._current_profile.id_profile
         try:
+            if set_launched_date:
+                self._current_profile.increment_launch_count()
             self._svc_profiles.update_profile_launch(self._current_scenario.id_file, self._current_profile)
             self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
         except AspirabotBaseError:
@@ -508,7 +510,7 @@ class ExecutorPresenter:
             self._vm.verification_message_var.set(msg)
         if not continue_process:
             return
-        self._on_save_profile()
+        self._on_save_profile(True)
         if self.on_request_launch_scraping and self._current_scenario and self._current_profile:
             self.on_request_launch_scraping(self._current_scenario, self._current_profile)
 

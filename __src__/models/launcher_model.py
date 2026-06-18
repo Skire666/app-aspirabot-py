@@ -46,7 +46,6 @@ class LaunchModel:
         urls_folder_racs: URL source configuration for FOLDER_RACS (.url shortcuts) mode.
         urls_folder_jsons: URL source configuration for FOLDER_JSONS mode.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
-        launch_count: Number of times the profile was launched.
         used_date_profile: Timestamp of the last launch, or None when never launched.
     """
 
@@ -59,7 +58,6 @@ class LaunchModel:
     urls_folder_racs: UrlsFolderRacsModel
     urls_folder_jsons: UrlsFolderJsonsModel
     urls_discover_entries: UrlsDiscoverEntriesModel
-    launch_count: int
     used_date_profile: datetime | None
     # Optional URL to open before the run starts; execution waits for user resume.
     warmup_url: str
@@ -89,7 +87,6 @@ class LaunchModel:
             urls_folder_jsons=UrlsFolderJsonsModel.get_default(),
             urls_discover_entries=UrlsDiscoverEntriesModel.get_default(),
             emergency_stop_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
-            launch_count=0,
             used_date_profile=None,
             emergency_stop_step_id="",
             emergency_stop_step_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
@@ -118,9 +115,8 @@ class LaunchModel:
             urls_discover_entries=UrlsDiscoverEntriesModel.import_from_data_json(
                 data.get("urls_discover_entries") or {}
             ),
-            emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
-            launch_count=int(data.get("launch_count", 0)),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
+            emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
             emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
             emergency_stop_step_threshold=int(data.get("emergency_stop_step_threshold", 0)),
             warmup_url=str(data.get("warmup_url") or ""),
@@ -145,7 +141,6 @@ class LaunchModel:
             **self.urls_folder_racs.export_to_data_json(),
             **self.urls_folder_jsons.export_to_data_json(),
             "emergency_stop_threshold": self.emergency_stop_threshold,
-            "launch_count": self.launch_count,
             "used_date_profile": self.used_date_profile,
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
@@ -178,7 +173,7 @@ class LaunchModel:
         Returns:
             None.
         """
-        self.launch_count += 1
+        print(f"DEBUG: Incrementing launch count for profile {self.profile_name} (scenario {self.id_scenario})")
         self.used_date_profile = datetime.now()
 
     def validate(self) -> ValidationResult:

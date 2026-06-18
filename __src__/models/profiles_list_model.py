@@ -84,7 +84,8 @@ class ProfilesModel:
         result: list[LaunchModel] = []
         for item in cast(list[object], profiles_data):
             if isinstance(item, dict):
-                result.append(LaunchModel.import_from_data_json(cast(dict[str, Any], item)))
+                obj = LaunchModel.import_from_data_json(cast(dict[str, Any], item))
+                result.append(obj)
         return result
 
     def copy_business(self) -> ProfilesModel:

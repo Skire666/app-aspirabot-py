@@ -23,7 +23,6 @@
             "url_sort_order_shortcuts": "mtime_asc",
             "url_sort_order_jsons": "mtime_asc",
             "emergency_stop_threshold": 10,
-            "launch_count": 9,
             "used_date_profile": {
                 "__type__": "datetime",
                 "value": "2026-06-07T21:27:48.195196"

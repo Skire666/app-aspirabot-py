@@ -160,6 +160,16 @@ class UrlSourceTypeEnum(Enum):
     E_DISCOVER_ENTRIES = "DISCOVER_ENTRIES"
     E_UNKNOWN = "UNKNOWN"
 
+    def to_displayable_str(self):
+        if self is UrlSourceTypeEnum.E_MANUAL_LIST:
+            return "Liste manuelle"
+        if self is UrlSourceTypeEnum.E_FOLDER_RACS:
+            return "Dossier RACS"
+        if self is UrlSourceTypeEnum.E_FOLDER_JSONS:
+            return "Dossier JSON"
+        if self is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
+            return "Découverte auto."
+
 
 class UrlSortOrderEnum(Enum):
     """Enumerates the file ordering strategies for folder-based URL sources."""
