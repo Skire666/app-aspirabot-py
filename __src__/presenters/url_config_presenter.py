@@ -51,19 +51,24 @@ class UrlConfigPresenter:
     # ------------------------------------------------------------------
 
     def refresh_preview_for_profile(self, profile: LaunchModel) -> None:
-        """Build URL previews / discover state from the profile and push to the VM.
+        """Build URL previews from the profile and push to the VM.
 
         Args:
             profile: The launch profile whose URL source configuration is rendered.
         """
-        self._vm.set_discovers_in_rows([])
         source_type = profile.urls_source_type
         if source_type == UrlSourceTypeEnum.E_FOLDER_RACS:
             self._refresh_folder_racs_from_model(profile.urls_folder_racs)
         elif source_type == UrlSourceTypeEnum.E_FOLDER_JSONS:
             self._refresh_folder_jsons_from_model(profile.urls_folder_jsons)
-        elif source_type == UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            self._load_discover_hub_into_vm(profile.urls_discover_entries)
+
+    def load_discover_hub(self, hub: UrlsDiscoverEntriesModel) -> None:
+        """Load a discover hub from a profile into the VM (IN grid + OUT form fields).
+
+        Args:
+            hub: The discover hub to load.
+        """
+        self._load_discover_hub_into_vm(hub)
 
     def refresh_preview_from_vm(self) -> None:
         """Build URL previews from the live VM state and push them to the VM.
@@ -110,6 +115,9 @@ class UrlConfigPresenter:
         self._vm.set_url_preview_shortcuts([])
         self._vm.set_url_preview_jsons([])
         self._vm.set_discovers_in_rows([])
+        self._vm.disc_out_pattern_json_var.set("")
+        self._vm.disc_out_key_mapping_var.set("")
+        self._vm.disc_out_pattern_urls_var.set("")
 
     # ------------------------------------------------------------------
     # Private — VM action callbacks

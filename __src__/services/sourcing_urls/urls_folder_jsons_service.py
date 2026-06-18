@@ -96,8 +96,6 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
             self._sort_order = UrlSortOrderEnum(model.orders_jsons)
             self._date_modified_newest = model.date_modified_start.to_datetime()
             self._date_modified_oldest = model.date_modified_end.to_datetime()
-            print("_date_modified_newest:", self._date_modified_newest)
-            print("_date_modified_oldest:", self._date_modified_oldest)
         else:
             raise InvalidUrlSourceValueTypeError("folder_jsons", "UrlsFolderJsonsModel", type(model).__name__)
 

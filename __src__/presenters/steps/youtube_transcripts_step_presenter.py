@@ -22,7 +22,12 @@ def _build(data: dict[str, Any]) -> YoutubeTranscriptsParams:
     Returns:
         A fully populated YoutubeTranscriptsParams instance.
     """
-    return YoutubeTranscriptsParams(title=data.get("title", ""), comment=data.get("comment", ""))
+    return YoutubeTranscriptsParams(
+        title=data.get("title", ""),
+        comment=data.get("comment", ""),
+        basic_info=data.get("basic_info", True),
+        ddl_srt=data.get("ddl_srt", True),
+    )
 
 
 register_params_builder(StepTypeEnum.E_YOUTUBE_DDL, _build)

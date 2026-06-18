@@ -141,10 +141,13 @@ class ExecutorViewModel(ViewModelBase):
         # Source Vars — user-editable, bound to form widgets.
         self.export_folder_var = tk.StringVar(master=master, value="")
         self.urls_source_type_var = tk.StringVar(master=master, value=UrlSourceTypeEnum.E_MANUAL_LIST.value)
+        # manual
         self.manual_urls_var = tk.StringVar(master=master, value="")
+        # racs
         self.urls_path_folder_racs_var = tk.StringVar(master=master, value="")
-        self.urls_path_folder_jsons_var = tk.StringVar(master=master, value="")
         self.url_sort_order_shortcuts_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
+        # jsons
+        self.urls_path_folder_jsons_var = tk.StringVar(master=master, value="")
         self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
         self.json_date_modified_start_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_0D.enum_to_view())
         self.json_date_modified_end_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_99.enum_to_view())

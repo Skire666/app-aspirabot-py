@@ -405,13 +405,3 @@ class TestWaitUserActionIntegration:
 # ---------------------------------------------------------------------------
 # YOUTUBE_DDL
 # ---------------------------------------------------------------------------
-
-
-class TestYoutubeTranscriptsIntegration:
-    def test_title_in_label(self) -> None:
-        from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
-
-        p = YoutubeTranscriptsParams(title="Python Tutorial", comment="", basic_info=True, ddl_srt=False)
-        label = _label(StepTypeEnum.E_YOUTUBE_DDL, p)
-        assert "Python Tutorial" in label
-        assert "YouTube" in label

@@ -140,12 +140,12 @@ class LaunchModel:
             **self.urls_manual_list.export_to_data_json(),
             **self.urls_folder_racs.export_to_data_json(),
             **self.urls_folder_jsons.export_to_data_json(),
+            "urls_discover_entries": self.urls_discover_entries.export_to_data_json(),
             "emergency_stop_threshold": self.emergency_stop_threshold,
             "used_date_profile": self.used_date_profile,
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
             "warmup_url": self.warmup_url,
-            "urls_discover_entries": self.urls_discover_entries.export_to_data_json(),
         }
 
     @classmethod

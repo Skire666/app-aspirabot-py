@@ -335,17 +335,22 @@ class ExecutorPresenter:
         """
         source_type = profile.urls_source_type or UrlSourceTypeEnum.E_MANUAL_LIST
         self._vm.urls_source_type_var.set(source_type.value)
+        # manual
         self._vm.set_manual_urls(profile.urls_manual_list.get_urls())
-        self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
-        self._vm.urls_path_folder_jsons_var.set(profile.urls_folder_jsons.folder_jsons)
+        # racs
         self._vm.url_sort_order_shortcuts_var.set(
             profile.urls_folder_racs.orders_racs or UrlSortOrderEnum.E_MTIME_ASC.value
         )
+        # jsons
+        self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
+        self._vm.urls_path_folder_jsons_var.set(profile.urls_folder_jsons.folder_jsons)
         self._vm.url_sort_order_jsons_var.set(
             profile.urls_folder_jsons.orders_jsons or UrlSortOrderEnum.E_MTIME_ASC.value
         )
         self._vm.json_date_modified_start_var.set(profile.urls_folder_jsons.date_modified_start.enum_to_view())
         self._vm.json_date_modified_end_var.set(profile.urls_folder_jsons.date_modified_end.enum_to_view())
+        # discover entries
+        self._url_config_presenter.load_discover_hub(profile.urls_discover_entries)
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
