@@ -94,6 +94,9 @@ _INVALID_CHARS_PATTERN = re.compile(r'[<>:"|?*\x00-\x1f]')
 # Noms réservés par Windows (quelle que soit l'extension)
 _RESERVED_NAMES = {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
 
+# Longueur maximale d'un chemin Windows (historique, désactivable via LongPathsEnabled)
+_C_MAX_PATH_LENGTH = 255
+
 
 def path_has_valid_syntax(path_str: str) -> bool:
     """Return True if *path_str* is syntactically valid for Windows, False otherwise."""
@@ -117,7 +120,7 @@ def path_has_valid_syntax(path_str: str) -> bool:
 
         # Un nom ne peut pas se terminer par un espace ou un point
         # (sauf "." et ".." qui sont des composants spéciaux)
-        if part not in (".", "..") and part != part.rstrip(" ."):
+        if part not in {".", ".."} and part != part.rstrip(" ."):
             return False
 
         # Vérifie les noms réservés, en ignorant l'extension éventuelle
@@ -125,10 +128,8 @@ def path_has_valid_syntax(path_str: str) -> bool:
         if base_name in _RESERVED_NAMES:
             return False
 
-    # Limite historique de Windows (255 caractères chemin complet)
-    # Peut être désactivée via une clé de registre (LongPathsEnabled),
-    # donc à ajuster selon votre contexte si besoin.
-    return not len(path_str) > 255
+    # Limite historique de Windows, désactivable via LongPathsEnabled.
+    return len(path_str) <= _C_MAX_PATH_LENGTH
 
 
 # EOF

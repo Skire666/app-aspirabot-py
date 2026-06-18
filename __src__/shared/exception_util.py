@@ -791,6 +791,18 @@ class UrlNavigationMismatchError(RuntimeError, AspirabotBaseError):
 # -----------------------------------------------------------------------------
 
 
+class SelectorNoElementFoundError(AspirabotBaseError):
+    """Raised when no HTML elements match a CSS selector during an extraction step."""
+
+    def __init__(self, selector: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            selector: The CSS selector that returned no matching elements.
+        """
+        super().__init__(f"Aucun élément pour le sélecteur '{selector}'")
+
+
 class NoDataToExportError(AspirabotBaseError):
     """Raised when there is no extracted data available to export."""
 

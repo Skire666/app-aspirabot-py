@@ -176,39 +176,43 @@ class LaunchModel:
         print(f"DEBUG: Incrementing launch count for profile {self.profile_name} (scenario {self.id_scenario})")
         self.used_date_profile = datetime.now()
 
-    def validate(self) -> ValidationResult:
-        """Validate the active URL source sub-model and return the first error found.
-
-        Returns:
-            The first validation ErrorCode, or None if the profile is valid.
-        """
-        vr = ValidationResult()
-
-        print(f"{self.emergency_stop_step_id}")
-
+    def _validate_id_and_source(self, vr: ValidationResult) -> bool:
+        """Validate scenario id and URL source type. Returns True if an error was appended."""
         if len(self.id_scenario.strip()) <= 0:
             vr.append(ErrorCodeLAM.LAM_1002, SeverityEnum.E_ERROR)
-        elif self.urls_source_type in {UrlSourceTypeEnum.E_UNSET, UrlSourceTypeEnum.E_UNKNOWN}:
+            return True
+        if self.urls_source_type in {UrlSourceTypeEnum.E_UNSET, UrlSourceTypeEnum.E_UNKNOWN}:
             vr.append(ErrorCodeLAM.LAM_1001, SeverityEnum.E_ERROR)
-        elif not self.export_folder or not self.export_folder.strip():
+            return True
+        return False
+
+    def _validate_export_folder(self, vr: ValidationResult) -> bool:
+        """Validate the export folder path fields. Returns True if an error was appended."""
+        if not self.export_folder or not self.export_folder.strip():
             vr.append(ErrorCodeLAM.LAM_1003, SeverityEnum.E_ERROR)
-        elif not path_has_valid_syntax(self.export_folder):
+            return True
+        if not path_has_valid_syntax(self.export_folder):
             vr.append(ErrorCodeLAM.LAM_1004, SeverityEnum.E_ERROR)
-        elif self.export_folder in {".", "./"}:
+            return True
+        if self.export_folder in {".", "./"}:
             vr.append(ErrorCodeLAM.LAM_1005, SeverityEnum.E_ERROR)
-        elif self.export_folder.startswith("/"):
+            return True
+        if self.export_folder.startswith("/"):
             vr.append(ErrorCodeLAM.LAM_1006, SeverityEnum.E_ERROR)
-        elif self.emergency_stop_threshold <= 1:
+            return True
+        return False
+
+    def _validate_emergency_stop(self, vr: ValidationResult) -> None:
+        """Validate emergency stop thresholds and step id."""
+        if self.emergency_stop_threshold <= 1:
             vr.append(ErrorCodeLAM.LAM_1007, SeverityEnum.E_ERROR)
         elif self.emergency_stop_step_threshold <= 1:
             vr.append(ErrorCodeLAM.LAM_1008, SeverityEnum.E_ERROR)
         elif not self.emergency_stop_step_id or not self.emergency_stop_step_id.strip():
             vr.append(ErrorCodeLAM.LAM_1009, SeverityEnum.E_ERROR)
 
-        if vr.has_errors_or_fatals():
-            return vr
-
-        # sub object
+    def _validate_sub_model(self, vr: ValidationResult) -> None:
+        """Delegate validation to the active URL source sub-model."""
         if self.urls_source_type is UrlSourceTypeEnum.E_MANUAL_LIST:
             vr.extend(self.urls_manual_list.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_RACS:
@@ -218,6 +222,21 @@ class LaunchModel:
         elif self.urls_source_type is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
             vr.extend(self.urls_discover_entries.validate())
 
+    def validate(self) -> ValidationResult:
+        """Validate all profile fields and the active URL source sub-model.
+
+        Returns:
+            A ValidationResult with any issues found; empty means the profile is valid.
+        """
+        vr = ValidationResult()
+        if self._validate_id_and_source(vr):
+            return vr
+        if self._validate_export_folder(vr):
+            return vr
+        self._validate_emergency_stop(vr)
+        if vr.has_errors_or_fatals():
+            return vr
+        self._validate_sub_model(vr)
         return vr
 
 

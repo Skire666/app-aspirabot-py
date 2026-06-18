@@ -17,6 +17,7 @@ from shared.path_util import path_has_valid_syntax
 from shared.validation_result import ValidationResult
 
 _C_MIN_URL_LENGTH = 3  # URLs shorter than this are treated as empty/invalid.
+_C_MAX_URL_WARNING_COUNT = 100  # Warn when the URL queue exceeds this threshold.
 
 
 class SourcingUrlsService:
@@ -158,6 +159,55 @@ class SourcingUrlsService:
         else:
             raise UnknownUrlSourceTypeError(str(ustype))
 
+    def _validate_launcher_config(self, rs: ValidationResult) -> bool:
+        """Validate launcher and source type. Returns True if an error was appended."""
+        if self._launcher is None:
+            rs.append(ErrorCodeSUS.SUS_1001, SeverityEnum.E_ERROR)
+            return True
+        if self._launcher.urls_source_type not in {
+            UrlSourceTypeEnum.E_MANUAL_LIST,
+            UrlSourceTypeEnum.E_FOLDER_RACS,
+            UrlSourceTypeEnum.E_FOLDER_JSONS,
+            UrlSourceTypeEnum.E_DISCOVER_ENTRIES,
+        }:
+            rs.append(ErrorCodeSUS.SUS_1002, SeverityEnum.E_ERROR)
+            return True
+        return False
+
+    def _validate_export_path(self, rs: ValidationResult) -> bool:
+        """Validate the export folder path. Returns True if an error was appended."""
+        if not self._export_folder or not self._export_folder.strip():
+            rs.append(ErrorCodeSUS.SUS_1003, SeverityEnum.E_ERROR)
+            return True
+        if not path_has_valid_syntax(self._export_folder):
+            rs.append(ErrorCodeSUS.SUS_1004, SeverityEnum.E_ERROR)
+            return True
+        if self._export_folder.strip() in {".", "./"}:
+            rs.append(ErrorCodeSUS.SUS_1008, SeverityEnum.E_ERROR)
+            return True
+        if self._export_folder.strip().startswith("/"):
+            rs.append(ErrorCodeSUS.SUS_1009, SeverityEnum.E_ERROR)
+            return True
+        return False
+
+    def _validate_url_provider(self, rs: ValidationResult) -> None:
+        """Validate that the active URL provider yields usable URLs."""
+        provider = self.get_provider_urls()
+        if not provider.loads_urls():
+            rs.append(ErrorCodeSUS.SUS_1005, SeverityEnum.E_ERROR)
+            return
+        if not provider.preview_next_url():
+            rs.append(ErrorCodeSUS.SUS_1006, SeverityEnum.E_ERROR)
+            return
+        if len(provider.preview_next_url() or "") <= _C_MIN_URL_LENGTH:
+            rs.append(ErrorCodeSUS.SUS_1007, SeverityEnum.E_ERROR)
+            return
+        count = provider.count_urls()
+        if count == 0:
+            rs.append(ErrorCodeSUS.SUS_1010, SeverityEnum.E_ERROR)
+        elif count > _C_MAX_URL_WARNING_COUNT:
+            rs.append(ErrorCodeSUS.SUS_1011, SeverityEnum.E_WARNING)
+
     def validate(self) -> ValidationResult:
         """Validate the current context and return any validation issues.
 
@@ -165,38 +215,11 @@ class SourcingUrlsService:
             A ValidationResult instance containing any validation issues.
         """
         rs = ValidationResult()
-
-        if self._launcher is None:
-            rs.append(ErrorCodeSUS.SUS_1001, SeverityEnum.E_ERROR)
-        elif self._launcher.urls_source_type not in {
-            UrlSourceTypeEnum.E_MANUAL_LIST,
-            UrlSourceTypeEnum.E_FOLDER_RACS,
-            UrlSourceTypeEnum.E_FOLDER_JSONS,
-            UrlSourceTypeEnum.E_DISCOVER_ENTRIES,
-        }:
-            rs.append(ErrorCodeSUS.SUS_1002, SeverityEnum.E_ERROR)
-        elif not self._export_folder or not self._export_folder.strip():
-            rs.append(ErrorCodeSUS.SUS_1003, SeverityEnum.E_ERROR)
-        elif not path_has_valid_syntax(self._export_folder):
-            rs.append(ErrorCodeSUS.SUS_1004, SeverityEnum.E_ERROR)
-        elif self._export_folder.strip() in {".", "./"}:
-            rs.append(ErrorCodeSUS.SUS_1008, SeverityEnum.E_ERROR)
-        elif self._export_folder.strip().startswith("/"):
-            rs.append(ErrorCodeSUS.SUS_1009, SeverityEnum.E_ERROR)
-        elif not self.get_provider_urls().loads_urls():
-            rs.append(ErrorCodeSUS.SUS_1005, SeverityEnum.E_ERROR)
-        elif not self.get_provider_urls().preview_next_url():
-            rs.append(ErrorCodeSUS.SUS_1006, SeverityEnum.E_ERROR)
-        elif len(self.get_provider_urls().preview_next_url() or "") <= _C_MIN_URL_LENGTH:
-            rs.append(ErrorCodeSUS.SUS_1007, SeverityEnum.E_ERROR)
-
-        if not rs.has_errors_or_fatals():
-            count = self.get_provider_urls().count_urls()
-            if count == 0:
-                rs.append(ErrorCodeSUS.SUS_1010, SeverityEnum.E_ERROR)
-            elif count > 100:
-                rs.append(ErrorCodeSUS.SUS_1011, SeverityEnum.E_WARNING)
-
+        if self._validate_launcher_config(rs):
+            return rs
+        if self._validate_export_path(rs):
+            return rs
+        self._validate_url_provider(rs)
         return rs
 
 

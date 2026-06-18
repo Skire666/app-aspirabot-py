@@ -314,7 +314,9 @@ class ScrapingPresenter:
             return self._format_step_log_lines(step, context)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
             ts = get_time_now_hh_mm_ss()
-            return f"{ts} | {step.step_id} | Bilan step : {context.last_result_step.value} | {context.last_time_elapsed:.3f}s"
+            result_label = context.last_result_step.value
+            elapsed = context.last_time_elapsed
+            return f"{ts} | {step.step_id} | Bilan step : {result_label} | {elapsed:.3f}s"
         return ""
 
     @staticmethod

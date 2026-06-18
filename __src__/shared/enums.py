@@ -160,7 +160,8 @@ class UrlSourceTypeEnum(Enum):
     E_DISCOVER_ENTRIES = "DISCOVER_ENTRIES"
     E_UNKNOWN = "UNKNOWN"
 
-    def to_displayable_str(self):
+    def to_displayable_str(self) -> str:
+        """Return a human-readable French label for this URL source type."""
         if self is UrlSourceTypeEnum.E_MANUAL_LIST:
             return "Liste manuelle"
         if self is UrlSourceTypeEnum.E_FOLDER_RACS:
@@ -169,6 +170,7 @@ class UrlSourceTypeEnum(Enum):
             return "Dossier JSON"
         if self is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
             return "Découverte auto."
+        return "Type inconnu"
 
 
 class UrlSortOrderEnum(Enum):

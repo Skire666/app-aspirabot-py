@@ -34,12 +34,15 @@ class ValidationIssue:
 
 @dataclass
 class ValidationResult:
+    """Accumulates validation issues with severity-keyed counters for efficient querying."""
+
     issues: list[ValidationIssue] = field(default_factory=list[ValidationIssue])
     count_warnings: int = 0
     count_errors: int = 0
     count_fatals: int = 0
 
     def append(self, code: ErrorCode, severity: SeverityEnum, context: dict[str, Any] | None = None) -> None:
+        """Append a new ValidationIssue and increment the matching severity counter."""
         self.issues.append(ValidationIssue(code=code, severity=severity, context=context or {}))
         if severity == SeverityEnum.E_WARNING:
             self.count_warnings += 1
@@ -67,35 +70,37 @@ class ValidationResult:
         """Return True if there are any validation warnings, False otherwise."""
         return self.count_warnings > 0
 
+    def _collect_issues_up_to(
+        self, severity: SeverityEnum, label: str, nbr_max: int, concat: str, nbr_pushed: int
+    ) -> tuple[str, int]:
+        """Append formatted issues of one severity to concat, stopping at nbr_max total."""
+        for issue in self.issues:
+            if nbr_pushed >= nbr_max:
+                break
+            if issue.severity == severity:
+                concat += f"{label}: {issue.message}\n"
+                nbr_pushed += 1
+        return concat, nbr_pushed
+
     def compute_displayable_issues(self, nbr_max: int = 2) -> str:
         """Compute a displayable string of validation issues."""
         if not self.issues:
             return "--"
-        nbr_issues_pushed = 0
-        concatenate = ""
-
+        concat = ""
+        nbr_pushed = 0
         if self.count_fatals > 0:
-            for issue in self.issues:
-                if issue.severity == SeverityEnum.E_FATAL:
-                    concatenate += f"Critique: {issue.message}\n"
-                    nbr_issues_pushed += 1
-                    if nbr_issues_pushed >= nbr_max:
-                        break
-        if self.count_errors > 0 and nbr_issues_pushed < nbr_max:
-            for issue in self.issues:
-                if issue.severity == SeverityEnum.E_ERROR:
-                    concatenate += f"Erreur: {issue.message}\n"
-                    nbr_issues_pushed += 1
-                    if nbr_issues_pushed >= nbr_max:
-                        break
-        if self.count_warnings > 0 and nbr_issues_pushed < nbr_max:
-            for issue in self.issues:
-                if issue.severity == SeverityEnum.E_WARNING:
-                    concatenate += f"Avertissement: {issue.message}\n"
-                    nbr_issues_pushed += 1
-                    if nbr_issues_pushed >= nbr_max:
-                        break
-        return concatenate.strip()
+            concat, nbr_pushed = self._collect_issues_up_to(
+                SeverityEnum.E_FATAL, "Critique", nbr_max, concat, nbr_pushed
+            )
+        if self.count_errors > 0 and nbr_pushed < nbr_max:
+            concat, nbr_pushed = self._collect_issues_up_to(
+                SeverityEnum.E_ERROR, "Erreur", nbr_max, concat, nbr_pushed
+            )
+        if self.count_warnings > 0 and nbr_pushed < nbr_max:
+            concat, nbr_pushed = self._collect_issues_up_to(
+                SeverityEnum.E_WARNING, "Avertissement", nbr_max, concat, nbr_pushed
+            )
+        return concat.strip()
 
     def clear(self) -> None:
         """Clear all validation issues and reset counts."""

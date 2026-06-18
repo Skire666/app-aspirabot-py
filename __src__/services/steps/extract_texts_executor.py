@@ -16,11 +16,18 @@ from models.steps.extract_texts_params import ExtractTextsParams
 from playwright.sync_api import ElementHandle
 from services.steps._helpers import extract_from_element
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.exception_util import SelectorNoElementFoundError
 from shared.step_registry import register_step_executor
 
 
 class ExtractTextsExecutor(IStepExecutor):
     """Executor for the extract text scraping step."""
+
+    @staticmethod
+    def _require_elements(elements: list[ElementHandle], selector: str) -> None:
+        """Raise SelectorNoElementFoundError when the selector matches nothing."""
+        if not elements:
+            raise SelectorNoElementFoundError(selector)
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -47,8 +54,7 @@ class ExtractTextsExecutor(IStepExecutor):
         try:
             page = browser.get_workflow_page()
             elements: list[ElementHandle] = page.query_selector_all(p.selector)
-            if not elements:
-                raise ValueError(f"Aucun élément pour le sélecteur '{p.selector}'")
+            self._require_elements(elements, p.selector)
             selected: list[ElementHandle] = (
                 [elements[0]]
                 if p.target == ExtractTargetEnum.E_FIRST
