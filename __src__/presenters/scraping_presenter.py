@@ -19,15 +19,17 @@ from typing import cast
 from models.launcher_model import LaunchModel
 from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
-from models.scraping_statistics_model import ScrapingStatisticsModel
+from models.scraping_statistics_model import ScrapingStatisticsModel, StatisticsStepModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps import ExtractTextsParams
+from models.steps.extract_links_params import ExtractLinksParams
 from models.steps.scroll_down_params import ScrollDownParams
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM, get_time_now_hh_mm_ss
-from shared.enums import EventScrapingEnum, StepTypeEnum
+from shared.enums import EventScrapingEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
@@ -44,6 +46,8 @@ from shared.i18n_fra import (
     C_SCRAPING_STATUS_STARTING,
 )
 from view_models.scraping_view_model import ScrapingViewModel
+
+from __src__.models.steps.wait_html_elements_params import WaitHtmlElementsParams
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -314,9 +318,16 @@ class ScrapingPresenter:
             return self._format_step_log_lines(step, context)
         if event == EventScrapingEnum.E_STEP_DONE and step and context:
             ts = get_time_now_hh_mm_ss()
-            result_label = context.last_result_step.value
             elapsed = context.last_time_elapsed
-            return f"{ts} | {step.step_id} | Bilan step : {result_label} | {elapsed:.3f}s"
+            msg_error: str = ""
+            if context.last_result_is_error():
+                if context.next_error_is_handled:
+                    msg_error = f"{StepExecutionResultEnum.E_WARNING.value} (l'échec est géré)"
+                else:
+                    msg_error = f"{StepExecutionResultEnum.E_ERROR.value} (non géré)"
+                return f"{ts} | {step.step_id} | Bilan step : {msg_error} | {elapsed:.3f}s"
+            result_label = context.last_result_step.value
+            return f"{ts} | {step.step_id} | Bilan step : {result_label}{msg_error} | {elapsed:.3f}s"
         return ""
 
     @staticmethod
@@ -338,20 +349,32 @@ class ScrapingPresenter:
         assert context is not None
         sid, stype = step.step_id, step.step_type
 
-        if stype == StepTypeEnum.E_SECTION_STEPS:
+        if step.step_type is StepTypeEnum.E_SECTION_STEPS:
             title = getattr(step.params, "title", "")
             return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Titre : {title}"
-        if stype == StepTypeEnum.E_YOUTUBE_DDL:
+        if step.step_type is StepTypeEnum.E_YOUTUBE_DDL:
             return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Utilisé : {context.last_url_opened}"
-        if stype == StepTypeEnum.E_OPEN_URL:
+        if step.step_type is StepTypeEnum.E_OPEN_URL:
             next_url = context.url_source.preview_next_url() if context.url_source else None
             return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Prochaine : {next_url!s}"
-        if stype == StepTypeEnum.E_SCROLL_DOWN:
+        if step.step_type is StepTypeEnum.E_SCROLL_DOWN:
             ts = get_time_now_hh_mm_ss()
             scroll_params = cast(ScrollDownParams, step.params)
             return (
                 f"{ts} | {sid} | <{stype.value}> | Dist. : {scroll_params.pixels} | Boucle : {scroll_params.nbr_loops}"
             )
+        if step.step_type is StepTypeEnum.E_EXTRACT_TEXTS:
+            extract_txt_params = cast(ExtractTextsParams, step.params)
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Comment : {extract_txt_params.comment}"
+        if step.step_type is StepTypeEnum.E_EXTRACT_LINKS:
+            extract_links_params = cast(ExtractLinksParams, step.params)
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Comment : {extract_links_params.comment}"
+        if step.step_type is StepTypeEnum.E_WAIT_HTML_ELEMENTS:
+            wait_html_params = cast(WaitHtmlElementsParams, step.params)
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Comment : {wait_html_params.comment}"
+        if step.step_type is StepTypeEnum.E_WAIT_HTML_IMAGES:
+            wait_html_params = cast(WaitHtmlElementsParams, step.params)
+            return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}> | Comment : {wait_html_params.comment}"
         return f"{get_time_now_hh_mm_ss()} | {sid} | <{stype.value}>"
 
     def _append_journal(self, line: str) -> None:
@@ -394,23 +417,37 @@ class ScrapingPresenter:
         Args:
             rp: The completed statistics model.
         """
-        ts = get_time_now_hh_mm_ss()
+        ts: str = get_time_now_hh_mm_ss()
         self._append_journal(f"{ts} | === Résumé final ===")
-        self._append_journal(
-            f"{ts} | Étapes : total={rp.steps_executed} | OK={rp.steps_success} | KO={rp.steps_failed}"
-        )
-        self._append_journal(
-            f"{ts} | OpenURL : total={rp.open_urls_executed} | OK={rp.open_urls_success} | KO={rp.open_urls_failed}"
-        )
-        self._append_journal(
-            f"{ts} | Clics : total={rp.clicks_executed} | OK={rp.clicks_success} | KO={rp.clicks_failed}"
-        )
+        self._append_journal(self._compute_final_stats_by_type(ts, "Steps", rp.stats_steps))
+        self._append_journal(self._compute_final_stats_by_type(ts, "Open_URL", rp.open_urls_steps))
+        self._append_journal(self._compute_final_stats_by_type(ts, "Clics_*", rp.clicks_steps))
+        self._append_journal(self._compute_final_stats_by_type(ts, "Extract_Links", rp.extract_links_steps))
+        self._append_journal(self._compute_final_stats_by_type(ts, "Extract_Texts", rp.extract_texts_steps))
         self._append_journal(f"{ts} | Annulé par l'utilisateur : {'oui' if rp.cancelled else 'non'}")
 
         duration_in_min = (
             (rp.finished_at - rp.started_at).total_seconds() / 60 if rp.started_at and rp.finished_at else 0
         )
         self._append_journal(f"{ts} | Durée totale : {duration_in_min:.1f} min")
+
+    @staticmethod
+    def _compute_final_stats_by_type(timestamp: str, type_str: str, rp: StatisticsStepModel) -> str:
+        """Compute summary statistics for a specific type.
+
+        Args:
+            timestamp: The current timestamp for the journal line.
+            type_str: The type label (e.g., "Étapes", "Clics").
+            rp: The StatisticsStepModel for the specific type.
+
+        Returns:
+            A formatted string with the summary statistics.
+        """
+        return (
+            f"{timestamp} | {type_str} : "
+            f"Total = {rp.executed} | Succès = {rp.success}"
+            f"| Erreur gérée = {rp.error_but_managed} | Erreur non gérée = {rp.error_not_handled}"
+        )
 
     def _export_journal(self) -> None:
         """Delegate journal persistence to ScrapingService and push the path to the view."""
@@ -428,10 +465,10 @@ class ScrapingPresenter:
     def _schedule_poll(self) -> None:
         """Schedule the next statistics poll cycle."""
         if self._is_running:
-            self._poll_stats()
+            self._poll_stats_on_gui()
             self._vm.after(_POLL_INTERVAL_MS, self._schedule_poll)
 
-    def _poll_stats(self) -> None:
+    def _poll_stats_on_gui(self) -> None:
         """Read the current scraping context and push formatted stats to the ViewModel."""
         ctx: ScrapingContextModel = self._service_scraping.current_context
         stats: ScrapingStatisticsModel = self._service_scraping.current_stats
@@ -441,19 +478,33 @@ class ScrapingPresenter:
         parts = [f"Démarré : {ts}", f"Seuil global : {self._current_global_threshold}"]
         if tid:
             parts.append(f"Seuil étape [{tid}] : {self._current_step_threshold}")
-        self._vm.stat_last_url_opended_var.set(f"{ctx.last_url_opened or '—'}")
+        self._vm.last_url_opended_var.set(f"{ctx.last_url_opened or '—'}")
         num_tabs, page0_url = ctx.browser_stats
         self._vm.stat_browser_tabs_var.set(f"{num_tabs} onglet(s) | {page0_url}")
-        self._vm.stat_global_var.set(
-            f"Total exec : {stats.steps_executed}  |  OK : {stats.steps_success}  |  KO : {stats.steps_failed}"
+
+        # stats steps
+        self._vm.stats_all_steps_var.set(
+            f"Total = {stats.stats_steps.executed} | Succès = {stats.stats_steps.success}"
+            f" | Erreur gérée = {stats.stats_steps.error_but_managed} | Erreur non gérée = {stats.stats_steps.error_not_handled}"
         )
-        self._vm.stat_open_url_var.set(
-            f"Open URL : {stats.open_urls_executed}"
-            f"  |  OK : {stats.open_urls_success}  |  KO : {stats.open_urls_failed}"
+        self._vm.stats_open_url_var.set(
+            f"Total = {stats.open_urls_steps.executed} | Succès = {stats.open_urls_steps.success}"
+            f" | Erreur gérée = {stats.open_urls_steps.error_but_managed} | Erreur non gérée = {stats.open_urls_steps.error_not_handled}"
         )
-        self._vm.stat_click_var.set(
-            f"Clicks : {stats.clicks_executed}  |  OK : {stats.clicks_success}  |  KO : {stats.clicks_failed}"
+        self._vm.stats_clicks_var.set(
+            f"Total = {stats.clicks_steps.executed} | Succès = {stats.clicks_steps.success}"
+            f" | Erreur gérée = {stats.clicks_steps.error_but_managed} | Erreur non gérée = {stats.clicks_steps.error_not_handled}"
         )
+        self._vm.stats_extract_links_var.set(
+            f"Total = {stats.extract_links_steps.executed} | Succès = {stats.extract_links_steps.success}"
+            f" | Erreur gérée = {stats.extract_links_steps.error_but_managed} | Erreur non gérée = {stats.extract_links_steps.error_not_handled}"
+        )
+        self._vm.stats_extract_texts_var.set(
+            f"Total = {stats.extract_texts_steps.executed} | Succès = {stats.extract_texts_steps.success}"
+            f" | Erreur gérée = {stats.extract_texts_steps.error_but_managed} | Erreur non gérée = {stats.extract_texts_steps.error_not_handled}"
+        )
+
+        # started at
         self._vm.stat_started_var.set("  |  ".join(parts))
 
 

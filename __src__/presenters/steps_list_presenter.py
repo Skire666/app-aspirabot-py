@@ -220,8 +220,10 @@ class StepsListPresenter:
 
         if candidate_errors:
             if self._gestion_view:
+                self._notify_validation_feedback(candidate_errors[0] if candidate_errors else None)
                 self._gestion_view.show_inline_form_errors(candidate_errors)
             return False
+        self._notify_validation_feedback(candidate_errors[0] if candidate_errors else None)
 
         self._steps[self._edit_index] = step
         step.mark_as_modified()
@@ -313,7 +315,11 @@ class StepsListPresenter:
         # Pre-register before the DragDropList fires on_reorder.
         self._steps.insert(idx + 1, new_step)
         context_ids = {s.step_id: i for i, s in enumerate(self._steps)}
-        return self._to_view_item(new_step, idx + 1, context_ids)
+
+        obj_view = self._to_view_item(new_step, idx + 1, context_ids)
+        errors = self.validate_steps()
+        self._notify_validation_feedback(errors[0] if errors else None)
+        return obj_view
 
     def _on_toggle_active_step(self, index: int) -> None:
         """Toggles the is_active state of a step.

@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from models.steps.jump_to_step_params import JumpToStepParams
+from shared.constants import C_STATE_JUMP_TO_STEP_FAILURE
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
@@ -109,23 +111,17 @@ class StepScrapingModel:
         """Update the step's modified date to the current time."""
         self.modified_date = datetime.now()
 
-    def is_jump_to_step(self) -> bool:
+    def is_jump_to_step_and_handle_error(self) -> bool:
         """Check if this step is a JUMP_TO_STEP type.
 
         Returns:
             True if the step_type is StepTypeEnum.E_JUMP_TO_STEP, else False.
         """
-        return self.step_type == StepTypeEnum.E_JUMP_TO_STEP
-
-    def if_jump_get_target_string(self) -> str | None:
-        """If this step is a JUMP_TO_STEP, return the target step ID string.
-
-        Returns:
-            The target step ID if this is a JUMP_TO_STEP, else None.
-        """
-        if self.is_jump_to_step():
-            return getattr(self.params, "target_hexastring", None)
-        return None
+        return bool(
+            self.step_type == StepTypeEnum.E_JUMP_TO_STEP
+            and isinstance(self.params, JumpToStepParams)
+            and self.params.condition == C_STATE_JUMP_TO_STEP_FAILURE
+        )
 
 
 # EOF

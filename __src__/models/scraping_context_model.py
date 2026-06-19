@@ -70,6 +70,7 @@ class ScrapingContextModel:
     url_source: IUrlSourceProvider | None = field(default=None)
 
     # Output signals written by executors and read back by the orchestrator.
+    next_error_is_handled: bool = field(default=False)
     last_result_step: StepExecutionResultEnum = field(default=StepExecutionResultEnum.E_UNSET)
     last_url_opened: str = field(default="")  # peut être en erreur, pas grave
     last_time_elapsed: float = field(default=0.0)
@@ -171,6 +172,10 @@ class ScrapingContextModel:
         Clear extracted data after export to prevent duplicate exports
         """
         self.extracted_data = ExtractedData()
+
+    def last_result_is_error(self) -> bool:
+        """Check if the last result indicates an error."""
+        return self.last_result_step in {StepExecutionResultEnum.E_ERROR, StepExecutionResultEnum.E_FATAL}
 
 
 # EOF

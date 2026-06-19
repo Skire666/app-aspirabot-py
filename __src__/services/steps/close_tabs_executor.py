@@ -38,7 +38,7 @@ class CloseTabsExecutor(IStepExecutor):
             filter_used = self._resolve_url_filter(p, context)
             current_page = browser.get_workflow_page()
             counter_closed = self._close_non_matching_tabs(browser, filter_used)
-            msg = f"Fermé x{counter_closed} onglet(s) ne correspondant pas au filtre URL '{filter_used!r}'"
+            msg = f"Fermé x{counter_closed} onglet(s) ne correspondant pas au filtre URL {filter_used!r}"
             event_bus.log_step(context, msg)
             if current_page not in browser.get_all_pages():
                 raise CurrentPageClosedUnexpectedlyError()  # noqa: TRY301

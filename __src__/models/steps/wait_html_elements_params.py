@@ -104,6 +104,16 @@ class WaitHtmlElementsParams(BaseModel):
             )
         return v
 
+    @field_validator("comment")
+    @classmethod
+    def check_comment(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that comment is non-empty."""
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(ERROR_TEMPLATES["field_comment_required"].format(step=step_label(info.context)))
+        return v
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""
         return self.model_dump(mode="json")

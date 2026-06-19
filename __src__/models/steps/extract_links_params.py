@@ -40,6 +40,16 @@ class ExtractLinksParams(BaseModel):
             raise ValueError(ERROR_TEMPLATES["extract_links_selector_required"].format(step=step_label(info.context)))
         return v
 
+    @field_validator("comment")
+    @classmethod
+    def check_comment(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that comment is non-empty."""
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(ERROR_TEMPLATES["field_comment_required"].format(step=step_label(info.context)))
+        return v
+
     @field_validator("target")
     @classmethod
     def check_target(cls, v: str, info: ValidationInfo) -> str:

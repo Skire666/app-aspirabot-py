@@ -9,26 +9,21 @@ from collections.abc import Callable
 from tkinter import ttk
 
 from PIL.ImageTk import PhotoImage
-from shared.constants import (
-    C_COLOR_BLACK_FONT,
-    C_COLOR_BLUE_HIGHLIGHT_DARK,
-    C_COLOR_GRAY_BACKGROUND,
-)
-from shared.i18n_fra import (
-    C_LISTING_MODULES,
-    TitleModuleEnum,
-)
-from shared.resources_icons_util import (
-    get_resource_icon_32px,
-    get_resource_icon_32px_disabled,
-)
+from shared.constants import C_COLOR_BLACK_FONT, C_COLOR_BLUE_HIGHLIGHT_DARK, C_COLOR_GRAY_BACKGROUND
+from shared.i18n_fra import C_LISTING_MODULES, TitleModuleEnum
+from shared.resources_icons_util import get_resource_icon_32px, get_resource_icon_32px_disabled
 
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
 
 # Main view sidebar width in pixels
-C_VIEW_SIDEBAR_LEFT_WIDTH = 75
+C_VIEW_SIDEBAR_LEFT_WIDTH = 70
+
+# Canvas geometry: height, icon vertical center, text vertical center
+_C_CANVAS_HEIGHT = 70
+_C_CANVAS_ICON_OFFSET_TO_TOP = 26
+_C_CANVAS_TEXT_OFFSET_TO_TOP = 54
 
 # Canvas-button color constants per state
 C_COLOR_SIDEBAR_ACTIVE_BG = C_COLOR_BLUE_HIGHLIGHT_DARK
@@ -39,10 +34,6 @@ C_COLOR_SIDEBAR_HOVER_BG = "#d0d0d0"
 C_COLOR_SIDEBAR_HOVER_FG = C_COLOR_BLACK_FONT
 C_COLOR_SIDEBAR_DISABLED_FG = "#8e8e8e"
 
-# Canvas geometry: height, icon vertical center, text vertical center
-_C_CANVAS_HEIGHT = 70
-_C_CANVAS_ICON_CY = 26
-_C_CANVAS_TEXT_CY = 52
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -57,11 +48,7 @@ class SideBarView(ttk.Frame):
     Notifies the caller via on_select when a non-disabled button is clicked.
     """
 
-    def __init__(
-        self,
-        parent: tk.Widget,
-        on_select: Callable[[TitleModuleEnum], None],
-    ) -> None:
+    def __init__(self, parent: tk.Widget, on_select: Callable[[TitleModuleEnum], None]) -> None:
         """Initializes the sidebar and builds all canvas navigation buttons.
 
         Args:
@@ -84,13 +71,7 @@ class SideBarView(ttk.Frame):
             self._button_states[module] = tk.NORMAL
             self._create_canvas_button(module, display, icon_b, icon_w)
 
-    def _create_canvas_button(
-        self,
-        module: TitleModuleEnum,
-        display: str,
-        icon_b: str,
-        icon_w: str,
-    ) -> None:
+    def _create_canvas_button(self, module: TitleModuleEnum, display: str, icon_b: str, icon_w: str) -> None:
         """Builds one canvas button and registers it for a module.
 
         Keeps hard references to both icon variants to prevent Tkinter's
@@ -112,11 +93,7 @@ class SideBarView(ttk.Frame):
     @staticmethod
     def _load_button_images(icon_b: str, icon_w: str) -> tuple[PhotoImage, PhotoImage, PhotoImage]:
         """Load the three icon variants (normal, active, disabled) for a button."""
-        return (
-            get_resource_icon_32px(icon_b),
-            get_resource_icon_32px(icon_w),
-            get_resource_icon_32px_disabled(icon_b),
-        )
+        return (get_resource_icon_32px(icon_b), get_resource_icon_32px(icon_w), get_resource_icon_32px_disabled(icon_b))
 
     def _make_sidebar_canvas(self) -> tk.Canvas:
         """Create and pack a blank canvas sized for a sidebar button."""
@@ -137,13 +114,22 @@ class SideBarView(ttk.Frame):
         # Three tagged items allow itemconfig() to repaint without deleting
         cx = C_VIEW_SIDEBAR_LEFT_WIDTH // 2
         canvas.create_rectangle(
-            0, 0, C_VIEW_SIDEBAR_LEFT_WIDTH, _C_CANVAS_HEIGHT,
-            fill=C_COLOR_SIDEBAR_NORMAL_BG, outline="", tags="bg_rect",
+            0,
+            0,
+            C_VIEW_SIDEBAR_LEFT_WIDTH,
+            _C_CANVAS_HEIGHT,
+            fill=C_COLOR_SIDEBAR_NORMAL_BG,
+            outline="",
+            tags="bg_rect",
         )
-        canvas.create_image(cx, _C_CANVAS_ICON_CY, image=img_black, tags="icon")  # type: ignore[reportUnknownMemberType]
+        canvas.create_image(cx, _C_CANVAS_ICON_OFFSET_TO_TOP, image=img_black, tags="icon")  # type: ignore[reportUnknownMemberType]
         canvas.create_text(
-            cx, _C_CANVAS_TEXT_CY, text=display,
-            fill=C_COLOR_SIDEBAR_NORMAL_FG, font=("Segoe UI", 9), tags="label",
+            cx,
+            _C_CANVAS_TEXT_OFFSET_TO_TOP,
+            text=display,
+            fill=C_COLOR_SIDEBAR_NORMAL_FG,
+            font=("Segoe UI", 9),
+            tags="label",
         )
 
     def _bind_canvas_events(self, canvas: tk.Canvas, module: TitleModuleEnum) -> None:

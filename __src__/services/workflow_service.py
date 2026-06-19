@@ -43,9 +43,15 @@ class WorkflowService:
         try:
             steps_context: StepsCollections = StepsCollections.from_list(steps)
             if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) != 1:
-                return ["Une SEULE étape de type 'E_OPEN_URL' est requise."]
+                return ["Une étape de type 'E_OPEN_URL' est requise (1 seule)."]
             if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) != 1:
-                return ["Une SEULE étape de type 'E_KILL_BROWSER' est requise."]
+                return ["Une étape de type 'E_KILL_BROWSER' est requise (1 seule)."]
+            if not steps_context.end_is_kill_browser():
+                return ["La dernière étape doit être de type 'E_KILL_BROWSER'."]
+            if steps_context.has_consecutive_jump_to_step():
+                return ["Il y a 2 étapes 'E_JUMP_TO_STEP' consécutives."]
+            if steps_context.had_dupplicate_step_id():
+                return ["Il y a des étapes avec des identifiants dupliqués."]
             if not step.params:
                 return [f"Step {step.step_id} has no params to validate"]
             if step.params.validate_with_context is None:

@@ -91,14 +91,16 @@ C_PROFILES_FILES_REGEXP = f"*{C_PROFILE_FILE_SUFFIX}"
 
 # -----------------------------------------------------------------------------
 
-# Special string used to indicate an error occurred during JavaScript evaluation in the browser context.
-C_STR_ERROR_JS_EVALUATION: str = "<[__ERROR__]>"
+# Special string used to indicate an error
+C_STR_ERROR_JS_EVALUATION: str = "<#JS/EVA>"
+C_STR_ERROR_EXTRACT_TEXTS: str = "<#EX/TXT>"
+C_STR_ERROR_EXTRACT_LINKS: str = "<#EX/LNK>"
 
 # Maximum size for images to be scraped (in pixels) - used as default value for image size filters
 C_MAXIMUM_SIZE_IMAGE: int = 99999
 
 # Maximum number of tabs that can be opened in the browser during scraping (used as a safety limit)
-C_MAXIMUM_NBR_TABS_BROWSER: int = 999
+C_MAXIMUM_NBR_TABS_BROWSER: int = 99
 
 # Maximum number of tabs that can be opened in the browser during scraping (used as a safety limit)
 C_MAXIMUM_QTY_COUNTER: int = 99999
@@ -121,8 +123,7 @@ C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 200
 
 # ------------------------------------------------------------------------------
 
-C_DEFAULT_PROFILE_NAME_TEMPLATE: str = "auto_discovers_new"
-
+C_STATE_JUMP_TO_STEP_FAILURE: str = "failure"
 
 # -----------------------------------------------------------------------------
 

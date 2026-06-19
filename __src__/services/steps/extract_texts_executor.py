@@ -15,19 +15,13 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_texts_params import ExtractTextsParams
 from playwright.sync_api import ElementHandle
 from services.steps._helpers import extract_from_element
+from shared.constants import C_STR_ERROR_EXTRACT_TEXTS
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
-from shared.exception_util import SelectorNoElementFoundError
 from shared.step_registry import register_step_executor
 
 
 class ExtractTextsExecutor(IStepExecutor):
     """Executor for the extract text scraping step."""
-
-    @staticmethod
-    def _require_elements(elements: list[ElementHandle], selector: str) -> None:
-        """Raise SelectorNoElementFoundError when the selector matches nothing."""
-        if not elements:
-            raise SelectorNoElementFoundError(selector)
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -54,7 +48,13 @@ class ExtractTextsExecutor(IStepExecutor):
         try:
             page = browser.get_workflow_page()
             elements: list[ElementHandle] = page.query_selector_all(p.selector)
-            self._require_elements(elements, p.selector)
+            texts: list[str] = []
+            if not elements:
+                event_bus.log_step(context, f"Excp : Aucun élément trouvé pour le sélecteur '{p.selector}'")
+                context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
+                return StepExecutionResultEnum.E_ERROR
+
+            # okay ?
             selected: list[ElementHandle] = (
                 [elements[0]]
                 if p.target == ExtractTargetEnum.E_FIRST
@@ -62,10 +62,12 @@ class ExtractTextsExecutor(IStepExecutor):
                 if p.target == ExtractTargetEnum.E_LAST
                 else elements  # all
             )
-            texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
+            texts = [extract_from_element(el, p.extract_mode) for el in selected]
             context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
-            debug_one_item = texts[0] if texts and texts[0] else "<no text>"
-            event_bus.log_step(context, f"x{len(texts)} texte(s) | str[:35] ='{debug_one_item[:35]}'")
+
+            # infos
+            preview_one_item = texts[0] if texts and texts[0] else C_STR_ERROR_EXTRACT_TEXTS
+            event_bus.log_step(context, f"x{len(texts)} texte(s) | str[:25] ='{preview_one_item[:25]}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

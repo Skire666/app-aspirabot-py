@@ -391,11 +391,11 @@ class UrlConfigView(ttk.Frame):
         ):
             self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
         MyLabel(frame, text="Fichiers de sorties :").pack_left()
-        MyEntry(frame, textvariable=self._vm.disc_out_pattern_json_var, width=25).pack_left()
+        MyEntry(frame, textvariable=self._vm.disc_out_pattern_json_var, width=24).pack_left()
         MyLabel(frame, text="Clé (Niv. 1) :").pack_left()
-        MyEntry(frame, textvariable=self._vm.disc_out_key_mapping_var, width=15).pack_left()
+        MyEntry(frame, textvariable=self._vm.disc_out_key_mapping_var, width=12).pack_left()
         MyLabel(frame, text="URLs (regexp) :").pack_left()
-        MyEntry(frame, textvariable=self._vm.disc_out_pattern_urls_var, width=15).pack_left()
+        MyEntry(frame, textvariable=self._vm.disc_out_pattern_urls_var, width=22).pack_left()
 
     # ------------------------------------------------------------------
     # ViewModel bindings

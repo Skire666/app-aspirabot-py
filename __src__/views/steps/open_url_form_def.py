@@ -22,7 +22,7 @@ from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MO
 # -----------------------------------------------------------------------------
 
 C_DEFAULT_WAIT_UNTIL = WaitUntilEnum.E_IDLE.value
-C_DEFAULT_TIMEOUT_DURATION = 10
+C_DEFAULT_TIMEOUT_DURATION = 12
 C_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
 C_KEY_WAIT_UNTIL = "wait_until"

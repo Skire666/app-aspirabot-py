@@ -19,7 +19,8 @@ class ErrorCodeSUS(ErrorCode):
     SUS_1008 = "Le dossier d'export ne peux pas être '.' ou './'"
     SUS_1009 = "Le dossier d'export ne peux pas commencer par '/'"
     SUS_1010 = "Aucune URL à consommer pour ce type de source"
-    SUS_1011 = "Plus de 100 URLs disponibles (la durée du scraping risque d'être longue)"
+    SUS_1011 = "Plus de 100 URLs disponibles (le scraping risque d'être long)"
+    SUS_1012 = "Plus de 1000 URLs disponibles (le scraping risque d'être long)"
 
     # ???
     SUS_9999 = "Erreur inconnue."

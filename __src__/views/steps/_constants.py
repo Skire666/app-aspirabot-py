@@ -9,7 +9,7 @@ across the 15 form-def files.
 # Imports
 # -----------------------------------------------------------------------------
 
-from shared.constants import C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_ALLOWED_FOR_VIEW
+from shared.constants import C_STATE_JUMP_TO_STEP_FAILURE, C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_ALLOWED_FOR_VIEW
 from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum
 
 # -----------------------------------------------------------------------------
@@ -42,7 +42,7 @@ CLICK_MODES: list[str] = ["Normal", "Forced", "JS Direct"]
 # -----------------------------------------------------------------------------
 
 CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]  # GARDER 'Toujours' à la fin
-CONDITION_VALUES: list[str] = ["success", "failure", "always"]
+CONDITION_VALUES: list[str] = ["success", C_STATE_JUMP_TO_STEP_FAILURE, "always"]
 CONDITION_VIEW_TO_MODEL: dict[str, str] = dict(zip(CONDITION_DISPLAY, CONDITION_VALUES, strict=True))
 CONDITION_MODEL_TO_VIEW: dict[str, str] = dict(zip(CONDITION_VALUES, CONDITION_DISPLAY, strict=True))
 

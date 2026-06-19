@@ -10,13 +10,14 @@ from typing import TYPE_CHECKING, Any, cast
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator, model_validator
+from shared.constants import C_STATE_JUMP_TO_STEP_FAILURE
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
 _ALLOWED_OPERATORS = frozenset({"equal", "not_equal", "greater_than", "less_than", "greater_or_equal", "less_or_equal"})
-_ALLOWED_SUCCESS_IF = frozenset({"success", "failure"})
+_ALLOWED_SUCCESS_IF = frozenset({"success", C_STATE_JUMP_TO_STEP_FAILURE})
 
 
 class CountHtmlImagesParams(BaseModel):

@@ -1274,11 +1274,11 @@ def _on_load(self) -> None:
 ```python
 ERROR_TEMPLATES: dict[str, str] = {
     "invalid_operator": (
-        "Étape {step} : l'opérateur doit être l'un de : "
+        "[{step}.] : l'opérateur doit être l'un de : "
         "equal, not_equal, greater_than, less_than, "
         "greater_or_equal, less_or_equal."
     ),
-    "empty_field": "Étape {step} : le champ '{field}' ne peut pas être vide.",
+    "empty_field": "[{step}.] : le champ '{field}' ne peut pas être vide.",
 }
 ```
 ### Presenter — formats and writes to a VM Var

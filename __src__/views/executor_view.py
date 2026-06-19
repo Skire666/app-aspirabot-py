@@ -137,7 +137,7 @@ class ExecutorView(ttk.Frame):
         container.pack(fill=tk.X)
         self._basic_settings_grid = container
         self._create_folder(container)
-        self._create_treshold_error(container)
+        self._create_threshold_error(container)
         self._create_cfg_row_warmup(container)
 
     def _create_url_settings_section(self, parent: tk.Widget) -> None:
@@ -165,7 +165,7 @@ class ExecutorView(ttk.Frame):
         )
         MyEntry(row, textvariable=self._vm.export_folder_var).pack_left(fill=tk.X, expand=True)
 
-    def _create_treshold_error(self, parent: tk.Widget) -> None:
+    def _create_threshold_error(self, parent: tk.Widget) -> None:
         """Row 5 — global error threshold."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X, pady=6)

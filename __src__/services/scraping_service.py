@@ -288,7 +288,10 @@ class ScrapingService:
             self._context.pause_event.wait()
             if self._context.cancel_event.is_set():
                 break
+
+            self._context.next_error_is_handled = i + 1 < len(steps) and steps[i + 1].is_jump_to_step_and_handle_error()
             i = self._run_one_step(steps[i], i)  # le i+1 est fait dedans (ou JUMP_TO_STEP)
+
             if i >= len(steps):
                 self._context.end_process = True
             # manual or automatic end-of-process
@@ -317,6 +320,7 @@ class ScrapingService:
         Args:
             step: The step model to execute.
             index: Zero-based position of this step in the workflow.
+            next_error_handled: Whether the next step is expected to handle errors.
 
         Returns:
             The index of the next step to execute.
@@ -331,7 +335,7 @@ class ScrapingService:
             self._context.browser_stats = self._browser_service.get_stats()
 
         is_okay = self._context.last_step_was_success()
-        self._statistics.update_result_step(step.step_type, is_okay)
+        self._statistics.update_result_step(step.step_type, is_okay, self._context.next_error_is_handled)
 
         # Track per-step failures for the step-level emergency stop.
         if not is_okay and step.step_id == self._emergency_stop_step_id:
@@ -372,7 +376,7 @@ class ScrapingService:
         if next_step.step_type in {StepTypeEnum.E_JUMP_TO_STEP, StepTypeEnum.E_KILL_BROWSER}:
             return
 
-        global_hit: bool = self._statistics.steps_failed >= self._emergency_stop_threshold
+        global_hit: bool = self._statistics.stats_steps.error_not_handled >= self._emergency_stop_threshold
         step_hit: bool = (
             self._emergency_stop_step_threshold >= 1
             and self._emergency_stop_step_failed >= self._emergency_stop_step_threshold

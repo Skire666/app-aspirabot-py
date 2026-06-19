@@ -15,7 +15,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_ALLOWED_FOR_MODEL, C_UNITS_TIME_ALLOWED_FOR_VIEW
+from shared.constants import (
+    C_MAXIMUM_SIZE_IMAGE,
+    C_STATE_JUMP_TO_STEP_FAILURE,
+    C_UNITS_TIME_ALLOWED_FOR_MODEL,
+    C_UNITS_TIME_ALLOWED_FOR_VIEW,
+)
 from shared.enums import FilterClosedEnum, StepTypeEnum
 
 # -----------------------------------------------------------------------------
@@ -143,7 +148,7 @@ def _fmt_download_image(params: dict[str, Any], _idx: int, _ctx: dict[str, int])
 def _fmt_export_data_to_js(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXPORT_DATA_TO_JS."""
     prefix = params.get("prefix_file") or "<vide>"
-    return f"Exporter les données\nPréfixe : {prefix}"
+    return f"Exporter vers fichier JSON\nPréfixe : {prefix}*.json"
 
 
 def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -151,7 +156,7 @@ def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) 
     selector = params.get("selector") or "<vide>"
     target = params.get("target", "")
     mapping = params.get("mapping", "")
-    return f"Extraire liens de la page  -  Clé : {mapping}\nCible : {target}  |  Sél. : {selector}"
+    return f"Extraire liens  -  Clé : {mapping}\nCible : {target}  |  Sél. : {selector}"
 
 
 def _fmt_extract_texts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -160,10 +165,7 @@ def _fmt_extract_texts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) 
     extract_mode = params.get("extract_mode", "")
     target = params.get("target", "")
     mapping = params.get("mapping", "")
-    return (
-        f"Extraire textes de la page  -  Clé : {mapping}\n"
-        f"Mode : {extract_mode}  |  Cible : {target}  |  Sél. : {selector}"
-    )
+    return f"Extraire textes  -  Clé : {mapping}  -  Cible : {target}\nMode : {extract_mode}  |  Sél. : {selector}"
 
 
 def _fmt_jump_to_step(params: dict[str, Any], _idx: int, ctx: dict[str, int]) -> str:
@@ -178,7 +180,7 @@ def _fmt_jump_to_step(params: dict[str, Any], _idx: int, ctx: dict[str, int]) ->
     cond = params.get("condition", "")
     if cond == "success":
         return f"Sauter vers l'étape - si était un succès\nSe rendre à {target_index}.  #{target_hexastring}"
-    if cond == "failure":
+    if cond == C_STATE_JUMP_TO_STEP_FAILURE:
         return f"Sauter vers l'étape - si était un échec\nSe rendre à {target_index}.  #{target_hexastring}"
     return f"Sauter vers l'étape - [TOUJOURS]\nAller à {target_index}.  #{target_hexastring}"
 
@@ -226,7 +228,7 @@ def _fmt_scroll_down(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) ->
 def _fmt_section(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for SECTION_STEPS."""
     title = params.get("title", "")
-    return f"----- Section : {title} -----"
+    return f"- - - - {title} - - - -"
 
 
 def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -238,7 +240,8 @@ def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, 
 def _fmt_export_variable(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXTRACT_VARIABLE."""
     variable = params.get("variable", "")
-    return f"Extraire variable système  -  Clé : {variable}\n(calculé dynamiquement)"
+    mapping = params.get("mapping", "")
+    return f"Lire variable système  -  Clé : {mapping}\n{variable} -> calculé dynamiquement"
 
 
 def _fmt_wait_fixed_time(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -283,7 +286,11 @@ def _fmt_wait_page_state(params: dict[str, Any], _idx: int, _ctx: dict[str, int]
 
 def _fmt_wait_user_action(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for WAIT_USER_ACTION."""
-    cond_labels: dict[str, str] = {"success": "Si succès", "failure": "Si échec", "always": "Toujours"}
+    cond_labels: dict[str, str] = {
+        "success": "Si succès",
+        C_STATE_JUMP_TO_STEP_FAILURE: "Si échec",
+        "always": "Toujours",
+    }
     condition = cond_labels.get(params.get("condition", ""), "Toujours")
     wd = params.get("wait_duration", 3)
     unit_time = params.get("wait_unit", "")

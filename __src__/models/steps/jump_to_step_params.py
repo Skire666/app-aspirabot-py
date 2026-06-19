@@ -10,12 +10,13 @@ from typing import TYPE_CHECKING, Any, cast
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator, model_validator
+from shared.constants import C_STATE_JUMP_TO_STEP_FAILURE
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
-_ALLOWED_CONDITIONS = frozenset({"success", "failure", "always"})
+_ALLOWED_CONDITIONS = frozenset({"success", C_STATE_JUMP_TO_STEP_FAILURE, "always"})
 
 
 class JumpToStepParams(BaseModel):
@@ -69,6 +70,16 @@ class JumpToStepParams(BaseModel):
         if steps_context.find_by_id(str(target)) is None:
             raise ValueError(ERROR_TEMPLATES["jump_to_step_target_not_found"].format(step=step, value=target))
         return d
+
+    @field_validator("comment")
+    @classmethod
+    def check_comment(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that comment is non-empty."""
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(ERROR_TEMPLATES["field_comment_required"].format(step=step_label(info.context)))
+        return v
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict (enum fields serialized as their string values)."""

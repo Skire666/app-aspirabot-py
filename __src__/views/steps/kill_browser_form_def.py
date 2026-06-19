@@ -91,6 +91,12 @@ class KillBrowserFormDef(IStepFormDef):
         ttk.Entry(row2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_COMMENT] = comm_var
 
+        row3 = ttk.Frame(frame)
+        row3.pack(fill="x", pady=(0, 8))
+        ttk.Label(row3, text="NOTE : Si 2 onglets ouverts ou plus, le navigateur restera ouvert (car anormal).").pack(
+            side=tk.LEFT, padx=(0, 5)
+        )
+
     @override
     def load_params_step_to_widget(self, params_dict: dict[str, Any], widgets: dict[str, Any]) -> None:
         """Pre-fill form widgets from a serialised params snapshot.

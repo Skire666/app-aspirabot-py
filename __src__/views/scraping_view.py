@@ -82,7 +82,7 @@ class ScrapingView(ttk.Frame):
         frame = HorizontalLineFrame(parent, text="Informations sur le lancement", first_line=True)
         frame.pack(fill=tk.X)
         grid = ttk.Frame(frame)
-        grid.pack(fill=tk.X, padx=5, pady=(0, 5))
+        grid.pack(fill=tk.X, padx=5)
 
         ttk.Label(grid, text="Scénario :").grid(row=0, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
         ttk.Label(grid, textvariable=self._vm.scenario_name_var).grid(row=0, column=1, sticky=tk.W, pady=(0, 5))
@@ -93,9 +93,9 @@ class ScrapingView(ttk.Frame):
         ttk.Label(grid, text="Dossier d'export :").grid(row=2, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
         ttk.Label(grid, textvariable=self._vm.folder_var).grid(row=2, column=1, sticky=tk.W, pady=(0, 5))
 
-        FolderLinkWidget(
-            grid, title="Dossier :", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder()
-        ).grid(row=2, column=2, padx=(10, 0), pady=(0, 5))
+        FolderLinkWidget(grid, title="", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder()).grid(
+            row=2, column=2, padx=(20, 0), pady=(0, 5)
+        )
 
     def _create_stats_section(self, parent: tk.Widget) -> None:
         """Section 2 — real-time scraping statistics, bound to ViewModel Vars."""
@@ -106,11 +106,14 @@ class ScrapingView(ttk.Frame):
 
         rows = [
             ("Processus :", self._vm.process_status_var),
-            ("Dernière URL ouverte :", self._vm.stat_last_url_opended_var),
+            ("Dernière URL ouverte :", self._vm.last_url_opended_var),
             ("Onglets / URL Page[0] :", self._vm.stat_browser_tabs_var),
-            ("Statistiques globales :", self._vm.stat_global_var),
-            ("Statistiques OpenURL :", self._vm.stat_open_url_var),
-            ("Statistiques ClickOn :", self._vm.stat_click_var),
+            # steps stats
+            ("Statistiques globales :", self._vm.stats_all_steps_var),
+            ("Statistiques OpenURL :", self._vm.stats_open_url_var),
+            ("Statistiques Click* :", self._vm.stats_clicks_var),
+            ("Statistiques Extract Links :", self._vm.stats_extract_links_var),
+            ("Statistiques Extract Texts :", self._vm.stats_extract_texts_var),
             ("Démarrage :", self._vm.stat_started_var),
         ]
         for i, (label, var) in enumerate(rows):

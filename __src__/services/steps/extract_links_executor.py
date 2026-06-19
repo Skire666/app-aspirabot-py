@@ -15,19 +15,13 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_links_params import ExtractLinksParams
 from playwright.sync_api import ElementHandle
+from shared.constants import C_STR_ERROR_EXTRACT_LINKS
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
-from shared.exception_util import SelectorNoElementFoundError
 from shared.step_registry import register_step_executor
 
 
 class ExtractLinksExecutor(IStepExecutor):
     """Executor for the extract links scraping step."""
-
-    @staticmethod
-    def _require_elements(elements: list[ElementHandle], selector: str) -> None:
-        """Raise SelectorNoElementFoundError when the selector matches nothing."""
-        if not elements:
-            raise SelectorNoElementFoundError(selector)
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -54,7 +48,13 @@ class ExtractLinksExecutor(IStepExecutor):
         try:
             page = browser.get_workflow_page()
             elements: list[ElementHandle] = page.query_selector_all(p.selector)
-            self._require_elements(elements, p.selector)
+            links: list[str] = []
+            if not elements:
+                event_bus.log_step(context, f"Excp : Aucun élément trouvé pour le sélecteur '{p.selector}'")
+                context.push_extracted_values(p.mapping, p.selector, p.comment, links)
+                return StepExecutionResultEnum.E_ERROR
+
+            # okay ?
             selected: list[ElementHandle] = (
                 [elements[0]]
                 if p.target == ExtractTargetEnum.E_FIRST
@@ -64,10 +64,12 @@ class ExtractLinksExecutor(IStepExecutor):
             )
             parsed = urlparse(page.url)
             base_url = f"{parsed.scheme}://{parsed.netloc}"
-            links: list[str] = self._get_all_links_from_elements(selected, base_url, p.cutted_ampersand)
+            links = self._get_all_links_from_elements(selected, base_url, p.cutted_ampersand)
             context.push_extracted_values(p.mapping, p.selector, p.comment, links)
-            debug_one_item = links[0] if links and links[0] else "<no link>"
-            event_bus.log_step(context, f"x{len(links)} lien(s) | str[:35] ='{debug_one_item[:35]}'")
+
+            # infos
+            preview_one_item = links[0] if links and links[0] else C_STR_ERROR_EXTRACT_LINKS
+            event_bus.log_step(context, f"x{len(links)} lien(s) | str[:25] ='{preview_one_item[:25]}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

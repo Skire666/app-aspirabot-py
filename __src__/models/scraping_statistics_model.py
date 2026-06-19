@@ -15,6 +15,33 @@ from shared.enums import StepTypeEnum
 
 
 @dataclass
+class StatisticsStepModel:
+    """Represents the statistics for a single step in the scraping workflow."""
+
+    executed: int
+    success: int
+    error_not_handled: int
+    error_but_managed: int
+
+    def clear(self) -> None:
+        """Reset all counters to zero."""
+        self.executed = 0
+        self.success = 0
+        self.error_not_handled = 0
+        self.error_but_managed = 0
+
+    def add_stats(self, is_success: bool, next_error_handled: bool) -> None:
+        """Update statistics counters based on the step success status."""
+        self.executed += 1
+        if is_success:
+            self.success += 1
+        elif next_error_handled:
+            self.error_but_managed += 1
+        else:
+            self.error_not_handled += 1
+
+
+@dataclass
 class ScrapingStatisticsModel:
     """Captures the execution summary of a completed scraping workflow.
 
@@ -35,15 +62,11 @@ class ScrapingStatisticsModel:
 
     started_at: datetime | None
     finished_at: datetime | None
-    steps_executed: int
-    steps_success: int
-    steps_failed: int
-    clicks_executed: int
-    clicks_success: int
-    clicks_failed: int
-    open_urls_executed: int
-    open_urls_success: int
-    open_urls_failed: int
+    stats_steps: StatisticsStepModel
+    clicks_steps: StatisticsStepModel
+    open_urls_steps: StatisticsStepModel
+    extract_links_steps: StatisticsStepModel
+    extract_texts_steps: StatisticsStepModel
     cancelled: bool
 
     def __init__(self) -> None:
@@ -54,15 +77,11 @@ class ScrapingStatisticsModel:
         """Reset all statistics to zero and timestamps to None."""
         self.started_at = None
         self.finished_at = None
-        self.steps_executed = 0
-        self.steps_success = 0
-        self.steps_failed = 0
-        self.clicks_executed = 0
-        self.clicks_success = 0
-        self.clicks_failed = 0
-        self.open_urls_executed = 0
-        self.open_urls_success = 0
-        self.open_urls_failed = 0
+        self.stats_steps = StatisticsStepModel(0, 0, 0, 0)
+        self.clicks_steps = StatisticsStepModel(0, 0, 0, 0)
+        self.open_urls_steps = StatisticsStepModel(0, 0, 0, 0)
+        self.extract_links_steps = StatisticsStepModel(0, 0, 0, 0)
+        self.extract_texts_steps = StatisticsStepModel(0, 0, 0, 0)
         self.cancelled = False
 
     def start_timer(self) -> None:
@@ -73,27 +92,21 @@ class ScrapingStatisticsModel:
         """Set the workflow end timestamp to the current time."""
         self.finished_at = datetime.now()
 
-    def update_result_step(self, step_type: StepTypeEnum, is_success: bool) -> None:
+    def update_result_step(self, step_type: StepTypeEnum, is_success: bool, next_error_handled: bool) -> None:
         """Update statistics counters based on the step type and success status."""
-        self.steps_executed += 1
-        if is_success:
-            self.steps_success += 1
-        else:
-            self.steps_failed += 1
+        self.stats_steps.add_stats(is_success, next_error_handled)
 
         if step_type in {StepTypeEnum.E_CLICK_FOR_DOWNLOAD, StepTypeEnum.E_CLICK_ON_ELEMENT}:
-            self.clicks_executed += 1
-            if is_success:
-                self.clicks_success += 1
-            else:
-                self.clicks_failed += 1
+            self.clicks_steps.add_stats(is_success, next_error_handled)
 
         if step_type in {StepTypeEnum.E_OPEN_URL}:
-            self.open_urls_executed += 1
-            if is_success:
-                self.open_urls_success += 1
-            else:
-                self.open_urls_failed += 1
+            self.open_urls_steps.add_stats(is_success, next_error_handled)
+
+        if step_type in {StepTypeEnum.E_EXTRACT_LINKS}:
+            self.extract_links_steps.add_stats(is_success, next_error_handled)
+
+        if step_type in {StepTypeEnum.E_EXTRACT_TEXTS}:
+            self.extract_texts_steps.add_stats(is_success, next_error_handled)
 
 
 # EOF

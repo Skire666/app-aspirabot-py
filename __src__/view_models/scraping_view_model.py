@@ -74,11 +74,14 @@ class ScrapingViewModel(ViewModelBase):
             master: Tkinter parent used to scope all Var lifetimes.
         """
         # Statistics Vars — Presenter formats and writes on every poll cycle.
-        self.stat_last_url_opended_var = tk.StringVar(master=master, value="—")
+        self.last_url_opended_var = tk.StringVar(master=master, value="—")
         self.stat_browser_tabs_var = tk.StringVar(master=master, value="—")
-        self.stat_global_var = tk.StringVar(master=master, value="—")
-        self.stat_open_url_var = tk.StringVar(master=master, value="—")
-        self.stat_click_var = tk.StringVar(master=master, value="—")
+        # steps stats
+        self.stats_all_steps_var = tk.StringVar(master=master, value="—")
+        self.stats_open_url_var = tk.StringVar(master=master, value="—")
+        self.stats_clicks_var = tk.StringVar(master=master, value="—")
+        self.stats_extract_links_var = tk.StringVar(master=master, value="—")
+        self.stats_extract_texts_var = tk.StringVar(master=master, value="—")
         self.stat_started_var = tk.StringVar(master=master, value="—")
         # Journal Vars — incremental append / full clear signals.
         self.journal_append_var = tk.StringVar(master=master, value="")
@@ -119,11 +122,7 @@ class ScrapingViewModel(ViewModelBase):
             return "tag_success"
         if StepExecutionResultEnum.E_SKIPPED.value in line or StepExecutionResultEnum.E_WARNING.value in line:
             return "tag_warning"
-        if (
-            "Excp" in line
-            or StepExecutionResultEnum.E_ERROR.value in line
-            or StepExecutionResultEnum.E_FATAL.value in line
-        ):
+        if StepExecutionResultEnum.E_ERROR.value in line or StepExecutionResultEnum.E_FATAL.value in line:
             return "tag_error"
         return ""
 

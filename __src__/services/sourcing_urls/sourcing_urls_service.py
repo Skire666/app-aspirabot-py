@@ -17,7 +17,8 @@ from shared.path_util import path_has_valid_syntax
 from shared.validation_result import ValidationResult
 
 _C_MIN_URL_LENGTH = 3  # URLs shorter than this are treated as empty/invalid.
-_C_MAX_URL_WARNING_COUNT = 100  # Warn when the URL queue exceeds this threshold.
+_C_MAX_URL_WARNING_COUNT_100 = 100  # Warn when the URL queue exceeds this threshold.
+_C_MAX_URL_WARNING_COUNT_1000 = 1000  # Warn when the URL queue exceeds this threshold.
 
 
 class SourcingUrlsService:
@@ -205,8 +206,13 @@ class SourcingUrlsService:
         count = provider.count_urls()
         if count == 0:
             rs.append(ErrorCodeSUS.SUS_1010, SeverityEnum.E_ERROR)
-        elif count > _C_MAX_URL_WARNING_COUNT:
-            rs.append(ErrorCodeSUS.SUS_1011, SeverityEnum.E_WARNING)
+
+        if not rs.has_errors_or_fatals():  # noqa: SIM102
+            if count > _C_MAX_URL_WARNING_COUNT_100:
+                if count > _C_MAX_URL_WARNING_COUNT_1000:
+                    rs.append(ErrorCodeSUS.SUS_1012, SeverityEnum.E_WARNING)
+                else:  # 100
+                    rs.append(ErrorCodeSUS.SUS_1011, SeverityEnum.E_WARNING)
 
     def validate(self) -> ValidationResult:
         """Validate the current context and return any validation issues.

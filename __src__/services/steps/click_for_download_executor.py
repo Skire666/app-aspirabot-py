@@ -71,7 +71,7 @@ class ClickForDownloadExecutor(IStepExecutor):
             if dl is None:
                 raise DownloadNotDetectedError()  # noqa: TRY301
             self._save_download(dl, context)
-            event_bus.log_step(context, f"Clique OK avec sélecteur '{p.selector!r}' pour téléchargement")
+            event_bus.log_step(context, f"Clique OK avec sélecteur '{p.selector}' pour téléchargement")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

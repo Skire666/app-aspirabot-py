@@ -30,6 +30,7 @@ from views.steps._constants import (
 C_INPUT_DEFAULT_CSS_SELECTOR = "Cf. FAQ ou 'copy selector' dans chrome/debug"
 C_INPUT_DEFAULT_RETRY_UNIT = C_UNITS_TIME_ALLOWED_FOR_VIEW[-1]  # ms
 C_INPUT_DEFAULT_RETRY_DELAY = 400
+C_INPUT_DEFAULT_RETRY_MAX = 12
 
 C_KEY_SELECTOR = "selector"
 C_KEY_OPERATOR = "operator"
@@ -130,7 +131,7 @@ class WaitHtmlElementsFormDef(IStepFormDef):
         ).pack(side=tk.LEFT, padx=(0, 5))
 
         ttk.Label(line2, text="avec").pack(side=tk.LEFT, padx=(0, 5))
-        max_var = tk.StringVar(value="10")
+        max_var = tk.StringVar(value=str(C_INPUT_DEFAULT_RETRY_MAX))
         ttk.Spinbox(line2, from_=0, to=C_MAXIMUM_QTY_COUNTER, textvariable=max_var, width=6).pack(
             side=tk.LEFT, padx=(0, 5)
         )

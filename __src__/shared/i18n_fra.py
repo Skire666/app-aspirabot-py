@@ -179,96 +179,98 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
 # -----------------------------------------------------------------------------
 
 ERROR_TEMPLATES: dict[str, str] = {
+    # shared
+    "field_comment_required": "[{step}.] : commentaire requis (important pour log).",
     # --- check_url_page ---
-    "check_url_page_nothing_to_check": "Étape {step} : Choix vides. Cocher au minimum 1 case.",
+    "check_url_page_nothing_to_check": "[{step}.] : Choix vides. Cocher au minimum 1 case.",
     # --- Shared image dimension validation (download_image, count_html_images, wait_html_images) ---
-    "image_dim_not_int": "Étape {step} : {key} doit être un nombre entier.",
-    "image_dim_negative": "Étape {step} : {key} doit être >= 0.",
-    "image_dim_max_below_one": "Étape {step} : {key} doit être >= 1.",
-    "image_dim_range_invalid": "Étape {step} : {min_key} doit être <= {max_key}.",
+    "image_dim_not_int": "[{step}.] : {key} doit être un nombre entier.",
+    "image_dim_negative": "[{step}.] : {key} doit être >= 0.",
+    "image_dim_max_below_one": "[{step}.] : {key} doit être >= 1.",
+    "image_dim_range_invalid": "[{step}.] : {min_key} doit être <= {max_key}.",
     # --- click_element ---
-    "click_element_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
-    "click_element_index_invalid": "Étape {step} : l'index du bouton à cliquer est invalide.",
+    "click_element_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
+    "click_element_index_invalid": "[{step}.] : l'index du bouton à cliquer est invalide.",
     # --- close_tabs ---
-    "close_tabs_filter_required": "Étape {step} : le filtre URL est obligatoire.",
-    "close_tabs_max_tabs_invalid": "Étape {step} : le nombre max. d'onglets doit être >= 1.",
+    "close_tabs_filter_required": "[{step}.] : le filtre URL est obligatoire.",
+    "close_tabs_max_tabs_invalid": "[{step}.] : le nombre max. d'onglets doit être >= 1.",
     # --- count_html_elements ---
-    "count_html_elements_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
-    "count_html_elements_value_negative": "Étape {step} : value doit être >= 0.",
-    "count_html_elements_success_if_invalid": "Étape {step} : success_if invalide — {value!r}.",
-    "count_html_elements_operator_invalid": "Étape {step} : operator invalide — {value!r}.",
+    "count_html_elements_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
+    "count_html_elements_value_negative": "[{step}.] : value doit être >= 0.",
+    "count_html_elements_success_if_invalid": "[{step}.] : success_if invalide — {value!r}.",
+    "count_html_elements_operator_invalid": "[{step}.] : operator invalide — {value!r}.",
     # --- count_html_images ---
-    "count_html_images_value_negative": "Étape {step} : value doit être >= 0.",
-    "count_html_images_success_if_invalid": "Étape {step} : success_if invalide — {value!r}.",
-    "count_html_images_operator_invalid": "Étape {step} : operator invalide — {value!r}.",
+    "count_html_images_value_negative": "[{step}.] : value doit être >= 0.",
+    "count_html_images_success_if_invalid": "[{step}.] : success_if invalide — {value!r}.",
+    "count_html_images_operator_invalid": "[{step}.] : operator invalide — {value!r}.",
     # --- end_process ---
-    "end_process_wait_duration_invalid": "Étape {step} : la durée d'attente doit être >= 0.",
-    "end_process_wait_unit_invalid": "Étape {step} : unité de temps invalide — {value!r}.",
+    "end_process_wait_duration_invalid": "[{step}.] : la durée d'attente doit être >= 0.",
+    "end_process_wait_unit_invalid": "[{step}.] : unité de temps invalide — {value!r}.",
     # --- export data to js ---
-    "export_data_to_js_prefix_file_required": "Étape {step} : Préfixe du fichier obligatoire.",
-    # --- all etracts with mapping ---
-    "extract_key_mapping_already_used": "Étape {step} : clé de mapping déjà utilisé.",
+    "export_data_to_js_prefix_file_required": "[{step}.] : Préfixe du fichier obligatoire.",
+    # --- all extracts with mapping ---
+    "extract_key_mapping_already_used": "[{step}.] : clé de mapping déjà utilisé.",
     # --- extract_links ---
-    "extract_links_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
-    "extract_links_target_invalid": "Étape {step} : cible '{value}' invalide.",
-    "extract_links_mapping_required": "Étape {step} : clé de mapping est obligatoire.",
+    "extract_links_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
+    "extract_links_target_invalid": "[{step}.] : cible '{value}' invalide.",
+    "extract_links_mapping_required": "[{step}.] : clé de mapping est obligatoire.",
     # --- extract_texts ---
-    "extract_texts_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
-    "extract_texts_mode_invalid": "Étape {step} : mode d'extraction '{value}' invalide.",
-    "extract_texts_target_invalid": "Étape {step} : cible '{value}' invalide.",
-    "extract_texts_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
+    "extract_texts_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
+    "extract_texts_mode_invalid": "[{step}.] : mode d'extraction '{value}' invalide.",
+    "extract_texts_target_invalid": "[{step}.] : cible '{value}' invalide.",
+    "extract_texts_mapping_required": "[{step}.] : la clé de mapping est obligatoire.",
     # --- jump_to_step ---
-    "jump_to_step_condition_invalid": "Étape {step} : condition invalide — {value}.",
-    "jump_to_step_target_missing": "Étape {step} : aucune étape référencée.",
-    "jump_to_step_self_reference": "Étape {step} : ne peut pas pointer vers elle-même.",
-    "jump_to_step_target_not_found": "Étape {step} : la cible [{value}] est introuvable.",
+    "jump_to_step_condition_invalid": "[{step}.] : condition invalide — {value}.",
+    "jump_to_step_target_missing": "[{step}.] : aucune étape référencée.",
+    "jump_to_step_self_reference": "[{step}.] : ne peut pas pointer vers elle-même.",
+    "jump_to_step_target_not_found": "[{step}.] : la cible [{value}] est introuvable.",
     # --- open_url ---
-    "open_url_url_required": "Étape {step} : l'URL est obligatoire.",
-    "open_url_wait_dns_solver_invalid": "Étape {step} : Délai DNS doit être 1 <= x <= 30 sec.",
-    "open_url_timeout_invalid": "Étape {step} : le timeout doit être >= 1.",
-    "open_url_timeout_unit_invalid": "Étape {step} : l'unité de timeout est invalide.",
+    "open_url_url_required": "[{step}.] : l'URL est obligatoire.",
+    "open_url_wait_dns_solver_invalid": "[{step}.] : Délai DNS doit être 1 <= x <= 30 sec.",
+    "open_url_timeout_invalid": "[{step}.] : le timeout doit être >= 1.",
+    "open_url_timeout_unit_invalid": "[{step}.] : l'unité de timeout est invalide.",
     # --- refresh_page ---
-    "refresh_page_timeout_invalid": "Étape {step} : le timeout doit être >= 1.",
-    "refresh_page_timeout_unit_invalid": "Étape {step} : l'unité de timeout invalide — {value!r}.",
+    "refresh_page_timeout_invalid": "[{step}.] : le timeout doit être >= 1.",
+    "refresh_page_timeout_unit_invalid": "[{step}.] : l'unité de timeout invalide — {value!r}.",
     # --- scroll_down ---
-    "scroll_down_pixels_invalid": "Étape {step} : le nombre de pixels doit être >= 1.",
-    "scroll_down_nbr_loops_invalid": "Étape {step} : le nombre de boucles doit être entre 1 et 99.",
-    "scroll_down_delay_pause_invalid": "Étape {step} : la pause doit être entre 1 et 99.",
+    "scroll_down_pixels_invalid": "[{step}.] : le nombre de pixels doit être >= 1.",
+    "scroll_down_nbr_loops_invalid": "[{step}.] : le nombre de boucles doit être entre 1 et 99.",
+    "scroll_down_delay_pause_invalid": "[{step}.] : la pause doit être entre 1 et 99.",
     # --- section ---
-    "section_title_required": "Étape {step} : le titre de la section est obligatoire.",
+    "section_title_required": "[{step}.] : le titre de la section est obligatoire.",
     # --- youtube_transcripts ---
-    "youtube_transcripts_title_required": "Étape {step} : Le titre est obligatoire.",
+    "youtube_transcripts_title_required": "[{step}.] : Le titre est obligatoire.",
     # --- export_variable ---
-    "export_variable_invalid": "Étape {step} : variable invalide — {value!r}.",
-    "export_variable_mapping_required": "Étape {step} : la clé de mapping est obligatoire.",
+    "export_variable_invalid": "[{step}.] : variable invalide — {value!r}.",
+    "export_variable_mapping_required": "[{step}.] : la clé de mapping est obligatoire.",
     # --- wait_html_elements ---
-    "wait_html_elements_selector_required": "Étape {step} : le sélecteur CSS est obligatoire.",
+    "wait_html_elements_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
     "wait_html_elements_operator_invalid": (
-        "Étape {step} : l'opérateur doit être l'un des suivants : "
+        "[{step}.] : l'opérateur doit être l'un des suivants : "
         "equal, not_equal, greater_than, less_than, greater_or_equal, less_or_equal."
     ),
-    "wait_html_elements_quantity_negative": "Étape {step} : la quantité doit être >= 0.",
-    "wait_html_elements_retry_delay_invalid": "Étape {step} : le délai de retry doit être >= 1.",
-    "wait_html_elements_retry_unit_invalid": "Étape {step} : l'unité de retry est invalide.",
-    "wait_html_elements_retry_max_invalid": "Étape {step} : le nombre maximum de retry doit être >= 1.",
+    "wait_html_elements_quantity_negative": "[{step}.] : la quantité doit être >= 0.",
+    "wait_html_elements_retry_delay_invalid": "[{step}.] : le délai de retry doit être >= 1.",
+    "wait_html_elements_retry_unit_invalid": "[{step}.] : l'unité de retry est invalide.",
+    "wait_html_elements_retry_max_invalid": "[{step}.] : le nombre maximum de retry doit être >= 1.",
     # --- wait_html_images ---
     "wait_html_images_operator_invalid": (
-        "Étape {step} : l'opérateur doit être l'un des suivants : "
+        "[{step}.] : l'opérateur doit être l'un des suivants : "
         "equal, not_equal, greater_than, less_than, greater_or_equal, less_or_equal."
     ),
-    "wait_html_images_quantity_negative": "Étape {step} : la quantité doit être >= 0.",
-    "wait_html_images_retry_delay_invalid": "Étape {step} : le délai de retry doit être >= 1.",
-    "wait_html_images_retry_unit_invalid": "Étape {step} : l'unité de retry est invalide.",
-    "wait_html_images_retry_max_invalid": "Étape {step} : le nombre maximum de retry doit être >= 1.",
+    "wait_html_images_quantity_negative": "[{step}.] : la quantité doit être >= 0.",
+    "wait_html_images_retry_delay_invalid": "[{step}.] : le délai de retry doit être >= 1.",
+    "wait_html_images_retry_unit_invalid": "[{step}.] : l'unité de retry est invalide.",
+    "wait_html_images_retry_max_invalid": "[{step}.] : le nombre maximum de retry doit être >= 1.",
     # --- wait_page_state ---
-    "wait_page_state_timeout_invalid": "Étape {step} : le timeout doit être >= 1.",
-    "wait_page_state_timeout_unit_invalid": "Étape {step} : l'unité de timeout est invalide.",
+    "wait_page_state_timeout_invalid": "[{step}.] : le timeout doit être >= 1.",
+    "wait_page_state_timeout_unit_invalid": "[{step}.] : l'unité de timeout est invalide.",
     # --- wait_user_action ---
-    "wait_user_action_condition_invalid": "Étape {step} : condition invalide — {value!r}.",
-    "wait_user_action_wait_duration_invalid": "Étape {step} : le délai post-reprise doit être >= 1.",
-    "wait_user_action_wait_unit_invalid": "Étape {step} : l'unité de temps est invalide — {value!r}.",
+    "wait_user_action_condition_invalid": "[{step}.] : condition invalide — {value!r}.",
+    "wait_user_action_wait_duration_invalid": "[{step}.] : le délai post-reprise doit être >= 1.",
+    "wait_user_action_wait_unit_invalid": "[{step}.] : l'unité de temps est invalide — {value!r}.",
     # --- wait_fixed_time ---
-    "wait_fixed_time_duration_invalid": "Étape {step} : la durée d'attente doit être >= 0.",
+    "wait_fixed_time_duration_invalid": "[{step}.] : la durée d'attente doit être >= 0.",
 }
 
 # EOF

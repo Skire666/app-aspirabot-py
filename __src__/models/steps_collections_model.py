@@ -95,5 +95,32 @@ class StepsCollections:
                 found += 1
         return found  # Return the actual count, not a boolean
 
+    def end_is_kill_browser(self) -> bool:
+        """Check if the last step in the context is a KILL_BROWSER step."""
+        if not self.steps:
+            return False
+        return self.steps[-1].step_type == StepTypeEnum.E_KILL_BROWSER
+
+    def has_consecutive_jump_to_step(self) -> bool:
+        """Check if there are any consecutive steps that jump to the same target step."""
+        for i in range(len(self.steps) - 1):
+            current_step = self.steps[i]
+            next_step = self.steps[i + 1]
+            if (
+                current_step.step_type is StepTypeEnum.E_JUMP_TO_STEP
+                and next_step.step_type is StepTypeEnum.E_JUMP_TO_STEP
+            ):
+                return True
+        return False
+
+    def had_dupplicate_step_id(self) -> bool:
+        """Check if there are any duplicate step IDs in the context."""
+        seen_ids: set[str] = set()
+        for step in self.steps:
+            if step.step_id in seen_ids:
+                return True
+            seen_ids.add(step.step_id)
+        return False
+
 
 # EOF

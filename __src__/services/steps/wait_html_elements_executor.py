@@ -48,7 +48,7 @@ class WaitHtmlElementsExecutor(IStepExecutor):
                 if i == p.retry_max - 1:  # i=5 -> max=6
                     raise CountHtmlElementsConditionNotMetError(count, p.operator, str(p.quantity))  # noqa: TRY301
                 time.sleep(nbr_delay_in_sec)
-            msg = f"Trouvé x{count} élément(s) pour le sélecteur '{p.selector!r}', condition vérifiée."
+            msg = f"Trouvé x{count} élément(s) pour le sélecteur '{p.selector}', condition vérifiée."
             event_bus.log_step(context, msg)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")

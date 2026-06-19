@@ -67,7 +67,7 @@ class WorkflowView(ttk.Frame):
         self.rowconfigure(0, weight=1)
 
         main_container = ttk.Frame(self)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=0)
+        main_container.pack(fill=tk.BOTH, expand=True)
 
         top_frame = ttk.Frame(main_container)
         top_frame.pack(side=tk.TOP, fill=tk.X)
@@ -94,14 +94,14 @@ class WorkflowView(ttk.Frame):
             parent: Container widget using a grid layout.
         """
         info_lf = HorizontalLineFrame(parent, text="Informations", first_line=True)
-        info_lf.grid(row=0, column=0, columnspan=2, sticky="nwes", padx=(5, 5))
+        info_lf.grid(row=0, column=0, columnspan=2, sticky="nwes")
 
         line1 = ttk.Frame(info_lf)
-        line1.pack(fill="x", padx=5, pady=(0, 8))
+        line1.pack(fill="x", pady=(0, 8))
         self._build_name_row(line1)
 
         line2 = ttk.Frame(info_lf)
-        line2.pack(fill="x", padx=5)
+        line2.pack(fill="x")
         self._build_url_row(line2)
 
     def _build_name_row(self, parent: tk.Widget) -> None:
@@ -156,7 +156,7 @@ class WorkflowView(ttk.Frame):
             parent: Container widget to pack the panel into.
         """
         self._gestion_container = HorizontalLineFrame(parent, text="Gestion des étapes", height=_HEIGHT_FRAME_GESTION)
-        self._gestion_container.pack(side=tk.TOP, fill=tk.X, padx=5)
+        self._gestion_container.pack(side=tk.TOP, fill=tk.X)
         self._gestion_container.pack_propagate(False)
         self._create_gestion_widgets()
 
@@ -165,7 +165,7 @@ class WorkflowView(ttk.Frame):
         labels = list(C_STEP_TYPE_TO_LABELS.values())
 
         left_frame = ttk.Frame(self._gestion_container, width=175)
-        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 20), pady=0)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y)
         left_frame.pack_propagate(False)
         self._build_type_listbox(left_frame, labels)
 
@@ -317,7 +317,7 @@ class WorkflowView(ttk.Frame):
             parent: Container widget to pack the panel into.
         """
         workflow_lf = HorizontalLineFrame(parent, text="Liste des étapes")
-        workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5), padx=5)
+        workflow_lf.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 5))
 
         self._workflow_builder_view = StepsListCrudView(workflow_lf)
         self._workflow_builder_view.pack(fill=tk.BOTH, expand=True)
@@ -343,10 +343,10 @@ class WorkflowView(ttk.Frame):
             parent: The footer frame to pack widgets into.
         """
         self._btn_save = ttk.Button(parent, text="Sauvegarder le scénario", command=self._notify_save, state="disabled")
-        self._btn_save.pack(side=tk.RIGHT, padx=5)
+        self._btn_save.pack(side=tk.RIGHT, padx=5, pady=(0, 5))
 
         self._btn_cancel = ttk.Button(parent, text="Annuler", command=self._notify_cancel)
-        self._btn_cancel.pack(side=tk.RIGHT, padx=5)
+        self._btn_cancel.pack(side=tk.RIGHT, padx=5, pady=(0, 5))
 
     # ---------------------------------------------------------------
     # ViewModel bindings
