@@ -525,7 +525,10 @@ class ExecutorPresenter:
             return
         self._on_save_profile(True)
         if self.on_request_launch_scraping and self._current_scenario and self._current_profile:
-            self.on_request_launch_scraping(self._current_scenario, self._current_profile)
+            cb = self.on_request_launch_scraping
+            sc = self._current_scenario
+            pr = self._current_profile
+            self._vm.after(0, lambda: cb(sc, pr))
 
     def _validate_launch(self) -> ValidationResult:
         """Run all pre-launch checks: guard conditions then domain validation.

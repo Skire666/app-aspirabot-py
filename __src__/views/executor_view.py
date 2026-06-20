@@ -20,6 +20,7 @@ from view_models.executor_view_model import ExecutorViewModel, ProfileItem, Scen
 from views.components.column_combobox.column_combobox import ColumnCombobox
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
+from views.components.loading_button import LoadingButton
 from views.executor.url_config_view import UrlConfigView
 
 # -----------------------------------------------------------------------------
@@ -209,7 +210,7 @@ class ExecutorView(ttk.Frame):
         MyLabel(row, text="Vérification :").pack_left()
         MyLabel(row, textvariable=self._vm.verification_message_var, foreground="red").pack_left(fill=tk.X, expand=True)
 
-        self._btn_launch = MyButton(row, text="Lancer le scraping", command=lambda: self._vm.launch())
+        self._btn_launch = LoadingButton(row, text="Lancer le scraping", width=20, command=lambda: self._vm.launch())
         self._btn_launch.pack_right()
 
     # ------------------------------------------------------------------

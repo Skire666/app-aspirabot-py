@@ -70,7 +70,7 @@ class ValidationResult:
         """Return True if there are any validation warnings, False otherwise."""
         return self.count_warnings > 0
 
-    def _collect_issues_up_to(
+    def _collect_issues(
         self, severity: SeverityEnum, label: str, nbr_max: int, concat: str, nbr_pushed: int
     ) -> tuple[str, int]:
         """Append formatted issues of one severity to concat, stopping at nbr_max total."""
@@ -89,15 +89,11 @@ class ValidationResult:
         concat = ""
         nbr_pushed = 0
         if self.count_fatals > 0:
-            concat, nbr_pushed = self._collect_issues_up_to(
-                SeverityEnum.E_FATAL, "Critique", nbr_max, concat, nbr_pushed
-            )
+            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_FATAL, "FATAL", nbr_max, concat, nbr_pushed)
         if self.count_errors > 0 and nbr_pushed < nbr_max:
-            concat, nbr_pushed = self._collect_issues_up_to(SeverityEnum.E_ERROR, "Erreur", nbr_max, concat, nbr_pushed)
+            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_ERROR, "ERROR", nbr_max, concat, nbr_pushed)
         if self.count_warnings > 0 and nbr_pushed < nbr_max:
-            concat, nbr_pushed = self._collect_issues_up_to(
-                SeverityEnum.E_WARNING, "Avertissement", nbr_max, concat, nbr_pushed
-            )
+            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_WARNING, "WARNING", nbr_max, concat, nbr_pushed)
         return concat.strip()
 
     def clear(self) -> None:
