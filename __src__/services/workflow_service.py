@@ -56,7 +56,7 @@ class WorkflowService:
             A list of error messages; empty when the step is valid.
         """
         try:
-            steps_context: StepsCollections = StepsCollections.from_list(steps)
+            steps_context: StepsCollections = StepsCollections(steps)
             errors = WorkflowService._validate_workflow_structure(steps_context)
             if errors is not None:
                 return errors

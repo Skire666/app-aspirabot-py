@@ -15,6 +15,7 @@ from interfaces.i_steps_list_crud_view import IStepsListCrudView
 from interfaces.i_steps_list_gestion_view import IStepsListGestionView
 from models.scenario_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps_collections_model import StepsCollections
 from presenters.step_label_formatters import format_step_label
 from services.scenarios_service import ScenariosService
 from services.workflow_service import WorkflowService
@@ -66,7 +67,7 @@ class StepsListPresenter:
         self._workflow_service: WorkflowService = workflow_service
 
         self._scenario_id_file: str | None = None
-        self._steps: list[StepScrapingModel] = []
+        self._steps: StepsCollections = StepsCollections([])
         self._edit_index: int | None = None
         self._is_new_scenario: bool = False
 
@@ -98,7 +99,7 @@ class StepsListPresenter:
         self._scenario_id_file = id_scenario
         self._is_new_scenario = False
         self._scenario_content: ScenarioModel = self._service_scenario.read_scenario(id_scenario)
-        self._steps = list(self._scenario_content.steps)
+        self._steps.load(list(self._scenario_content.steps))
         self._refresh_view()
         self._view.set_validation_status("Vérification : --", False)
 
@@ -110,7 +111,7 @@ class StepsListPresenter:
         """
         self._scenario_id_file = id_scenario
         self._is_new_scenario = True
-        self._steps = []
+        self._steps.reset()
         self._refresh_view()
         self._view.set_validation_status("Vérification : --", False)
 
@@ -120,7 +121,7 @@ class StepsListPresenter:
         Returns:
             Snapshot of the in-memory steps.
         """
-        return list(self._steps)
+        return self._steps.as_list()
 
     def validate_steps(self) -> list[str]:
         """Validates the current workflow step list.
@@ -129,9 +130,10 @@ class StepsListPresenter:
             List of validation errors; empty when valid.
         """
         errors: list[str] = []
+        steps_list = self._steps.as_list()
         # Validate each step in its current order for cross-step consistency.
-        for index, step in enumerate(self._steps):
-            errors.extend(self._workflow_service.validate_step(index, step, self._steps))
+        for index, step in enumerate(steps_list):
+            errors.extend(self._workflow_service.validate_step(index, step, steps_list))
         return errors
 
     def clear_steps(self) -> None:
@@ -174,7 +176,7 @@ class StepsListPresenter:
             step_type=step_type, step_id=generate_rng_id_step(), is_active=True, params=build_params(step_type, params)
         )
         # Validate in context of the full list with the new step appended.
-        candidate_steps = list(self._steps)
+        candidate_steps = self._steps.as_list()
         candidate_steps.append(step)
         target_index = len(self._steps)
         candidate_errors = self._validate_solo_step(candidate_steps, target_index)
@@ -214,7 +216,7 @@ class StepsListPresenter:
             params=build_params(step_type, params),
         )
         # Validate in context of the full list with the updated step in place.
-        candidate_steps = list(self._steps)
+        candidate_steps = self._steps.as_list()
         candidate_steps[self._edit_index] = step
         candidate_errors = self._validate_solo_step(candidate_steps, self._edit_index)
 
@@ -241,10 +243,7 @@ class StepsListPresenter:
         Returns:
             The zero-based index of the first matching step, or None if not found.
         """
-        for index, step in enumerate(self._steps):
-            if step.step_id == step_id:
-                return index
-        return None
+        return self._steps.find_index_by_id(step_id)
 
     def _on_cancel_inline_step(self) -> None:
         """Clears the pending edit state after the view hides the panel."""
@@ -258,7 +257,7 @@ class StepsListPresenter:
             index: Zero-based index of the step to delete.
         """
         if 0 <= index < len(self._steps):
-            del self._steps[index]
+            self._steps.delete_at(index)
             self._refresh_view()
             errors = self.validate_steps()
             self._notify_validation_feedback(errors[0] if errors else None)
@@ -279,8 +278,7 @@ class StepsListPresenter:
         Args:
             step_ids: The new complete step ID ordering produced by the widget.
         """
-        steps_by_id = {s.step_id: s for s in self._steps}
-        self._steps = [steps_by_id[sid] for sid in step_ids if sid in steps_by_id]
+        self._steps.reorder_by_ids(step_ids)
 
     def _on_move_step(self, index: int, direction: int) -> None:
         """Swaps a step with its neighbour in the given direction.
@@ -291,7 +289,7 @@ class StepsListPresenter:
         """
         new_index = index + direction
         if 0 <= new_index < len(self._steps):
-            self._steps[index], self._steps[new_index] = (self._steps[new_index], self._steps[index])
+            self._steps.swap(index, new_index)
             self._refresh_view()
 
     def _on_duplicate_step(self, item: StepViewItem, idx: int) -> StepViewItem:
@@ -308,13 +306,13 @@ class StepsListPresenter:
         Returns:
             A StepViewItem for the new copy.
         """
-        original = next((s for s in self._steps if s.step_id == item.step_id), None)
+        original = self._steps.find_by_id(item.step_id)
         if original is None:
             return item
         new_step = original.copy_business()
         # Pre-register before the DragDropList fires on_reorder.
-        self._steps.insert(idx + 1, new_step)
-        context_ids = {s.step_id: i for i, s in enumerate(self._steps)}
+        self._steps.insert_after(idx, new_step)
+        context_ids = self._steps.build_context_ids()
 
         obj_view = self._to_view_item(new_step, idx + 1, context_ids)
         errors = self.validate_steps()
@@ -328,8 +326,9 @@ class StepsListPresenter:
             index: Zero-based index of the step to toggle.
         """
         if 0 <= index < len(self._steps):
-            self._steps[index].is_active = not self._steps[index].is_active
-            self._steps[index].mark_as_modified()
+            step = self._steps[index]
+            step.is_active = not step.is_active
+            step.mark_as_modified()
             self._refresh_view()
 
     # ---------------------------------------------------------------
@@ -373,7 +372,7 @@ class StepsListPresenter:
         Returns:
             Ordered list of view-safe snapshots matching self._steps.
         """
-        context_ids = {s.step_id: i for i, s in enumerate(self._steps)}
+        context_ids = self._steps.build_context_ids()
         return [self._to_view_item(s, i, context_ids) for i, s in enumerate(self._steps)]
 
     @staticmethod

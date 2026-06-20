@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -101,7 +100,7 @@ class TestLoad:
 
 class TestInitNew:
     def test_init_new_clears_steps(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter.init_new("new-scenario")
         assert presenter._steps == []
 
@@ -118,7 +117,7 @@ class TestInitNew:
 class TestGetSteps:
     def test_returns_copy_of_steps(self, presenter: StepsListPresenter) -> None:
         step = _make_step()
-        presenter._steps = [step]
+        presenter._steps.load([step])
         result = presenter.get_steps()
         assert result == [step]
         assert result is not presenter._steps
@@ -131,19 +130,19 @@ class TestGetSteps:
 
 class TestValidateSteps:
     def test_returns_empty_list_when_all_valid(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._workflow_service.validate_step.return_value = []
         errors = presenter.validate_steps()
         assert errors == []
 
     def test_returns_errors_from_service(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._workflow_service.validate_step.return_value = ["Field required"]
         errors = presenter.validate_steps()
         assert "Field required" in errors
 
     def test_calls_validate_for_each_step(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step(step_id="s1"), _make_step(step_id="s2")]
+        presenter._steps.load([_make_step(step_id="s1"), _make_step(step_id="s2")])
         presenter._workflow_service.validate_step.return_value = []
         presenter.validate_steps()
         assert presenter._workflow_service.validate_step.call_count == 2
@@ -156,7 +155,7 @@ class TestValidateSteps:
 
 class TestClearSteps:
     def test_clears_steps_list(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter.clear_steps()
         assert presenter._steps == []
 
@@ -177,22 +176,22 @@ class TestClearSteps:
 
 class TestOnEditStep:
     def test_shows_inline_form_for_valid_index(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._on_edit_step(0)
         presenter._gestion_view.show_inline_form.assert_called_once()
 
     def test_ignores_negative_index(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._on_edit_step(-1)
         presenter._gestion_view.show_inline_form.assert_not_called()
 
     def test_ignores_out_of_bounds_index(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._on_edit_step(5)
         presenter._gestion_view.show_inline_form.assert_not_called()
 
     def test_sets_edit_index(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step(), _make_step(step_id="s2")]
+        presenter._steps.load([_make_step(), _make_step(step_id="s2")])
         presenter._on_edit_step(1)
         assert presenter._edit_index == 1
 
@@ -245,7 +244,7 @@ class TestOnConfirmUpdateStep:
 
     def test_updates_step_on_success(self, presenter: StepsListPresenter) -> None:
         step = _make_step()
-        presenter._steps = [step]
+        presenter._steps.load([step])
         presenter._edit_index = 0
         presenter._workflow_service.validate_step.return_value = []
         result = presenter._on_confirm_update_step(StepTypeEnum.E_SECTION_STEPS, {"title": "New", "comment": ""})
@@ -254,7 +253,7 @@ class TestOnConfirmUpdateStep:
 
     def test_returns_false_when_validation_fails(self, presenter: StepsListPresenter) -> None:
         step = _make_step()
-        presenter._steps = [step]
+        presenter._steps.load([step])
         presenter._edit_index = 0
         presenter._workflow_service.validate_step.return_value = ["Error"]
         result = presenter._on_confirm_update_step(StepTypeEnum.E_SECTION_STEPS, {"title": "", "comment": ""})
@@ -262,14 +261,14 @@ class TestOnConfirmUpdateStep:
 
     def test_shows_form_errors_when_validation_fails(self, presenter: StepsListPresenter) -> None:
         step = _make_step()
-        presenter._steps = [step]
+        presenter._steps.load([step])
         presenter._edit_index = 0
         presenter._workflow_service.validate_step.return_value = ["Bad field"]
         presenter._on_confirm_update_step(StepTypeEnum.E_SECTION_STEPS, {})
         presenter._gestion_view.show_inline_form_errors.assert_called_once()
 
     def test_edit_index_out_of_bounds_returns_true(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._edit_index = 99
         result = presenter._on_confirm_update_step(StepTypeEnum.E_SECTION_STEPS, {})
         assert result is True
@@ -282,15 +281,15 @@ class TestOnConfirmUpdateStep:
 
 class TestFindStepIndexById:
     def test_returns_index_when_found(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step(step_id="s1"), _make_step(step_id="s2")]
+        presenter._steps.load([_make_step(step_id="s1"), _make_step(step_id="s2")])
         assert presenter.find_step_index_by_id("s2") == 1
 
     def test_returns_none_when_not_found(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step(step_id="s1")]
+        presenter._steps.load([_make_step(step_id="s1")])
         assert presenter.find_step_index_by_id("missing") is None
 
     def test_returns_zero_for_first_step(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step(step_id="first")]
+        presenter._steps.load([_make_step(step_id="first")])
         assert presenter.find_step_index_by_id("first") == 0
 
 
@@ -317,23 +316,23 @@ class TestOnCancelInlineStep:
 
 class TestOnDeleteStep:
     def test_removes_step_at_index(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step(step_id="s1"), _make_step(step_id="s2")]
+        presenter._steps.load([_make_step(step_id="s1"), _make_step(step_id="s2")])
         presenter._on_delete_step(0)
         assert len(presenter._steps) == 1
         assert presenter._steps[0].step_id == "s2"
 
     def test_ignores_out_of_bounds(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._on_delete_step(99)
         assert len(presenter._steps) == 1
 
     def test_ignores_negative_index(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._on_delete_step(-1)
         assert len(presenter._steps) == 1
 
     def test_calls_render_steps(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step()]
+        presenter._steps.load([_make_step()])
         presenter._view.render_steps.reset_mock()
         presenter._on_delete_step(0)
         presenter._view.render_steps.assert_called()
@@ -346,7 +345,7 @@ class TestOnDeleteStep:
 
 class TestOnClearAllSteps:
     def test_clears_all_steps(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = [_make_step(), _make_step(step_id="s2")]
+        presenter._steps.load([_make_step(), _make_step(step_id="s2")])
         presenter._on_clear_all_steps()
         assert presenter._steps == []
 
@@ -365,14 +364,14 @@ class TestOnReorderSteps:
     def test_reorders_steps_by_id(self, presenter: StepsListPresenter) -> None:
         s1 = _make_step(step_id="s1")
         s2 = _make_step(step_id="s2")
-        presenter._steps = [s1, s2]
+        presenter._steps.load([s1, s2])
         presenter._on_reorder_steps(["s2", "s1"])
         assert presenter._steps[0].step_id == "s2"
         assert presenter._steps[1].step_id == "s1"
 
     def test_ignores_unknown_ids(self, presenter: StepsListPresenter) -> None:
         s1 = _make_step(step_id="s1")
-        presenter._steps = [s1]
+        presenter._steps.load([s1])
         presenter._on_reorder_steps(["s1", "unknown"])
         assert len(presenter._steps) == 1
 
@@ -386,7 +385,7 @@ class TestOnMoveStep:
     def test_moves_step_down(self, presenter: StepsListPresenter) -> None:
         s1 = _make_step(step_id="s1")
         s2 = _make_step(step_id="s2")
-        presenter._steps = [s1, s2]
+        presenter._steps.load([s1, s2])
         presenter._on_move_step(0, 1)
         assert presenter._steps[0].step_id == "s2"
         assert presenter._steps[1].step_id == "s1"
@@ -394,13 +393,13 @@ class TestOnMoveStep:
     def test_moves_step_up(self, presenter: StepsListPresenter) -> None:
         s1 = _make_step(step_id="s1")
         s2 = _make_step(step_id="s2")
-        presenter._steps = [s1, s2]
+        presenter._steps.load([s1, s2])
         presenter._on_move_step(1, -1)
         assert presenter._steps[0].step_id == "s2"
 
     def test_ignores_move_out_of_bounds(self, presenter: StepsListPresenter) -> None:
         s1 = _make_step(step_id="s1")
-        presenter._steps = [s1]
+        presenter._steps.load([s1])
         presenter._on_move_step(0, 1)  # can't move down — only 1 step
         assert presenter._steps[0].step_id == "s1"
 
@@ -413,7 +412,7 @@ class TestOnMoveStep:
 class TestOnDuplicateStep:
     def test_inserts_copy_after_original(self, presenter: StepsListPresenter) -> None:
         step = _make_step(step_id="orig")
-        presenter._steps = [step]
+        presenter._steps.load([step])
         view_item = StepViewItem(
             step_id="orig",
             step_type=step.step_type,
@@ -428,7 +427,7 @@ class TestOnDuplicateStep:
         assert presenter._steps[1].step_id != "orig"
 
     def test_returns_item_when_step_not_found(self, presenter: StepsListPresenter) -> None:
-        presenter._steps = []
+        presenter._steps.reset()
         view_item = StepViewItem(
             step_id="missing",
             step_type=StepTypeEnum.E_SECTION_STEPS,
