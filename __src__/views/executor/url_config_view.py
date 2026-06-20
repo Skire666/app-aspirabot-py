@@ -104,7 +104,7 @@ class UrlConfigView(ttk.Frame):
         MyLabel(stats, text="Uniques :").pack_left()
         MyLabel(stats, textvariable=self._vm.url_count_manual_unique_var, width=10).pack_left()
         MyLabel(stats, text="Doublons :").pack_left()
-        MyLabel(stats, textvariable=self._vm.url_count_manual_dupplicate_var, width=10).pack_left()
+        MyLabel(stats, textvariable=self._vm.url_count_manual_duplicate_var, width=10).pack_left()
         MyLabel(stats, text="Lignes vides :").pack_left()
         MyLabel(stats, textvariable=self._vm.url_count_manual_empty_var, width=10).pack_left()
 

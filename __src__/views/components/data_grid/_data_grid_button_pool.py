@@ -35,6 +35,8 @@ class _DataGridButtonPool:
         self._canvas = canvas
         self._pool: dict[str, list[ttk.Button]] = {}
         self._active: list[tuple[str, ttk.Button, int, int]] = []
+        style = ttk.Style(canvas)
+        style.configure("DataGrid.TButton", font=("Segoe UI", 12))
 
     def acquire(self, action_id: str, text: str) -> ttk.Button:
         """Return a ready-to-use button for *action_id*, creating one if needed.
@@ -47,7 +49,7 @@ class _DataGridButtonPool:
             A configured ttk.Button instance.
         """
         pool = self._pool.setdefault(action_id, [])
-        btn = pool.pop() if pool else ttk.Button(self._canvas, takefocus=False)
+        btn = pool.pop() if pool else ttk.Button(self._canvas, takefocus=False, style="DataGrid.TButton")
         btn.configure(text=text)
         return btn
 

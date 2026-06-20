@@ -19,10 +19,10 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 # -----------------------------------------------------------------------------
 
 DATA_GRID_COLUMNS: list[GridColumn] = [
-    GridColumn(id="action_launch", title="Lancer", width=62, col_type="button", button_text="Lancer"),
-    GridColumn(id="action_delete", title="Supp.", width=55, col_type="button", button_text="Supp."),
+    GridColumn(id="action_launch", title="Lancer", width=56, col_type="button", button_text="▶"),
+    GridColumn(id="action_delete", title="Supp.", width=56, col_type="button", button_text="✕"),
     GridColumn(id="profile_name", title="Nom du profil", width=160),
-    GridColumn(id="scenario_name", title="Scénario", width=150),
+    GridColumn(id="scenario_name", title="Scénario", width=170),
     GridColumn(
         id="urls_source_type",
         title="Source",

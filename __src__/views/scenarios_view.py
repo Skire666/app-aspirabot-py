@@ -19,12 +19,12 @@ from views.components.horizontal_line_frame import HorizontalLineFrame
 # -----------------------------------------------------------------------------
 
 DATA_GRID_COLUMNS: list[GridColumn] = [
-    GridColumn(id="action_launch", title="Lancer", width=58, col_type="button", button_text="▶"),
-    GridColumn(id="action_edit", title="Modif.", width=58, col_type="button", button_text="✏"),
-    GridColumn(id="action_duplicate", title="Dupp.", width=58, col_type="button", button_text="⧉"),
-    GridColumn(id="action_delete", title="Supp.", width=58, col_type="button", button_text="✕"),
-    GridColumn(id="scenario_name", title="Nom", width=160),
-    GridColumn(id="scenario_desc", title="Description", width=160),
+    GridColumn(id="action_launch", title="Lancer", width=56, col_type="button", button_text="▶"),
+    GridColumn(id="action_edit", title="Modif.", width=56, col_type="button", button_text="🔧"),
+    GridColumn(id="action_duplicate", title="Dupl.", width=56, col_type="button", button_text="⧉"),
+    GridColumn(id="action_delete", title="Supp.", width=56, col_type="button", button_text="✕"),
+    GridColumn(id="scenario_name", title="Nom", width=170),
+    GridColumn(id="scenario_desc", title="Description", width=170),
     GridColumn(id="id_file", title="ID Fichier", width=100),
     GridColumn(id="created_date_scenario", title="Création", width=125, format=C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM),
     GridColumn(id="modified_date_scenario", title="Modification", width=125, format=C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM),

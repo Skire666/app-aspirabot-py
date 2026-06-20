@@ -118,10 +118,10 @@ class WorkflowView(ttk.Frame):
         self._view_traces.append(
             (self._vm.name_var, self._vm.name_var.trace_add("write", lambda *_: self._mark_dirty()))
         )
-        self._entry_name = MyEntry(parent, textvariable=self._vm.name_var, width=30)
+        self._entry_name = MyEntry(parent, textvariable=self._vm.name_var, width=9)
         self._entry_name.pack_left(fill="x", expand=True)
 
-        MyLabel(parent, text="Desc. :", width=7).pack_left()
+        MyLabel(parent, text="    Desc. :").pack_left()
 
         self._view_traces.append(
             (self._vm.desc_var, self._vm.desc_var.trace_add("write", lambda *_: self._mark_dirty()))
@@ -129,8 +129,8 @@ class WorkflowView(ttk.Frame):
         self._entry_url = MyEntry(parent, textvariable=self._vm.desc_var)
         self._entry_url.pack_left(fill="x", expand=True)
 
-        MyLabel(parent, text="ID Fichier :", width=10).pack_left()
-        self._entry_id_file = MyEntry(parent, textvariable=self._vm.id_file_var, state="readonly", width=15)
+        MyLabel(parent, text="    ID :").pack_left()
+        self._entry_id_file = MyEntry(parent, textvariable=self._vm.id_file_var, state="readonly", width=10)
         self._entry_id_file.pack_left()
 
     def _build_url_row(self, parent: tk.Widget) -> None:

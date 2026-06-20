@@ -277,7 +277,6 @@ class StepsListCrudView(ttk.Frame):
         self._dnd_list.redraw_item(idx)
         if self.on_edit_step:
             self.on_edit_step(idx)
-        self._fire_dirty()
 
     def _on_dnd_delete(self, item: StepViewItem, idx: int) -> bool:
         # Include the step number in the prompt for clarity.

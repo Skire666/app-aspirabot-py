@@ -78,7 +78,7 @@ class ValidationResult:
             if nbr_pushed >= nbr_max:
                 break
             if issue.severity == severity:
-                concat += f"{label}: {issue.code} - {issue.message}\n"
+                concat += f"{label} : {issue.code} - {issue.message}\n"
                 nbr_pushed += 1
         return concat, nbr_pushed
 

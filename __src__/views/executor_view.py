@@ -209,7 +209,7 @@ class ExecutorView(ttk.Frame):
         MyLabel(row, text="Vérification :").pack_left()
         MyLabel(row, textvariable=self._vm.verification_message_var, foreground="red").pack_left(fill=tk.X, expand=True)
 
-        self._btn_launch = MyButton(row, text="Lancer le scraping", width=25, command=lambda: self._vm.launch())
+        self._btn_launch = MyButton(row, text="Lancer le scraping", command=lambda: self._vm.launch())
         self._btn_launch.pack_right()
 
     # ------------------------------------------------------------------

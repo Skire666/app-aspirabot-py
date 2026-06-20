@@ -198,7 +198,7 @@ class ExecutorViewModel(ViewModelBase):
         # Derived Var — URL count for manual mode, recomputed from manual_urls_var.
         self.url_total_count_manual_var = tk.StringVar(master=master, value="0")
         self.url_count_manual_unique_var = tk.StringVar(master=master, value="0")
-        self.url_count_manual_dupplicate_var = tk.StringVar(master=master, value="0")
+        self.url_count_manual_duplicate_var = tk.StringVar(master=master, value="0")
         self.url_count_manual_empty_var = tk.StringVar(master=master, value="0")
         # Derived section-active Var — AND of is_profile_cfg_accessible_var and is_profile_section_enabled_var.
         self.is_profile_section_active_var = tk.BooleanVar(master=master, value=False)
@@ -276,7 +276,7 @@ class ExecutorViewModel(ViewModelBase):
         empty = len(lines) - total
         self._set_if_changed(self.url_total_count_manual_var, str(total))
         self._set_if_changed(self.url_count_manual_unique_var, str(len(set(non_empty))))
-        self._set_if_changed(self.url_count_manual_dupplicate_var, str(duplicates))
+        self._set_if_changed(self.url_count_manual_duplicate_var, str(duplicates))
         self._set_if_changed(self.url_count_manual_empty_var, str(empty))
 
     def _compute_profile_section_active(self) -> None:

@@ -142,7 +142,7 @@ class ScenariosViewModel(ViewModelBase):
         self._on_edit = cb
 
     def bind_duplicate(self, cb: Callable[[str], None]) -> None:
-        """Register the handler invoked when the user clicks Dupp.
+        """Register the handler invoked when the user clicks Dupl.
 
         Raises:
             AspirabotBaseError: If the hook is already bound.

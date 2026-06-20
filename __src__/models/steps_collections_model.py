@@ -209,7 +209,7 @@ class StepsCollections:
             prev_was_restart = is_restart
         return False
 
-    def had_dupplicate_step_id(self) -> bool:
+    def had_duplicate_step_id(self) -> bool:
         """Check if there are any duplicate step IDs in the context."""
         seen_ids: set[str] = set()
         for step in self.list_steps:

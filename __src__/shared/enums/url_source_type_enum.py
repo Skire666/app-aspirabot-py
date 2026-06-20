@@ -20,5 +20,5 @@ class UrlSourceTypeEnum(Enum):
         if self is UrlSourceTypeEnum.E_FOLDER_JSONS:
             return "Dossier JSON"
         if self is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            return "Découverte auto."
+            return "Lire nouveautés"
         return "Type inconnu"

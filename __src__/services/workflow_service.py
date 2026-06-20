@@ -41,7 +41,7 @@ class WorkflowService:
             vr.append(ErrorCodeWKF.WKF_1003, SeverityEnum.E_ERROR)
         if steps_context.has_consecutive_jump_to_step():
             vr.append(ErrorCodeWKF.WKF_1004, SeverityEnum.E_ERROR)
-        if steps_context.had_dupplicate_step_id():
+        if steps_context.had_duplicate_step_id():
             vr.append(ErrorCodeWKF.WKF_1005, SeverityEnum.E_ERROR)
         if steps_context.has_consecutive_restart_to_beginning():
             vr.append(ErrorCodeWKF.WKF_1007, SeverityEnum.E_ERROR)
