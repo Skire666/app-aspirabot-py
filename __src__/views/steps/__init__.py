@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 
 from views.steps.check_url_page_form_def import CheckUrlPageFormDef
+from views.steps.restart_to_beginning_form_def import RestartToBeginningFormDef
 from views.steps.click_for_download_form_def import ClickForDownloadFormDef
 from views.steps.click_on_element_form_def import ClickOnElementFormDef
 from views.steps.close_tabs_form_def import CloseTabsFormDef
@@ -30,6 +31,7 @@ from views.steps.youtube_transcripts_form_def import YoutubeTranscriptsFormDef
 
 __all__ = [
     "CheckUrlPageFormDef",
+    "RestartToBeginningFormDef",
     "ClickForDownloadFormDef",
     "ClickOnElementFormDef",
     "CloseTabsFormDef",

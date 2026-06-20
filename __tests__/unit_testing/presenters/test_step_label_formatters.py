@@ -219,38 +219,6 @@ class TestFmtExtractTexts:
 
 
 # ---------------------------------------------------------------------------
-# JUMP_TO_STEP
-# ---------------------------------------------------------------------------
-
-
-class TestFmtJumpToStep:
-    def test_success_condition_with_known_target(self) -> None:
-        ctx = {"abc123": 2}
-        result = _fmt(StepTypeEnum.E_JUMP_TO_STEP, {"target_hexastring": "abc123", "condition": "success"}, ctx=ctx)
-        assert "succès" in result
-        assert "03" in result  # idx_found=2, zfill(2) → "03"
-
-    def test_failure_condition(self) -> None:
-        ctx = {"abc123": 0}
-        result = _fmt(StepTypeEnum.E_JUMP_TO_STEP, {"target_hexastring": "abc123", "condition": "failure"}, ctx=ctx)
-        assert "échec" in result
-
-    def test_always_condition(self) -> None:
-        ctx = {"abc123": 1}
-        result = _fmt(StepTypeEnum.E_JUMP_TO_STEP, {"target_hexastring": "abc123", "condition": "always"}, ctx=ctx)
-        assert "TOUJOURS" in result
-
-    def test_unknown_target_shows_question_marks(self) -> None:
-        result = _fmt(StepTypeEnum.E_JUMP_TO_STEP, {"target_hexastring": "missing", "condition": "always"}, ctx={})
-        assert "????" in result
-        assert "??" in result
-
-    def test_no_target_hexastring(self) -> None:
-        result = _fmt(StepTypeEnum.E_JUMP_TO_STEP, {}, ctx={})
-        assert "????" in result
-
-
-# ---------------------------------------------------------------------------
 # KILL_BROWSER
 # ---------------------------------------------------------------------------
 

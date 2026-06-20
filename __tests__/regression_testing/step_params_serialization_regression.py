@@ -274,13 +274,6 @@ class TestJumpToStepParamsSerialization:
         d = JumpToStepParams(**self._DATA).to_dict()
         assert set(d.keys()) == {"condition", "target_hexastring", "comment"}
 
-    def test_all_conditions_serializable(self) -> None:
-        from models.steps.jump_to_step_params import JumpToStepParams
-
-        for cond in ("success", "failure", "always"):
-            d = JumpToStepParams(condition=cond, target_hexastring="1234", comment="").to_dict()
-            assert d["condition"] == cond
-
     def test_round_trip(self) -> None:
         from models.steps.jump_to_step_params import JumpToStepParams
 
@@ -572,12 +565,6 @@ _ALL_PARAMS_INSTANCES = [
             "models.steps.extract_variable_params", fromlist=["ExtractVariableParams"]
         ).ExtractVariableParams(variable="last_url", mapping="url", comment=""),
         id="ExtractVariable",
-    ),
-    pytest.param(
-        lambda: __import__("models.steps.jump_to_step_params", fromlist=["JumpToStepParams"]).JumpToStepParams(
-            condition="always", target_hexastring="ab12", comment=""
-        ),
-        id="JumpToStep",
     ),
     pytest.param(
         lambda: __import__("models.steps.kill_browser_params", fromlist=["KillBrowserParams"]).KillBrowserParams(

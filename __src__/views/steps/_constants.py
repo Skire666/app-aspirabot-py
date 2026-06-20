@@ -41,8 +41,8 @@ CLICK_MODES: list[str] = ["Normal", "Forced", "JS Direct"]
 # JUMP_TO_STEP condition display / model mappings
 # -----------------------------------------------------------------------------
 
-CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec", "Toujours"]  # GARDER 'Toujours' à la fin
-CONDITION_VALUES: list[str] = ["success", C_STATE_JUMP_TO_STEP_FAILURE, "always"]
+CONDITION_DISPLAY: list[str] = ["Si succès", "Si échec"]  # GARDER 'Toujours' à la fin
+CONDITION_VALUES: list[str] = ["success", C_STATE_JUMP_TO_STEP_FAILURE]
 CONDITION_VIEW_TO_MODEL: dict[str, str] = dict(zip(CONDITION_DISPLAY, CONDITION_VALUES, strict=True))
 CONDITION_MODEL_TO_VIEW: dict[str, str] = dict(zip(CONDITION_VALUES, CONDITION_DISPLAY, strict=True))
 

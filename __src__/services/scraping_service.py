@@ -343,6 +343,11 @@ class ScrapingService:
 
         if result == StepExecutionResultEnum.E_FATAL:
             self._context.end_process = True
+        if (
+            step.step_type == StepTypeEnum.E_RESTART_TO_BEGINNING
+            and self._context.last_result_step == StepExecutionResultEnum.E_SUCCESS
+        ):
+            return 0
 
         return self._consume_pending_jump(index)
 

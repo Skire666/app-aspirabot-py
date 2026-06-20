@@ -221,14 +221,6 @@ class TestJumpToStepIntegration:
         assert "succès" in label
         assert "03" in label  # idx=2 → 2+1=3 → zfill(2) = "03"
 
-    def test_always_condition_without_context(self) -> None:
-        from models.steps.jump_to_step_params import JumpToStepParams
-
-        p = JumpToStepParams(condition="always", target_hexastring="xxxx", comment="")
-        label = format_step_label(StepTypeEnum.E_JUMP_TO_STEP, p.to_dict(), 0, {})
-        assert "TOUJOURS" in label
-        assert "????" in label  # target not in ctx → unknown
-
 
 # ---------------------------------------------------------------------------
 # KILL_BROWSER

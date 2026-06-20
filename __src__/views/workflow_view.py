@@ -21,6 +21,7 @@ from views.workflow.steps_list_crud_panel import StepsListCrudView
 # -----------------------------------------------------------------------------
 
 _HEIGHT_FRAME_GESTION = 194
+_SPACE_BETWEEN_LIST_AND_FORM = 14
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -170,7 +171,7 @@ class WorkflowView(ttk.Frame):
         self._build_type_listbox(left_frame, labels)
 
         self._inline_form = EditStepDialogPanel(self._gestion_container)
-        self._inline_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._inline_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(_SPACE_BETWEEN_LIST_AND_FORM, 0))
         self._wire_inline_form_callbacks()
 
     def _build_type_listbox(self, parent: tk.Widget, labels: list[str]) -> None:

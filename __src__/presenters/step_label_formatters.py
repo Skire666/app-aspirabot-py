@@ -87,6 +87,16 @@ def _fmt_check_url_page(params: dict[str, Any], _idx: int, _ctx: dict[str, int])
     return f"Vérifier l'URL de la page\nDomaine : {domain_str}  |  Chemin : {path_str}"
 
 
+def _fmt_restart_to_beginning(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
+    """Format label for RESTART_TO_BEGINNING."""
+    urls_str = (
+        "Uniquement si URL restantes"
+        if params.get("jump_only_if_urls_remaining")
+        else "Toujours (aucune vérif. si URL restantes)"
+    )
+    return f"Recommencer au début.\n{urls_str}"
+
+
 def _fmt_click_for_download(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for CLICK_FOR_DOWNLOAD."""
     selector = params.get("selector") or "<vide>"
@@ -307,6 +317,7 @@ _FormatterFn = Callable[[dict[str, Any], int, dict[str, int]], str]
 
 _REGISTRY: dict[StepTypeEnum, _FormatterFn] = {
     StepTypeEnum.E_CHECK_URL_PAGE: _fmt_check_url_page,
+    StepTypeEnum.E_RESTART_TO_BEGINNING: _fmt_restart_to_beginning,
     StepTypeEnum.E_CLICK_FOR_DOWNLOAD: _fmt_click_for_download,
     StepTypeEnum.E_CLICK_ON_ELEMENT: _fmt_click_on_element,
     StepTypeEnum.E_CLOSE_TABS: _fmt_close_tabs,

@@ -163,6 +163,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_WAIT_HTML_IMAGES: "Attendre X images",
     StepTypeEnum.E_CLICK_ON_ELEMENT: "Cliquer sur un élément",
     StepTypeEnum.E_CLICK_FOR_DOWNLOAD: "Cliquer pour télécharger",
+    StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
     StepTypeEnum.E_YOUTUBE_DDL: "YouTube info/srt",
     StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes de la page",
@@ -170,7 +171,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_EXTRACT_VARIABLE: "Extraire variable système",
     StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (json)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
-    StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
+    StepTypeEnum.E_RESTART_TO_BEGINNING: "Recommencer au début",
     StepTypeEnum.E_KILL_BROWSER: "Quitter navigateur",
 }
 
@@ -183,6 +184,8 @@ ERROR_TEMPLATES: dict[str, str] = {
     "field_comment_required": "[{step}.] : commentaire requis (important pour log).",
     # --- check_url_page ---
     "check_url_page_nothing_to_check": "[{step}.] : Choix vides. Cocher au minimum 1 case.",
+    # --- restart_to_beginning ---
+    "restart_to_beginning_comment_too_long": "[{step}.] : Le commentaire ne doit pas dépasser 120 caractères.",
     # --- Shared image dimension validation (download_image, count_html_images, wait_html_images) ---
     "image_dim_not_int": "[{step}.] : {key} doit être un nombre entier.",
     "image_dim_negative": "[{step}.] : {key} doit être >= 0.",

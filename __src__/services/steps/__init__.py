@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 
 from services.steps.check_url_page_executor import CheckUrlPageExecutor
+from services.steps.restart_to_beginning_executor import RestartToBeginningExecutor
 from services.steps.click_for_download_executor import ClickForDownloadExecutor
 from services.steps.click_on_element_executor import ClickOnElementExecutor
 from services.steps.close_tabs_executor import CloseTabsExecutor
@@ -30,6 +31,7 @@ from services.steps.youtube_transcripts_executor import YoutubeTranscriptsExecut
 
 __all__ = [
     "CheckUrlPageExecutor",
+    "RestartToBeginningExecutor",
     "ClickForDownloadExecutor",
     "ClickOnElementExecutor",
     "CloseTabsExecutor",

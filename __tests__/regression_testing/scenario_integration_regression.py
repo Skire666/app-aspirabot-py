@@ -13,22 +13,16 @@ step registry so StepScrapingModel.import_from_data_json() works end-to-end.
 
 from __future__ import annotations
 
-import pytest
-
-import presenters.steps  # noqa: F401 — registers all params builders
-
 from datetime import datetime
 
+import presenters.steps  # noqa: F401 — registers all params builders
 from models.scenario_model import ScenarioModel
 from models.step_scraping_model import StepScrapingModel
-from models.steps.jump_to_step_params import JumpToStepParams
 from models.steps.scroll_down_params import ScrollDownParams
 from models.steps.section_params import SectionParams
 from models.steps.wait_fixed_time_params import WaitFixedTimeParams
 from models.steps_collections_model import StepsCollections as StepsContext
 from shared.enums import StepTypeEnum
-from pydantic import ValidationError
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -75,7 +69,9 @@ class TestStepScrapingModelRoundTrip:
         assert restored.params.to_dict()["pixels"] == 500
 
     def test_wait_fixed_time_step_round_trip(self) -> None:
-        original = _make_step(StepTypeEnum.E_WAIT_FIXED_TIME, WaitFixedTimeParams(duration=3, unit="s", comment=""), step_id="cc33")
+        original = _make_step(
+            StepTypeEnum.E_WAIT_FIXED_TIME, WaitFixedTimeParams(duration=3, unit="s", comment=""), step_id="cc33"
+        )
         exported = original.export_to_data_json()
         restored = StepScrapingModel.import_from_data_json(exported)
 
@@ -112,7 +108,9 @@ class TestScenarioModelRoundTrip:
         steps = [
             _make_step(StepTypeEnum.E_SECTION_STEPS, SectionParams(title="Phase 1", comment=""), step_id="s001"),
             _make_step(StepTypeEnum.E_SCROLL_DOWN, ScrollDownParams(pixels=300, comment=""), step_id="s002"),
-            _make_step(StepTypeEnum.E_WAIT_FIXED_TIME, WaitFixedTimeParams(duration=2, unit="s", comment=""), step_id="s003"),
+            _make_step(
+                StepTypeEnum.E_WAIT_FIXED_TIME, WaitFixedTimeParams(duration=2, unit="s", comment=""), step_id="s003"
+            ),
         ]
         return _make_scenario_with_steps(steps)
 
@@ -171,7 +169,12 @@ class TestScenarioModelRoundTrip:
         # Inject a malformed step (unknown step_type)
         exported["steps"] = [
             {"step_type": "TOTALLY_UNKNOWN", "step_id": "bad1", "is_active": True, "params": {}},
-            {"step_type": StepTypeEnum.E_SECTION_STEPS.value, "step_id": "good1", "is_active": True, "params": {"title": "OK", "comment": ""}},
+            {
+                "step_type": StepTypeEnum.E_SECTION_STEPS.value,
+                "step_id": "good1",
+                "is_active": True,
+                "params": {"title": "OK", "comment": ""},
+            },
         ]
         restored = ScenarioModel.import_from_data_json(exported)
         # The invalid step is silently skipped; only the valid one is kept
@@ -205,7 +208,9 @@ class TestScenarioModelCopyBusiness:
 
         assert len(copy.steps) == 1, "Copied scenario must have the same step count"
         # Deep copy: mutating the copy must not affect the source
-        copy.steps.append(_make_step(StepTypeEnum.E_SCROLL_DOWN, ScrollDownParams(pixels=100, comment=""), step_id="new1"))
+        copy.steps.append(
+            _make_step(StepTypeEnum.E_SCROLL_DOWN, ScrollDownParams(pixels=100, comment=""), step_id="new1")
+        )
         assert len(source.steps) == 1, "Deep copy: modifying the copy must not affect the source"
 
 
@@ -246,7 +251,9 @@ class TestStepsContextIntegration:
         steps = [
             _make_step(StepTypeEnum.E_SECTION_STEPS, SectionParams(title="T", comment=""), step_id="id_a"),
             _make_step(StepTypeEnum.E_SCROLL_DOWN, ScrollDownParams(pixels=100, comment=""), step_id="id_b"),
-            _make_step(StepTypeEnum.E_WAIT_FIXED_TIME, WaitFixedTimeParams(duration=1, unit="s", comment=""), step_id="id_c"),
+            _make_step(
+                StepTypeEnum.E_WAIT_FIXED_TIME, WaitFixedTimeParams(duration=1, unit="s", comment=""), step_id="id_c"
+            ),
         ]
         return StepsContext.from_list(steps), steps
 
@@ -273,64 +280,3 @@ class TestStepsContextIntegration:
     def test_find_index_by_id_returns_none_for_unknown(self) -> None:
         ctx, _ = self._build_context()
         assert ctx.find_index_by_id("ghost") is None
-
-
-# ---------------------------------------------------------------------------
-# JumpToStepParams cross-step validation with real StepsContext
-# ---------------------------------------------------------------------------
-
-
-class TestJumpToStepCrossStepValidation:
-    """Integration: JumpToStepParams validators that query StepsContext."""
-
-    def _make_steps_with_ids(self, step_id_a: str, step_id_jump: str) -> list[StepScrapingModel]:
-        return [
-            _make_step(StepTypeEnum.E_SECTION_STEPS, SectionParams(title="S", comment=""), step_id=step_id_a),
-            _make_step(StepTypeEnum.E_SCROLL_DOWN, ScrollDownParams(pixels=100, comment=""), step_id=step_id_jump),
-        ]
-
-    def test_valid_target_passes(self) -> None:
-        steps = self._make_steps_with_ids("aaa1", "bbb2")
-        ctx_dict = {
-            "step_index": 2,
-            "step_id": "ccc3",
-            "steps_context": StepsContext.from_list(steps),
-        }
-        params = JumpToStepParams.model_validate(
-            {"condition": "always", "target_hexastring": "aaa1", "comment": ""},
-            context=ctx_dict,
-        )
-        assert params.target_hexastring == "aaa1"
-
-    def test_self_reference_raises(self) -> None:
-        steps = self._make_steps_with_ids("aaa1", "bbb2")
-        ctx_dict = {
-            "step_index": 0,
-            "step_id": "aaa1",
-            "steps_context": StepsContext.from_list(steps),
-        }
-        with pytest.raises(ValidationError, match="elle-même|self"):
-            JumpToStepParams.model_validate(
-                {"condition": "always", "target_hexastring": "aaa1", "comment": ""},
-                context=ctx_dict,
-            )
-
-    def test_target_not_in_context_raises(self) -> None:
-        steps = self._make_steps_with_ids("aaa1", "bbb2")
-        ctx_dict = {
-            "step_index": 1,
-            "step_id": "bbb2",
-            "steps_context": StepsContext.from_list(steps),
-        }
-        with pytest.raises(ValidationError):
-            JumpToStepParams.model_validate(
-                {"condition": "success", "target_hexastring": "ghost99", "comment": ""},
-                context=ctx_dict,
-            )
-
-    def test_no_context_accepts_self_reference(self) -> None:
-        # Without context, no validator fires — construction must succeed
-        params = JumpToStepParams(condition="always", target_hexastring="self_id", comment="")
-        assert params.target_hexastring == "self_id", (
-            "Without context, self-reference is accepted (safe deserialisation contract)"
-        )

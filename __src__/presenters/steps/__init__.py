@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 
 from presenters.steps.check_url_page_step_presenter import _build as _b_check_url_page  # noqa: F401
+from presenters.steps.restart_to_beginning_step_presenter import _build as _b_restart_to_beginning  # noqa: F401
 from presenters.steps.click_for_download_step_presenter import _build as _b_click_for_dl  # noqa: F401
 from presenters.steps.click_on_element_step_presenter import _build as _b_click_on_el  # noqa: F401
 from presenters.steps.close_tabs_step_presenter import _build as _b_close_tabs  # noqa: F401
