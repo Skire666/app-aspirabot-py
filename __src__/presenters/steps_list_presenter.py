@@ -101,7 +101,7 @@ class StepsListPresenter:
         self._scenario_content: ScenarioModel = self._service_scenario.read_scenario(id_scenario)
         self._steps.load(list(self._scenario_content.steps))
         self._refresh_view()
-        self._view.set_validation_status("Vérification : --", False)
+        self._view.set_validation_status("--", False)
 
     def init_new(self, id_scenario: str) -> None:
         """Initializes an empty workflow for a brand-new provider.
@@ -113,7 +113,7 @@ class StepsListPresenter:
         self._is_new_scenario = True
         self._steps.reset()
         self._refresh_view()
-        self._view.set_validation_status("Vérification : --", False)
+        self._view.set_validation_status("--", False)
 
     def get_steps(self) -> list[StepScrapingModel]:
         """Returns a copy of the current step list.
@@ -129,12 +129,7 @@ class StepsListPresenter:
         Returns:
             List of validation errors; empty when valid.
         """
-        errors: list[str] = []
-        steps_list = self._steps.as_list()
-        # Validate each step in its current order for cross-step consistency.
-        for index, step in enumerate(steps_list):
-            errors.extend(self._workflow_service.validate_step(index, step, steps_list))
-        return errors
+        return self._workflow_service.validate_all_steps(self._steps.as_list())
 
     def clear_steps(self) -> None:
         """Clears all steps and refreshes the view."""
@@ -172,25 +167,11 @@ class StepsListPresenter:
         Returns:
             True when the step is accepted; False when it fails validation.
         """
-        step = StepScrapingModel(
-            step_type=step_type, step_id=generate_rng_id_step(), is_active=True, params=build_params(step_type, params)
-        )
-        # Validate in context of the full list with the new step appended.
-        candidate_steps = self._steps.as_list()
-        candidate_steps.append(step)
-        target_index = len(self._steps)
-        candidate_errors = self._validate_solo_step(candidate_steps, target_index)
-
-        if candidate_errors:
-            if self._gestion_view:
-                self._gestion_view.show_inline_form_errors(candidate_errors)
+        step, errors = self._validate_inline_form(step_type, params)
+        self._apply_inline_feedback(errors)
+        if errors:
             return False
-
-        self._steps.append(step)
-        step.mark_as_modified()
-        self._edit_index = None
-        self._view.clear_selection()
-        self._refresh_view()
+        self._commit_inline_step(step)
         return True
 
     def _on_confirm_update_step(self, step_type: StepTypeEnum, params: dict[str, Any]) -> bool:
@@ -207,31 +188,11 @@ class StepsListPresenter:
             if self._gestion_view:
                 self._gestion_view.show_warning(C_STEP_NOT_FOUND_FOR_UPDATE)
             return True
-
-        existing = self._steps[self._edit_index]
-        step = StepScrapingModel(
-            step_type=step_type,
-            step_id=existing.step_id,
-            is_active=existing.is_active,
-            params=build_params(step_type, params),
-        )
-        # Validate in context of the full list with the updated step in place.
-        candidate_steps = self._steps.as_list()
-        candidate_steps[self._edit_index] = step
-        candidate_errors = self._validate_solo_step(candidate_steps, self._edit_index)
-
-        if candidate_errors:
-            if self._gestion_view:
-                self._notify_validation_feedback(candidate_errors[0] if candidate_errors else None)
-                self._gestion_view.show_inline_form_errors(candidate_errors)
+        step, errors = self._validate_inline_form(step_type, params)
+        self._apply_inline_feedback(errors)
+        if errors:
             return False
-        self._notify_validation_feedback(candidate_errors[0] if candidate_errors else None)
-
-        self._steps[self._edit_index] = step
-        step.mark_as_modified()
-        self._edit_index = None
-        self._view.clear_selection()
-        self._refresh_view()
+        self._commit_inline_step(step)
         return True
 
     def find_step_index_by_id(self, step_id: str) -> int | None:
@@ -249,6 +210,66 @@ class StepsListPresenter:
         """Clears the pending edit state after the view hides the panel."""
         self._edit_index = None
         self._view.clear_selection()
+        self._revalidate_and_notify()
+
+    # ---------------------------------------------------------------
+    # Inline form — validation helpers
+    # ---------------------------------------------------------------
+
+    def _validate_inline_form(
+        self, step_type: StepTypeEnum, params: dict[str, Any]
+    ) -> tuple[StepScrapingModel, list[str]]:
+        """Build and validate a step from the inline form (shared by create and update).
+
+        Determines create vs update from self._edit_index:
+        - edit_index set and in range → update mode (preserves step_id and is_active).
+        - otherwise → create mode (new step_id, is_active=True).
+
+        Returns:
+            (built_step, errors) — errors is empty when the step is valid.
+        """
+        if self._edit_index is not None and self._edit_index < len(self._steps):
+            existing = self._steps[self._edit_index]
+            step = StepScrapingModel(
+                step_type=step_type,
+                step_id=existing.step_id,
+                is_active=existing.is_active,
+                params=build_params(step_type, params),
+            )
+            candidate_steps = self._steps.as_list()
+            candidate_steps[self._edit_index] = step
+            target_index = self._edit_index
+        else:
+            step = StepScrapingModel(
+                step_type=step_type,
+                step_id=generate_rng_id_step(),
+                is_active=True,
+                params=build_params(step_type, params),
+            )
+            candidate_steps = self._steps.as_list()
+            candidate_steps.append(step)
+            target_index = len(self._steps)
+
+        steps_context = StepsCollections(candidate_steps)
+        errors = self._workflow_service.validate_step(target_index, step, steps_context)
+        return step, errors
+
+    def _apply_inline_feedback(self, errors: list[str]) -> None:
+        """Report inline validation results to the form and the status bar."""
+        if errors and self._gestion_view:
+            self._gestion_view.show_inline_form_errors(errors)
+        self._notify_validation_feedback(errors[0] if errors else None)
+
+    def _commit_inline_step(self, step: StepScrapingModel) -> None:
+        """Persist an accepted inline step and refresh the view."""
+        if self._edit_index is not None and self._edit_index < len(self._steps):
+            self._steps[self._edit_index] = step
+        else:
+            self._steps.append(step)
+        step.mark_as_modified()
+        self._edit_index = None
+        self._view.clear_selection()
+        self._refresh_view()
 
     def _on_delete_step(self, index: int) -> None:
         """Removes a step by index.
@@ -259,8 +280,7 @@ class StepsListPresenter:
         if 0 <= index < len(self._steps):
             self._steps.delete_at(index)
             self._refresh_view()
-            errors = self.validate_steps()
-            self._notify_validation_feedback(errors[0] if errors else None)
+            self._revalidate_and_notify()
 
     def _on_clear_all_steps(self) -> None:
         """Clears all steps and persists the empty workflow."""
@@ -315,8 +335,7 @@ class StepsListPresenter:
         context_ids = self._steps.build_context_ids()
 
         obj_view = self._to_view_item(new_step, idx + 1, context_ids)
-        errors = self.validate_steps()
-        self._notify_validation_feedback(errors[0] if errors else None)
+        self._revalidate_and_notify()
         return obj_view
 
     def _on_toggle_active_step(self, index: int) -> None:
@@ -341,23 +360,16 @@ class StepsListPresenter:
         self._view.render_steps(items)
         self._gestion_view.set_available_steps(items)
 
+    def _revalidate_and_notify(self) -> None:
+        """Revalidates the full step list and updates the status bar."""
+        errors = self.validate_steps()
+        self._notify_validation_feedback(errors[0] if errors else None)
+
     def _notify_validation_feedback(self, first_error: str | None) -> None:
         if first_error:
             self._view.set_validation_status(first_error, True)
         else:
             self._view.set_validation_status("Workflow valide.", False)
-
-    def _validate_solo_step(self, steps: list[StepScrapingModel], candidate_index: int) -> list[str]:
-        """Return validation errors for the candidate step within the full workflow context.
-
-        Args:
-            steps: Full ordered workflow step list providing cross-step context.
-            candidate_index: Index of the step to validate.
-
-        Returns:
-            A list of validation errors for the candidate step.
-        """
-        return self._workflow_service.validate_step(candidate_index, steps[candidate_index], steps)
 
     # ---------------------------------------------------------------
     # StepViewItem factory helpers

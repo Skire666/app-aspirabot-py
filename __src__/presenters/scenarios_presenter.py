@@ -16,11 +16,7 @@ from datetime import datetime
 from models.scenario_model import ScenarioModel
 from services.scenarios_service import ScenariosService
 from shared.exception_util import AspirabotBaseError
-from shared.i18n_fra import (
-    C_DELETE_SCENARIO_FAILED,
-    C_DUPLICATE_SCENARIO_FAILED,
-    C_WORKFLOW_ALREADY_ACTIVE_WARNING,
-)
+from shared.i18n_fra import C_DELETE_SCENARIO_FAILED, C_DUPLICATE_SCENARIO_FAILED, C_WORKFLOW_ALREADY_ACTIVE_WARNING
 from view_models.scenarios_view_model import ScenariosViewModel
 from views.dialog_util import ask_delete_scenario_confirmation, ask_duplicate_scenario_confirmation
 
@@ -136,7 +132,6 @@ class ScenariosPresenter:
                     "id_file": p.id_file,
                     "scenario_name": p.scenario_name,
                     "scenario_desc": p.scenario_desc,
-                    "version": p.version,
                     "created_date_scenario": p.created_date_scenario,
                     "modified_date_scenario": p.modified_date_scenario,
                 }

@@ -30,6 +30,16 @@ class CountHtmlElementsParams(BaseModel):
     value: int
     comment: str = ""
 
+    @field_validator("comment")
+    @classmethod
+    def check_comment(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that comment is non-empty."""
+        if not info.context:
+            return v
+        if not v.strip():
+            raise ValueError(ERROR_TEMPLATES["field_comment_required"].format(step=step_label(info.context)))
+        return v
+
     @field_validator("selector")
     @classmethod
     def check_selector(cls, v: str, info: ValidationInfo) -> str:

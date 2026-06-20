@@ -85,7 +85,6 @@ class WorkflowPresenter:
             id_file=self._current_scenario.id_file,
             scenario_name=self._current_scenario.scenario_name,
             scenario_desc=self._current_scenario.scenario_desc,
-            version=self._current_scenario.version,
         )
         self._vm.show_inline_form(None)
 
@@ -111,7 +110,6 @@ class WorkflowPresenter:
             id_file=self._current_scenario.id_file,
             scenario_name=self._current_scenario.scenario_name,
             scenario_desc=self._current_scenario.scenario_desc,
-            version=self._current_scenario.version,
         )
         self._vm.show_inline_form(None)
         return True
@@ -134,7 +132,6 @@ class WorkflowPresenter:
             state = self._vm.snapshot()
             self._current_scenario.scenario_name = state.scenario_name
             self._current_scenario.scenario_desc = state.scenario_desc
-            self._current_scenario.version = state.version
 
             # Collect steps from the sub-presenter.
             self._current_scenario.steps = self._workflow_presenter.get_steps()

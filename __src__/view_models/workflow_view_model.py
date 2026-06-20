@@ -26,14 +26,12 @@ class WorkflowFormViewState:
         id_file: Unique identifier of the loaded scenario file.
         scenario_name: Editable name of the scenario.
         scenario_desc: Editable description of the scenario.
-        version: Version string of the scenario.
         is_dirty: True when the form has unsaved changes.
     """
 
     id_file: str
     scenario_name: str
     scenario_desc: str
-    version: str
     is_dirty: bool
 
 
@@ -45,7 +43,7 @@ class WorkflowFormViewState:
 class WorkflowViewModel(ViewModelBase):
     """UI state and action hooks for the workflow scenario editor.
 
-    Holds the form field Vars (scenario name, description, version, file ID)
+    Holds the form field Vars (scenario name, description, file ID)
     as ``tk.StringVar`` instances.  The ``is_loading_var`` flag lets the View
     suppress dirty-state marking while the Presenter populates the form.
     Lifecycle actions (save, cancel, show_error, show_inline_form, …) are
@@ -63,7 +61,6 @@ class WorkflowViewModel(ViewModelBase):
         # Form field Vars — bound to entries in the View
         self.name_var = tk.StringVar(master=master, value="")
         self.desc_var = tk.StringVar(master=master, value="")
-        self.version_var = tk.StringVar(master=master, value="")
         self.id_file_var = tk.StringVar(master=master, value="")
 
         # Guard Var — View checks this in _mark_dirty() to suppress during load
@@ -85,7 +82,7 @@ class WorkflowViewModel(ViewModelBase):
     # Form helpers
     # ------------------------------------------------------------------
 
-    def load_form(self, id_file: str, scenario_name: str, scenario_desc: str, version: str) -> None:
+    def load_form(self, id_file: str, scenario_name: str, scenario_desc: str) -> None:
         """Populate form Vars from typed parameters with dirty tracking suppressed.
 
         Uses ``batch_update`` so derived state is computed once on exit.
@@ -94,7 +91,6 @@ class WorkflowViewModel(ViewModelBase):
             id_file: Unique identifier of the scenario file.
             scenario_name: Display name of the scenario.
             scenario_desc: Short description of the scenario.
-            version: Version string.
         """
         self.is_loading_var.set(True)
         try:
@@ -102,7 +98,6 @@ class WorkflowViewModel(ViewModelBase):
                 self.id_file_var.set(id_file)
                 self.name_var.set(scenario_name)
                 self.desc_var.set(scenario_desc)
-                self.version_var.set(version)
                 self.is_dirty_var.set(False)
         finally:
             self.is_loading_var.set(False)
@@ -115,7 +110,6 @@ class WorkflowViewModel(ViewModelBase):
                 self.id_file_var.set("")
                 self.name_var.set("")
                 self.desc_var.set("")
-                self.version_var.set("")
                 self.is_dirty_var.set(False)
         finally:
             self.is_loading_var.set(False)
@@ -130,7 +124,6 @@ class WorkflowViewModel(ViewModelBase):
             id_file=self.id_file_var.get(),
             scenario_name=self.name_var.get(),
             scenario_desc=self.desc_var.get(),
-            version=self.version_var.get(),
             is_dirty=self.is_dirty_var.get(),
         )
 

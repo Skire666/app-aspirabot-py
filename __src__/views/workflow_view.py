@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any, cast
 
+from shared.app_global_state import MyEntry, MyLabel
 from shared.enums import StepTypeEnum
 from shared.i18n_fra import C_STEP_TYPE_TO_LABELS
 from shared.step_view_item import StepViewItem
@@ -98,7 +99,7 @@ class WorkflowView(ttk.Frame):
         info_lf.grid(row=0, column=0, columnspan=2, sticky="nwes")
 
         line1 = ttk.Frame(info_lf)
-        line1.pack(fill="x", pady=(0, 8))
+        line1.pack(fill="x")
         self._build_name_row(line1)
 
         line2 = ttk.Frame(info_lf)
@@ -111,18 +112,26 @@ class WorkflowView(ttk.Frame):
         Args:
             parent: The row frame to pack widgets into.
         """
-        ttk.Label(parent, text="Nom :", width=7).pack(side="left")
+        MyLabel(parent, text="Nom :").pack_left()
 
         # Bound to ViewModel Var; trace_add marks dirty (id stored for teardown).
         self._view_traces.append(
             (self._vm.name_var, self._vm.name_var.trace_add("write", lambda *_: self._mark_dirty()))
         )
-        self._entry_name = ttk.Entry(parent, textvariable=self._vm.name_var)
-        self._entry_name.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self._entry_name = MyEntry(parent, textvariable=self._vm.name_var, width=30)
+        self._entry_name.pack_left(fill="x", expand=True)
 
-        ttk.Label(parent, text="ID Fichier :", width=10).pack(side="left", padx=(20, 0))
-        self._entry_id_file = ttk.Entry(parent, textvariable=self._vm.id_file_var, state="readonly", width=15)
-        self._entry_id_file.pack(side="left")
+        MyLabel(parent, text="Desc. :", width=7).pack_left()
+
+        self._view_traces.append(
+            (self._vm.desc_var, self._vm.desc_var.trace_add("write", lambda *_: self._mark_dirty()))
+        )
+        self._entry_url = MyEntry(parent, textvariable=self._vm.desc_var)
+        self._entry_url.pack_left(fill="x", expand=True)
+
+        MyLabel(parent, text="ID Fichier :", width=10).pack_left()
+        self._entry_id_file = MyEntry(parent, textvariable=self._vm.id_file_var, state="readonly", width=15)
+        self._entry_id_file.pack_left()
 
     def _build_url_row(self, parent: tk.Widget) -> None:
         """Builds the Description and Version widgets bound to ViewModel Vars.
@@ -130,21 +139,6 @@ class WorkflowView(ttk.Frame):
         Args:
             parent: The row frame to pack widgets into.
         """
-        ttk.Label(parent, text="Desc. :", width=7).pack(side="left")
-
-        self._view_traces.append(
-            (self._vm.desc_var, self._vm.desc_var.trace_add("write", lambda *_: self._mark_dirty()))
-        )
-        self._entry_url = ttk.Entry(parent, textvariable=self._vm.desc_var)
-        self._entry_url.pack(side="left", fill="x", expand=True, padx=(0, 10))
-
-        ttk.Label(parent, text="Version :", width=10).pack(side="left", padx=(20, 0))
-
-        self._view_traces.append(
-            (self._vm.version_var, self._vm.version_var.trace_add("write", lambda *_: self._mark_dirty()))
-        )
-        self._entry_version = ttk.Entry(parent, textvariable=self._vm.version_var, width=15)
-        self._entry_version.pack(side="left")
 
     # ---------------------------------------------------------------
     # Gestion des étapes panel

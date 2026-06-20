@@ -237,7 +237,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "refresh_page_timeout_unit_invalid": "[{step}.] : l'unité de timeout invalide — {value!r}.",
     # --- scroll_down ---
     "scroll_down_pixels_invalid": "[{step}.] : le nombre de pixels doit être >= 1.",
-    "scroll_down_nbr_loops_invalid": "[{step}.] : le nombre de boucles doit être entre 1 et 99.",
+    "scroll_down_nbr_loops_invalid": "[{step}.] : le nombre de boucles doit être entre 1 et 999.",
     "scroll_down_delay_pause_invalid": "[{step}.] : la pause doit être entre 1 et 99.",
     # --- section ---
     "section_title_required": "[{step}.] : le titre de la section est obligatoire.",

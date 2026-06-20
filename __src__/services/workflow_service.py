@@ -10,61 +10,84 @@ step registry.  The presenter calls validate_step() before persisting changes.
 
 from models.step_scraping_model import StepScrapingModel
 from models.steps_collections_model import StepsCollections
-from shared.enums import StepTypeEnum
+from shared.enums import SeverityEnum, StepTypeEnum
+from shared.errors.workflow_error import ErrorCodeWKF
 from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
+from shared.validation_result import ValidationResult
 
 
 class WorkflowService:
-    """Validates scraping workflow step parameters via the step registry.
+    """Validates scraping workflow steps.
 
-    Each IStepExecutor is responsible for its own validation logic.
-    validate_step() is the single public entry point.
+    Two public entry points:
+    - validate_step(): validates a single step's params within a pre-built context.
+    - validate_all_steps(): structure check then each step's params.
     """
 
     def __init__(self) -> None:
         """Initialize the workflow service."""
 
     @staticmethod
-    def _validate_workflow_structure(steps_context: StepsCollections) -> list[str] | None:
-        """Check workflow-level constraints; return error list or None if all pass."""
+    def _validate_workflow_structure(steps_context: StepsCollections) -> ValidationResult:
+        """Check workflow-level constraints; return a ValidationResult."""
+        vr = ValidationResult()
         if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) != 1:
-            return ["Une étape de type 'E_OPEN_URL' est requise (1 seule)."]
+            vr.append(ErrorCodeWKF.WKF_1001, SeverityEnum.E_ERROR)
+        if not steps_context.had_open_url_at_the_beginning():
+            vr.append(ErrorCodeWKF.WKF_1006, SeverityEnum.E_ERROR)
         if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) != 1:
-            return ["Une étape de type 'E_KILL_BROWSER' est requise (1 seule)."]
+            vr.append(ErrorCodeWKF.WKF_1002, SeverityEnum.E_ERROR)
         if not steps_context.end_is_kill_browser():
-            return ["La dernière étape doit être de type 'E_KILL_BROWSER'."]
+            vr.append(ErrorCodeWKF.WKF_1003, SeverityEnum.E_ERROR)
         if steps_context.has_consecutive_jump_to_step():
-            return ["Il y a 2 étapes 'E_JUMP_TO_STEP' consécutives."]
+            vr.append(ErrorCodeWKF.WKF_1004, SeverityEnum.E_ERROR)
         if steps_context.had_dupplicate_step_id():
-            return ["Il y a des étapes avec des identifiants dupliqués."]
-        return None
+            vr.append(ErrorCodeWKF.WKF_1005, SeverityEnum.E_ERROR)
+        if steps_context.has_consecutive_restart_to_beginning():
+            vr.append(ErrorCodeWKF.WKF_1007, SeverityEnum.E_ERROR)
+        return vr
 
     @staticmethod
-    def validate_step(step_index: int, step: StepScrapingModel, steps: list[StepScrapingModel]) -> list[str]:
-        """Validate the parameters of a single workflow step.
-
-        Builds a StepsContext from the full step list and passes it to the
-        registered executor so cross-step checks (e.g. jump targets) have
-        access to their siblings without any mutable side-effects on the model.
+    def validate_step(step_index: int, step: StepScrapingModel, steps_context: StepsCollections) -> list[str]:
+        """Validate the parameters of a single step within its workflow context.
 
         Args:
             step_index: Zero-based position of the step in the workflow.
             step: The step to validate.
-            steps: Ordered workflow list required for context-aware checks.
+            steps_context: Pre-built collection giving access to sibling steps.
 
         Returns:
             A list of error messages; empty when the step is valid.
         """
         try:
-            steps_context: StepsCollections = StepsCollections(steps)
-            errors = WorkflowService._validate_workflow_structure(steps_context)
-            if errors is not None:
-                return errors
             if not step.params:
                 return [f"Step {step.step_id} has no params to validate"]
             if step.params.validate_with_context is None:
                 return [f"Step {step.step_id} has params without validate_with_context method"]
             return step.params.validate_with_context(step_index, steps_context, step.step_id)
+        except NoExecutorsRegisteredError, ExecutorNotRegisteredError:
+            return []
+
+    @staticmethod
+    def validate_all_steps(steps: list[StepScrapingModel]) -> list[str]:
+        """Validate the full workflow: structure constraints then each step's params.
+
+        Args:
+            steps: Ordered workflow step list.
+
+        Returns:
+            A list of error messages; empty when the workflow is valid.
+        """
+        try:
+            steps_context = StepsCollections(steps)
+            vr = WorkflowService._validate_workflow_structure(steps_context)
+            if vr.has_errors_or_fatals():
+                return [issue.message for issue in vr.issues]
+            return [
+                error
+                for index, step in enumerate(steps)
+                for error in WorkflowService.validate_step(index, step, steps_context)
+            ]
         except NoExecutorsRegisteredError, ExecutorNotRegisteredError:
             return []
 

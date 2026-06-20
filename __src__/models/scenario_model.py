@@ -36,7 +36,6 @@ class ScenarioModel:
         scenario_desc: Description of the scenario.
         created_date_scenario: Creation timestamp in YYYY-MM-DD HH:MM:SS format.
         modified_date_scenario: Last update timestamp in YYYY-MM-DD HH:MM:SS format.
-        version: scenario version string (for example 1.0.0).
         steps: Ordered list of scraping actions.
     """
 
@@ -45,7 +44,6 @@ class ScenarioModel:
     scenario_desc: str
     created_date_scenario: datetime | None
     modified_date_scenario: datetime | None
-    version: str
     steps: list[StepScrapingModel] = field(default_factory=lambda: cast(list[StepScrapingModel], []))
 
     @classmethod
@@ -66,7 +64,6 @@ class ScenarioModel:
             id_file=generate_rng_hexastring(C_SIZE_HEXASTRING_SCENARIO_ID),
             scenario_name="Nouv. scénario",
             scenario_desc="Description du scénario (ou URL)",
-            version="1.0.0",
             created_date_scenario=current_timestamp,
             modified_date_scenario=current_timestamp,
         )
@@ -161,7 +158,6 @@ class ScenarioModel:
             scenario_desc=str(data.get("scenario_desc") or ""),
             created_date_scenario=dict_with_key_to_optional_datetime(data, "created_date_scenario"),
             modified_date_scenario=dict_with_key_to_optional_datetime(data, "modified_date_scenario"),
-            version=str(data.get("version") or ""),
             steps=steps,
         )
 
@@ -204,7 +200,6 @@ class ScenarioModel:
             "scenario_desc": self.scenario_desc,
             "created_date_scenario": self.created_date_scenario,
             "modified_date_scenario": self.modified_date_scenario,
-            "version": self.version,
             "steps": [step.export_to_data_json() for step in self.steps],
         }
 

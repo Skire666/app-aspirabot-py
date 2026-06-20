@@ -95,10 +95,7 @@ class StepsCollections:
 
     def swap(self, index_a: int, index_b: int) -> None:
         """Swap two steps by index. Cache is unaffected (same objects, different positions)."""
-        self.list_steps[index_a], self.list_steps[index_b] = (
-            self.list_steps[index_b],
-            self.list_steps[index_a],
-        )
+        self.list_steps[index_a], self.list_steps[index_b] = (self.list_steps[index_b], self.list_steps[index_a])
 
     def clear(self) -> None:
         """Remove all steps."""
@@ -196,6 +193,22 @@ class StepsCollections:
             prev_was_jump = is_jump
         return False
 
+    def has_consecutive_restart_to_beginning(self) -> bool:
+        """Check if any two E_RESTART_TO_BEGINNING steps are adjacent in the workflow.
+
+        Uses the type cache for an O(1) fast-path: if fewer than two restart steps
+        exist, consecutive is impossible without scanning the ordered list.
+        """
+        if len(self._type_cache.get(StepTypeEnum.E_RESTART_TO_BEGINNING, [])) < self._MIN_JUMP_STEPS_FOR_CONSECUTIVE:
+            return False
+        prev_was_restart = False
+        for step in self.list_steps:
+            is_restart = step.step_type is StepTypeEnum.E_RESTART_TO_BEGINNING
+            if is_restart and prev_was_restart:
+                return True
+            prev_was_restart = is_restart
+        return False
+
     def had_dupplicate_step_id(self) -> bool:
         """Check if there are any duplicate step IDs in the context."""
         seen_ids: set[str] = set()
@@ -204,6 +217,15 @@ class StepsCollections:
                 return True
             seen_ids.add(step.step_id)
         return False
+
+    def had_open_url_at_the_beginning(self) -> bool:
+        """Check if the first step is an E_OPEN_URL step."""
+        if not self.list_steps:
+            return False
+        index = 0
+        while index < len(self.list_steps) - 1 and self.list_steps[index].step_type == StepTypeEnum.E_SECTION_STEPS:
+            index += 1
+        return self.list_steps[index].step_type == StepTypeEnum.E_OPEN_URL
 
     # ---------------------------------------------------------------
     # Cache management (private)

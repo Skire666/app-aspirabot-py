@@ -17,6 +17,7 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import Any
 
+from shared.app_global_state import MyLabel
 from shared.enums import StepTypeEnum
 from shared.step_view_item import StepViewItem
 from views.components.drag_drop_list import DragDropList
@@ -121,6 +122,7 @@ class StepsListCrudView(ttk.Frame):
         toolbar = ttk.Frame(self)
 
         # Status label expands on the left; clear button is anchored to the right.
+        MyLabel(toolbar, text="Vérification : ", anchor="w", foreground=_STATUS_COLOR_OK).pack_left()
         self._lbl_validation_status = ttk.Label(toolbar, text="", anchor="w", foreground=_STATUS_COLOR_OK)
         self._lbl_validation_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
 
