@@ -14,15 +14,24 @@ import logging
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import cast
 
 from models.launcher_model import LaunchModel
 from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
-from models.scraping_statistics_model import ScrapingStatisticsModel, StatisticsStepModel
+from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
-from models.steps.scroll_down_params import ScrollDownParams
 from models.workflow_run_handlers_model import WorkflowRunHandlers
+from presenters.scraping_statistics_presenter import ScrapingStatisticsPresenter
+from presenters.steps import (
+    extract_links_step_presenter,
+    extract_texts_step_presenter,
+    open_url_step_presenter,
+    scroll_down_step_presenter,
+    section_step_presenter,
+    wait_html_elements_step_presenter,
+    wait_html_images_step_presenter,
+    youtube_transcripts_step_presenter,
+)
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
@@ -59,12 +68,16 @@ _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
     EventScrapingEnum.E_PAUSE_ASKED: C_SCRAPING_EVENT_PAUSE_ASKED,
 }
 
-_STEP_COMMENT_TYPES: frozenset[StepTypeEnum] = frozenset({
-    StepTypeEnum.E_EXTRACT_TEXTS,
-    StepTypeEnum.E_EXTRACT_LINKS,
-    StepTypeEnum.E_WAIT_HTML_ELEMENTS,
-    StepTypeEnum.E_WAIT_HTML_IMAGES,
-})
+_STEP_START_FORMATTERS: dict[StepTypeEnum, Callable[[str, StepScrapingModel, ScrapingContextModel], str]] = {
+    StepTypeEnum.E_SECTION_STEPS: section_step_presenter.format_step_start,
+    StepTypeEnum.E_YOUTUBE_DDL: youtube_transcripts_step_presenter.format_step_start,
+    StepTypeEnum.E_OPEN_URL: open_url_step_presenter.format_step_start,
+    StepTypeEnum.E_SCROLL_DOWN: scroll_down_step_presenter.format_step_start,
+    StepTypeEnum.E_EXTRACT_TEXTS: extract_texts_step_presenter.format_step_start,
+    StepTypeEnum.E_EXTRACT_LINKS: extract_links_step_presenter.format_step_start,
+    StepTypeEnum.E_WAIT_HTML_ELEMENTS: wait_html_elements_step_presenter.format_step_start,
+    StepTypeEnum.E_WAIT_HTML_IMAGES: wait_html_images_step_presenter.format_step_start,
+}
 
 
 # -----------------------------------------------------------------------------
@@ -358,18 +371,9 @@ class ScrapingPresenter:
         ts = get_time_now_hh_mm_ss()
         sid, stype = step.step_id, step.step_type
         prefix = f"{ts} | {sid} | <{stype.value}>"
-        if stype is StepTypeEnum.E_SECTION_STEPS:
-            return f"{prefix} | Titre : {getattr(step.params, 'title', '')}"
-        if stype is StepTypeEnum.E_YOUTUBE_DDL:
-            return f"{prefix} | Utilisé : {context.last_url_opened}"
-        if stype is StepTypeEnum.E_OPEN_URL:
-            next_url = context.url_source.preview_next_url() if context.url_source else None
-            return f"{prefix} | Prochaine : {next_url!s}"
-        if stype is StepTypeEnum.E_SCROLL_DOWN:
-            scroll_params = cast(ScrollDownParams, step.params)
-            return f"{prefix} | Dist. : {scroll_params.pixels} | Boucle : {scroll_params.nbr_loops}"
-        if stype in _STEP_COMMENT_TYPES:
-            return f"{prefix} | Comment : {getattr(step.params, 'comment', '')}"
+        formatter = _STEP_START_FORMATTERS.get(stype)
+        if formatter:
+            return formatter(prefix, step, context)
         return prefix
 
     def _append_journal(self, line: str) -> None:
@@ -412,37 +416,8 @@ class ScrapingPresenter:
         Args:
             rp: The completed statistics model.
         """
-        ts: str = get_time_now_hh_mm_ss()
-        self._append_journal(f"{ts} | === Résumé final ===")
-        self._append_journal(self._compute_final_stats_by_type(ts, "Steps", rp.stats_steps))
-        self._append_journal(self._compute_final_stats_by_type(ts, "Open_URL", rp.open_urls_steps))
-        self._append_journal(self._compute_final_stats_by_type(ts, "Clics_*", rp.clicks_steps))
-        self._append_journal(self._compute_final_stats_by_type(ts, "Extract_Links", rp.extract_links_steps))
-        self._append_journal(self._compute_final_stats_by_type(ts, "Extract_Texts", rp.extract_texts_steps))
-        self._append_journal(f"{ts} | Annulé par l'utilisateur : {'oui' if rp.cancelled else 'non'}")
-
-        duration_in_min = (
-            (rp.finished_at - rp.started_at).total_seconds() / 60 if rp.started_at and rp.finished_at else 0
-        )
-        self._append_journal(f"{ts} | Durée totale : {duration_in_min:.1f} min")
-
-    @staticmethod
-    def _compute_final_stats_by_type(timestamp: str, type_str: str, rp: StatisticsStepModel) -> str:
-        """Compute summary statistics for a specific type.
-
-        Args:
-            timestamp: The current timestamp for the journal line.
-            type_str: The type label (e.g., "Étapes", "Clics").
-            rp: The StatisticsStepModel for the specific type.
-
-        Returns:
-            A formatted string with the summary statistics.
-        """
-        return (
-            f"{timestamp} | {type_str} : "
-            f"Total = {rp.executed} | Succès = {rp.success}"
-            f"| Erreur gérée = {rp.error_but_managed} | Erreur non gérée = {rp.error_not_handled}"
-        )
+        for line in ScrapingStatisticsPresenter.format_final_stats(rp):
+            self._append_journal(line)
 
     def _export_journal(self) -> None:
         """Delegate journal persistence to ScrapingService and push the path to the view."""
@@ -481,31 +456,12 @@ class ScrapingPresenter:
 
     def _push_step_stats(self, stats: ScrapingStatisticsModel) -> None:
         """Push all step-type counters to the corresponding ViewModel Vars."""
-        self._vm.stats_all_steps_var.set(
-            f"Total = {stats.stats_steps.executed} | Succès = {stats.stats_steps.success}"
-            f" | Erreur gérée = {stats.stats_steps.error_but_managed}"
-            f" | Erreur non gérée = {stats.stats_steps.error_not_handled}"
-        )
-        self._vm.stats_open_url_var.set(
-            f"Total = {stats.open_urls_steps.executed} | Succès = {stats.open_urls_steps.success}"
-            f" | Erreur gérée = {stats.open_urls_steps.error_but_managed}"
-            f" | Erreur non gérée = {stats.open_urls_steps.error_not_handled}"
-        )
-        self._vm.stats_clicks_var.set(
-            f"Total = {stats.clicks_steps.executed} | Succès = {stats.clicks_steps.success}"
-            f" | Erreur gérée = {stats.clicks_steps.error_but_managed}"
-            f" | Erreur non gérée = {stats.clicks_steps.error_not_handled}"
-        )
-        self._vm.stats_extract_links_var.set(
-            f"Total = {stats.extract_links_steps.executed} | Succès = {stats.extract_links_steps.success}"
-            f" | Erreur gérée = {stats.extract_links_steps.error_but_managed}"
-            f" | Erreur non gérée = {stats.extract_links_steps.error_not_handled}"
-        )
-        self._vm.stats_extract_texts_var.set(
-            f"Total = {stats.extract_texts_steps.executed} | Succès = {stats.extract_texts_steps.success}"
-            f" | Erreur gérée = {stats.extract_texts_steps.error_but_managed}"
-            f" | Erreur non gérée = {stats.extract_texts_steps.error_not_handled}"
-        )
+        fmt = ScrapingStatisticsPresenter.format_counters
+        self._vm.stats_all_steps_var.set(fmt(stats.stats_steps))
+        self._vm.stats_open_url_var.set(fmt(stats.open_urls_steps))
+        self._vm.stats_clicks_var.set(fmt(stats.clicks_steps))
+        self._vm.stats_extract_links_var.set(fmt(stats.extract_links_steps))
+        self._vm.stats_extract_texts_var.set(fmt(stats.extract_texts_steps))
 
 
 # EOF

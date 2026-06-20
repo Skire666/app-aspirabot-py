@@ -8,9 +8,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from models.scraping_context_model import ScrapingContextModel
+from models.step_scraping_model import StepScrapingModel
 from models.steps.extract_links_params import ExtractLinksParams
 from shared.enums import ExtractTargetEnum, StepTypeEnum
 from shared.step_registry import register_params_builder
+
+
+def format_step_start(prefix: str, step: StepScrapingModel, _context: ScrapingContextModel) -> str:
+    """Format E_STEP_START journal line for EXTRACT_LINKS."""
+    return f"{prefix} | Comment : {getattr(step.params, 'comment', '')}"
 
 
 def _build(data: dict[str, Any]) -> ExtractLinksParams:

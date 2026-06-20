@@ -8,10 +8,18 @@ from __future__ import annotations
 
 from typing import Any
 
+from models.scraping_context_model import ScrapingContextModel
+from models.step_scraping_model import StepScrapingModel
 from models.steps.open_url_params import OpenUrlParams
 from shared.constants import C_UNITS_TIME_DEFAULT_MODEL
 from shared.enums import StepTypeEnum, WaitUntilEnum
 from shared.step_registry import register_params_builder
+
+
+def format_step_start(prefix: str, _step: StepScrapingModel, context: ScrapingContextModel) -> str:
+    """Format E_STEP_START journal line for OPEN_URL."""
+    next_url = context.url_source.preview_next_url() if context.url_source else None
+    return f"{prefix} | Prochaine : {next_url!s}"
 
 
 def _build(data: dict[str, Any]) -> OpenUrlParams:
