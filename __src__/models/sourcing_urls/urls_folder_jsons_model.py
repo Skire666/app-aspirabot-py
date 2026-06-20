@@ -127,14 +127,19 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
             rs.append(ErrorCodeUFJ.UFJ_1005, SeverityEnum.E_ERROR)
         elif count_files_in_folder(self.folder_jsons, ".json") <= 0:
             rs.append(ErrorCodeUFJ.UFJ_1006, SeverityEnum.E_ERROR)
-        elif not self.date_modified_start.is_valid():
+        else:
+            self._validate_dates(rs)
+
+        return rs
+
+    def _validate_dates(self, rs: ValidationResult) -> None:
+        """Check date filter constraints and append any errors to rs."""
+        if not self.date_modified_start.is_valid():
             rs.append(ErrorCodeUFJ.UFJ_1007, SeverityEnum.E_ERROR)
         elif not self.date_modified_end.is_valid():
             rs.append(ErrorCodeUFJ.UFJ_1008, SeverityEnum.E_ERROR)
         elif not self.date_modified_start.is_lower_than(self.date_modified_end):
             rs.append(ErrorCodeUFJ.UFJ_1009, SeverityEnum.E_ERROR)
-
-        return rs
 
 
 # EOF

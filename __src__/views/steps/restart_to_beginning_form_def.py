@@ -43,7 +43,7 @@ class RestartToBeginningFormDef(IStepFormDef):
 
         urls_var = tk.BooleanVar(value=True)
 
-        CanvasCheckbox(line1, text="Recommencer uniquement s'il reste des URLs", variable=urls_var).pack(
+        CanvasCheckbox(line1, text="Recommencer uniquement s'il reste des URLs (sinon SKIP)", variable=urls_var).pack(
             side=tk.LEFT, padx=(0, 25)
         )
         widgets[C_JUMP_ONLY_IF_URLS_REMAINING] = urls_var

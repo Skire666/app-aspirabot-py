@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 from models.steps.check_url_page_params import CheckUrlPageParams
-from models.steps.restart_to_beginning_params import RestartToBeginningParams
 from models.steps.click_for_download_params import ClickForDownloadParams
 from models.steps.click_on_element_params import ClickOnElementParams
 from models.steps.close_tabs_params import CloseTabsParams
@@ -20,6 +19,7 @@ from models.steps.jump_to_step_params import JumpToStepParams
 from models.steps.kill_browser_params import KillBrowserParams
 from models.steps.open_url_params import OpenUrlParams
 from models.steps.refresh_page_params import RefreshPageParams
+from models.steps.restart_to_beginning_params import RestartToBeginningParams
 from models.steps.scroll_down_params import ScrollDownParams
 from models.steps.section_params import SectionParams
 from models.steps.wait_fixed_time_params import WaitFixedTimeParams
@@ -31,7 +31,6 @@ from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
 
 __all__ = [
     "CheckUrlPageParams",
-    "RestartToBeginningParams",
     "ClickForDownloadParams",
     "ClickOnElementParams",
     "CloseTabsParams",
@@ -46,6 +45,7 @@ __all__ = [
     "KillBrowserParams",
     "OpenUrlParams",
     "RefreshPageParams",
+    "RestartToBeginningParams",
     "ScrollDownParams",
     "SectionParams",
     "WaitFixedTimeParams",

@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 from presenters.steps.check_url_page_step_presenter import _build as _b_check_url_page  # noqa: F401
-from presenters.steps.restart_to_beginning_step_presenter import _build as _b_restart_to_beginning  # noqa: F401
 from presenters.steps.click_for_download_step_presenter import _build as _b_click_for_dl  # noqa: F401
 from presenters.steps.click_on_element_step_presenter import _build as _b_click_on_el  # noqa: F401
 from presenters.steps.close_tabs_step_presenter import _build as _b_close_tabs  # noqa: F401
@@ -20,6 +19,7 @@ from presenters.steps.jump_to_step_step_presenter import _build as _b_jump_to_st
 from presenters.steps.kill_browser_step_presenter import _build as _b_kill_browser  # noqa: F401
 from presenters.steps.open_url_step_presenter import _build as _b_open_url  # noqa: F401
 from presenters.steps.refresh_page_step_presenter import _build as _b_refresh_page  # noqa: F401
+from presenters.steps.restart_to_beginning_step_presenter import _build as _b_restart_to_beginning  # noqa: F401
 from presenters.steps.scroll_down_step_presenter import _build as _b_scroll_down  # noqa: F401
 from presenters.steps.section_step_presenter import _build as _b_section  # noqa: F401
 from presenters.steps.wait_fixed_time_step_presenter import _build as _b_wait_fixed  # noqa: F401

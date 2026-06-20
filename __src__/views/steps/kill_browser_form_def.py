@@ -25,7 +25,7 @@ C_KEY_WAIT_DURATION = "wait_duration"
 C_KEY_WAIT_UNIT = "wait_unit"
 C_KEY_COMMENT = "comment"
 
-C_DEFAULT_WAIT_DURATION = 3
+C_DEFAULT_WAIT_DURATION = 2
 
 # -----------------------------------------------------------------------------
 # Classes

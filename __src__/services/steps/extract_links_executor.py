@@ -53,21 +53,11 @@ class ExtractLinksExecutor(IStepExecutor):
                 event_bus.log_step(context, f"Excp : Aucun élément trouvé pour le sélecteur '{p.selector}'")
                 context.push_extracted_values(p.mapping, p.selector, p.comment, links)
                 return StepExecutionResultEnum.E_ERROR
-
-            # okay ?
-            selected: list[ElementHandle] = (
-                [elements[0]]
-                if p.target == ExtractTargetEnum.E_FIRST
-                else [elements[-1]]
-                if p.target == ExtractTargetEnum.E_LAST
-                else elements  # all
-            )
+            selected = self._select_elements(elements, p.target)
             parsed = urlparse(page.url)
             base_url = f"{parsed.scheme}://{parsed.netloc}"
             links = self._get_all_links_from_elements(selected, base_url, p.cutted_ampersand)
             context.push_extracted_values(p.mapping, p.selector, p.comment, links)
-
-            # infos
             preview_one_item = links[0] if links and links[0] else C_STR_ERROR_EXTRACT_LINKS
             event_bus.log_step(context, f"x{len(links)} lien(s) | str[:25] ='{preview_one_item[:25]}'")
         except Exception as exc:  # noqa: BLE001
@@ -75,6 +65,23 @@ class ExtractLinksExecutor(IStepExecutor):
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS
+
+    @staticmethod
+    def _select_elements(elements: list[ElementHandle], target: str) -> list[ElementHandle]:
+        """Return the subset of elements based on the target filter.
+
+        Args:
+            elements: Full list of matching elements.
+            target: Which element(s) to keep (first, last, or all).
+
+        Returns:
+            A list containing the selected element(s).
+        """
+        if target == ExtractTargetEnum.E_FIRST:
+            return [elements[0]]
+        if target == ExtractTargetEnum.E_LAST:
+            return [elements[-1]]
+        return elements
 
     @staticmethod
     def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str, cutted_ampersand: bool) -> list[str]:

@@ -8,6 +8,8 @@ import string
 from datetime import datetime
 from pathlib import Path
 
+from shared.exception_util import InvalidDirectoryPathError
+
 ALLOWED = set(string.ascii_letters + string.digits + "-_. ()")
 
 
@@ -138,7 +140,7 @@ def list_files(folder: str, extension: str) -> list[tuple[Path, datetime]]:
     folder_path = Path(folder)
 
     if not folder_path.is_dir():
-        raise ValueError(f"The provided path '{folder}' is not a valid directory.")
+        raise InvalidDirectoryPathError(folder)
 
     if not extension.startswith("."):
         extension = "." + extension

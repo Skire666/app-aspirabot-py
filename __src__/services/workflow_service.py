@@ -25,6 +25,21 @@ class WorkflowService:
         """Initialize the workflow service."""
 
     @staticmethod
+    def _validate_workflow_structure(steps_context: StepsCollections) -> list[str] | None:
+        """Check workflow-level constraints; return error list or None if all pass."""
+        if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) != 1:
+            return ["Une étape de type 'E_OPEN_URL' est requise (1 seule)."]
+        if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) != 1:
+            return ["Une étape de type 'E_KILL_BROWSER' est requise (1 seule)."]
+        if not steps_context.end_is_kill_browser():
+            return ["La dernière étape doit être de type 'E_KILL_BROWSER'."]
+        if steps_context.has_consecutive_jump_to_step():
+            return ["Il y a 2 étapes 'E_JUMP_TO_STEP' consécutives."]
+        if steps_context.had_dupplicate_step_id():
+            return ["Il y a des étapes avec des identifiants dupliqués."]
+        return None
+
+    @staticmethod
     def validate_step(step_index: int, step: StepScrapingModel, steps: list[StepScrapingModel]) -> list[str]:
         """Validate the parameters of a single workflow step.
 
@@ -42,21 +57,13 @@ class WorkflowService:
         """
         try:
             steps_context: StepsCollections = StepsCollections.from_list(steps)
-            if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) != 1:
-                return ["Une étape de type 'E_OPEN_URL' est requise (1 seule)."]
-            if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) != 1:
-                return ["Une étape de type 'E_KILL_BROWSER' est requise (1 seule)."]
-            if not steps_context.end_is_kill_browser():
-                return ["La dernière étape doit être de type 'E_KILL_BROWSER'."]
-            if steps_context.has_consecutive_jump_to_step():
-                return ["Il y a 2 étapes 'E_JUMP_TO_STEP' consécutives."]
-            if steps_context.had_dupplicate_step_id():
-                return ["Il y a des étapes avec des identifiants dupliqués."]
+            errors = WorkflowService._validate_workflow_structure(steps_context)
+            if errors is not None:
+                return errors
             if not step.params:
                 return [f"Step {step.step_id} has no params to validate"]
             if step.params.validate_with_context is None:
                 return [f"Step {step.step_id} has params without validate_with_context method"]
-
             return step.params.validate_with_context(step_index, steps_context, step.step_id)
         except NoExecutorsRegisteredError, ExecutorNotRegisteredError:
             return []

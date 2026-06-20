@@ -275,6 +275,18 @@ class InvalidScenarioJsonContentError(ValueError, AspirabotBaseError):
         super().__init__(f"Contenu JSON invalide dans {file_name}")
 
 
+class InvalidDirectoryPathError(NotADirectoryError, AspirabotBaseError):
+    """Raised when a path does not point to a valid directory."""
+
+    def __init__(self, folder: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            folder: The path that is not a valid directory.
+        """
+        super().__init__(f"Le chemin spécifié n'est pas un dossier valide : {folder}")
+
+
 class InvalidProfilesFolderPathError(NotADirectoryError, AspirabotBaseError):
     """Raised when the profiles folder path is not a directory."""
 

@@ -21,7 +21,7 @@ from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MO
 # Constants
 # -----------------------------------------------------------------------------
 
-C_INPUT_DEFAULT_DURATION = 3
+C_INPUT_DEFAULT_DURATION = 2
 
 C_KEY_DURATION = "duration"
 C_KEY_UNIT_TIME = "unit"

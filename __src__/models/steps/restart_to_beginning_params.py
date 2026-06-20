@@ -15,6 +15,8 @@ from shared.i18n_fra import ERROR_TEMPLATES
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
+_MAX_COMMENT_LENGTH: int = 120
+
 
 class RestartToBeginningParams(BaseModel):
     """Parameters for the restart to beginning scraping step."""
@@ -28,7 +30,7 @@ class RestartToBeginningParams(BaseModel):
     @classmethod
     def comment_max_length(cls, v: str) -> str:
         """Validate that the comment does not exceed 100 characters."""
-        if v and len(v) > 120:
+        if v and len(v) > _MAX_COMMENT_LENGTH:
             raise ValueError(ERROR_TEMPLATES["restart_to_beginning_comment_too_long"])
         return v
 

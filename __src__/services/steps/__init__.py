@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 from services.steps.check_url_page_executor import CheckUrlPageExecutor
-from services.steps.restart_to_beginning_executor import RestartToBeginningExecutor
 from services.steps.click_for_download_executor import ClickForDownloadExecutor
 from services.steps.click_on_element_executor import ClickOnElementExecutor
 from services.steps.close_tabs_executor import CloseTabsExecutor
@@ -20,6 +19,7 @@ from services.steps.jump_to_step_executor import JumpToStepExecutor
 from services.steps.kill_browser_executor import KillBrowserExecutor
 from services.steps.open_url_executor import OpenUrlExecutor
 from services.steps.refresh_page_executor import RefreshPageExecutor
+from services.steps.restart_to_beginning_executor import RestartToBeginningExecutor
 from services.steps.scroll_down_executor import ScrollDownExecutor
 from services.steps.section_executor import SectionExecutor
 from services.steps.wait_fixed_time_executor import WaitFixedTimeExecutor
@@ -31,7 +31,6 @@ from services.steps.youtube_transcripts_executor import YoutubeTranscriptsExecut
 
 __all__ = [
     "CheckUrlPageExecutor",
-    "RestartToBeginningExecutor",
     "ClickForDownloadExecutor",
     "ClickOnElementExecutor",
     "CloseTabsExecutor",
@@ -46,6 +45,7 @@ __all__ = [
     "KillBrowserExecutor",
     "OpenUrlExecutor",
     "RefreshPageExecutor",
+    "RestartToBeginningExecutor",
     "ScrollDownExecutor",
     "SectionExecutor",
     "WaitFixedTimeExecutor",

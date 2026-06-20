@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 from views.steps.check_url_page_form_def import CheckUrlPageFormDef
-from views.steps.restart_to_beginning_form_def import RestartToBeginningFormDef
 from views.steps.click_for_download_form_def import ClickForDownloadFormDef
 from views.steps.click_on_element_form_def import ClickOnElementFormDef
 from views.steps.close_tabs_form_def import CloseTabsFormDef
@@ -20,6 +19,7 @@ from views.steps.jump_to_step_form_def import JumpToStepFormDef
 from views.steps.kill_browser_form_def import KillBrowserFormDef
 from views.steps.open_url_form_def import OpenUrlFormDef
 from views.steps.refresh_page_form_def import RefreshPageFormDef
+from views.steps.restart_to_beginning_form_def import RestartToBeginningFormDef
 from views.steps.scroll_down_form_def import ScrollDownFormDef
 from views.steps.section_form_def import SectionFormDef
 from views.steps.wait_fixed_time_form_def import WaitFixedTimeFormDef
@@ -31,7 +31,6 @@ from views.steps.youtube_transcripts_form_def import YoutubeTranscriptsFormDef
 
 __all__ = [
     "CheckUrlPageFormDef",
-    "RestartToBeginningFormDef",
     "ClickForDownloadFormDef",
     "ClickOnElementFormDef",
     "CloseTabsFormDef",
@@ -46,6 +45,7 @@ __all__ = [
     "KillBrowserFormDef",
     "OpenUrlFormDef",
     "RefreshPageFormDef",
+    "RestartToBeginningFormDef",
     "ScrollDownFormDef",
     "SectionFormDef",
     "WaitFixedTimeFormDef",
