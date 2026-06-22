@@ -89,17 +89,20 @@ Install the following extensions from the VS Code marketplace (`Ctrl+Shift+X`):
 | Extension | Publisher | Purpose |
 |-----------|-----------|---------|
 | **Python** | Microsoft | Python language support |
-| **BasedPyright | detachhead | Replace pylance
+| **BasedPyright** | detachhead | Replace pylance |
 | **Ruff** | Astral Software | Linter & formatter |
-| **Pytest** | Little Fox Team | Test runner integration |
-| **vscode-icons** | VS Code Teams | Enhanced IDE
+| **Python Test Explorer** | Little Fox Team | Test runner integration |
+| **Python CodeLens** | Prasad G K | References count |
+| **vscode-icons** | VS Code Teams | Enhanced IDE |
 
 ### Settings
 
 Open your user settings (`Ctrl+Shift+P` → *Open User Settings JSON*) and add:
 
 ```json
-"[python]": {
+{
+    "git.ignoreMissingGitWarning": true,
+    "workbench.iconTheme": "vscode-icons",
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
