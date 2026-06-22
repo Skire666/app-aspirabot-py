@@ -27,6 +27,7 @@ from presenters.steps.wait_html_elements_step_presenter import _build as _b_wait
 from presenters.steps.wait_html_images_step_presenter import _build as _b_wait_html_img  # noqa: F401
 from presenters.steps.wait_page_state_step_presenter import _build as _b_wait_page_state  # noqa: F401
 from presenters.steps.wait_user_action_step_presenter import _build as _b_wait_user  # noqa: F401
+from presenters.steps.youtube_subtitles_presenter import _build as _b_YOUTUBE_SUBTITLES  # noqa: F401
 from presenters.steps.youtube_transcripts_step_presenter import _build as _b_yt_transcripts  # noqa: F401
 
 

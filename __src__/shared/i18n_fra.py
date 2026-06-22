@@ -165,10 +165,11 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_CLICK_FOR_DOWNLOAD: "Cliquer pour télécharger",
     StepTypeEnum.E_SCROLL_DOWN: "Défiler vers le bas",
     StepTypeEnum.E_DOWNLOAD_IMAGE: "Télécharger les images",
-    StepTypeEnum.E_YOUTUBE_DDL: "YouTube info/srt",
-    StepTypeEnum.E_EXTRACT_TEXTS: "Extraire textes de la page",
-    StepTypeEnum.E_EXTRACT_LINKS: "Extraire liens de la page",
-    StepTypeEnum.E_EXTRACT_VARIABLE: "Extraire variable système",
+    StepTypeEnum.E_YOUTUBE_SUBTITLES: "Youtube : Télécharger SRT",
+    StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS: "Youtube : Extraire page vidéo",
+    StepTypeEnum.E_EXTRACT_TEXTS: "Extraire : Textes de la page",
+    StepTypeEnum.E_EXTRACT_LINKS: "Extraire : Liens de la page",
+    StepTypeEnum.E_EXTRACT_VARIABLE: "Extraire : variable système",
     StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (json)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_RESTART_TO_BEGINNING: "Recommencer au début",
@@ -243,6 +244,9 @@ ERROR_TEMPLATES: dict[str, str] = {
     "section_title_required": "[{step}.] : le titre de la section est obligatoire.",
     # --- youtube_transcripts ---
     "youtube_transcripts_title_required": "[{step}.] : Le titre est obligatoire.",
+    # --- youtube_subtitles ---
+    "youtube_subtitles_nothing_to_download": "[{step}.] : Aucune langue sélectionnée. Cocher au moins FRA ou ENG.",
+    "youtube_subtitles_comment_too_long": "[{step}.] : Le commentaire ne doit pas dépasser 50 caractères.",
     # --- export_variable ---
     "export_variable_invalid": "[{step}.] : variable invalide — {value!r}.",
     "export_variable_mapping_required": "[{step}.] : la clé de mapping est obligatoire.",

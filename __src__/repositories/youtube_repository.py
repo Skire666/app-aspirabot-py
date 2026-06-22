@@ -12,8 +12,12 @@ from pathlib import Path
 from typing import Any, Final, cast
 
 import yt_dlp
-from models.youtube_video_model import YoutubeVideoModel
+from models.youtube_infos_video_model import YoutubeInfosVideoModel
+from models.Youtube_subtitles_list_model import YoutubeSubtitleModel
+from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
+from shared.enums.youtube_subtitle_enum import SubtitleOriginEnum
 from shared.exception_util import RepositoryWriteError
+from shared.youtube_util import get_id_video_youtube
 
 # ============================================================================
 # INTERNAL CONSTANTS
@@ -61,40 +65,47 @@ class YoutubeRepository:
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
-            "writesubtitles": False,
-            "writeautomaticsub": False,
+            "writesubtitles": False,  # list manual
+            "writeautomaticsub": False,  # list auto
             "socket_timeout": 30,
         }
-        self._logger.debug("Récupération des métadonnées YouTube : url='%s'", url)
         with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[arg-type]
             raw = ydl.extract_info(url, download=False)
         return cast(dict[str, Any], raw)
 
-    def execute_subtitle_download(self, url: str, out_dir: Path, codes: list[str], *, automatic: bool) -> None:
+    def execute_subtitle_download(self, url: str, out_dir: Path, srt: YoutubeSubtitleModel) -> None:
         """Invoke yt-dlp to download a specific set of subtitle tracks to disk.
 
         Args:
             url: The YouTube video URL.
             out_dir: Directory where subtitle files are written.
-            codes: Language codes to request (e.g. ``["fr", "en"]``).
-            automatic: ``True`` for auto-generated subtitles, ``False`` for manual.
+            srt: info subitles (auto, manual)
 
         Raises:
             DownloadError: Propagated from yt-dlp on download failures.
         """
+        id_video = get_id_video_youtube(url)
+        ori_video = srt.origin.value
+        lng_video = srt.language.value
+        ts_date = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
+        is_automatic = srt.origin is SubtitleOriginEnum.E_AUTO
+
+        # name
+        # template = str(out_dir / f"{id_video} - {ori_video} - {lng_video} - [%(id)s] - {ts_date}.%(ext)s")
         template = str(out_dir / "%(id)s.%(ext)s")
+
+        # payload
         opts: dict[str, Any] = {
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
-            "writesubtitles": not automatic,
-            "writeautomaticsub": automatic,
-            "subtitleslangs": list(codes),
+            "writesubtitles": not is_automatic,
+            "writeautomaticsub": is_automatic,
+            "subtitleslangs": list(srt.code),
             "subtitlesformat": _SUBTITLE_FORMATS,
             "outtmpl": template,
             "overwrites": False,
         }
-        self._logger.debug("Téléchargement sous-titres codes=%s automatic=%s", codes, automatic)
         with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[arg-type]
             ydl.download([url])
 
@@ -122,7 +133,7 @@ class YoutubeRepository:
         self._logger.debug("Répertoire de sortie prêt : %s", path)
         return path
 
-    def save_basic_data_json(self, info: YoutubeVideoModel, target: Path) -> None:
+    def save_basic_data_json(self, info: YoutubeInfosVideoModel, target: Path) -> None:
         """Serialize *info* as indented JSON and write it to *target*.
 
         Args:

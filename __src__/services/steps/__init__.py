@@ -27,7 +27,8 @@ from services.steps.wait_html_elements_executor import WaitHtmlElementsExecutor
 from services.steps.wait_html_images_executor import WaitHtmlImagesExecutor
 from services.steps.wait_page_state_executor import WaitPageStateExecutor
 from services.steps.wait_user_action_executor import WaitUserActionExecutor
-from services.steps.youtube_transcripts_executor import YoutubeTranscriptsExecutor
+from services.steps.youtube_infos_video_executor import YoutubeInfosVideoExecutor
+from services.steps.youtube_subtitles_executor import YoutubeSubtitlesExecutor
 
 __all__ = [
     "CheckUrlPageExecutor",
@@ -53,7 +54,8 @@ __all__ = [
     "WaitHtmlImagesExecutor",
     "WaitPageStateExecutor",
     "WaitUserActionExecutor",
-    "YoutubeTranscriptsExecutor",
+    "YoutubeInfosVideoExecutor",
+    "YoutubeSubtitlesExecutor",
 ]
 
 

@@ -80,7 +80,7 @@ class WorkflowView(ttk.Frame):
         self._build_gestion_etapes_panel(main_container)
 
         footer_frame = ttk.Frame(main_container)
-        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 5))
+        footer_frame.pack(side=tk.BOTTOM, fill=tk.X)
         self._build_footer(footer_frame)
 
         self._build_liste_etapes_panel(main_container)
@@ -159,7 +159,7 @@ class WorkflowView(ttk.Frame):
         """Populates the gestion container: type listbox on left, form on right."""
         labels = list(C_STEP_TYPE_TO_LABELS.values())
 
-        left_frame = ttk.Frame(self._gestion_container, width=175)
+        left_frame = ttk.Frame(self._gestion_container, width=182)
         left_frame.pack(side=tk.LEFT, fill=tk.Y)
         left_frame.pack_propagate(False)
         self._build_type_listbox(left_frame, labels)

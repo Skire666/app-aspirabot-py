@@ -27,7 +27,8 @@ from models.steps.wait_html_elements_params import WaitHtmlElementsParams
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
 from models.steps.wait_page_state_params import WaitPageStateParams
 from models.steps.wait_user_action_params import WaitUserActionParams
-from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
+from models.steps.youtube_infos_video_params import YoutubeInfosVideoParams
+from models.steps.youtube_subtitles_params import YoutubeSubtitlesParams
 
 __all__ = [
     "CheckUrlPageParams",
@@ -53,7 +54,8 @@ __all__ = [
     "WaitHtmlImagesParams",
     "WaitPageStateParams",
     "WaitUserActionParams",
-    "YoutubeTranscriptsParams",
+    "YoutubeInfosVideoParams",
+    "YoutubeSubtitlesParams",
 ]
 
 

@@ -247,6 +247,13 @@ def _fmt_youtube_transcripts(params: dict[str, Any], _idx: int, _ctx: dict[str, 
     return f"YouTube Transcripts\nInfo : {title}"
 
 
+def _fmt_youtube_subtitles(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
+    """Format label for YOUTUBE_SUBTITLES."""
+    fra_str = "oui" if params.get("download_fra_srt") else "non"
+    eng_str = "oui" if params.get("download_eng_srt") else "non"
+    return f"Télécharger '.srt'\nFRA : {fra_str}  |  ENG : {eng_str}"
+
+
 def _fmt_export_variable(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXTRACT_VARIABLE."""
     variable = params.get("variable", "")
@@ -333,7 +340,8 @@ _REGISTRY: dict[StepTypeEnum, _FormatterFn] = {
     StepTypeEnum.E_REFRESH_PAGE: _fmt_refresh_page,
     StepTypeEnum.E_SCROLL_DOWN: _fmt_scroll_down,
     StepTypeEnum.E_SECTION_STEPS: _fmt_section,
-    StepTypeEnum.E_YOUTUBE_DDL: _fmt_youtube_transcripts,
+    StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS: _fmt_youtube_transcripts,
+    StepTypeEnum.E_YOUTUBE_SUBTITLES: _fmt_youtube_subtitles,
     StepTypeEnum.E_EXTRACT_VARIABLE: _fmt_export_variable,
     StepTypeEnum.E_WAIT_FIXED_TIME: _fmt_wait_fixed_time,
     StepTypeEnum.E_WAIT_HTML_ELEMENTS: _fmt_wait_html_elements,

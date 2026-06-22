@@ -10,7 +10,7 @@ from typing import Any
 
 from models.scraping_context_model import ScrapingContextModel
 from models.step_scraping_model import StepScrapingModel
-from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
+from models.steps.youtube_infos_video_params import YoutubeInfosVideoParams
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_params_builder
 
@@ -20,7 +20,7 @@ def format_step_start(prefix: str, _step: StepScrapingModel, context: ScrapingCo
     return f"{prefix} | Utilisé : {context.last_url_opened}"
 
 
-def _build(data: dict[str, Any]) -> YoutubeTranscriptsParams:
+def _build(data: dict[str, Any]) -> YoutubeInfosVideoParams:
     """Build YoutubeTranscriptsParams from a raw JSON params dict.
 
     Args:
@@ -29,7 +29,7 @@ def _build(data: dict[str, Any]) -> YoutubeTranscriptsParams:
     Returns:
         A fully populated YoutubeTranscriptsParams instance.
     """
-    return YoutubeTranscriptsParams(
+    return YoutubeInfosVideoParams(
         title=data.get("title", ""),
         comment=data.get("comment", ""),
         basic_info=data.get("basic_info", True),
@@ -37,7 +37,7 @@ def _build(data: dict[str, Any]) -> YoutubeTranscriptsParams:
     )
 
 
-register_params_builder(StepTypeEnum.E_YOUTUBE_DDL, _build)
+register_params_builder(StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS, _build)
 
 
 # EOF

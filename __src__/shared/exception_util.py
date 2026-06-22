@@ -839,7 +839,7 @@ class DownloadNotDetectedError(AspirabotBaseError):
         super().__init__("Le clic a été effectué mais aucun téléchargement n'a été détecté.")
 
 
-class YoutubeBaseDataNotDownloadedError(AspirabotBaseError):
+class YoutubeInfosVideoNotDownloadedError(AspirabotBaseError):
     """Raised when no basic info file was downloaded for a YouTube step."""
 
     def __init__(self, error_details: str) -> None:
@@ -847,7 +847,7 @@ class YoutubeBaseDataNotDownloadedError(AspirabotBaseError):
         super().__init__(f"Aucun fichier de base téléchargé. Détails : {error_details}")
 
 
-class YoutubeSrtNotDownloadedError(AspirabotBaseError):
+class YoutubeSubtitlesDownloadedError(AspirabotBaseError):
     """Raised when no subtitle file was downloaded for a YouTube step."""
 
     def __init__(self) -> None:

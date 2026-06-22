@@ -27,7 +27,8 @@ from views.steps.wait_html_elements_form_def import WaitHtmlElementsFormDef
 from views.steps.wait_html_images_form_def import WaitHtmlImagesFormDef
 from views.steps.wait_page_state_form_def import WaitPageStateFormDef
 from views.steps.wait_user_action_form_def import WaitUserActionFormDef
-from views.steps.youtube_transcripts_form_def import YoutubeTranscriptsFormDef
+from views.steps.youtube_subtitles_form_def import YoutubeSubtitlesFormDef
+from views.steps.youtube_transcripts_form_def import YoutubeInfosVideoFormDef
 
 __all__ = [
     "CheckUrlPageFormDef",
@@ -53,7 +54,8 @@ __all__ = [
     "WaitHtmlImagesFormDef",
     "WaitPageStateFormDef",
     "WaitUserActionFormDef",
-    "YoutubeTranscriptsFormDef",
+    "YoutubeInfosVideoFormDef",
+    "YoutubeSubtitlesFormDef",
 ]
 
 

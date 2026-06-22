@@ -29,13 +29,13 @@ C_KEY_DDL_SRT = "ddl_srt"
 # -----------------------------------------------------------------------------
 
 
-class YoutubeTranscriptsFormDef(IStepFormDef):
+class YoutubeInfosVideoFormDef(IStepFormDef):
     """Form definition for the YouTube transcripts step."""
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_YOUTUBE_DDL
+        return StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -131,7 +131,7 @@ class YoutubeTranscriptsFormDef(IStepFormDef):
         }
 
 
-register_form(YoutubeTranscriptsFormDef())
+register_form(YoutubeInfosVideoFormDef())
 
 
 # EOF

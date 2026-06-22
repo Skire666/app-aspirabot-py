@@ -17,7 +17,6 @@ All file and network I/O is delegated to :class:`YoutubeRepository`.
 from __future__ import annotations
 
 import logging
-import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -25,7 +24,8 @@ from typing import Final
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
 from models.scraping_context_model import ScrapingContextModel
-from models.youtube_video_model import YoutubeSubtitlesListModel, YoutubeVideoModel
+from models.youtube_infos_video_model import YoutubeInfosVideoModel
+from models.Youtube_subtitles_list_model import YoutubeSubtitleModel, YoutubeSubtitlesListModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.exception_util import (
@@ -35,6 +35,7 @@ from shared.exception_util import (
     YoutubeUrlParameterEmptyError,
 )
 from shared.path_util import clean_filename_youtube
+from shared.youtube_util import sanitize_youtube_url
 from yt_dlp.utils import DownloadError
 
 # ============================================================================
@@ -68,25 +69,6 @@ ORIGIN_AUTO: Final[str] = "srt_autogen"
 
 # Module-level logger (configuration is left to the caller).
 _logger: Final[logging.Logger] = logging.getLogger(LOGGER_NAME)
-
-
-def clean_youtube_url(url: str) -> str:
-    """Clean a YouTube URL by extracting the video ID and reformatting it.
-
-    This function looks for the 'v' parameter in the query string and constructs a
-    standardized YouTube URL. If the 'v' parameter is not found, it returns the original URL.
-
-    # https://www.youtube.com/?v=cmXyYWC1FZc&pp=sdfsdf -> https://www.youtube.com/watch?v=cmXyYWC1FZc
-    # https://www.youtube.com/watch?v=aaaaGEU&pp=ugUEEgJmcg%3D%3D -> https://www.youtube.com/watch?v=aaaaGEU
-    # https://www.youtube.com/shorts/cmXyYWC1FZc&pp=sdfsdf -> https://www.youtube.com/watch?v=cmXyYWC1FZc
-    """
-    match = re.search(r"[?&]v=([a-zA-Z0-9_-]+)", url)
-    if not match:
-        match = re.search(r"shorts/([a-zA-Z0-9_-]+)", url)
-
-    if match:
-        return f"https://www.youtube.com/watch?v={match.group(1)}"
-    return ""  # pas de paramètre v, on retourne l'URL telle quelle
 
 
 # ============================================================================
@@ -166,7 +148,7 @@ def download_youtube_data(
     """
     result: DownloadResult = DownloadResult()
 
-    url_youtube = clean_youtube_url(url_youtube)
+    url_youtube = sanitize_youtube_url(url_youtube)
     _logger.debug("Début du téléchargement YouTube : url='%s'", url_youtube)
     if not _safe_validate(url_youtube, output_dir, get_basic_data, get_srt, result):
         event_bus.log_step(ctx, f"Paramètres invalides : {result.errors[-1]}")
@@ -178,7 +160,7 @@ def download_youtube_data(
 
     _logger.debug("Préparation du répertoire de sortie.")
     # basic info extraction (also serves as a validation step before attempting subs download)
-    all_infos: YoutubeVideoModel | None = _safe_fetch_info(url_youtube, result, repo)
+    all_infos: YoutubeInfosVideoModel | None = _safe_fetch_info(url_youtube, result, repo)
     if all_infos is None:
         return result
     video_id = str(all_infos.id or "unknown")
@@ -222,11 +204,13 @@ def _safe_prepare_dir(output_dir: str, result: DownloadResult, repo: YoutubeRepo
         return None
 
 
-def _safe_fetch_info(url_youtube: str, result: DownloadResult, repo: YoutubeRepository) -> YoutubeVideoModel | None:
+def _safe_fetch_info(
+    url_youtube: str, result: DownloadResult, repo: YoutubeRepository
+) -> YoutubeInfosVideoModel | None:
     """Fetch video info via the repository; on failure, record error and return None."""
     try:
         obj = repo.fetch_video_info(url_youtube)
-        return YoutubeVideoModel(obj)
+        return YoutubeInfosVideoModel(obj)
     except (DownloadError, RuntimeError) as exc:
         exc_str: str = str(exc).lower()
         if "in to confirm your age" in exc_str:
@@ -238,7 +222,7 @@ def _safe_fetch_info(url_youtube: str, result: DownloadResult, repo: YoutubeRepo
 
 
 def _safe_save_basic_data(
-    info: YoutubeVideoModel,
+    info: YoutubeInfosVideoModel,
     out_dir: Path,
     video_id: str,
     result: DownloadResult,
@@ -259,7 +243,6 @@ def _safe_download_subtitles(
     url: str,
     info: YoutubeSubtitlesListModel,
     out_dir: Path,
-    video_id: str,
     result: DownloadResult,
     event_bus: IScrapingEventBus,
     ctx: ScrapingContextModel,
@@ -267,7 +250,7 @@ def _safe_download_subtitles(
 ) -> None:
     """Wrap ``_download_subtitles`` to capture any unexpected exception."""
     try:
-        _download_subtitles(url, info, out_dir, video_id, result, event_bus, ctx, repo)
+        _download_subtitles(url, info, out_dir, result, event_bus, ctx, repo)
     except Exception as exc:  # noqa: BLE001
         result.fail(f"Sous-titres (erreur inattendue) : {exc!r}")
 
@@ -293,7 +276,7 @@ def _validate_inputs(url_youtube: str, output_dir: str, get_basic_data: bool, ge
 
 
 def _save_basic_data(
-    info: YoutubeVideoModel, out_dir: Path, video_id: str, result: DownloadResult, repo: YoutubeRepository
+    info: YoutubeInfosVideoModel, out_dir: Path, video_id: str, result: DownloadResult, repo: YoutubeRepository
 ) -> None:
     """Build the target path and delegate JSON serialisation to the repository."""
     filename = BASIC_DATA_FILENAME_FMT.format(vid=video_id, ts=get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff())
@@ -324,30 +307,29 @@ def _download_subtitles(
     url_youtube: str,
     info: YoutubeSubtitlesListModel,
     out_dir: Path,
-    video_id: str,
     result: DownloadResult,
     event_bus: IScrapingEventBus,
     ctx: ScrapingContextModel,
     repo: YoutubeRepository,
 ) -> None:
     """Run the two-phase subtitle workflow (manual then automatic)."""
-    manual_codes = info.list_manual_codes()
-    auto_codes = info.list_auto_codes()
+    manual_subtitles = info.list_manual_codes()
+    auto_subtitles = info.list_auto_codes()
 
-    _logger.info("Phase manuelle - codes sélectionnés : %s", manual_codes or "aucun")
-    if manual_codes:
-        event_bus.log_step(ctx, f"Sous-titres manuels : {', '.join(manual_codes)}")
+    _logger.info("Phase manuelle - codes sélectionnés : %s", manual_subtitles or "aucun")
+    if manual_subtitles:
+        event_bus.log_step(ctx, "Sous-titres manuels")
         time.sleep(PHASE_PAUSE_SECONDS)
-        for code in manual_codes:
-            _run_subtitle_phase(url_youtube, out_dir, [code], result, automatic=False, repo=repo)
+        for srt in manual_subtitles:
+            _run_subtitle_phase(url_youtube, out_dir, srt, result, repo=repo)
 
-    _logger.info("Phase automatique - codes sélectionnés : %s", auto_codes or "aucun")
-    if auto_codes:
-        event_bus.log_step(ctx, f"Sous-titres automatiques : {', '.join(auto_codes)}")
+    _logger.info("Phase automatique - codes sélectionnés : %s", auto_subtitles or "aucun")
+    if auto_subtitles:
+        event_bus.log_step(ctx, "Sous-titres automatiques")
         time.sleep(PHASE_PAUSE_SECONDS)
-        for code in auto_codes:
-            _run_subtitle_phase(url_youtube, out_dir, [code], result, automatic=True, repo=repo)
-    _rename_subtitle_files(out_dir, video_id, manual_codes, auto_codes, result, repo)
+        for srt in auto_subtitles:
+            _run_subtitle_phase(url_youtube, out_dir, srt, result, repo=repo)
+    # _rename_subtitle_files(out_dir, video_id, manual_subtitles, auto_subtitles, result, repo)
 
 
 # ============================================================================
@@ -356,7 +338,7 @@ def _download_subtitles(
 
 
 def _run_subtitle_phase(
-    url: str, out_dir: Path, codes: list[str], result: DownloadResult, *, automatic: bool, repo: YoutubeRepository
+    url: str, out_dir: Path, srt: YoutubeSubtitleModel, result: DownloadResult, *, repo: YoutubeRepository
 ) -> None:
     """Run a single subtitle phase with fixed-delay retries on HTTP 429."""
     last_error: Exception | None = None
@@ -365,7 +347,7 @@ def _run_subtitle_phase(
             time.sleep(delay)
 
         try:
-            repo.execute_subtitle_download(url, out_dir, codes, automatic=automatic)
+            repo.execute_subtitle_download(url, out_dir, srt)
         except DownloadError as exc:
             last_error = exc
             if not _is_rate_limit_error(exc):

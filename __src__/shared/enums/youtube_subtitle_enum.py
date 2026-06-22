@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class SubtitleTypeEnum(Enum):
+class SubtitleOriginEnum(Enum):
     E_UNSET = "UNSET"
     E_MANUAL = "MANUAL"
     E_AUTO = "AUTO"

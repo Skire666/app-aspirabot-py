@@ -310,12 +310,12 @@ class TestFmtSection:
 
 class TestFmtYoutubeTranscripts:
     def test_with_title(self) -> None:
-        result = _fmt(StepTypeEnum.E_YOUTUBE_DDL, {"title": "My Video"})
+        result = _fmt(StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS, {"title": "My Video"})
         assert "YouTube" in result
         assert "My Video" in result
 
     def test_empty(self) -> None:
-        result = _fmt(StepTypeEnum.E_YOUTUBE_DDL, {})
+        result = _fmt(StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS, {})
         assert "YouTube" in result
 
 
