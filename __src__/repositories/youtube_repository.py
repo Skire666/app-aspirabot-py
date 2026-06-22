@@ -17,7 +17,6 @@ from models.Youtube_subtitles_list_model import YoutubeSubtitleModel
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums.youtube_subtitle_enum import SubtitleOriginEnum
 from shared.exception_util import RepositoryWriteError
-from shared.youtube_util import get_id_video_youtube
 
 # ============================================================================
 # INTERNAL CONSTANTS
@@ -73,7 +72,9 @@ class YoutubeRepository:
             raw = ydl.extract_info(url, download=False)
         return cast(dict[str, Any], raw)
 
-    def execute_subtitle_download(self, url: str, out_dir: Path, srt: YoutubeSubtitleModel) -> None:
+    def execute_subtitle_download(
+        self, url_youtube: str, id_video: str, out_dir: Path, srt: YoutubeSubtitleModel
+    ) -> None:
         """Invoke yt-dlp to download a specific set of subtitle tracks to disk.
 
         Args:
@@ -84,15 +85,13 @@ class YoutubeRepository:
         Raises:
             DownloadError: Propagated from yt-dlp on download failures.
         """
-        id_video = get_id_video_youtube(url)
-        ori_video = srt.origin.value
-        lng_video = srt.language.value
         ts_date = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
         is_automatic = srt.origin is SubtitleOriginEnum.E_AUTO
 
         # name
-        # template = str(out_dir / f"{id_video} - {ori_video} - {lng_video} - [%(id)s] - {ts_date}.%(ext)s")
-        template = str(out_dir / "%(id)s.%(ext)s")
+        template = str(
+            out_dir / f"{id_video} - Q{srt.quality} - {srt.origin.value} - {srt.language.value} - {ts_date}.%(ext)s"
+        )
 
         # payload
         opts: dict[str, Any] = {
@@ -101,13 +100,13 @@ class YoutubeRepository:
             "skip_download": True,
             "writesubtitles": not is_automatic,
             "writeautomaticsub": is_automatic,
-            "subtitleslangs": list(srt.code),
+            "subtitleslangs": [srt.code],
             "subtitlesformat": _SUBTITLE_FORMATS,
             "outtmpl": template,
             "overwrites": False,
         }
         with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[arg-type]
-            ydl.download([url])
+            ydl.download([url_youtube])
 
     # ------------------------------------------------------------------
     # Local filesystem operations

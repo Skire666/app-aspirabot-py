@@ -34,8 +34,7 @@ from shared.exception_util import (
     YoutubeOutputDirParameterEmptyError,
     YoutubeUrlParameterEmptyError,
 )
-from shared.path_util import clean_filename_youtube
-from shared.youtube_util import sanitize_youtube_url
+from shared.youtube_util import get_id_video_youtube, sanitize_youtube_url
 from yt_dlp.utils import DownloadError
 
 # ============================================================================
@@ -44,14 +43,8 @@ from yt_dlp.utils import DownloadError
 
 LOGGER_NAME: Final[str] = "youtube_txt_downloader"
 
-# --- Language selection rules ----------------------------------------------
-TARGET_LANG_PATTERNS: Final[tuple[str, ...]] = ("french", "english")
-TARGET_LANG_CODES: Final[tuple[str, ...]] = ("fr", "en")
-DEFAULT_SHORT_CODE: Final[str] = "UNDEF"
-
 # --- Rate-limit / phase pacing ---------------------------------------------
 RATE_LIMIT_RETRY_DELAYS: Final[tuple[int, ...]] = (1, 3)  # old = (0, 3, 5, 7)
-PHASE_PAUSE_SECONDS: Final[int] = 1
 HTTP_429_PATTERNS: Final[tuple[str, ...]] = ("429", "too many requests", "rate-limit")
 
 # --- Subtitle formats ------------------------------------------------------
@@ -59,13 +52,6 @@ SUBTITLE_EXTENSIONS_KEEP: Final[tuple[str, ...]] = ("srt", "vtt", "json3")
 
 # --- Filename patterns -----------------------------------------------------
 BASIC_DATA_FILENAME_FMT: Final[str] = "{vid} - basic_data - {ts}.json"
-SUBTITLE_FILENAME_FMT: Final[str] = "{vid} - {origin} - {lang} - {ts}.{ext}"
-NA_FILENAME_FMT: Final[str] = "{vid} - {origin} - {lang} - {ts}.{ext}"
-NA_PLACEHOLDER_EXT: Final[str] = "error"
-
-# --- Origin tags used in subtitle filenames --------------------------------
-ORIGIN_MANUAL: Final[str] = "srt_manual"
-ORIGIN_AUTO: Final[str] = "srt_autogen"
 
 # Module-level logger (configuration is left to the caller).
 _logger: Final[logging.Logger] = logging.getLogger(LOGGER_NAME)
@@ -91,14 +77,12 @@ class DownloadResult:
         errors: Failures the caller must inspect and decide how to handle.
     """
 
-    files_written: list[Path] = field(default_factory=list)
-    files_downloaded: list[Path] = field(default_factory=list)
+    files_basic_data: int = 0
+    files_srt_ddl: int = 0
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     video_not_found: bool = False
     video_age_restricted: bool = False
-    nbr_base_success: int = 0
-    nbr_srt_success: int = 0
 
     @property
     def success(self) -> bool:
@@ -172,7 +156,7 @@ def download_youtube_data(
         _safe_save_basic_data(all_infos, out_path, video_id, result, event_bus, ctx, repo)
     if get_srt:
         _logger.debug("Téléchargement des sous-titres : %s", video_id)
-        _safe_download_subtitles(url_youtube, all_infos.subtitles_ls, out_path, video_id, result, event_bus, ctx, repo)
+        _safe_download_subtitles(url_youtube, all_infos.subtitles_ls, out_path, result, event_bus, ctx, repo)
 
     return result
 
@@ -234,13 +218,12 @@ def _safe_save_basic_data(
     try:
         _save_basic_data(info, out_dir, video_id, result, repo)
         event_bus.log_step(ctx, "Données basiques téléchargées.")
-        result.nbr_base_success += 1
     except Exception as exc:  # noqa: BLE001
         result.fail(f"Données basiques (erreur inattendue) : {exc!r}")
 
 
 def _safe_download_subtitles(
-    url: str,
+    url_youtube: str,
     info: YoutubeSubtitlesListModel,
     out_dir: Path,
     result: DownloadResult,
@@ -250,7 +233,18 @@ def _safe_download_subtitles(
 ) -> None:
     """Wrap ``_download_subtitles`` to capture any unexpected exception."""
     try:
-        _download_subtitles(url, info, out_dir, result, event_bus, ctx, repo)
+        all_subtitles = info.list_srt_better_to_worst()
+
+        if all_subtitles:
+            for st in all_subtitles:
+                msg_log = f"SRT -> Code: {st.code}, Name: {st.name}, Origine: {st.origin.value}, Qual.: {st.quality}"
+                is_success = _run_subtitle_phase(url_youtube, out_dir, st, result, repo=repo)
+                if is_success:
+                    event_bus.log_step(ctx, "OK: " + msg_log)
+                    result.files_srt_ddl += 1
+                else:
+                    event_bus.log_step(ctx, "ERROR: " + msg_log)
+
     except Exception as exc:  # noqa: BLE001
         result.fail(f"Sous-titres (erreur inattendue) : {exc!r}")
 
@@ -286,50 +280,8 @@ def _save_basic_data(
     except RepositoryWriteError as exc:
         result.fail(f"Écriture des données basiques échouée : {exc}")
         return
-    result.files_written.append(target)
+    result.files_basic_data += 1
     _logger.info("Données basiques enregistrées dans %s.", target)
-
-
-def _short_lang_code(code: str, name: str) -> str:
-    """Map a track to a 2-letter uppercase short code (FRA/ENG/...)."""
-    lowered = name.lower()
-    if lowered.startswith(TARGET_LANG_PATTERNS):
-        return code
-    return DEFAULT_SHORT_CODE
-
-
-# ============================================================================
-# SUBTITLES — TWO-PHASE DOWNLOAD
-# ============================================================================
-
-
-def _download_subtitles(
-    url_youtube: str,
-    info: YoutubeSubtitlesListModel,
-    out_dir: Path,
-    result: DownloadResult,
-    event_bus: IScrapingEventBus,
-    ctx: ScrapingContextModel,
-    repo: YoutubeRepository,
-) -> None:
-    """Run the two-phase subtitle workflow (manual then automatic)."""
-    manual_subtitles = info.list_manual_codes()
-    auto_subtitles = info.list_auto_codes()
-
-    _logger.info("Phase manuelle - codes sélectionnés : %s", manual_subtitles or "aucun")
-    if manual_subtitles:
-        event_bus.log_step(ctx, "Sous-titres manuels")
-        time.sleep(PHASE_PAUSE_SECONDS)
-        for srt in manual_subtitles:
-            _run_subtitle_phase(url_youtube, out_dir, srt, result, repo=repo)
-
-    _logger.info("Phase automatique - codes sélectionnés : %s", auto_subtitles or "aucun")
-    if auto_subtitles:
-        event_bus.log_step(ctx, "Sous-titres automatiques")
-        time.sleep(PHASE_PAUSE_SECONDS)
-        for srt in auto_subtitles:
-            _run_subtitle_phase(url_youtube, out_dir, srt, result, repo=repo)
-    # _rename_subtitle_files(out_dir, video_id, manual_subtitles, auto_subtitles, result, repo)
 
 
 # ============================================================================
@@ -338,110 +290,33 @@ def _download_subtitles(
 
 
 def _run_subtitle_phase(
-    url: str, out_dir: Path, srt: YoutubeSubtitleModel, result: DownloadResult, *, repo: YoutubeRepository
-) -> None:
+    url_youtube: str, out_dir: Path, srt: YoutubeSubtitleModel, result: DownloadResult, *, repo: YoutubeRepository
+) -> bool:
     """Run a single subtitle phase with fixed-delay retries on HTTP 429."""
-    last_error: Exception | None = None
+    id_video = get_id_video_youtube(url_youtube)
+
     for _, delay in enumerate(RATE_LIMIT_RETRY_DELAYS):  # idx, delay
         if delay > 0:
             time.sleep(delay)
 
         try:
-            repo.execute_subtitle_download(url, out_dir, srt)
+            repo.execute_subtitle_download(url_youtube, id_video, out_dir, srt)
         except DownloadError as exc:
-            last_error = exc
             if not _is_rate_limit_error(exc):
                 result.fail(f"Erreur yt-dlp (non rate-limit) : {exc}")
-                return
+                return False
             result.warn("Limite de débit détectée (HTTP 429).")
         else:
-            return
-    result.fail(f"Échec définitif après réessais : {last_error}")
+            return True
+    target = str(out_dir / f"{id_video} - Q{srt.quality} - {srt.origin.value} - {srt.language.value}.error")
+    repo.write_placeholder_file_when_error(Path(target))
+    return False
 
 
 def _is_rate_limit_error(exc: BaseException) -> bool:
     """Return True if the exception message looks like an HTTP 429 issue."""
     message = str(exc).lower()
     return any(pattern in message for pattern in HTTP_429_PATTERNS)
-
-
-# ============================================================================
-# RENAMING + N/A PLACEHOLDERS
-# ============================================================================
-
-
-def _rename_subtitle_files(
-    out_dir: Path,
-    video_id: str,
-    manual_codes: list[str],
-    auto_codes: list[str],
-    result: DownloadResult,
-    repo: YoutubeRepository,
-) -> None:
-    """Rename downloaded subtitle files; emit N/A placeholders on failure."""
-    _process_phase_rename(out_dir, video_id, manual_codes, ORIGIN_MANUAL, result, repo)
-    _process_phase_rename(out_dir, video_id, auto_codes, ORIGIN_AUTO, result, repo)
-
-
-def _process_phase_rename(
-    out_dir: Path, video_id: str, codes: list[str], origin: str, result: DownloadResult, repo: YoutubeRepository
-) -> None:
-    """For each requested code, rename downloaded files or emit a placeholder."""
-    for code in codes:
-        renamed_any = False
-        for ext in SUBTITLE_EXTENSIONS_KEEP:
-            src = out_dir / f"{video_id}.{code}.{ext}"
-            if src.exists():
-                _rename_one(src, out_dir, video_id, code, origin, ext, result, repo)
-                renamed_any = True
-        if not renamed_any:
-            _emit_na_placeholder(out_dir, video_id, code, origin, result, repo)
-
-
-def _rename_one(
-    src: Path,
-    out_dir: Path,
-    video_id: str,
-    short: str,
-    origin: str,
-    ext: str,
-    result: DownloadResult,
-    repo: YoutubeRepository,
-) -> None:
-    """Build the canonical filename and delegate the rename to the repository."""
-    filename = SUBTITLE_FILENAME_FMT.format(
-        vid=video_id, origin=origin, lang=short, ts=get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff(), ext=ext
-    )
-    target = out_dir / clean_filename_youtube(filename)
-    try:
-        repo.rename_subtitle_file(src, target)
-        result.nbr_srt_success += 1
-    except RepositoryWriteError as exc:
-        result.fail(f"Renommage de {src.name} échoué : {exc}")
-        return
-    result.files_downloaded.append(target)
-    result.files_written.append(target)
-
-
-def _emit_na_placeholder(
-    out_dir: Path, video_id: str, short: str, origin: str, result: DownloadResult, repo: YoutubeRepository
-) -> None:
-    """Build the placeholder path and delegate the write to the repository."""
-    filename = NA_FILENAME_FMT.format(
-        vid=video_id,
-        origin=origin,
-        lang=short,
-        ts=get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff(),
-        ext=NA_PLACEHOLDER_EXT,
-    )
-    target = out_dir / clean_filename_youtube(filename)
-    try:
-        repo.write_placeholder_file_when_error(target)
-    except RepositoryWriteError as exc:
-        result.fail(f"Création du placeholder échouée : {exc}")
-        return
-    result.files_written.append(target)
-    result.warn(f"Aucun sous-titre pour {short}/{origin}, placeholder : {target.name}")
 
 
 # EOF

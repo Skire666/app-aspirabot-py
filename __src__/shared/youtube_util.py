@@ -21,7 +21,7 @@ def sanitize_youtube_url(url: str) -> str:
     return ""  # pas de paramètre v, on retourne l'URL telle quelle
 
 
-def get_id_video_youtube(url: str) -> str | None:
+def get_id_video_youtube(url: str) -> str:
     # https://www.youtube.en/?v=1111YWC1FZc
     # https://www.youtube.fr/?ffffff=2222YWC1FZc
     # www.youtube.com/?v=3333WC1FZc&pp=sdfsdf
@@ -45,4 +45,4 @@ def get_id_video_youtube(url: str) -> str | None:
     if "v" in query_params:
         return query_params["v"][0]
 
-    return None
+    raise ValueError("undefine id vide youtube")

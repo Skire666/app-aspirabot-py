@@ -61,11 +61,11 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             if rs.video_not_found:
                 event_bus.log_step(context, "Vidéo introuvable, extraction impossible.")
                 raise YoutubeInfosVideoNotDownloadedError("video_not_found")  # noqa: TRY301
-            if p.basic_info and rs.nbr_base_success <= 0:
+            if p.basic_info and rs.files_basic_data <= 0:
                 raise YoutubeInfosVideoNotDownloadedError("no_ddl_basic_info")  # noqa: TRY301
-            if p.ddl_srt and rs.nbr_srt_success <= 0:
+            if p.ddl_srt and rs.files_srt_ddl <= 0:
                 raise YoutubeSubtitlesDownloadedError()  # noqa: TRY301
-            msg = f"Téléchargés : Basic info +{rs.nbr_base_success} | Sous-titres +{rs.nbr_srt_success}"
+            msg = f"Téléchargés : Basic info +{rs.files_basic_data} | Sous-titres +{rs.files_srt_ddl}"
             event_bus.log_step(context, msg)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")

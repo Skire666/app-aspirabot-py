@@ -16,6 +16,7 @@ class YoutubeSubtitleModel:
     name: str
     origin: SubtitleOriginEnum
     language: SubtitleLanguageEnum
+    quality: int = 9
 
 
 class YoutubeSubtitlesListModel:
@@ -30,6 +31,29 @@ class YoutubeSubtitlesListModel:
             self.append_subtitles(block_manual, SubtitleOriginEnum.E_MANUAL)
         if block_auto:
             self.append_subtitles(block_auto, SubtitleOriginEnum.E_AUTO)
+        # quality...
+        if self.data:
+            self.compute_hypothetic_quality()
+
+    def compute_hypothetic_quality(self) -> None:
+        original_language: str = ""
+        for item in self.data:
+            if "(Original)" in item.name:
+                original_language = item.language.value
+
+        # loop
+        for item in self.data:
+            item.quality = 9
+            # original
+            if not item.code.startswith(original_language):
+                item.quality -= 1
+            # type
+            if item.origin is SubtitleOriginEnum.E_MANUAL:
+                item.quality -= 2
+            elif item.origin is SubtitleOriginEnum.E_AUTO:
+                item.quality -= 3
+            else:  # ???
+                item.quality -= 4
 
     # Example :
     # code: crs, name: Seselwa Creole French
@@ -37,7 +61,7 @@ class YoutubeSubtitlesListModel:
     # code: en-orig, name: English (Original)
     # code: en, name: English
     # code: fr, name: French (Original)
-    def append_subtitles(self, block: dict[str, Any], sub_type: SubtitleOriginEnum) -> None:
+    def append_subtitles(self, block: dict[str, Any], origin: SubtitleOriginEnum) -> None:
         """Append subtitles from a block to the list."""
         for code, tracks in block.items():
             code_lw: str = code.strip().lower()
@@ -45,9 +69,7 @@ class YoutubeSubtitlesListModel:
             if lng is not None:
                 name_subtitle = self.get_name_from_tracks(tracks)
                 if name_subtitle:
-                    self.data.append(
-                        YoutubeSubtitleModel(code=code_lw, name=name_subtitle, origin=sub_type, language=lng)
-                    )
+                    self.data.append(YoutubeSubtitleModel(code_lw, name_subtitle, origin, lng))
 
     @staticmethod
     def compute_targets_fra_or_eng(code: str) -> SubtitleLanguageEnum | None:
@@ -65,21 +87,9 @@ class YoutubeSubtitlesListModel:
             return SubtitleLanguageEnum.E_EN
         return None
 
-    def list_manual_codes(self) -> list[YoutubeSubtitleModel]:
+    def list_srt_better_to_worst(self) -> list[YoutubeSubtitleModel]:
         """Return language codes whose display name matches the selection rules."""
-        selected: list[YoutubeSubtitleModel] = []
-        for sub in self.data:
-            if sub.origin == SubtitleOriginEnum.E_MANUAL:
-                selected.append(sub)
-        return selected
-
-    def list_auto_codes(self) -> list[YoutubeSubtitleModel]:
-        """Return language codes whose display name matches the selection rules."""
-        selected: list[YoutubeSubtitleModel] = []
-        for sub in self.data:
-            if sub.origin == SubtitleOriginEnum.E_AUTO:
-                selected.append(sub)
-        return selected
+        return sorted(self.data, key=lambda s: s.quality, reverse=True)
 
     # [ {'ext':'srt', 'url': 'https://xxxxx', 'name': 'French', 'impersonate': True}, {'ext': 'vtt', ...} ]
     @staticmethod
@@ -96,7 +106,13 @@ class YoutubeSubtitlesListModel:
         """Convert the model to a dictionary."""
         return {
             "data": [
-                {"code": sub.code, "name": sub.name, "type": sub.origin.value, "language": sub.language.value}
+                {
+                    "code": sub.code,
+                    "name": sub.name,
+                    "type": sub.origin.value,
+                    "language": sub.language.value,
+                    "quality": sub.quality,
+                }
                 for sub in self.data
             ]
         }
