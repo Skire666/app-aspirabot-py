@@ -89,9 +89,10 @@ Install the following extensions from the VS Code marketplace (`Ctrl+Shift+X`):
 | Extension | Publisher | Purpose |
 |-----------|-----------|---------|
 | **Python** | Microsoft | Python language support |
-| **BasedPyright | detachhead | Replace pylance
+| **BasedPyright** | detachhead | Replace pylance |
 | **Ruff** | Astral Software | Linter & formatter |
-| **Pytest** | Little Fox Team | Test runner integration |
+| **Python Test Explorer** | Little Fox Team | Test runner integration |
+| **Python CodeLens** | Prasad G K | References count |
 | **vscode-icons** | VS Code Teams | Enhanced IDE
 
 ### Settings
