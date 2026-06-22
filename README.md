@@ -99,13 +99,44 @@ Install the following extensions from the VS Code marketplace (`Ctrl+Shift+X`):
 Open your user settings (`Ctrl+Shift+P` → *Open User Settings JSON*) and add:
 
 ```json
-"[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-        "source.fixAll.ruff": "explicit",
-        "source.organizeImports.ruff": "explicit"
-    }
+{
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "git.ignoreMissingGitWarning": true,
+    "editor.minimap.renderCharacters": false,
+    "powershell.promptToUpdatePowerShell": false,
+    "python.createEnvironment.trigger": "off",
+
+    // --- Ruff: linter & formatter ---
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+
+    // plugins
+    "workbench.iconTheme": "vscode-icons",
+    "editor.fontFamily": "'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace",
+    "chat.viewSessions.orientation": "stacked",
+    "chat.tools.terminal.autoApprove": {
+        "/^ruff check \\./__src__/$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    },
+    "claudeCode.initialPermissionMode": "bypassPermissions",
+    "claudeCode.useCtrlEnterToSend": true,
+    "claudeCode.preferredLocation": "panel",
+    "claudeCode.allowDangerouslySkipPermissions": true,
+    "terminal.integrated.stickyScroll.enabled": false,
+    "basedpyright.analysis.typeCheckingMode": "standard",
+    "js/ts.referencesCodeLens.showOnAllFunctions": true,
+    "basedpyright.analysis.inlayHints.callArgumentNames": false,
+    "basedpyright.analysis.inlayHints.functionReturnTypes": false,
+    "basedpyright.analysis.inlayHints.genericTypes": false,
+    "basedpyright.analysis.inlayHints.variableTypes": false
 }
 ```
 
