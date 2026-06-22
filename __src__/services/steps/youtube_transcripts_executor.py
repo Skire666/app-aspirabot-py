@@ -14,6 +14,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.youtube_transcripts_params import YoutubeTranscriptsParams
+from repositories.youtube_repository import YoutubeRepository
 from services.steps.youtube_helpers import download_youtube_data
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import YoutubeBaseDataNotDownloadedError, YoutubeSrtNotDownloadedError
@@ -24,6 +25,14 @@ _logger = logging.getLogger(__name__)
 
 class YoutubeTranscriptsExecutor(IStepExecutor):
     """Executor for the YouTube transcripts step — logs the title and always returns success."""
+
+    def __init__(self, repo: YoutubeRepository) -> None:
+        """Initialise the executor with an injected YouTube repository.
+
+        Args:
+            repo: Repository that owns all yt-dlp and filesystem I/O.
+        """
+        self._repo = repo
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -43,7 +52,9 @@ class YoutubeTranscriptsExecutor(IStepExecutor):
             # RATE_LIMIT_RETRY_DELAYS -> (1, 3)
             # PHASE_PAUSE_SECONDS -> 1
 
-            rs = download_youtube_data(context.last_url_opened, exp_folder, p.basic_info, p.ddl_srt, event_bus, context)
+            rs = download_youtube_data(
+                context.last_url_opened, exp_folder, p.basic_info, p.ddl_srt, event_bus, context, self._repo
+            )
             if rs.video_age_restricted:
                 event_bus.log_step(context, "Vidéo marquée comme réservée aux adultes, extraction impossible.")
                 raise YoutubeBaseDataNotDownloadedError("video_age_restricted")  # noqa: TRY301
@@ -63,7 +74,7 @@ class YoutubeTranscriptsExecutor(IStepExecutor):
             return StepExecutionResultEnum.E_SUCCESS
 
 
-register_step_executor(YoutubeTranscriptsExecutor())
+register_step_executor(YoutubeTranscriptsExecutor(YoutubeRepository()))
 
 
 # EOF
