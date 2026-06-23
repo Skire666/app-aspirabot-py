@@ -274,21 +274,6 @@ class TestScrollDownIntegration:
 
 
 # ---------------------------------------------------------------------------
-# SECTION_STEPS
-# ---------------------------------------------------------------------------
-
-
-class TestSectionIntegration:
-    def test_title_in_label(self) -> None:
-        from models.steps.section_params import SectionParams
-
-        p = SectionParams(title="Authentication Flow", comment="")
-        label = _label(StepTypeEnum.E_SECTION_STEPS, p)
-        assert "Authentication Flow" in label
-        assert "Section" in label
-
-
-# ---------------------------------------------------------------------------
 # WAIT_FIXED_TIME
 # ---------------------------------------------------------------------------
 

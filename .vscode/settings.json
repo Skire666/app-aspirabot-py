@@ -1,5 +1,10 @@
 {
     "editor.codeLens": true,
     "python.languageServer": "None",
-    "basedpyright.analysis.diagnosticMode": "workspace"
+    "basedpyright.analysis.diagnosticMode": "workspace",
+    "python.testing.pytestArgs": [
+        "__tests__"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

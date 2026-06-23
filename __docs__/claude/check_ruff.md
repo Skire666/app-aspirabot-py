@@ -4,11 +4,11 @@ Pour cela, lit le fichier @AGENTS.md et respecte ses directives sans exception p
 
 1ère étape de qualimétrie :
 Lance la commande 'ruff check ./__src__/' avec l'environnement 'venv' d'activé.
-Corrige toutes les erreurs.
+Regarde si tu peux corriger automatiquement les erreurs avec '--fix'. Puis corrige toutes les erreurs qui restent.
 
 2ème étape de qualimétrie :
 Lance la commande 'python .\__tools__\furripe.py' avec l'environnement 'venv' d'activé.
-Corrige toutes les erreurs.
+Regarde si tu peux corriger automatiquement les erreurs avec '--fix'. Puis corrige toutes les erreurs qui restent.
 
 ------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
