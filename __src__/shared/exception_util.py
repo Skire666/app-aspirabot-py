@@ -871,14 +871,6 @@ class YoutubeOutputDirParameterEmptyError(ValueError, AspirabotBaseError):
         super().__init__("Le paramètre 'output_dir' doit être une chaîne non vide.")
 
 
-class YoutubeNoDownloadOptionError(ValueError, AspirabotBaseError):
-    """Raised when neither get_basic_data nor get_srt is enabled."""
-
-    def __init__(self) -> None:
-        """Initialize the error message."""
-        super().__init__("Au moins une option doit être active.")
-
-
 class MissingUrlFilterError(ValueError, AspirabotBaseError):
     """Raised when no URL filter is available to execute a close-tabs step."""
 

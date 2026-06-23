@@ -21,7 +21,7 @@ def format_step_start(prefix: str, _step: StepScrapingModel, context: ScrapingCo
 
 
 def _build(data: dict[str, Any]) -> YoutubeInfosVideoParams:
-    """Build YoutubeTranscriptsParams from a raw JSON params dict.
+    """Build YoutubeInfosVideoParams from a raw JSON params dict.
 
     Args:
         data: Raw parameter dict as stored in JSON; missing keys use defaults.
@@ -29,12 +29,7 @@ def _build(data: dict[str, Any]) -> YoutubeInfosVideoParams:
     Returns:
         A fully populated YoutubeTranscriptsParams instance.
     """
-    return YoutubeInfosVideoParams(
-        title=data.get("title", ""),
-        comment=data.get("comment", ""),
-        basic_info=data.get("basic_info", True),
-        ddl_srt=data.get("ddl_srt", True),
-    )
+    return YoutubeInfosVideoParams(comment=data.get("comment", ""))
 
 
 register_params_builder(StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS, _build)

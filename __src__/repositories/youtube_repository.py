@@ -29,6 +29,8 @@ _NA_TOKEN: Final[str] = "<<_#N/A_>>"
 # CLASS
 # ============================================================================
 
+cached_video_info: dict[str, YoutubeInfosVideoModel] = {}
+
 
 class YoutubeRepository:
     """Sole owner of all YouTube-related I/O: yt-dlp network calls and local files.
@@ -45,6 +47,11 @@ class YoutubeRepository:
     # ------------------------------------------------------------------
     # yt-dlp network calls
     # ------------------------------------------------------------------
+
+    def update_cached(self, url: str, info: YoutubeInfosVideoModel) -> None:
+        """Update the cached video info."""
+        global cached_video_info
+        cached_video_info[url] = info
 
     def fetch_video_info(self, url: str) -> dict[str, Any]:
         """Fetch raw video metadata via yt-dlp without downloading any media.

@@ -24,7 +24,7 @@ class YoutubeSubtitlesListModel:
 
     data: list[YoutubeSubtitleModel]
 
-    def __init__(self, block_manual: dict[str, Any], block_auto: dict[str, Any]) -> None:
+    def __init__(self, digram_lang: str, block_manual: dict[str, Any], block_auto: dict[str, Any]) -> None:
         """Return 'CODE (display name)' labels for FR/EN tracks of a subs block."""
         self.data = []
         if block_manual:
@@ -33,13 +33,16 @@ class YoutubeSubtitlesListModel:
             self.append_subtitles(block_auto, SubtitleOriginEnum.E_AUTO)
         # quality...
         if self.data:
-            self.compute_hypothetic_quality()
+            self.compute_hypothetic_quality(digram_lang)
 
-    def compute_hypothetic_quality(self) -> None:
+    def compute_hypothetic_quality(self, digram_lang_from_video: str) -> None:
         original_language: str = ""
         for item in self.data:
             if "(Original)" in item.name:
                 original_language = item.language.value
+
+        if original_language and digram_lang_from_video and original_language != digram_lang_from_video:
+            raise ValueError("original_language != digram_lang_from_video")
 
         # loop
         for item in self.data:
@@ -51,9 +54,12 @@ class YoutubeSubtitlesListModel:
             if item.origin is SubtitleOriginEnum.E_MANUAL:
                 item.quality -= 2
             elif item.origin is SubtitleOriginEnum.E_AUTO:
-                item.quality -= 3
+                if item.code.startswith(digram_lang_from_video):
+                    item.quality -= 3
+                else:
+                    item.quality = 0
             else:  # ???
-                item.quality -= 4
+                raise ValueError("wtf ? ni manual ni automatique ?")
 
     # Example :
     # code: crs, name: Seselwa Creole French

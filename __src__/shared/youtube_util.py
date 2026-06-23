@@ -1,4 +1,3 @@
-import re
 from urllib.parse import parse_qs, urlparse
 
 
@@ -7,21 +6,13 @@ def sanitize_youtube_url(url: str) -> str:
 
     This function looks for the 'v' parameter in the query string and constructs a
     standardized YouTube URL. If the 'v' parameter is not found, it returns the original URL.
-
-    # https://www.youtube.com/?v=cmXyYWC1FZc&pp=sdfsdf -> https://www.youtube.com/watch?v=cmXyYWC1FZc
-    # https://www.youtube.com/watch?v=aaaaGEU&pp=ugUEEgJmcg%3D%3D -> https://www.youtube.com/watch?v=aaaaGEU
-    # https://www.youtube.com/shorts/cmXyYWC1FZc&pp=sdfsdf -> https://www.youtube.com/watch?v=cmXyYWC1FZc
     """
-    match = re.search(r"[?&]v=([a-zA-Z0-9_-]+)", url)
-    if not match:
-        match = re.search(r"shorts/([a-zA-Z0-9_-]+)", url)
-
-    if match:
-        return f"https://www.youtube.com/watch?v={match.group(1)}"
-    return ""  # pas de paramètre v, on retourne l'URL telle quelle
+    id_video = get_id_video_youtube(url)
+    return f"https://www.youtube.com/watch?v={id_video}"
 
 
 def get_id_video_youtube(url: str) -> str:
+    """Extract the YouTube video ID from a given URL."""
     # https://www.youtube.en/?v=1111YWC1FZc
     # https://www.youtube.fr/?ffffff=2222YWC1FZc
     # www.youtube.com/?v=3333WC1FZc&pp=sdfsdf

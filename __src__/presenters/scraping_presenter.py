@@ -30,7 +30,8 @@ from presenters.steps import (
     section_step_presenter,
     wait_html_elements_step_presenter,
     wait_html_images_step_presenter,
-    youtube_transcripts_step_presenter,
+    youtube_infos_video_presenter,
+    youtube_subtitles_presenter,
 )
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
@@ -70,7 +71,8 @@ _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
 
 _STEP_START_FORMATTERS: dict[StepTypeEnum, Callable[[str, StepScrapingModel, ScrapingContextModel], str]] = {
     StepTypeEnum.E_SECTION_STEPS: section_step_presenter.format_step_start,
-    StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS: youtube_transcripts_step_presenter.format_step_start,
+    StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS: youtube_infos_video_presenter.format_step_start,
+    StepTypeEnum.E_YOUTUBE_SUBTITLES: youtube_subtitles_presenter.format_step_start,
     StepTypeEnum.E_OPEN_URL: open_url_step_presenter.format_step_start,
     StepTypeEnum.E_SCROLL_DOWN: scroll_down_step_presenter.format_step_start,
     StepTypeEnum.E_EXTRACT_TEXTS: extract_texts_step_presenter.format_step_start,
@@ -78,7 +80,6 @@ _STEP_START_FORMATTERS: dict[StepTypeEnum, Callable[[str, StepScrapingModel, Scr
     StepTypeEnum.E_WAIT_HTML_ELEMENTS: wait_html_elements_step_presenter.format_step_start,
     StepTypeEnum.E_WAIT_HTML_IMAGES: wait_html_images_step_presenter.format_step_start,
 }
-
 
 # -----------------------------------------------------------------------------
 # Class

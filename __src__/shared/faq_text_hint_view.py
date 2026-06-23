@@ -265,20 +265,12 @@ class FaqTextTextHint:
                 "  - min >= 0, max >= 1, min <= max\n\n"
                 "Erreur de config si les bornes de dimensions sont incohérentes."
             ),
-            "YouTube Transcripts": (
+            "YouTube - Extraire infos vidéo": (
                 "Extrait les données textuelles d'une vidéo YouTube via yt-dlp.\n"
                 "Utilise la dernière URL ouverte par un step 'Ouvrir une URL'.\n\n"
                 "• Titre : obligatoire, non vide (identifiant dans le journal)\n"
                 "• Infos de base : si coché, sauvegarde un fichier JSON\n"
                 "  avec les métadonnées de la vidéo (titre, durée, vues, etc.)\n"
-                "• Sous-titres SRT : si coché, télécharge les sous-titres FR et EN\n"
-                "  (manuels en premier, puis automatiques)\n"
-                "  - Retry automatique si HTTP 429 (rate-limit YouTube)\n"
-                "  - Si aucun sous-titre trouvé pour une langue,\n"
-                "    un placeholder .error est créé à la place\n\n"
-                "Erreurs runtime :\n"
-                "  - 'Infos de base' coché mais aucun fichier JSON produit\n"
-                "  - 'Sous-titres SRT' coché mais aucun fichier de sous-titres produit\n\n"
                 "Attention : l'étape échoue si aucune des deux options n'est cochée."
             ),
             "Extraire textes": (

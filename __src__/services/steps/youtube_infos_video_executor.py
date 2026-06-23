@@ -14,17 +14,17 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.youtube_infos_video_params import YoutubeInfosVideoParams
+from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.youtube_repository import YoutubeRepository
-from services.steps.youtube_helpers import download_youtube_data
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
-from shared.exception_util import YoutubeInfosVideoNotDownloadedError, YoutubeSubtitlesDownloadedError
 from shared.step_registry import register_step_executor
+from shared.youtube_util import sanitize_youtube_url
 
 _logger = logging.getLogger(__name__)
 
 
 class YoutubeInfosVideoExecutor(IStepExecutor):
-    """Executor for the YouTube transcripts step — logs the title and always returns success."""
+    """Executor for the YouTube infos video step — logs the title and always returns success."""
 
     def __init__(self, repo: YoutubeRepository) -> None:
         """Initialise the executor with an injected YouTube repository.
@@ -46,28 +46,18 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(YoutubeInfosVideoParams, context.step_scraping_data.params)
-        exp_folder = str(context.folder_export) + "/srt"
         try:
-            # "socket_timeout" -> 20
-            # RATE_LIMIT_RETRY_DELAYS -> (1, 3)
-            # PHASE_PAUSE_SECONDS -> 1
+            url_youtube = sanitize_youtube_url(context.last_url_opened)
+            obj = self._repo.fetch_video_info(url_youtube)
+            casted = YoutubeInfosVideoModel(obj)
+            self._repo.update_cached_subtitles(url_youtube, casted)
+            for key, value in casted.to_dict().items():
+                casted_list = [value] if not isinstance(value, list) else value  # pyright: ignore[reportUnknownVariableType]
+                context.push_extracted_values(key, "ytb-dl", p.comment, casted_list)
 
-            rs = download_youtube_data(
-                context.last_url_opened, exp_folder, p.basic_info, p.ddl_srt, event_bus, context, self._repo
-            )
-            if rs.video_age_restricted:
-                event_bus.log_step(context, "Vidéo marquée comme réservée aux adultes, extraction impossible.")
-                raise YoutubeInfosVideoNotDownloadedError("video_age_restricted")  # noqa: TRY301
-            if rs.video_not_found:
-                event_bus.log_step(context, "Vidéo introuvable, extraction impossible.")
-                raise YoutubeInfosVideoNotDownloadedError("video_not_found")  # noqa: TRY301
-            if p.basic_info and rs.files_basic_data <= 0:
-                raise YoutubeInfosVideoNotDownloadedError("no_ddl_basic_info")  # noqa: TRY301
-            if p.ddl_srt and rs.files_srt_ddl <= 0:
-                raise YoutubeSubtitlesDownloadedError()  # noqa: TRY301
-            msg = f"Téléchargés : Basic info +{rs.files_basic_data} | Sous-titres +{rs.files_srt_ddl}"
-            event_bus.log_step(context, msg)
         except Exception as exc:  # noqa: BLE001
+            # "... in to confirm your age ..." -> video age restricted
+            # "... video unavailable ..." -> video not found
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:

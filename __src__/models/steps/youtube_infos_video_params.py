@@ -17,25 +17,20 @@ if TYPE_CHECKING:
 
 
 class YoutubeInfosVideoParams(BaseModel):
-    """Parameters for the YouTube transcripts step."""
+    """Parameters for the YouTube infos video step."""
 
     model_config = ConfigDict(frozen=True)
 
-    title: str
     comment: str = ""
-    basic_info: bool = True
-    ddl_srt: bool = True
 
-    @field_validator("title")
+    @field_validator("comment")
     @classmethod
-    def check_title(cls, v: str, info: ValidationInfo) -> str:
-        """Reject empty or whitespace-only titles."""
+    def check_comment_length(cls, v: str, info: ValidationInfo) -> str:
+        """Reject comments longer than 50 characters."""
         if not info.context:
             return v
-        if not v or not v.strip():
-            raise ValueError(
-                ERROR_TEMPLATES["youtube_transcripts_title_required"].format(step=step_label(info.context))
-            )
+        if v and len(v) > 50:
+            raise ValueError(ERROR_TEMPLATES["filed_comment_too_long"].format(step=step_label(info.context)))
         return v
 
     def to_dict(self) -> dict[str, Any]:

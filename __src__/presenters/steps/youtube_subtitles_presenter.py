@@ -8,9 +8,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from models.scraping_context_model import ScrapingContextModel
+from models.step_scraping_model import StepScrapingModel
 from models.steps.youtube_subtitles_params import YoutubeSubtitlesParams
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_params_builder
+
+
+def format_step_start(prefix: str, _step: StepScrapingModel, context: ScrapingContextModel) -> str:
+    """Format E_STEP_START journal line for YOUTUBE_DDL."""
+    return f"{prefix} | Utilisé : {context.last_url_opened}"
 
 
 def _build(data: dict[str, Any]) -> YoutubeSubtitlesParams:
@@ -22,11 +29,7 @@ def _build(data: dict[str, Any]) -> YoutubeSubtitlesParams:
     Returns:
         A fully populated YoutubeSubtitlesParams instance.
     """
-    return YoutubeSubtitlesParams(
-        download_fra_srt=data.get("download_fra_srt", True),
-        download_eng_srt=data.get("download_eng_srt", True),
-        comment=data.get("comment", ""),
-    )
+    return YoutubeSubtitlesParams(comment=data.get("comment", ""))
 
 
 register_params_builder(StepTypeEnum.E_YOUTUBE_SUBTITLES, _build)

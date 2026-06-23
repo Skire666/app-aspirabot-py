@@ -11,7 +11,7 @@ from shared.exception_util import ValueMustBePositiveAndEvenError
 # -----------------------------------------------------------------------------
 
 # forbidden characters: i, l, n, o, r, s, u, v, z AND 0, 1, 2 -> to avoid confusion with 0o, I1l, uv, AR...
-# and ensure strings are easily distinguishable and less prone to errors when read or transcribed.
+# and ensure strings are easily distinguishable and less prone to errors when read.
 _ALPHABET_PATTERN = "aAbBcCdDeEFgGHkNpPqtTxyZY23456789"
 
 # -----------------------------------------------------------------------------

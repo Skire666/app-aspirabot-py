@@ -13,16 +13,12 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_form
-from views.components.canvas_checkbox import CanvasCheckbox
 
 # -----------------------------------------------------------------------------
 # Constants
 # -----------------------------------------------------------------------------
 
-C_KEY_TITLE = "title"
 C_KEY_COMMENT = "comment"
-C_KEY_BASIC_INFO = "basic_info"
-C_KEY_DDL_SRT = "ddl_srt"
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -30,7 +26,7 @@ C_KEY_DDL_SRT = "ddl_srt"
 
 
 class YoutubeInfosVideoFormDef(IStepFormDef):
-    """Form definition for the YouTube transcripts step."""
+    """Form definition for the YouTube infos video step."""
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -47,7 +43,6 @@ class YoutubeInfosVideoFormDef(IStepFormDef):
         """
         self._build_subform_title(frame, widgets)
         self._build_subform_comment(frame, widgets)
-        self._build_subform_options(frame, widgets)
 
     @staticmethod
     def _build_subform_title(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -60,10 +55,7 @@ class YoutubeInfosVideoFormDef(IStepFormDef):
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Info/Titre :").pack(side="left", padx=(0, 5))
-        title_var = tk.StringVar(value="Download automatique FRA/ENG")
-        ttk.Entry(row0, textvariable=title_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        widgets[C_KEY_TITLE] = title_var
+        ttk.Label(row0, text="Extraire les infos d'une page vidéo youtube via ytb-dl").pack(side="left", padx=(0, 5))
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -81,25 +73,6 @@ class YoutubeInfosVideoFormDef(IStepFormDef):
         ttk.Entry(row1, textvariable=comm_var).pack(side="left", fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_COMMENT] = comm_var
 
-    @staticmethod
-    def _build_subform_options(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the checkboxes row (basic_info / ddl_srt).
-
-        Args:
-            frame: Parent frame to pack the row into.
-            widgets: Mutable mapping; populated with C_KEY_BASIC_INFO and C_KEY_DDL_SRT tk.BooleanVar.
-        """
-        row2 = ttk.Frame(frame)
-        row2.pack(fill="x", pady=(0, 8))
-
-        basic_info_var = tk.BooleanVar(value=True)
-        CanvasCheckbox(row2, text="Récupérer la fiche", variable=basic_info_var).pack(side="left", padx=(0, 16))
-        widgets[C_KEY_BASIC_INFO] = basic_info_var
-
-        ddl_srt_var = tk.BooleanVar(value=True)
-        CanvasCheckbox(row2, text="Récupérer les SRT", variable=ddl_srt_var).pack(side="left")
-        widgets[C_KEY_DDL_SRT] = ddl_srt_var
-
     @override
     def load_params_step_to_widget(self, params_dict: dict[str, Any], widgets: dict[str, Any]) -> None:
         """Pre-fill form widgets from a serialised params snapshot.
@@ -108,10 +81,7 @@ class YoutubeInfosVideoFormDef(IStepFormDef):
             params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_TITLE].set(params_dict.get(C_KEY_TITLE, ""))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
-        widgets[C_KEY_BASIC_INFO].set(params_dict.get(C_KEY_BASIC_INFO, True))
-        widgets[C_KEY_DDL_SRT].set(params_dict.get(C_KEY_DDL_SRT, True))
 
     @override
     def read_params_from_view(self, widgets: dict[str, Any]) -> dict[str, Any]:
@@ -123,12 +93,7 @@ class YoutubeInfosVideoFormDef(IStepFormDef):
         Returns:
             Dictionary of step parameters ready for persistence in the model.
         """
-        return {
-            C_KEY_TITLE: widgets[C_KEY_TITLE].get().strip(),
-            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
-            C_KEY_BASIC_INFO: widgets[C_KEY_BASIC_INFO].get(),
-            C_KEY_DDL_SRT: widgets[C_KEY_DDL_SRT].get(),
-        }
+        return {C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip()}
 
 
 register_form(YoutubeInfosVideoFormDef())

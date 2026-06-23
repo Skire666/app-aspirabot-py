@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
-from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
@@ -21,22 +21,7 @@ class YoutubeSubtitlesParams(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    download_fra_srt: bool
-    download_eng_srt: bool
     comment: str = ""
-
-    @model_validator(mode="before")
-    @classmethod
-    def check_at_least_one_srt(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
-        """Validate that at least one subtitle language is selected."""
-        if not isinstance(data, dict) or not info.context:
-            return cast(dict[str, Any], data)
-        d = cast(dict[str, Any], data)
-        if not d.get("download_fra_srt") and not d.get("download_eng_srt"):
-            raise ValueError(
-                ERROR_TEMPLATES["youtube_subtitles_nothing_to_download"].format(step=step_label(info.context))
-            )
-        return d
 
     @field_validator("comment")
     @classmethod
@@ -45,9 +30,7 @@ class YoutubeSubtitlesParams(BaseModel):
         if not info.context:
             return v
         if v and len(v) > 50:
-            raise ValueError(
-                ERROR_TEMPLATES["youtube_subtitles_comment_too_long"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["filed_comment_too_long"].format(step=step_label(info.context)))
         return v
 
     def to_dict(self) -> dict[str, Any]:

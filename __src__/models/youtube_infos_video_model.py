@@ -55,7 +55,7 @@ class YoutubeInfosVideoModel:
         # subtitles
         manual_block: dict[str, Any] = data.get("subtitles") or {}
         auto_block: dict[str, Any] = data.get("automatic_captions") or {}
-        self.subtitles_ls = YoutubeSubtitlesListModel(manual_block, auto_block)
+        self.subtitles_ls = YoutubeSubtitlesListModel(self.language, manual_block, auto_block)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the model to a dictionary."""
