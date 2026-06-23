@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum, TitleModuleEnum, UrlSourceTypeEnum
+from shared.enums.relative_date_enum import RelativeDateEnum
 
 
 class TestTitleModuleEnum:
@@ -74,3 +75,41 @@ class TestUrlSourceTypeEnum:
 
     def test_json_value(self) -> None:
         assert UrlSourceTypeEnum.E_FOLDER_JSONS.value == "FOLDER_JSONS"
+
+    def test_to_displayable_str_manual_list(self) -> None:
+        assert UrlSourceTypeEnum.E_MANUAL_LIST.to_displayable_str() == "Liste manuelle"
+
+    def test_to_displayable_str_folder_racs(self) -> None:
+        assert UrlSourceTypeEnum.E_FOLDER_RACS.to_displayable_str() == "Dossier RACS"
+
+    def test_to_displayable_str_folder_jsons(self) -> None:
+        assert UrlSourceTypeEnum.E_FOLDER_JSONS.to_displayable_str() == "Dossier JSON"
+
+    def test_to_displayable_str_discover_entries(self) -> None:
+        assert UrlSourceTypeEnum.E_DISCOVER_ENTRIES.to_displayable_str() == "Lire nouveautés"
+
+    def test_to_displayable_str_unset_returns_unknown(self) -> None:
+        assert UrlSourceTypeEnum.E_UNSET.to_displayable_str() == "Type inconnu"
+
+    def test_to_displayable_str_unknown_returns_unknown(self) -> None:
+        assert UrlSourceTypeEnum.E_UNKNOWN.to_displayable_str() == "Type inconnu"
+
+
+class TestRelativeDateEnum:
+    def test_view_to_enum_known_label(self) -> None:
+        result = RelativeDateEnum.view_to_enum("3 derniers jours")
+        assert result is RelativeDateEnum.E_LAST_3D
+
+    def test_view_to_enum_unknown_label_returns_e_unknown(self) -> None:
+        result = RelativeDateEnum.view_to_enum("not a real label")
+        assert result is RelativeDateEnum.E_UNKNOWN
+
+    def test_to_datetime_returns_datetime(self) -> None:
+        from datetime import datetime
+        result = RelativeDateEnum.E_LAST_1W.to_datetime()
+        assert isinstance(result, datetime)
+
+    def test_to_datetime_unset_falls_back(self) -> None:
+        from datetime import datetime
+        result = RelativeDateEnum.E_UNSET.to_datetime()
+        assert isinstance(result, datetime)

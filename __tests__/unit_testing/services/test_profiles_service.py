@@ -209,6 +209,28 @@ class TestDeleteProfileLaunch:
 # ---------------------------------------------------------------------------
 
 
+class TestUpdateProfilesLaunchUrlOnly:
+    def test_updates_existing_scenario(self) -> None:
+        existing = _make_profiles("sc001")
+        profile = _make_profile("sc001")
+        repo = _make_repo()
+        repo.exists_scenarios.return_value = True
+        repo.read_profiles.return_value = existing
+        svc = _make_service(repo)
+        result = svc.update_profiles_launch_url_only("sc001", profile)
+        assert result is profile
+        repo.update_profiles.assert_called_once()
+
+    def test_creates_new_when_scenario_absent(self) -> None:
+        profile = _make_profile("sc001")
+        repo = _make_repo()
+        repo.exists_scenarios.return_value = False
+        svc = _make_service(repo)
+        result = svc.update_profiles_launch_url_only("sc001", profile)
+        assert result is profile
+        repo.create_profiles.assert_called_once()
+
+
 class TestGetScenarioName:
     def test_returns_scenario_name(self) -> None:
         scenario = ScenarioModel.get_default_data()

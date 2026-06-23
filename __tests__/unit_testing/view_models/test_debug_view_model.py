@@ -111,3 +111,97 @@ class TestResetPage:
         vm.is_alive_var.set(False)
         vm.reset_page("https://test.com")
         assert vm.is_alive_var.get() is True
+
+
+# ---------------------------------------------------------------------------
+# master property
+# ---------------------------------------------------------------------------
+
+
+class TestMasterProperty:
+    def test_master_returns_tk_widget(self, vm: DebugViewModel, tk_root: tk.Tk) -> None:
+        assert vm.master is tk_root
+
+
+# ---------------------------------------------------------------------------
+# url property
+# ---------------------------------------------------------------------------
+
+
+class TestUrlProperty:
+    def test_url_returns_current_var(self, vm: DebugViewModel) -> None:
+        vm.url_var.set("https://current.com")
+        assert vm.url == "https://current.com"
+
+
+# ---------------------------------------------------------------------------
+# Double-bind raises
+# ---------------------------------------------------------------------------
+
+
+class TestDoubleBindRaises:
+    @pytest.mark.parametrize("bind_method", [
+        "bind_start", "bind_open_debug_page", "bind_refresh",
+        "bind_analyze_texts", "bind_analyze_images", "bind_close",
+    ])
+    def test_double_bind_raises(self, vm: DebugViewModel, bind_method: str) -> None:
+        cb = MagicMock()
+        getattr(vm, bind_method)(cb)
+        with pytest.raises(CallbackNotDefinedError):
+            getattr(vm, bind_method)(cb)
+
+
+# ---------------------------------------------------------------------------
+# format_text_results
+# ---------------------------------------------------------------------------
+
+
+class TestFormatTextResults:
+    def test_empty_results_returns_no_elements_message(self) -> None:
+        result = DebugViewModel.format_text_results(".selector", [])
+        assert "Aucun élément" in result
+        assert ".selector" in result
+
+    def test_non_empty_results_formats_each_element(self) -> None:
+        results = [
+            {
+                "innerText": "hello",
+                "textContent": "hello world",
+                "innerHTML": "<b>hello</b>",
+                "outerHTML": "<p><b>hello</b></p>",
+                "value": "",
+            }
+        ]
+        output = DebugViewModel.format_text_results("p", results)
+        assert "Nombre total : 1" in output
+        assert "hello" in output
+        assert "[1]" in output
+
+
+# ---------------------------------------------------------------------------
+# format_image_results
+# ---------------------------------------------------------------------------
+
+
+class TestFormatImageResults:
+    def test_empty_results_returns_no_images_message(self) -> None:
+        result = DebugViewModel.format_image_results("img", [])
+        assert "Aucune image" in result
+        assert "img" in result
+
+    def test_non_empty_results_formats_each_image(self) -> None:
+        results = [
+            {
+                "src": "https://example.com/img.png",
+                "alt": "test image",
+                "naturalWidth": 100,
+                "naturalHeight": 200,
+                "clientWidth": 50,
+                "clientHeight": 100,
+                "ext": "png",
+            }
+        ]
+        output = DebugViewModel.format_image_results("img", results)
+        assert "Nombre total : 1" in output
+        assert "https://example.com/img.png" in output
+        assert "[1]" in output

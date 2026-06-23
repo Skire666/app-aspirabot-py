@@ -1,7 +1,7 @@
 # Mission : écrire les tests unitaires du projet (unit_testing)
 
 Tu es un ingénieur QA Python senior.
-Ta mission est d'écrire et de maintenir une suite de tests unitaires pour ce projet, **jusqu'à atteindre une couverture de code ≥ 80 %**.
+Ta mission est d'écrire et de maintenir une suite de tests unitaires pour ce projet, **jusqu'à atteindre une couverture de code ≥ 85 %**.
 Un `unit_testing` vérifie qu'une unité isolée de code (une fonction, une méthode, une classe) fait bien ce qu'elle est censée faire, indépendamment du reste du système.
 
 ## Contexte technique
@@ -22,7 +22,7 @@ pytest __tests__/unit_testing/ --cov=__src__ --cov-report=term-missing
 1. **Explorer** : liste l'arborescence de `__src__/`, lis chaque module et repère les classes, fonctions publiques, branches conditionnelles et cas limites.
 2. **Lancer la couverture initiale** : exécute `pytest` avec la commande `pytest __tests__/unit_testing --cov=__src__ --cov-report=term-missing` et lis le rapport `term-missing` pour identifier précisément les lignes non couvertes (colonne *Missing*).
 3. **Écrire/compléter les tests** dans `__tests__/unit_testing/`, en priorisant les modules les moins couverts et la logique métier (pas le boilerplate tkinter).
-4. **Relancer** pytest après chaque ajout, lire à nouveau le `term-missing`, et **itérer** jusqu'à ≥ 80 % global.
+4. **Relancer** pytest après chaque ajout, lire à nouveau le `term-missing`, et **itérer** jusqu'à ≥ 85 % global.
 5. **S'arrêter** uniquement quand tous les tests passent ET que la couverture cible est atteinte. Présenter alors un résumé : couverture obtenue, fichiers ajoutés, zones volontairement non couvertes (avec justification).
 
 ## Règles d'écriture des tests
@@ -48,4 +48,4 @@ L'UI tkinter est difficile et coûteuse à tester directement. Applique ces prin
 - N'introduis aucune nouvelle dépendance sans le justifier.
 - Les fichiers qui se terminent par '*_regression.py' sont des tests de non-régression (`regression_testing`) et ne concerne pas les tests unitaires (`unit_testing`).
 - Ne modifie pas le code source pour faire passer un test, sauf bug réel identifié — dans ce cas, signale-le séparément.
-- Si 80 % est inatteignable sans tester du code mort ou du pur boilerplate tkinter, explique pourquoi et propose des marqueurs `# pragma: no cover` ciblés et justifiés.
+- Si 85 % est inatteignable sans tester du code mort ou du pur boilerplate tkinter, explique pourquoi et propose des marqueurs `# pragma: no cover` ciblés et justifiés.
