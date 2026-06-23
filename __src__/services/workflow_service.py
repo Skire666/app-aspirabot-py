@@ -45,6 +45,10 @@ class WorkflowService:
             vr.append(ErrorCodeWKF.WKF_1005, SeverityEnum.E_ERROR)
         if steps_context.has_consecutive_restart_to_beginning():
             vr.append(ErrorCodeWKF.WKF_1007, SeverityEnum.E_ERROR)
+        if not steps_context.had_restart_to_beginning_after_open_url():
+            vr.append(ErrorCodeWKF.WKF_1008, SeverityEnum.E_ERROR)
+        if not steps_context.has_export_step_when_extract_step():
+            vr.append(ErrorCodeWKF.WKF_1009, SeverityEnum.E_ERROR)
         return vr
 
     @staticmethod

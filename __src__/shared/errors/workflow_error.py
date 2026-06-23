@@ -15,6 +15,8 @@ class ErrorCodeWKF(ErrorCode):
     WKF_1005 = "Il y a des étapes avec des identifiants dupliqués."
     WKF_1006 = "L'étape 'E_OPEN_URL' est à placer au début (sections ignorées)."
     WKF_1007 = "Il y a 2 étapes 'E_RESTART_TO_BEGINNING' consécutives."
+    WKF_1008 = "L'étape 'E_RESTART_TO_BEGINNING' est à placer après l'étape 'E_OPEN_URL'"
+    WKF_1009 = "Une étape 'EXPORT***' est requise avec les étapes de type 'EXTRACT***'"
     WKF_9999 = "Erreur inconnue."
 
 

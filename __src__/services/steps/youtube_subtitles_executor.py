@@ -57,6 +57,10 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
             all_srt = self._repo.fetch_cached_subtitles(url_youtube)
             if all_srt is None:
                 raise ValueError("Aucun sous-titre trouvé dans les métadonnées du flux vidéo.")
+            rs = all_srt.validate()  # raises if any error
+            if rs.has_errors_or_fatals():
+                raise ValueError(f"Validation des sous-titres échouée : {rs.compute_displayable_issues(2)}")
+
             nbr_ddl_srt = self.download_all_subtitles(url_youtube, all_srt, exp_folder, event_bus, context)
             if nbr_ddl_srt <= 0:
                 raise ValueError("Aucun sous-titre téléchargé.")
@@ -91,7 +95,7 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
                     if st.quality >= 1:
                         is_success = self.download_on_subtitle(url_youtube, out_dir, st, event_bus, ctx)
                         if is_success:
-                            event_bus.log_step(ctx, "OK: " + msg_log)
+                            event_bus.log_step(ctx, "DONE: " + msg_log)
                             nbr_srt_ddl += 1
                         else:  # error...
                             event_bus.log_step(ctx, "ERROR: " + msg_log)

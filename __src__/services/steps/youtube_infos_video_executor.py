@@ -50,6 +50,9 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             url_youtube = sanitize_youtube_url(context.last_url_opened)
             obj = self._repo.fetch_video_info(url_youtube)
             casted = YoutubeInfosVideoModel(obj)
+            rs = casted.validate()  # raises if any error
+            if rs.has_errors_or_fatals():
+                raise ValueError(f"Validation des métadonnées échouée : {rs.compute_displayable_issues(2)}")
             self._repo.update_cached_subtitles(url_youtube, casted)
             for key, value in casted.to_dict().items():
                 casted_list = [value] if not isinstance(value, list) else value  # pyright: ignore[reportUnknownVariableType]

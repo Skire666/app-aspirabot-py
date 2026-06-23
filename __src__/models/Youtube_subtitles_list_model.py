@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, cast
 
+from shared.enums import SeverityEnum
 from shared.enums.youtube_subtitle_enum import SubtitleLanguageEnum, SubtitleOriginEnum
+from shared.errors.youtube_subtitles_list_model_error import ErrorCodeYSL
+from shared.validation_result import ValidationResult
 
 
 @dataclass(slots=True)
@@ -16,7 +19,7 @@ class YoutubeSubtitleModel:
     name: str
     origin: SubtitleOriginEnum
     language: SubtitleLanguageEnum
-    quality: int = 9
+    quality: int = 10
 
 
 class YoutubeSubtitlesListModel:
@@ -35,18 +38,21 @@ class YoutubeSubtitlesListModel:
         if self.data:
             self.compute_hypothetic_quality(digram_lang)
 
-    def compute_hypothetic_quality(self, digram_lang_from_video: str) -> None:
-        original_language: str = ""
+    def determine_langauge_from_audio_srt(self) -> str:
         for item in self.data:
             if "(Original)" in item.name:
-                original_language = item.language.value
+                return item.language.value
+        return ""
+
+    def compute_hypothetic_quality(self, digram_lang_from_video: str) -> None:
+        original_language: str = self.determine_langauge_from_audio_srt()
 
         if original_language and digram_lang_from_video and original_language != digram_lang_from_video:
             raise ValueError("original_language != digram_lang_from_video")
 
         # loop
         for item in self.data:
-            item.quality = 9
+            item.quality = 10
             # original
             if not item.code.startswith(original_language):
                 item.quality -= 1
@@ -57,9 +63,8 @@ class YoutubeSubtitlesListModel:
                 if item.code.startswith(digram_lang_from_video):
                     item.quality -= 3
                 else:
+                    # AUTO + not original language of video == always HTTP 429 in youtube...
                     item.quality = 0
-            else:  # ???
-                raise ValueError("wtf ? ni manual ni automatique ?")
 
     # Example :
     # code: crs, name: Seselwa Creole French
@@ -107,6 +112,23 @@ class YoutubeSubtitlesListModel:
                 if typed.get("name"):
                     return str(typed["name"])
         return None
+
+    def validate(self) -> ValidationResult:
+        """Validate the subtitles list and return any issues found."""
+        rs = ValidationResult()
+
+        if not self.data:
+            rs.append(ErrorCodeYSL.YSL_1001, SeverityEnum.E_ERROR)
+        elif any(not sub.code.strip() for sub in self.data):
+            rs.append(ErrorCodeYSL.YSL_1002, SeverityEnum.E_ERROR)
+        elif all(sub.quality == 0 for sub in self.data):
+            rs.append(ErrorCodeYSL.YSL_1003, SeverityEnum.E_ERROR)
+        elif any(sub.origin is SubtitleOriginEnum.E_UNSET for sub in self.data):
+            rs.append(ErrorCodeYSL.YSL_1004, SeverityEnum.E_ERROR)
+        elif any(sub.origin is SubtitleOriginEnum.E_UNKNOWN for sub in self.data):
+            rs.append(ErrorCodeYSL.YSL_1005, SeverityEnum.E_ERROR)
+
+        return rs
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the model to a dictionary."""

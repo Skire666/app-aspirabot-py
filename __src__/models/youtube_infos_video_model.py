@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from models.Youtube_subtitles_list_model import YoutubeSubtitlesListModel
+from shared.enums import SeverityEnum
+from shared.errors.youtube_infos_video_model_error import ErrorCodeYIV
+from shared.validation_result import ValidationResult
 
 
 @dataclass
@@ -56,6 +59,25 @@ class YoutubeInfosVideoModel:
         manual_block: dict[str, Any] = data.get("subtitles") or {}
         auto_block: dict[str, Any] = data.get("automatic_captions") or {}
         self.subtitles_ls = YoutubeSubtitlesListModel(self.language, manual_block, auto_block)
+
+    def validate(self) -> ValidationResult:
+        """Validate the model fields and return any issues found."""
+        rs = ValidationResult()
+
+        if not self.id or not str(self.id).strip():
+            rs.append(ErrorCodeYIV.YIV_1001, SeverityEnum.E_ERROR)
+        if not self.title or not str(self.title).strip():
+            rs.append(ErrorCodeYIV.YIV_1002, SeverityEnum.E_ERROR)
+        if not self.webpage_url or not str(self.webpage_url).strip():
+            rs.append(ErrorCodeYIV.YIV_1003, SeverityEnum.E_ERROR)
+        if not self.duration:
+            rs.append(ErrorCodeYIV.YIV_1004, SeverityEnum.E_ERROR)
+        elif not isinstance(self.duration, (int, float)) or not str(self.duration).isdigit():
+            rs.append(ErrorCodeYIV.YIV_1005, SeverityEnum.E_ERROR)
+        if not self.language or not str(self.language).strip():
+            rs.append(ErrorCodeYIV.YIV_1006, SeverityEnum.E_ERROR)
+
+        return rs
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the model to a dictionary."""

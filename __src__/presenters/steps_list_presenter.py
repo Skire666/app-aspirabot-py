@@ -9,6 +9,7 @@ view, and persists changes via the repository.
 # -----------------------------------------------------------------------------
 
 import logging
+import time
 from typing import Any
 
 from interfaces.i_steps_list_crud_view import IStepsListCrudView
@@ -362,7 +363,11 @@ class StepsListPresenter:
 
     def _revalidate_and_notify(self) -> None:
         """Revalidates the full step list and updates the status bar."""
+        time_start = time.perf_counter()
         errors = self.validate_steps()
+        time_end = time.perf_counter()
+        time_elapsed_in_ms = (time_end - time_start) * 1000
+        print(f"_revalidate_and_notify -> Validation took {time_elapsed_in_ms:.2f} ms.")
         self._notify_validation_feedback(errors[0] if errors else None)
 
     def _notify_validation_feedback(self, first_error: str | None) -> None:

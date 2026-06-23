@@ -227,6 +227,33 @@ class StepsCollections:
             index += 1
         return self.list_steps[index].step_type == StepTypeEnum.E_OPEN_URL
 
+    def had_restart_to_beginning_after_open_url(self) -> bool:
+        """Check if any E_RESTART_TO_BEGINNING step occurs after an E_OPEN_URL step."""
+        if self.count_type_step(StepTypeEnum.E_RESTART_TO_BEGINNING) == 0:
+            return True
+        found_open_url = False
+        for step in self.list_steps:
+            if step.step_type == StepTypeEnum.E_OPEN_URL:
+                found_open_url = True
+            elif found_open_url and step.step_type == StepTypeEnum.E_RESTART_TO_BEGINNING:
+                return True
+        return False
+
+    def has_export_step_when_extract_step(self) -> bool:
+        """Check if any E_EXTRACT*** step occurs without a corresponding E_EXPORT*** step."""
+        has_extract = any(
+            step.step_type
+            in {
+                StepTypeEnum.E_EXTRACT_TEXTS,
+                StepTypeEnum.E_EXTRACT_LINKS,
+                StepTypeEnum.E_EXTRACT_VARIABLE,
+                StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS,
+            }
+            for step in self.list_steps
+        )
+        has_export = self.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_JS) >= 1
+        return has_extract == has_export
+
     # ---------------------------------------------------------------
     # Cache management (private)
     # ---------------------------------------------------------------
