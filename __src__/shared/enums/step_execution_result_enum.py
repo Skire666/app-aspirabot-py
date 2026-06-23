@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -16,3 +20,6 @@ class StepExecutionResultEnum(Enum):
     E_ERROR = "ERROR"  # step failed; workflow continues to next step
     E_FATAL = "FATAL"  # step failed; workflow stops immediately
     E_UNKNOWN = "UNKNOWN"
+
+
+# EOF

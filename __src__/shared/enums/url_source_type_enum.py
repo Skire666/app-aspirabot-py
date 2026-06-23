@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -22,3 +26,6 @@ class UrlSourceTypeEnum(Enum):
         if self is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
             return "Lire nouveautés"
         return "Type inconnu"
+
+
+# EOF

@@ -28,17 +28,24 @@ class WorkflowService:
         """Initialize the workflow service."""
 
     @staticmethod
-    def _validate_workflow_structure(steps_context: StepsCollections) -> ValidationResult:
-        """Check workflow-level constraints; return a ValidationResult."""
-        vr = ValidationResult()
+    def _validate_url_steps(steps_context: StepsCollections, vr: ValidationResult) -> None:
+        """Append OPEN_URL structural errors to vr."""
         if steps_context.count_type_step(StepTypeEnum.E_OPEN_URL) != 1:
             vr.append(ErrorCodeWKF.WKF_1001, SeverityEnum.E_ERROR)
         if not steps_context.had_open_url_at_the_beginning():
             vr.append(ErrorCodeWKF.WKF_1006, SeverityEnum.E_ERROR)
+
+    @staticmethod
+    def _validate_kill_browser_steps(steps_context: StepsCollections, vr: ValidationResult) -> None:
+        """Append KILL_BROWSER structural errors to vr."""
         if steps_context.count_type_step(StepTypeEnum.E_KILL_BROWSER) != 1:
             vr.append(ErrorCodeWKF.WKF_1002, SeverityEnum.E_ERROR)
         if not steps_context.end_is_kill_browser():
             vr.append(ErrorCodeWKF.WKF_1003, SeverityEnum.E_ERROR)
+
+    @staticmethod
+    def _validate_flow_constraints(steps_context: StepsCollections, vr: ValidationResult) -> None:
+        """Append flow-control and export structural errors to vr."""
         if steps_context.has_consecutive_jump_to_step():
             vr.append(ErrorCodeWKF.WKF_1004, SeverityEnum.E_ERROR)
         if steps_context.had_duplicate_step_id():
@@ -49,6 +56,14 @@ class WorkflowService:
             vr.append(ErrorCodeWKF.WKF_1008, SeverityEnum.E_ERROR)
         if not steps_context.has_export_step_when_extract_step():
             vr.append(ErrorCodeWKF.WKF_1009, SeverityEnum.E_ERROR)
+
+    @staticmethod
+    def _validate_workflow_structure(steps_context: StepsCollections) -> ValidationResult:
+        """Check workflow-level constraints; return a ValidationResult."""
+        vr = ValidationResult()
+        WorkflowService._validate_url_steps(steps_context, vr)
+        WorkflowService._validate_kill_browser_steps(steps_context, vr)
+        WorkflowService._validate_flow_constraints(steps_context, vr)
         return vr
 
     @staticmethod

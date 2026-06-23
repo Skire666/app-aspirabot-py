@@ -27,7 +27,7 @@ def _build(data: dict[str, Any]) -> YoutubeInfosVideoParams:
         data: Raw parameter dict as stored in JSON; missing keys use defaults.
 
     Returns:
-        A fully populated YoutubeTranscriptsParams instance.
+        A fully populated YoutubeInfosVideoParams instance.
     """
     return YoutubeInfosVideoParams(comment=data.get("comment", ""))
 

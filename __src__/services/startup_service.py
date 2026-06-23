@@ -134,7 +134,7 @@ class StartupService:
 
     @property
     def config_model(self) -> AppConfigurationModel:
-        """Return the loaded configuration model.
+        """The loaded configuration model.
 
         Returns:
             The AppConfigurationModel populated by load_configuration().
@@ -148,7 +148,7 @@ class StartupService:
 
     @property
     def logging_service(self) -> LoggingService:
-        """Return the initialized logging service.
+        """The initialized logging service.
 
         Returns:
             The LoggingService populated by initialize_logging().

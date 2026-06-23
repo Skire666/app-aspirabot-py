@@ -13,7 +13,7 @@ from typing import Any, Final, cast
 
 import yt_dlp
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
-from models.Youtube_subtitles_list_model import YoutubeSubtitleModel
+from models.Youtube_subtitles_list_model import YoutubeSubtitleModel, YoutubeSubtitlesListModel
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums.youtube_subtitle_enum import SubtitleOriginEnum
 from shared.exception_util import RepositoryWriteError
@@ -29,7 +29,7 @@ _NA_TOKEN: Final[str] = "<<_#N/A_>>"
 # CLASS
 # ============================================================================
 
-cached_video_info: dict[str, YoutubeInfosVideoModel] = {}
+cached_video_info: dict[str, YoutubeSubtitlesListModel] = {}
 
 
 class YoutubeRepository:
@@ -48,12 +48,23 @@ class YoutubeRepository:
     # yt-dlp network calls
     # ------------------------------------------------------------------
 
-    def update_cached(self, url: str, info: YoutubeInfosVideoModel) -> None:
+    @staticmethod
+    def update_cached_subtitles(url: str, info: YoutubeInfosVideoModel) -> None:
         """Update the cached video info."""
         global cached_video_info
-        cached_video_info[url] = info
+        cached_video_info[url] = info.subtitles_ls
 
-    def fetch_video_info(self, url: str) -> dict[str, Any]:
+    def fetch_cached_subtitles(self, url: str) -> YoutubeSubtitlesListModel | None:
+        """Fetch cached subtitle info for a given URL."""
+        global cached_video_info
+        if url not in cached_video_info:
+            obj = self.fetch_video_info(url)
+            casted = YoutubeInfosVideoModel(obj)
+            self.update_cached_subtitles(url, casted)
+        return cached_video_info.get(url)
+
+    @staticmethod
+    def fetch_video_info(url: str) -> dict[str, Any]:
         """Fetch raw video metadata via yt-dlp without downloading any media.
 
         Args:
@@ -79,15 +90,17 @@ class YoutubeRepository:
             raw = ydl.extract_info(url, download=False)
         return cast(dict[str, Any], raw)
 
+    @staticmethod
     def execute_subtitle_download(
-        self, url_youtube: str, id_video: str, out_dir: Path, srt: YoutubeSubtitleModel
+        url_youtube: str, id_video: str, out_dir: Path, srt: YoutubeSubtitleModel
     ) -> None:
         """Invoke yt-dlp to download a specific set of subtitle tracks to disk.
 
         Args:
-            url: The YouTube video URL.
+            url_youtube: The YouTube video URL.
+            id_video: The YouTube video identifier used for naming output files.
             out_dir: Directory where subtitle files are written.
-            srt: info subitles (auto, manual)
+            srt: Subtitle track metadata (auto vs. manual, language, quality).
 
         Raises:
             DownloadError: Propagated from yt-dlp on download failures.

@@ -1,4 +1,10 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from urllib.parse import parse_qs, urlparse
+
+from shared.exception_util import YoutubeUrlParameterEmptyError
 
 
 def sanitize_youtube_url(url: str) -> str:
@@ -36,4 +42,7 @@ def get_id_video_youtube(url: str) -> str:
     if "v" in query_params:
         return query_params["v"][0]
 
-    raise ValueError("undefine id vide youtube")
+    raise YoutubeUrlParameterEmptyError()
+
+
+# EOF

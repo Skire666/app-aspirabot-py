@@ -10,7 +10,6 @@ the ViewModel, ScenariosService, ProfilesService, and WorkflowService.
 # -----------------------------------------------------------------------------
 
 import logging
-import time
 from collections.abc import Callable
 
 from models.scenario_model import ScenarioModel
@@ -122,11 +121,7 @@ class WorkflowPresenter:
                 return
 
             # Validate workflow steps before persisting.
-            time_start = time.perf_counter()
             errors = self._workflow_presenter.validate_steps()
-            time_end = time.perf_counter()
-            time_elapsed_in_ms = (time_end - time_start) * 1000
-            print(f"_on_save -> Validation took {time_elapsed_in_ms:.2f} ms.")
 
             if errors:
                 self._vm.show_error(errors[0])

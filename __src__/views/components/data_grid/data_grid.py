@@ -87,7 +87,7 @@ class DataGrid(_DataGridDrawingMixin, ttk.Frame):
 
     @property
     def _visible_columns(self) -> list[GridColumn]:
-        """Returns only the currently visible column definitions."""
+        """Only the currently visible column definitions."""
         return [c for c in self.columns if c.visible]
 
     def _rebuild_geometry(self) -> None:

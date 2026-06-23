@@ -25,7 +25,7 @@ class ValidationIssue:
 
     @property
     def message(self) -> str:
-        """Return the formatted message for the validation issue."""
+        """Formatted message for the validation issue."""
         try:
             return self.code.value.format(**self.context)
         except KeyError, IndexError:

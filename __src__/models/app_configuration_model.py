@@ -110,7 +110,7 @@ class AppConfigurationModel:
 
     @property
     def log_level_enum(self) -> str:
-        """Returns the logging level as a string."""
+        """Logging level as a string."""
         return self._log_level_enum
 
     @log_level_enum.setter
@@ -123,7 +123,7 @@ class AppConfigurationModel:
 
     @property
     def folder_logs(self) -> Path:
-        """Returns the folder path for logs."""
+        """Folder path for logs."""
         return self._folder_logs
 
     @folder_logs.setter
@@ -135,7 +135,7 @@ class AppConfigurationModel:
 
     @property
     def folder_scenarios(self) -> Path:
-        """Returns the folder path for scenarios."""
+        """Folder path for scenarios."""
         return self._folder_scenarios
 
     @folder_scenarios.setter
@@ -147,7 +147,7 @@ class AppConfigurationModel:
 
     @property
     def gui_booting_size(self) -> str:
-        """Returns the default size of the GUI at booting."""
+        """Default GUI size at boot."""
         return self._gui_booting_size
 
     @gui_booting_size.setter
@@ -163,7 +163,7 @@ class AppConfigurationModel:
 
     @property
     def gui_booting_position(self) -> str:
-        """Returns the default position of the GUI at booting as 'X,Y'."""
+        """Default GUI position at boot as 'X,Y'."""
         return self._gui_booting_position
 
     @gui_booting_position.setter
@@ -188,7 +188,7 @@ class AppConfigurationModel:
 
     @property
     def gui_booting_fullscreen(self) -> bool:
-        """Returns whether the GUI should start in fullscreen mode."""
+        """Whether the GUI should start in fullscreen mode."""
         return self._gui_booting_fullscreen
 
     @gui_booting_fullscreen.setter

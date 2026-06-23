@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -16,3 +20,6 @@ class EventScrapingEnum(Enum):
     E_EMERGENCY_STOP = "EMERGENCY_STOP"
     E_COMPLETED = "COMPLETED"
     E_UNKNOWN = "UNKNOWN"
+
+
+# EOF

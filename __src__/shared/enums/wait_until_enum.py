@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -10,3 +14,6 @@ class WaitUntilEnum(Enum):
     E_LOAD = "load"  # 3) all resources loaded
     E_IDLE = "networkidle"  # 4) no network for at least 500ms
     E_UNKNOWN = "UNKNOWN"
+
+
+# EOF

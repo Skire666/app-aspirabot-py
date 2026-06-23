@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -22,7 +26,7 @@ class RelativeDateEnum(Enum):
         return _RELATIVE_DATE_TO_LABEL.get(self, "")
 
     @classmethod
-    def view_to_enum(cls, value: str) -> "RelativeDateEnum":
+    def view_to_enum(cls, value: str) -> RelativeDateEnum:
         """Convert a string value to the corresponding RelativeDateEnum member.
 
         Args:
@@ -33,7 +37,7 @@ class RelativeDateEnum(Enum):
         """
         return _LABEL_TO_RELATIVE_DATE.get(value, cls.E_UNKNOWN)
 
-    def is_lower_than(self, right: "RelativeDateEnum") -> bool:
+    def is_lower_than(self, right: RelativeDateEnum) -> bool:
         """Determine if this enum member represents a lower (earlier) relative date than another.
 
         Args:
@@ -98,3 +102,6 @@ _RELATIVE_DATE_TO_TIMEDELTA: dict[RelativeDateEnum, timedelta] = {
     RelativeDateEnum.E_LAST_3Y: timedelta(days=1095),
     RelativeDateEnum.E_LAST_99: timedelta(days=36135),
 }
+
+
+# EOF

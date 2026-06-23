@@ -1,5 +1,9 @@
 """Model for YouTube basic metadata payload extracted via yt-dlp."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,6 +12,7 @@ from typing import Any
 from models.Youtube_subtitles_list_model import YoutubeSubtitlesListModel
 from shared.enums import SeverityEnum
 from shared.errors.youtube_infos_video_model_error import ErrorCodeYIV
+from shared.exception_util import YoutubeVideoDataIncompleteError
 from shared.validation_result import ValidationResult
 
 
@@ -48,7 +53,7 @@ class YoutubeInfosVideoModel:
     def __init__(self, data: dict[str, Any]) -> None:
         """Populate the model from a dictionary."""
         if "url" not in data or "subtitles" not in data or "automatic_captions" not in data:
-            raise ValueError("Missing required keys in data dictionary.")
+            raise YoutubeVideoDataIncompleteError()
 
         # basic
         for key in data:

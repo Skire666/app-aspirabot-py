@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -34,3 +38,6 @@ class StepTypeEnum(Enum):
     E_CHECK_URL_PAGE = "CHECK_URL_PAGE"
     E_RESTART_TO_BEGINNING = "RESTART_TO_BEGINNING"
     E_UNKNOWN = "UNKNOWN"
+
+
+# EOF

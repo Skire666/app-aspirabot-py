@@ -1,5 +1,9 @@
 """Model for YouTube basic metadata payload extracted via yt-dlp."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,6 +12,7 @@ from typing import Any, cast
 from shared.enums import SeverityEnum
 from shared.enums.youtube_subtitle_enum import SubtitleLanguageEnum, SubtitleOriginEnum
 from shared.errors.youtube_subtitles_list_model_error import ErrorCodeYSL
+from shared.exception_util import YoutubeLanguageMismatchError
 from shared.validation_result import ValidationResult
 
 
@@ -39,16 +44,26 @@ class YoutubeSubtitlesListModel:
             self.compute_hypothetic_quality(digram_lang)
 
     def determine_langauge_from_audio_srt(self) -> str:
+        """Return the language code of the original audio track, or empty string if not found."""
         for item in self.data:
             if "(Original)" in item.name:
                 return item.language.value
         return ""
 
     def compute_hypothetic_quality(self, digram_lang_from_video: str) -> None:
+        """Assign quality scores to each subtitle track based on language and origin.
+
+        Args:
+            digram_lang_from_video: Two-letter language code of the video (e.g. 'fr', 'en').
+
+        Raises:
+            YoutubeLanguageMismatchError: If the audio original language differs from the
+                declared video language.
+        """
         original_language: str = self.determine_langauge_from_audio_srt()
 
         if original_language and digram_lang_from_video and original_language != digram_lang_from_video:
-            raise ValueError("original_language != digram_lang_from_video")
+            raise YoutubeLanguageMismatchError()
 
         # loop
         for item in self.data:

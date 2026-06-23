@@ -64,7 +64,7 @@ class _DropdownWindow:
 
     @property
     def is_open(self) -> bool:
-        """Return True when the dropdown is currently visible."""
+        """True when the dropdown is currently visible."""
         return self._is_open
 
     def open(self) -> None:

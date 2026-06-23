@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
@@ -14,6 +14,9 @@ from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
+
+
+_MAX_COMMENT_LENGTH: Final[int] = 50
 
 
 class YoutubeSubtitlesParams(BaseModel):
@@ -29,7 +32,7 @@ class YoutubeSubtitlesParams(BaseModel):
         """Reject comments longer than 50 characters."""
         if not info.context:
             return v
-        if v and len(v) > 50:
+        if v and len(v) > _MAX_COMMENT_LENGTH:
             raise ValueError(ERROR_TEMPLATES["filed_comment_too_long"].format(step=step_label(info.context)))
         return v
 

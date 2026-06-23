@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -8,3 +12,6 @@ class FilterClosedEnum(Enum):
     E_SOURCE = "<<SOURCE>>"
     E_CUSTOM = "<<CUSTOM>>"
     E_UNKNOWN = "UNKNOWN"
+
+
+# EOF

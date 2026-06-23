@@ -17,10 +17,25 @@ from models.steps.youtube_infos_video_params import YoutubeInfosVideoParams
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.exception_util import YoutubeInfosVideoNotDownloadedError
 from shared.step_registry import register_step_executor
+from shared.validation_result import ValidationResult
 from shared.youtube_util import sanitize_youtube_url
 
 _logger = logging.getLogger(__name__)
+
+
+def _require_valid_video_infos(rs: ValidationResult) -> None:
+    """Raise if the validation result contains errors or fatals.
+
+    Args:
+        rs: ValidationResult to inspect.
+
+    Raises:
+        YoutubeInfosVideoNotDownloadedError: If validation has errors or fatals.
+    """
+    if rs.has_errors_or_fatals():
+        raise YoutubeInfosVideoNotDownloadedError(rs.compute_displayable_issues(2))
 
 
 class YoutubeInfosVideoExecutor(IStepExecutor):
@@ -50,9 +65,8 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             url_youtube = sanitize_youtube_url(context.last_url_opened)
             obj = self._repo.fetch_video_info(url_youtube)
             casted = YoutubeInfosVideoModel(obj)
-            rs = casted.validate()  # raises if any error
-            if rs.has_errors_or_fatals():
-                raise ValueError(f"Validation des métadonnées échouée : {rs.compute_displayable_issues(2)}")
+            rs = casted.validate()
+            _require_valid_video_infos(rs)
             self._repo.update_cached_subtitles(url_youtube, casted)
             for key, value in casted.to_dict().items():
                 casted_list = [value] if not isinstance(value, list) else value  # pyright: ignore[reportUnknownVariableType]

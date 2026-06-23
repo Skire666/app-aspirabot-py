@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from shared.enums.error_data_enum import ErrorDataEnum
 from shared.enums.event_scraping_enum import EventScrapingEnum
 from shared.enums.extract_target_enum import ExtractTargetEnum
@@ -27,3 +31,6 @@ __all__ = [
     "UrlSourceTypeEnum",
     "WaitUntilEnum",
 ]
+
+
+# EOF

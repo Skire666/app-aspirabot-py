@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -8,3 +12,6 @@ class UrlSortOrderEnum(Enum):
     E_MTIME_ASC = "mtime_asc"  # oldest modified first (default)
     E_MTIME_DESC = "mtime_desc"  # newest modified first
     E_UNKNOWN = "UNKNOWN"
+
+
+# EOF

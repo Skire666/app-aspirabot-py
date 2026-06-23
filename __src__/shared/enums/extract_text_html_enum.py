@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -11,3 +15,6 @@ class ExtractTextHtmlEnum(Enum):
     E_INNER_HTML = "innerHTML"
     E_INPUT_VALUE = "value"
     E_UNKNOWN = "UNKNOWN"
+
+
+# EOF

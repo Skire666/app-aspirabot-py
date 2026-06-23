@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -12,3 +16,6 @@ class SeverityEnum(Enum):
     E_ERROR = "ERROR"  # Critical issue; workflow may be affected
     E_FATAL = "FATAL"  # Severe issue; workflow must stop immediately
     E_UNKNOWN = "UNKNOWN"  # Unknown severity level
+
+
+# EOF

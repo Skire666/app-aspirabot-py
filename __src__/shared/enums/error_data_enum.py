@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from enum import Enum
 
 
@@ -14,3 +18,6 @@ class ErrorDataEnum(Enum):
     E_PERMISSION = "PERMISSION"  # accès non autorisé
     E_STALE = "STALE"  # donnée périmée
     E_UNKNOWN = "UNKNOWN"  # type d'erreur inconnu
+
+
+# EOF

@@ -320,7 +320,7 @@ class WorkflowView(ttk.Frame):
 
     @property
     def workflow_builder_view(self) -> StepsListCrudView:
-        """Returns the embedded StepsListCrudView widget.
+        """The embedded StepsListCrudView widget.
 
         Returns:
             The drag-and-drop step list instance.

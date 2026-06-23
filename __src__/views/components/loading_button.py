@@ -1,5 +1,9 @@
 """Generic button that disables itself and shows a spinning ASCII indicator while a command runs."""
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from __future__ import annotations
 
 import threading
@@ -33,6 +37,7 @@ class LoadingButton(MyButton):
     def __init__(
         self, master: tk.Widget, *, text: str, command: Callable[[], None], min_ms: int = _MIN_MS_DEFAULT, **kwargs: Any
     ) -> None:
+        """Initialize the button, clamping min_ms to _MIN_MS_DEFAULT if smaller."""
         self._original_text = text
         self._threaded_command = command
         self._min_ms = max(min_ms, _MIN_MS_DEFAULT)
@@ -76,3 +81,6 @@ class LoadingButton(MyButton):
             self.after_cancel(self._spin_id)
             self._spin_id = None
         self.config(state=tk.NORMAL, text=self._original_text)
+
+
+# EOF

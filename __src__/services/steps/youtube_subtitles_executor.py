@@ -17,8 +17,58 @@ from models.scraping_context_model import ScrapingContextModel
 from models.Youtube_subtitles_list_model import YoutubeSubtitleModel, YoutubeSubtitlesListModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.exception_util import (
+    YoutubeSubtitlesDownloadedError,
+    YoutubeSubtitlesNotFoundInMetadataError,
+    YoutubeSubtitlesValidationFailedError,
+)
 from shared.step_registry import register_step_executor
+from shared.validation_result import ValidationResult
 from shared.youtube_util import get_id_video_youtube, sanitize_youtube_url
+
+
+def _require_subtitles_found(all_srt: YoutubeSubtitlesListModel | None) -> YoutubeSubtitlesListModel:
+    """Raise if no subtitles were found in the video metadata.
+
+    Args:
+        all_srt: Subtitle list model or None when metadata contained no tracks.
+
+    Returns:
+        The subtitle list model when it is not None.
+
+    Raises:
+        YoutubeSubtitlesNotFoundInMetadataError: If all_srt is None.
+    """
+    if all_srt is None:
+        raise YoutubeSubtitlesNotFoundInMetadataError()
+    return all_srt
+
+
+def _require_valid_subtitles(rs: ValidationResult) -> None:
+    """Raise if the subtitle validation result contains errors or fatals.
+
+    Args:
+        rs: ValidationResult to inspect.
+
+    Raises:
+        YoutubeSubtitlesValidationFailedError: If validation has errors or fatals.
+    """
+    if rs.has_errors_or_fatals():
+        raise YoutubeSubtitlesValidationFailedError(rs.compute_displayable_issues(2))
+
+
+def _require_subtitles_downloaded(count: int) -> None:
+    """Raise if no subtitles were actually downloaded.
+
+    Args:
+        count: Number of subtitle files successfully written to disk.
+
+    Raises:
+        YoutubeSubtitlesDownloadedError: If count is zero or negative.
+    """
+    if count <= 0:
+        raise YoutubeSubtitlesDownloadedError()
+
 
 # ============================================================================
 # CONSTANTS (single source of truth — tune the behaviour from here)
@@ -54,16 +104,12 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
         exp_folder = Path(str(context.folder_export) + "/srt")
         try:
             url_youtube = sanitize_youtube_url(context.last_url_opened)
-            all_srt = self._repo.fetch_cached_subtitles(url_youtube)
-            if all_srt is None:
-                raise ValueError("Aucun sous-titre trouvé dans les métadonnées du flux vidéo.")
-            rs = all_srt.validate()  # raises if any error
-            if rs.has_errors_or_fatals():
-                raise ValueError(f"Validation des sous-titres échouée : {rs.compute_displayable_issues(2)}")
+            all_srt = _require_subtitles_found(self._repo.fetch_cached_subtitles(url_youtube))
+            rs = all_srt.validate()
+            _require_valid_subtitles(rs)
 
             nbr_ddl_srt = self.download_all_subtitles(url_youtube, all_srt, exp_folder, event_bus, context)
-            if nbr_ddl_srt <= 0:
-                raise ValueError("Aucun sous-titre téléchargé.")
+            _require_subtitles_downloaded(nbr_ddl_srt)
             event_bus.log_step(context, f"Nombre de sous-titres téléchargés : +{nbr_ddl_srt}")
 
         except Exception as exc:  # noqa: BLE001
