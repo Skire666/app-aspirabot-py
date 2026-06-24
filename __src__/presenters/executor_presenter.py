@@ -294,6 +294,10 @@ class ExecutorPresenter:
 
     def _render_profile_form(self, profile: LaunchModel) -> None:
         """Populate all ViewModel Vars from the given profile."""
+        # Enable the section first so comboboxes are in readonly state when vars are pushed.
+        # Without this, comboboxes are DISABLED during .set() calls and may not refresh their
+        # display on the DISABLED→readonly transition (Windows/Tk behaviour).
+        self._vm.is_profile_section_enabled_var.set(True)
         steps = self._current_scenario.steps if self._current_scenario else []
         self._push_profile_vars(profile, steps)
         self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
@@ -301,7 +305,6 @@ class ExecutorPresenter:
         # Reset dirty after all Vars are pushed — view traces on source Vars fire form_changed()
         # during the push above, so dirty must be cleared after the full load, not before.
         self._set_dirty(False)
-        self._vm.is_profile_section_enabled_var.set(True)
 
     def _push_profile_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write profile scalar fields and step list into the ViewModel Vars.
@@ -482,6 +485,11 @@ class ExecutorPresenter:
         )
         self._current_profile.urls_folder_jsons.date_modified_end = RelativeDateEnum.view_to_enum(
             self._vm.json_date_modified_end_var.get()
+        )
+        print(
+            "2222",
+            self._current_profile.urls_folder_jsons.date_modified_start,
+            self._current_profile.urls_folder_jsons.date_modified_end,
         )
 
         # calc entries

@@ -10,7 +10,8 @@ class RelativeDateEnum(Enum):
     """Enumerates the relative date options for filtering files in a folder-based URL source."""
 
     E_UNSET = "UNSET"
-    E_LAST_0D = "LAST_0D"  # now
+    E_LAST_NOW = "LAST_NOW"  # now
+    E_LAST_1D = "LAST_1D"  # LAST 1 DAYS
     E_LAST_3D = "LAST_3D"  # LAST 3 DAYS
     E_LAST_1W = "LAST_1W"  # LAST 7 DAYS
     E_LAST_3W = "LAST_3W"  # LAST 14 DAYS
@@ -48,7 +49,8 @@ class RelativeDateEnum(Enum):
         """
         order = [
             RelativeDateEnum.E_UNSET,
-            RelativeDateEnum.E_LAST_0D,
+            RelativeDateEnum.E_LAST_NOW,
+            RelativeDateEnum.E_LAST_1D,
             RelativeDateEnum.E_LAST_3D,
             RelativeDateEnum.E_LAST_1W,
             RelativeDateEnum.E_LAST_3W,
@@ -80,8 +82,9 @@ class RelativeDateEnum(Enum):
 
 
 _RELATIVE_DATE_TO_LABEL: dict[RelativeDateEnum, str] = {
-    RelativeDateEnum.E_LAST_0D: "Maintenant",
-    RelativeDateEnum.E_LAST_3D: "3 derniers jours",
+    RelativeDateEnum.E_LAST_NOW: "Maintenant",
+    RelativeDateEnum.E_LAST_1D: "1 jour",
+    RelativeDateEnum.E_LAST_3D: "3 jours",
     RelativeDateEnum.E_LAST_1W: "1 semaine",
     RelativeDateEnum.E_LAST_3W: "3 semaines",
     RelativeDateEnum.E_LAST_1M: "1 mois",
@@ -92,7 +95,8 @@ _RELATIVE_DATE_TO_LABEL: dict[RelativeDateEnum, str] = {
 }
 _LABEL_TO_RELATIVE_DATE: dict[str, RelativeDateEnum] = {v: k for k, v in _RELATIVE_DATE_TO_LABEL.items()}
 _RELATIVE_DATE_TO_TIMEDELTA: dict[RelativeDateEnum, timedelta] = {
-    RelativeDateEnum.E_LAST_0D: timedelta(0),
+    RelativeDateEnum.E_LAST_NOW: timedelta(0),
+    RelativeDateEnum.E_LAST_1D: timedelta(days=1),
     RelativeDateEnum.E_LAST_3D: timedelta(days=3),
     RelativeDateEnum.E_LAST_1W: timedelta(weeks=1),
     RelativeDateEnum.E_LAST_3W: timedelta(weeks=3),

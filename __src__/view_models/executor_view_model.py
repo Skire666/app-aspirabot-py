@@ -149,7 +149,9 @@ class ExecutorViewModel(ViewModelBase):
         # jsons
         self.urls_path_folder_jsons_var = tk.StringVar(master=master, value="")
         self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
-        self.json_date_modified_start_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_0D.enum_to_view())
+        self.json_date_modified_start_var = tk.StringVar(
+            master=master, value=RelativeDateEnum.E_LAST_NOW.enum_to_view()
+        )
         self.json_date_modified_end_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_99.enum_to_view())
         # Discover mode — OUT form fields.
         self.disc_out_pattern_json_var = tk.StringVar(master=master, value="export*.json")

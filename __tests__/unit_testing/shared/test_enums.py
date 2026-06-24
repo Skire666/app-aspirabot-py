@@ -97,7 +97,7 @@ class TestUrlSourceTypeEnum:
 
 class TestRelativeDateEnum:
     def test_view_to_enum_known_label(self) -> None:
-        result = RelativeDateEnum.view_to_enum("3 derniers jours")
+        result = RelativeDateEnum.view_to_enum("3 jours")
         assert result is RelativeDateEnum.E_LAST_3D
 
     def test_view_to_enum_unknown_label_returns_e_unknown(self) -> None:
@@ -106,10 +106,12 @@ class TestRelativeDateEnum:
 
     def test_to_datetime_returns_datetime(self) -> None:
         from datetime import datetime
+
         result = RelativeDateEnum.E_LAST_1W.to_datetime()
         assert isinstance(result, datetime)
 
     def test_to_datetime_unset_falls_back(self) -> None:
         from datetime import datetime
+
         result = RelativeDateEnum.E_UNSET.to_datetime()
         assert isinstance(result, datetime)

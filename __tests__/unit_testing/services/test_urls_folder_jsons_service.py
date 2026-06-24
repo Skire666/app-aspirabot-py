@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
 from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
 from services.sourcing_urls.urls_folder_jsons_service import UrlsFolderJsonsService, _collect_urls
 from shared.enums import RelativeDateEnum, UrlSortOrderEnum
 from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceExhaustedError
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -23,14 +20,11 @@ from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceExhau
 def _make_model(
     folder: str,
     order: str = UrlSortOrderEnum.E_MTIME_ASC.value,
-    date_start: RelativeDateEnum = RelativeDateEnum.E_LAST_0D,  # upper bound = now
-    date_end: RelativeDateEnum = RelativeDateEnum.E_LAST_99,    # lower bound = 99y ago
+    date_start: RelativeDateEnum = RelativeDateEnum.E_LAST_NOW,  # upper bound = now
+    date_end: RelativeDateEnum = RelativeDateEnum.E_LAST_99,  # lower bound = 99y ago
 ) -> UrlsFolderJsonsModel:
     return UrlsFolderJsonsModel(
-        folder_json=folder,
-        orders_json=order,
-        date_modified_start=date_start,
-        date_modified_end=date_end,
+        folder_json=folder, orders_json=order, date_modified_start=date_start, date_modified_end=date_end
     )
 
 
@@ -283,10 +277,7 @@ class TestFilterAndSortUrls:
     def test_mtime_desc_sorts_newest_first(self, svc: UrlsFolderJsonsService, tmp_path: Path) -> None:
         from datetime import datetime
 
-        url_mtime = {
-            "https://a.com": datetime(2023, 1, 1),
-            "https://b.com": datetime(2024, 1, 1),
-        }
+        url_mtime = {"https://a.com": datetime(2023, 1, 1), "https://b.com": datetime(2024, 1, 1)}
         svc._sort_order = UrlSortOrderEnum.E_MTIME_DESC
         svc._date_modified_newest = None
         svc._date_modified_oldest = None
@@ -297,10 +288,7 @@ class TestFilterAndSortUrls:
     def test_mtime_asc_sorts_oldest_first(self, svc: UrlsFolderJsonsService) -> None:
         from datetime import datetime
 
-        url_mtime = {
-            "https://a.com": datetime(2023, 1, 1),
-            "https://b.com": datetime(2024, 1, 1),
-        }
+        url_mtime = {"https://a.com": datetime(2023, 1, 1), "https://b.com": datetime(2024, 1, 1)}
         svc._sort_order = UrlSortOrderEnum.E_MTIME_ASC
         svc._date_modified_newest = None
         svc._date_modified_oldest = None
@@ -311,10 +299,7 @@ class TestFilterAndSortUrls:
     def test_date_filter_applied(self, svc: UrlsFolderJsonsService) -> None:
         from datetime import datetime
 
-        url_mtime = {
-            "https://old.com": datetime(2020, 1, 1),
-            "https://new.com": datetime(2024, 1, 1),
-        }
+        url_mtime = {"https://old.com": datetime(2020, 1, 1), "https://new.com": datetime(2024, 1, 1)}
         svc._sort_order = UrlSortOrderEnum.E_MTIME_ASC
         svc._date_modified_newest = datetime(2022, 1, 1)  # only include up to 2022
         svc._date_modified_oldest = None

@@ -110,13 +110,13 @@ class UrlConfigView(ttk.Frame):
 
         # Text area fills the remaining space above the stats row.
         inner = ttk.Frame(self._panel_manual)
-        inner.pack(fill=tk.BOTH, expand=True)
+        inner.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self._txt_url_manual = tk.Text(inner, wrap=tk.NONE)
         scrollbar = ttk.Scrollbar(inner, orient=tk.VERTICAL, command=self._txt_url_manual.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_manual.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_manual.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=6)
+        self._txt_url_manual.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self._txt_url_manual.bind("<<Modified>>", self._on_manual_text_modified)
 
     # ─── Panel 2 : Dossier avec URL ──────────────────────────────────────────
@@ -159,14 +159,14 @@ class UrlConfigView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, pady=6)
+        left.pack(side=tk.LEFT, anchor=tk.NW)
         preview_frame = ttk.Frame(row)
-        preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=5)
         self._txt_url_shortcuts = tk.Text(preview_frame, wrap=tk.NONE, state=tk.DISABLED, bg=C_BACKGROUND_GRAY)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_shortcuts.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_shortcuts.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=6)
+        self._txt_url_shortcuts.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def _create_folder_stats_row(self, parent: tk.Widget) -> None:
         """Stats row (total / unique / duplicates / empty) for the FOLDER source panel.
@@ -175,7 +175,7 @@ class UrlConfigView(ttk.Frame):
             parent: The FOLDER panel frame to attach widgets to.
         """
         stats = ttk.Frame(parent)
-        stats.pack(side=tk.BOTTOM, fill=tk.X, pady=6)
+        stats.pack(side=tk.BOTTOM, fill=tk.X)
         MyLabel(stats, text="Nombre total d'URLs :").pack_left()
         MyLabel(stats, textvariable=self._vm.url_total_count_shortcuts_var, width=10).pack_left()
         MyLabel(stats, text="Uniques :").pack_left()
@@ -244,9 +244,7 @@ class UrlConfigView(ttk.Frame):
                 self._vm.urls_path_folder_jsons_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        ttk.Entry(row, textvariable=self._vm.urls_path_folder_jsons_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), pady=(0, 5)
-        )
+        MyEntry(row, textvariable=self._vm.urls_path_folder_jsons_var).pack_left(fill=tk.X, expand=True)
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_json).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
@@ -261,14 +259,14 @@ class UrlConfigView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         left = ttk.Frame(row)
-        left.pack(side=tk.LEFT, anchor=tk.NW, pady=6)
+        left.pack(side=tk.LEFT, anchor=tk.NW)
         preview_frame = ttk.Frame(row)
-        preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=5)
         self._txt_url_jsons = tk.Text(preview_frame, wrap=tk.NONE, state=tk.DISABLED, bg=C_BACKGROUND_GRAY)
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self._txt_url_jsons.yview)  # type: ignore[reportUnknownMemberType]
         self._txt_url_jsons.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=6)
+        self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def _create_json_stats_row(self, parent: tk.Widget) -> None:
         """Stats row (total / unique / duplicates / empty) for the JSON source panel.
@@ -277,7 +275,7 @@ class UrlConfigView(ttk.Frame):
             parent: The JSON panel frame to attach widgets to.
         """
         stats = ttk.Frame(parent)
-        stats.pack(side=tk.BOTTOM, fill=tk.X, pady=6)
+        stats.pack(side=tk.BOTTOM, fill=tk.X)
         MyLabel(stats, text="Nombre total d'URLs :").pack_left()
         MyLabel(stats, textvariable=self._vm.url_total_count_jsons_var, width=10).pack_left()
         MyLabel(stats, text="Uniques :").pack_left()
@@ -319,7 +317,7 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        date_values = [e.enum_to_view() for e in RelativeDateEnum if e is not RelativeDateEnum.E_UNKNOWN]
+        date_values = [e.enum_to_view() for e in RelativeDateEnum if e.is_valid()]
         MyLabel(row, text="URLs dont les JSONs ont été modifiés entre").pack_left()
         MyCombobox(
             row, textvariable=self._vm.json_date_modified_start_var, values=date_values, state="readonly", width=20

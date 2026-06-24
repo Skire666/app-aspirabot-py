@@ -27,7 +27,7 @@ def _make_vm() -> MagicMock:
     vm.url_sort_order_shortcuts_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
     vm.urls_path_folder_jsons_var.get.return_value = "/jsons"
     vm.url_sort_order_jsons_var.get.return_value = UrlSortOrderEnum.E_MTIME_ASC.value
-    vm.json_date_modified_start_var.get.return_value = RelativeDateEnum.E_LAST_0D.enum_to_view()
+    vm.json_date_modified_start_var.get.return_value = RelativeDateEnum.E_LAST_NOW.enum_to_view()
     vm.json_date_modified_end_var.get.return_value = RelativeDateEnum.E_LAST_99.enum_to_view()
     vm.disc_out_pattern_json_var.get.return_value = ""
     vm.disc_out_key_mapping_var.get.return_value = ""
@@ -109,7 +109,7 @@ class TestRefreshPreviewForProfile:
             folder_json="/jsons",
             orders_json=UrlSortOrderEnum.E_MTIME_ASC.value,
             date_modified_start=RelativeDateEnum.E_LAST_99,
-            date_modified_end=RelativeDateEnum.E_LAST_0D,
+            date_modified_end=RelativeDateEnum.E_LAST_NOW,
         )
 
         provider = MagicMock()
