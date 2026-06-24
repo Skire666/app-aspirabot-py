@@ -10,7 +10,9 @@ injectable navigation hooks from main.py.
 # Imports
 # -----------------------------------------------------------------------------
 
+import datetime
 import logging
+import time
 from collections.abc import Callable
 
 from models.launcher_model import LaunchModel
@@ -85,6 +87,8 @@ class ExecutorPresenter:
         self._current_profiles_model: ProfilesModel | None = None
         self._current_profile: LaunchModel | None = None
         self._is_dirty: bool = False
+        # Guard: suppresses refresh_preview_from_vm() during bulk profile loading.
+        self._is_loading_profile: bool = False
 
         # Hooks injected from main.py after construction.
         self.on_request_edit_scenario: Callable[[str], None] | None = None
@@ -297,14 +301,22 @@ class ExecutorPresenter:
         # Enable the section first so comboboxes are in readonly state when vars are pushed.
         # Without this, comboboxes are DISABLED during .set() calls and may not refresh their
         # display on the DISABLED→readonly transition (Windows/Tk behaviour).
-        self._vm.is_profile_section_enabled_var.set(True)
-        steps = self._current_scenario.steps if self._current_scenario else []
-        self._push_profile_vars(profile, steps)
-        self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
-        self._url_config_presenter.refresh_preview_for_profile(profile)
-        # Reset dirty after all Vars are pushed — view traces on source Vars fire form_changed()
-        # during the push above, so dirty must be cleared after the full load, not before.
-        self._set_dirty(False)
+        self._is_loading_profile = True
+        t0 = time.perf_counter()
+        print("DEBUG 02:", datetime.datetime.now())
+        try:
+            self._vm.is_profile_section_enabled_var.set(True)
+            steps = self._current_scenario.steps if self._current_scenario else []
+            self._push_profile_vars(profile, steps)
+            self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
+            self._url_config_presenter.refresh_preview_for_profile(profile)
+            # Reset dirty after all Vars are pushed — view traces on source Vars fire form_changed()
+            # during the push above, so dirty must be cleared after the full load, not before.
+            self._set_dirty(False)
+        finally:
+            self._is_loading_profile = False
+        print("DEBUG 05:", datetime.datetime.now())
+        print("In ms", (time.perf_counter() - t0) * 1000)
 
     def _push_profile_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write profile scalar fields and step list into the ViewModel Vars.
@@ -350,6 +362,7 @@ class ExecutorPresenter:
         self._vm.url_sort_order_jsons_var.set(
             profile.urls_folder_jsons.orders_jsons or UrlSortOrderEnum.E_MTIME_ASC.value
         )
+        self._vm.url_regexp_jsons_var.set(profile.urls_folder_jsons.url_regexp)
         self._vm.json_date_modified_start_var.set(profile.urls_folder_jsons.date_modified_start.enum_to_view())
         self._vm.json_date_modified_end_var.set(profile.urls_folder_jsons.date_modified_end.enum_to_view())
         # discover entries
@@ -480,6 +493,7 @@ class ExecutorPresenter:
         # folder json
         self._current_profile.urls_folder_jsons.folder_jsons = self._vm.urls_path_folder_jsons_var.get().strip()
         self._current_profile.urls_folder_jsons.orders_jsons = self._vm.url_sort_order_jsons_var.get()
+        self._current_profile.urls_folder_jsons.url_regexp = self._vm.url_regexp_jsons_var.get()
         self._current_profile.urls_folder_jsons.date_modified_start = RelativeDateEnum.view_to_enum(
             self._vm.json_date_modified_start_var.get()
         )
@@ -502,7 +516,8 @@ class ExecutorPresenter:
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)
-        self._url_config_presenter.refresh_preview_from_vm()
+        if not self._is_loading_profile:
+            self._url_config_presenter.refresh_preview_from_vm()
 
     def _set_dirty(self, value: bool) -> None:
         self._is_dirty = value

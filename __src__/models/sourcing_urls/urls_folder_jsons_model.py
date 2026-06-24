@@ -31,6 +31,7 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
 
     folder_jsons: str
     orders_jsons: str
+    url_regexp: str
     date_modified_start: RelativeDateEnum
     date_modified_end: RelativeDateEnum
 
@@ -38,6 +39,7 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         self,
         folder_json: str,
         orders_json: str,
+        url_regexp: str,
         date_modified_start: RelativeDateEnum,
         date_modified_end: RelativeDateEnum,
     ) -> None:
@@ -46,11 +48,13 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         Args:
             folder_json: Absolute path of the folder containing .json files.
             orders_json: Sort order applied when reading the .json files.
+            url_regexp: Regular expression for filtering URLs.
             date_modified_start: Start date for filtering files by modification date.
             date_modified_end: End date for filtering files by modification date.
         """
         self.folder_jsons = folder_json.strip()
         self.orders_jsons = orders_json.strip()
+        self.url_regexp = url_regexp.strip()
         self.date_modified_start = date_modified_start
         self.date_modified_end = date_modified_end
 
@@ -73,8 +77,9 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         return cls(
             folder_json="",
             orders_json="",
-            date_modified_start=RelativeDateEnum.E_UNSET,
-            date_modified_end=RelativeDateEnum.E_UNSET,
+            url_regexp="http*",
+            date_modified_start=RelativeDateEnum.E_LAST_NOW,
+            date_modified_end=RelativeDateEnum.E_LAST_99,
         )
 
     @classmethod
@@ -90,6 +95,7 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         return cls(
             folder_json=str(data.get("folder_json") or ""),
             orders_json=str(data.get("orders_json") or ""),
+            url_regexp=str(data.get("url_regexp") or "http*"),
             date_modified_start=RelativeDateEnum(data.get("date_modified_start") or RelativeDateEnum.E_UNSET),
             date_modified_end=RelativeDateEnum(data.get("date_modified_end") or RelativeDateEnum.E_UNSET),
         )
@@ -103,6 +109,7 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         return {
             "folder_json": self.folder_jsons,
             "orders_json": self.orders_jsons,
+            "url_regexp": self.url_regexp or "http*",
             "date_modified_start": self.date_modified_start,
             "date_modified_end": self.date_modified_end,
         }
@@ -123,6 +130,8 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
             rs.append(ErrorCodeUFJ.UFJ_1003, SeverityEnum.E_ERROR)
         elif len(self.orders_jsons.strip()) <= 1 or self.orders_jsons == "UNSET":
             rs.append(ErrorCodeUFJ.UFJ_1004, SeverityEnum.E_ERROR)
+        elif not self.url_regexp or not self.url_regexp.strip():
+            rs.append(ErrorCodeUFJ.UFJ_1010, SeverityEnum.E_ERROR)
         elif not folder_exists(self.folder_jsons):
             rs.append(ErrorCodeUFJ.UFJ_1005, SeverityEnum.E_ERROR)
         elif count_files_in_folder(self.folder_jsons, ".json") <= 0:

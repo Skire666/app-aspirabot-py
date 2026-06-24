@@ -14,7 +14,7 @@ class RelativeDateEnum(Enum):
     E_LAST_1D = "LAST_1D"  # LAST 1 DAYS
     E_LAST_3D = "LAST_3D"  # LAST 3 DAYS
     E_LAST_1W = "LAST_1W"  # LAST 7 DAYS
-    E_LAST_3W = "LAST_3W"  # LAST 14 DAYS
+    E_LAST_3W = "LAST_3W"  # LAST 20 DAYS
     E_LAST_1M = "LAST_1M"  # LAST 30 DAYS
     E_LAST_3M = "LAST_3M"  # LAST 90 DAYS
     E_LAST_1Y = "LAST_1Y"  # LAST 1 YEAR

@@ -92,6 +92,7 @@ class UrlConfigPresenter:
             model = UrlsFolderJsonsModel(
                 folder_json=self._vm.urls_path_folder_jsons_var.get().strip(),
                 orders_json=self._vm.url_sort_order_jsons_var.get(),
+                url_regexp=self._vm.url_regexp_jsons_var.get().strip(),
                 date_modified_start=RelativeDateEnum.view_to_enum(self._vm.json_date_modified_start_var.get()),
                 date_modified_end=RelativeDateEnum.view_to_enum(self._vm.json_date_modified_end_var.get()),
             )

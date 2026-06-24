@@ -13,6 +13,7 @@ Discovery is lazy: the folder is scanned only on the first ``load_url_if_availab
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import cast
@@ -31,20 +32,17 @@ from shared.path_util import list_files
 _SENTINEL = object()
 
 
-def _collect_urls(obj: object, result: list[str]) -> None:
-    """Recursively walk any JSON value and append HTTP strings to *result*."""
+def _collect_urls(obj: object, result: list[str], pattern: re.Pattern[str]) -> None:
+    """Recursively walk any JSON value and append matching strings to *result*."""
     if isinstance(obj, str):
-        # value with string ?
-        if obj.startswith("http"):
+        if pattern.search(obj):
             result.append(obj)
     elif isinstance(obj, dict):
-        # node dict -> key / value
         for v in cast(dict[str, object], obj).values():
-            _collect_urls(v, result)
+            _collect_urls(v, result, pattern)
     elif isinstance(obj, list):
-        # node list -> iterate over items
         for item in cast(list[object], obj):
-            _collect_urls(item, result)
+            _collect_urls(item, result, pattern)
 
 
 # -----------------------------------------------------------------------------
@@ -68,6 +66,8 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         """
         self._folder_path: str = ""
         self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC
+        self._url_regexp: str = ""
+        self._compiled_regexp: re.Pattern[str] = re.compile(r"")
         self._date_modified_newest: datetime | None = None
         self._date_modified_oldest: datetime | None = None
         self._file_paths: list[tuple[Path, datetime]] | None = None
@@ -96,6 +96,11 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
             self._sort_order = UrlSortOrderEnum(model.orders_jsons)
             self._date_modified_newest = model.date_modified_start.to_datetime()
             self._date_modified_oldest = model.date_modified_end.to_datetime()
+            self._url_regexp = model.url_regexp
+            rg_sanitized = (
+                "^" + self._url_regexp if self._url_regexp and self._url_regexp[0].isalnum() else self._url_regexp
+            )
+            self._compiled_regexp = re.compile(rg_sanitized)
         else:
             raise InvalidUrlSourceValueTypeError("folder_jsons", "UrlsFolderJsonsModel", type(model).__name__)
 
@@ -103,6 +108,8 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         """Reset the provider to its initial state, clearing any cached data."""
         self._folder_path = ""
         self._sort_order = UrlSortOrderEnum.E_MTIME_ASC
+        self._url_regexp = ""
+        self._compiled_regexp = re.compile(r"")
         self._date_modified_newest = None
         self._date_modified_oldest = None
         self._file_paths = None
@@ -192,7 +199,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         assert self._file_paths is not None
         url_mtime: dict[str, datetime] = {}
         for file_path, mtime in self._file_paths:
-            for url in self._extract_urls_from_file(file_path):
+            for url in self._extract_urls_from_file(file_path, self._compiled_regexp):
                 if url not in url_mtime or mtime > url_mtime[url]:
                     url_mtime[url] = mtime
 
@@ -225,14 +232,15 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         self._urls = self._filter_and_sort_urls(url_mtime)
 
     @staticmethod
-    def _extract_urls_from_file(file_path: Path) -> list[str]:
-        """Return all HTTP strings found anywhere in the JSON file.
+    def _extract_urls_from_file(file_path: Path, pattern: re.Pattern[str]) -> list[str]:
+        """Return all strings matching *pattern* found anywhere in the JSON file.
 
         Args:
             file_path: Path to the .json file to parse.
+            pattern: Compiled regexp used to select matching strings.
 
         Returns:
-            Ordered list of strings starting with ``http``; empty on error.
+            Ordered list of matching strings; empty on error.
         """
         try:
             with file_path.open(encoding="utf-8") as f:
@@ -241,7 +249,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
             return []
 
         urls: list[str] = []
-        _collect_urls(data, urls)
+        _collect_urls(data, urls, pattern)
         return urls
 
 

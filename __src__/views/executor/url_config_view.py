@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 
 import contextlib
+import datetime
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import filedialog, ttk
@@ -308,6 +309,15 @@ class UrlConfigView(ttk.Frame):
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
+        MyLabel(row, text="             ").pack_left()  # Fleme d'aligner proprement
+        MyLabel(row, text="Filtrer URLs (regexp) :").pack_left()
+        MyEntry(row, textvariable=self._vm.url_regexp_jsons_var).pack_right(expand=True, fill=tk.X)
+        self._view_traces.append(
+            (
+                self._vm.url_regexp_jsons_var,
+                self._vm.url_regexp_jsons_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
 
     def _create_json_dates_between(self, parent: tk.Widget) -> None:
         """Date-range filter row for the JSON source panel.
@@ -332,6 +342,7 @@ class UrlConfigView(ttk.Frame):
         MyCombobox(
             row, textvariable=self._vm.json_date_modified_end_var, values=date_values, state="readonly", width=20
         ).pack_left()
+        print("DEBUG AA:", datetime.datetime.now())
         self._view_traces.append(
             (
                 self._vm.json_date_modified_end_var,

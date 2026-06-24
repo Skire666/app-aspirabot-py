@@ -9,6 +9,7 @@ dispatching to Presenter-registered callbacks.
 # Imports
 # -----------------------------------------------------------------------------
 
+import datetime
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -149,10 +150,12 @@ class ExecutorViewModel(ViewModelBase):
         # jsons
         self.urls_path_folder_jsons_var = tk.StringVar(master=master, value="")
         self.url_sort_order_jsons_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
+        self.url_regexp_jsons_var = tk.StringVar(master=master, value="http*")
         self.json_date_modified_start_var = tk.StringVar(
             master=master, value=RelativeDateEnum.E_LAST_NOW.enum_to_view()
         )
         self.json_date_modified_end_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_99.enum_to_view())
+        print("DEBUG 01:", datetime.datetime.now())
         # Discover mode — OUT form fields.
         self.disc_out_pattern_json_var = tk.StringVar(master=master, value="export*.json")
         self.disc_out_key_mapping_var = tk.StringVar(master=master, value="key_xxx")

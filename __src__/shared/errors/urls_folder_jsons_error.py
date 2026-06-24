@@ -18,6 +18,7 @@ class ErrorCodeUFJ(ErrorCode):
     UFJ_1007 = "Date de modif. de début est vide."
     UFJ_1008 = "Date de modif. de fin est vide."
     UFJ_1009 = "Date de modif. de début postérieure à date de modif. de fin."
+    UFJ_1010 = "Le filtre d'URL est vide."
 
     # ???
     UFJ_9999 = "Erreur inconnue."
