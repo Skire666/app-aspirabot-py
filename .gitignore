@@ -1,9 +1,7 @@
 # project
 tmp_app_logs/
-data_scraping/
-data_scenarios/
 chromium_tmp/
-extensions/
+extensions/uBlock0_chromium
 config-aspirabot.json
 
 # Byte-compiled / optimized / DLL files
