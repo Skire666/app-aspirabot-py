@@ -95,7 +95,6 @@ class ProfilesView(ttk.Frame):
         """Re-render the DataGrid and counter from the ViewModel data."""
         profiles = self._vm.get_profiles()
 
-        self._btn_open_folder.set_path(self._vm.get_folder_path())
         self._grid.render_data(profiles)
 
     def _on_action(self, action_id: str, bound: object) -> None:

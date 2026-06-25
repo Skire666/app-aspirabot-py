@@ -76,6 +76,12 @@ class AppConfigurationModel:
     # Methods
     # -----------------------------------------------------------------------------
 
+    def __new__(cls, *args: object, **kwargs: object) -> AppConfigurationModel:
+        """Return the singleton instance, creating it on first call."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(
         self,
         log_level_enum: str = C_LOGS_DEFAULT_LEVEL_TRACE,
@@ -88,6 +94,8 @@ class AppConfigurationModel:
         chromium_extensions_dir: str = C_CHROMIUM_EXTENSIONS_DIR,
     ) -> None:
         """Initializes the configuration model with optional parameters."""
+        if hasattr(self, "_log_level_enum"):
+            return
         self.log_level_enum = log_level_enum
         self.folder_logs = folder_logs
         self.folder_scenarios = folder_scenarios
@@ -96,7 +104,6 @@ class AppConfigurationModel:
         self.gui_booting_fullscreen = gui_booting_fullscreen
         self.chromium_persistant_dir = chromium_persistant_dir
         self.chromium_extensions_dir = chromium_extensions_dir
-        AppConfigurationModel._instance = self
 
     @classmethod
     def get_instance(cls) -> AppConfigurationModel:

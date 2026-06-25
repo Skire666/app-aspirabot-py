@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 import logging
-from pathlib import Path
 
 from interfaces.i_profiles_repository import IProfilesRepository
 from models.launcher_model import LaunchModel
@@ -255,14 +254,5 @@ class ProfilesService:
             UnsupportedOperatingSystemError: If the OS is not supported.
         """
         self._repository.open_export_folder(folder_path)
-
-    def get_path_profiles_folder(self) -> Path:
-        """Get the path of the folder containing scenario files.
-
-        Returns:
-            The path of the folder containing scenario files.
-        """
-        return self._repository.get_path_profiles_folder()
-
 
 # EOF

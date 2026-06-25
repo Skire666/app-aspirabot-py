@@ -114,6 +114,11 @@ class StartupService:
                 if not file_profil.exists():
                     new_profiles = ProfilesModel.get_default(id_scenario=sub_folder.name)
                     repo_profiles.create_profiles(new_profiles)
+                else:
+                    ls_obj = repo_profiles.read_profiles(sub_folder.name)
+                    if not ls_obj.launch_profiles:
+                        new_profiles = ProfilesModel.get_default(id_scenario=sub_folder.name)
+                        repo_profiles.create_profiles(new_profiles)
 
     def initialize_logging(self) -> None:
         """Step 3: Configure the rotating-file logging service.

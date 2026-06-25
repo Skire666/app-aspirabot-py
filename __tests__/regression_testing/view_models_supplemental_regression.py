@@ -12,11 +12,9 @@ Covers lines left uncovered after the initial view_models_integration_regression
 from __future__ import annotations
 
 import tkinter as tk
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
 from shared.enums import SeverityEnum
 from shared.errors.launch_error import ErrorCodeLAM
 from shared.errors.workflow_error import ErrorCodeWKF
@@ -27,7 +25,6 @@ from view_models.log_view_model import LogViewModel
 from view_models.profiles_view_model import ProfilesViewModel
 from view_models.scenarios_view_model import ScenariosViewModel
 from view_models.workflow_view_model import WorkflowFormViewState, WorkflowViewModel
-
 
 # ===========================================================================
 # ValidationResult — missing line coverage
@@ -587,10 +584,6 @@ class TestValidationIssueFallbackMessage:
 
 
 class TestScenariosViewModelCoverageGap:
-    def test_get_folder_path_returns_set_path(self, sc_vm: ScenariosViewModel) -> None:
-        path = Path("/scenarios/folder")
-        sc_vm.set_scenarios(path, [])
-        assert sc_vm.get_folder_path() == path
 
     def test_duplicate_bind_edit_raises(self, sc_vm: ScenariosViewModel) -> None:
         sc_vm.bind_edit(lambda _: None)

@@ -53,9 +53,5 @@ class IProfilesRepository(Protocol):
         """Open *folder_path* in the OS file explorer, creating it if absent."""
         ...
 
-    def get_path_profiles_folder(self) -> Path:
-        """Return the path of the folder containing profiles documents."""
-        ...
-
 
 # EOF

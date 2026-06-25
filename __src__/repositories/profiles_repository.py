@@ -268,13 +268,5 @@ class ProfilesRepository:
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
 
-    def get_path_profiles_folder(self) -> Path:
-        """Gets the path of the scenarios folder.
-
-        Returns:
-            The path of the scenarios folder as a Path object.
-        """
-        return self._folder_path
-
 
 # EOF

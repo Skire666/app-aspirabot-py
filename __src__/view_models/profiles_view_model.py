@@ -6,7 +6,6 @@
 
 import tkinter as tk
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
 from shared.exception_util import CallbackNotDefinedError
@@ -36,7 +35,6 @@ class ProfilesViewModel(ViewModelBase):
 
         # Profile list data
         self._profiles: list[dict[str, Any]] = []
-        self._folder_path: Path = Path()
         self.profiles_version_var = tk.IntVar(master=master, value=0)
 
         # Presenter callback slots
@@ -58,22 +56,13 @@ class ProfilesViewModel(ViewModelBase):
         """
         return list(self._profiles)
 
-    def get_folder_path(self) -> Path:
-        """Return the current profiles folder path.
-
-        Returns:
-            The path set by the last ``set_profiles`` call.
-        """
-        return self._folder_path
-
-    def set_profiles(self, folder_path: Path, profiles: list[dict[str, Any]]) -> None:
+    def set_profiles(self, profiles: list[dict[str, Any]]) -> None:
         """Replace the profile list and increment the version trigger.
 
         Args:
             folder_path: Path to the profiles folder (shown in the folder link).
             profiles: New ordered list of profile row dicts for the DataGrid.
         """
-        self._folder_path = folder_path
         self._profiles = list(profiles)
         self.profiles_version_var.set(self.profiles_version_var.get() + 1)
 

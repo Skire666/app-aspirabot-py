@@ -79,7 +79,7 @@ class LaunchModel:
         return cls(
             id_profile=generate_rng_hexastring(C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID),
             id_scenario=id_scenario,
-            profile_name="Nouveau profil",
+            profile_name="Profil par défaut",
             export_folder="",
             urls_source_type=UrlSourceTypeEnum.E_MANUAL_LIST,
             urls_manual_list=UrlsManualListModel.get_default(),

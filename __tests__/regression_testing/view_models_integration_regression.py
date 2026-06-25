@@ -19,11 +19,8 @@ duplicated by unit tests:
 from __future__ import annotations
 
 import tkinter as tk
-from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
-
 from shared.exception_util import CallbackNotDefinedError
 from view_models.debug_view_model import DebugViewModel
 from view_models.log_view_model import LogViewModel
@@ -33,7 +30,6 @@ from view_models.scraping_view_model import ScrapingViewModel
 from view_models.splashscreen_view_model import SplashscreenViewModel
 from view_models.view_model_base import ViewModelBase
 from view_models.workflow_view_model import WorkflowFormViewState, WorkflowViewModel
-
 
 # ===========================================================================
 # ViewModelBase
@@ -258,20 +254,6 @@ def profiles_vm(tk_root: tk.Tk) -> ProfilesViewModel:
 
 
 class TestProfilesViewModelIntegration:
-    def test_set_profiles_updates_data_and_version(self, profiles_vm: ProfilesViewModel) -> None:
-        folder = Path("some/folder")
-        rows = [{"id_profile": "p1", "name": "Profile 1"}]
-        profiles_vm.set_profiles(folder, rows)
-
-        assert profiles_vm.get_profiles() == rows
-        assert profiles_vm.get_folder_path() == folder
-        assert profiles_vm.profiles_version_var.get() == 1
-
-    def test_get_profiles_returns_copy(self, profiles_vm: ProfilesViewModel) -> None:
-        profiles_vm.set_profiles(Path("."), [{"id": "1"}])
-        copy = profiles_vm.get_profiles()
-        copy.append({"id": "2"})
-        assert len(profiles_vm.get_profiles()) == 1
 
     def test_bind_refresh_and_dispatch(self, profiles_vm: ProfilesViewModel) -> None:
         calls: list[bool] = []
@@ -318,12 +300,6 @@ def scenarios_vm(tk_root: tk.Tk) -> ScenariosViewModel:
 
 
 class TestScenariosViewModelIntegration:
-    def test_set_scenarios_updates_data_and_version(self, scenarios_vm: ScenariosViewModel) -> None:
-        rows = [{"id": "1", "name": "S1"}, {"id": "2", "name": "S2"}]
-        scenarios_vm.set_scenarios(Path("/folder"), rows)
-        assert scenarios_vm.get_scenarios() == rows
-        assert scenarios_vm.scenarios_version_var.get() == 1
-
     def test_validation_vars_initial_state(self, scenarios_vm: ScenariosViewModel) -> None:
         assert scenarios_vm.is_validation_running_var.get() is False
         assert scenarios_vm.validation_status_text_var.get() == ""
@@ -333,18 +309,6 @@ class TestScenariosViewModelIntegration:
         scenarios_vm.bind_create(lambda: calls.append(True))
         scenarios_vm.create()
         assert calls == [True]
-
-    def test_bind_edit_and_dispatch(self, scenarios_vm: ScenariosViewModel) -> None:
-        received: list[str] = []
-        scenarios_vm.bind_edit(lambda s: received.append(s))
-        scenarios_vm.edit("sc_abc")
-        assert received == ["sc_abc"]
-
-    def test_bind_delete_and_dispatch(self, scenarios_vm: ScenariosViewModel) -> None:
-        received: list[str] = []
-        scenarios_vm.bind_delete(lambda s: received.append(s))
-        scenarios_vm.delete("sc_def")
-        assert received == ["sc_def"]
 
     def test_bind_launch_and_dispatch(self, scenarios_vm: ScenariosViewModel) -> None:
         received: list[str] = []

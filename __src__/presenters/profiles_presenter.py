@@ -7,7 +7,6 @@
 import logging
 from collections.abc import Callable
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 from models.launcher_model import LaunchModel
@@ -100,8 +99,8 @@ class ProfilesPresenter:
         sorted_tuples = self._sort_profiles(all_profiles)
 
         # Push formatted rows to the view and stamp the load time.
-        path_folder: Path = self._service_profile.get_path_profiles_folder()
-        self._vm.set_profiles(path_folder, self._format_rows(sorted_tuples))
+        print(f"ProfilesPresenter: pushing {len(sorted_tuples)} profiles to the view")
+        self._vm.set_profiles(self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 
     def _format_rows(self, list_profiles: list[LaunchModel]) -> list[dict[str, Any]]:
