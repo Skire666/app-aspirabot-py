@@ -15,10 +15,7 @@ from shared.constants import (
     C_SPLASHSCREEN_STEP_LABELS,
 )
 from shared.exception_util import AspirabotBaseError
-from shared.i18n_fra import (
-    C_FOLDER_SETUP_DEFAULT_WARNING_MSG,
-    C_FOLDER_SETUP_DEFAULT_WARNING_TITLE,
-)
+from shared.i18n_fra import C_FOLDER_SETUP_DEFAULT_WARNING_MSG, C_FOLDER_SETUP_DEFAULT_WARNING_TITLE
 from view_models.splashscreen_view_model import SplashscreenViewModel
 
 # -----------------------------------------------------------------------------
@@ -88,10 +85,7 @@ class SplashscreenPresenter:
         try:
             self._service.load_configuration()
             if self._service.needs_folder_scenarios_setup() and self._folder_setup_factory is not None:
-                self._folder_setup_factory(
-                    self._on_folder_setup_confirmed,
-                    self._on_folder_setup_cancelled,
-                )
+                self._folder_setup_factory(self._on_folder_setup_confirmed, self._on_folder_setup_cancelled)
                 return
             self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
         except AspirabotBaseError as exc:
@@ -119,6 +113,7 @@ class SplashscreenPresenter:
         self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[1])
         try:
             self._service.create_required_directories()
+            self._service.create_default_profiles_for_scenarios_if_missing()
             self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_3)
         except AspirabotBaseError as exc:
             traceback.print_stack()

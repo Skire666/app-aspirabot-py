@@ -9,9 +9,14 @@ from collections.abc import Callable
 from pathlib import Path
 
 from models.app_configuration_model import AppConfigurationModel
+from models.profiles_list_model import ProfilesModel
 from repositories.app_configuration_repository import AppConfigurationRepository
+from repositories.json_repository import JsonFileRepository
 from repositories.log_repository import LogRepository
+from repositories.profiles_repository import ProfilesRepository
+from repositories.scenarios_repository import ScenariosRepository
 from services.logging_service import LoggingService
+from services.scenarios_service import ScenariosService
 from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
 from shared.exception_util import (
     AspirabotBaseError,
@@ -98,6 +103,20 @@ class StartupService:
                 make_all_folders_if_not_exists(self._config_model.folder_scenarios, is_file_path=False)
         except OSError as exc:
             raise FailedToCreateRequiredDirectoriesDuringRuntimeError() from exc
+
+    def create_default_profiles_for_scenarios_if_missing(self) -> None:
+        if self._config_model is None:
+            raise ConfigurationNotLoadedError("create_default_profiles_for_scenarios_if_missing()")
+
+        json_repo = JsonFileRepository()
+        repo_scenarios = ScenariosRepository(self._config_model.folder_scenarios, json_repo)
+        repo_profiles = ProfilesRepository(self._config_model.folder_scenarios, json_repo)
+        service_scenario = ScenariosService(repo_scenarios, repo_profiles)
+
+        for scenario in service_scenario.list_all_scenarios():
+            if not repo_profiles.exists_scenarios(scenario.id_file):
+                new_profiles = ProfilesModel.get_default(id_scenario=scenario.id_file)
+                repo_profiles.create_profiles(new_profiles)
 
     def initialize_logging(self) -> None:
         """Step 3: Configure the rotating-file logging service.

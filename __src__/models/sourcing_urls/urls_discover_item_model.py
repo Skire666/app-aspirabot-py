@@ -18,7 +18,7 @@ from shared.validation_result import ValidationResult
 # Constants
 # -----------------------------------------------------------------------------
 
-_C_ID_SIZE: int = 16
+_C_ID_SIZE: int = 8
 _C_DEFAULT_PATTERN_JSON: str = "export*.json"
 _C_DEFAULT_KEY_MAPPING: str = "key_xxx"
 _C_DEFAULT_PATTERN_URLS: str = "https*"

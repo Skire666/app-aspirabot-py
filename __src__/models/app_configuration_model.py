@@ -57,7 +57,7 @@ class AppConfigurationModel:
 
     _log_level_enum: str
     _folder_logs: Path
-    _folder_scenarios: Path | None
+    _folder_scenarios: Path
     _gui_booting_size: str
     _gui_booting_position: str
     _gui_booting_fullscreen: bool
@@ -132,7 +132,7 @@ class AppConfigurationModel:
         self._folder_logs = Path(value) if isinstance(value, str) else value
 
     @property
-    def folder_scenarios(self) -> Path | None:
+    def folder_scenarios(self) -> Path:
         """Folder path for scenarios, or None when not yet configured."""
         return self._folder_scenarios
 
