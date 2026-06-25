@@ -7,6 +7,7 @@
 import logging
 import tkinter as tk
 import traceback
+from collections.abc import Callable
 
 import models.steps  # noqa: F401 - load registry entries
 import presenters.steps  # noqa: F401 - load registry entries (params builders)
@@ -16,6 +17,7 @@ from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.debug_presenter import DebugPresenter
 from presenters.executor_presenter import ExecutorPresenter
+from presenters.folder_setup_presenter import FolderSetupPresenter
 from presenters.log_presenter import LogPresenter
 from presenters.profiles_presenter import ProfilesPresenter
 from presenters.scenarios_presenter import ScenariosPresenter
@@ -53,6 +55,7 @@ from shared.path_util import get_current_working_directory
 from view_models.app_configuration_view_model import AppConfigurationViewModel
 from view_models.debug_view_model import DebugViewModel
 from view_models.executor_view_model import ExecutorViewModel
+from view_models.folder_setup_view_model import FolderSetupViewModel
 from view_models.log_view_model import LogViewModel
 from view_models.profiles_view_model import ProfilesViewModel
 from view_models.scenarios_view_model import ScenariosViewModel
@@ -63,6 +66,7 @@ from views.app_configuration_view import AppConfigurationView
 from views.debug_view import DebugView
 from views.executor_view import ExecutorView
 from views.faq_view import FaqView
+from views.folder_setup_view import FolderSetupView
 from views.log_view import LogView
 from views.main_view import MainView
 from views.profiles_view import ProfilesView
@@ -93,6 +97,15 @@ def main() -> None:
         config_repo, log_repo_factory=LogRepository, logging_service_factory=LoggingService
     )
 
+    def _folder_setup_factory(
+        on_confirm: Callable[[], None],
+        on_cancel: Callable[[], None],
+    ) -> None:
+        """Create and display the folder-setup dialog MVP at first launch."""
+        vm = FolderSetupViewModel(master=root)
+        FolderSetupPresenter(vm, startup_service, on_confirm, on_cancel)
+        FolderSetupView(master=root, vm=vm)
+
     # Build ViewModel before the View so both receive the same instance.
     splash_vm = SplashscreenViewModel(master=root)
     _splash_view = SplashscreenView(root, vm=splash_vm)
@@ -101,6 +114,7 @@ def main() -> None:
         service=startup_service,
         on_success=lambda: _launch_main_app(root, config_repo, startup_service),
         on_failure=root.destroy,
+        folder_setup_factory=_folder_setup_factory,
     ).start()
 
     root.mainloop()

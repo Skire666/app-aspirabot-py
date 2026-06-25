@@ -16,13 +16,11 @@ from shared.constants import (
     C_APP_DEFAULT_SIZE_GUI,
     C_CHROMIUM_EXTENSIONS_DIR,
     C_CHROMIUM_PROFILE_DIR,
-    C_DATA_DEFAULT_FOLDER_SCENARIO,
     C_LOGS_DEFAULT_FOLDER,
     C_LOGS_DEFAULT_LEVEL_TRACE,
 )
 from shared.exception_util import (
     InvalidFolderLogsError,
-    InvalidFolderScenariosError,
     InvalidGuiBootingPositionError,
     InvalidGuiBootingSizeError,
     InvalidLogLevelError,
@@ -59,7 +57,7 @@ class AppConfigurationModel:
 
     _log_level_enum: str
     _folder_logs: Path
-    _folder_scenarios: Path
+    _folder_scenarios: Path | None
     _gui_booting_size: str
     _gui_booting_position: str
     _gui_booting_fullscreen: bool
@@ -74,7 +72,7 @@ class AppConfigurationModel:
         self,
         log_level_enum: str = C_LOGS_DEFAULT_LEVEL_TRACE,
         folder_logs: Path | str = C_LOGS_DEFAULT_FOLDER,
-        folder_scenarios: Path | str = C_DATA_DEFAULT_FOLDER_SCENARIO,
+        folder_scenarios: Path | str = "",
         gui_booting_size: str = C_APP_DEFAULT_SIZE_GUI,
         gui_booting_position: str = "",
         gui_booting_fullscreen: bool = False,
@@ -96,7 +94,7 @@ class AppConfigurationModel:
         return {
             "log_level_enum": self.log_level_enum,
             "folder_logs": str(self.folder_logs),
-            "folder_scenarios": str(self.folder_scenarios),
+            "folder_scenarios": str(self._folder_scenarios) if self._folder_scenarios is not None else "",
             "gui_booting_size": self.gui_booting_size,
             "gui_booting_position": self.gui_booting_position,
             "gui_booting_fullscreen": self.gui_booting_fullscreen,
@@ -134,15 +132,21 @@ class AppConfigurationModel:
         self._folder_logs = Path(value) if isinstance(value, str) else value
 
     @property
-    def folder_scenarios(self) -> Path:
-        """Folder path for scenarios."""
+    def folder_scenarios(self) -> Path | None:
+        """Folder path for scenarios, or None when not yet configured."""
         return self._folder_scenarios
 
+    @property
+    def is_folder_scenarios_configured(self) -> bool:
+        """True when folder_scenarios holds a usable path."""
+        return self._folder_scenarios is not None
+
     @folder_scenarios.setter
-    def folder_scenarios(self, value: Path | str) -> None:
-        """Sets the folder path for scenarios."""
-        if not value or str(value).strip() == "":
-            raise InvalidFolderScenariosError()
+    def folder_scenarios(self, value: Path | str | None) -> None:
+        """Sets the folder path for scenarios; stores None for empty or missing values."""
+        if value is None or str(value).strip() == "":
+            self._folder_scenarios = None
+            return
         self._folder_scenarios = Path(value) if isinstance(value, str) else value
 
     @property

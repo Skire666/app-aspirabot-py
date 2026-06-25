@@ -54,11 +54,10 @@ C_LOGS_DEFAULT_LEVEL_TRACE: str = "DEBUG"
 # Default folder for log files (relative to current working directory)
 C_LOGS_DEFAULT_FOLDER: str = "tmp_app_logs"
 
+# Default folder for scenarios when none is configured at first launch
+C_SCENARIOS_DEFAULT_FOLDER: str = "data_scenarios"
+
 # -----------------------------------------------------------------------------
-
-
-# Default folders for data storage (relative to current working directory)
-C_DATA_DEFAULT_FOLDER_SCENARIO: str = "data_scenarios"
 
 # size of the hex string used for generating unique IDs (e.g., for workflow items)
 C_SIZE_HEXASTRING_DISCOVER_ID: int = 4  # must be even (aka % 2 == 0)

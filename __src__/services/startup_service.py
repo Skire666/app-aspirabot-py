@@ -19,9 +19,10 @@ from shared.exception_util import (
     FailedToCreateRequiredDirectoriesDuringRuntimeError,
     FailedToInitializeLoggingDuringRuntimeError,
     FailedToLoadConfigurationDuringRuntimeError,
+    InvalidFolderScenariosError,
     LoggingNotInitializedError,
 )
-from shared.path_util import make_all_folders_if_not_exists
+from shared.path_util import make_all_folders_if_not_exists, path_has_valid_syntax
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -92,7 +93,9 @@ class StartupService:
         try:
             # Create each runtime folder declared in the configuration.
             make_all_folders_if_not_exists(self._config_model.folder_logs, is_file_path=False)
-            make_all_folders_if_not_exists(self._config_model.folder_scenarios, is_file_path=False)
+            # folder_scenarios may be None on first launch (set via the setup dialog).
+            if self._config_model.folder_scenarios is not None:
+                make_all_folders_if_not_exists(self._config_model.folder_scenarios, is_file_path=False)
         except OSError as exc:
             raise FailedToCreateRequiredDirectoriesDuringRuntimeError() from exc
 
@@ -115,6 +118,40 @@ class StartupService:
             )
         except (OSError, ValueError) as exc:
             raise FailedToInitializeLoggingDuringRuntimeError() from exc
+
+    def needs_folder_scenarios_setup(self) -> bool:
+        """Return True when folder_scenarios has not been configured yet.
+
+        Raises:
+            ConfigurationNotLoadedError: If load_configuration() was not called first.
+        """
+        if self._config_model is None:
+            raise ConfigurationNotLoadedError("needs_folder_scenarios_setup()")
+        return not self._config_model.is_folder_scenarios_configured
+
+    def set_folder_scenarios(self, folder_path: str) -> None:
+        """Validate, create, and persist a new folder_scenarios path.
+
+        Validates the path syntax, creates the directory tree on disk, updates the
+        in-memory configuration model, and writes the change to the config file.
+
+        Args:
+            folder_path: Raw string path entered by the user.
+
+        Raises:
+            ConfigurationNotLoadedError: If load_configuration() was not called first.
+            InvalidFolderScenariosError: If the path is empty or syntactically invalid.
+            OSError: If the directory cannot be created.
+        """
+        if self._config_model is None:
+            raise ConfigurationNotLoadedError("set_folder_scenarios()")
+        stripped = folder_path.strip()
+        if not stripped or not path_has_valid_syntax(stripped):
+            raise InvalidFolderScenariosError()
+        path = Path(stripped)
+        path.mkdir(parents=True, exist_ok=True)
+        self._config_model.folder_scenarios = path
+        self._config_repo.write_configuration(self._config_model)
 
     def get_time_elapsed_when_booting(self) -> float:
         """Get the time elapsed since the startup sequence began.

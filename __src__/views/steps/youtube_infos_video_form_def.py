@@ -55,7 +55,7 @@ class YoutubeInfosVideoFormDef(IStepFormDef):
         row0 = ttk.Frame(frame)
         row0.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row0, text="Extraire les infos d'une page vidéo youtube via ytb-dl").pack(side="left", padx=(0, 5))
+        ttk.Label(row0, text="Extraire les infos d'une page vidéo youtube via yt-dlp").pack(side="left", padx=(0, 5))
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:

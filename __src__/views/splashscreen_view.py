@@ -56,9 +56,10 @@ class SplashscreenView(tk.Toplevel):
         self._create_widgets()
         self._bind_vm_vars()
 
-        # Register View as destroy/error providers for the Presenter.
+        # Register View as destroy/error/warning providers for the Presenter.
         vm.bind_destroy(self.destroy)
         vm.bind_show_error(self._show_error)
+        vm.bind_show_warning(self._show_warning)
 
     # -----------------------------------------------------------------------------
     # Widget construction
@@ -133,6 +134,15 @@ class SplashscreenView(tk.Toplevel):
     # -----------------------------------------------------------------------------
     # Dialog provider — registered on ViewModel
     # -----------------------------------------------------------------------------
+
+    def _show_warning(self, title: str, message: str) -> None:
+        """Display a modal warning dialog over the splash screen.
+
+        Args:
+            title: Dialog title.
+            message: Warning description shown to the user.
+        """
+        messagebox.showwarning(title=title, message=message, parent=self)
 
     def _show_error(self, message: str) -> None:
         """Display a modal error dialog over the splash screen.

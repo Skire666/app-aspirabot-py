@@ -9,11 +9,16 @@ from collections.abc import Callable
 
 from services.startup_service import StartupService
 from shared.constants import (
+    C_SCENARIOS_DEFAULT_FOLDER,
     C_SPLASHSCREEN_DISPLAY_MS_BY_STEP,
     C_SPLASHSCREEN_DISPLAY_MS_TOTAL,
     C_SPLASHSCREEN_STEP_LABELS,
 )
 from shared.exception_util import AspirabotBaseError
+from shared.i18n_fra import (
+    C_FOLDER_SETUP_DEFAULT_WARNING_MSG,
+    C_FOLDER_SETUP_DEFAULT_WARNING_TITLE,
+)
 from view_models.splashscreen_view_model import SplashscreenViewModel
 
 # -----------------------------------------------------------------------------
@@ -41,6 +46,7 @@ class SplashscreenPresenter:
         service: StartupService,
         on_success: Callable[[], None],
         on_failure: Callable[[], None],
+        folder_setup_factory: Callable[[Callable[[], None], Callable[[], None]], None] | None = None,
     ) -> None:
         """Initialize the presenter with its ViewModel, service, and outcome callbacks.
 
@@ -49,11 +55,15 @@ class SplashscreenPresenter:
             service: The startup service exposing the three init step methods.
             on_success: Called after all three steps succeed and the splash closes.
             on_failure: Called after any step fails and the splash closes.
+            folder_setup_factory: Optional callable that creates and shows the
+                folder-setup dialog. Receives ``on_confirm`` and ``on_cancel``
+                callbacks. Required when folder_scenarios may be unconfigured.
         """
         self._vm = vm
         self._service = service
         self._on_success = on_success
         self._on_failure = on_failure
+        self._folder_setup_factory = folder_setup_factory
 
     # -----------------------------------------------------------------------------
     # Public interface
@@ -77,9 +87,32 @@ class SplashscreenPresenter:
         self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[0])
         try:
             self._service.load_configuration()
+            if self._service.needs_folder_scenarios_setup() and self._folder_setup_factory is not None:
+                self._folder_setup_factory(
+                    self._on_folder_setup_confirmed,
+                    self._on_folder_setup_cancelled,
+                )
+                return
             self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
         except AspirabotBaseError as exc:
             self._handle_error(str(exc))
+
+    def _on_folder_setup_confirmed(self) -> None:
+        """Resume the startup sequence after the user successfully configured the folder."""
+        self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
+
+    def _on_folder_setup_cancelled(self) -> None:
+        """Apply the default folder path and warn the user, then resume startup."""
+        try:
+            self._service.set_folder_scenarios(C_SCENARIOS_DEFAULT_FOLDER)
+        except (AspirabotBaseError, OSError) as exc:
+            self._handle_error(str(exc))
+            return
+        self._vm.show_warning(
+            C_FOLDER_SETUP_DEFAULT_WARNING_TITLE,
+            C_FOLDER_SETUP_DEFAULT_WARNING_MSG.format(path=C_SCENARIOS_DEFAULT_FOLDER),
+        )
+        self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_2)
 
     def _run_step_2(self) -> None:
         """Execute step 2: create required application directories."""

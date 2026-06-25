@@ -70,7 +70,7 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             self._repo.update_cached_subtitles(url_youtube, casted)
             for key, value in casted.to_dict().items():
                 casted_list = [value] if not isinstance(value, list) else value  # pyright: ignore[reportUnknownVariableType]
-                context.push_extracted_values(key, "ytb-dl", p.comment, casted_list)
+                context.push_extracted_values(key, "yt-dlp", p.comment, casted_list)
 
         except Exception as exc:  # noqa: BLE001
             # "... in to confirm your age ..." -> video age restricted

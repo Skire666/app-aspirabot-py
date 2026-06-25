@@ -101,6 +101,31 @@ C_SCRAPING_CANCEL_CONFIRM_TITLE = "Confirmer l'annulation"
 C_SCRAPING_CANCEL_CONFIRM_MSG = "Êtes-vous sûr de vouloir annuler le processus en cours ?"
 
 # -----------------------------------------------------------------------------
+# Folder setup dialog (first-launch, when folder_scenarios is unconfigured)
+# -----------------------------------------------------------------------------
+
+C_FOLDER_SETUP_TITLE = "Configuration initiale"
+C_FOLDER_SETUP_DESCRIPTION = (
+    "Le dossier de stockage des scénarios n'est pas encore configuré.\n"
+    "Veuillez indiquer le chemin du dossier à utiliser."
+)
+C_FOLDER_SETUP_PATH_LABEL = "Dossier des scénarios :"
+C_FOLDER_SETUP_BROWSE_BTN = "Parcourir…"
+C_FOLDER_SETUP_CONFIRM_BTN = "Confirmer"
+C_FOLDER_SETUP_CANCEL_BTN = "Annuler"
+C_FOLDER_SETUP_INVALID_PATH = "Le chemin renseigné n'est pas valide."
+C_FOLDER_SETUP_CREATE_ERROR = "Impossible de créer le dossier : {exc}"
+C_FOLDER_SETUP_ABORTED = (
+    "La configuration du dossier des scénarios est requise pour démarrer l'application."
+)
+C_FOLDER_SETUP_DEFAULT_WARNING_TITLE = "Dossier par défaut utilisé"
+C_FOLDER_SETUP_DEFAULT_WARNING_MSG = (
+    "Aucun dossier configuré pour les scénarios.\n"
+    "Le dossier par défaut « {path} » sera utilisé.\n\n"
+    "Vous pouvez modifier ce paramètre depuis l'onglet Options."
+)
+
+# -----------------------------------------------------------------------------
 # Common dialog / presenter messages
 # -----------------------------------------------------------------------------
 

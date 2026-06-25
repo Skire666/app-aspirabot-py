@@ -40,6 +40,7 @@ class SplashscreenViewModel(ViewModelBase):
 
         # Presenter callback slots
         self._on_show_error: Callable[[str], None] | None = None
+        self._on_show_warning: Callable[[str, str], None] | None = None
         self._on_destroy: Callable[[], None] | None = None
 
     # ------------------------------------------------------------------
@@ -59,6 +60,19 @@ class SplashscreenViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_show_error = cb
 
+    def bind_show_warning(self, cb: Callable[[str, str], None]) -> None:
+        """Register the handler that displays a modal warning dialog.
+
+        Args:
+            cb: Called with (title, message) strings.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_show_warning is not None:
+            raise CallbackNotDefinedError()
+        self._on_show_warning = cb
+
     def bind_destroy(self, cb: Callable[[], None]) -> None:
         """Register the handler that closes the splash window.
 
@@ -75,6 +89,16 @@ class SplashscreenViewModel(ViewModelBase):
     # ------------------------------------------------------------------
     # Action methods — called by the Presenter
     # ------------------------------------------------------------------
+
+    def show_warning(self, title: str, message: str) -> None:
+        """Dispatch a warning dialog request to the registered handler.
+
+        Args:
+            title: Dialog title shown to the user.
+            message: Human-readable warning description shown to the user.
+        """
+        if self._on_show_warning is not None:
+            self._on_show_warning(title, message)
 
     def show_error(self, message: str) -> None:
         """Dispatch an error dialog request to the registered handler.

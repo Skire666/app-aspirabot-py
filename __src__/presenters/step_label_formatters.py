@@ -243,12 +243,12 @@ def _fmt_section(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str
 
 def _fmt_youtube_infos_video(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for YOUTUBE_DDL."""
-    return "YouTube - Extraire infos d'une page vidéo via ytb-dl"
+    return "YouTube - Extraire infos d'une page vidéo via yt-dlp"
 
 
 def _fmt_youtube_subtitles(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for YOUTUBE_SUBTITLES."""
-    return "Youtube - Télécharger les sous-titres vidéo via ytb-dl"
+    return "Youtube - Télécharger les sous-titres vidéo via yt-dlp"
 
 
 def _fmt_export_variable(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
