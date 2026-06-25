@@ -11,7 +11,6 @@ automatic timestamp stamping and step context injection.
 # -----------------------------------------------------------------------------
 
 import logging
-from pathlib import Path
 
 from interfaces.i_profiles_repository import IProfilesRepository
 from interfaces.i_scenarios_repository import IScenariosRepository
@@ -86,15 +85,6 @@ class ScenariosService:
             ``True`` if a matching scenario file is found, ``False`` otherwise.
         """
         return self._repository_scenarios.exists_scenario(id_file)
-
-    def get_folder_path_scenarios(self) -> Path:
-        """Return the absolute path of the scenarios storage folder as a string.
-
-        Returns:
-            The path returned by the repository, converted to ``str`` for
-            callers that do not accept :class:`pathlib.Path` objects.
-        """
-        return self._repository_scenarios.get_path_scenarios_folder()
 
     # -------------------------------------------------------------------------
     # CRUS operations

@@ -117,7 +117,6 @@ class ScenariosView(ttk.Frame):
         """Re-render the DataGrid and counter from the ViewModel data."""
         scenarios = self._vm.get_scenarios()
 
-        self._btn_open_folder.set_path(self._vm.get_folder_path())
         self.grid.render_data(scenarios)
 
     def _sync_validation_state(self, *_: object) -> None:

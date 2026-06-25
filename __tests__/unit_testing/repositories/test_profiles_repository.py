@@ -6,22 +6,19 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
 from repositories.profiles_repository import ProfilesRepository
-from shared.constants import C_PROFILE_FILE_SUFFIX, C_SCENARIO_FILE_SUFFIX
+from shared.constants import C_PROFILE_FILE, C_SCENARIO_FILE
 from shared.exception_util import (
     EmptyScenarioIdError,
-    ExportFolderNotADirectoryError,
     InvalidProfilesFolderPathError,
     ProfileDataMissingError,
     ProfileNotFoundError,
     RepositoryWriteError,
     ScenarioNotFoundError,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -35,10 +32,7 @@ def _make_json_repo() -> MagicMock:
 
 
 def _make_repo(tmp_path: Path, json_repo: MagicMock | None = None) -> ProfilesRepository:
-    return ProfilesRepository(
-        folder_profiles=tmp_path,
-        json_repo=json_repo or _make_json_repo(),
-    )
+    return ProfilesRepository(folder_profiles=tmp_path, json_repo=json_repo or _make_json_repo())
 
 
 def _make_profiles_model(id_scenario: str = "sc001") -> ProfilesModel:
@@ -77,8 +71,8 @@ class TestListProfilesFiles:
         assert repo._list_profiles_files() == []
 
     def test_finds_profile_json_files(self, tmp_path: Path) -> None:
-        (tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}").write_text("{}")
-        (tmp_path / f"sc002{C_PROFILE_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"sc001{C_PROFILE_FILE}").write_text("{}")
+        (tmp_path / f"sc002{C_PROFILE_FILE}").write_text("{}")
         repo = _make_repo(tmp_path)
         assert len(repo._list_profiles_files()) == 2
 
@@ -94,7 +88,7 @@ class TestExistsScenarios:
         assert repo.exists_scenarios("missing") is False
 
     def test_returns_true_when_present(self, tmp_path: Path) -> None:
-        (tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"sc001{C_PROFILE_FILE}").write_text("{}")
         repo = _make_repo(tmp_path)
         assert repo.exists_scenarios("sc001") is True
 
@@ -113,7 +107,7 @@ class TestComputeFullpath:
     def test_returns_correct_path(self, tmp_path: Path) -> None:
         repo = _make_repo(tmp_path)
         result = repo._compute_fullpath_from_id_file("sc001")
-        assert result == tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}"
+        assert result == tmp_path / f"sc001{C_PROFILE_FILE}"
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +142,7 @@ class TestReadProfiles:
             repo.read_profiles("missing")
 
     def test_raises_data_missing_when_json_empty(self, tmp_path: Path) -> None:
-        (tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"sc001{C_PROFILE_FILE}").write_text("{}")
         json_repo = _make_json_repo()
         json_repo.read_from_path.return_value = {}
         repo = _make_repo(tmp_path, json_repo)
@@ -158,7 +152,7 @@ class TestReadProfiles:
     def test_returns_model_when_valid(self, tmp_path: Path) -> None:
         profiles = _make_profiles_model("sc001")
         data = profiles.export_to_data_json()
-        (tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"sc001{C_PROFILE_FILE}").write_text("{}")
         json_repo = _make_json_repo()
         json_repo.read_from_path.return_value = data
         repo = _make_repo(tmp_path, json_repo)
@@ -180,21 +174,21 @@ class TestReadAllProfiles:
     def test_returns_loaded_profiles(self, tmp_path: Path) -> None:
         profiles = _make_profiles_model("sc001")
         data = profiles.export_to_data_json()
-        (tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"sc001{C_PROFILE_FILE}").write_text("{}")
         json_repo = _make_json_repo()
         json_repo.read_from_path.return_value = data
         repo = _make_repo(tmp_path, json_repo)
         assert len(repo.read_all_profiles()) == 1
 
     def test_skips_unreadable_files(self, tmp_path: Path) -> None:
-        (tmp_path / f"bad{C_PROFILE_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"bad{C_PROFILE_FILE}").write_text("{}")
         json_repo = _make_json_repo()
         json_repo.read_from_path.side_effect = OSError("fail")
         repo = _make_repo(tmp_path, json_repo)
         assert repo.read_all_profiles() == []
 
     def test_skips_empty_json(self, tmp_path: Path) -> None:
-        (tmp_path / f"empty{C_PROFILE_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"empty{C_PROFILE_FILE}").write_text("{}")
         json_repo = _make_json_repo()
         json_repo.read_from_path.return_value = {}
         repo = _make_repo(tmp_path, json_repo)
@@ -233,19 +227,18 @@ class TestDeleteProfiles:
             repo.delete_profiles("missing")
 
     def test_deletes_existing_file(self, tmp_path: Path) -> None:
-        file = tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}"
+        file = tmp_path / f"sc001{C_PROFILE_FILE}"
         file.write_text("{}")
         repo = _make_repo(tmp_path)
         repo.delete_profiles("sc001")
         assert not file.exists()
 
     def test_raises_write_error_on_os_error(self, tmp_path: Path) -> None:
-        file = tmp_path / f"sc001{C_PROFILE_FILE_SUFFIX}"
+        file = tmp_path / f"sc001{C_PROFILE_FILE}"
         file.write_text("{}")
         repo = _make_repo(tmp_path)
-        with patch.object(Path, "unlink", side_effect=OSError("locked")):
-            with pytest.raises(RepositoryWriteError):
-                repo.delete_profiles("sc001")
+        with patch.object(Path, "unlink", side_effect=OSError("locked")), pytest.raises(RepositoryWriteError):
+            repo.delete_profiles("sc001")
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +255,7 @@ class TestReadScenario:
     def test_returns_scenario_model_when_present(self, tmp_path: Path) -> None:
         scenario = ScenarioModel.get_default_data()
         data = scenario.export_to_data_json()
-        (tmp_path / f"{scenario.id_file}{C_SCENARIO_FILE_SUFFIX}").write_text("{}")
+        (tmp_path / f"{scenario.id_file}{C_SCENARIO_FILE}").write_text("{}")
         json_repo = _make_json_repo()
         json_repo.read_from_path.return_value = data
         repo = _make_repo(tmp_path, json_repo)

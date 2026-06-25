@@ -16,7 +16,6 @@ from pathlib import Path
 
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
-from models.app_configuration_model import AppConfigurationModel
 from models.scenario_model import ScenarioModel
 from models.scraping_context_model import ScrapingContextModel
 from models.scraping_statistics_model import ScrapingStatisticsModel
@@ -48,7 +47,6 @@ class ScrapingService:
 
     def __init__(
         self,
-        model_config: AppConfigurationModel,
         workflow_service: WorkflowService,
         extracted_data_repository: JsonFileRepository,
         browser_service_factory: Callable[[], IWebBrowserService],
@@ -57,7 +55,6 @@ class ScrapingService:
         """Initialise the service and its per-run execution state.
 
         Args:
-            model_config: Application configuration model.
             workflow_service: Service for resolving step executors by type.
             extracted_data_repository: Repository used to persist extracted data as JSON.
             browser_service_factory: Zero-argument callable that returns a fresh
@@ -72,7 +69,7 @@ class ScrapingService:
         self._journal_repository = journal_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
-        self._context: ScrapingContextModel = ScrapingContextModel(model_config)
+        self._context: ScrapingContextModel = ScrapingContextModel()
 
         # Run-level statistics counters.
         self._statistics: ScrapingStatisticsModel = ScrapingStatisticsModel()

@@ -10,6 +10,7 @@ from pathlib import Path
 from models.log_entry_model import LogEntryModel
 from shared.exception_util import LogFolderNotADirectoryError
 from shared.operating_system_util import open_folder
+from shared.path_util import make_all_folders_if_not_exists
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -50,12 +51,6 @@ class LogRepository:
         """
         return list(self._logs)
 
-    def create_folder_if_missing(self) -> None:
-        """Creates the logs folder if it does not already exist."""
-        if not self._folder_path.exists():
-            self._folder_path.mkdir(exist_ok=True, parents=True)
-            self._logger.debug("Dossier de logs créé : %s", self._folder_path)
-
     def open_logs_folder(self) -> None:
         """Opens the logs folder in the system file explorer.
 
@@ -67,7 +62,7 @@ class LogRepository:
             OSError: If the OS command fails to open the folder.
         """
         # Ensure the folder exists before trying to open it.
-        self.create_folder_if_missing()
+        make_all_folders_if_not_exists(self._folder_path)
 
         if not self._folder_path.is_dir():
             raise LogFolderNotADirectoryError(self._folder_path)

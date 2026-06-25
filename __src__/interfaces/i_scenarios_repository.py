@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from models.scenario_model import ScenarioModel
@@ -22,10 +21,6 @@ class IScenariosRepository(Protocol):
 
     def exists_scenario(self, id_file: str) -> bool:
         """Return True if a scenario file with *id_file* exists on disk."""
-        ...
-
-    def get_path_scenarios_folder(self) -> Path:
-        """Return the path of the folder containing scenario files."""
         ...
 
     def create_scenario(self, scenario: ScenarioModel) -> None:

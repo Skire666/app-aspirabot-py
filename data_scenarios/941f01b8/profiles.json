@@ -1,0 +1,43 @@
+{
+    "id_scenario": "941f01b8",
+    "created_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-25T13:57:09.924631"
+    },
+    "modified_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-25T14:00:53.389870"
+    },
+    "launch_profiles": [
+        {
+            "id_profile": "d86e5f57",
+            "id_scenario": "941f01b8",
+            "profile_name": "Profil par défaut",
+            "export_folder": "",
+            "urls_source_type": "MANUAL_LIST",
+            "url_sources_list_manual": [],
+            "folder_racs": "",
+            "orders_racs": "",
+            "folder_json": "",
+            "orders_json": "",
+            "url_regexp": "http*",
+            "date_modified_start": "LAST_NOW",
+            "date_modified_end": "LAST_99",
+            "urls_discover_entries": {
+                "inputs": [],
+                "output": {
+                    "id_discover": "8df2e03b",
+                    "folder_json": "",
+                    "pattern_json": "export*.json",
+                    "key_mapping": "key_xxx",
+                    "pattern_urls": "https*"
+                }
+            },
+            "emergency_stop_threshold": 200,
+            "used_date_profile": null,
+            "emergency_stop_step_id": "",
+            "emergency_stop_step_threshold": 200,
+            "warmup_url": ""
+        }
+    ]
+}

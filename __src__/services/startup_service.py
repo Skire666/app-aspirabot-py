@@ -14,10 +14,8 @@ from repositories.app_configuration_repository import AppConfigurationRepository
 from repositories.json_repository import JsonFileRepository
 from repositories.log_repository import LogRepository
 from repositories.profiles_repository import ProfilesRepository
-from repositories.scenarios_repository import ScenariosRepository
 from services.logging_service import LoggingService
-from services.scenarios_service import ScenariosService
-from shared.constants import C_LOGS_FILE_NAME_WITH_EXT
+from shared.constants import C_LOGS_FILE_NAME_WITH_EXT, C_PROFILE_FILE
 from shared.exception_util import (
     AspirabotBaseError,
     ConfigurationNotLoadedError,
@@ -99,8 +97,7 @@ class StartupService:
             # Create each runtime folder declared in the configuration.
             make_all_folders_if_not_exists(self._config_model.folder_logs, is_file_path=False)
             # folder_scenarios may be None on first launch (set via the setup dialog).
-            if self._config_model.folder_scenarios is not None:
-                make_all_folders_if_not_exists(self._config_model.folder_scenarios, is_file_path=False)
+            make_all_folders_if_not_exists(self._config_model.folder_scenarios, is_file_path=False)
         except OSError as exc:
             raise FailedToCreateRequiredDirectoriesDuringRuntimeError() from exc
 
@@ -109,14 +106,14 @@ class StartupService:
             raise ConfigurationNotLoadedError("create_default_profiles_for_scenarios_if_missing()")
 
         json_repo = JsonFileRepository()
-        repo_scenarios = ScenariosRepository(self._config_model.folder_scenarios, json_repo)
         repo_profiles = ProfilesRepository(self._config_model.folder_scenarios, json_repo)
-        service_scenario = ScenariosService(repo_scenarios, repo_profiles)
 
-        for scenario in service_scenario.list_all_scenarios():
-            if not repo_profiles.exists_scenarios(scenario.id_file):
-                new_profiles = ProfilesModel.get_default(id_scenario=scenario.id_file)
-                repo_profiles.create_profiles(new_profiles)
+        for sub_folder in self._config_model.folder_scenarios.iterdir():
+            if sub_folder.is_dir():
+                file_profil = sub_folder / C_PROFILE_FILE
+                if not file_profil.exists():
+                    new_profiles = ProfilesModel.get_default(id_scenario=sub_folder.name)
+                    repo_profiles.create_profiles(new_profiles)
 
     def initialize_logging(self) -> None:
         """Step 3: Configure the rotating-file logging service.
@@ -170,7 +167,7 @@ class StartupService:
         path = Path(stripped)
         path.mkdir(parents=True, exist_ok=True)
         self._config_model.folder_scenarios = path
-        self._config_repo.write_configuration(self._config_model)
+        self._config_repo.write_configuration()
 
     def get_time_elapsed_when_booting(self) -> float:
         """Get the time elapsed since the startup sequence began.

@@ -178,15 +178,13 @@ def _assemble_components(  # noqa: PLR0914
     """
     log_view, log_pr = _init_log_component(main_view, startup_service.logging_service)
     cfg_view, cfg_pr = _init_config_component(main_view, config_repo)
-    profiles_view, prof_pr, prof_svc, prof_repo = _init_profiles_components(
-        main_view, startup_service.config_model, JsonFileRepository()
-    )
+    profiles_view, prof_pr, prof_svc, prof_repo = _init_profiles_components(main_view, JsonFileRepository())
     scen_view, scen_pre, edit_view, edit_pr, steps_pr, scen_svc = _init_scenarios_components(
-        main_view, prof_svc, prof_repo, startup_service.config_model, JsonFileRepository()
+        main_view, prof_svc, prof_repo, JsonFileRepository()
     )
     exec_view, exec_pre, url_cfg_pr, sourcing = _init_executor_component(main_view, scen_svc, prof_svc)
-    scrap_view, scrap_pre = _init_scraping_component(main_view, startup_service.config_model, scen_svc, sourcing)
-    dbg_view, dbg_p = _init_debug_component(main_view, startup_service.config_model)
+    scrap_view, scrap_pre = _init_scraping_component(main_view, scen_svc, sourcing)
+    dbg_view, dbg_p = _init_debug_component(main_view)
     _wire_all_navigation(main_view, scen_pre, edit_pr, exec_pre, prof_pr, scrap_pre)
     views: list[tk.Widget] = [log_view, profiles_view, cfg_view, scen_view, edit_view, exec_view, scrap_view, dbg_view]
     presenters: list[object] = [
@@ -209,7 +207,7 @@ def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, start
     try:
         main_view = _build_main_view(root)
         app_state.setup(root, main_view.show_view, main_view.set_tab_state)
-        app_state.override_gui_and_style(startup_service.config_model)
+        app_state.override_gui_and_style()
         views, presenters = _assemble_components(main_view, config_repo, startup_service)
         root.deiconify()
         app_state.wire_geometry_persistence(config_repo)
@@ -276,20 +274,19 @@ def _init_config_component(
 
 
 def _init_profiles_components(
-    main_view: MainView, config_model: AppConfigurationModel, json_repo: JsonFileRepository
+    main_view: MainView, json_repo: JsonFileRepository
 ) -> tuple[ProfilesView, ProfilesPresenter, ProfilesService, ProfilesRepository]:
     """Create and wire the historic component.
 
     Args:
         main_view: Main container providing the content area as parent.
-        config_model: Configuration model supplying the scenarios folder path.
         json_repo: Shared JSON repository injected into the scenarios repository.
 
     Returns:
         A (ProfilesView, ProfilesPresenter, ProfilesService, ProfilesRepository) tuple.
         The repository is returned so callers can inject it into other services directly.
     """
-    repo = ProfilesRepository(config_model.folder_scenarios, json_repo)
+    repo = ProfilesRepository(AppConfigurationModel.get_instance().folder_scenarios, json_repo)
     service = ProfilesService(repo)
     profiles_vm = ProfilesViewModel(master=main_view.content_area)
     view = ProfilesView(main_view.content_area, vm=profiles_vm)
@@ -301,7 +298,6 @@ def _init_scenarios_components(
     main_view: MainView,
     profiles_service: ProfilesService,
     profiles_repo: ProfilesRepository,
-    config_model: AppConfigurationModel,
     json_repo: JsonFileRepository,
 ) -> tuple[ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter, StepsListPresenter, ScenariosService]:
     """Create and wire the scenario list and edit components.
@@ -311,14 +307,13 @@ def _init_scenarios_components(
         profiles_service: Service for managing profile data.
         profiles_repo: Repository for profile data, injected directly to avoid
             accessing private attributes of ProfilesService.
-        config_model: Configuration model supplying the scenarios folder path.
         json_repo: Shared JSON repository injected into the scenarios repository.
 
     Returns:
         A (ScenariosView, ScenariosPresenter, WorkflowView, WorkflowPresenter,
         StepsListPresenter, ScenariosService) tuple.
     """
-    scenario_repo = ScenariosRepository(config_model.folder_scenarios, json_repo)
+    scenario_repo = ScenariosRepository(AppConfigurationModel.get_instance().folder_scenarios, json_repo)
     scenarios_service = ScenariosService(scenario_repo, profiles_repo)
     scenarios_vm = ScenariosViewModel(master=main_view.content_area)
     scenario_view = ScenariosView(main_view.content_area, vm=scenarios_vm)
@@ -370,12 +365,11 @@ def _init_workflow_group(
     return workflow_view, workflow_presenter, steps_list_presenter
 
 
-def _init_debug_component(main_view: MainView, config_model: AppConfigurationModel) -> tuple[DebugView, DebugPresenter]:
+def _init_debug_component(main_view: MainView) -> tuple[DebugView, DebugPresenter]:
     """Create and wire the debug browser component.
 
     Args:
         main_view: Main container providing the content area as parent.
-        config_model: Application configuration supplying Chromium paths.
 
     Returns:
         A (DebugView, DebugPresenter) tuple.
@@ -386,8 +380,8 @@ def _init_debug_component(main_view: MainView, config_model: AppConfigurationMod
         vm=debug_vm,
         debug_service=DebugBrowserService(),
         browser_factory=lambda: BrowserPlaywrightService(
-            chromium_persistant_dir=config_model.chromium_persistant_dir,
-            chromium_extensions_dir=config_model.chromium_extensions_dir,
+            chromium_persistant_dir=AppConfigurationModel.get_instance().chromium_persistant_dir,
+            chromium_extensions_dir=AppConfigurationModel.get_instance().chromium_extensions_dir,
         ),
     )
     return debug_view, debug_presenter
@@ -400,7 +394,6 @@ def _init_executor_component(
 
     Args:
         main_view: Main container providing the content area as parent.
-        config_model: Configuration model supplying the executor output folder.
         scenario_service: The scenario service for managing scenario data.
         profiles_service: The profiles service for managing profile data.
         json_repo: Shared JSON repository injected into the tab-4 discover repository.
@@ -429,7 +422,6 @@ def _init_executor_component(
 
 def _init_scraping_component(
     main_view: MainView,
-    config_model: AppConfigurationModel,
     scenarios_service: ScenariosService,
     sourcing_urls: SourcingUrlsService,
 ) -> tuple[ScrapingView, ScrapingPresenter]:
@@ -437,7 +429,6 @@ def _init_scraping_component(
 
     Args:
         main_view: Main container providing the content area as parent.
-        config_model: Configuration model supplying the scraping output folder.
         scenarios_service: The scenarios service for managing scenario data.
         sourcing_urls: The URL sourcing service.
 
@@ -447,12 +438,11 @@ def _init_scraping_component(
     scraping_vm = ScrapingViewModel(master=main_view.content_area)
     scraping_view = ScrapingView(main_view.content_area, vm=scraping_vm)
     scraping_service = ScrapingService(
-        model_config=config_model,
         workflow_service=WorkflowService(),
         extracted_data_repository=JsonFileRepository(),
         browser_service_factory=lambda: BrowserPlaywrightService(
-            chromium_persistant_dir=config_model.chromium_persistant_dir,
-            chromium_extensions_dir=config_model.chromium_extensions_dir,
+            chromium_persistant_dir=AppConfigurationModel.get_instance().chromium_persistant_dir,
+            chromium_extensions_dir=AppConfigurationModel.get_instance().chromium_extensions_dir,
         ),
         journal_repository=JournalRepository(),
     )

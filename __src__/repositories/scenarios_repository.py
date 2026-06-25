@@ -12,9 +12,10 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from models.app_configuration_model import AppConfigurationModel
 from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
-from shared.constants import C_SCENARIO_FILE_SUFFIX, C_SCENARIOS_FILES_REGEXP
+from shared.constants import C_SCENARIO_FILE
 from shared.exception_util import (
     AspirabotBaseError,
     InvalidScenariosFolderPathError,
@@ -23,6 +24,7 @@ from shared.exception_util import (
     ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
+from shared.path_util import make_all_folders_if_not_exists
 
 # -----------------------------------------------------------------------------
 # Classes
@@ -69,7 +71,7 @@ class ScenariosRepository:
             folder is missing or invalid.
         """
         if self._folder_path.exists() and self._folder_path.is_dir():
-            return list(self._folder_path.glob(C_SCENARIOS_FILES_REGEXP))
+            return list(self._folder_path.rglob(C_SCENARIO_FILE))
         return []
 
     @staticmethod
@@ -93,7 +95,7 @@ class ScenariosRepository:
         Returns:
             True when a matching JSON file is found on disk, False otherwise.
         """
-        full_filepath = self._compute_fullpath_from_id_file(id_file)
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_scenario(id_file)
         return full_filepath.exists() and full_filepath.is_file()
 
     def read_scenario(self, id_file: str) -> ScenarioModel:
@@ -109,7 +111,7 @@ class ScenariosRepository:
             ScenarioNotFoundError: When no file matches id_file.
             ScenarioDataMissingError: When the matching file is empty.
         """
-        full_filepath = self._compute_fullpath_from_id_file(id_file)
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_scenario(id_file)
 
         if not full_filepath.exists():
             raise ScenarioNotFoundError(id_file)
@@ -157,8 +159,8 @@ class ScenariosRepository:
         Raises:
             OSError: When the file cannot be written.
         """
-        full_filepath = self._compute_fullpath_from_id_file(scenario.id_file)
-        self.create_folder_if_missing()
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_scenario(scenario.id_file)
+        make_all_folders_if_not_exists(full_filepath, is_file_path=True)
 
         try:
             scenario_dict = scenario.export_to_data_json()
@@ -177,8 +179,8 @@ class ScenariosRepository:
         Raises:
             OSError: When the file cannot be written.
         """
-        full_filepath = self._compute_fullpath_from_id_file(scenario.id_file)
-        self.create_folder_if_missing()
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_scenario(scenario.id_file)
+        make_all_folders_if_not_exists(full_filepath, is_file_path=True)
 
         try:
             scenario_dict = scenario.export_to_data_json()
@@ -187,12 +189,6 @@ class ScenariosRepository:
         except OSError as exc:
             self._logger.error("Erreur lors de la MAJ du scénario.", exc_info=True)
             raise RepositoryWriteError() from exc
-
-    def create_folder_if_missing(self) -> None:
-        """Creates the scenarios folder if it does not already exist."""
-        if not self._folder_path.exists():
-            Path(self._folder_path).mkdir(exist_ok=True, parents=True)
-            self._logger.debug("Dossier créé : %s", self._folder_path)
 
     def delete_scenario(self, id_file: str) -> None:
         """Deletes the JSON file for the given provider identifier.
@@ -205,10 +201,10 @@ class ScenariosRepository:
             OSError: When the file cannot be deleted.
         """
         self._logger.debug("Suppression du scénario id=%s", id_file)
-        self.create_folder_if_missing()
+        make_all_folders_if_not_exists(self._folder_path, is_file_path=False)
 
         # delete scenario AND profile files to avoid orphaned
-        full_pathfile_scenario = self._compute_fullpath_from_id_file(id_file, C_SCENARIO_FILE_SUFFIX)
+        full_pathfile_scenario = AppConfigurationModel().get_instance().compute_fullpath_scenario(id_file)
 
         if not full_pathfile_scenario.exists():
             raise ScenarioNotFoundError(id_file, context="suppression")
@@ -227,40 +223,18 @@ class ScenariosRepository:
             InvalidScenariosFolderPathError: When the configured path is not a directory.
             UnsupportedOperatingSystemError: When the OS is not Windows, macOS, or Linux.
         """
-        folder: Path = self.get_path_scenarios_folder()
-        self._logger.debug("Ouverture du dossier des scénarios : %s", folder)
+        self._logger.debug("Ouverture du dossier des scénarios : %s", self._folder_path)
+        make_all_folders_if_not_exists(self._folder_path, is_file_path=False)
 
-        self.create_folder_if_missing()
-
-        if not folder.is_dir():
-            raise InvalidScenariosFolderPathError(folder)
+        if not self._folder_path.is_dir():
+            raise InvalidScenariosFolderPathError(self._folder_path)
 
         try:
-            open_folder(folder)
-            self._logger.debug("Dossier ouvert : %s", folder)
+            open_folder(self._folder_path)
+            self._logger.debug("Dossier ouvert : %s", self._folder_path)
         except OSError, AspirabotBaseError:
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
-
-    def get_path_scenarios_folder(self) -> Path:
-        """Gets the path of the scenarios folder.
-
-        Returns:
-            The path of the scenarios folder as a Path object.
-        """
-        return self._folder_path
-
-    def _compute_fullpath_from_id_file(self, id_file: str, suffix: str = C_SCENARIO_FILE_SUFFIX) -> Path:
-        """Computes the full JSON file path for a given provider identifier.
-
-        Args:
-            id_file: Unique identifier of the provider.
-            suffix: The file suffix to append (default is C_SCENARIO_FILE_SUFFIX).
-
-        Returns:
-            The full Path to the provider's JSON file.
-        """
-        return self._folder_path / (id_file + suffix)
 
 
 # EOF

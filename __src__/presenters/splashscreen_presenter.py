@@ -113,7 +113,6 @@ class SplashscreenPresenter:
         self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[1])
         try:
             self._service.create_required_directories()
-            self._service.create_default_profiles_for_scenarios_if_missing()
             self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_3)
         except AspirabotBaseError as exc:
             traceback.print_stack()
@@ -124,6 +123,7 @@ class SplashscreenPresenter:
         self._vm.status_var.set(C_SPLASHSCREEN_STEP_LABELS[2])
         try:
             self._service.initialize_logging()
+            self._service.create_default_profiles_for_scenarios_if_missing()
             self._vm.after(C_SPLASHSCREEN_DISPLAY_MS_BY_STEP, self._run_step_4)
         except AspirabotBaseError as exc:
             self._handle_error(str(exc))

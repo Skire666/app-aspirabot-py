@@ -46,26 +46,26 @@ class AppConfigurationPresenter:
     def _load_configuration(self) -> None:
         """Loads the persisted configuration into the view."""
         try:
-            config = self._service.read_configuration()
+            self._service.read_configuration()
         except AspirabotBaseError as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             self._vm.show_error(str(exc))
-            config = AppConfigurationModel()
+            AppConfigurationModel()
 
-        self._apply_configuration(config)
+        self._apply_configuration()
 
     def _on_save(self) -> None:
         """Validates and persists configuration changes from the ViewModel."""
         state = self._vm.snapshot()
         try:
-            new_config = self._build_model(state)
-            self._service.update_configuration(new_config)
+            self._build_model(state)
+            self._service.update_configuration()
         except AspirabotBaseError as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             self._vm.show_error(str(exc))
             return
 
-        self._apply_configuration(new_config)
+        self._apply_configuration()
 
     def _on_reset(self) -> None:
         """Resets configuration to defaults after user confirmation."""
@@ -73,14 +73,14 @@ class AppConfigurationPresenter:
             return
 
         try:
-            default_config = AppConfigurationModel()
-            self._service.update_configuration(default_config)
+            AppConfigurationModel()
+            self._service.update_configuration()
         except AspirabotBaseError as exc:
             self._logger.error("Une erreur s'est produite", exc_info=True)
             self._vm.show_error(str(exc))
             return
 
-        self._apply_configuration(default_config)
+        self._apply_configuration()
 
     def _on_cancel(self) -> None:
         """Reloads the persisted configuration and discards edits."""
@@ -111,14 +111,10 @@ class AppConfigurationPresenter:
             gui_booting_fullscreen=state.gui_booting_fullscreen,
         )
 
-    def _apply_configuration(self, config: AppConfigurationModel) -> None:
-        """Push configuration data into the ViewModel and reset change tracking.
-
-        Args:
-            config: The configuration model to reflect into the form Vars.
-        """
+    def _apply_configuration(self) -> None:
+        """Push configuration singleton into the ViewModel and reset change tracking."""
         self._is_loading = True
-        self._vm.set_data(config.to_dict())
+        self._vm.set_data(AppConfigurationModel.get_instance().to_dict())
         self._is_loading = False
         self._last_loaded_state = self._vm.snapshot()
         self._vm.is_cancel_enabled_var.set(False)

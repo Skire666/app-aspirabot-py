@@ -27,8 +27,8 @@ from shared.enums import StepExecutionResultEnum
 
 
 def _make_context() -> ScrapingContextModel:
-    cfg = MagicMock(spec=AppConfigurationModel)
-    return ScrapingContextModel(model_config=cfg)
+    AppConfigurationModel._instance = MagicMock(spec=AppConfigurationModel)
+    return ScrapingContextModel()
 
 
 def _make_step(step_id: str = "s1") -> MagicMock:

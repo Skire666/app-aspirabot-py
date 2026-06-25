@@ -77,16 +77,10 @@ C_CHROMIUM_EXTENSIONS_DIR: str = "extensions/uBlock0_chromium"
 C_SCENARIO_EXTENSION = ".json"
 
 # Supported URL modes for the OPEN_URL step (mirrors view layer allowed modes).
-C_SCENARIO_FILE_SUFFIX = "_scenario.json"
-
-# Glob pattern to match all scenario files in the scenarios folder.
-C_SCENARIOS_FILES_REGEXP = f"*{C_SCENARIO_FILE_SUFFIX}"
+C_SCENARIO_FILE = "scenario.json"
 
 # Suffix for profile files associated with scenarios (mirrors view layer naming convention).
-C_PROFILE_FILE_SUFFIX = "_profiles.json"
-
-# Glob pattern to match all profile files in the profiles folder.
-C_PROFILES_FILES_REGEXP = f"*{C_PROFILE_FILE_SUFFIX}"
+C_PROFILE_FILE = "profiles.json"
 
 # -----------------------------------------------------------------------------
 

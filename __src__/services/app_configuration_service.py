@@ -51,13 +51,9 @@ class ConfigService:
         """
         return self._repository.read_configuration()
 
-    def update_configuration(self, new_config: AppConfigurationModel) -> None:
-        """Met à jour unitairement la configuration et la sauvegarde.
-
-        Args:
-            new_config (ConfigAspirabotModel): L'entité à enregistrer.
-        """
-        self._repository.write_configuration(new_config)
+    def update_configuration(self) -> None:
+        """Sauvegarde la configuration singleton courante."""
+        self._repository.write_configuration()
 
     def get_last_write_time(self) -> datetime | None:
         """Returns the last modification time of the configuration file."""

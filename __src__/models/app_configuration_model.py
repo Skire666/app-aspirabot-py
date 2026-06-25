@@ -9,8 +9,11 @@ designed to keep configuration access explicit and predictable.
 # Imports
 # -----------------------------------------------------------------------------
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from shared.constants import (
     C_APP_DEFAULT_SIZE_GUI,
@@ -18,8 +21,11 @@ from shared.constants import (
     C_CHROMIUM_PROFILE_DIR,
     C_LOGS_DEFAULT_FOLDER,
     C_LOGS_DEFAULT_LEVEL_TRACE,
+    C_PROFILE_FILE,
+    C_SCENARIO_FILE,
 )
 from shared.exception_util import (
+    EmptyScenarioIdError,
     InvalidFolderLogsError,
     InvalidGuiBootingPositionError,
     InvalidGuiBootingSizeError,
@@ -55,9 +61,11 @@ class AppConfigurationModel:
     # Variables
     # -----------------------------------------------------------------------------
 
+    _instance: ClassVar[AppConfigurationModel | None] = None
+
     _log_level_enum: str
     _folder_logs: Path
-    _folder_scenarios: Path
+    _folder_scenarios: Path | None
     _gui_booting_size: str
     _gui_booting_position: str
     _gui_booting_fullscreen: bool
@@ -88,6 +96,15 @@ class AppConfigurationModel:
         self.gui_booting_fullscreen = gui_booting_fullscreen
         self.chromium_persistant_dir = chromium_persistant_dir
         self.chromium_extensions_dir = chromium_extensions_dir
+        AppConfigurationModel._instance = self
+
+    @classmethod
+    def get_instance(cls) -> AppConfigurationModel:
+        """Return the singleton instance, raising if not yet initialized."""
+        if cls._instance is None:
+            msg = "AppConfigurationModel n'est pas encore initialisé."
+            raise RuntimeError(msg)
+        return cls._instance
 
     def to_dict(self) -> dict[str, object]:
         """Converts the configuration model to a dictionary for serialization."""
@@ -101,6 +118,38 @@ class AppConfigurationModel:
             "chromium_persistant_dir": self.chromium_persistant_dir,
             "chromium_extensions_dir": self.chromium_extensions_dir,
         }
+
+    def compute_fullpath_profile(self, id_folder: str) -> Path:
+        """Computes the full JSON file path for a given scenario identifier.
+
+        Args:
+            id_folder: Unique identifier of the scenario.
+            suffix: The file suffix to append (default is C_PROFILE_FILE).
+
+        Returns:
+            The full Path to the scenario's JSON file.
+        """
+        if not id_folder or id_folder.strip() == "":
+            raise EmptyScenarioIdError()
+        assert self._folder_scenarios is not None, "folder_scenarios must be set before computing profile paths."
+
+        return self._folder_scenarios / id_folder / C_PROFILE_FILE
+
+    def compute_fullpath_scenario(self, id_folder: str) -> Path:
+        """Computes the full JSON file path for a given scenario identifier.
+
+        Args:
+            id_folder: Unique identifier of the scenario.
+            suffix: The file suffix to append (default is C_PROFILE_FILE).
+
+        Returns:
+            The full Path to the scenario's JSON file.
+        """
+        if not id_folder or id_folder.strip() == "":
+            raise EmptyScenarioIdError()
+        assert self._folder_scenarios is not None, "folder_scenarios must be set before computing profile paths."
+
+        return self._folder_scenarios / id_folder / C_SCENARIO_FILE
 
     # -----------------------------------------------------------------------------
     # Properties
@@ -134,6 +183,7 @@ class AppConfigurationModel:
     @property
     def folder_scenarios(self) -> Path:
         """Folder path for scenarios, or None when not yet configured."""
+        assert self._folder_scenarios is not None, "folder_scenarios must be set before accessing it."
         return self._folder_scenarios
 
     @property
@@ -144,6 +194,7 @@ class AppConfigurationModel:
     @folder_scenarios.setter
     def folder_scenarios(self, value: Path | str | None) -> None:
         """Sets the folder path for scenarios; stores None for empty or missing values."""
+        print("AAAAA)", value)
         if value is None or str(value).strip() == "":
             self._folder_scenarios = None
             return

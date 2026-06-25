@@ -119,7 +119,7 @@ class ScenariosPresenter:
     def _update_view(self) -> None:
         """Update the view with the current list of scenarios, sorted and formatted for display."""
         scenarios_data = self._format_scenarios(self._all_scenarios)
-        self._vm.set_scenarios(self._service.get_folder_path_scenarios(), scenarios_data)
+        self._vm.set_scenarios(scenarios_data)
 
     @staticmethod
     def _format_scenarios(scenarios: list[ScenarioModel]) -> list[dict[str, object]]:

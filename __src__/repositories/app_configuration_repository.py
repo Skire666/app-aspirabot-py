@@ -100,8 +100,8 @@ class AppConfigurationRepository:
             self._logger.debug(
                 "Fichier de configuration introuvable, création du fichier par défaut : %s", self._full_pathfile
             )
-            default_data = AppConfigurationModel()
-            self._write_json(default_data)
+            AppConfigurationModel()
+            self._write_json()
 
     def read_configuration(self) -> AppConfigurationModel:
         """Load configuration from JSON and map it to the domain model.
@@ -124,27 +124,9 @@ class AppConfigurationRepository:
 
         return self._read_json()
 
-    def write_configuration(self, config: AppConfigurationModel) -> None:
-        """Persist a configuration model to the JSON file.
-
-        Converts the domain model to a dictionary and delegates serialization
-        to the file writing helper. This method is the primary interface for
-        persisting configuration changes.
-
-        Args:
-            config (AppConfigurationModel): The configuration model instance to
-                serialize and persist to disk.
-
-        Returns:
-            None
-
-        Raises:
-            None: All errors are handled internally by _write_json. Errors are
-                logged but do not raise exceptions.
-        """
-        # Extract dictionary representation from the model.
-        # Delegate serialization and file writing to the helper method.
-        self._write_json(config)
+    def write_configuration(self) -> None:
+        """Persist the singleton configuration model to the JSON file."""
+        self._write_json()
 
     def get_last_write_time(self) -> datetime | None:
         """Returns the last modification time for the configuration file.
@@ -187,34 +169,13 @@ class AppConfigurationRepository:
             # Return defaults as a safe fallback.
             return AppConfigurationModel()
 
-    def _write_json(self, data: AppConfigurationModel) -> None:
-        """Serialize and write configuration data to the JSON file.
-
-        Converts a dictionary to formatted JSON and writes it to the configured
-        file path. Parent directories are created automatically if they do not exist.
-
-        The output JSON is formatted with indentation for human readability and
-        configured to preserve UTF-8 characters (non-ASCII characters are not escaped).
-
-        Args:
-            data (AppConfigurationModel): The configuration model instance to
-                serialize and persist.
-
-        Returns:
-            None
-
-        Raises:
-            None: All I/O errors are caught and logged. The method never raises
-                exceptions to the caller.
-        """
-        # Ensure the parent directory exists before attempting to write.
+    def _write_json(self) -> None:
+        """Serialize and write the singleton configuration to the JSON file."""
         try:
             make_all_folders_if_not_exists(self._full_pathfile, is_file_path=True)
 
-            # Open file in write mode with UTF-8 encoding.
             with Path(self._full_pathfile).open("w", encoding="utf-8") as file:
-                # Write JSON with indentation and UTF-8 character preservation.
-                json.dump(data.to_dict(), file, indent=4, ensure_ascii=False)
+                json.dump(AppConfigurationModel.get_instance().to_dict(), file, indent=4, ensure_ascii=False)
 
             # Log successful completion at debug level.
             self._logger.debug("Fichier de configuration sauvegardé avec succès.")

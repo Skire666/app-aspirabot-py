@@ -20,7 +20,8 @@ def _make_step(step_id: str) -> MagicMock:
 
 
 def _make_context() -> ScrapingContextModel:
-    return ScrapingContextModel(model_config=_make_config())  # type: ignore[call-arg]
+    AppConfigurationModel._instance = _make_config()
+    return ScrapingContextModel()
 
 
 # ---------------------------------------------------------------------------

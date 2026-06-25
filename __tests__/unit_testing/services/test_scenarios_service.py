@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock
-
-import pytest
 
 from models.scenario_model import ScenarioModel
 from repositories.profiles_repository import ProfilesRepository
 from repositories.scenarios_repository import ScenariosRepository
 from services.scenarios_service import ScenariosService
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -60,19 +56,6 @@ class TestExistsScenario:
         scen_repo.exists_scenario.return_value = True
         svc = ScenariosService(scen_repo, prof_repo)
         assert svc.exists_scenario("sc001") is True
-
-
-# ---------------------------------------------------------------------------
-# get_folder_path_scenarios
-# ---------------------------------------------------------------------------
-
-
-class TestGetFolderPath:
-    def test_delegates_to_repo(self) -> None:
-        scen_repo, prof_repo = _make_repos()
-        scen_repo.get_path_scenarios_folder.return_value = Path("/scenarios")
-        svc = ScenariosService(scen_repo, prof_repo)
-        assert svc.get_folder_path_scenarios() == Path("/scenarios")
 
 
 # ---------------------------------------------------------------------------

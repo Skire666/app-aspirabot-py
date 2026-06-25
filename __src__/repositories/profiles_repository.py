@@ -11,13 +11,13 @@ JSON provider configuration files stored in a local directory.
 import logging
 from pathlib import Path
 
+from models.app_configuration_model import AppConfigurationModel
 from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
 from repositories.json_repository import JsonFileRepository
-from shared.constants import C_PROFILE_FILE_SUFFIX, C_PROFILES_FILES_REGEXP, C_SCENARIO_FILE_SUFFIX
+from shared.constants import C_PROFILE_FILE
 from shared.exception_util import (
     AspirabotBaseError,
-    EmptyScenarioIdError,
     ExportFolderNotADirectoryError,
     InvalidProfilesFolderPathError,
     ProfileDataMissingError,
@@ -76,7 +76,7 @@ class ProfilesRepository:
             folder is missing or invalid.
         """
         if self._folder_path.exists() and self._folder_path.is_dir():
-            return list(self._folder_path.glob(C_PROFILES_FILES_REGEXP))
+            return list(self._folder_path.rglob(C_PROFILE_FILE))
         return []
 
     def exists_scenarios(self, id_scenario: str) -> bool:
@@ -88,7 +88,7 @@ class ProfilesRepository:
         Returns:
             True when a matching JSON file is found on disk, False otherwise.
         """
-        full_filepath = self._compute_fullpath_from_id_file(id_scenario, suffix=C_PROFILE_FILE_SUFFIX)
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_profile(id_scenario)
         return full_filepath.exists() and full_filepath.is_file()
 
     def create_profiles(self, profiles: ProfilesModel) -> None:
@@ -100,7 +100,7 @@ class ProfilesRepository:
         Raises:
             OSError: When the file cannot be written.
         """
-        full_filepath = self._compute_fullpath_from_id_file(profiles.id_scenario)
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_profile(profiles.id_scenario)
         self.create_folder_profiles_if_missing()
 
         try:
@@ -124,7 +124,7 @@ class ProfilesRepository:
             ProfileNotFoundError: When no file matches id_scenario.
             ProfileDataMissingError: When the matching file is empty.
         """
-        full_filepath = self._compute_fullpath_from_id_file(id_scenario)
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_profile(id_scenario)
 
         if not full_filepath.exists():
             raise ProfileNotFoundError(id_scenario)
@@ -172,7 +172,7 @@ class ProfilesRepository:
         Raises:
             OSError: When the file cannot be written.
         """
-        full_filepath = self._compute_fullpath_from_id_file(profiles.id_scenario)
+        full_filepath = AppConfigurationModel().get_instance().compute_fullpath_profile(profiles.id_scenario)
         self.create_folder_profiles_if_missing()
 
         try:
@@ -196,7 +196,7 @@ class ProfilesRepository:
         self._logger.debug("Suppression des profils pour le scénario id=%s", id_scenario)
         self.create_folder_profiles_if_missing()
 
-        full_pathfile_to_delete = self._compute_fullpath_from_id_file(id_scenario)
+        full_pathfile_to_delete = AppConfigurationModel().get_instance().compute_fullpath_profile(id_scenario)
 
         if not full_pathfile_to_delete.exists():
             raise ProfileNotFoundError(id_scenario, context="suppression")
@@ -214,7 +214,7 @@ class ProfilesRepository:
         Args:
             id_scenario: Unique identifier of the scenario to load.
         """
-        full_pathfile = self._compute_fullpath_from_id_file(id_scenario, suffix=C_SCENARIO_FILE_SUFFIX)
+        full_pathfile = AppConfigurationModel().get_instance().compute_fullpath_scenario(id_scenario)
         if not full_pathfile.exists():
             raise ScenarioNotFoundError(id_scenario)
         scenario_data = self._json_repo.read_from_path(full_pathfile)
@@ -254,17 +254,16 @@ class ProfilesRepository:
             InvalidProfilesFolderPathError: When the configured path is not a directory.
             UnsupportedOperatingSystemError: When the OS is not Windows, macOS, or Linux.
         """
-        folder: Path = self.get_path_profiles_folder()
-        self._logger.debug("Ouverture du dossier des profils : %s", folder)
+        self._logger.debug("Ouverture du dossier des profils : %s", self._folder_path)
 
         self.create_folder_profiles_if_missing()
 
-        if not folder.is_dir():
-            raise InvalidProfilesFolderPathError(folder)
+        if not self._folder_path.is_dir():
+            raise InvalidProfilesFolderPathError(self._folder_path)
 
         try:
-            open_folder(folder)
-            self._logger.debug("Dossier ouvert : %s", folder)
+            open_folder(self._folder_path)
+            self._logger.debug("Dossier ouvert : %s", self._folder_path)
         except OSError, AspirabotBaseError:
             self._logger.error("Erreur lors de l'ouverture du dossier.", exc_info=True)
             raise
@@ -276,21 +275,6 @@ class ProfilesRepository:
             The path of the scenarios folder as a Path object.
         """
         return self._folder_path
-
-    def _compute_fullpath_from_id_file(self, id_file: str, suffix: str = C_PROFILE_FILE_SUFFIX) -> Path:
-        """Computes the full JSON file path for a given scenario identifier.
-
-        Args:
-            id_file: Unique identifier of the scenario.
-            suffix: The file suffix to append (default is C_PROFILE_FILE_SUFFIX).
-
-        Returns:
-            The full Path to the scenario's JSON file.
-        """
-        if not id_file:
-            raise EmptyScenarioIdError()
-
-        return self._folder_path / (id_file + suffix)
 
 
 # EOF

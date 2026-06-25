@@ -6,7 +6,6 @@
 
 import tkinter as tk
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
 from shared.exception_util import CallbackNotDefinedError
@@ -36,7 +35,6 @@ class ScenariosViewModel(ViewModelBase):
 
         # Scenario list data
         self._scenarios: list[dict[str, Any]] = []
-        self._folder_path: Path = Path()
         self.scenarios_version_var = tk.IntVar(master=master, value=0)
 
         # Validation state Vars — Presenter writes, View traces
@@ -68,22 +66,12 @@ class ScenariosViewModel(ViewModelBase):
         """
         return list(self._scenarios)
 
-    def get_folder_path(self) -> Path:
-        """Return the current scenarios folder path.
-
-        Returns:
-            The path set by the last ``set_scenarios`` call.
-        """
-        return self._folder_path
-
-    def set_scenarios(self, folder_path: Path, scenarios: list[dict[str, Any]]) -> None:
+    def set_scenarios(self, scenarios: list[dict[str, Any]]) -> None:
         """Replace the scenario list and increment the version trigger.
 
         Args:
-            folder_path: Path to the scenarios folder (shown in the folder link).
             scenarios: New ordered list of scenario row dicts for the DataGrid.
         """
-        self._folder_path = folder_path
         self._scenarios = list(scenarios)
         self.scenarios_version_var.set(self.scenarios_version_var.get() + 1)
 

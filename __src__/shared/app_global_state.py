@@ -122,9 +122,10 @@ class AppGlobalState:
         """Configure global ttk widget styles."""
         ttk.Style().configure("TButton", padding=(4, 4))
 
-    def override_gui_and_style(self, config_model: AppConfigurationModel) -> None:
+    def override_gui_and_style(self) -> None:
         """Apply window title, geometry, fullscreen state, and global widget style."""
         root = self._root
+        config_model = AppConfigurationModel.get_instance()
         root.title("Aspirabot")
         position = config_model.gui_booting_position
         if position:
@@ -151,11 +152,12 @@ class AppGlobalState:
             parts = root.geometry().split("+")  # "WxH+X+Y" → ["WxH", "X", "Y"]
             if len(parts) != _C_GEO_SPLIT_PARTS:
                 return
-            config = config_repo.read_configuration()
+            config_repo.read_configuration()
+            config = AppConfigurationModel.get_instance()
             config.gui_booting_size = parts[0]
             config.gui_booting_position = f"{parts[1]},{parts[2]}"
             config.gui_booting_fullscreen = state_rt == "zoomed"
-            config_repo.write_configuration(config)
+            config_repo.write_configuration()
         except tk.TclError:
             pass
         except Exception:
