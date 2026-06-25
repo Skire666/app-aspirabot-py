@@ -1,0 +1,55 @@
+{
+    "id_scenario": "50aae622",
+    "created_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-14T00:21:56.364760"
+    },
+    "modified_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-21T23:24:04.346469"
+    },
+    "launch_profiles": [
+        {
+            "id_profile": "b9c81b58",
+            "id_scenario": "50aae622",
+            "profile_name": "Youtube - FilmGame - Chaine vers fiches",
+            "export_folder": "E:/app-life-selector/Youtube/FilmGame/Export - Fiches",
+            "urls_source_type": "MANUAL_LIST",
+            "url_sources_list_manual": [
+                "https://www.youtube.com/watch?v=PVy-bcTsO8A"
+            ],
+            "folder_racs": "E:/app-life-selector/Youtube/FilmGame/Export - Chaines",
+            "orders_racs": "mtime_asc",
+            "folder_json": "E:/app-life-selector/Youtube/FilmGame/Export - Chaines",
+            "orders_json": "mtime_asc",
+            "date_modified_start": "UNKNOWN",
+            "date_modified_end": "UNKNOWN",
+            "urls_discover_entries": {
+                "inputs": [
+                    {
+                        "id_discover": "141d",
+                        "folder_json": "E:/app-life-selector/Youtube/FilmGame/Export - Chaines",
+                        "pattern_json": "export_all*.json",
+                        "key_mapping": "urls",
+                        "pattern_urls": "https://www.youtube*"
+                    }
+                ],
+                "output": {
+                    "id_discover": "0583",
+                    "folder_json": "E:/app-life-selector/Youtube/FilmGame/Export - Fiches",
+                    "pattern_json": "export*.json",
+                    "key_mapping": "last_url",
+                    "pattern_urls": "https://www.youtube*"
+                }
+            },
+            "emergency_stop_threshold": 200,
+            "used_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-06-21T23:24:04.344674"
+            },
+            "emergency_stop_step_id": "Gd75",
+            "emergency_stop_step_threshold": 200,
+            "warmup_url": "https://www.youtube.com/"
+        }
+    ]
+}

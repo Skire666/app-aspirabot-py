@@ -1,0 +1,48 @@
+{
+    "id_scenario": "8517d1ad",
+    "created_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-14T00:22:17.168800"
+    },
+    "modified_date_profile": {
+        "__type__": "datetime",
+        "value": "2026-06-20T00:07:46.340643"
+    },
+    "launch_profiles": [
+        {
+            "id_profile": "2361ceb1",
+            "id_scenario": "8517d1ad",
+            "profile_name": "Profil par défaut",
+            "export_folder": "E:/app-life-selector/Youtube/FilmGame/Export - Chaines",
+            "urls_source_type": "MANUAL_LIST",
+            "url_sources_list_manual": [
+                "https://www.lemonde.fr/",
+                "https://www.lemonde.fr/"
+            ],
+            "folder_racs": "",
+            "orders_racs": "mtime_asc",
+            "folder_json": "",
+            "orders_json": "mtime_asc",
+            "date_modified_start": "UNKNOWN",
+            "date_modified_end": "UNKNOWN",
+            "urls_discover_entries": {
+                "inputs": [],
+                "output": {
+                    "id_discover": "7f630d413e052730",
+                    "folder_json": "E:/app-life-selector/Youtube/FilmGame/Export - Chaines",
+                    "pattern_json": "export*.json",
+                    "key_mapping": "key_xxx",
+                    "pattern_urls": "https*"
+                }
+            },
+            "emergency_stop_threshold": 200,
+            "used_date_profile": {
+                "__type__": "datetime",
+                "value": "2026-06-20T00:07:46.336720"
+            },
+            "emergency_stop_step_id": "PFAx",
+            "emergency_stop_step_threshold": 200,
+            "warmup_url": ""
+        }
+    ]
+}
