@@ -99,7 +99,6 @@ class ProfilesPresenter:
         sorted_tuples = self._sort_profiles(all_profiles)
 
         # Push formatted rows to the view and stamp the load time.
-        print(f"ProfilesPresenter: pushing {len(sorted_tuples)} profiles to the view")
         self._vm.set_profiles(self._format_rows(sorted_tuples))
         self._last_loaded = datetime.now()
 

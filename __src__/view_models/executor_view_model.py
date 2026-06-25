@@ -9,7 +9,6 @@ dispatching to Presenter-registered callbacks.
 # Imports
 # -----------------------------------------------------------------------------
 
-import datetime
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -155,7 +154,6 @@ class ExecutorViewModel(ViewModelBase):
             master=master, value=RelativeDateEnum.E_LAST_NOW.enum_to_view()
         )
         self.json_date_modified_end_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_99.enum_to_view())
-        print("DEBUG 01:", datetime.datetime.now())
         # Discover mode — OUT form fields.
         self.disc_out_pattern_json_var = tk.StringVar(master=master, value="export*.json")
         self.disc_out_key_mapping_var = tk.StringVar(master=master, value="key_xxx")

@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 import contextlib
-import datetime
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import filedialog, ttk
@@ -342,7 +341,6 @@ class UrlConfigView(ttk.Frame):
         MyCombobox(
             row, textvariable=self._vm.json_date_modified_end_var, values=date_values, state="readonly", width=20
         ).pack_left()
-        print("DEBUG AA:", datetime.datetime.now())
         self._view_traces.append(
             (
                 self._vm.json_date_modified_end_var,

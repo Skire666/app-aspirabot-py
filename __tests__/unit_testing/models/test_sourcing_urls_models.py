@@ -183,6 +183,7 @@ class TestUrlsFolderJsonsModel:
         m = UrlsFolderJsonsModel(
             folder_json="  folder  ",
             orders_json="  ASC  ",
+            url_regexp="http*",
             date_modified_start=RelativeDateEnum.E_UNSET,
             date_modified_end=RelativeDateEnum.E_UNSET,
         )
@@ -215,6 +216,7 @@ class TestUrlsFolderJsonsModel:
         m = UrlsFolderJsonsModel(
             folder_json="invalid<>path",
             orders_json="ASC",
+            url_regexp="http*",
             date_modified_start=RelativeDateEnum.E_LAST_3D,
             date_modified_end=RelativeDateEnum.E_LAST_1Y,
         )
@@ -226,6 +228,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_UNSET,
                 date_modified_end=RelativeDateEnum.E_UNSET,
             )
@@ -237,6 +240,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="UNSET",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_UNSET,
                 date_modified_end=RelativeDateEnum.E_UNSET,
             )
@@ -251,6 +255,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="ASC",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_UNSET,
                 date_modified_end=RelativeDateEnum.E_UNSET,
             )
@@ -266,6 +271,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="ASC",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_UNSET,
                 date_modified_end=RelativeDateEnum.E_UNSET,
             )
@@ -281,6 +287,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="ASC",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_UNSET,
                 date_modified_end=RelativeDateEnum.E_LAST_1Y,
             )
@@ -296,6 +303,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="ASC",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_LAST_3D,
                 date_modified_end=RelativeDateEnum.E_UNSET,
             )
@@ -311,6 +319,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="ASC",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_LAST_1Y,
                 date_modified_end=RelativeDateEnum.E_LAST_3D,
             )
@@ -326,6 +335,7 @@ class TestUrlsFolderJsonsModel:
             m = UrlsFolderJsonsModel(
                 folder_json="folder",
                 orders_json="ASC",
+                url_regexp="http*",
                 date_modified_start=RelativeDateEnum.E_LAST_3D,
                 date_modified_end=RelativeDateEnum.E_LAST_1Y,
             )

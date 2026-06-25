@@ -201,7 +201,6 @@ class AppConfigurationModel:
     @folder_scenarios.setter
     def folder_scenarios(self, value: Path | str | None) -> None:
         """Sets the folder path for scenarios; stores None for empty or missing values."""
-        print("AAAAA)", value)
         if value is None or str(value).strip() == "":
             self._folder_scenarios = None
             return

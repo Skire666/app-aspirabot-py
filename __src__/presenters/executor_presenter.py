@@ -10,9 +10,7 @@ injectable navigation hooks from main.py.
 # Imports
 # -----------------------------------------------------------------------------
 
-import datetime
 import logging
-import time
 from collections.abc import Callable
 
 from models.launcher_model import LaunchModel
@@ -302,8 +300,6 @@ class ExecutorPresenter:
         # Without this, comboboxes are DISABLED during .set() calls and may not refresh their
         # display on the DISABLED→readonly transition (Windows/Tk behaviour).
         self._is_loading_profile = True
-        t0 = time.perf_counter()
-        print("DEBUG 02:", datetime.datetime.now())
         try:
             self._vm.is_profile_section_enabled_var.set(True)
             steps = self._current_scenario.steps if self._current_scenario else []
@@ -315,8 +311,6 @@ class ExecutorPresenter:
             self._set_dirty(False)
         finally:
             self._is_loading_profile = False
-        print("DEBUG 05:", datetime.datetime.now())
-        print("In ms", (time.perf_counter() - t0) * 1000)
 
     def _push_profile_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write profile scalar fields and step list into the ViewModel Vars.
