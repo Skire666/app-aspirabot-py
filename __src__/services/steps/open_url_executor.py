@@ -48,6 +48,9 @@ class OpenUrlExecutor(IStepExecutor):
             target_url = self._extract_next_url_used(context, p, event_bus)
             # obligé de le mettre avant de goto
             # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
+            if target_url is None:
+                event_bus.log_step(context, "Aucune URL à ouvrir.")
+                return StepExecutionResultEnum.E_ERROR
             context.last_url_opened = target_url
             timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
             browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
@@ -59,7 +62,9 @@ class OpenUrlExecutor(IStepExecutor):
             return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
-    def _extract_next_url_used(context: ScrapingContextModel, p: OpenUrlParams, event_bus: IScrapingEventBus) -> str:
+    def _extract_next_url_used(
+        context: ScrapingContextModel, p: OpenUrlParams, event_bus: IScrapingEventBus
+    ) -> str | None:
         """Extract the next URL to open based on the step parameters and context.
 
         Args:
@@ -74,10 +79,11 @@ class OpenUrlExecutor(IStepExecutor):
             UrlSourceExhaustedError: If the URL mode is source but there are no more URLs.
         """
         # Consume the next URL from the injected source
-        if context.url_source is None or not context.url_source.loads_urls():
+        if context.url_source is None or not context.url_source.is_ready_to_consum_urls():
             event_bus.log_step(context, "Aucune URL disponible dans la source.")
             raise UrlSourceExhaustedError()
-        url_readed = context.url_source.pop_url()
+        url_readed = context.url_source.read_current_url()
+        context.url_source.load_next_url()
         event_bus.log_step(context, f"Progression : {context.url_source.get_progress_text()}")
         return url_readed
 

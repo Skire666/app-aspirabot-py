@@ -5,11 +5,14 @@
 # -----------------------------------------------------------------------------
 
 from dataclasses import dataclass
+from fnmatch import fnmatch
+from pathlib import Path
 from typing import Any
 
 from shared.enums import SeverityEnum
 from shared.errors.urls_discover_inputs_error import ErrorCodeUDI
 from shared.errors.urls_discover_output_error import ErrorCodeUDO
+from shared.exception_util import DiscoverFolderNotFoundError
 from shared.path_util import count_files_in_folder, folder_exists
 from shared.random_util import generate_rng_hexastring
 from shared.validation_result import ValidationResult
@@ -54,6 +57,28 @@ class UrlsDiscoverItemModel:
     pattern_json: str
     key_mapping: str
     pattern_urls: str
+
+    @classmethod
+    def list_all_files(cls) -> list[Path]:
+        """Extract URLs from all matching files in the discover folder.
+
+        Args:
+            discover: Configuration describing the folder, file pattern, key,
+                and URL filter pattern.
+
+        Returns:
+            Ordered list of URL strings (duplicates preserved).
+
+        Raises:
+            DiscoverFolderNotFoundError: If the folder path does not exist.
+        """
+        folder = Path(cls.folder_json)
+        if not folder.is_dir():
+            raise DiscoverFolderNotFoundError(cls.folder_json)
+
+        return sorted(
+            (f for f in folder.iterdir() if f.is_file() and fnmatch(f.name, cls.pattern_json)), key=lambda f: f.name
+        )
 
     @classmethod
     def get_default(cls) -> UrlsDiscoverItemModel:

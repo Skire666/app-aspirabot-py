@@ -20,12 +20,7 @@ from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.sourcing_urls.urls_discover_item_model import UrlsDiscoverItemModel
 from repositories.json_repository import JsonFileRepository
-from shared.exception_util import (
-    AspirabotBaseError,
-    DiscoverFolderNotFoundError,
-    InvalidUrlSourceValueTypeError,
-    UrlSourceExhaustedError,
-)
+from shared.exception_util import InvalidUrlSourceValueTypeError
 
 # -----------------------------------------------------------------------------
 # Class
@@ -48,16 +43,18 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             json_repository: Repository used to read JSON files during discovery.
         """
         self._logger = logging.getLogger(__name__)
-        self.payloads_inputs: list[UrlsDiscoverItemModel] | None = None
-        self.payloads_target: UrlsDiscoverItemModel | None = None
+        self._inputs_frame: list[UrlsDiscoverItemModel] | None = None
+        self._inputs_paths_cache: list[list[Path] | None] = []
+        self._inputs_urls_cache: list[set[str] | None] = []
+        self._output_frame: UrlsDiscoverItemModel | None = None
+        self._output_paths_cache: list[Path] | None = None
+        self._output_urls_cache: set[str] | None = None
 
         # results compute
-        self.input_total_count: int = 0
-        self.output_total_count: int = 0
-        self.output_unique_count_stored: int = 0
-        self.input_entries: dict[str, int] = {}
-        self.output_entries: dict[str, int] = {}
-        self.new_entries: set[str] = set()
+        self.input_entries: set[str] = set()
+        self.output_entries: set[str] = set()
+        self.final_entries: list[str] = []
+        self.is_ready: bool = False
         self.current_index: int = 0
 
         self._json_repository = json_repository
@@ -73,81 +70,67 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             model: The raw URL source model containing unprocessed data.
         """
         if isinstance(model, UrlsDiscoverEntriesModel):
-            self.payloads_inputs = model.inputs
-            self.payloads_target = model.output
+            self._inputs_frame = model.inputs
+            self._inputs_paths_cache = [None for _ in model.inputs]
+            self._inputs_urls_cache = [None for _ in model.inputs]
+            self._output_frame = model.output
+            self._output_paths_cache = None
+            self._output_urls_cache = None
+            self.is_ready = False
         else:
             raise InvalidUrlSourceValueTypeError("discover_entries", "UrlsDiscoverEntriesModel", type(model).__name__)
-
-    def update_sources_and_compute(
-        self, source_inputs: list[UrlsDiscoverItemModel], source_target: UrlsDiscoverItemModel
-    ) -> None:
-        """Update the source model and run the discovery computation.
-
-        Args:
-            source_inputs: A list of ``UrlsDiscoverItemModel`` instances representing the input data.
-            source_target: An instance of ``UrlsDiscoverItemModel`` representing the output data.
-        """
-        assert source_target is not None, "OUT DiscoverModel must be provided"
-
-        inputs_are_same = self.payloads_inputs == source_inputs
-        output_is_same = self.payloads_target == source_target
-
-        if not inputs_are_same:
-            self._logger.info("MAJ sources d'entrée pour la découverte (%d source(s) IN)", len(source_inputs))
-            self.payloads_inputs = source_inputs
-            self._collect_input_entries()
-        if not output_is_same:
-            self._logger.info("MAJ sources de sortie pour la découverte (source OUT)")
-            self.payloads_target = source_target
-            self._collect_output_entries()
-        if not inputs_are_same or not output_is_same:
-            self._logger.info("Modification des sources détectée, recalcul des nouvelles entrées")
-            self._compute_new_entries()
-        else:
-            self._logger.info("Aucune modification des sources, pas de recalcul nécessaire")
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def loads_urls(self) -> bool:
+    def is_ready_to_consum_urls(self) -> bool:
         """Return True when at least one new URL remains available.
 
         Returns:
             True if at least one new URL is available; False otherwise.
         """
-        if len(self.new_entries) <= 0:
-            self._compute_all_stuff()
-        return len(self.new_entries) >= 1
+        if not self.is_ready:
+            self.reset()
+        return self.is_ready
 
-    def preview_next_url(self) -> str | None:
-        """Return the next new URL without advancing the internal cursor.
-
-        Returns:
-            The next new URL string, or an empty string if no new URLs remain.
-        """
-        return next(iter(self.new_entries), None)
-
-    def pop_url(self) -> str:
-        """Drain the look-ahead buffer and return the next new URL.
+    def read_current_url(self) -> str | None:
+        """Return the current URL without advancing the internal cursor.
 
         Returns:
-            The next new URL string.
+            The current URL string, or None if no URL is available.
         """
-        if not self.loads_urls():
-            raise UrlSourceExhaustedError()
-        url = next(iter(self.new_entries))
+        if 0 <= self.current_index < len(self.final_entries):
+            return self.final_entries[self.current_index]
+        return None
+
+    def has_next_url(self) -> bool:
+        """Return True if there is a next URL available to consume.
+
+        Returns:
+            True if the cursor has not reached the end of the list.
+        """
+        return 0 <= self.current_index < len(self.final_entries) - 1
+
+    def load_next_url(self) -> None:
+        """Return the next URL and advance the cursor.
+
+        Returns:
+            The next URL string.
+
+        Raises:
+            StopIteration: When all URLs have been consumed.
+        """
+        if not self.is_ready_to_consum_urls():
+            raise StopIteration("No new URLs available")
+
         self.current_index += 1
-        self.new_entries.remove(url)
-        return url
 
     def reset(self) -> None:
         """Rewind to the first new URL; the discovered set is preserved."""
         self.current_index = 0
-        if self.payloads_inputs is None or self.payloads_target is None:
-            msg = "Les sources d'entrée et de sortie doivent être définies avant la réinitialisation."
-            raise AspirabotBaseError(msg)
-        self.update_sources_and_compute(self.payloads_inputs, self.payloads_target)
+        self._compute_all_stuff()
+        self.is_ready = len(self.final_entries) >= 1
 
     def get_progress_text(self) -> str:
         """Return a human-readable summary of the discovery progress.
@@ -155,7 +138,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         Returns:
             A string summarizing the counts of input, output, and new URLs.
         """
-        return f"{self.current_index} / {len(self.new_entries)} URL(s)"
+        return f"{self.current_index} / {len(self.final_entries)} URL(s)"
 
     def preview_all_urls(self) -> list[str]:
         """Return a list of all new URLs without advancing the internal cursor.
@@ -163,7 +146,9 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         Returns:
             A list of new URL strings.
         """
-        return list(self.new_entries)
+        assert self.is_ready_to_consum_urls(), "No new URLs available"
+
+        return self.final_entries
 
     def count_urls(self) -> int:
         """Return the total number of new URLs available.
@@ -171,7 +156,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         Returns:
             The total number of new URLs available.
         """
-        return len(self.new_entries)
+        return len(self.final_entries)
 
     # ------------------------------------------------------------------
     # Private
@@ -190,8 +175,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             DiscoverFolderNotFoundError: If any configured folder does not exist.
             DiscoverComputeError: If an unrecoverable error occurs during computation.
         """
-        assert self.payloads_inputs is not None, "IN DiscoverModel(s) must be provided"
-        self._logger.info("Calcul de découverte démarré (%d source(s) IN)", len(self.payloads_inputs))
+        assert self._inputs_frame is not None, "IN DiscoverModel(s) must be provided"
 
         # --- Collect IN URLs ---
         self._collect_input_entries()
@@ -201,65 +185,67 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
 
         # --- Compute new entries (present in IN but absent from OUT) ---
         # compute new entries (present in IN but absent from OUT)
-        self._compute_new_entries()
+        self._collect_final_entries()
 
         self._logger.info(
             "Découverte terminée : %d nouvelle(s) URL(s) sur %d entrée(s) IN unique(s)",
-            len(self.new_entries),
+            len(self.final_entries),
             len(self.input_entries),
         )
 
-    def _compute_new_entries(self) -> None:
-        """Populate self.new_entries from input_entries and output_entries.
+    def _collect_input_entries(self) -> None:
+        assert self._inputs_frame is not None, "IN DiscoverModel(s) must be provided"
+
+        self.input_entries = set()
+
+        index = 0
+        while index < len(self._inputs_frame):
+            discover = self._inputs_frame[index]
+            paths = discover.list_all_files()
+            if self._inputs_paths_cache[index] == paths:
+                assert self._inputs_urls_cache[index] is not None
+                self.input_entries.update(self._inputs_urls_cache[index])  # pyright: ignore[reportArgumentType]
+            else:
+                urls = self._read_read_all_jsons(paths, discover)
+                self.input_entries.update(urls)
+                self._inputs_urls_cache[index] = urls
+                self._inputs_paths_cache[index] = paths
+
+        # len
+        self._logger.info("Collecte IN terminée : %d entrée(s) IN unique(s)", len(self.input_entries))
+
+    def _collect_output_entries(self) -> None:
+        assert self._output_frame is not None, "OUT DiscoverModel(s) must be provided"
+
+        self.output_entries = set()
+
+        paths = self._output_frame.list_all_files()
+        if self._output_paths_cache == paths:
+            assert self._output_urls_cache is not None
+            self.output_entries.update(self._output_urls_cache)
+        else:
+            urls = self._read_read_all_jsons(paths, self._output_frame)
+            self.output_entries.update(urls)
+            self._output_urls_cache = urls
+            self._output_paths_cache = paths
+
+        # len
+        self._logger.info("Collecte OUT terminée : %d entrée(s) OUT unique(s)", len(self.output_entries))
+
+    def _collect_final_entries(self) -> None:
+        """Populate self.final_entries from input_entries and output_entries.
 
         Keeps semantics: URLs present in inputs but absent from outputs.
         """
         # choose efficient set difference
-        out_set = set(self.output_entries)
-        self.new_entries = {url for url in self.input_entries if url not in out_set}
+        urls_out = set(self.output_entries)
+        self.final_entries = [url_in for url_in in self.input_entries if url_in not in urls_out]
 
-    def _collect_input_entries(self) -> None:
-        assert self.payloads_inputs is not None, "IN DiscoverModel(s) must be provided"
-        self.input_entries = {}
-        self.input_total_count = 0
-        for discover in self.payloads_inputs:
-            urls = self._collect_urls(discover)
-            self.input_total_count += len(urls)
-            for url in urls:
-                self.input_entries[url] = self.input_entries.get(url, 0) + 1
-
-        # len
-        self._logger.info(
-            "Collecte IN terminée : %d URL(s) sur %d entrée(s) IN unique(s)",
-            self.input_total_count,
-            len(self.input_entries),
-        )
-
-    def _collect_output_entries(self) -> None:
-        assert self.payloads_target is not None, "OUT DiscoverModel must be provided"
-        self.output_entries = {}
-        self.output_total_count = 0
-        try:
-            out_urls = self._collect_urls(self.payloads_target)
-            self.output_total_count += len(out_urls)
-            for url in out_urls:
-                self.output_entries[url] = self.output_entries.get(url, 0) + 1
-        except DiscoverFolderNotFoundError:
-            # Output folder absent (e.g. first run) → treat as empty; all IN URLs are new.
-            self._logger.info(
-                "Dossier OUT absent ou non configuré, traité comme vide : %s", self.payloads_target.folder_json
-            )
-
-        self._logger.info(
-            "Collecte OUT terminée : %d URL(s) sur %d entrée(s) OUT unique(s)",
-            self.output_total_count,
-            len(self.output_entries),
-        )
-
-    def _collect_urls(self, discover: UrlsDiscoverItemModel) -> list[str]:
+    def _read_read_all_jsons(self, paths: list[Path], discover: UrlsDiscoverItemModel) -> set[str]:
         """Extract URLs from all matching files in the discover folder.
 
         Args:
+            paths: List of Path objects for JSON files to read.
             discover: Configuration describing the folder, file pattern, key,
                 and URL filter pattern.
 
@@ -269,45 +255,19 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         Raises:
             DiscoverFolderNotFoundError: If the folder path does not exist.
         """
-        folder = Path(discover.folder_json)
-        if not folder.is_dir():
-            raise DiscoverFolderNotFoundError(discover.folder_json)
+        self._logger.info("Collecte de %d fichier(s) dans %s", len(paths))
 
-        files = sorted(
-            (f for f in folder.iterdir() if f.is_file() and fnmatch(f.name, discover.pattern_json)),
-            key=lambda f: f.name,
-        )
+        urls: set[str] = set()
 
-        self._logger.info("Collecte de %d fichier(s) dans %s", len(files), folder)
+        for file_path in paths:
+            data = self._json_repository.read_from_path(file_path)
+            if data:
+                self._read_json(data, discover.key_mapping, discover.pattern_urls, urls)
 
-        urls: list[str] = []
-        for file_path in files:
-            extracted = self._extract_from_file(file_path, discover.key_mapping, discover.pattern_urls)
-            urls.extend(extracted)
         return urls
 
-    def _extract_from_file(self, file_path: Path, key_mapping: str, pattern_urls: str) -> list[str]:
-        """Parse a JSON file and return URLs at key_mapping filtered by pattern_urls.
-
-        Args:
-            file_path: Path to the JSON file to parse.
-            key_mapping: JSON key whose string values are extracted.
-            pattern_urls: Glob pattern applied to each candidate URL.
-
-        Returns:
-            List of matching URL strings; empty on parse error.
-        """
-        data = self._json_repository.read_from_path(file_path)
-
-        if not data:
-            return []
-
-        candidates: list[str] = []
-        self._extract_from_export_list(data, key_mapping, pattern_urls, candidates)
-        return candidates
-
     @staticmethod
-    def _extract_from_export_list(data: object, key_mapping: str, filter_url: str, result: list[str]) -> None:
+    def _read_json(data: object, key_mapping: str, filter_url: str, accumulator: set[str]) -> None:
         """Extract values from the app's export JSON format.
 
         The format is ``[{"key": "...", "values": [...], ...}, ...]``.
@@ -317,7 +277,7 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
             data: JSON-decoded Python object (expected to be a list).
             key_mapping: The extraction key name used during scraping.
             filter_url: The URL pattern to filter results.
-            result: Accumulator list modified in place.
+            accumulator: Accumulator set modified in place.
         """
         if not isinstance(data, dict):
             return
@@ -327,25 +287,25 @@ class UrlsDiscoverEntriesService(IUrlSourceProvider):
         node = data_dict[key_mapping]
         # si "key": "..."
         if isinstance(node, str) and fnmatch(node, filter_url):
-            result.append(node)
+            accumulator.add(node)
         # si "key": "key_bis1": ..., "key_bis2": ...
         if not isinstance(node, dict):
             return
         node_dict = cast(dict[str, object], node)
-        UrlsDiscoverEntriesService._append_nested_values(node_dict, filter_url, result)
+        UrlsDiscoverEntriesService._append_nested_values(node_dict, filter_url, accumulator)
 
     @staticmethod
-    def _append_nested_values(node: dict[str, object], filter_url: str, result: list[str]) -> None:
+    def _append_nested_values(node: dict[str, object], filter_url: str, accumulator: set[str]) -> None:
         """Append matching string values from nested key/value structures."""
         for all_values in node.values():
             # "key_bis1": "..."
             if isinstance(all_values, str) and fnmatch(all_values, filter_url):
-                result.append(all_values)
+                accumulator.add(all_values)
             # "key_bis1": [..., ..., ...]
             if isinstance(all_values, list):
                 for item in cast(list[object], all_values):
                     if isinstance(item, str) and fnmatch(item, filter_url):
-                        result.append(item)
+                        accumulator.add(item)
 
 
 # EOF

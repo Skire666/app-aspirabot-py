@@ -16,7 +16,7 @@ from shared.i18n_fra import ERROR_TEMPLATES
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
-_ALLOWED_TARGETS = frozenset({e.value for e in ExtractTargetEnum})
+_ALLOWED_TARGETS = frozenset(set(ExtractTargetEnum))
 
 
 class ExtractLinksParams(BaseModel):

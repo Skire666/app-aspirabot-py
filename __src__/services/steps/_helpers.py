@@ -17,8 +17,7 @@ from shared.constants import (
     C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
     C_STR_ERROR_JS_EVALUATION,
 )
-
-from __src__.shared.enums import ExtractTextHtmlEnum
+from shared.enums import ExtractTextHtmlEnum
 
 _logger = logging.getLogger(__name__)
 

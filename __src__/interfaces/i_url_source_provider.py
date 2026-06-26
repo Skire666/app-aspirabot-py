@@ -38,7 +38,7 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
-    def loads_urls(self) -> bool:
+    def is_ready_to_consum_urls(self) -> bool:
         """Return True if at least one URL remains to be consumed.
 
         Returns:
@@ -46,22 +46,27 @@ class IUrlSourceProvider(Protocol):
         """
         ...
 
-    def preview_next_url(self) -> str | None:
-        """Return the next URL without advancing the internal cursor.
+    def read_current_url(self) -> str | None:
+        """Return the current URL without advancing the internal cursor.
 
         Returns:
-            The next URL string, or None if no URLs remain.
+            The current URL string, or None if no URL is available.
         """
         ...
 
-    def pop_url(self) -> str:
-        """Return the next URL and advance the internal cursor.
+    def has_next_url(self) -> bool:
+        """Return True if there is a next URL available to consume.
 
         Returns:
-            The next URL string from this source.
+            True if the cursor has not reached the end of the list.
+        """
+        ...
 
-        Raises:
-            StopIteration: When no URLs remain (i.e. ``load_url_if_available()`` is False).
+    def load_next_url(self) -> None:
+        """Return the next URL and advance the cursor.
+
+        Returns:
+            The next URL string.
         """
         ...
 

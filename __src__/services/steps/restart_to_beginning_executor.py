@@ -36,10 +36,11 @@ class RestartToBeginningExecutor(IStepExecutor):
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(RestartToBeginningParams, context.step_scraping_data.params)
+        assert context.url_source is not None, "RESTART_TO_BEGINNING requires a URL source to be configured"
         try:
             if p.jump_only_if_urls_remaining:
-                next_rule = context.url_source.preview_next_url()  # pyright: ignore[reportOptionalMemberAccess]
-                if next_rule is None:
+                has_next_url = context.url_source.has_next_url()
+                if not has_next_url:
                     event_bus.log_step(context, "Aucune URL restante (etape SKIP)")
                     return StepExecutionResultEnum.E_SKIPPED
                 event_bus.log_step(context, "URL restante (va reprendre au début)")

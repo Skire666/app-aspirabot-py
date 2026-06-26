@@ -7,6 +7,7 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from shared.app_global_state import MyEntry
 from shared.i18n_fra import (
     C_FOLDER_SETUP_BROWSE_BTN,
     C_FOLDER_SETUP_CANCEL_BTN,
@@ -16,8 +17,6 @@ from shared.i18n_fra import (
     C_FOLDER_SETUP_TITLE,
 )
 from view_models.folder_setup_view_model import FolderSetupViewModel
-
-from __src__.shared.app_global_state import MyEntry
 
 # -----------------------------------------------------------------------------
 # Class

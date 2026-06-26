@@ -26,8 +26,7 @@ from shared.exception_util import (
     ScenarioNotFoundError,
 )
 from shared.operating_system_util import open_folder
-
-from __src__.shared.path_util import make_all_folders_if_not_exists
+from shared.path_util import make_all_folders_if_not_exists
 
 # -----------------------------------------------------------------------------
 # Classes

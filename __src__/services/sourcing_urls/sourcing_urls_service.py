@@ -147,16 +147,16 @@ class SourcingUrlsService:
 
         if ustype is UrlSourceTypeEnum.E_MANUAL_LIST:
             self._provider_manual.setup_model(launcher.urls_manual_list)
-            self._provider_manual.loads_urls()
+            self._provider_manual.is_ready_to_consum_urls()
         elif ustype is UrlSourceTypeEnum.E_FOLDER_RACS:
             self._provider_folder_racs.setup_model(launcher.urls_folder_racs)
-            self._provider_folder_racs.loads_urls()
+            self._provider_folder_racs.is_ready_to_consum_urls()
         elif ustype is UrlSourceTypeEnum.E_FOLDER_JSONS:
             self._provider_folder_jsons.setup_model(launcher.urls_folder_jsons)
-            self._provider_folder_jsons.loads_urls()
+            self._provider_folder_jsons.is_ready_to_consum_urls()
         elif ustype is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
             self._provider_discover.setup_model(launcher.urls_discover_entries)
-            self._provider_discover.loads_urls()
+            self._provider_discover.is_ready_to_consum_urls()
         else:
             raise UnknownUrlSourceTypeError(str(ustype))
 
@@ -194,13 +194,13 @@ class SourcingUrlsService:
     def _validate_url_provider(self, rs: ValidationResult) -> None:
         """Validate that the active URL provider yields usable URLs."""
         provider = self.get_provider_urls()
-        if not provider.loads_urls():
+        if not provider.is_ready_to_consum_urls():
             rs.append(ErrorCodeSUS.SUS_1005, SeverityEnum.E_ERROR)
             return
-        if not provider.preview_next_url():
+        if not provider.read_current_url():
             rs.append(ErrorCodeSUS.SUS_1006, SeverityEnum.E_ERROR)
             return
-        if len(provider.preview_next_url() or "") <= _C_MIN_URL_LENGTH:
+        if len(provider.preview_all_urls() or "") <= _C_MIN_URL_LENGTH:
             rs.append(ErrorCodeSUS.SUS_1007, SeverityEnum.E_ERROR)
             return
         count = provider.count_urls()
