@@ -18,17 +18,19 @@ from shared.constants import (
     C_STR_ERROR_JS_EVALUATION,
 )
 
+from __src__.shared.enums import ExtractTextHtmlEnum
+
 _logger = logging.getLogger(__name__)
 
-_ELEMENT_EXTRACTORS: dict[str, Callable[[ElementHandle], str]] = {
-    "textContent": lambda el: (el.text_content() or "").strip(),
-    "outerHTML": lambda el: str(el.evaluate("el => el.outerHTML") or "").strip(),
-    "innerHTML": lambda el: el.inner_html().strip(),
-    "value": lambda el: el.input_value().strip(),
+_ELEMENT_EXTRACTORS: dict[ExtractTextHtmlEnum, Callable[[ElementHandle], str]] = {
+    ExtractTextHtmlEnum.E_TEXT_CONTENT: lambda el: (el.text_content() or "").strip(),
+    ExtractTextHtmlEnum.E_OUTER_HTML: lambda el: str(el.evaluate("el => el.outerHTML") or "").strip(),
+    ExtractTextHtmlEnum.E_INNER_HTML: lambda el: el.inner_html().strip(),
+    ExtractTextHtmlEnum.E_INPUT_VALUE: lambda el: el.input_value().strip(),
 }
 
 
-def extract_from_element(element: ElementHandle, mode: str) -> str:
+def extract_from_element(element: ElementHandle, mode: ExtractTextHtmlEnum) -> str:
     """Reads a property from a Playwright ElementHandle.
 
     Args:

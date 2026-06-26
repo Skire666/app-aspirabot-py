@@ -17,6 +17,8 @@ from shared.i18n_fra import (
 )
 from view_models.folder_setup_view_model import FolderSetupViewModel
 
+from __src__.shared.app_global_state import MyEntry
+
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
@@ -65,45 +67,27 @@ class FolderSetupView(tk.Toplevel):
         frame = ttk.Frame(self, padding=20)
         frame.pack(fill="both", expand=True)
 
-        ttk.Label(
-            frame,
-            text=C_FOLDER_SETUP_DESCRIPTION,
-            wraplength=420,
-            justify="left",
-        ).pack(anchor="w", pady=(0, 12))
+        ttk.Label(frame, text=C_FOLDER_SETUP_DESCRIPTION, wraplength=420, justify="left").pack(anchor="w", pady=(0, 12))
 
         ttk.Label(frame, text=C_FOLDER_SETUP_PATH_LABEL).pack(anchor="w")
 
         path_row = ttk.Frame(frame)
         path_row.pack(fill="x", pady=(4, 0))
-        ttk.Entry(path_row, textvariable=self._vm.path_var, width=46).pack(
-            side="left", fill="x", expand=True
-        )
-        ttk.Button(path_row, text=C_FOLDER_SETUP_BROWSE_BTN, command=self._on_browse).pack(
-            side="left", padx=(6, 0)
-        )
+        MyEntry(path_row, textvariable=self._vm.path_var, width=46).pack_left(fill="x", expand=True)
+        ttk.Button(path_row, text=C_FOLDER_SETUP_BROWSE_BTN, command=self._on_browse).pack(side="left", padx=(6, 0))
 
-        ttk.Label(frame, textvariable=self._vm.error_var, foreground="red").pack(
-            anchor="w", pady=(6, 0)
-        )
+        ttk.Label(frame, textvariable=self._vm.error_var, foreground="red").pack(anchor="w", pady=(6, 0))
 
         btn_row = ttk.Frame(frame)
         btn_row.pack(fill="x", pady=(16, 0))
-        ttk.Button(btn_row, text=C_FOLDER_SETUP_CANCEL_BTN, command=self._vm.cancel).pack(
-            side="right", padx=(6, 0)
-        )
-        self._confirm_btn = ttk.Button(
-            btn_row, text=C_FOLDER_SETUP_CONFIRM_BTN, command=self._vm.confirm
-        )
+        ttk.Button(btn_row, text=C_FOLDER_SETUP_CANCEL_BTN, command=self._vm.cancel).pack(side="right", padx=(6, 0))
+        self._confirm_btn = ttk.Button(btn_row, text=C_FOLDER_SETUP_CONFIRM_BTN, command=self._vm.confirm)
         self._confirm_btn.pack(side="right")
 
         # Mirror can_confirm_var onto the confirm button's enabled state.
         self._sync_confirm_state()
         self._view_traces.append(
-            (
-                self._vm.can_confirm_var,
-                self._vm.can_confirm_var.trace_add("write", self._on_can_confirm_changed),
-            )
+            (self._vm.can_confirm_var, self._vm.can_confirm_var.trace_add("write", self._on_can_confirm_changed))
         )
 
     # ------------------------------------------------------------------

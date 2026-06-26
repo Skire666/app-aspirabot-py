@@ -60,7 +60,6 @@ class ProfilesViewModel(ViewModelBase):
         """Replace the profile list and increment the version trigger.
 
         Args:
-            folder_path: Path to the profiles folder (shown in the folder link).
             profiles: New ordered list of profile row dicts for the DataGrid.
         """
         self._profiles = list(profiles)

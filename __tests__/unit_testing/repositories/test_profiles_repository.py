@@ -264,30 +264,6 @@ class TestReadScenario:
 
 
 # ---------------------------------------------------------------------------
-# create_folder_profiles_if_missing
-# ---------------------------------------------------------------------------
-
-
-class TestCreateFolderIfMissing:
-    def test_creates_folder_when_absent(self, tmp_path: Path) -> None:
-        new_folder = tmp_path / "new"
-        repo = _make_repo(new_folder)
-        repo.create_folder_profiles_if_missing()
-        assert new_folder.exists()
-
-
-# ---------------------------------------------------------------------------
-# get_path_profiles_folder
-# ---------------------------------------------------------------------------
-
-
-class TestGetPathProfilesFolder:
-    def test_returns_configured_path(self, tmp_path: Path) -> None:
-        repo = _make_repo(tmp_path)
-        assert repo.get_path_profiles_folder() == tmp_path
-
-
-# ---------------------------------------------------------------------------
 # open_profiles_folder / open_export_folder
 # ---------------------------------------------------------------------------
 

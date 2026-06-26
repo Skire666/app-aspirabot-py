@@ -31,8 +31,8 @@ def _build(data: dict[str, Any]) -> ExtractTextsParams:
     """
     return ExtractTextsParams(
         selector=data.get("selector", ""),
-        extract_mode=data.get("extract_mode", ExtractTextHtmlEnum.E_INNER_TEXT.value),
-        target=data.get("target", ExtractTargetEnum.E_ALL.value),
+        extract_mode=data.get("extract_mode", ExtractTextHtmlEnum.E_INNER_TEXT),
+        target=data.get("target", ExtractTargetEnum.E_ALL),
         mapping=data.get("mapping", "urls"),
         comment=data.get("comment", ""),
     )

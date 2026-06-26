@@ -24,6 +24,15 @@ class ExtractTextsExecutor(IStepExecutor):
     """Executor for the extract text scraping step."""
 
     @classmethod
+    def _select_elements(cls, elements: list[ElementHandle], target: ExtractTargetEnum) -> list[ElementHandle]:
+        """Return the elements matching the extraction target."""
+        if target is ExtractTargetEnum.E_FIRST:
+            return [elements[0]]
+        if target is ExtractTargetEnum.E_LAST:
+            return [elements[-1]]
+        return elements  # all
+
+    @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type handled by this executor.
 
@@ -54,14 +63,7 @@ class ExtractTextsExecutor(IStepExecutor):
                 context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
                 return StepExecutionResultEnum.E_ERROR
 
-            # okay ?
-            selected: list[ElementHandle] = (
-                [elements[0]]
-                if p.target == ExtractTargetEnum.E_FIRST
-                else [elements[-1]]
-                if p.target == ExtractTargetEnum.E_LAST
-                else elements  # all
-            )
+            selected: list[ElementHandle] = self._select_elements(elements, p.target)
             texts = [extract_from_element(el, p.extract_mode) for el in selected]
             context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
 

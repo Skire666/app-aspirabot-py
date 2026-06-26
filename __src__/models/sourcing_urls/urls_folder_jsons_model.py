@@ -39,9 +39,9 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         self,
         folder_json: str,
         orders_json: str,
-        url_regexp: str,
         date_modified_start: RelativeDateEnum,
         date_modified_end: RelativeDateEnum,
+        url_regexp: str = "http*",
     ) -> None:
         """Initialize the model with optional folder path and sort order.
 

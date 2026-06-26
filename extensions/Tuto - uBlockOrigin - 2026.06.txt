@@ -1,0 +1,17 @@
+
+Pour télécharger :
+Aller sur https://github.com/uBlockOrigin/uBOL-home/releases
+
+Dérouler une release (ou une latest) :
+https://github.com/uBlockOrigin/uBOL-home/releases/latest
+
+cSe renre en bas du cadre, Cliquer sur "Assets" pour dérouler.
+Prendre un des zip chromium :
+uBOLite_2026.625.1633.chromium.zip
+
+Dézipper. Veiller à ce que le manifeste soit dans :
+extensions/uBlock0_chromium/manifest.json
+
+Lancer l'application :
+Si erreur lors du scraping avec l'extension, va mettre un warning.
+Sinon se lance et charge bien le module (plugin visible dans chrome)

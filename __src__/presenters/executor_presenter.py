@@ -494,11 +494,6 @@ class ExecutorPresenter:
         self._current_profile.urls_folder_jsons.date_modified_end = RelativeDateEnum.view_to_enum(
             self._vm.json_date_modified_end_var.get()
         )
-        print(
-            "2222",
-            self._current_profile.urls_folder_jsons.date_modified_start,
-            self._current_profile.urls_folder_jsons.date_modified_end,
-        )
 
         # calc entries
         self._current_profile.urls_discover_entries = self._url_config_presenter.get_current_discovers_hub()

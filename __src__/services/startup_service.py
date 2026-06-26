@@ -102,6 +102,7 @@ class StartupService:
             raise FailedToCreateRequiredDirectoriesDuringRuntimeError() from exc
 
     def create_default_profiles_for_scenarios_if_missing(self) -> None:
+        """Create default profiles for each scenario folder if the profile file is missing or empty."""
         if self._config_model is None:
             raise ConfigurationNotLoadedError("create_default_profiles_for_scenarios_if_missing()")
 

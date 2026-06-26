@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from unittest.mock import MagicMock, call
-
-import pytest
+from unittest.mock import MagicMock
 
 from models.launcher_model import LaunchModel
 from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
 from repositories.profiles_repository import ProfilesRepository
 from services.profiles_service import ProfilesService
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -241,11 +237,6 @@ class TestGetScenarioName:
         assert svc.get_scenario_name(scenario.id_file) == "Test Scenario"
 
 
-# ---------------------------------------------------------------------------
-# open_profiles_folder / open_export_folder / get_path_profiles_folder
-# ---------------------------------------------------------------------------
-
-
 class TestFolderOperations:
     def test_open_profiles_folder_delegates(self) -> None:
         repo = _make_repo()
@@ -258,10 +249,3 @@ class TestFolderOperations:
         svc = _make_service(repo)
         svc.open_export_folder("/some/path")
         repo.open_export_folder.assert_called_once_with("/some/path")
-
-    def test_get_path_profiles_folder_delegates(self) -> None:
-        repo = _make_repo()
-        repo.get_path_profiles_folder.return_value = Path("/some/path")
-        svc = _make_service(repo)
-        result = svc.get_path_profiles_folder()
-        assert result == Path("/some/path")

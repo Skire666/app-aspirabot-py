@@ -16,8 +16,8 @@ from shared.i18n_fra import ERROR_TEMPLATES
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
-_ALLOWED_MODES = frozenset({e.value for e in ExtractTextHtmlEnum})
-_ALLOWED_TARGETS = frozenset({e.value for e in ExtractTargetEnum})
+_ALLOWED_MODES = frozenset(set(ExtractTextHtmlEnum))
+_ALLOWED_TARGETS = frozenset(set(ExtractTargetEnum))
 
 
 class ExtractTextsParams(BaseModel):
@@ -26,8 +26,8 @@ class ExtractTextsParams(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     selector: str
-    extract_mode: str
-    target: str
+    extract_mode: ExtractTextHtmlEnum
+    target: ExtractTargetEnum
     mapping: str
     comment: str = ""
 
@@ -53,7 +53,7 @@ class ExtractTextsParams(BaseModel):
 
     @field_validator("extract_mode")
     @classmethod
-    def check_extract_mode(cls, v: str, info: ValidationInfo) -> str:
+    def check_extract_mode(cls, v: ExtractTextHtmlEnum, info: ValidationInfo) -> ExtractTextHtmlEnum:
         """Validate that extract_mode is a recognised value."""
         if not info.context:
             return v
@@ -65,7 +65,7 @@ class ExtractTextsParams(BaseModel):
 
     @field_validator("target")
     @classmethod
-    def check_target(cls, v: str, info: ValidationInfo) -> str:
+    def check_target(cls, v: ExtractTargetEnum, info: ValidationInfo) -> ExtractTargetEnum:
         """Validate that target is a recognised value."""
         if not info.context:
             return v

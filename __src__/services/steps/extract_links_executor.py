@@ -67,7 +67,7 @@ class ExtractLinksExecutor(IStepExecutor):
             return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
-    def _select_elements(elements: list[ElementHandle], target: str) -> list[ElementHandle]:
+    def _select_elements(elements: list[ElementHandle], target: ExtractTargetEnum) -> list[ElementHandle]:
         """Return the subset of elements based on the target filter.
 
         Args:
@@ -77,9 +77,9 @@ class ExtractLinksExecutor(IStepExecutor):
         Returns:
             A list containing the selected element(s).
         """
-        if target == ExtractTargetEnum.E_FIRST:
+        if target is ExtractTargetEnum.E_FIRST:
             return [elements[0]]
-        if target == ExtractTargetEnum.E_LAST:
+        if target is ExtractTargetEnum.E_LAST:
             return [elements[-1]]
         return elements
 

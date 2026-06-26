@@ -308,8 +308,7 @@ class UrlConfigView(ttk.Frame):
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
-        MyLabel(row, text="             ").pack_left()  # Fleme d'aligner proprement
-        MyLabel(row, text="Filtrer URLs (regexp) :").pack_left()
+        MyLabel(row, text="             Filtrer URLs (regexp) :").pack_left()
         MyEntry(row, textvariable=self._vm.url_regexp_jsons_var).pack_right(expand=True, fill=tk.X)
         self._view_traces.append(
             (

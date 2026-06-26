@@ -193,6 +193,8 @@ ruff check --fix ./__src__/
 ruff format ./__src__/
 ```
 
+
+
 ### Basedpyright — static type checking
 
 ```bash

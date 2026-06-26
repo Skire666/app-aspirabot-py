@@ -8,6 +8,7 @@ import tkinter as tk
 from collections.abc import Callable
 
 from shared.exception_util import CallbackNotDefinedError
+
 from view_models.view_model_base import ViewModelBase
 
 # -----------------------------------------------------------------------------

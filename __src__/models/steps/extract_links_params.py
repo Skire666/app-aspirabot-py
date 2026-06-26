@@ -25,7 +25,7 @@ class ExtractLinksParams(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     selector: str
-    target: str
+    target: ExtractTargetEnum
     mapping: str
     cutted_ampersand: bool
     comment: str = ""
