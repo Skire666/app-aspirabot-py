@@ -1,4 +1,6 @@
 
+Le store google marche pas pour installer UBO dasn un chrome de tests.
+
 Pour télécharger :
 Aller sur https://github.com/uBlockOrigin/uBOL-home/releases
 
