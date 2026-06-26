@@ -191,6 +191,9 @@ ruff check --fix ./__src__/
 
 # Format code
 ruff format ./__src__/
+
+# custom
+python ./__tools__/furripe.py
 ```
 
 

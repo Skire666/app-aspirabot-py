@@ -86,7 +86,8 @@ class ScenariosRepository:
         """
         return ScenarioModel.import_from_data_json(data)
 
-    def exists_scenario(self, id_file: str) -> bool:
+    @staticmethod
+    def exists_scenario(id_file: str) -> bool:
         """Returns True if a scenario file exists for the given identifier.
 
         Args:

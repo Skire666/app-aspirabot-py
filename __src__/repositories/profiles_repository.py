@@ -27,6 +27,8 @@ from shared.exception_util import (
 )
 from shared.operating_system_util import open_folder
 
+from __src__.shared.path_util import make_all_folders_if_not_exists
+
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
@@ -79,7 +81,8 @@ class ProfilesRepository:
             return list(self._folder_path.rglob(C_PROFILE_FILE))
         return []
 
-    def exists_scenarios(self, id_scenario: str) -> bool:
+    @staticmethod
+    def exists_scenarios(id_scenario: str) -> bool:
         """Returns True if a profile file exists for the given identifier.
 
         Args:
@@ -101,7 +104,7 @@ class ProfilesRepository:
             OSError: When the file cannot be written.
         """
         full_filepath = AppConfigurationModel().get_instance().compute_fullpath_profile(profiles.id_scenario)
-        self.create_folder_profiles_if_missing()
+        make_all_folders_if_not_exists(full_filepath, is_file_path=True)
 
         try:
             provider_dict = profiles.export_to_data_json()
@@ -173,7 +176,7 @@ class ProfilesRepository:
             OSError: When the file cannot be written.
         """
         full_filepath = AppConfigurationModel().get_instance().compute_fullpath_profile(profiles.id_scenario)
-        self.create_folder_profiles_if_missing()
+        make_all_folders_if_not_exists(full_filepath, is_file_path=True)
 
         try:
             scenario_dict = profiles.export_to_data_json()
@@ -193,10 +196,8 @@ class ProfilesRepository:
             ProfileNotFoundError: When no matching file exists.
             OSError: When the file cannot be deleted.
         """
-        self._logger.debug("Suppression des profils pour le scénario id=%s", id_scenario)
-        self.create_folder_profiles_if_missing()
-
         full_pathfile_to_delete = AppConfigurationModel().get_instance().compute_fullpath_profile(id_scenario)
+        make_all_folders_if_not_exists(full_pathfile_to_delete, is_file_path=True)
 
         if not full_pathfile_to_delete.exists():
             raise ProfileNotFoundError(id_scenario, context="suppression")
@@ -224,12 +225,6 @@ class ProfilesRepository:
     # trivial operations
     # -------------------------------------------------------------------------
 
-    def create_folder_profiles_if_missing(self) -> None:
-        """Creates the profiles folder if it does not already exist."""
-        if not self._folder_path.exists():
-            Path(self._folder_path).mkdir(exist_ok=True, parents=True)
-            self._logger.debug("Dossier créé : %s", self._folder_path)
-
     def open_export_folder(self, folder_path: str | Path) -> None:
         """Opens an export folder in the OS file explorer, creating it if needed.
 
@@ -256,7 +251,7 @@ class ProfilesRepository:
         """
         self._logger.debug("Ouverture du dossier des profils : %s", self._folder_path)
 
-        self.create_folder_profiles_if_missing()
+        make_all_folders_if_not_exists(self._folder_path, is_file_path=False)
 
         if not self._folder_path.is_dir():
             raise InvalidProfilesFolderPathError(self._folder_path)
