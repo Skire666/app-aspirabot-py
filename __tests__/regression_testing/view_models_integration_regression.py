@@ -254,7 +254,6 @@ def profiles_vm(tk_root: tk.Tk) -> ProfilesViewModel:
 
 
 class TestProfilesViewModelIntegration:
-
     def test_bind_refresh_and_dispatch(self, profiles_vm: ProfilesViewModel) -> None:
         calls: list[bool] = []
         profiles_vm.bind_refresh(lambda: calls.append(True))
@@ -300,10 +299,6 @@ def scenarios_vm(tk_root: tk.Tk) -> ScenariosViewModel:
 
 
 class TestScenariosViewModelIntegration:
-    def test_validation_vars_initial_state(self, scenarios_vm: ScenariosViewModel) -> None:
-        assert scenarios_vm.is_validation_running_var.get() is False
-        assert scenarios_vm.validation_status_text_var.get() == ""
-
     def test_bind_create_and_dispatch(self, scenarios_vm: ScenariosViewModel) -> None:
         calls: list[bool] = []
         scenarios_vm.bind_create(lambda: calls.append(True))
@@ -438,9 +433,7 @@ class TestScrapingViewModelDerivedState:
     def test_launch_btn_disabled_when_running(self, scraping_vm: ScrapingViewModel) -> None:
         scraping_vm.has_context_var.set(True)
         scraping_vm.is_running_var.set(True)
-        assert scraping_vm.is_launch_btn_enabled_var.get() is False, (
-            "Launch button must be disabled while running"
-        )
+        assert scraping_vm.is_launch_btn_enabled_var.get() is False, "Launch button must be disabled while running"
 
     def test_cancel_btn_enabled_when_running(self, scraping_vm: ScrapingViewModel) -> None:
         scraping_vm.is_running_var.set(True)
@@ -582,9 +575,7 @@ class TestWorkflowViewModelFormState:
 
 class TestWorkflowFormViewState:
     def test_snapshot_is_frozen(self) -> None:
-        snapshot = WorkflowFormViewState(
-            id_file="abc", scenario_name="Name", scenario_desc="Desc", is_dirty=False
-        )
+        snapshot = WorkflowFormViewState(id_file="abc", scenario_name="Name", scenario_desc="Desc", is_dirty=False)
         with pytest.raises((AttributeError, TypeError)):
             snapshot.id_file = "new"  # type: ignore[misc]
 

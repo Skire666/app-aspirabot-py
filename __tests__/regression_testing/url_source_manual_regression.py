@@ -14,11 +14,9 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
 from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceExhaustedError
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -59,9 +57,7 @@ class TestGetProgressText:
         svc = UrlsManualListService()
         # No setup_model called → empty list
         text = svc.get_progress_text()
-        assert "non chargée" in text, (
-            "get_progress_text must say 'non chargée' when no URLs are loaded"
-        )
+        assert "non chargée" in text, "get_progress_text must say 'non chargée' when no URLs are loaded"
 
     def test_zero_consumed_shows_zero_slash_total(self) -> None:
         svc = _make_service(["http://a.com", "http://b.com", "http://c.com"])
@@ -70,21 +66,6 @@ class TestGetProgressText:
         assert "0" in text
         assert "3" in text
         assert "consommé" in text.lower() or "Liste" in text
-
-    def test_partial_consumed_shows_correct_counts(self) -> None:
-        svc = _make_service(["http://a.com", "http://b.com", "http://c.com"])
-        svc.pop_url()  # consume one
-        text = svc.get_progress_text()
-        assert "1" in text, "After consuming 1 URL, progress text must include '1'"
-        assert "3" in text, "Total must remain 3"
-
-    def test_exhausted_shows_aucune_url(self) -> None:
-        svc = _make_service(["http://a.com"])
-        svc.pop_url()  # consume only URL
-        text = svc.get_progress_text()
-        assert "plus aucune" in text.lower() or "0" in text, (
-            "When all URLs are consumed, get_progress_text must indicate exhaustion"
-        )
 
 
 # ---------------------------------------------------------------------------

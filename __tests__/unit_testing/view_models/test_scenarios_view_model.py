@@ -6,7 +6,6 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
-
 from shared.exception_util import CallbackNotDefinedError
 from view_models.scenarios_view_model import ScenariosViewModel
 
@@ -22,9 +21,6 @@ class TestInit:
 
     def test_version_starts_at_zero(self, vm: ScenariosViewModel) -> None:
         assert vm.scenarios_version_var.get() == 0
-
-    def test_validation_running_false(self, vm: ScenariosViewModel) -> None:
-        assert vm.is_validation_running_var.get() is False
 
 
 class TestSetGetScenarios:

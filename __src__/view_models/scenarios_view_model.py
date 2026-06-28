@@ -38,7 +38,6 @@ class ScenariosViewModel(ViewModelBase):
         self.scenarios_version_var = tk.IntVar(master=master, value=0)
 
         # Validation state Vars — Presenter writes, View traces
-        self.is_validation_running_var = tk.BooleanVar(master=master, value=False)
         self.validation_status_text_var = tk.StringVar(master=master, value="")
 
         # Presenter callback slots
@@ -50,7 +49,6 @@ class ScenariosViewModel(ViewModelBase):
         self._on_duplicate: Callable[[str], None] | None = None
         self._on_launch: Callable[[str], None] | None = None
         self._on_delete: Callable[[str], None] | None = None
-        self._on_validate: Callable[[], None] | None = None
         self._on_show_warning: Callable[[str], None] | None = None
         self._on_show_error: Callable[[str], None] | None = None
 
@@ -158,16 +156,6 @@ class ScenariosViewModel(ViewModelBase):
         if self._on_delete is not None:
             raise CallbackNotDefinedError()
         self._on_delete = cb
-
-    def bind_validate(self, cb: Callable[[], None]) -> None:
-        """Register the handler invoked when the user clicks Valider les scénarios.
-
-        Raises:
-            AspirabotBaseError: If the hook is already bound.
-        """
-        if self._on_validate is not None:
-            raise CallbackNotDefinedError()
-        self._on_validate = cb
 
     def bind_show_warning(self, cb: Callable[[str], None]) -> None:
         """Register the handler that displays a modal warning dialog.
@@ -288,16 +276,6 @@ class ScenariosViewModel(ViewModelBase):
         if self._on_delete is None:
             raise CallbackNotDefinedError()
         self._on_delete(id_file)
-
-    def validate(self) -> None:
-        """Dispatch a batch-validation request.
-
-        Raises:
-            AspirabotBaseError: If the hook is not bound.
-        """
-        if self._on_validate is None:
-            raise CallbackNotDefinedError()
-        self._on_validate()
 
     def show_warning(self, message: str) -> None:
         """Dispatch a warning dialog request.

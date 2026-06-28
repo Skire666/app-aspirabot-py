@@ -21,9 +21,8 @@ from shared.step_registry import register_step_executor
 # Constants
 # -----------------------------------------------------------------------------
 
-# TODO PCO est en dur, pas bien.
-# Faudrait le rendre flexible
-C_LIMIT_TIMEOUT_CLICK_MS = 10000
+# TODO PCO est en dur, pas bien. Faudrait le rendre flexible
+C_LIMIT_TIMEOUT_CLICK_MS = 15000
 
 # -----------------------------------------------------------------------------
 # Class

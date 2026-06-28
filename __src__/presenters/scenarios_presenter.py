@@ -78,7 +78,7 @@ class ScenariosPresenter:
         self._vm.bind_duplicate(self._on_duplicate_scenario)
         self._vm.bind_launch(self._on_launch_scenario)
         self._vm.bind_delete(self._on_delete_scenario)
-        self._vm.bind_validate(self._on_validate_scenarios)
+        self._vm.bind_validate(self._on_validate_scenarios)  # TODO PCO
 
     def _load_scenarios(self) -> None:
         """Fetch all scenarios from the service, sort them, and refresh the view."""
@@ -189,16 +189,6 @@ class ScenariosPresenter:
 
     def _on_refresh(self) -> None:
         self._load_scenarios()
-
-    def _on_validate_scenarios(self) -> None:
-        """Trigger batch validation of all loaded scenarios.
-
-        Not yet implemented — raises ``NotImplementedError`` until the feature
-        is built out in a future iteration.
-        """
-        self._vm.is_validation_running_var.set(True)
-        self._vm.validation_status_text_var.set("TODO A CODER")
-        raise NotImplementedError("La validation des scénarios n'est pas encore implémentée.")
 
     def _on_sort(self, column: str, ascending: bool) -> None:
         self._current_sort_column = column

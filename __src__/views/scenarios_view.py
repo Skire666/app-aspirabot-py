@@ -69,9 +69,6 @@ class ScenariosView(ttk.Frame):
         self._btn_create = MyButton(top_frame, text="Créer un scénario", command=lambda: self._vm.create())
         self._btn_create.pack_left()
 
-        self._btn_validate = MyButton(top_frame, text="Valider les scénarios", command=lambda: self._vm.validate())
-        self._btn_validate.pack_left()
-
     def _create_grid_widgets(self) -> None:
         """Constructs the scenario list DataGrid."""
         top_frame = HorizontalLineFrame(self, text="Liste des scénarios")
@@ -99,12 +96,6 @@ class ScenariosView(ttk.Frame):
         self._view_traces.append(
             (self._vm.scenarios_version_var, self._vm.scenarios_version_var.trace_add("write", self._sync_scenarios))
         )
-        self._view_traces.append(
-            (
-                self._vm.is_validation_running_var,
-                self._vm.is_validation_running_var.trace_add("write", self._sync_validation_state),
-            )
-        )
 
     def teardown(self) -> None:
         """Detach all view-owned VM traces and dispose the ViewModel."""
@@ -118,14 +109,6 @@ class ScenariosView(ttk.Frame):
         scenarios = self._vm.get_scenarios()
 
         self.grid.render_data(scenarios)
-
-    def _sync_validation_state(self, *_: object) -> None:
-        """Mirror is_validation_running_var onto the validate button state."""
-        if self._vm.is_validation_running_var.get():
-            self._btn_validate.config(state=tk.DISABLED)
-            self.update_idletasks()
-        else:
-            self._btn_validate.config(state=tk.NORMAL)
 
     def _on_action(self, action_id: str, bound: object) -> None:
         """Forward DataGrid action events to the ViewModel via grid_action.
