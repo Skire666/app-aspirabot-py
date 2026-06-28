@@ -34,13 +34,13 @@ class TestInit:
         svc = UrlsManualListService()
         assert svc.count_urls() == 0
 
-    def test_loads_urls_returns_false_initially(self) -> None:
+    def test_is_ready_false_initially(self) -> None:
         svc = UrlsManualListService()
-        assert svc.loads_urls() is False
+        assert svc.is_ready_to_consum_urls() is False
 
-    def test_preview_next_url_returns_none_initially(self) -> None:
+    def test_read_current_url_returns_none_initially(self) -> None:
         svc = UrlsManualListService()
-        assert svc.preview_next_url() is None
+        assert svc.read_current_url() is None
 
 
 # ---------------------------------------------------------------------------
@@ -61,9 +61,9 @@ class TestSetupModel:
         model = MagicMock(spec=UrlsManualListModel)
         model.get_urls.return_value = ["https://a.com"]
         svc.setup_model(model)
-        svc.pop_url()
+        svc.load_next_url()
         svc.setup_model(model)
-        assert svc.preview_next_url() == "https://a.com"
+        assert svc.read_current_url() == "https://a.com"
 
     def test_wrong_type_raises(self) -> None:
         svc = UrlsManualListService()
@@ -76,15 +76,14 @@ class TestSetupModel:
 # ---------------------------------------------------------------------------
 
 
-class TestLoadsUrls:
+class TestIsReadyToConsumUrls:
     def test_returns_true_with_remaining_urls(self) -> None:
         svc = _make_loaded_service(["https://a.com"])
-        assert svc.loads_urls() is True
+        assert svc.is_ready_to_consum_urls() is True
 
-    def test_returns_false_after_exhaustion(self) -> None:
-        svc = _make_loaded_service(["https://a.com"])
-        svc.pop_url()
-        assert svc.loads_urls() is False
+    def test_returns_false_when_not_loaded(self) -> None:
+        svc = UrlsManualListService()
+        assert svc.is_ready_to_consum_urls() is False
 
 
 # ---------------------------------------------------------------------------
@@ -92,16 +91,16 @@ class TestLoadsUrls:
 # ---------------------------------------------------------------------------
 
 
-class TestPreviewNextUrl:
+class TestReadCurrentUrl:
     def test_returns_first_url_without_advancing(self) -> None:
         svc = _make_loaded_service(["https://a.com", "https://b.com"])
-        assert svc.preview_next_url() == "https://a.com"
-        assert svc.preview_next_url() == "https://a.com"
+        assert svc.read_current_url() == "https://a.com"
+        assert svc.read_current_url() == "https://a.com"
 
     def test_returns_none_after_exhaustion(self) -> None:
         svc = _make_loaded_service(["https://a.com"])
-        svc.pop_url()
-        assert svc.preview_next_url() is None
+        svc.load_next_url()
+        assert svc.read_current_url() is None
 
 
 # ---------------------------------------------------------------------------
@@ -109,22 +108,22 @@ class TestPreviewNextUrl:
 # ---------------------------------------------------------------------------
 
 
-class TestPopUrl:
-    def test_returns_url_and_advances_index(self) -> None:
+class TestLoadNextUrl:
+    def test_advances_index_and_url_changes(self) -> None:
         svc = _make_loaded_service(["https://a.com", "https://b.com"])
-        assert svc.pop_url() == "https://a.com"
-        assert svc.pop_url() == "https://b.com"
+        assert svc.read_current_url() == "https://a.com"
+        svc.load_next_url()
+        assert svc.read_current_url() == "https://b.com"
 
-    def test_raises_when_empty(self) -> None:
+    def test_raises_when_not_ready(self) -> None:
         svc = UrlsManualListService()
         with pytest.raises(UrlSourceExhaustedError):
-            svc.pop_url()
+            svc.load_next_url()
 
-    def test_raises_when_exhausted(self) -> None:
+    def test_returns_none_after_all_consumed(self) -> None:
         svc = _make_loaded_service(["https://a.com"])
-        svc.pop_url()
-        with pytest.raises(UrlSourceExhaustedError):
-            svc.pop_url()
+        svc.load_next_url()
+        assert svc.read_current_url() is None
 
 
 # ---------------------------------------------------------------------------
@@ -135,9 +134,9 @@ class TestPopUrl:
 class TestReset:
     def test_rewinds_cursor_to_start(self) -> None:
         svc = _make_loaded_service(["https://a.com", "https://b.com"])
-        svc.pop_url()
+        svc.load_next_url()
         svc.reset()
-        assert svc.preview_next_url() == "https://a.com"
+        assert svc.read_current_url() == "https://a.com"
 
 
 # ---------------------------------------------------------------------------
@@ -187,14 +186,14 @@ class TestGetProgressText:
         assert "0" in text
         assert "2" in text
 
-    def test_after_pop_shows_consumed_count(self) -> None:
+    def test_after_advance_shows_consumed_count(self) -> None:
         svc = _make_loaded_service(["https://a.com", "https://b.com"])
-        svc.pop_url()
+        svc.load_next_url()
         text = svc.get_progress_text()
         assert "1" in text
 
     def test_fully_consumed_returns_aucune_url(self) -> None:
         svc = _make_loaded_service(["https://a.com"])
-        svc.pop_url()
+        svc.load_next_url()
         text = svc.get_progress_text()
         assert "aucune" in text.lower()

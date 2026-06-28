@@ -605,11 +605,6 @@ class TestScenariosViewModelCoverageGap:
         with pytest.raises(CallbackNotDefinedError):
             sc_vm.bind_delete(lambda _: None)
 
-    def test_duplicate_bind_validate_raises(self, sc_vm: ScenariosViewModel) -> None:
-        sc_vm.bind_validate(lambda: None)
-        with pytest.raises(CallbackNotDefinedError):
-            sc_vm.bind_validate(lambda: None)
-
     def test_unbound_edit_raises(self, sc_vm: ScenariosViewModel) -> None:
         with pytest.raises(CallbackNotDefinedError):
             sc_vm.edit("abc123")
@@ -626,9 +621,6 @@ class TestScenariosViewModelCoverageGap:
         with pytest.raises(CallbackNotDefinedError):
             sc_vm.delete("abc123")
 
-    def test_unbound_validate_raises(self, sc_vm: ScenariosViewModel) -> None:
-        with pytest.raises(CallbackNotDefinedError):
-            sc_vm.validate()
 
 
 # ===========================================================================

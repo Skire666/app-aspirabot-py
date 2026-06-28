@@ -98,7 +98,7 @@ class TestRefreshPreviewForProfile:
         presenter.refresh_preview_for_profile(profile)
 
         provider.setup_model.assert_called_once()
-        provider.loads_urls.assert_called_once()
+        provider.is_ready_to_consum_urls.assert_called_once()
         vm.set_url_preview_shortcuts.assert_called_once_with(["https://a.com"])
 
     def test_folder_jsons_calls_provider(self) -> None:
@@ -140,7 +140,7 @@ class TestRefreshPreviewForProfile:
         )
 
         provider = MagicMock()
-        provider.loads_urls.side_effect = RuntimeError("failed")
+        provider.is_ready_to_consum_urls.side_effect = RuntimeError("failed")
         sourcing.get_provider_folder_racs.return_value = provider
 
         presenter.refresh_preview_for_profile(profile)  # must not raise

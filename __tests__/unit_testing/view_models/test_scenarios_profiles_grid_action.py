@@ -22,18 +22,6 @@ def pvm(tk_root: tk.Tk) -> ProfilesViewModel:
     return ProfilesViewModel(master=tk_root)
 
 
-class TestScenariosViewModelValidate:
-    def test_validate_dispatches(self, svm: ScenariosViewModel) -> None:
-        cb = MagicMock()
-        svm.bind_validate(cb)
-        svm.validate()
-        cb.assert_called_once()
-
-    def test_validate_without_callback_raises(self, svm: ScenariosViewModel) -> None:
-        with pytest.raises(CallbackNotDefinedError):
-            svm.validate()
-
-
 class TestScenariosViewModelGridAction:
     def test_grid_action_launch(self, svm: ScenariosViewModel) -> None:
         cb = MagicMock()

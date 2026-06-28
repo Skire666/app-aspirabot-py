@@ -59,7 +59,7 @@ class TestSetupModel:
     def test_setup_resets_discovery(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         svc._file_paths = [tmp_path]
         svc.setup_model(_make_model(str(tmp_path)))
-        assert svc._file_paths is None
+        assert svc._file_paths != [tmp_path]
 
 
 # ---------------------------------------------------------------------------
@@ -67,20 +67,19 @@ class TestSetupModel:
 # ---------------------------------------------------------------------------
 
 
-class TestLoadsUrls:
+class TestIsReadyToConsumUrls:
     def test_returns_false_when_folder_empty(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         svc.setup_model(_make_model(str(tmp_path)))
-        assert svc.loads_urls() is False
+        assert svc.is_ready_to_consum_urls() is False
 
     def test_returns_true_when_url_file_present(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         _write_url_file(tmp_path / "site.url", "https://example.com")
         svc.setup_model(_make_model(str(tmp_path)))
-        assert svc.loads_urls() is True
+        assert svc.is_ready_to_consum_urls() is True
 
     def test_raises_when_folder_not_found(self, svc: UrlsFolderRacsService) -> None:
-        svc.setup_model(_make_model("/nonexistent/path/xyz"))
         with pytest.raises(UrlSourceFileNotFoundError):
-            svc.loads_urls()
+            svc.setup_model(_make_model("/nonexistent/path/xyz"))
 
 
 # ---------------------------------------------------------------------------
@@ -88,16 +87,16 @@ class TestLoadsUrls:
 # ---------------------------------------------------------------------------
 
 
-class TestPreviewNextUrl:
-    def test_returns_none_when_buffer_empty(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
+class TestReadCurrentUrl:
+    def test_raises_when_folder_empty(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         svc.setup_model(_make_model(str(tmp_path)))
-        assert svc.preview_next_url() is None
+        with pytest.raises(IndexError):
+            svc.read_current_url()
 
-    def test_returns_url_after_loads(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
+    def test_returns_url_when_file_present(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         _write_url_file(tmp_path / "site.url", "https://example.com")
         svc.setup_model(_make_model(str(tmp_path)))
-        svc.loads_urls()
-        assert svc.preview_next_url() == "https://example.com"
+        assert svc.read_current_url() == "https://example.com"
 
 
 # ---------------------------------------------------------------------------
@@ -105,27 +104,32 @@ class TestPreviewNextUrl:
 # ---------------------------------------------------------------------------
 
 
-class TestPopUrl:
-    def test_returns_url_and_advances(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
-        _write_url_file(tmp_path / "site.url", "https://example.com")
+class TestLoadNextUrl:
+    def test_advances_to_next_file(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
+        _write_url_file(tmp_path / "a.url", "https://a.com")
+        _write_url_file(tmp_path / "b.url", "https://b.com")
         svc.setup_model(_make_model(str(tmp_path)))
 
-        url = svc.pop_url()
-        assert url == "https://example.com"
+        first_url = svc.read_current_url()
+        svc.load_next_url()
+        second_url = svc.read_current_url()
+
+        assert first_url != second_url
+        assert first_url in ("https://a.com", "https://b.com")
+        assert second_url in ("https://a.com", "https://b.com")
 
     def test_raises_when_exhausted(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
-        svc.setup_model(_make_model(str(tmp_path)))
-        with pytest.raises(UrlSourceExhaustedError):
-            svc.pop_url()
-
-    def test_clears_buffer_after_pop(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         _write_url_file(tmp_path / "site.url", "https://example.com")
         svc.setup_model(_make_model(str(tmp_path)))
-        svc.loads_urls()
 
-        svc.pop_url()
+        svc.load_next_url()
 
-        assert svc.preview_next_url() is None
+        with pytest.raises(IndexError):
+            svc.read_current_url()
+
+    def test_not_ready_when_folder_empty(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
+        svc.setup_model(_make_model(str(tmp_path)))
+        assert svc.is_ready_to_consum_urls() is False
 
 
 # ---------------------------------------------------------------------------
@@ -138,10 +142,10 @@ class TestReset:
         _write_url_file(tmp_path / "a.url", "https://a.com")
         svc.setup_model(_make_model(str(tmp_path)))
 
-        svc.pop_url()  # consume
+        svc.load_next_url()  # consume
         svc.reset()
 
-        assert svc.loads_urls() is True
+        assert svc.is_ready_to_consum_urls() is True
 
 
 # ---------------------------------------------------------------------------
@@ -166,20 +170,14 @@ class TestPreviewAllUrls:
         assert "https://a.com" in result
         assert "https://b.com" in result
 
-    def test_returns_empty_when_folder_not_found(self, svc: UrlsFolderRacsService) -> None:
-        svc.setup_model(_make_model("/nonexistent/path/xyz"))
-        result = svc.preview_all_urls()
-        assert result == []
-
-    def test_includes_buffered_url_first(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
+    def test_current_url_matches_first_preview(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         _write_url_file(tmp_path / "a.url", "https://a.com")
         _write_url_file(tmp_path / "b.url", "https://b.com")
         svc.setup_model(_make_model(str(tmp_path)))
-        svc.loads_urls()  # buffers first URL
 
         result = svc.preview_all_urls()
-        # Buffered URL appears first in result
-        assert result[0] == svc.preview_next_url()
+        assert len(result) == 2
+        assert svc.read_current_url() in result
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +209,7 @@ class TestGetProgressText:
     def test_exhausted_returns_no_more_message(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         _write_url_file(tmp_path / "a.url", "https://a.com")
         svc.setup_model(_make_model(str(tmp_path)))
-        svc.pop_url()  # consume all
+        svc.load_next_url()  # consume all
 
         text = svc.get_progress_text()
         assert "plus aucune" in text
@@ -242,7 +240,8 @@ class TestDiscoverFiles:
         assert files[0].name == "b.url"
 
     def test_raises_when_folder_missing(self, svc: UrlsFolderRacsService) -> None:
-        svc.setup_model(_make_model("/nonexistent/xyz"))
+        svc._folder_path = "/nonexistent/xyz"
+        svc._sort_order = UrlSortOrderEnum.E_MTIME_ASC
         with pytest.raises(UrlSourceFileNotFoundError):
             svc._discover_files()
 
@@ -252,20 +251,14 @@ class TestDiscoverFiles:
 # ---------------------------------------------------------------------------
 
 
-class TestFillOneUrlIfEmpty:
-    def test_raises_when_not_discovered(self, svc: UrlsFolderRacsService) -> None:
-        with pytest.raises(UrlSourceFilesNotDiscoveredError):
-            svc._fill_one_url_if_empty()
+class TestIsReadyToConsumUrlsContract:
+    def test_raises_when_file_paths_not_discovered(self, svc: UrlsFolderRacsService) -> None:
+        with pytest.raises(AssertionError):
+            svc.is_ready_to_consum_urls()
 
-    def test_does_not_refill_when_buffer_present(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
-        _write_url_file(tmp_path / "a.url", "https://a.com")
-        svc.setup_model(_make_model(str(tmp_path)))
-        svc._file_paths = list(tmp_path.glob("*.url"))
-        svc._buffered = "https://cached.com"
-
-        svc._fill_one_url_if_empty()
-
-        assert svc._buffered == "https://cached.com"
+    def test_returns_false_when_no_files(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
+        svc._file_paths = []
+        assert svc.is_ready_to_consum_urls() is False
 
 
 # ---------------------------------------------------------------------------
@@ -278,16 +271,16 @@ class TestUpdateModifiedTime:
         with pytest.raises(UrlSourceFilesNotDiscoveredError):
             svc._update_modified_time_of_current_file()
 
-    def test_raises_when_index_zero(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
+    def test_raises_when_file_list_empty(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         svc._file_paths = []
         svc._index = 0
-        with pytest.raises(UrlSourceNoUrlBufferedError):
+        with pytest.raises(IndexError):
             svc._update_modified_time_of_current_file()
 
     def test_raises_when_file_not_on_disk(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
         ghost = tmp_path / "ghost.url"
         svc._file_paths = [ghost]
-        svc._index = 1  # points at ghost (index-1)
+        svc._index = 0  # points at ghost directly (0-based)
         with pytest.raises(UrlSourceFileNotFoundError):
             svc._update_modified_time_of_current_file()
 
@@ -295,7 +288,7 @@ class TestUpdateModifiedTime:
         f = tmp_path / "real.url"
         _write_url_file(f, "https://x.com")
         svc._file_paths = [f]
-        svc._index = 1
+        svc._index = 0  # 0-based index
 
         mtime_before = f.stat().st_mtime
         import time

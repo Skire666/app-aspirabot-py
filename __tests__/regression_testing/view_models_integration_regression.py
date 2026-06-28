@@ -311,12 +311,6 @@ class TestScenariosViewModelIntegration:
         scenarios_vm.launch("sc_ghi")
         assert received == ["sc_ghi"]
 
-    def test_bind_validate_and_dispatch(self, scenarios_vm: ScenariosViewModel) -> None:
-        calls: list[bool] = []
-        scenarios_vm.bind_validate(lambda: calls.append(True))
-        scenarios_vm.validate()
-        assert calls == [True]
-
     def test_bind_duplicate_and_dispatch(self, scenarios_vm: ScenariosViewModel) -> None:
         received: list[str] = []
         scenarios_vm.bind_duplicate(lambda s: received.append(s))

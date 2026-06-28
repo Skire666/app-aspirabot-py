@@ -64,17 +64,8 @@ def service() -> UrlsFolderJsonsService:
 class TestInit:
     def test_initial_state(self, service: UrlsFolderJsonsService) -> None:
         assert service._folder_path == ""
-        assert not service._is_loaded
+        assert not service._is_ready
         assert service.count_urls() == 0
-
-
-class TestClear:
-    def test_clear_resets_state(self, service: UrlsFolderJsonsService) -> None:
-        service._folder_path = "/some/path"
-        service._is_loaded = True
-        service.clear()
-        assert service._folder_path == ""
-        assert not service._is_loaded
 
 
 class TestGetProgressText:
@@ -86,7 +77,7 @@ class TestGetProgressText:
         service._file_paths = []
         service._urls = []
         service._index_url = 0
-        service._is_loaded = True
+        service._is_ready = True
         text = service.get_progress_text()
         assert "plus aucune URL" in text
 
@@ -94,7 +85,7 @@ class TestGetProgressText:
         service._file_paths = []
         service._urls = ["https://a.com", "https://b.com"]
         service._index_url = 1
-        service._is_loaded = True
+        service._is_ready = True
         text = service.get_progress_text()
         assert "1" in text
         assert "2" in text
@@ -109,62 +100,62 @@ class TestCountUrls:
         assert service.count_urls() == 3
 
 
-class TestPreviewNextUrl:
+class TestReadCurrentUrl:
     def test_returns_none_when_no_urls(self, service: UrlsFolderJsonsService) -> None:
-        assert service.preview_next_url() is None
-
-    def test_returns_next_url_when_available(self, service: UrlsFolderJsonsService) -> None:
-        service._urls = ["https://a.com"]
-        service._is_loaded = True
         service._index_url = 0
-        service._buffered = "https://a.com"
-        assert service.preview_next_url() == "https://a.com"
+        assert service.read_current_url() is None
+
+    def test_returns_current_url_when_available(self, service: UrlsFolderJsonsService) -> None:
+        service._urls = ["https://a.com"]
+        service._is_ready = True
+        service._index_url = 0
+        assert service.read_current_url() == "https://a.com"
 
 
-class TestPopUrl:
-    def test_raises_exhausted_when_empty(self, service: UrlsFolderJsonsService) -> None:
-        service._is_loaded = True
-        with pytest.raises(UrlSourceExhaustedError):
-            service.pop_url()
-
-    def test_returns_and_advances(self, service: UrlsFolderJsonsService) -> None:
+class TestLoadNextUrl:
+    def test_advances_index(self, service: UrlsFolderJsonsService) -> None:
         service._urls = ["https://a.com", "https://b.com"]
         service._index_url = 0
-        service._is_loaded = True
-        service._buffered = "https://a.com"
-        url = service.pop_url()
-        assert url == "https://a.com"
+        service._is_ready = True
+        service.load_next_url()
         assert service._index_url == 1
 
-    def test_buffered_advances_to_next(self, service: UrlsFolderJsonsService) -> None:
+    def test_current_url_changes_after_advance(self, service: UrlsFolderJsonsService) -> None:
         service._urls = ["https://a.com", "https://b.com"]
         service._index_url = 0
-        service._is_loaded = True
-        service._buffered = "https://a.com"
-        service.pop_url()
-        assert service._buffered == "https://b.com"
+        service._is_ready = True
+        assert service.read_current_url() == "https://a.com"
+        service.load_next_url()
+        assert service.read_current_url() == "https://b.com"
+
+    def test_returns_none_after_exhaustion(self, service: UrlsFolderJsonsService) -> None:
+        service._urls = ["https://a.com"]
+        service._index_url = 0
+        service._is_ready = True
+        service.load_next_url()
+        assert service.read_current_url() is None
 
 
 class TestReset:
     def test_reset_rewinds_index(self, service: UrlsFolderJsonsService) -> None:
+        service._index_url = 5
         service._urls = ["https://a.com"]
-        service._index_url = 1
-        service._is_loaded = True
-        service.reset()
+        with patch.object(service, "_discover_and_load"):
+            service.reset()
         assert service._index_url == 0
 
 
 class TestPreviewAllUrls:
     def test_returns_all_urls_when_loaded(self, service: UrlsFolderJsonsService) -> None:
         service._urls = ["https://a.com", "https://b.com"]
-        service._is_loaded = True
+        service._is_ready = True
         result = service.preview_all_urls()
         assert result == ["https://a.com", "https://b.com"]
 
-    def test_raises_when_not_loaded(self, service: UrlsFolderJsonsService) -> None:
-        service._is_loaded = False
-        with pytest.raises(AssertionError):
-            service.preview_all_urls()
+    def test_returns_empty_when_not_loaded(self, service: UrlsFolderJsonsService) -> None:
+        service._is_ready = False
+        result = service.preview_all_urls()
+        assert result == []
 
 
 class TestExtractUrlsFromFile:
@@ -204,21 +195,22 @@ class TestFilesAreLoaded:
         assert service._file_paths is not None
 
 
-class TestLoadsUrls:
-    def test_loads_and_buffers_first_url(self, tmp_path: Path, service: UrlsFolderJsonsService) -> None:
+class TestIsReadyToConsumUrls:
+    def test_loads_and_makes_first_url_available(self, tmp_path: Path, service: UrlsFolderJsonsService) -> None:
         (tmp_path / "test.json").write_text('{"url": "https://example.com"}')
         service._folder_path = str(tmp_path)
         service._compiled_regexp = re.compile(r"^https?")
-        result = service.loads_urls()
+        result = service.is_ready_to_consum_urls()
         assert result is True
-        assert service.preview_next_url() == "https://example.com"
+        assert service.read_current_url() == "https://example.com"
 
-    def test_returns_false_when_no_urls_found(self, tmp_path: Path, service: UrlsFolderJsonsService) -> None:
+    def test_returns_true_even_when_no_urls_found(self, tmp_path: Path, service: UrlsFolderJsonsService) -> None:
         (tmp_path / "test.json").write_text('{"key": "not_a_url"}')
         service._folder_path = str(tmp_path)
         service._compiled_regexp = re.compile(r"^https?")
-        result = service.loads_urls()
-        assert result is False
+        result = service.is_ready_to_consum_urls()
+        assert result is True
+        assert service.count_urls() == 0
 
     def test_raises_source_file_not_found_on_invalid_path(self, service: UrlsFolderJsonsService) -> None:
         service._folder_path = "/nonexistent/invalid/path"
@@ -228,7 +220,7 @@ class TestLoadsUrls:
             side_effect=ValueError("bad path"),
         ):
             with pytest.raises(UrlSourceFileNotFoundError):
-                service.loads_urls()
+                service.is_ready_to_consum_urls()
 
 
 class TestDiscoverAndLoad:

@@ -193,13 +193,6 @@ class TestBindShowWarning:
         vm.show_warning("warning")  # must not raise
 
 
-class TestBindValidate:
-    def test_double_bind_raises(self, vm: ScenariosViewModel) -> None:
-        vm.bind_validate(MagicMock())
-        with pytest.raises(CallbackNotDefinedError):
-            vm.bind_validate(MagicMock())
-
-
 class TestBindShowError:
     def test_bind_and_dispatch(self, vm: ScenariosViewModel) -> None:
         cb = MagicMock()

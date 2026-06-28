@@ -104,7 +104,7 @@ class TestSetContextScraping:
     def test_sets_export_folder_and_warmup(self) -> None:
         svc, manual, *_ = _make_service()
         launcher = _make_launcher(UrlSourceTypeEnum.E_MANUAL_LIST)
-        manual.loads_urls.return_value = True
+        manual.is_ready_to_consum_urls.return_value = True
 
         svc.set_context_scraping(launcher, "export/path", "http://warmup.com")
 
@@ -118,7 +118,7 @@ class TestSetContextScraping:
         svc.set_context_scraping(launcher, "out", None)
 
         manual.setup_model.assert_called_once_with(launcher.urls_manual_list)
-        manual.loads_urls.assert_called_once()
+        manual.is_ready_to_consum_urls.assert_called_once()
 
     def test_folder_racs_calls_setup_and_loads(self) -> None:
         svc, _, racs, *_ = _make_service()
@@ -127,7 +127,7 @@ class TestSetContextScraping:
         svc.set_context_scraping(launcher, "out", None)
 
         racs.setup_model.assert_called_once_with(launcher.urls_folder_racs)
-        racs.loads_urls.assert_called_once()
+        racs.is_ready_to_consum_urls.assert_called_once()
 
     def test_folder_jsons_calls_setup_and_loads(self) -> None:
         svc, _, _, jsons, _ = _make_service()
@@ -136,7 +136,7 @@ class TestSetContextScraping:
         svc.set_context_scraping(launcher, "out", None)
 
         jsons.setup_model.assert_called_once_with(launcher.urls_folder_jsons)
-        jsons.loads_urls.assert_called_once()
+        jsons.is_ready_to_consum_urls.assert_called_once()
 
     def test_discover_entries_calls_setup_and_loads(self) -> None:
         svc, _, _, _, discover = _make_service()
@@ -145,7 +145,7 @@ class TestSetContextScraping:
         svc.set_context_scraping(launcher, "out", None)
 
         discover.setup_model.assert_called_once_with(launcher.urls_discover_entries)
-        discover.loads_urls.assert_called_once()
+        discover.is_ready_to_consum_urls.assert_called_once()
 
     def test_unknown_source_type_raises(self) -> None:
         svc, *_ = _make_service()
@@ -246,7 +246,7 @@ class TestValidateUrlProvider:
     def test_no_urls_loaded_returns_error(self) -> None:
         svc, manual, *_ = _make_service()
         self._setup_with_manual(svc, manual)
-        manual.loads_urls.return_value = False
+        manual.is_ready_to_consum_urls.return_value = False
 
         result = svc.validate()
         assert result.has_errors_or_fatals()
@@ -254,17 +254,18 @@ class TestValidateUrlProvider:
     def test_no_next_url_returns_error(self) -> None:
         svc, manual, *_ = _make_service()
         self._setup_with_manual(svc, manual)
-        manual.loads_urls.return_value = True
-        manual.preview_next_url.return_value = None
+        manual.is_ready_to_consum_urls.return_value = True
+        manual.read_current_url.return_value = None
 
         result = svc.validate()
         assert result.has_errors_or_fatals()
 
-    def test_too_short_url_returns_error(self) -> None:
+    def test_too_few_urls_returns_error(self) -> None:
         svc, manual, *_ = _make_service()
         self._setup_with_manual(svc, manual)
-        manual.loads_urls.return_value = True
-        manual.preview_next_url.return_value = "ab"
+        manual.is_ready_to_consum_urls.return_value = True
+        manual.read_current_url.return_value = "https://example.com"
+        manual.preview_all_urls.return_value = []
 
         result = svc.validate()
         assert result.has_errors_or_fatals()
@@ -272,8 +273,9 @@ class TestValidateUrlProvider:
     def test_valid_url_with_zero_count_returns_error(self) -> None:
         svc, manual, *_ = _make_service()
         self._setup_with_manual(svc, manual)
-        manual.loads_urls.return_value = True
-        manual.preview_next_url.return_value = "https://example.com"
+        manual.is_ready_to_consum_urls.return_value = True
+        manual.read_current_url.return_value = "https://example.com"
+        manual.preview_all_urls.return_value = ["https://a.com"] * 4
         manual.count_urls.return_value = 0
 
         result = svc.validate()
@@ -282,8 +284,9 @@ class TestValidateUrlProvider:
     def test_valid_url_small_count_no_issues(self) -> None:
         svc, manual, *_ = _make_service()
         self._setup_with_manual(svc, manual)
-        manual.loads_urls.return_value = True
-        manual.preview_next_url.return_value = "https://example.com"
+        manual.is_ready_to_consum_urls.return_value = True
+        manual.read_current_url.return_value = "https://example.com"
+        manual.preview_all_urls.return_value = ["https://a.com"] * 5
         manual.count_urls.return_value = 5
 
         result = svc.validate()
@@ -292,8 +295,9 @@ class TestValidateUrlProvider:
     def test_large_count_over_100_adds_warning(self) -> None:
         svc, manual, *_ = _make_service()
         self._setup_with_manual(svc, manual)
-        manual.loads_urls.return_value = True
-        manual.preview_next_url.return_value = "https://example.com"
+        manual.is_ready_to_consum_urls.return_value = True
+        manual.read_current_url.return_value = "https://example.com"
+        manual.preview_all_urls.return_value = ["https://a.com"] * 5
         manual.count_urls.return_value = 500
 
         result = svc.validate()
@@ -303,8 +307,9 @@ class TestValidateUrlProvider:
     def test_very_large_count_over_1000_adds_warning(self) -> None:
         svc, manual, *_ = _make_service()
         self._setup_with_manual(svc, manual)
-        manual.loads_urls.return_value = True
-        manual.preview_next_url.return_value = "https://example.com"
+        manual.is_ready_to_consum_urls.return_value = True
+        manual.read_current_url.return_value = "https://example.com"
+        manual.preview_all_urls.return_value = ["https://a.com"] * 5
         manual.count_urls.return_value = 2000
 
         result = svc.validate()
