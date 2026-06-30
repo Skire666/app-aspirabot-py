@@ -154,7 +154,6 @@ class UrlsFolderRacsService(IUrlSourceProvider):
                 result.append(url)
 
         self._counted_urls = len(result)
-
         return result
 
     def count_urls(self) -> int:

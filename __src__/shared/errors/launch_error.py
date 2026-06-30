@@ -16,8 +16,8 @@ class ErrorCodeLAM(ErrorCode):
     LAM_1004 = "Le dossier d'export possède des caractères interdits."
     LAM_1005 = "Le dossier d'export ne peux pas être '.' ou './'"
     LAM_1006 = "Le dossier d'export ne peux pas commencer par '/'"
-    LAM_1007 = "Le compteur des erreurs globales est <= 1."
-    LAM_1008 = "Le compteur des erreurs pour la step unitaire est <= 1."
+    LAM_1007 = "Le compteur des erreurs globales est <= 0."
+    LAM_1008 = "Le compteur des erreurs pour la step unitaire est <= 0."
     LAM_1009 = "La sélection pour la step unitaire est vide."
 
     # ???

@@ -9,6 +9,7 @@ JSON provider configuration files stored in a local directory.
 # -----------------------------------------------------------------------------
 
 import logging
+import shutil
 from pathlib import Path
 
 from models.app_configuration_model import AppConfigurationModel
@@ -186,14 +187,14 @@ class ProfilesRepository:
             raise RepositoryWriteError() from exc
 
     def delete_profiles(self, id_scenario: str) -> None:
-        """Deletes the JSON file for the given profile identifier.
+        """Deletes the scenario folder (and all its contents) for the given profile identifier.
 
         Args:
             id_scenario: Unique identifier of the scenario for which to delete profiles.
 
         Raises:
             ProfileNotFoundError: When no matching file exists.
-            OSError: When the file cannot be deleted.
+            OSError: When the folder cannot be deleted.
         """
         full_pathfile_to_delete = AppConfigurationModel().get_instance().compute_fullpath_profile(id_scenario)
         make_all_folders_if_not_exists(full_pathfile_to_delete, is_file_path=True)
@@ -201,9 +202,10 @@ class ProfilesRepository:
         if not full_pathfile_to_delete.exists():
             raise ProfileNotFoundError(id_scenario, context="suppression")
 
+        folder_to_delete = full_pathfile_to_delete.parent
         try:
-            Path(full_pathfile_to_delete).unlink()
-            self._logger.debug("Profil supprimé : %s", full_pathfile_to_delete)
+            shutil.rmtree(folder_to_delete)
+            self._logger.debug("Dossier de profil supprimé : %s", folder_to_delete)
         except OSError as exc:
             self._logger.error("Erreur lors de la suppression du profil.", exc_info=True)
             raise RepositoryWriteError() from exc

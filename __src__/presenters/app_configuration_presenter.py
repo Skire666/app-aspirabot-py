@@ -94,22 +94,22 @@ class AppConfigurationPresenter:
 
     @staticmethod
     def _build_model(state: AppConfigViewState) -> AppConfigurationModel:
-        """Build a configuration model from a typed ViewModel snapshot.
+        """Update the configuration singleton from a typed ViewModel snapshot.
 
         Args:
             state: Immutable snapshot of the configuration form.
 
         Returns:
-            A new ``AppConfigurationModel`` populated from *state*.
+            The updated singleton ``AppConfigurationModel``.
         """
-        return AppConfigurationModel(
-            log_level_enum=state.log_level_enum,
-            folder_logs=state.folder_logs,
-            folder_scenarios=state.folder_scenarios,
-            gui_booting_size=state.gui_booting_size,
-            gui_booting_position=state.gui_booting_position,
-            gui_booting_fullscreen=state.gui_booting_fullscreen,
-        )
+        model = AppConfigurationModel.get_instance()
+        model.log_level_enum = state.log_level_enum
+        model.folder_logs = state.folder_logs
+        model.folder_scenarios = state.folder_scenarios
+        model.gui_booting_size = state.gui_booting_size
+        model.gui_booting_position = state.gui_booting_position
+        model.gui_booting_fullscreen = state.gui_booting_fullscreen
+        return model
 
     def _apply_configuration(self) -> None:
         """Push configuration singleton into the ViewModel and reset change tracking."""

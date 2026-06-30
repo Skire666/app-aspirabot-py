@@ -203,9 +203,9 @@ class LaunchModel:
 
     def _validate_emergency_stop(self, vr: ValidationResult) -> None:
         """Validate emergency stop thresholds and step id."""
-        if self.emergency_stop_threshold <= 1:
+        if self.emergency_stop_threshold <= 0:
             vr.append(ErrorCodeLAM.LAM_1007, SeverityEnum.E_ERROR)
-        elif self.emergency_stop_step_threshold <= 1:
+        elif self.emergency_stop_step_threshold <= 0:
             vr.append(ErrorCodeLAM.LAM_1008, SeverityEnum.E_ERROR)
         elif not self.emergency_stop_step_id or not self.emergency_stop_step_id.strip():
             vr.append(ErrorCodeLAM.LAM_1009, SeverityEnum.E_ERROR)

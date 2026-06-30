@@ -200,7 +200,7 @@ class SourcingUrlsService:
         if not provider.read_current_url():
             rs.append(ErrorCodeSUS.SUS_1006, SeverityEnum.E_ERROR)
             return
-        if len(provider.preview_all_urls() or "") <= _C_MIN_URL_LENGTH:
+        if len(provider.read_current_url() or "") <= _C_MIN_URL_LENGTH:
             rs.append(ErrorCodeSUS.SUS_1007, SeverityEnum.E_ERROR)
             return
         count = provider.count_urls()
