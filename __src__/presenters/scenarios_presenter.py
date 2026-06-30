@@ -78,7 +78,6 @@ class ScenariosPresenter:
         self._vm.bind_duplicate(self._on_duplicate_scenario)
         self._vm.bind_launch(self._on_launch_scenario)
         self._vm.bind_delete(self._on_delete_scenario)
-        self._vm.bind_validate(self._on_validate_scenarios)  # TODO PCO
 
     def _load_scenarios(self) -> None:
         """Fetch all scenarios from the service, sort them, and refresh the view."""
