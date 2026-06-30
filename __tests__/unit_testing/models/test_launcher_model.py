@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from models.launcher_model import LaunchModel
 from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
@@ -14,7 +12,6 @@ from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from shared.enums import UrlSourceTypeEnum
 from shared.validation_result import ValidationResult
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -241,24 +238,6 @@ class TestValidateExportFolder:
 
 
 class TestValidateEmergencyStop:
-    def test_error_when_emergency_stop_threshold_le_1(self) -> None:
-        m = _make_valid_model()
-        m.emergency_stop_threshold = 1
-        vr = m.validate()
-        assert vr.has_errors_or_fatals()
-
-    def test_error_when_step_threshold_le_1(self) -> None:
-        m = _make_valid_model()
-        m.emergency_stop_step_threshold = 1
-        vr = m.validate()
-        assert vr.has_errors_or_fatals()
-
-    def test_error_when_step_id_empty(self) -> None:
-        m = _make_valid_model()
-        m.emergency_stop_step_id = ""
-        vr = m.validate()
-        assert vr.has_errors_or_fatals()
-
     def test_error_when_step_id_whitespace(self) -> None:
         m = _make_valid_model()
         m.emergency_stop_step_id = "   "

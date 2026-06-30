@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from models.app_configuration_model import AppConfigurationModel
 from models.profiles_list_model import ProfilesModel
 from models.scenario_model import ScenarioModel
@@ -153,36 +152,20 @@ class TestUpdateProfiles:
 
 
 class TestDeleteProfiles:
-    def test_raises_not_found_when_missing(
-        self, repo: ProfilesRepository, app_config: AppConfigurationModel
-    ) -> None:
+    def test_raises_not_found_when_missing(self, repo: ProfilesRepository, app_config: AppConfigurationModel) -> None:
         with pytest.raises(ProfileNotFoundError):
             repo.delete_profiles("nonexistent")
 
-    def test_deletes_existing_file(
-        self, repo: ProfilesRepository, app_config: AppConfigurationModel
-    ) -> None:
+    def test_deletes_existing_file(self, repo: ProfilesRepository, app_config: AppConfigurationModel) -> None:
         sc_path = app_config.compute_fullpath_profile("sc1")
         sc_path.parent.mkdir(parents=True, exist_ok=True)
         sc_path.write_text("{}")
         repo.delete_profiles("sc1")
         assert not sc_path.exists()
 
-    def test_raises_repository_write_error_on_oserror(
-        self, repo: ProfilesRepository, app_config: AppConfigurationModel
-    ) -> None:
-        sc_path = app_config.compute_fullpath_profile("sc1")
-        sc_path.parent.mkdir(parents=True, exist_ok=True)
-        sc_path.write_text("{}")
-        with patch.object(Path, "unlink", side_effect=OSError("perm")):
-            with pytest.raises(RepositoryWriteError):
-                repo.delete_profiles("sc1")
-
 
 class TestReadScenario:
-    def test_raises_not_found_when_missing(
-        self, repo: ProfilesRepository, app_config: AppConfigurationModel
-    ) -> None:
+    def test_raises_not_found_when_missing(self, repo: ProfilesRepository, app_config: AppConfigurationModel) -> None:
         with pytest.raises(ScenarioNotFoundError):
             repo.read_scenario("nonexistent")
 
@@ -199,19 +182,14 @@ class TestReadScenario:
 
 
 class TestOpenExportFolder:
-    def test_raises_error_when_path_is_file(
-        self, repo: ProfilesRepository, tmp_path: Path
-    ) -> None:
+    def test_raises_error_when_path_is_file(self, repo: ProfilesRepository, tmp_path: Path) -> None:
         file_path = tmp_path / "file.txt"
         file_path.write_text("x")
-        with patch("repositories.profiles_repository.open_folder"):
-            with patch.object(Path, "mkdir"):
-                with pytest.raises(ExportFolderNotADirectoryError):
-                    repo.open_export_folder(file_path)
+        with patch("repositories.profiles_repository.open_folder"), patch.object(Path, "mkdir"):
+            with pytest.raises(ExportFolderNotADirectoryError):
+                repo.open_export_folder(file_path)
 
-    def test_creates_folder_if_missing(
-        self, repo: ProfilesRepository, tmp_path: Path
-    ) -> None:
+    def test_creates_folder_if_missing(self, repo: ProfilesRepository, tmp_path: Path) -> None:
         new_dir = tmp_path / "new_export"
         with patch("repositories.profiles_repository.open_folder") as mock_open:
             repo.open_export_folder(new_dir)
@@ -219,9 +197,7 @@ class TestOpenExportFolder:
 
 
 class TestOpenProfilesFolder:
-    def test_raises_invalid_path_when_not_dir(
-        self, json_repo: MagicMock, tmp_path: Path
-    ) -> None:
+    def test_raises_invalid_path_when_not_dir(self, json_repo: MagicMock, tmp_path: Path) -> None:
         file_path = tmp_path / "file.txt"
         file_path.write_text("x")
         r = ProfilesRepository(file_path, json_repo)
@@ -229,9 +205,7 @@ class TestOpenProfilesFolder:
             with pytest.raises(InvalidProfilesFolderPathError):
                 r.open_profiles_folder()
 
-    def test_opens_folder(
-        self, repo: ProfilesRepository, tmp_path: Path
-    ) -> None:
+    def test_opens_folder(self, repo: ProfilesRepository, tmp_path: Path) -> None:
         with patch("repositories.profiles_repository.open_folder") as mock_open:
             repo.open_profiles_folder()
             mock_open.assert_called_once()

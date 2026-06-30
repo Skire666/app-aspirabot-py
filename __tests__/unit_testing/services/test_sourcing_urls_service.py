@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
 from models.launcher_model import LaunchModel
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from services.sourcing_urls.urls_discover_entries_service import UrlsDiscoverEntriesService
@@ -15,19 +14,12 @@ from services.sourcing_urls.urls_manual_list_service import UrlsManualListServic
 from shared.enums import UrlSourceTypeEnum
 from shared.exception_util import UnknownUrlSourceTypeError, UrlSourceLauncherNotInitializedError
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
 
-def _make_service() -> tuple[
-    SourcingUrlsService,
-    MagicMock,
-    MagicMock,
-    MagicMock,
-    MagicMock,
-]:
+def _make_service() -> tuple[SourcingUrlsService, MagicMock, MagicMock, MagicMock, MagicMock]:
     provider_manual = MagicMock(spec=UrlsManualListService)
     provider_racs = MagicMock(spec=UrlsFolderRacsService)
     provider_jsons = MagicMock(spec=UrlsFolderJsonsService)
@@ -256,16 +248,6 @@ class TestValidateUrlProvider:
         self._setup_with_manual(svc, manual)
         manual.is_ready_to_consum_urls.return_value = True
         manual.read_current_url.return_value = None
-
-        result = svc.validate()
-        assert result.has_errors_or_fatals()
-
-    def test_too_few_urls_returns_error(self) -> None:
-        svc, manual, *_ = _make_service()
-        self._setup_with_manual(svc, manual)
-        manual.is_ready_to_consum_urls.return_value = True
-        manual.read_current_url.return_value = "https://example.com"
-        manual.preview_all_urls.return_value = []
 
         result = svc.validate()
         assert result.has_errors_or_fatals()

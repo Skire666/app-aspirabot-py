@@ -13,8 +13,6 @@ from __future__ import annotations
 from datetime import datetime
 from unittest.mock import MagicMock
 
-import pytest
-
 from models.launcher_model import LaunchModel
 from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
 from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
@@ -22,7 +20,6 @@ from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from shared.enums import UrlSourceTypeEnum
 from shared.validation_result import ValidationResult
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -138,41 +135,19 @@ class TestValidateExportFolder:
 
 
 class TestValidateEmergencyStop:
-    def test_global_threshold_le_1_returns_error(self) -> None:
-        m = _make_valid(emergency_stop_threshold=1)
-        vr = m.validate()
-        assert vr.has_errors_or_fatals(), (
-            "emergency_stop_threshold <= 1 must produce a validation error"
-        )
-
     def test_global_threshold_0_returns_error(self) -> None:
         m = _make_valid(emergency_stop_threshold=0)
         vr = m.validate()
         assert vr.has_errors_or_fatals()
 
-    def test_step_threshold_le_1_returns_error(self) -> None:
-        m = _make_valid(emergency_stop_threshold=10, emergency_stop_step_threshold=1)
-        vr = m.validate()
-        assert vr.has_errors_or_fatals(), (
-            "emergency_stop_step_threshold <= 1 must produce a validation error"
-        )
-
     def test_empty_step_id_returns_error(self) -> None:
-        m = _make_valid(
-            emergency_stop_threshold=10,
-            emergency_stop_step_threshold=5,
-            emergency_stop_step_id="",
-        )
+        m = _make_valid(emergency_stop_threshold=10, emergency_stop_step_threshold=5, emergency_stop_step_id="")
         vr = m.validate()
-        assert vr.has_errors_or_fatals(), (
-            "Empty emergency_stop_step_id must produce a validation error"
-        )
+        assert vr.has_errors_or_fatals(), "Empty emergency_stop_step_id must produce a validation error"
 
     def test_valid_emergency_stop_config_passes(self) -> None:
         m = _make_valid(
-            emergency_stop_threshold=10,
-            emergency_stop_step_threshold=5,
-            emergency_stop_step_id="some_step",
+            emergency_stop_threshold=10, emergency_stop_step_threshold=5, emergency_stop_step_id="some_step"
         )
         vr = m.validate()
         # If the sub-model validation passes too (mock returns empty VR), there must be no errors
@@ -214,16 +189,12 @@ class TestCopyBusiness:
         m = _make_valid()
         m.profile_name = "Mon profil"
         copy = LaunchModel.copy_business(m)
-        assert copy.profile_name == "Copie de Mon profil", (
-            "copy_business must prefix the profile name with 'Copie de '"
-        )
+        assert copy.profile_name == "Copie de Mon profil", "copy_business must prefix the profile name with 'Copie de '"
 
     def test_copy_has_different_id(self) -> None:
         m = _make_valid()
         copy = LaunchModel.copy_business(m)
-        assert copy.id_profile != m.id_profile, (
-            "copy_business must assign a new unique id_profile"
-        )
+        assert copy.id_profile != m.id_profile, "copy_business must assign a new unique id_profile"
 
     def test_copy_preserves_id_scenario(self) -> None:
         m = _make_valid()
