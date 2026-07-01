@@ -16,7 +16,7 @@ from shared.i18n_fra import ERROR_TEMPLATES
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
-_ALLOWED_CONDITIONS = frozenset({"success", C_STATE_JUMP_TO_STEP_FAILURE, "always"})
+_ALLOWED_CONDITIONS = frozenset({"success", C_STATE_JUMP_TO_STEP_FAILURE})
 
 
 class JumpToStepParams(BaseModel):

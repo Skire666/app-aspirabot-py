@@ -15,7 +15,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from models.steps.jump_to_step_params import JumpToStepParams
-from shared.constants import C_STATE_JUMP_TO_STEP_FAILURE
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import StepTypeEnum
 from shared.random_util import generate_rng_id_step
@@ -117,11 +116,7 @@ class StepScrapingModel:
         Returns:
             True if the step_type is StepTypeEnum.E_JUMP_TO_STEP, else False.
         """
-        return bool(
-            self.step_type == StepTypeEnum.E_JUMP_TO_STEP
-            and isinstance(self.params, JumpToStepParams)
-            and self.params.condition == C_STATE_JUMP_TO_STEP_FAILURE
-        )
+        return bool(self.step_type == StepTypeEnum.E_JUMP_TO_STEP and isinstance(self.params, JumpToStepParams))
 
 
 # EOF
