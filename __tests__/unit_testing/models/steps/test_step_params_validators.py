@@ -5,16 +5,13 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from pydantic import ValidationError
-
 from models.steps.check_url_page_params import CheckUrlPageParams
 from models.steps.click_for_download_params import ClickForDownloadParams
 from models.steps.click_on_element_params import ClickOnElementParams
 from models.steps.close_tabs_params import CloseTabsParams
 from models.steps.count_html_elements_params import CountHtmlElementsParams
-from models.steps.count_html_images_params import CountHtmlImagesParams
 from models.steps.download_image_params import DownloadImageParams
-from models.steps.export_data_to_js_params import ExportDataToJsParams
+from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 from models.steps.extract_variable_params import ExtractVariableParams
 from models.steps.jump_to_step_params import JumpToStepParams
 from models.steps.kill_browser_params import KillBrowserParams
@@ -22,10 +19,9 @@ from models.steps.refresh_page_params import RefreshPageParams
 from models.steps.restart_to_beginning_params import RestartToBeginningParams
 from models.steps.scroll_down_params import ScrollDownParams
 from models.steps.wait_html_elements_params import WaitHtmlElementsParams
-from models.steps.wait_html_images_params import WaitHtmlImagesParams
 from models.steps.wait_page_state_params import WaitPageStateParams
 from models.steps.wait_user_action_params import WaitUserActionParams
-
+from pydantic import ValidationError
 
 _CTX = {"step_index": 0, "step_id": "abc"}
 
@@ -54,14 +50,10 @@ class TestCheckUrlPageParams:
 
     def test_with_context_raises_when_nothing_checked(self) -> None:
         with pytest.raises(ValidationError):
-            CheckUrlPageParams.model_validate(
-                {"check_domain": False, "check_path": False}, context=_CTX
-            )
+            CheckUrlPageParams.model_validate({"check_domain": False, "check_path": False}, context=_CTX)
 
     def test_with_context_passes_when_at_least_one(self) -> None:
-        p = CheckUrlPageParams.model_validate(
-            {"check_domain": True, "check_path": False}, context=_CTX
-        )
+        p = CheckUrlPageParams.model_validate({"check_domain": True, "check_path": False}, context=_CTX)
         assert p.check_domain is True
 
     def test_validate_with_context_no_errors(self) -> None:
@@ -128,12 +120,11 @@ class TestCloseTabsParams:
 
     def test_with_context_zero_max_tabs_raises(self) -> None:
         with pytest.raises(ValidationError):
-            CloseTabsParams.model_validate(
-                {"filter_mode": "all", "filter_custom": "", "max_tabs": 0}, context=_CTX
-            )
+            CloseTabsParams.model_validate({"filter_mode": "all", "filter_custom": "", "max_tabs": 0}, context=_CTX)
 
     def test_with_context_custom_mode_no_filter_raises(self) -> None:
         from shared.enums import FilterClosedEnum
+
         with pytest.raises(ValidationError):
             CloseTabsParams.model_validate(
                 {"filter_mode": FilterClosedEnum.E_CUSTOM.value, "filter_custom": "", "max_tabs": 1}, context=_CTX
@@ -165,35 +156,35 @@ class TestCountHtmlElementsParams:
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
                 {"selector": "", "success_if": "success", "operator": "equal", "value": 1, "comment": "note"},
-                context=_CTX
+                context=_CTX,
             )
 
     def test_with_context_negative_value_raises(self) -> None:
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
                 {"selector": ".el", "success_if": "success", "operator": "equal", "value": -1, "comment": "note"},
-                context=_CTX
+                context=_CTX,
             )
 
     def test_with_context_invalid_success_if_raises(self) -> None:
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
                 {"selector": ".el", "success_if": "invalid", "operator": "equal", "value": 1, "comment": "note"},
-                context=_CTX
+                context=_CTX,
             )
 
     def test_with_context_invalid_operator_raises(self) -> None:
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
                 {"selector": ".el", "success_if": "success", "operator": "bad_op", "value": 1, "comment": "note"},
-                context=_CTX
+                context=_CTX,
             )
 
     def test_with_context_empty_comment_raises(self) -> None:
         with pytest.raises(ValidationError):
             CountHtmlElementsParams.model_validate(
                 {"selector": ".el", "success_if": "success", "operator": "equal", "value": 1, "comment": ""},
-                context=_CTX
+                context=_CTX,
             )
 
     def test_validate_with_context_returns_errors(self) -> None:
@@ -259,15 +250,11 @@ class TestExtractVariableParams:
 
     def test_invalid_variable_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ExtractVariableParams.model_validate(
-                {"variable": "invalid_var", "mapping": "key1"}, context=_CTX
-            )
+            ExtractVariableParams.model_validate({"variable": "invalid_var", "mapping": "key1"}, context=_CTX)
 
     def test_empty_mapping_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ExtractVariableParams.model_validate(
-                {"variable": "datetime_now", "mapping": ""}, context=_CTX
-            )
+            ExtractVariableParams.model_validate({"variable": "datetime_now", "mapping": ""}, context=_CTX)
 
     def test_validate_with_context_no_errors(self) -> None:
         p = ExtractVariableParams(variable="datetime_now", mapping="key1")
@@ -466,30 +453,25 @@ class TestWaitPageStateParams:
     _BASE = {"wait_until": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
 
     def test_construction_without_context(self) -> None:
-        from models.steps.wait_page_state_params import WaitPageStateParams
         p = WaitPageStateParams(**self._BASE)
         assert p.timeout_duration == 30
 
     def test_to_dict(self) -> None:
-        from models.steps.wait_page_state_params import WaitPageStateParams
         p = WaitPageStateParams(**self._BASE)
         d = p.to_dict()
         assert d["timeout_duration"] == 30
 
     def test_with_context_zero_timeout_raises(self) -> None:
-        from models.steps.wait_page_state_params import WaitPageStateParams
         data = {**self._BASE, "timeout_duration": 0}
         with pytest.raises(ValidationError):
             WaitPageStateParams.model_validate(data, context=_CTX)
 
     def test_with_context_invalid_unit_raises(self) -> None:
-        from models.steps.wait_page_state_params import WaitPageStateParams
         data = {**self._BASE, "timeout_unit": "hours"}
         with pytest.raises(ValidationError):
             WaitPageStateParams.model_validate(data, context=_CTX)
 
     def test_validate_with_context_no_errors(self) -> None:
-        from models.steps.wait_page_state_params import WaitPageStateParams
         p = WaitPageStateParams(**self._BASE)
         steps = _make_steps_context()
         errors = p.validate_with_context(0, steps, "abc")
@@ -505,30 +487,25 @@ class TestWaitUserActionParams:
     _BASE = {"condition": "always", "wait_duration": 1, "wait_unit": "s"}
 
     def test_construction_without_context(self) -> None:
-        from models.steps.wait_user_action_params import WaitUserActionParams
         p = WaitUserActionParams(**self._BASE)
         assert p.condition == "always"
 
     def test_to_dict(self) -> None:
-        from models.steps.wait_user_action_params import WaitUserActionParams
         p = WaitUserActionParams(**self._BASE)
         d = p.to_dict()
         assert d["condition"] == "always"
 
     def test_with_context_invalid_condition_raises(self) -> None:
-        from models.steps.wait_user_action_params import WaitUserActionParams
         data = {**self._BASE, "condition": "never"}
         with pytest.raises(ValidationError):
             WaitUserActionParams.model_validate(data, context=_CTX)
 
     def test_with_context_zero_wait_duration_raises(self) -> None:
-        from models.steps.wait_user_action_params import WaitUserActionParams
         data = {**self._BASE, "wait_duration": 0}
         with pytest.raises(ValidationError):
             WaitUserActionParams.model_validate(data, context=_CTX)
 
     def test_validate_with_context_no_errors(self) -> None:
-        from models.steps.wait_user_action_params import WaitUserActionParams
         p = WaitUserActionParams(**self._BASE)
         steps = _make_steps_context()
         errors = p.validate_with_context(0, steps, "abc")
@@ -544,30 +521,25 @@ class TestRefreshPageParams:
     _BASE = {"clear_cache": False, "wait_until": "load", "timeout_duration": 30, "timeout_unit": "s", "comment": ""}
 
     def test_construction_without_context(self) -> None:
-        from models.steps.refresh_page_params import RefreshPageParams
         p = RefreshPageParams(**self._BASE)
         assert p.timeout_duration == 30
 
     def test_to_dict(self) -> None:
-        from models.steps.refresh_page_params import RefreshPageParams
         p = RefreshPageParams(**self._BASE)
         d = p.to_dict()
         assert d["timeout_duration"] == 30
 
     def test_with_context_zero_timeout_raises(self) -> None:
-        from models.steps.refresh_page_params import RefreshPageParams
         data = {**self._BASE, "timeout_duration": 0}
         with pytest.raises(ValidationError):
             RefreshPageParams.model_validate(data, context=_CTX)
 
     def test_with_context_invalid_unit_when_positive_duration_raises(self) -> None:
-        from models.steps.refresh_page_params import RefreshPageParams
         data = {**self._BASE, "timeout_unit": "hours"}
         with pytest.raises(ValidationError):
             RefreshPageParams.model_validate(data, context=_CTX)
 
     def test_validate_with_context_no_errors(self) -> None:
-        from models.steps.refresh_page_params import RefreshPageParams
         p = RefreshPageParams(**self._BASE)
         steps = _make_steps_context()
         errors = p.validate_with_context(0, steps, "abc")
@@ -583,30 +555,25 @@ class TestKillBrowserParams:
     _BASE = {"wait_duration": 0, "wait_unit": "s"}
 
     def test_construction_without_context(self) -> None:
-        from models.steps.kill_browser_params import KillBrowserParams
         p = KillBrowserParams(**self._BASE)
         assert p.wait_unit == "s"
 
     def test_to_dict(self) -> None:
-        from models.steps.kill_browser_params import KillBrowserParams
         p = KillBrowserParams(**self._BASE)
         d = p.to_dict()
         assert d["wait_unit"] == "s"
 
     def test_with_context_negative_duration_raises(self) -> None:
-        from models.steps.kill_browser_params import KillBrowserParams
         data = {**self._BASE, "wait_duration": -1}
         with pytest.raises(ValidationError):
             KillBrowserParams.model_validate(data, context=_CTX)
 
     def test_with_context_invalid_unit_raises(self) -> None:
-        from models.steps.kill_browser_params import KillBrowserParams
         data = {**self._BASE, "wait_unit": "hours"}
         with pytest.raises(ValidationError):
             KillBrowserParams.model_validate(data, context=_CTX)
 
     def test_validate_with_context_no_errors(self) -> None:
-        from models.steps.kill_browser_params import KillBrowserParams
         p = KillBrowserParams(**self._BASE)
         steps = _make_steps_context()
         errors = p.validate_with_context(0, steps, "abc")
@@ -614,30 +581,26 @@ class TestKillBrowserParams:
 
 
 # ---------------------------------------------------------------------------
-# ExportDataToJsParams
+# ExportDataToCsvParams
 # ---------------------------------------------------------------------------
 
 
-class TestExportDataToJsParams:
+class TestExportDataToCsvParams:
     def test_construction_without_context(self) -> None:
-        from models.steps.export_data_to_js_params import ExportDataToJsParams
-        p = ExportDataToJsParams(prefix_file="myfile")
+        p = ExportDataToCsvParams(prefix_file="myfile")
         assert p.prefix_file == "myfile"
 
     def test_to_dict(self) -> None:
-        from models.steps.export_data_to_js_params import ExportDataToJsParams
-        p = ExportDataToJsParams(prefix_file="myfile")
+        p = ExportDataToCsvParams(prefix_file="myfile")
         d = p.to_dict()
         assert d["prefix_file"] == "myfile"
 
     def test_with_context_empty_prefix_raises(self) -> None:
-        from models.steps.export_data_to_js_params import ExportDataToJsParams
         with pytest.raises(ValidationError):
-            ExportDataToJsParams.model_validate({"prefix_file": ""}, context=_CTX)
+            ExportDataToCsvParams.model_validate({"prefix_file": ""}, context=_CTX)
 
     def test_validate_with_context_no_errors(self) -> None:
-        from models.steps.export_data_to_js_params import ExportDataToJsParams
-        p = ExportDataToJsParams(prefix_file="myfile")
+        p = ExportDataToCsvParams(prefix_file="myfile")
         steps = _make_steps_context()
         errors = p.validate_with_context(0, steps, "abc")
         assert errors == []

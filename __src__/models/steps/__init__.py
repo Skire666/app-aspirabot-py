@@ -11,7 +11,7 @@ from models.steps.close_tabs_params import CloseTabsParams
 from models.steps.count_html_elements_params import CountHtmlElementsParams
 from models.steps.count_html_images_params import CountHtmlImagesParams
 from models.steps.download_image_params import DownloadImageParams
-from models.steps.export_data_to_js_params import ExportDataToJsParams
+from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 from models.steps.extract_links_params import ExtractLinksParams
 from models.steps.extract_texts_params import ExtractTextsParams
 from models.steps.extract_variable_params import ExtractVariableParams
@@ -38,7 +38,7 @@ __all__ = [
     "CountHtmlElementsParams",
     "CountHtmlImagesParams",
     "DownloadImageParams",
-    "ExportDataToJsParams",
+    "ExportDataToCsvParams",
     "ExtractLinksParams",
     "ExtractTextsParams",
     "ExtractVariableParams",

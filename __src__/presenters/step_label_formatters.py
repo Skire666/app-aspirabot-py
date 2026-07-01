@@ -158,7 +158,7 @@ def _fmt_download_image(params: dict[str, Any], _idx: int, _ctx: dict[str, int])
 def _fmt_export_data_to_js(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXPORT_DATA_TO_JS."""
     prefix = params.get("prefix_file") or "<vide>"
-    return f"Exporter vers fichier JSON\nPréfixe : {prefix}*.json"
+    return f"Exporter vers fichier CSV\nPréfixe : {prefix}*.csv"
 
 
 def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:

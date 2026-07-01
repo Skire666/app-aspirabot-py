@@ -12,7 +12,7 @@ from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.steps.export_data_to_js_params import ExportDataToJsParams
+from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 from repositories.json_repository import JsonFileRepository
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
@@ -38,7 +38,7 @@ class ExportDataToJsExecutor(IStepExecutor):
     ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
-        p = cast(ExportDataToJsParams, context.step_scraping_data.params)
+        p = cast(ExportDataToCsvParams, context.step_scraping_data.params)
         try:
             if not context.extracted_data or context.extracted_data.is_empty():
                 raise NoDataToExportError()  # noqa: TRY301

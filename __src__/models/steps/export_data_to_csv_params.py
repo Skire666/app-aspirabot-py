@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
 
-class ExportDataToJsParams(BaseModel):
+class ExportDataToCsvParams(BaseModel):
     """Parameters for the export data to JS scraping step."""
 
     model_config = ConfigDict(frozen=True)

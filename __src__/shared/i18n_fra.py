@@ -115,9 +115,7 @@ C_FOLDER_SETUP_CONFIRM_BTN = "Confirmer"
 C_FOLDER_SETUP_CANCEL_BTN = "Annuler"
 C_FOLDER_SETUP_INVALID_PATH = "Le chemin renseigné n'est pas valide."
 C_FOLDER_SETUP_CREATE_ERROR = "Impossible de créer le dossier : {exc}"
-C_FOLDER_SETUP_ABORTED = (
-    "La configuration du dossier des scénarios est requise pour démarrer l'application."
-)
+C_FOLDER_SETUP_ABORTED = "La configuration du dossier des scénarios est requise pour démarrer l'application."
 C_FOLDER_SETUP_DEFAULT_WARNING_TITLE = "Dossier par défaut utilisé"
 C_FOLDER_SETUP_DEFAULT_WARNING_MSG = (
     "Aucun dossier configuré pour les scénarios.\n"
@@ -195,7 +193,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_EXTRACT_TEXTS: "Extraire : Textes de la page",
     StepTypeEnum.E_EXTRACT_LINKS: "Extraire : Liens de la page",
     StepTypeEnum.E_EXTRACT_VARIABLE: "Extraire : variable système",
-    StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (json)",
+    StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (csv)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_RESTART_TO_BEGINNING: "Recommencer au début",
     StepTypeEnum.E_KILL_BROWSER: "Quitter navigateur",

@@ -150,15 +150,15 @@ class TestDownloadImageIntegration:
 
 class TestExportDataToJsIntegration:
     def test_prefix_in_label(self) -> None:
-        from models.steps.export_data_to_js_params import ExportDataToJsParams
+        from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 
-        p = ExportDataToJsParams(prefix_file="output_", comment="")
+        p = ExportDataToCsvParams(prefix_file="output_", comment="")
         assert "output_" in _label(StepTypeEnum.E_EXPORT_DATA_TO_JS, p)
 
     def test_empty_prefix_shows_vide(self) -> None:
-        from models.steps.export_data_to_js_params import ExportDataToJsParams
+        from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 
-        p = ExportDataToJsParams(prefix_file="", comment="")
+        p = ExportDataToCsvParams(prefix_file="", comment="")
         assert "<vide>" in _label(StepTypeEnum.E_EXPORT_DATA_TO_JS, p)
 
 
