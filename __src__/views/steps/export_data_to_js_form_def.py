@@ -1,4 +1,4 @@
-"""IStepFormDef for EXPORT_DATA_TO_JS."""
+"""IStepFormDef for EXPORT_DATA_TO_CSV."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -20,7 +20,7 @@ from shared.step_registry import register_form
 
 C_INPUT_DEFAULT_EXPORT = "export_"  # export_urls_done_2026-06-07_09h21m29s028210.json
 
-C_KEY_PREFIX = "prefix_file"
+C_KEY_PREFIX = "csv_filename"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -34,7 +34,7 @@ class ExportDataToJsFormDef(IStepFormDef):
     @classmethod
     def step_type(cls) -> StepTypeEnum:
         """Return the step type."""
-        return StepTypeEnum.E_EXPORT_DATA_TO_JS
+        return StepTypeEnum.E_EXPORT_DATA_TO_CSV
 
     @override
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:

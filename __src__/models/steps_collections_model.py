@@ -13,6 +13,8 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 from models.step_scraping_model import StepScrapingModel
+from models.steps.export_data_to_csv_params import ExportDataToCsvParams
+from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from shared.enums import StepTypeEnum
 
 # -----------------------------------------------------------------------------
@@ -165,6 +167,34 @@ class StepsCollections:
                     found += 1
         return found
 
+    def get_all_mapping_keys(self) -> set[str]:
+        """Return a set of all mapping keys used by the three extract types."""
+        found: set[str] = set()
+
+        # extract
+        allowed = (StepTypeEnum.E_EXTRACT_TEXTS, StepTypeEnum.E_EXTRACT_LINKS, StepTypeEnum.E_EXTRACT_VARIABLE)
+        for step_type in allowed:
+            for step in self._type_cache.get(step_type, []):
+                if step.params and hasattr(step.params, "mapping"):
+                    found.add(step.params.mapping)  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+        # youtube
+        ytb_step = self._type_cache.get(StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS, [])
+        if ytb_step:
+            ytb_header = YoutubeInfosVideoModel.get_all_fields()  # get all fields in the YoutubeInfosVideoModel
+            found.update(ytb_header)
+        return found
+
+    def get_name_of_file_csv(self) -> str | None:
+        """Return the name of the CSV file from the first E_EXPORT_DATA_TO_CSV step, or None if not found."""
+        export_steps = self._type_cache.get(StepTypeEnum.E_EXPORT_DATA_TO_CSV, [])
+        if export_steps:
+            export_step = export_steps[0]
+            if isinstance(ExportDataToCsvParams, export_step.params.__class__):
+                print(f"DEBUG: csv_filename: {export_step.params}")
+                return export_step.params.csv_filename  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+        print("DEBUG: csv_filename: NOT FOUND")
+        return None
+
     def count_type_step(self, step_type: StepTypeEnum) -> int:
         """Count steps with the given step type."""
         return len(self._type_cache.get(step_type, []))
@@ -251,7 +281,7 @@ class StepsCollections:
             }
             for step in self.list_steps
         )
-        has_export = self.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_JS) >= 1
+        has_export = self.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_CSV) >= 1
         return has_extract == has_export
 
     # ---------------------------------------------------------------

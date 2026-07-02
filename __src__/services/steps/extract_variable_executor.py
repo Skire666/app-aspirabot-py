@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import datetime
 from typing import cast, override
 from urllib.parse import urlparse
 
@@ -15,7 +14,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_variable_params import ExtractVariableParams
-from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
+from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
@@ -31,7 +30,7 @@ def _resolve_variable(variable: str, context: ScrapingContextModel) -> str:
         The resolved string value for the variable.
     """
     if variable == "datetime_now":
-        return datetime.datetime.now().strftime(C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS)
+        return get_datetime_now_yyyy_mm_dd_hh_mm_ss()
     if variable == "last_url_full":
         return context.last_url_opened
     if variable == "last_url_domain":
@@ -65,10 +64,14 @@ class ExtractVariableExecutor(IStepExecutor):
             event_bus: Event bus for intermediate log entries.
         """
         assert context.step_scraping_data is not None
+
         p = cast(ExtractVariableParams, context.step_scraping_data.params)
         try:
             value = _resolve_variable(p.variable, context)
-            context.push_extracted_values(p.mapping, p.variable, p.comment, [value])
+
+            # push
+            context.push_vars_extracted(p.mapping, value)
+
             event_bus.log_step(context, f"Variable '{p.variable}' = '{value}'.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")

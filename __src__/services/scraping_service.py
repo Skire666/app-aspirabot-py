@@ -22,7 +22,6 @@ from models.scraping_statistics_model import ScrapingStatisticsModel
 from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from repositories.journal_repository import JournalRepository
-from repositories.json_repository import JsonFileRepository
 from services.scraping_event_bus import ScrapingEventBus
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from services.workflow_service import WorkflowService
@@ -48,7 +47,6 @@ class ScrapingService:
     def __init__(
         self,
         workflow_service: WorkflowService,
-        extracted_data_repository: JsonFileRepository,
         browser_service_factory: Callable[[], IWebBrowserService],
         journal_repository: JournalRepository,
     ) -> None:
@@ -56,7 +54,6 @@ class ScrapingService:
 
         Args:
             workflow_service: Service for resolving step executors by type.
-            extracted_data_repository: Repository used to persist extracted data as JSON.
             browser_service_factory: Zero-argument callable that returns a fresh
                 IWebBrowserService instance for each scraping run.
             journal_repository: Repository used to persist run journal lines.
@@ -65,7 +62,6 @@ class ScrapingService:
         self._browser_service: IWebBrowserService | None = None
         self._browser_service_factory = browser_service_factory
         self._workflow_service = workflow_service
-        self._extracted_data_repository = extracted_data_repository
         self._journal_repository = journal_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
@@ -305,6 +301,7 @@ class ScrapingService:
         """
         # Rewind the URL source so it can be replayed in a new run.
         self._context.reset_before_new_process(steps)
+        self._context.prepare_extracted_data(steps)
         self._statistics.clear()
         self._statistics.start_timer()
 

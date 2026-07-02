@@ -1,4 +1,4 @@
-"""Typed parameter model for the EXPORT_DATA_TO_JS step."""
+"""Typed parameter model for the EXPORT_DATA_TO_CSV step."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -21,19 +21,21 @@ class ExportDataToCsvParams(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    prefix_file: str = ""
+    csv_filename: str = ""
     comment: str = ""
 
-    @field_validator("prefix_file")
+    @field_validator("csv_filename")
     @classmethod
-    def check_prefix_file(cls, v: str, info: ValidationInfo) -> str:
-        """Validate that prefix_file is non-empty."""
+    def check_csv_filename(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that csv_filename is non-empty."""
         if not info.context:
             return v
         if not v.strip():
             raise ValueError(
-                ERROR_TEMPLATES["export_data_to_js_prefix_file_required"].format(step=step_label(info.context))
+                ERROR_TEMPLATES["export_data_to_js_csv_filename_required"].format(step=step_label(info.context))
             )
+        if not v.replace("_", "").isalnum():
+            raise ValueError("La clé doit être alphanumérique (et '_').")
         return v
 
     def to_dict(self) -> dict[str, Any]:

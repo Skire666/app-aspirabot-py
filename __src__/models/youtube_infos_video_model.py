@@ -21,6 +21,9 @@ class YoutubeInfosVideoModel:
     """Structured YouTube basic metadata payload ready for JSON serialization."""
 
     id: Any
+    webpage_url: Any
+    webpage_url_basename: Any
+    webpage_url_domain: Any
     title: Any
     fulltitle: Any
     description: Any
@@ -41,9 +44,6 @@ class YoutubeInfosVideoModel:
     like_count: Any
     comment_count: Any
     availability: Any
-    webpage_url: Any
-    webpage_url_basename: Any
-    webpage_url_domain: Any
     original_url: Any
     categories: Any
     tags: Any
@@ -93,6 +93,11 @@ class YoutubeInfosVideoModel:
             else:
                 result[key] = getattr(self, key, None)
         return result
+
+    @staticmethod
+    def get_all_fields() -> set[str]:
+        """Return a list of all field names in the model."""
+        return set(YoutubeInfosVideoModel.__dataclass_fields__.keys())
 
 
 # EOF

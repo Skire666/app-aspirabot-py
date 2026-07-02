@@ -44,6 +44,7 @@ class ExtractLinksExecutor(IStepExecutor):
             event_bus: Event bus for intermediate log entries.
         """
         assert context.step_scraping_data is not None
+
         p = cast(ExtractLinksParams, context.step_scraping_data.params)
         try:
             page = browser.get_workflow_page()
@@ -51,13 +52,16 @@ class ExtractLinksExecutor(IStepExecutor):
             links: list[str] = []
             if not elements:
                 event_bus.log_step(context, f"Excp : Aucun élément trouvé pour le sélecteur '{p.selector}'")
-                context.push_extracted_values(p.mapping, p.selector, p.comment, links)
                 return StepExecutionResultEnum.E_ERROR
             selected = self._select_elements(elements, p.target)
             parsed = urlparse(page.url)
             base_url = f"{parsed.scheme}://{parsed.netloc}"
             links = self._get_all_links_from_elements(selected, base_url, p.cutted_ampersand)
-            context.push_extracted_values(p.mapping, p.selector, p.comment, links)
+
+            # push
+            context.push_links_extracted(links)
+
+            # debug log
             preview_one_item = links[0] if links and links[0] else C_STR_ERROR_EXTRACT_LINKS
             event_bus.log_step(context, f"x{len(links)} lien(s) | str[:25] ='{preview_one_item[:25]}'")
         except Exception as exc:  # noqa: BLE001

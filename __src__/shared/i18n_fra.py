@@ -193,7 +193,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_EXTRACT_TEXTS: "Extraire : Textes de la page",
     StepTypeEnum.E_EXTRACT_LINKS: "Extraire : Liens de la page",
     StepTypeEnum.E_EXTRACT_VARIABLE: "Extraire : variable système",
-    StepTypeEnum.E_EXPORT_DATA_TO_JS: "Exporter données (csv)",
+    StepTypeEnum.E_EXPORT_DATA_TO_CSV: "Exporter données (csv)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
     StepTypeEnum.E_RESTART_TO_BEGINNING: "Recommencer au début",
     StepTypeEnum.E_KILL_BROWSER: "Quitter navigateur",
@@ -235,7 +235,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "end_process_wait_duration_invalid": "[{step}.] : la durée d'attente doit être >= 0.",
     "end_process_wait_unit_invalid": "[{step}.] : unité de temps invalide — {value!r}.",
     # --- export data to js ---
-    "export_data_to_js_prefix_file_required": "[{step}.] : Préfixe du fichier obligatoire.",
+    "export_data_to_js_csv_filename_required": "[{step}.] : Fichier CSV obligatoire.",
     # --- all extracts with mapping ---
     "extract_key_mapping_already_used": "[{step}.] : clé de mapping déjà utilisé.",
     # --- extract_links ---

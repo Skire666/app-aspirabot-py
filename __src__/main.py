@@ -97,10 +97,7 @@ def main() -> None:
         config_repo, log_repo_factory=LogRepository, logging_service_factory=LoggingService
     )
 
-    def _folder_setup_factory(
-        on_confirm: Callable[[], None],
-        on_cancel: Callable[[], None],
-    ) -> None:
+    def _folder_setup_factory(on_confirm: Callable[[], None], on_cancel: Callable[[], None]) -> None:
         """Create and display the folder-setup dialog MVP at first launch."""
         vm = FolderSetupViewModel(master=root)
         FolderSetupPresenter(vm, startup_service, on_confirm, on_cancel)
@@ -421,9 +418,7 @@ def _init_executor_component(
 
 
 def _init_scraping_component(
-    main_view: MainView,
-    scenarios_service: ScenariosService,
-    sourcing_urls: SourcingUrlsService,
+    main_view: MainView, scenarios_service: ScenariosService, sourcing_urls: SourcingUrlsService
 ) -> tuple[ScrapingView, ScrapingPresenter]:
     """Create and wire the scraping panel component.
 
@@ -439,7 +434,6 @@ def _init_scraping_component(
     scraping_view = ScrapingView(main_view.content_area, vm=scraping_vm)
     scraping_service = ScrapingService(
         workflow_service=WorkflowService(),
-        extracted_data_repository=JsonFileRepository(),
         browser_service_factory=lambda: BrowserPlaywrightService(
             chromium_persistant_dir=AppConfigurationModel.get_instance().chromium_persistant_dir,
             chromium_extensions_dir=AppConfigurationModel.get_instance().chromium_extensions_dir,

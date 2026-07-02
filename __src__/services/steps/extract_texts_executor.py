@@ -53,19 +53,20 @@ class ExtractTextsExecutor(IStepExecutor):
             event_bus: Event bus for intermediate log entries.
         """
         assert context.step_scraping_data is not None
+
         p = cast(ExtractTextsParams, context.step_scraping_data.params)
         try:
             page = browser.get_workflow_page()
             elements: list[ElementHandle] = page.query_selector_all(p.selector)
-            texts: list[str] = []
             if not elements:
                 event_bus.log_step(context, f"Excp : Aucun élément trouvé pour le sélecteur '{p.selector}'")
-                context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
                 return StepExecutionResultEnum.E_ERROR
 
             selected: list[ElementHandle] = self._select_elements(elements, p.target)
-            texts = [extract_from_element(el, p.extract_mode) for el in selected]
-            context.push_extracted_values(p.mapping, p.selector, p.comment, texts)
+            texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
+
+            # push
+            context.push_texts_extracted(p.mapping, texts)
 
             # infos
             preview_one_item = texts[0] if texts and texts[0] else C_STR_ERROR_EXTRACT_TEXTS

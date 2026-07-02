@@ -7,13 +7,12 @@
 from __future__ import annotations
 
 import logging
-from typing import cast, override
+from typing import override
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
 from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
-from models.steps.youtube_infos_video_params import YoutubeInfosVideoParams
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
@@ -60,7 +59,8 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
     ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
-        p = cast(YoutubeInfosVideoParams, context.step_scraping_data.params)
+
+        # TEST cast(YoutubeInfosVideoParams, context.step_scraping_data.params)
         try:
             url_youtube = sanitize_youtube_url(context.last_url_opened)
             obj = self._repo.fetch_video_info(url_youtube)
@@ -68,9 +68,9 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             rs = casted.validate()
             _require_valid_video_infos(rs)
             self._repo.update_cached_subtitles(url_youtube, casted)
-            for key, value in casted.to_dict().items():
-                casted_list = [value] if not isinstance(value, list) else value  # pyright: ignore[reportUnknownVariableType]
-                context.push_extracted_values(key, "yt-dlp", p.comment, casted_list)
+
+            # push
+            context.push_ytdlp_extracted(casted)
 
         except Exception as exc:  # noqa: BLE001
             # "... in to confirm your age ..." -> video age restricted

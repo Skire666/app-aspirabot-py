@@ -19,9 +19,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from models.app_configuration_model import AppConfigurationModel
-from models.extracted_data_model import ExtractedData
 from models.step_scraping_model import StepScrapingModel
-from shared.enums import StepExecutionResultEnum
+from models.steps_collections_model import StepsCollections
+from repositories.csv_repository import CsvRepository
+from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.typing.csv_table import CsvTable
+
+from __src__.models.youtube_infos_video_model import YoutubeInfosVideoModel
+from __src__.shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 
 if TYPE_CHECKING:
     from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -64,7 +69,7 @@ class ScrapingContextModel:
     log_messages: list[str] = field(default_factory=list)
 
     # date extracted
-    extracted_data: ExtractedData | None = field(default=None)
+    extracted_data: CsvTable | None = field(default=None)
 
     # Optional URL source scenario injected by the service before each run.
     url_source: IUrlSourceProvider | None = field(default=None)
@@ -87,7 +92,7 @@ class ScrapingContextModel:
         self.app_config = AppConfigurationModel.get_instance()
         self.folder_export = Path()
         self.downloaded_urls = set()
-        self.extracted_data = ExtractedData()
+        self.extracted_data = None
         self.step_id_by_index = []
         self.step_index_by_id = {}
         self.pause_event = threading.Event()
@@ -112,12 +117,31 @@ class ScrapingContextModel:
         self.pending_jump = None
         self.end_process = False
         self.downloaded_urls = set()
-        self.extracted_data = ExtractedData()
         self.browser_stats = (0, "—")
 
         # Build fast-lookup maps used by JUMP_TO_STEP resolution.
         self.step_id_by_index = [step.step_id for step in steps]
         self.step_index_by_id = {step.step_id: idx for idx, step in enumerate(steps)}
+
+    def prepare_extracted_data(self, steps: list[StepScrapingModel]) -> None:
+        """Prepare the extracted data table with headers from all steps.
+
+        Args:
+            steps: The list of steps in the workflow, used to build the CSV header.
+        """
+        ls_collection = StepsCollections(steps)
+        if ls_collection.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_CSV) >= 1:
+            filename = ls_collection.get_name_of_file_csv()
+            headers: set[str] = ls_collection.get_all_mapping_keys()
+            csv_repository = CsvRepository()
+            fullpath = self.folder_export / f"{filename}.csv"
+            if csv_repository.file_exists(fullpath):
+                self.extracted_data = csv_repository.read_file(fullpath)
+            else:
+                self.extracted_data = CsvTable(header=headers)
+                csv_repository.create_file(fullpath, headers)
+        else:
+            self.extracted_data = None
 
     def prepare_step_execution(self, step: StepScrapingModel) -> None:
         """Prepare the context for a new step execution.
@@ -140,20 +164,6 @@ class ScrapingContextModel:
         self.last_result_step = result
         self.last_time_elapsed = time.time() - self._time_started + 0.001  # add 1ms to avoid zero values
 
-    def push_extracted_values(self, mapping_key: str, inp: str, com: str, vals: list[str]) -> None:
-        """Push extracted values into the context's extracted_data dict.
-
-        Args:
-            mapping_key: The key under which to store the extracted values.
-            inp: The input value used to find the elements.
-            com: A user-provided comment for the extracted values.
-            vals: The list of extracted string values to store.
-        """
-        if self.extracted_data is None:
-            self.extracted_data = ExtractedData()
-
-        self.extracted_data.append_item(key=mapping_key, input_css=inp, values=vals, comment=com)
-
     def last_step_was_success(self) -> bool:
         """Helper to check if the last step execution was a success."""
         return self.last_result_step in {
@@ -167,11 +177,85 @@ class ScrapingContextModel:
 
         Clear extracted data after export to prevent duplicate exports
         """
-        self.extracted_data = ExtractedData()
+        self.extracted_data = None
 
     def last_result_is_error(self) -> bool:
         """Check if the last result indicates an error."""
         return self.last_result_step in {StepExecutionResultEnum.E_ERROR, StepExecutionResultEnum.E_FATAL}
+
+    # ------------------------------------------------------------------
+    # Push extracted data into the context's extracted_data table.
+    # ------------------------------------------------------------------
+
+    def push_links_extracted(self, links: list[str]) -> None:
+        """Push extracted links into the context's extracted data table.
+
+        Args:
+            links: List of extracted link strings.
+        """
+        assert self.extracted_data is not None
+
+        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        for link in links:
+            index = self.extracted_data.find_row_index("__primary_key__", link)
+            if index is None:
+                dc = {"__primary_key__": link, "__date_created_links__": date_now}
+                self.extracted_data.add_row(dc)
+            else:
+                self.extracted_data.update_cell(index, "__date_modified_links__", date_now)
+
+    def push_texts_extracted(self, mapping: str, texts: list[str]) -> None:
+        """Push extracted texts into the context's extracted data table.
+
+        Args:
+            mapping: The mapping key for the extracted texts.
+            texts: List of extracted text strings.
+        """
+        assert self.extracted_data is not None
+
+        # push
+        index = self.extracted_data.find_row_index("__primary_key__", self.last_url_opened)
+        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        flt = self.extracted_data.flatten_value(texts)
+        if index is None:  # not found...
+            dc = {"__primary_key__": self.last_url_opened, mapping: flt, "__date_created_texts__": date_now}
+            self.extracted_data.add_row(dc)
+        else:
+            self.extracted_data.update_cell(index, mapping, flt)
+            self.extracted_data.update_cell(index, "__date_modified_texts__", date_now)
+
+    def push_vars_extracted(self, mapping: str, value: str) -> None:
+        """Push a single extracted variable into the context's extracted data table."""
+        assert self.extracted_data is not None
+
+        # push
+        index = self.extracted_data.find_row_index("__primary_key__", self.last_url_opened)
+        flt = self.extracted_data.flatten_value(value)
+        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        if index is None:  # not found...
+            dc = {"__primary_key__": self.last_url_opened, mapping: flt, "__date_created_vars__": date_now}
+            self.extracted_data.add_row(dc)
+        else:
+            self.extracted_data.update_cell(index, mapping, flt)
+            self.extracted_data.update_cell(index, "__date_modified_vars__", date_now)
+
+    def push_ytdlp_extracted(self, ytdlp_data: YoutubeInfosVideoModel) -> None:
+        """Push extracted YouTube data into the context's extracted data table."""
+        assert self.extracted_data is not None
+
+        # push
+        index = self.extracted_data.find_row_index("__primary_key__", self.last_url_opened)
+        casted = ytdlp_data.to_dict()
+        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        for key, value in casted.items():
+            # push
+            flt = self.extracted_data.flatten_value(value)
+            if index is None:  # not found...
+                dc = {"__primary_key__": self.last_url_opened, key: flt, "__date_created_ytdlp__": date_now}
+                self.extracted_data.add_row(dc)
+            else:
+                self.extracted_data.update_cell(index, key, flt)
+                self.extracted_data.update_cell(index, "__date_modified_ytdlp__", date_now)
 
 
 # EOF

@@ -1,4 +1,4 @@
-"""Per-step presenter for EXPORT_DATA_TO_JS — builds typed params from raw dict."""
+"""Per-step presenter for EXPORT_DATA_TO_CSV — builds typed params from raw dict."""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -22,10 +22,10 @@ def _build(data: dict[str, Any]) -> ExportDataToCsvParams:
     Returns:
         A fully populated ExportDataToCsvParams instance.
     """
-    return ExportDataToCsvParams(prefix_file=data.get("prefix_file", ""), comment=data.get("comment", ""))
+    return ExportDataToCsvParams(csv_filename=data.get("csv_filename", ""), comment=data.get("comment", ""))
 
 
-register_params_builder(StepTypeEnum.E_EXPORT_DATA_TO_JS, _build)
+register_params_builder(StepTypeEnum.E_EXPORT_DATA_TO_CSV, _build)
 
 
 # EOF

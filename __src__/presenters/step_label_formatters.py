@@ -156,9 +156,9 @@ def _fmt_download_image(params: dict[str, Any], _idx: int, _ctx: dict[str, int])
 
 
 def _fmt_export_data_to_js(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
-    """Format label for EXPORT_DATA_TO_JS."""
-    prefix = params.get("prefix_file") or "<vide>"
-    return f"Exporter vers fichier CSV\nPréfixe : {prefix}*.csv"
+    """Format label for EXPORT_DATA_TO_CSV."""
+    csv_fname = params.get("csv_filename") or "<vide>"
+    return f"Exporter vers fichier CSV\nNom : {csv_fname}.csv"
 
 
 def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -328,7 +328,7 @@ _REGISTRY: dict[StepTypeEnum, _FormatterFn] = {
     StepTypeEnum.E_COUNT_HTML_ELEMENTS: _fmt_count_html_elements,
     StepTypeEnum.E_COUNT_HTML_IMAGES: _fmt_count_html_images,
     StepTypeEnum.E_DOWNLOAD_IMAGE: _fmt_download_image,
-    StepTypeEnum.E_EXPORT_DATA_TO_JS: _fmt_export_data_to_js,
+    StepTypeEnum.E_EXPORT_DATA_TO_CSV: _fmt_export_data_to_js,
     StepTypeEnum.E_EXTRACT_LINKS: _fmt_extract_links,
     StepTypeEnum.E_EXTRACT_TEXTS: _fmt_extract_texts,
     StepTypeEnum.E_JUMP_TO_STEP: _fmt_jump_to_step,
