@@ -12,6 +12,7 @@ from services.steps.count_html_elements_executor import CountHtmlElementsExecuto
 from services.steps.count_html_images_executor import CountHtmlImagesExecutor
 from services.steps.download_image_executor import DownloadImageExecutor
 from services.steps.export_data_to_js_executor import ExportDataToCsvExecutor
+from services.steps.extract_js_custom_executor import ExtractJsCustomExecutor
 from services.steps.extract_links_executor import ExtractLinksExecutor
 from services.steps.extract_texts_executor import ExtractTextsExecutor
 from services.steps.extract_variable_executor import ExtractVariableExecutor
@@ -39,6 +40,7 @@ __all__ = [
     "CountHtmlImagesExecutor",
     "DownloadImageExecutor",
     "ExportDataToCsvExecutor",
+    "ExtractJsCustomExecutor",
     "ExtractLinksExecutor",
     "ExtractTextsExecutor",
     "ExtractVariableExecutor",

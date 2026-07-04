@@ -172,9 +172,7 @@ class StepsCollections:
         if export_steps:
             export_step = export_steps[0]  # always one
             if isinstance(export_step.params, ExportDataToCsvParams):
-                print(f"DEBUG: csv_filename: {export_step.params}")
-                return export_step.params.csv_filename  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
-        print("DEBUG: csv_filename: NOT FOUND")
+                return export_step.params.csv_filename
         return None
 
     def count_type_step(self, step_type: StepTypeEnum) -> int:

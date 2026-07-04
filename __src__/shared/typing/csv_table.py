@@ -185,6 +185,19 @@ class CsvTable:
         self._rows[index][column] = value
         self.add_column(column)  # ensure column is in header, even if it was missing
 
+    def update_cells(self, index: int, row: dict[str, str]) -> None:
+        """Update the row at *index* with the key/value pairs in *row*.
+
+        Raises:
+            CsvRowIndexNotFoundError: When *index* is out of range.
+            CsvColumnNotFoundError: When *row* has a key outside the header.
+        """
+        self._require_row(index)
+        for key, value in row.items():
+            self._rows[index][key] = value
+        for key in row:
+            self.add_column(key)
+
     def get_cell(self, index: int, column: str) -> str:
         """Return the value of a single cell at (*index*, *column*).
 

@@ -815,6 +815,30 @@ class SelectorNoElementFoundError(AspirabotBaseError):
         super().__init__(f"Aucun élément pour le sélecteur '{selector}'")
 
 
+class JsExtractedPrimaryKeyMissingError(ValueError, AspirabotBaseError):
+    """Raised when a JS-extracted object is missing the configured primary key."""
+
+    def __init__(self, primary_key: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            primary_key: The primary key expected in the extracted object.
+        """
+        super().__init__(f"La clé primaire '{primary_key}' est manquante dans l'objet extrait.")
+
+
+class InvalidJsExtractedValueTypeError(TypeError, AspirabotBaseError):
+    """Raised when a JS-extracted value is not a dict or a list of dicts."""
+
+    def __init__(self, got: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            got: The actual Python type name received.
+        """
+        super().__init__(f"La valeur extraite doit être un dict ou une liste de dicts, reçu : {got}.")
+
+
 class NoDataToExportError(AspirabotBaseError):
     """Raised when there is no extracted data available to export."""
 

@@ -169,6 +169,12 @@ def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) 
     return f"Extraire liens  -  Clé : {mapping}\nCible : {target}  |  Sél. : {selector}"
 
 
+def _fmt_extract_js_custom(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
+    """Format label for EXTRACT_JS_CUSTOM."""
+    primary_key = params.get("primary_key") or "<vide>"
+    return f"Extraction - JS Personnalisé\nClé primaire : {primary_key}"
+
+
 def _fmt_extract_texts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXTRACT_TEXTS."""
     selector = params.get("selector") or "<vide>"
@@ -330,6 +336,7 @@ _REGISTRY: dict[StepTypeEnum, _FormatterFn] = {
     StepTypeEnum.E_DOWNLOAD_IMAGE: _fmt_download_image,
     StepTypeEnum.E_EXPORT_DATA_TO_CSV: _fmt_export_data_to_js,
     StepTypeEnum.E_EXTRACT_LINKS: _fmt_extract_links,
+    StepTypeEnum.E_EXTRACT_JS_CUSTOM: _fmt_extract_js_custom,
     StepTypeEnum.E_EXTRACT_TEXTS: _fmt_extract_texts,
     StepTypeEnum.E_JUMP_TO_STEP: _fmt_jump_to_step,
     StepTypeEnum.E_KILL_BROWSER: _fmt_kill_browser,

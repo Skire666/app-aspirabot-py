@@ -16,7 +16,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from models.app_configuration_model import AppConfigurationModel
 from models.step_scraping_model import StepScrapingModel
@@ -26,6 +26,7 @@ from repositories.csv_repository import CsvRepository
 from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_PRIMARY_KEY, C_COLUMN_SOURCE
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.exception_util import InvalidJsExtractedValueTypeError, JsExtractedPrimaryKeyMissingError
 from shared.typing.csv_table import CsvTable
 
 if TYPE_CHECKING:
@@ -187,6 +188,62 @@ class ScrapingContextModel:
     # Push extracted data into the context's extracted_data table.
     # ------------------------------------------------------------------
 
+    def push_js_custom_extracted(self, js_obj: object, col_primary_key: str) -> None:
+        """Push extracted JavaScript objects into the context's extracted data table.
+
+        Args:
+            js_obj: The JavaScript object to extract data from.
+            col_primary_key: The column name for the primary key in the extracted data.
+
+        Raises:
+            JsExtractedPrimaryKeyMissingError: When a dict is missing *primary_key*.
+            InvalidJsExtractedValueTypeError: When *js_obj* is not a dict or a list of dicts.
+        """
+        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+
+        if isinstance(js_obj, dict):
+            self._push_js_custom_row(cast(dict[str, object], js_obj), col_primary_key, date_now)
+        elif isinstance(js_obj, list):
+            for item in cast(list[object], js_obj):
+                if not isinstance(item, dict):
+                    raise InvalidJsExtractedValueTypeError(type(item).__name__)
+                self._push_js_custom_row(cast(dict[str, object], item), col_primary_key, date_now)
+        else:
+            raise InvalidJsExtractedValueTypeError(type(js_obj).__name__)
+
+    def _push_js_custom_row(self, obj: dict[str, object], col_primary_key: str, date_now: str) -> None:
+        """Insert or update a single extracted-data row from a JS-extracted dict.
+
+        Args:
+            obj: The JS-extracted dict, keyed by column name.
+            col_primary_key: Column name holding the row's primary key.
+            date_now: Timestamp string stamped on created/modified rows.
+
+        Raises:
+            JsExtractedPrimaryKeyMissingError: When *obj* is missing *col_primary_key*.
+        """
+        assert self.extracted_data is not None
+
+        pk_value = obj.get(col_primary_key)
+        if pk_value is None:
+            raise JsExtractedPrimaryKeyMissingError(col_primary_key)
+
+        pk_str = CsvTable.flatten_value(pk_value)
+        row = CsvTable.flatten_json_to_row(obj)
+        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, pk_str)
+        if index is None:
+            del row[col_primary_key]  # avoid duplicate column
+            row[C_COLUMN_PRIMARY_KEY] = pk_str
+            row[C_COLUMN_DATE_CREATED] = date_now
+            row[C_COLUMN_DATE_MODIFIED] = date_now
+            row[C_COLUMN_SOURCE] = "js_custom"
+            self.extracted_data.add_row(row)
+        else:
+            del row[col_primary_key]  # avoid duplicate column
+            row[C_COLUMN_DATE_MODIFIED] = date_now
+            row[C_COLUMN_SOURCE] = "js_custom"
+            self.extracted_data.update_cells(index, row)
+
     def push_links_extracted(self, links: list[str]) -> None:
         """Push extracted links into the context's extracted data table.
 
@@ -199,10 +256,16 @@ class ScrapingContextModel:
         for link in links:
             index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, link)
             if index is None:
-                dc = {C_COLUMN_PRIMARY_KEY: link, C_COLUMN_DATE_CREATED: date_now}
+                dc = {
+                    C_COLUMN_PRIMARY_KEY: link,
+                    C_COLUMN_DATE_CREATED: date_now,
+                    C_COLUMN_DATE_MODIFIED: date_now,
+                    C_COLUMN_SOURCE: "links",
+                }
                 self.extracted_data.add_row(dc)
             else:
-                self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
+                dc = {C_COLUMN_DATE_MODIFIED: date_now, C_COLUMN_SOURCE: "links"}
+                self.extracted_data.update_cells(index, dc)
 
     def push_texts_extracted(self, mapping: str, texts: list[str], target: ExtractTargetEnum) -> None:
         """Push extracted texts into the context's extracted data table.
@@ -217,20 +280,19 @@ class ScrapingContextModel:
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         value_flatten = texts if target == ExtractTargetEnum.E_ALL else texts[0]
-        print(f"DEBUG: push_texts_extracted - value_flatten: {value_flatten}")
         flt = self.extracted_data.flatten_value(value_flatten)
         if index is None:  # not found...
             dc = {
                 C_COLUMN_PRIMARY_KEY: self.last_url_opened,
                 mapping: flt,
                 C_COLUMN_DATE_CREATED: date_now,
+                C_COLUMN_DATE_MODIFIED: date_now,
                 C_COLUMN_SOURCE: "texts",
             }
             self.extracted_data.add_row(dc)
         else:
-            self.extracted_data.update_cell(index, mapping, flt)
-            self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
-            self.extracted_data.update_cell(index, C_COLUMN_SOURCE, "texts")
+            dc = {mapping: flt, C_COLUMN_DATE_MODIFIED: date_now, C_COLUMN_SOURCE: "texts"}
+            self.extracted_data.update_cells(index, dc)
 
     def push_vars_extracted(self, mapping: str, value: str) -> None:
         """Push a single extracted variable into the context's extracted data table."""
@@ -238,20 +300,19 @@ class ScrapingContextModel:
 
         # push
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
-        flt = self.extracted_data.flatten_value(value)
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         if index is None:  # not found...
             dc = {
                 C_COLUMN_PRIMARY_KEY: self.last_url_opened,
-                mapping: flt,
+                mapping: value,
                 C_COLUMN_DATE_CREATED: date_now,
+                C_COLUMN_DATE_MODIFIED: date_now,
                 C_COLUMN_SOURCE: "vars",
             }
             self.extracted_data.add_row(dc)
         else:
-            self.extracted_data.update_cell(index, mapping, flt)
-            self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
-            self.extracted_data.update_cell(index, C_COLUMN_SOURCE, "vars")
+            dc = {mapping: value, C_COLUMN_DATE_MODIFIED: date_now, C_COLUMN_SOURCE: "vars"}
+            self.extracted_data.update_cells(index, dc)
 
     def push_ytdlp_extracted(self, ytdlp_data: YoutubeInfosVideoModel) -> None:
         """Push extracted YouTube data into the context's extracted data table."""
@@ -260,23 +321,21 @@ class ScrapingContextModel:
         # push
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
         casted = ytdlp_data.to_dict()
+        casted = self.extracted_data.flatten_json_to_row(casted)
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
-
-        for key, value in casted.items():
-            casted[key] = self.extracted_data.flatten_value(value)
 
         if index is None:  # not found...
             casted[C_COLUMN_PRIMARY_KEY] = self.last_url_opened
             casted[C_COLUMN_DATE_CREATED] = date_now
+            casted[C_COLUMN_DATE_MODIFIED] = date_now
             casted[C_COLUMN_SOURCE] = "ytdlp"
-
+            # new
             self.extracted_data.add_row(casted)
         else:
+            casted[C_COLUMN_DATE_MODIFIED] = date_now
+            casted[C_COLUMN_SOURCE] = "ytdlp"
             # update
-            for key, value in casted.items():
-                self.extracted_data.update_cell(index, key, value)
-            self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
-            self.extracted_data.update_cell(index, C_COLUMN_SOURCE, "ytdlp")
+            self.extracted_data.update_cells(index, casted)
 
 
 # EOF

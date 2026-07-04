@@ -85,9 +85,9 @@ C_PROFILE_FILE = "profiles.json"
 # -----------------------------------------------------------------------------
 
 # Special string used to indicate an error
-C_STR_ERROR_JS_EVALUATION: str = "<#JS/EVA>"
-C_STR_ERROR_EXTRACT_TEXTS: str = "<#EX/TXT>"
-C_STR_ERROR_EXTRACT_LINKS: str = "<#EX/LNK>"
+C_STR_ERROR_JS_EVALUATION: str = "<#ERR/JS_EVAL>"
+C_STR_ERROR_EXTRACT_TEXTS: str = "<#ERR/EMPTY_TXT>"
+C_STR_ERROR_EXTRACT_LINKS: str = "<#ERR/LNK>"
 
 # Maximum size for images to be scraped (in pixels) - used as default value for image size filters
 C_MAXIMUM_SIZE_IMAGE: int = 99999

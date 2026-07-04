@@ -12,6 +12,7 @@ from views.steps.count_html_elements_form_def import CountHtmlElementsFormDef
 from views.steps.count_html_images_form_def import CountHtmlImagesFormDef
 from views.steps.download_image_form_def import DownloadImageFormDef
 from views.steps.export_data_to_js_form_def import ExportDataToJsFormDef
+from views.steps.extract_js_custom_form_def import ExtractJsCustomFormDef
 from views.steps.extract_links_form_def import ExtractLinksFormDef
 from views.steps.extract_texts_form_def import ExtractTextsFormDef
 from views.steps.extract_variable_form_def import ExtractVariableFormDef
@@ -39,6 +40,7 @@ __all__ = [
     "CountHtmlImagesFormDef",
     "DownloadImageFormDef",
     "ExportDataToJsFormDef",
+    "ExtractJsCustomFormDef",
     "ExtractLinksFormDef",
     "ExtractTextsFormDef",
     "ExtractVariableFormDef",
