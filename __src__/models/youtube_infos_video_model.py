@@ -94,10 +94,5 @@ class YoutubeInfosVideoModel:
                 result[key] = getattr(self, key, None)
         return result
 
-    @staticmethod
-    def get_all_fields() -> set[str]:
-        """Return a list of all field names in the model."""
-        return set(YoutubeInfosVideoModel.__dataclass_fields__.keys())
-
 
 # EOF

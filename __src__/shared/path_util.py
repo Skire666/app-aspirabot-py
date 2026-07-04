@@ -154,4 +154,19 @@ def list_files(folder: str, extension: str) -> list[tuple[Path, datetime]]:
     return [(f, datetime.fromtimestamp(f.stat().st_mtime)) for f in files_found]
 
 
+def get_mtime_of_file(file_path: Path | str) -> datetime:
+    """Get the last modified time of a file.
+
+    Args:
+        file_path: The path to the file.
+
+    Returns:
+        datetime: The last modified time of the file.
+    """
+    path = Path(file_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"The specified path is not a valid file: {file_path}")
+    return datetime.fromtimestamp(path.stat().st_mtime)
+
+
 # EOF

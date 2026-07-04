@@ -27,7 +27,9 @@ class ExtractLinksParams(BaseModel):
     selector: str
     target: ExtractTargetEnum
     mapping: str
-    cutted_ampersand: bool
+    url_cut_ampersand: bool
+    url_cut_question: bool
+    url_always_add_slash: bool
     comment: str = ""
 
     @field_validator("selector")

@@ -13,11 +13,9 @@ coverage from regression tests and are not fully exercised by unit tests:
 from __future__ import annotations
 
 import re
-import tempfile
 from pathlib import Path
 
 import pytest
-
 from shared.datetime_util import (
     get_datetime_now_yyyy_mm_dd_hh_mm,
     get_time_now_hh_mm_ss,
@@ -25,19 +23,13 @@ from shared.datetime_util import (
 )
 from shared.enums import UrlSourceTypeEnum
 from shared.exception_util import ValueMustBePositiveAndEvenError
-from shared.path_util import (
-    count_files_in_folder,
-    folder_exists,
-    list_files,
-    path_has_valid_syntax,
-)
+from shared.path_util import count_files_in_folder, folder_exists, list_files, path_has_valid_syntax
 from shared.random_util import (
+    g_unique_list_id_step,
     generate_rng_hexastring,
     generate_rng_id_step,
-    g_unique_list_id_step,
     merge_unique_list_id_step,
 )
-
 
 # ===========================================================================
 # datetime_util — format contracts
@@ -54,15 +46,11 @@ class TestDatetimeUtilFormats:
 
     def test_get_datetime_now_yyyy_mm_dd_hh_mm_format(self) -> None:
         result = get_datetime_now_yyyy_mm_dd_hh_mm()
-        assert self._PATTERN_HH_MM.match(result), (
-            f"get_datetime_now_yyyy_mm_dd_hh_mm() format mismatch: {result!r}"
-        )
+        assert self._PATTERN_HH_MM.match(result), f"get_datetime_now_yyyy_mm_dd_hh_mm() format mismatch: {result!r}"
 
     def test_get_time_now_hh_mm_ss_format(self) -> None:
         result = get_time_now_hh_mm_ss()
-        assert self._PATTERN_HH_MM_SS.match(result), (
-            f"get_time_now_hh_mm_ss() format mismatch: {result!r}"
-        )
+        assert self._PATTERN_HH_MM_SS.match(result), f"get_time_now_hh_mm_ss() format mismatch: {result!r}"
 
     def test_get_timestamp_file_format(self) -> None:
         result = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
@@ -231,8 +219,8 @@ class TestPathHasValidSyntaxEdgeCases:
             ("C:\\Users\\data", True),
             ("relative\\path", True),
             ("file.txt", True),
-            ('path|with|pipe', False),
-            ('path<with>angle', False),
+            ("path|with|pipe", False),
+            ("path<with>angle", False),
             ('path"with"quote', False),
             ("CON", False),
             ("NUL\\subfolder", False),
@@ -277,17 +265,13 @@ class TestUrlSourceTypeEnumValues:
         assert "E_UNKNOWN" in names
         assert "E_MANUAL_LIST" in names
         assert "E_FOLDER_RACS" in names
-        assert "E_FOLDER_JSONS" in names
-        assert "E_DISCOVER_ENTRIES" in names
+        assert "E_REFRESH_URLS" in names
 
     def test_enum_count_is_six(self) -> None:
         assert len(list(UrlSourceTypeEnum)) == 6, (
             "UrlSourceTypeEnum must have exactly 6 variants — update this test if adding new ones"
         )
 
-    @pytest.mark.parametrize(
-        "member",
-        list(UrlSourceTypeEnum),
-    )
+    @pytest.mark.parametrize("member", list(UrlSourceTypeEnum))
     def test_each_value_is_string(self, member: UrlSourceTypeEnum) -> None:
         assert isinstance(member.value, str), f"{member.name}.value must be a string"

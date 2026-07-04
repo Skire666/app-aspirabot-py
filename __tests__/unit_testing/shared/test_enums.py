@@ -74,19 +74,13 @@ class TestUrlSourceTypeEnum:
         assert UrlSourceTypeEnum.E_FOLDER_RACS.value == "FOLDER_RACS"
 
     def test_json_value(self) -> None:
-        assert UrlSourceTypeEnum.E_FOLDER_JSONS.value == "FOLDER_JSONS"
+        assert UrlSourceTypeEnum.E_REFRESH_URLS.value == "FOLDER_JSONS"
 
     def test_to_displayable_str_manual_list(self) -> None:
         assert UrlSourceTypeEnum.E_MANUAL_LIST.to_displayable_str() == "Liste manuelle"
 
     def test_to_displayable_str_folder_racs(self) -> None:
         assert UrlSourceTypeEnum.E_FOLDER_RACS.to_displayable_str() == "Dossier RACS"
-
-    def test_to_displayable_str_folder_jsons(self) -> None:
-        assert UrlSourceTypeEnum.E_FOLDER_JSONS.to_displayable_str() == "Dossier JSON"
-
-    def test_to_displayable_str_discover_entries(self) -> None:
-        assert UrlSourceTypeEnum.E_DISCOVER_ENTRIES.to_displayable_str() == "Lire nouveautés"
 
     def test_to_displayable_str_unset_returns_unknown(self) -> None:
         assert UrlSourceTypeEnum.E_UNSET.to_displayable_str() == "Type inconnu"

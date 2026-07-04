@@ -11,10 +11,10 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 from shared.app_global_state import MyButton, MyCombobox, MyEntry, MyLabel, MyRadioButton
+from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED
 from shared.enums import RelativeDateEnum, UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
-from views.components.editable_table.editable_table import ActionColumnDef, EditableTable, TableConfig, TextColumnDef
 from views.components.folder_link_widget import FolderLinkWidget
 
 # -----------------------------------------------------------------------------
@@ -69,7 +69,6 @@ class UrlConfigView(ttk.Frame):
         self._create_panel_manual()
         self._create_panel_folder()
         self._create_panel_json()
-        self._create_panel_discover()
 
     def _create_radio_bar(self, parent: tk.Widget) -> None:
         """Four radio buttons sharing _panel_var — one per content panel."""
@@ -79,8 +78,7 @@ class UrlConfigView(ttk.Frame):
         entries = [
             ("Saisie manuelle", UrlSourceTypeEnum.E_MANUAL_LIST.value),
             ("Dossier avec '.url'", UrlSourceTypeEnum.E_FOLDER_RACS.value),
-            ("Dossier avec '.json'", UrlSourceTypeEnum.E_FOLDER_JSONS.value),
-            ("Lire les nouveautés", UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value),
+            ("Dossier avec '.csv'", UrlSourceTypeEnum.E_REFRESH_URLS.value),
         ]
         MyLabel(bar, text="Source :").pack_left()
         for label, value in entries:
@@ -137,7 +135,7 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        MyLabel(row, text="Chemin :").pack_left()
+        MyLabel(row, text="Dossier avec '.url' :").pack_left()
         self._view_traces.append(
             (
                 self._vm.urls_path_folder_racs_var,
@@ -237,14 +235,14 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        MyLabel(row, text="Chemin :").pack_left()
+        MyLabel(row, text="Chemin vers fichier CSV :").pack_left()
         self._view_traces.append(
             (
-                self._vm.urls_path_folder_jsons_var,
-                self._vm.urls_path_folder_jsons_var.trace_add("write", lambda *_: self._vm.form_changed()),
+                self._vm.urls_path_folder_csv_var,
+                self._vm.urls_path_folder_csv_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
-        MyEntry(row, textvariable=self._vm.urls_path_folder_jsons_var).pack_left(fill=tk.X, expand=True)
+        MyEntry(row, textvariable=self._vm.urls_path_folder_csv_var).pack_left(fill=tk.X, expand=True)
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_json).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
@@ -296,24 +294,24 @@ class UrlConfigView(ttk.Frame):
         MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
         MyRadioButton(
             row,
-            text="Lire récemment modifié",
-            variable=self._vm.url_sort_order_jsons_var,
+            text="Lire récents > anciens",
+            variable=self._vm.url_sort_order_csv_var,
             value=UrlSortOrderEnum.E_MTIME_DESC.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
         MyRadioButton(
             row,
-            text="Lire les plus anciens",
-            variable=self._vm.url_sort_order_jsons_var,
+            text="Lire anciens > récents",
+            variable=self._vm.url_sort_order_csv_var,
             value=UrlSortOrderEnum.E_MTIME_ASC.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
-        MyLabel(row, text="             Filtrer URLs (regexp) :").pack_left()
-        MyEntry(row, textvariable=self._vm.url_regexp_jsons_var).pack_right(expand=True, fill=tk.X)
+        MyEntry(row, textvariable=self._vm.url_x_top_csv_var).pack_right()
+        MyLabel(row, text="Nombre maximum à lire :").pack_right()
         self._view_traces.append(
             (
-                self._vm.url_regexp_jsons_var,
-                self._vm.url_regexp_jsons_var.trace_add("write", lambda *_: self._vm.form_changed()),
+                self._vm.url_x_top_csv_var,
+                self._vm.url_x_top_csv_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
 
@@ -326,82 +324,42 @@ class UrlConfigView(ttk.Frame):
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
         date_values = [e.enum_to_view() for e in RelativeDateEnum if e.is_valid()]
-        MyLabel(row, text="URLs dont les JSONs ont été modifiés entre").pack_left()
+        MyLabel(row, text="Filtrer les dates de").pack_left()
         MyCombobox(
-            row, textvariable=self._vm.json_date_modified_start_var, values=date_values, state="readonly", width=20
+            row,
+            textvariable=self._vm.csv_date_type_used_var,
+            values=[C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED],
+            state="readonly",
+            width=15,
         ).pack_left()
         self._view_traces.append(
             (
-                self._vm.json_date_modified_start_var,
-                self._vm.json_date_modified_start_var.trace_add("write", lambda *_: self._vm.form_changed()),
+                self._vm.csv_date_type_used_var,
+                self._vm.csv_date_type_used_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
+        MyLabel(row, text=" entre ").pack_left()
+        MyCombobox(
+            row, textvariable=self._vm.csv_date_start_var, values=date_values, state="readonly", width=15
+        ).pack_left()
+        self._view_traces.append(
+            (
+                self._vm.csv_date_start_var,
+                self._vm.csv_date_start_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
         MyLabel(row, text="et").pack_left()
         MyCombobox(
-            row, textvariable=self._vm.json_date_modified_end_var, values=date_values, state="readonly", width=20
+            row, textvariable=self._vm.csv_date_end_var, values=date_values, state="readonly", width=15
         ).pack_left()
         self._view_traces.append(
             (
-                self._vm.json_date_modified_end_var,
-                self._vm.json_date_modified_end_var.trace_add("write", lambda *_: self._vm.form_changed()),
+                self._vm.csv_date_end_var,
+                self._vm.csv_date_end_var.trace_add("write", lambda *_: self._vm.form_changed()),
             )
         )
 
     # ─── Panel 4 : Découverte automatique ────────────────────────────────────
-
-    def _create_panel_discover(self) -> None:
-        """Panel 4 — IN grid, IN/OUT forms, and compute row for URL discovery."""
-        self._panel_discover = ttk.Frame(self._panels_container)
-        self._create_discover_out_section(self._panel_discover)
-        self._create_discover_grid(self._panel_discover)
-
-    def _create_discover_grid(self, parent: tk.Widget) -> None:
-        """EditableTable [IN]: Modifier action button per row; built-in delete delegates to VM.
-
-        Args:
-            parent: The DISCOVER panel frame to attach widgets to.
-        """
-        config = TableConfig(
-            columns=[
-                TextColumnDef(key="col_dossier", header="Dossier (entrée)", width=180, editable=True, sortable=True),
-                ActionColumnDef(
-                    key="action_browse",
-                    header="📂 ...",
-                    width=50,
-                    label="📂 ...",
-                    target_key="col_dossier",
-                    handler=self._on_discover_browse_action,
-                ),
-                TextColumnDef(key="col_fichiers", header="Fichiers (regexp)", width=120, editable=True, sortable=True),
-                TextColumnDef(key="col_mapping", header="Clé (Niv. 1)", width=100, editable=True, sortable=True),
-                TextColumnDef(key="col_urls", header="URLs (regexp)", width=100, editable=True, sortable=True),
-            ],
-            confirm_delete=True,
-            on_change=self._on_discover_table_change,
-        )
-        self._grid_discover = EditableTable(parent, config=config)
-        self._grid_discover.pack(fill=tk.BOTH, expand=True)
-
-    def _create_discover_out_section(self, parent: tk.Widget) -> None:
-        """[OUT] form with 4 fields (reference — already-processed URLs).
-
-        Args:
-            parent: The DISCOVER panel frame to attach widgets to.
-        """
-        frame = tk.Frame(parent)
-        frame.pack(side=tk.BOTTOM, fill=tk.X)
-        for var in (
-            self._vm.disc_out_pattern_json_var,
-            self._vm.disc_out_key_mapping_var,
-            self._vm.disc_out_pattern_urls_var,
-        ):
-            self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
-        MyLabel(frame, text="Fichiers de sorties :").pack_left()
-        MyEntry(frame, textvariable=self._vm.disc_out_pattern_json_var, width=24).pack_left()
-        MyLabel(frame, text="Clé (Niv. 1) :").pack_left()
-        MyEntry(frame, textvariable=self._vm.disc_out_key_mapping_var, width=12).pack_left()
-        MyLabel(frame, text="URLs (regexp) :").pack_left()
-        MyEntry(frame, textvariable=self._vm.disc_out_pattern_urls_var, width=22).pack_left()
 
     # ------------------------------------------------------------------
     # ViewModel bindings
@@ -415,7 +373,6 @@ class UrlConfigView(ttk.Frame):
             (self._vm.url_preview_jsons_version_var, self._sync_jsons_preview),
             (self._vm.urls_source_type_var, self._sync_panel_from_vm),
             (self._vm.is_profile_section_active_var, self._sync_section_enabled),
-            (self._vm.discovers_in_version_var, self._sync_discovers_grid),
         ]
         for var, cb in bindings:
             self._view_traces.append((var, var.trace_add("write", cb)))
@@ -432,8 +389,7 @@ class UrlConfigView(ttk.Frame):
         if stype not in {
             UrlSourceTypeEnum.E_MANUAL_LIST.value,
             UrlSourceTypeEnum.E_FOLDER_RACS.value,
-            UrlSourceTypeEnum.E_FOLDER_JSONS.value,
-            UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value,
+            UrlSourceTypeEnum.E_REFRESH_URLS.value,
         }:
             return
         # Programmatic .set() does NOT fire command= on radio buttons — no feedback loop.
@@ -458,21 +414,6 @@ class UrlConfigView(ttk.Frame):
         text = "\n".join(self._vm.get_url_preview_jsons())
         self._write_readonly_text(self._txt_url_jsons, text)
 
-    def _sync_discovers_grid(self, *_: object) -> None:
-        """Rebuild the [IN] EditableTable from the current discovers rows snapshot."""
-        rows = self._vm.get_discovers_in_rows()
-        data = [
-            {
-                "col_dossier": r.folder_json,
-                "col_fichiers": r.pattern_json,
-                "col_mapping": r.key_mapping,
-                "col_urls": r.pattern_urls,
-                "__bound__": str(r.id_discover),
-            }
-            for r in rows
-        ]
-        self._grid_discover.set_data(data)
-
     def _sync_section_enabled(self, *_: object) -> None:
         """Enable or disable URL config widgets based on is_profile_section_active_var."""
         enabled = self._vm.is_profile_section_active_var.get()
@@ -490,9 +431,6 @@ class UrlConfigView(ttk.Frame):
                 _apply(child)  # type: ignore[arg-type]
 
         _apply(self)
-        # EditableTable's Treeview uses raw event bindings that ignore ttk state —
-        # call set_enabled() so its interaction gate is properly toggled.
-        self._grid_discover.set_enabled(enabled)
         # Readonly preview widgets must stay disabled even when the section is active.
         if enabled:
             self._txt_url_shortcuts.configure(state=tk.DISABLED)
@@ -521,31 +459,6 @@ class UrlConfigView(ttk.Frame):
             self._vm.manual_urls_var.set(content)
             self._vm.form_changed()
 
-    def _on_discover_table_change(self, rows: list[dict[str, str]]) -> None:
-        """Keep VM discover rows in sync with the EditableTable on every mutation.
-
-        Called by EditableTable.on_change after any inline edit, deletion, or
-        clear. Updates the VM silently (no version bump) so that the Presenter
-        can read the current state without triggering a table reload loop.
-
-        Args:
-            rows: Full rows_data snapshot after the mutation.
-        """
-        self._vm.update_discovers_table_state(rows)
-
-    def _on_discover_browse_action(self, _row_idx: int, _row_data: dict[str, str]) -> str | None:
-        """Open a folder dialog and return the selected path to populate col_dossier.
-
-        The returned value is written to ``col_dossier`` by the EditableTable
-        ``target_key`` mechanism.
-
-        Args:
-            _row_idx: Zero-based row index (unused).
-            _row_data: Current row dict (unused).
-        """
-        folder = filedialog.askdirectory(title="Choisir le dossier [IN] source", parent=self)
-        return folder or None
-
     def _browse_shortcuts_folder(self) -> None:
         """Open a folder dialog and write the result to urls_path_folder_racs_var."""
         folder = filedialog.askdirectory(title="Choisir le dossier source (URL)", parent=self)
@@ -559,14 +472,14 @@ class UrlConfigView(ttk.Frame):
             open_folder(path)
 
     def _browse_jsons_folder(self) -> None:
-        """Open a folder dialog and write the result to urls_path_folder_jsons_var."""
+        """Open a folder dialog and write the result to urls_path_folder_csv_var."""
         folder = filedialog.askdirectory(title="Choisir le dossier source (JSON)", parent=self)
         if folder:
-            self._vm.urls_path_folder_jsons_var.set(folder)
+            self._vm.urls_path_folder_csv_var.set(folder)
 
     def _open_shortcuts_json(self) -> None:
         """Open the shortcuts folder in the OS file explorer."""
-        path = self._vm.urls_path_folder_jsons_var.get()
+        path = self._vm.urls_path_folder_csv_var.get()
         if path:
             open_folder(path)
 
@@ -593,8 +506,7 @@ class UrlConfigView(ttk.Frame):
         panel_map: dict[str, ttk.Frame] = {
             UrlSourceTypeEnum.E_MANUAL_LIST.value: self._panel_manual,
             UrlSourceTypeEnum.E_FOLDER_RACS.value: self._panel_folder,
-            UrlSourceTypeEnum.E_FOLDER_JSONS.value: self._panel_json,
-            UrlSourceTypeEnum.E_DISCOVER_ENTRIES.value: self._panel_discover,
+            UrlSourceTypeEnum.E_REFRESH_URLS.value: self._panel_json,
         }
         target = panel_map.get(key)
         if target is None or target is self._current_panel:

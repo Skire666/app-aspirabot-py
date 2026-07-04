@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from pathlib import Path
 from typing import Final, override
@@ -89,6 +90,7 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
             repo: Repository that owns all yt-dlp and filesystem I/O.
         """
         self._repo = repo
+        self._logger = logging.getLogger(__name__)
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -112,9 +114,10 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
             _require_subtitles_downloaded(nbr_ddl_srt)
             event_bus.log_step(context, f"Nombre de sous-titres téléchargés : +{nbr_ddl_srt}")
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
             # "... video unavailable ..." -> video not found
+            self._logger.exception("An error occurred while fetching YouTube subtitles.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:

@@ -350,17 +350,16 @@ class ExecutorPresenter:
         self._vm.url_sort_order_shortcuts_var.set(
             profile.urls_folder_racs.orders_racs or UrlSortOrderEnum.E_MTIME_ASC.value
         )
-        # jsons
         self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
-        self._vm.urls_path_folder_jsons_var.set(profile.urls_folder_jsons.folder_jsons)
-        self._vm.url_sort_order_jsons_var.set(
-            profile.urls_folder_jsons.orders_jsons or UrlSortOrderEnum.E_MTIME_ASC.value
+        # csv
+        self._vm.urls_path_folder_csv_var.set(profile.urls_folder_csv.path_to_csv)
+        self._vm.url_sort_order_csv_var.set(
+            profile.urls_folder_csv.sort_order_csv or UrlSortOrderEnum.E_MTIME_ASC.value
         )
-        self._vm.url_regexp_jsons_var.set(profile.urls_folder_jsons.url_regexp)
-        self._vm.json_date_modified_start_var.set(profile.urls_folder_jsons.date_modified_start.enum_to_view())
-        self._vm.json_date_modified_end_var.set(profile.urls_folder_jsons.date_modified_end.enum_to_view())
-        # discover entries
-        self._url_config_presenter.load_discover_hub(profile.urls_discover_entries)
+        self._vm.url_x_top_csv_var.set(profile.urls_folder_csv.x_top_taken)
+        self._vm.csv_date_type_used_var.set(profile.urls_folder_csv.date_type_used)
+        self._vm.csv_date_start_var.set(profile.urls_folder_csv.date_start.enum_to_view())
+        self._vm.csv_date_end_var.set(profile.urls_folder_csv.date_end.enum_to_view())
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
@@ -484,20 +483,17 @@ class ExecutorPresenter:
         self._current_profile.urls_folder_racs.folder_racs = self._vm.urls_path_folder_racs_var.get().strip()
         self._current_profile.urls_folder_racs.orders_racs = self._vm.url_sort_order_shortcuts_var.get()
 
-        # folder json
-        self._current_profile.urls_folder_jsons.folder_jsons = self._vm.urls_path_folder_jsons_var.get().strip()
-        self._current_profile.urls_folder_jsons.orders_jsons = self._vm.url_sort_order_jsons_var.get()
-        self._current_profile.urls_folder_jsons.url_regexp = self._vm.url_regexp_jsons_var.get()
-        self._current_profile.urls_folder_jsons.date_modified_start = RelativeDateEnum.view_to_enum(
-            self._vm.json_date_modified_start_var.get()
+        # csv
+        self._current_profile.urls_folder_csv.path_to_csv = self._vm.urls_path_folder_csv_var.get().strip()
+        self._current_profile.urls_folder_csv.sort_order_csv = self._vm.url_sort_order_csv_var.get()
+        self._current_profile.urls_folder_csv.x_top_taken = self._vm.url_x_top_csv_var.get()
+        self._current_profile.urls_folder_csv.date_type_used = self._vm.csv_date_type_used_var.get()
+        self._current_profile.urls_folder_csv.date_start = RelativeDateEnum.view_to_enum(
+            self._vm.csv_date_start_var.get()
         )
-        self._current_profile.urls_folder_jsons.date_modified_end = RelativeDateEnum.view_to_enum(
-            self._vm.json_date_modified_end_var.get()
-        )
+        self._current_profile.urls_folder_csv.date_end = RelativeDateEnum.view_to_enum(self._vm.csv_date_end_var.get())
 
-        # calc entries
-        self._current_profile.urls_discover_entries = self._url_config_presenter.get_current_discovers_hub()
-
+        # trivia
         self._current_profile.emergency_stop_step_id = self._vm.step_id_selected_var.get()
         self._current_profile.emergency_stop_threshold = safe_int_from_str(self._vm.global_threshold_var.get(), 0)
         self._current_profile.emergency_stop_step_threshold = safe_int_from_str(self._vm.step_threshold_var.get(), 0)

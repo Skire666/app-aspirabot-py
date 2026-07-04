@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import cast, override
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
@@ -27,6 +28,8 @@ _DNS_SOLVER_WAIT_MAX = 30  # Maximum accepted value; values > this are rejected 
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
+
+_logger = logging.getLogger(__name__)
 
 
 class OpenUrlExecutor(IStepExecutor):
@@ -55,7 +58,8 @@ class OpenUrlExecutor(IStepExecutor):
             timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
             browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
             event_bus.log_step(context, f"Ouvert : '{target_url}'")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
+            _logger.exception("An error occurred while opening the URL.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
@@ -85,6 +89,15 @@ class OpenUrlExecutor(IStepExecutor):
         url_readed = context.url_source.read_current_url()
         context.url_source.load_next_url()
         event_bus.log_step(context, f"Progression : {context.url_source.get_progress_text()}")
+
+        if url_readed:
+            if p.url_cut_ampersand:
+                url_readed = url_readed.split("&")[0]
+            if p.url_cut_question:
+                url_readed = url_readed.split("?")[0]
+            if p.url_always_add_slash and not url_readed.endswith("/"):
+                url_readed += "/"
+
         return url_readed
 
 

@@ -232,7 +232,7 @@ class AppConfigurationModel:
         """Sets the default position of the GUI at booting.
 
         An empty string or None means no position is applied (OS decides).
-        A non-empty value must be two comma-separated integers, e.g. '100,200'.
+        A non-empty value must be two comma-separated integers, e.g. '100,300'.
         """
         if value is None or str(value).strip() == "":
             self._gui_booting_position = ""

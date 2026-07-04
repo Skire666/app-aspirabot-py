@@ -269,13 +269,13 @@ class DebugViewModel(ViewModelBase):
             str_outer_html = str(el.get(ExtractTextHtmlEnum.E_OUTER_HTML.value, "")).strip()
             str_input_val = str(el.get(ExtractTextHtmlEnum.E_INPUT_VALUE.value, "")).strip()
             lines += [
-                f"[{i}]",
-                f"   innerText x{len(str_inner_txt)} \t : {str_inner_txt}",
-                f"   textContent x{len(str_txt_content)} \t : {str_txt_content}",
-                f"   innerHTML x{len(str_inner_html)} \t : {str_inner_html}",
-                f"   outerHTML x{len(str_outer_html)} \t : {str_outer_html}",
-                f"   value x{len(str_input_val)} \t : {str_input_val}",
-                "",
+                f"----[{i}]----",
+                f"# innerText   x{len(str_inner_txt)} \t : {str_inner_txt}",
+                f"# textContent x{len(str_txt_content)} \t : {str_txt_content}",
+                f"# innerHTML   x{len(str_inner_html)} \t : {str_inner_html}",
+                f"# outerHTML   x{len(str_outer_html)} \t : {str_outer_html}",
+                f"# value       x{len(str_input_val)} \t : {str_input_val}",
+                "---------------",
             ]
         return "\n".join(lines)
 

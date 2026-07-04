@@ -18,7 +18,7 @@ from shared.step_registry import register_form
 # Constants
 # -----------------------------------------------------------------------------
 
-C_INPUT_DEFAULT_EXPORT = "export_"  # export_urls_done_2026-06-07_09h21m29s028210.json
+C_INPUT_DEFAULT_EXPORT = "export"  # export_urls_done_2026-06-07_09h21m29s028210.json
 
 C_KEY_PREFIX = "csv_filename"
 C_KEY_COMMENT = "comment"

@@ -158,7 +158,7 @@ class CsvTable:
             CsvColumnNotFoundError: When *row* has a key outside the header.
         """
         self._rows.append(row)
-        for key, _ in row:
+        for key in row:
             self.add_column(key)
         return len(self._rows) - 1
 
@@ -184,6 +184,16 @@ class CsvTable:
         self._require_row(index)
         self._rows[index][column] = value
         self.add_column(column)  # ensure column is in header, even if it was missing
+
+    def get_cell(self, index: int, column: str) -> str:
+        """Return the value of a single cell at (*index*, *column*).
+
+        Raises:
+            CsvRowIndexNotFoundError: When *index* is out of range.
+            CsvColumnNotFoundError: When *column* is not part of the header.
+        """
+        self._require_row(index)
+        return self._rows[index][column]
 
     def delete_row(self, index: int) -> None:
         """Remove the row at *index*, shifting later rows down by one.

@@ -6,8 +6,7 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 from models.launcher_model import LaunchModel
-from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
-from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
+from models.sourcing_urls.urls_folder_csv_model import UrlsFolderCsvModel
 from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from shared.enums import UrlSourceTypeEnum
@@ -31,11 +30,8 @@ def _make_valid_model(
     racs = MagicMock(spec=UrlsFolderRacsModel)
     racs.export_to_data_json.return_value = {}
 
-    jsons = MagicMock(spec=UrlsFolderJsonsModel)
+    jsons = MagicMock(spec=UrlsFolderCsvModel)
     jsons.export_to_data_json.return_value = {}
-
-    discover = MagicMock(spec=UrlsDiscoverEntriesModel)
-    discover.export_to_data_json.return_value = {}
 
     return LaunchModel(
         id_profile="abc12345",
@@ -45,8 +41,7 @@ def _make_valid_model(
         urls_source_type=urls_source_type,
         urls_manual_list=manual,
         urls_folder_racs=racs,
-        urls_folder_jsons=jsons,
-        urls_discover_entries=discover,
+        urls_folder_csv=jsons,
         used_date_profile=None,
         warmup_url="",
         emergency_stop_threshold=10,
@@ -262,20 +257,6 @@ class TestValidateSubModelDelegation:
         m.urls_folder_racs.validate = MagicMock(return_value=racs_vr)
         m.validate()
         m.urls_folder_racs.validate.assert_called_once()
-
-    def test_folder_jsons_validate_called(self) -> None:
-        m = _make_valid_model(urls_source_type=UrlSourceTypeEnum.E_FOLDER_JSONS)
-        jsons_vr = ValidationResult()
-        m.urls_folder_jsons.validate = MagicMock(return_value=jsons_vr)
-        m.validate()
-        m.urls_folder_jsons.validate.assert_called_once()
-
-    def test_discover_entries_validate_called(self) -> None:
-        m = _make_valid_model(urls_source_type=UrlSourceTypeEnum.E_DISCOVER_ENTRIES)
-        discover_vr = ValidationResult()
-        m.urls_discover_entries.validate = MagicMock(return_value=discover_vr)
-        m.validate()
-        m.urls_discover_entries.validate.assert_called_once()
 
     def test_validate_returns_validation_result(self) -> None:
         m = _make_valid_model()

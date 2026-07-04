@@ -21,12 +21,12 @@ from typing import TYPE_CHECKING
 from models.app_configuration_model import AppConfigurationModel
 from models.step_scraping_model import StepScrapingModel
 from models.steps_collections_model import StepsCollections
+from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.csv_repository import CsvRepository
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_PRIMARY_KEY, C_COLUMN_SOURCE
+from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
+from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.typing.csv_table import CsvTable
-
-from __src__.models.youtube_infos_video_model import YoutubeInfosVideoModel
-from __src__.shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 
 if TYPE_CHECKING:
     from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -132,14 +132,14 @@ class ScrapingContextModel:
         ls_collection = StepsCollections(steps)
         if ls_collection.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_CSV) >= 1:
             filename = ls_collection.get_name_of_file_csv()
-            headers: set[str] = ls_collection.get_all_mapping_keys()
             csv_repository = CsvRepository()
             fullpath = self.folder_export / f"{filename}.csv"
             if csv_repository.file_exists(fullpath):
                 self.extracted_data = csv_repository.read_file(fullpath)
             else:
-                self.extracted_data = CsvTable(header=headers)
-                csv_repository.create_file(fullpath, headers)
+                base_headers = {C_COLUMN_PRIMARY_KEY, C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_SOURCE}
+                self.extracted_data = CsvTable(header=base_headers)
+                csv_repository.create_file(fullpath, base_headers)
         else:
             self.extracted_data = None
 
@@ -197,14 +197,14 @@ class ScrapingContextModel:
 
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         for link in links:
-            index = self.extracted_data.find_row_index("__primary_key__", link)
+            index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, link)
             if index is None:
-                dc = {"__primary_key__": link, "__date_created_links__": date_now}
+                dc = {C_COLUMN_PRIMARY_KEY: link, C_COLUMN_DATE_CREATED: date_now}
                 self.extracted_data.add_row(dc)
             else:
-                self.extracted_data.update_cell(index, "__date_modified_links__", date_now)
+                self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
 
-    def push_texts_extracted(self, mapping: str, texts: list[str]) -> None:
+    def push_texts_extracted(self, mapping: str, texts: list[str], target: ExtractTargetEnum) -> None:
         """Push extracted texts into the context's extracted data table.
 
         Args:
@@ -214,48 +214,69 @@ class ScrapingContextModel:
         assert self.extracted_data is not None
 
         # push
-        index = self.extracted_data.find_row_index("__primary_key__", self.last_url_opened)
+        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
-        flt = self.extracted_data.flatten_value(texts)
+        value_flatten = texts if target == ExtractTargetEnum.E_ALL else texts[0]
+        print(f"DEBUG: push_texts_extracted - value_flatten: {value_flatten}")
+        flt = self.extracted_data.flatten_value(value_flatten)
         if index is None:  # not found...
-            dc = {"__primary_key__": self.last_url_opened, mapping: flt, "__date_created_texts__": date_now}
+            dc = {
+                C_COLUMN_PRIMARY_KEY: self.last_url_opened,
+                mapping: flt,
+                C_COLUMN_DATE_CREATED: date_now,
+                C_COLUMN_SOURCE: "texts",
+            }
             self.extracted_data.add_row(dc)
         else:
             self.extracted_data.update_cell(index, mapping, flt)
-            self.extracted_data.update_cell(index, "__date_modified_texts__", date_now)
+            self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
+            self.extracted_data.update_cell(index, C_COLUMN_SOURCE, "texts")
 
     def push_vars_extracted(self, mapping: str, value: str) -> None:
         """Push a single extracted variable into the context's extracted data table."""
         assert self.extracted_data is not None
 
         # push
-        index = self.extracted_data.find_row_index("__primary_key__", self.last_url_opened)
+        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
         flt = self.extracted_data.flatten_value(value)
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         if index is None:  # not found...
-            dc = {"__primary_key__": self.last_url_opened, mapping: flt, "__date_created_vars__": date_now}
+            dc = {
+                C_COLUMN_PRIMARY_KEY: self.last_url_opened,
+                mapping: flt,
+                C_COLUMN_DATE_CREATED: date_now,
+                C_COLUMN_SOURCE: "vars",
+            }
             self.extracted_data.add_row(dc)
         else:
             self.extracted_data.update_cell(index, mapping, flt)
-            self.extracted_data.update_cell(index, "__date_modified_vars__", date_now)
+            self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
+            self.extracted_data.update_cell(index, C_COLUMN_SOURCE, "vars")
 
     def push_ytdlp_extracted(self, ytdlp_data: YoutubeInfosVideoModel) -> None:
         """Push extracted YouTube data into the context's extracted data table."""
         assert self.extracted_data is not None
 
         # push
-        index = self.extracted_data.find_row_index("__primary_key__", self.last_url_opened)
+        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
         casted = ytdlp_data.to_dict()
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+
         for key, value in casted.items():
-            # push
-            flt = self.extracted_data.flatten_value(value)
-            if index is None:  # not found...
-                dc = {"__primary_key__": self.last_url_opened, key: flt, "__date_created_ytdlp__": date_now}
-                self.extracted_data.add_row(dc)
-            else:
-                self.extracted_data.update_cell(index, key, flt)
-                self.extracted_data.update_cell(index, "__date_modified_ytdlp__", date_now)
+            casted[key] = self.extracted_data.flatten_value(value)
+
+        if index is None:  # not found...
+            casted[C_COLUMN_PRIMARY_KEY] = self.last_url_opened
+            casted[C_COLUMN_DATE_CREATED] = date_now
+            casted[C_COLUMN_SOURCE] = "ytdlp"
+
+            self.extracted_data.add_row(casted)
+        else:
+            # update
+            for key, value in casted.items():
+                self.extracted_data.update_cell(index, key, value)
+            self.extracted_data.update_cell(index, C_COLUMN_DATE_MODIFIED, date_now)
+            self.extracted_data.update_cell(index, C_COLUMN_SOURCE, "ytdlp")
 
 
 # EOF

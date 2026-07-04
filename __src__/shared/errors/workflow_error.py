@@ -18,6 +18,8 @@ class ErrorCodeWKF(ErrorCode):
     WKF_1008 = "L'étape 'E_RESTART_TO_BEGINNING' est à placer après l'étape 'E_OPEN_URL'"
     WKF_1009 = "Une étape 'EXPORT***' est requise avec les étapes de type 'EXTRACT***'"
     WKF_1010 = "Il y a 2 étapes 'EXPORT***'. 1 seule max. autorisées."
+    WKF_1011 = "L'étape 'EXPORT***' doit se situer avant l'étape 'KILL***'."
+    WKF_1012 = "L'étape 'EXPORT***' doit se situer après l'étape 'E_RESTART_TO_BEGINNING'."
     WKF_9999 = "Erreur inconnue."
 
 

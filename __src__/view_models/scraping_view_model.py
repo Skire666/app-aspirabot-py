@@ -122,7 +122,11 @@ class ScrapingViewModel(ViewModelBase):
             return "tag_success"
         if StepExecutionResultEnum.E_SKIPPED.value in line or StepExecutionResultEnum.E_WARNING.value in line:
             return "tag_warning"
-        if StepExecutionResultEnum.E_ERROR.value in line or StepExecutionResultEnum.E_FATAL.value in line:
+        if (
+            StepExecutionResultEnum.E_ERROR.value in line
+            or StepExecutionResultEnum.E_FATAL.value in line
+            or "Excp :" in line
+        ):
             return "tag_error"
         return ""
 

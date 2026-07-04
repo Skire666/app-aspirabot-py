@@ -14,7 +14,6 @@ from collections.abc import Iterator
 
 from models.step_scraping_model import StepScrapingModel
 from models.steps.export_data_to_csv_params import ExportDataToCsvParams
-from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from shared.enums import StepTypeEnum
 
 # -----------------------------------------------------------------------------
@@ -167,29 +166,12 @@ class StepsCollections:
                     found += 1
         return found
 
-    def get_all_mapping_keys(self) -> set[str]:
-        """Return a set of all mapping keys used by the three extract types."""
-        found: set[str] = set()
-
-        # extract
-        allowed = (StepTypeEnum.E_EXTRACT_TEXTS, StepTypeEnum.E_EXTRACT_LINKS, StepTypeEnum.E_EXTRACT_VARIABLE)
-        for step_type in allowed:
-            for step in self._type_cache.get(step_type, []):
-                if step.params and hasattr(step.params, "mapping"):
-                    found.add(step.params.mapping)  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
-        # youtube
-        ytb_step = self._type_cache.get(StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS, [])
-        if ytb_step:
-            ytb_header = YoutubeInfosVideoModel.get_all_fields()  # get all fields in the YoutubeInfosVideoModel
-            found.update(ytb_header)
-        return found
-
     def get_name_of_file_csv(self) -> str | None:
         """Return the name of the CSV file from the first E_EXPORT_DATA_TO_CSV step, or None if not found."""
         export_steps = self._type_cache.get(StepTypeEnum.E_EXPORT_DATA_TO_CSV, [])
         if export_steps:
-            export_step = export_steps[0]
-            if isinstance(ExportDataToCsvParams, export_step.params.__class__):
+            export_step = export_steps[0]  # always one
+            if isinstance(export_step.params, ExportDataToCsvParams):
                 print(f"DEBUG: csv_filename: {export_step.params}")
                 return export_step.params.csv_filename  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
         print("DEBUG: csv_filename: NOT FOUND")
@@ -266,6 +248,26 @@ class StepsCollections:
             if step.step_type == StepTypeEnum.E_OPEN_URL:
                 found_open_url = True
             elif found_open_url and step.step_type == StepTypeEnum.E_RESTART_TO_BEGINNING:
+                return True
+        return False
+
+    def has_export_step_before_kill_step(self) -> bool:
+        """Check if any E_EXPORT*** step occurs before an E_KILL_BROWSER step."""
+        found_kill_browser = False
+        for step in self.list_steps:
+            if step.step_type == StepTypeEnum.E_KILL_BROWSER:
+                found_kill_browser = True
+            elif not found_kill_browser and step.step_type == StepTypeEnum.E_EXPORT_DATA_TO_CSV:
+                return True
+        return False
+
+    def has_export_step_after_restart_step(self) -> bool:
+        """Check if any E_EXPORT*** step occurs after an E_RESTART_TO_BEGINNING step."""
+        found_restart = False
+        for step in self.list_steps:
+            if step.step_type == StepTypeEnum.E_RESTART_TO_BEGINNING:
+                found_restart = True
+            elif found_restart and step.step_type == StepTypeEnum.E_EXPORT_DATA_TO_CSV:
                 return True
         return False
 

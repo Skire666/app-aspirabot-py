@@ -47,6 +47,7 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             repo: Repository that owns all yt-dlp and filesystem I/O.
         """
         self._repo = repo
+        self._logger = logging.getLogger(__name__)
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -72,9 +73,10 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             # push
             context.push_ytdlp_extracted(casted)
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
             # "... video unavailable ..." -> video not found
+            self._logger.exception("An error occurred while fetching YouTube video info.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:

@@ -56,7 +56,7 @@ class ExtractLinksExecutor(IStepExecutor):
             selected = self._select_elements(elements, p.target)
             parsed = urlparse(page.url)
             base_url = f"{parsed.scheme}://{parsed.netloc}"
-            links = self._get_all_links_from_elements(selected, base_url, p.cutted_ampersand)
+            links = self._get_all_links_from_elements(selected, base_url, p)
 
             # push
             context.push_links_extracted(links)
@@ -88,13 +88,13 @@ class ExtractLinksExecutor(IStepExecutor):
         return elements
 
     @staticmethod
-    def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str, cutted_ampersand: bool) -> list[str]:
+    def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str, p: ExtractLinksParams) -> list[str]:
         """Extract href attributes from a list of elements.
 
         Args:
             elements: List of ElementHandle objects to extract links from.
             base_url: The base URL to resolve relative links against.
-            cutted_ampersand: Whether to cut the ampersand from the links.
+            p: ExtractLinksParams instance containing extraction parameters.
 
         Returns:
             List of fully qualified URLs extracted from the elements.
@@ -105,11 +105,13 @@ class ExtractLinksExecutor(IStepExecutor):
             href = (el.get_attribute("href") or "").strip()
             if href:
                 full_url = urljoin(base_url, href)
-                if cutted_ampersand:
-                    # anti-youtube and random extra query params
-                    links.append(full_url.split("&")[0])
-                else:
-                    links.append(full_url)
+                if p.url_cut_ampersand:
+                    full_url = full_url.split("&")[0]
+                if p.url_cut_question:
+                    full_url = full_url.split("?")[0]
+                if p.url_always_add_slash and not full_url.endswith("/"):
+                    full_url += "/"
+                links.append(full_url)
         return links
 
 

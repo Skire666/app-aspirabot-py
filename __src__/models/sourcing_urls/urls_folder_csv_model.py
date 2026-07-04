@@ -7,12 +7,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from interfaces.i_urls_source_model import IUrlsSourceModel
+from shared.constants import C_COLUMN_DATE_CREATED
 from shared.enums import RelativeDateEnum, SeverityEnum, UrlSourceTypeEnum
-from shared.errors.urls_folder_jsons_error import ErrorCodeUFJ
-from shared.path_util import count_files_in_folder, folder_exists, path_has_valid_syntax
+from shared.errors.urls_folder_csv_error import ErrorCodeUFC
+from shared.path_util import path_has_valid_syntax
 from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
@@ -21,7 +23,7 @@ from shared.validation_result import ValidationResult
 
 
 @dataclass
-class UrlsFolderJsonsModel(IUrlsSourceModel):
+class UrlsFolderCsvModel(IUrlsSourceModel):
     """Stores the folder path and sort order for JSON source mode.
 
     Attributes:
@@ -29,34 +31,37 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         orders_json: Sort order applied when reading the .json files.
     """
 
-    folder_jsons: str
-    orders_jsons: str
-    url_regexp: str
-    date_modified_start: RelativeDateEnum
-    date_modified_end: RelativeDateEnum
+    path_to_csv: str
+    sort_order_csv: str
+    x_top_taken: int
+    date_type_used: str
+    date_start: RelativeDateEnum
+    date_end: RelativeDateEnum
 
     def __init__(
         self,
-        folder_json: str,
+        path_to_csv: str,
         orders_json: str,
+        x_top_taken: int,
+        date_type_used: str,
         date_modified_start: RelativeDateEnum,
         date_modified_end: RelativeDateEnum,
-        url_regexp: str = "http*",
     ) -> None:
         """Initialize the model with optional folder path and sort order.
 
         Args:
-            folder_json: Absolute path of the folder containing .json files.
+            path_to_csv: Absolute path of the folder containing .json files.
             orders_json: Sort order applied when reading the .json files.
-            url_regexp: Regular expression for filtering URLs.
+            x_top_taken: Maximum number of URLs to take.
             date_modified_start: Start date for filtering files by modification date.
             date_modified_end: End date for filtering files by modification date.
         """
-        self.folder_jsons = folder_json.strip()
-        self.orders_jsons = orders_json.strip()
-        self.url_regexp = url_regexp.strip()
-        self.date_modified_start = date_modified_start
-        self.date_modified_end = date_modified_end
+        self.path_to_csv = path_to_csv.strip()
+        self.sort_order_csv = orders_json.strip()
+        self.x_top_taken = x_top_taken
+        self.date_type_used = date_type_used
+        self.date_start = date_modified_start
+        self.date_end = date_modified_end
 
     @classmethod
     def get_type_source(cls) -> UrlSourceTypeEnum:
@@ -65,37 +70,39 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         Returns:
             The type of the URL source.
         """
-        return UrlSourceTypeEnum.E_FOLDER_JSONS
+        return UrlSourceTypeEnum.E_REFRESH_URLS
 
     @classmethod
-    def get_default(cls) -> UrlsFolderJsonsModel:
+    def get_default(cls) -> UrlsFolderCsvModel:
         """Return an instance with empty path and sort order.
 
         Returns:
-            A UrlsFolderJsonsModel with empty string fields.
+            A UrlsFolderCsvModel with empty string fields.
         """
         return cls(
-            folder_json="",
+            path_to_csv="",
             orders_json="",
-            url_regexp="http*",
+            x_top_taken=100,
+            date_type_used=C_COLUMN_DATE_CREATED,
             date_modified_start=RelativeDateEnum.E_LAST_NOW,
             date_modified_end=RelativeDateEnum.E_LAST_99,
         )
 
     @classmethod
-    def import_from_data_json(cls, data: dict[str, Any]) -> UrlsFolderJsonsModel:
+    def import_from_data_json(cls, data: dict[str, Any]) -> UrlsFolderCsvModel:
         """Deserialize from a flat profile dictionary (reads its own keys only).
 
         Args:
             data: Raw dict produced by the parent LaunchModel.export_to_data_json().
 
         Returns:
-            A UrlsFolderJsonsModel instance.
+            A UrlsFolderCsvModel instance.
         """
         return cls(
-            folder_json=str(data.get("folder_json") or ""),
+            path_to_csv=str(data.get("path_to_csv") or ""),
             orders_json=str(data.get("orders_json") or ""),
-            url_regexp=str(data.get("url_regexp") or "http*"),
+            x_top_taken=int(data.get("x_top_taken") or 100),
+            date_type_used=str(data.get("date_type_used") or C_COLUMN_DATE_CREATED),
             date_modified_start=RelativeDateEnum(data.get("date_modified_start") or RelativeDateEnum.E_UNSET),
             date_modified_end=RelativeDateEnum(data.get("date_modified_end") or RelativeDateEnum.E_UNSET),
         )
@@ -104,14 +111,15 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         """Serialize to a flat dictionary to be merged into the parent export.
 
         Returns:
-            A dict containing folder_json and orders_json keys.
+            A dict containing path_to_csv and orders_json keys.
         """
         return {
-            "folder_json": self.folder_jsons,
-            "orders_json": self.orders_jsons,
-            "url_regexp": self.url_regexp or "http*",
-            "date_modified_start": self.date_modified_start,
-            "date_modified_end": self.date_modified_end,
+            "path_to_csv": self.path_to_csv,
+            "orders_json": self.sort_order_csv,
+            "x_top_taken": self.x_top_taken or 100,
+            "date_type_used": self.date_type_used,
+            "date_modified_start": self.date_start,
+            "date_modified_end": self.date_end,
         }
 
     def validate(self) -> ValidationResult:
@@ -122,20 +130,18 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
         """
         rs = ValidationResult()
 
-        if not self.folder_jsons or not self.folder_jsons.strip():
-            rs.append(ErrorCodeUFJ.UFJ_1001, SeverityEnum.E_ERROR)
-        elif not path_has_valid_syntax(self.folder_jsons):
-            rs.append(ErrorCodeUFJ.UFJ_1002, SeverityEnum.E_ERROR)
-        elif not self.orders_jsons:
-            rs.append(ErrorCodeUFJ.UFJ_1003, SeverityEnum.E_ERROR)
-        elif len(self.orders_jsons.strip()) <= 1 or self.orders_jsons == "UNSET":
-            rs.append(ErrorCodeUFJ.UFJ_1004, SeverityEnum.E_ERROR)
-        elif not self.url_regexp or not self.url_regexp.strip():
-            rs.append(ErrorCodeUFJ.UFJ_1010, SeverityEnum.E_ERROR)
-        elif not folder_exists(self.folder_jsons):
-            rs.append(ErrorCodeUFJ.UFJ_1005, SeverityEnum.E_ERROR)
-        elif count_files_in_folder(self.folder_jsons, ".json") <= 0:
-            rs.append(ErrorCodeUFJ.UFJ_1006, SeverityEnum.E_ERROR)
+        if not self.path_to_csv or not self.path_to_csv.strip():
+            rs.append(ErrorCodeUFC.UFC_1001, SeverityEnum.E_ERROR)
+        elif not path_has_valid_syntax(self.path_to_csv):
+            rs.append(ErrorCodeUFC.UFC_1002, SeverityEnum.E_ERROR)
+        elif not Path(self.path_to_csv).exists():
+            rs.append(ErrorCodeUFC.UFC_1005, SeverityEnum.E_ERROR)
+        elif not self.sort_order_csv:
+            rs.append(ErrorCodeUFC.UFC_1003, SeverityEnum.E_ERROR)
+        elif len(self.sort_order_csv.strip()) <= 1 or self.sort_order_csv == "UNSET":
+            rs.append(ErrorCodeUFC.UFC_1004, SeverityEnum.E_ERROR)
+        elif not self.x_top_taken or self.x_top_taken <= 0:
+            rs.append(ErrorCodeUFC.UFC_1010, SeverityEnum.E_ERROR)
         else:
             self._validate_dates(rs)
 
@@ -143,12 +149,12 @@ class UrlsFolderJsonsModel(IUrlsSourceModel):
 
     def _validate_dates(self, rs: ValidationResult) -> None:
         """Check date filter constraints and append any errors to rs."""
-        if not self.date_modified_start.is_valid():
-            rs.append(ErrorCodeUFJ.UFJ_1007, SeverityEnum.E_ERROR)
-        elif not self.date_modified_end.is_valid():
-            rs.append(ErrorCodeUFJ.UFJ_1008, SeverityEnum.E_ERROR)
-        elif not self.date_modified_start.is_lower_than(self.date_modified_end):
-            rs.append(ErrorCodeUFJ.UFJ_1009, SeverityEnum.E_ERROR)
+        if not self.date_start.is_valid():
+            rs.append(ErrorCodeUFC.UFC_1007, SeverityEnum.E_ERROR)
+        elif not self.date_end.is_valid():
+            rs.append(ErrorCodeUFC.UFC_1008, SeverityEnum.E_ERROR)
+        elif not self.date_start.is_lower_than(self.date_end):
+            rs.append(ErrorCodeUFC.UFC_1009, SeverityEnum.E_ERROR)
 
 
 # EOF

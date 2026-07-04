@@ -6,8 +6,7 @@ import logging
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from models.launcher_model import LaunchModel
-from services.sourcing_urls.urls_discover_entries_service import UrlsDiscoverEntriesService
-from services.sourcing_urls.urls_folder_jsons_service import UrlsFolderJsonsService
+from services.sourcing_urls.urls_folder_csv_service import UrlsFolderCsvService
 from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsService
 from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
 from shared.enums import SeverityEnum, UrlSourceTypeEnum
@@ -36,23 +35,21 @@ class SourcingUrlsService:
         self,
         provider_manual: UrlsManualListService,
         provider_folder_racs: UrlsFolderRacsService,
-        provider_folder_jsons: UrlsFolderJsonsService,
-        provider_discover: UrlsDiscoverEntriesService,
+        provider_folder_csv: UrlsFolderCsvService,
     ) -> None:
         """Initialise the service with all four injected URL providers.
 
         Args:
             provider_manual: Provider for manual URL lists.
             provider_folder_racs: Provider for RAC shortcut folders.
-            provider_folder_jsons: Provider for JSON file folders.
+            provider_folder_csv: Provider for JSON file folders.
             provider_discover: Provider for discovery-based URL sets.
         """
         self._logger = logging.getLogger(__name__)
         self._launcher: LaunchModel | None = None
         self._provider_manual = provider_manual
         self._provider_folder_racs = provider_folder_racs
-        self._provider_folder_jsons = provider_folder_jsons
-        self._provider_discover = provider_discover
+        self._provider_folder_csv = provider_folder_csv
         self._export_folder = ""
         self._warmup_url = None
 
@@ -90,19 +87,9 @@ class SourcingUrlsService:
             return self._provider_manual
         if self._launcher.urls_source_type is UrlSourceTypeEnum.E_FOLDER_RACS:
             return self._provider_folder_racs
-        if self._launcher.urls_source_type is UrlSourceTypeEnum.E_FOLDER_JSONS:
-            return self._provider_folder_jsons
-        if self._launcher.urls_source_type is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            return self._provider_discover
+        if self._launcher.urls_source_type is UrlSourceTypeEnum.E_REFRESH_URLS:
+            return self._provider_folder_csv
         raise UnknownUrlSourceTypeError(str(self._launcher.urls_source_type))
-
-    def get_provider_discover(self) -> UrlsDiscoverEntriesService:
-        """Return the discovery provider directly.
-
-        Returns:
-            The UrlsDiscoverEntriesService instance.
-        """
-        return self._provider_discover
 
     def get_provider_manual(self) -> UrlsManualListService:
         """Return the manual-list provider directly.
@@ -120,13 +107,13 @@ class SourcingUrlsService:
         """
         return self._provider_folder_racs
 
-    def get_provider_folder_jsons(self) -> UrlsFolderJsonsService:
+    def get_provider_folder_csv(self) -> UrlsFolderCsvService:
         """Return the JSON folder provider directly.
 
         Returns:
-            The UrlsFolderJsonsService instance.
+            The UrlsFolderCsvService instance.
         """
-        return self._provider_folder_jsons
+        return self._provider_folder_csv
 
     def set_context_scraping(self, launcher: LaunchModel, export_folder: str, warmup_url: str | None) -> None:
         """Configure the scraping context and preload the active URL provider.
@@ -151,12 +138,9 @@ class SourcingUrlsService:
         elif ustype is UrlSourceTypeEnum.E_FOLDER_RACS:
             self._provider_folder_racs.setup_model(launcher.urls_folder_racs)
             self._provider_folder_racs.is_ready_to_consum_urls()
-        elif ustype is UrlSourceTypeEnum.E_FOLDER_JSONS:
-            self._provider_folder_jsons.setup_model(launcher.urls_folder_jsons)
-            self._provider_folder_jsons.is_ready_to_consum_urls()
-        elif ustype is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            self._provider_discover.setup_model(launcher.urls_discover_entries)
-            self._provider_discover.is_ready_to_consum_urls()
+        elif ustype is UrlSourceTypeEnum.E_REFRESH_URLS:
+            self._provider_folder_csv.setup_model(launcher.urls_folder_csv)
+            self._provider_folder_csv.is_ready_to_consum_urls()
         else:
             raise UnknownUrlSourceTypeError(str(ustype))
 
@@ -168,8 +152,7 @@ class SourcingUrlsService:
         if self._launcher.urls_source_type not in {
             UrlSourceTypeEnum.E_MANUAL_LIST,
             UrlSourceTypeEnum.E_FOLDER_RACS,
-            UrlSourceTypeEnum.E_FOLDER_JSONS,
-            UrlSourceTypeEnum.E_DISCOVER_ENTRIES,
+            UrlSourceTypeEnum.E_REFRESH_URLS,
         }:
             rs.append(ErrorCodeSUS.SUS_1002, SeverityEnum.E_ERROR)
             return True

@@ -12,43 +12,27 @@ Discovery is lazy: the folder is scanned only on the first ``load_url_if_availab
 
 from __future__ import annotations
 
-import json
-import re
+import heapq
 from datetime import datetime
+from operator import itemgetter
 from pathlib import Path
-from typing import cast
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
-from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
+from models.sourcing_urls.urls_folder_csv_model import UrlsFolderCsvModel
+from repositories.csv_repository import CsvRepository
+from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_PRIMARY_KEY
 from shared.enums import UrlSortOrderEnum
-from shared.exception_util import InvalidUrlSourceValueTypeError, UrlSourceFileNotFoundError
-from shared.path_util import list_files
-
-# -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
-
-
-def _collect_urls(obj: object, result: list[str], pattern: re.Pattern[str]) -> None:
-    """Recursively walk any JSON value and append matching strings to *result*."""
-    if isinstance(obj, str):
-        if pattern.search(obj):
-            result.append(obj)
-    elif isinstance(obj, dict):
-        for v in cast(dict[str, object], obj).values():
-            _collect_urls(v, result, pattern)
-    elif isinstance(obj, list):
-        for item in cast(list[object], obj):
-            _collect_urls(item, result, pattern)
-
+from shared.exception_util import InvalidUrlSourceValueTypeError
+from shared.path_util import get_mtime_of_file
+from shared.typing.csv_table import CsvTable
 
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
 
 
-class UrlsFolderJsonsService(IUrlSourceProvider):
+class UrlsFolderCsvService(IUrlSourceProvider):
     """Iterates over .json files in a folder, yielding every HTTP URL found.
 
     Files are sorted by modification time (oldest first).  Within each file,
@@ -60,16 +44,23 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         """Store the folder path without scanning it yet.
 
         Args:
-            source: A ``UrlsFolderJsonsModel`` instance with the folder path and sort order.
+            source: A ``UrlsFolderCsvModel`` instance with the folder path and sort order.
         """
-        self._folder_path: str = ""
+        # cache
+        self._last_date_mtime_csv: datetime | None = None
+        self._last_path_to_csv: str = ""
+        self._last_urls_readed: dict[str, datetime] = {}
+
+        # model
+        self._path_to_csv: str = ""
         self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC
-        self._url_regexp: str = ""
-        self._compiled_regexp: re.Pattern[str] = re.compile(r"")
-        self._date_modified_newest: datetime | None = None
-        self._date_modified_oldest: datetime | None = None
-        self._file_paths: list[tuple[Path, datetime]] | None = None
-        self._urls: list[str] = []
+        self._x_top_taken: int = 0
+        self._date_type_used: str = C_COLUMN_DATE_CREATED
+        self._date_modified_newest: datetime = datetime.max
+        self._date_modified_oldest: datetime = datetime.min
+
+        # obj
+        self._urls_filtred: list[str] = []
         self._index: int = 0
         self._is_ready: bool = False
 
@@ -87,24 +78,20 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         Args:
             model: The raw URL source model containing unprocessed data.
         """
-        if isinstance(model, UrlsFolderJsonsModel):
-            self._folder_path = model.folder_jsons
-            self._sort_order = UrlSortOrderEnum(model.orders_jsons)
-            self._date_modified_newest = model.date_modified_start.to_datetime()
-            self._date_modified_oldest = model.date_modified_end.to_datetime()
-            self._url_regexp = model.url_regexp
-            rg_sanitized = (
-                "^" + self._url_regexp if self._url_regexp and self._url_regexp[0].isalnum() else self._url_regexp
-            )
-            self._compiled_regexp = re.compile(rg_sanitized)
+        if isinstance(model, UrlsFolderCsvModel):
+            self._path_to_csv = model.path_to_csv
+            self._sort_order = UrlSortOrderEnum(model.sort_order_csv)
+            self._x_top_taken = model.x_top_taken
+            self._date_type_used = model.date_type_used
+            self._date_modified_newest = model.date_start.to_datetime()
+            self._date_modified_oldest = model.date_end.to_datetime()
         else:
-            raise InvalidUrlSourceValueTypeError("folder_jsons", "UrlsFolderJsonsModel", type(model).__name__)
+            raise InvalidUrlSourceValueTypeError("folder_csv", "UrlsFolderCsvModel", type(model).__name__)
 
     def is_ready_to_consum_urls(self) -> bool:
         """Discover files and return True when at least one URL remains to be consumed."""
-        if not self._is_ready:
-            self.reset()
-        return self._is_ready
+        self.reset()
+        return len(self._urls) > 0
 
     def read_current_url(self) -> str | None:
         """Return the current URL without advancing the internal cursor.
@@ -164,7 +151,7 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
         Returns:
             A string like "JSON : 3/10 fichier(s) consommé(s)".
         """
-        if self._file_paths is None:
+        if self._last_date_mtime_csv is None:
             return "JSON : non chargé"
         if self._index_url >= self.count_urls():
             return "JSON : plus aucune URL"
@@ -176,75 +163,64 @@ class UrlsFolderJsonsService(IUrlSourceProvider):
 
     def _discover_and_load(self) -> None:
         """Scan the folder, deduplicate URLs (keeping newest mtime), filter and sort."""
-        try:
-            found = self._files_are_loaded()
-        except ValueError as err:
-            raise UrlSourceFileNotFoundError(self._folder_path) from err
+        time_start = datetime.now()
+        need_reload = False
 
-        if not found:
-            return
+        if self._path_to_csv and self._path_to_csv != self._last_path_to_csv:
+            self._last_path_to_csv = self._path_to_csv
+            self._last_date_mtime_csv = None
+            need_reload = True
 
-        url_mtime = self._collect_url_mtimes()
-        self._urls = self._filter_and_sort_urls(url_mtime)
+        date_found = get_mtime_of_file(self._path_to_csv)
+        if date_found and date_found != self._last_date_mtime_csv:
+            self._last_date_mtime_csv = date_found
+            need_reload = True
 
-    def _files_are_loaded(self) -> bool:
-        """Return True when the folder has been scanned and file paths are cached.
+        if need_reload:
+            self._last_urls_readed = self._collect_urls()
+        self._urls = self._filter_and_sort_urls(self._last_urls_readed)
 
-        Returns:
-            True when the folder has been scanned and file paths are cached.
-        """
-        assert len(self._folder_path) >= 1, "Folder path has not been set."
+        time_end = datetime.now()
+        time_elapsed = (time_end - time_start).total_seconds()
+        print(f"DEBUG: discover_and_load took {time_elapsed:.3f} seconds, found {len(self._urls)} URLs.")
 
-        new_files = list_files(self._folder_path, ".json")
-        if len(new_files) == 0:
-            return False
-        self._file_paths = new_files
-        return True
-
-    def _collect_url_mtimes(self) -> dict[str, datetime]:
+    def _collect_urls(self) -> dict[str, datetime]:
         """Scan all files and build a url→mtime map; duplicates keep the newest mtime."""
-        assert self._file_paths is not None
-        url_mtime: dict[str, datetime] = {}
-        for file_path, mtime in self._file_paths:
-            for url in self._extract_urls_from_file(file_path, self._compiled_regexp):
-                if url not in url_mtime or mtime > url_mtime[url]:
-                    url_mtime[url] = mtime
+        urls_time: dict[str, datetime] = {}
+        repo = CsvRepository()
+        csv: CsvTable = repo.read_file(Path(self._path_to_csv))
 
-        return url_mtime
+        nbr_rows = csv.row_count
+        for row_index in range(nbr_rows):
+            url = csv.get_cell(row_index, C_COLUMN_PRIMARY_KEY).strip()
+            time_str = csv.get_cell(row_index, self._date_type_used).strip()
+            try:
+                time_casted = datetime.fromisoformat(time_str)
+            except ValueError:
+                continue  # skip invalid mtime format
 
-    def _filter_and_sort_urls(self, url_mtime: dict[str, datetime]) -> list[str]:
+            if url and (url not in urls_time or time_casted > urls_time[url]):
+                urls_time[url] = time_casted
+
+        return urls_time
+
+    def _filter_and_sort_urls(self, url_with_time: dict[str, datetime]) -> list[str]:
         """Apply date range filter and sort order; return the final ordered URL list."""
-        filtered = [
-            (url, dt)
-            for url, dt in url_mtime.items()
-            if (self._date_modified_newest is None or dt <= self._date_modified_newest)
-            and (self._date_modified_oldest is None or dt >= self._date_modified_oldest)
-        ]
+        # 1. On sort les attributs de la boucle (accès attribut = coûteux en Python)
+        newest = self._date_modified_newest
+        oldest = self._date_modified_oldest
+        top_n = self._x_top_taken
         reverse = self._sort_order == UrlSortOrderEnum.E_MTIME_DESC
-        filtered.sort(key=lambda x: x[1], reverse=reverse)
 
-        return [url for url, _ in filtered]
+        # 2. Filtrage — les tests `is None` sont hoistés hors de la comparaison
+        filtered = [(url, dt) for url, dt in url_with_time.items() if (dt <= newest) and (dt >= oldest)]
 
-    @staticmethod
-    def _extract_urls_from_file(file_path: Path, pattern: re.Pattern[str]) -> list[str]:
-        """Return all strings matching *pattern* found anywhere in the JSON file.
+        # 3. Tri + limitation
+        # O(n log k) au lieu de O(n log n) : bien mieux quand k << n
+        pick = heapq.nlargest if reverse else heapq.nsmallest
+        selected = pick(top_n, filtered, key=itemgetter(1))
 
-        Args:
-            file_path: Path to the .json file to parse.
-            pattern: Compiled regexp used to select matching strings.
-
-        Returns:
-            Ordered list of matching strings; empty on error.
-        """
-        try:
-            with file_path.open(encoding="utf-8") as f:
-                data = json.load(f)
-        except json.JSONDecodeError, OSError:
-            return []
-
-        urls: list[str] = []
-        _collect_urls(data, urls, pattern)
-        return urls
+        return [url for url, _ in selected]
 
 
 # EOF

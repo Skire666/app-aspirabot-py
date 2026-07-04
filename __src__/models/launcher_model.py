@@ -12,8 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from models.sourcing_urls.urls_discover_entries_model import UrlsDiscoverEntriesModel
-from models.sourcing_urls.urls_folder_jsons_model import UrlsFolderJsonsModel
+from models.sourcing_urls.urls_folder_csv_model import UrlsFolderCsvModel
 from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from models.sourcing_urls.urls_manual_list_model import UrlsManualListModel
 from shared.constants import C_DEFAULT_THRESHOLD_ERROR_SCRAPING, C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID
@@ -44,7 +43,7 @@ class LaunchModel:
         urls_source_type: One of "MANUAL_LIST", "FOLDER_RACS", "FOLDER_JSONS", "CALC_NEW", or "" when unset.
         urls_manual_list: URL source configuration for MANUAL_LIST mode.
         urls_folder_racs: URL source configuration for FOLDER_RACS (.url shortcuts) mode.
-        urls_folder_jsons: URL source configuration for FOLDER_JSONS mode.
+        urls_folder_csv: URL source configuration for FOLDER_JSONS mode.
         emergency_stop_threshold: Pause the run when failed steps reach this count.
         used_date_profile: Timestamp of the last launch, or None when never launched.
     """
@@ -56,8 +55,7 @@ class LaunchModel:
     urls_source_type: UrlSourceTypeEnum
     urls_manual_list: UrlsManualListModel
     urls_folder_racs: UrlsFolderRacsModel
-    urls_folder_jsons: UrlsFolderJsonsModel
-    urls_discover_entries: UrlsDiscoverEntriesModel
+    urls_folder_csv: UrlsFolderCsvModel
     used_date_profile: datetime | None
     # Optional URL to open before the run starts; execution waits for user resume.
     warmup_url: str
@@ -84,8 +82,7 @@ class LaunchModel:
             urls_source_type=UrlSourceTypeEnum.E_MANUAL_LIST,
             urls_manual_list=UrlsManualListModel.get_default(),
             urls_folder_racs=UrlsFolderRacsModel.get_default(),
-            urls_folder_jsons=UrlsFolderJsonsModel.get_default(),
-            urls_discover_entries=UrlsDiscoverEntriesModel.get_default(),
+            urls_folder_csv=UrlsFolderCsvModel.get_default(),
             emergency_stop_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             used_date_profile=None,
             emergency_stop_step_id="",
@@ -111,10 +108,7 @@ class LaunchModel:
             urls_source_type=UrlSourceTypeEnum(data.get("urls_source_type", UrlSourceTypeEnum.E_MANUAL_LIST)),
             urls_manual_list=UrlsManualListModel.import_from_data_json(data),
             urls_folder_racs=UrlsFolderRacsModel.import_from_data_json(data),
-            urls_folder_jsons=UrlsFolderJsonsModel.import_from_data_json(data),
-            urls_discover_entries=UrlsDiscoverEntriesModel.import_from_data_json(
-                data.get("urls_discover_entries") or {}
-            ),
+            urls_folder_csv=UrlsFolderCsvModel.import_from_data_json(data),
             used_date_profile=dict_with_key_to_optional_datetime(data, "used_date_profile"),
             emergency_stop_threshold=int(data.get("emergency_stop_threshold", 1)),
             emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
@@ -139,8 +133,7 @@ class LaunchModel:
             "urls_source_type": self.urls_source_type,
             **self.urls_manual_list.export_to_data_json(),
             **self.urls_folder_racs.export_to_data_json(),
-            **self.urls_folder_jsons.export_to_data_json(),
-            "urls_discover_entries": self.urls_discover_entries.export_to_data_json(),
+            **self.urls_folder_csv.export_to_data_json(),
             "emergency_stop_threshold": self.emergency_stop_threshold,
             "used_date_profile": self.used_date_profile,
             "emergency_stop_step_id": self.emergency_stop_step_id,
@@ -216,10 +209,8 @@ class LaunchModel:
             vr.extend(self.urls_manual_list.validate())
         elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_RACS:
             vr.extend(self.urls_folder_racs.validate())
-        elif self.urls_source_type is UrlSourceTypeEnum.E_FOLDER_JSONS:
-            vr.extend(self.urls_folder_jsons.validate())
-        elif self.urls_source_type is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            vr.extend(self.urls_discover_entries.validate())
+        elif self.urls_source_type is UrlSourceTypeEnum.E_REFRESH_URLS:
+            vr.extend(self.urls_folder_csv.validate())
 
     def validate(self) -> ValidationResult:
         """Validate all profile fields and the active URL source sub-model.

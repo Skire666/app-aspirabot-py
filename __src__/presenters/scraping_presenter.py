@@ -345,7 +345,7 @@ class ScrapingPresenter:
         msg_error: str = ""
         if context.last_result_is_error():
             if context.next_error_is_handled:
-                msg_error = f"{StepExecutionResultEnum.E_WARNING.value} (l'échec est géré)"
+                msg_error = f"{StepExecutionResultEnum.E_ERROR.value} (l'échec est géré)"
             else:
                 msg_error = f"{StepExecutionResultEnum.E_ERROR.value} (non géré)"
             return f"{ts} | {step.step_id} | Bilan step : {msg_error} | {elapsed:.3f}s"

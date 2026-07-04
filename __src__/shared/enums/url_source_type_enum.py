@@ -11,8 +11,7 @@ class UrlSourceTypeEnum(Enum):
     E_UNSET = "UNSET"
     E_MANUAL_LIST = "MANUAL_LIST"
     E_FOLDER_RACS = "FOLDER_RACS"
-    E_FOLDER_JSONS = "FOLDER_JSONS"
-    E_DISCOVER_ENTRIES = "DISCOVER_ENTRIES"
+    E_REFRESH_URLS = "REFRESH_URLS"
     E_UNKNOWN = "UNKNOWN"
 
     def to_displayable_str(self) -> str:
@@ -21,10 +20,8 @@ class UrlSourceTypeEnum(Enum):
             return "Liste manuelle"
         if self is UrlSourceTypeEnum.E_FOLDER_RACS:
             return "Dossier RACS"
-        if self is UrlSourceTypeEnum.E_FOLDER_JSONS:
-            return "Dossier JSON"
-        if self is UrlSourceTypeEnum.E_DISCOVER_ENTRIES:
-            return "Lire nouveautés"
+        if self is UrlSourceTypeEnum.E_REFRESH_URLS:
+            return "Chemin vers CSV"
         return "Type inconnu"
 
 

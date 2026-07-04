@@ -33,7 +33,9 @@ def _build(data: dict[str, Any]) -> ExtractLinksParams:
         selector=data.get("selector", ""),
         target=data.get("target", ExtractTargetEnum.E_ALL),
         mapping=data.get("mapping", "urls"),
-        cutted_ampersand=data.get("cutted_ampersand", True),
+        url_cut_ampersand=data.get("url_cut_ampersand", True),
+        url_cut_question=data.get("url_cut_question", False),
+        url_always_add_slash=data.get("url_always_add_slash", False),
         comment=data.get("comment", ""),
     )
 

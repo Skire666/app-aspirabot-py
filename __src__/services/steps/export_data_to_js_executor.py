@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import cast, override
 
@@ -29,6 +30,7 @@ class ExportDataToCsvExecutor(IStepExecutor):
     def __init__(self) -> None:
         """Initialise the executor with its CSV row-level service."""
         self._csv_repository = CsvRepository()
+        self._logger = logging.getLogger(__name__)
 
     @classmethod
     def step_type(cls) -> StepTypeEnum:
@@ -56,7 +58,8 @@ class ExportDataToCsvExecutor(IStepExecutor):
             event_bus.log_step(context, f"Fichier CSV : '{p.csv_filename}'.csv")
             event_bus.log_step(context, f"Chemin complet : '{dest}'")
             context.reset_exported_data()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
+            self._logger.exception("An error occurred while exporting data to CSV.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:

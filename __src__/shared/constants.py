@@ -112,13 +112,20 @@ C_UNITS_TIME_ALLOWED_FOR_MODEL: list[str] = ["m", "s", "ms"]
 C_UNITS_TIME_ALLOWED_FOR_VIEW: list[str] = ["min", "sec", "millisec."]
 
 # Default threshold for considering a scraping step as having an error
-C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 200
+C_DEFAULT_THRESHOLD_ERROR_SCRAPING: int = 50
 
 # ------------------------------------------------------------------------------
 
 C_STATE_JUMP_TO_STEP_FAILURE: str = "failure"
 
 # -----------------------------------------------------------------------------
+
+C_COLUMN_PRIMARY_KEY: str = "__primary_key__"
+C_COLUMN_DATE_CREATED: str = "__date_created__"
+C_COLUMN_DATE_MODIFIED: str = "__date_modified__"
+C_COLUMN_SOURCE: str = "__source__"
+
+# ------------------------------------------------------------------------------
 
 # default color background
 C_COLOR_GRAY_BACKGROUND: str = "#F0F0F0"

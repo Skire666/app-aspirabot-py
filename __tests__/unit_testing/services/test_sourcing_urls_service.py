@@ -7,8 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from models.launcher_model import LaunchModel
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
-from services.sourcing_urls.urls_discover_entries_service import UrlsDiscoverEntriesService
-from services.sourcing_urls.urls_folder_jsons_service import UrlsFolderJsonsService
+from services.sourcing_urls.urls_folder_csv_service import UrlsFolderCsvService
 from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsService
 from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
 from shared.enums import UrlSourceTypeEnum
@@ -22,15 +21,11 @@ from shared.exception_util import UnknownUrlSourceTypeError, UrlSourceLauncherNo
 def _make_service() -> tuple[SourcingUrlsService, MagicMock, MagicMock, MagicMock, MagicMock]:
     provider_manual = MagicMock(spec=UrlsManualListService)
     provider_racs = MagicMock(spec=UrlsFolderRacsService)
-    provider_jsons = MagicMock(spec=UrlsFolderJsonsService)
-    provider_discover = MagicMock(spec=UrlsDiscoverEntriesService)
+    provider_jsons = MagicMock(spec=UrlsFolderCsvService)
     svc = SourcingUrlsService(
-        provider_manual=provider_manual,
-        provider_folder_racs=provider_racs,
-        provider_folder_jsons=provider_jsons,
-        provider_discover=provider_discover,
+        provider_manual=provider_manual, provider_folder_racs=provider_racs, provider_folder_csv=provider_jsons
     )
-    return svc, provider_manual, provider_racs, provider_jsons, provider_discover
+    return svc, provider_manual, provider_racs, provider_jsons
 
 
 def _make_launcher(source_type: UrlSourceTypeEnum = UrlSourceTypeEnum.E_MANUAL_LIST) -> MagicMock:
@@ -38,8 +33,7 @@ def _make_launcher(source_type: UrlSourceTypeEnum = UrlSourceTypeEnum.E_MANUAL_L
     launcher.urls_source_type = source_type
     launcher.urls_manual_list = MagicMock()
     launcher.urls_folder_racs = MagicMock()
-    launcher.urls_folder_jsons = MagicMock()
-    launcher.urls_discover_entries = MagicMock()
+    launcher.urls_folder_csv = MagicMock()
     return launcher
 
 
@@ -66,13 +60,9 @@ class TestInit:
         svc, _, racs, *_ = _make_service()
         assert svc.get_provider_folder_racs() is racs
 
-    def test_get_provider_folder_jsons_returns_instance(self) -> None:
+    def test_get_provider_folder_csv_returns_instance(self) -> None:
         svc, _, _, jsons, _ = _make_service()
-        assert svc.get_provider_folder_jsons() is jsons
-
-    def test_get_provider_discover_returns_instance(self) -> None:
-        svc, _, _, _, discover = _make_service()
-        assert svc.get_provider_discover() is discover
+        assert svc.get_provider_folder_csv() is jsons
 
 
 # ---------------------------------------------------------------------------
@@ -121,24 +111,6 @@ class TestSetContextScraping:
         racs.setup_model.assert_called_once_with(launcher.urls_folder_racs)
         racs.is_ready_to_consum_urls.assert_called_once()
 
-    def test_folder_jsons_calls_setup_and_loads(self) -> None:
-        svc, _, _, jsons, _ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_FOLDER_JSONS)
-
-        svc.set_context_scraping(launcher, "out", None)
-
-        jsons.setup_model.assert_called_once_with(launcher.urls_folder_jsons)
-        jsons.is_ready_to_consum_urls.assert_called_once()
-
-    def test_discover_entries_calls_setup_and_loads(self) -> None:
-        svc, _, _, _, discover = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_DISCOVER_ENTRIES)
-
-        svc.set_context_scraping(launcher, "out", None)
-
-        discover.setup_model.assert_called_once_with(launcher.urls_discover_entries)
-        discover.is_ready_to_consum_urls.assert_called_once()
-
     def test_unknown_source_type_raises(self) -> None:
         svc, *_ = _make_service()
         launcher = _make_launcher(UrlSourceTypeEnum.E_UNKNOWN)
@@ -167,15 +139,9 @@ class TestGetProviderUrlsWithContext:
 
     def test_returns_jsons_provider(self) -> None:
         svc, _, _, jsons, _ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_FOLDER_JSONS)
+        launcher = _make_launcher(UrlSourceTypeEnum.E_REFRESH_URLS)
         svc.set_context_scraping(launcher, "out", None)
         assert svc.get_provider_urls() is jsons
-
-    def test_returns_discover_provider(self) -> None:
-        svc, _, _, _, discover = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_DISCOVER_ENTRIES)
-        svc.set_context_scraping(launcher, "out", None)
-        assert svc.get_provider_urls() is discover
 
 
 # ---------------------------------------------------------------------------

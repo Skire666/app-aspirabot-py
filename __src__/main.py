@@ -40,8 +40,7 @@ from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
-from services.sourcing_urls.urls_discover_entries_service import UrlsDiscoverEntriesService
-from services.sourcing_urls.urls_folder_jsons_service import UrlsFolderJsonsService
+from services.sourcing_urls.urls_folder_csv_service import UrlsFolderCsvService
 from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsService
 from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
 from services.startup_service import StartupService
@@ -402,8 +401,7 @@ def _init_executor_component(
     sourcing = SourcingUrlsService(
         provider_manual=UrlsManualListService(),
         provider_folder_racs=UrlsFolderRacsService(),
-        provider_folder_jsons=UrlsFolderJsonsService(),
-        provider_discover=UrlsDiscoverEntriesService(json_repository=JsonFileRepository()),
+        provider_folder_csv=UrlsFolderCsvService(),
     )
     url_config_presenter = UrlConfigPresenter(vm=vm, sourcing_urls=sourcing)
     executor_view = ExecutorView(main_view.content_area, vm=vm)

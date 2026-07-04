@@ -32,6 +32,9 @@ def _build(data: dict[str, Any]) -> OpenUrlParams:
         A fully populated OpenUrlParams instance.
     """
     return OpenUrlParams(
+        url_cut_ampersand=data.get("url_cut_ampersand", True),
+        url_cut_question=data.get("url_cut_question", False),
+        url_always_add_slash=data.get("url_always_add_slash", False),
         wait_until=data.get("wait_until", WaitUntilEnum.E_IDLE.value),
         wait_dns_solver=int(data.get("wait_dns_solver", 6)),
         timeout_duration=int(data.get("timeout_duration", 1)),

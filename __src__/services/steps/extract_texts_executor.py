@@ -65,8 +65,12 @@ class ExtractTextsExecutor(IStepExecutor):
             selected: list[ElementHandle] = self._select_elements(elements, p.target)
             texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
 
+            if "#info > a" in p.selector:
+                print(f"DEBUG: Extracted texts from selector '{p.selector}': {texts}")
+                print(f"DEBUG: Elements count: {len(elements)}, Selected count: {len(selected)}")
+
             # push
-            context.push_texts_extracted(p.mapping, texts)
+            context.push_texts_extracted(p.mapping, texts, p.target)
 
             # infos
             preview_one_item = texts[0] if texts and texts[0] else C_STR_ERROR_EXTRACT_TEXTS

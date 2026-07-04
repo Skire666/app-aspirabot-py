@@ -189,9 +189,9 @@ class AppGlobalState:
                         pending[0] = root.after(400, _save)
             except tk.TclError:
                 return  # fenêtre en cours de destruction — arrêt du poll
-            root.after(200, _poll)
+            root.after(150, _poll)
 
-        root.after(200, _poll)
+        root.after(150, _poll)
         root._force_save_geometry = _save  # type: ignore[attr-defined]
 
     # ------------------------------------------------------------------

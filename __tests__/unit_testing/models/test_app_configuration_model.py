@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from models.app_configuration_model import AppConfigurationModel
 from shared.exception_util import (
     EmptyScenarioIdError,
@@ -76,6 +75,7 @@ class TestFolderLogs:
 
     def test_valid_path_accepted(self) -> None:
         from pathlib import Path
+
         m = AppConfigurationModel(folder_logs="/var/log")
         assert m.folder_logs == Path("/var/log")
 
@@ -100,6 +100,7 @@ class TestFolderScenarios:
 
     def test_valid_path_accepted(self) -> None:
         from pathlib import Path
+
         m = AppConfigurationModel(folder_scenarios="/some/path")
         assert m.is_folder_scenarios_configured
         assert m.folder_scenarios == Path("/some/path")
@@ -142,8 +143,8 @@ class TestGuiBootingPosition:
         assert m.gui_booting_position == ""
 
     def test_valid_position(self) -> None:
-        m = AppConfigurationModel(gui_booting_position="100,200")
-        assert m.gui_booting_position == "100,200"
+        m = AppConfigurationModel(gui_booting_position="100,300")
+        assert m.gui_booting_position == "100,300"
 
     def test_single_value_raises(self) -> None:
         with pytest.raises(InvalidGuiBootingPositionError):

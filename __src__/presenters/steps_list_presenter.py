@@ -101,7 +101,7 @@ class StepsListPresenter:
         self._scenario_content: ScenarioModel = self._service_scenario.read_scenario(id_scenario)
         self._steps.load(list(self._scenario_content.steps))
         self._refresh_view()
-        self._view.set_validation_status("--", False)
+        self._revalidate_and_notify()
 
     def init_new(self, id_scenario: str) -> None:
         """Initializes an empty workflow for a brand-new provider.
@@ -299,6 +299,7 @@ class StepsListPresenter:
             step_ids: The new complete step ID ordering produced by the widget.
         """
         self._steps.reorder_by_ids(step_ids)
+        self._revalidate_and_notify()
 
     def _on_move_step(self, index: int, direction: int) -> None:
         """Swaps a step with its neighbour in the given direction.
