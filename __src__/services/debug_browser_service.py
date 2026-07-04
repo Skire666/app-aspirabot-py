@@ -108,6 +108,24 @@ class DebugBrowserService:
         return results
 
     @staticmethod
+    def execute_js(page: Page, code: str) -> object:
+        """Evaluates arbitrary JavaScript code in the page context.
+
+        Args:
+            page: Live Playwright Page object.
+            code: JavaScript source pasted by the user. May be a single
+                expression or several statements; the value of the last
+                statement is returned, matching browser console semantics.
+
+        Returns:
+            The JSON-serializable value returned by the evaluated code.
+
+        Raises:
+            playwright.sync_api.Error: If the code fails to parse or throws.
+        """
+        return page.evaluate(code)
+
+    @staticmethod
     def _extract_extension(url: str) -> str:
         """Extracts the file extension from an image URL.
 

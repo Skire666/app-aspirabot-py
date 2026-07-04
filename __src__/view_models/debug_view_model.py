@@ -11,6 +11,7 @@ clears page Vars and marks the session alive before each new browser session.
 # Imports
 # -----------------------------------------------------------------------------
 
+import json
 import tkinter as tk
 from collections.abc import Callable
 
@@ -49,6 +50,7 @@ class DebugViewModel(ViewModelBase):
         self.html_content_var = tk.StringVar(master=master, value="")
         self.text_results_var = tk.StringVar(master=master, value="")
         self.image_results_var = tk.StringVar(master=master, value="")
+        self.js_result_var = tk.StringVar(master=master, value="")
 
         # Lifecycle Var — True while a session Toplevel is open; View traces to auto-destroy
         self.is_alive_var = tk.BooleanVar(master=master, value=False)
@@ -59,6 +61,7 @@ class DebugViewModel(ViewModelBase):
         self._on_refresh: Callable[[], None] | None = None
         self._on_analyze_texts: Callable[[str], None] | None = None
         self._on_analyze_images: Callable[[str], None] | None = None
+        self._on_execute_js: Callable[[str], None] | None = None
         self._on_close: Callable[[], None] | None = None
 
     # ------------------------------------------------------------------
@@ -92,6 +95,7 @@ class DebugViewModel(ViewModelBase):
         self.html_content_var.set("")
         self.text_results_var.set("")
         self.image_results_var.set("")
+        self.js_result_var.set("")
         self.is_alive_var.set(True)
 
     # ------------------------------------------------------------------
@@ -156,6 +160,16 @@ class DebugViewModel(ViewModelBase):
         if self._on_analyze_images is not None:
             raise CallbackNotDefinedError()
         self._on_analyze_images = cb
+
+    def bind_execute_js(self, cb: Callable[[str], None]) -> None:
+        """Register the handler invoked when the user requests JS execution.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_execute_js is not None:
+            raise CallbackNotDefinedError()
+        self._on_execute_js = cb
 
     def bind_close(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when the user closes the inspection window.
@@ -233,6 +247,19 @@ class DebugViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_analyze_images(selector)
 
+    def execute_js(self, code: str) -> None:
+        """Dispatch a JavaScript execution request with the given source code.
+
+        Args:
+            code: JavaScript source pasted by the user.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_execute_js is None:
+            raise CallbackNotDefinedError()
+        self._on_execute_js(code)
+
     def close(self) -> None:
         """Dispatch a user-initiated window-close request to the Presenter.
 
@@ -305,6 +332,24 @@ class DebugViewModel(ViewModelBase):
                 "",
             ]
         return "\n".join(lines)
+
+    @staticmethod
+    def format_js_result(result: object) -> str:
+        """Format a JavaScript evaluation return value into a display string.
+
+        Args:
+            result: Value returned by DebugBrowserService.execute_js(), already
+                deserialized from JSON by Playwright (dict, list, str, number,
+                bool, or None for JS undefined/null).
+
+        Returns:
+            Human-readable string ready for display.
+        """
+        if result is None:
+            return "undefined"
+        if isinstance(result, dict | list):
+            return json.dumps(result, indent=2, ensure_ascii=False)
+        return str(result)
 
 
 # EOF

@@ -66,6 +66,12 @@ class TestBindAndDispatch:
         vm.analyze_images("img")
         cb.assert_called_once_with("img")
 
+    def test_execute_js_dispatches(self, vm: DebugViewModel) -> None:
+        cb = MagicMock()
+        vm.bind_execute_js(cb)
+        vm.execute_js("document.title")
+        cb.assert_called_once_with("document.title")
+
     def test_unbound_primary_actions_raise(self, vm: DebugViewModel) -> None:
         """Primary action methods raise AspirabotBaseError when no handler is bound."""
         with pytest.raises(CallbackNotDefinedError):
@@ -80,6 +86,8 @@ class TestBindAndDispatch:
             vm.analyze_texts(".x")
         with pytest.raises(CallbackNotDefinedError):
             vm.analyze_images("img")
+        with pytest.raises(CallbackNotDefinedError):
+            vm.execute_js("1+1")
 
 
 class TestAfter:
@@ -142,7 +150,7 @@ class TestUrlProperty:
 class TestDoubleBindRaises:
     @pytest.mark.parametrize("bind_method", [
         "bind_start", "bind_open_debug_page", "bind_refresh",
-        "bind_analyze_texts", "bind_analyze_images", "bind_close",
+        "bind_analyze_texts", "bind_analyze_images", "bind_execute_js", "bind_close",
     ])
     def test_double_bind_raises(self, vm: DebugViewModel, bind_method: str) -> None:
         cb = MagicMock()
@@ -205,3 +213,28 @@ class TestFormatImageResults:
         assert "Nombre total : 1" in output
         assert "https://example.com/img.png" in output
         assert "[1]" in output
+
+
+# ---------------------------------------------------------------------------
+# format_js_result
+# ---------------------------------------------------------------------------
+
+
+class TestFormatJsResult:
+    def test_none_returns_undefined(self) -> None:
+        assert DebugViewModel.format_js_result(None) == "undefined"
+
+    def test_string_returns_as_is(self) -> None:
+        assert DebugViewModel.format_js_result("hello") == "hello"
+
+    def test_number_stringifies(self) -> None:
+        assert DebugViewModel.format_js_result(42) == "42"
+
+    def test_dict_returns_pretty_json(self) -> None:
+        output = DebugViewModel.format_js_result({"a": 1})
+        assert '"a": 1' in output
+
+    def test_list_returns_pretty_json(self) -> None:
+        output = DebugViewModel.format_js_result([1, 2, 3])
+        assert "1" in output
+        assert "3" in output

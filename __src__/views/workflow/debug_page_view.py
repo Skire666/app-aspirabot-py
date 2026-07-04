@@ -65,7 +65,7 @@ class DebugPageView(tk.Toplevel):
     # -----------------------------------------------------------------------
 
     def _create_widgets(self) -> None:
-        """Builds the Notebook with three tabs: HTML brut, Textes, Images."""
+        """Builds the Notebook with four tabs: HTML brut, Textes, Images, JavaScript."""
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
@@ -75,10 +75,12 @@ class DebugPageView(tk.Toplevel):
         tab_html = self._build_html_tab(notebook)
         tab_texts = self._build_texts_tab(notebook)
         tab_images = self._build_images_tab(notebook)
+        tab_js = self._build_js_tab(notebook)
 
         notebook.add(tab_html, text="HTML brut")
         notebook.add(tab_texts, text="Analyser textes")
         notebook.add(tab_images, text="Analyser images")
+        notebook.add(tab_js, text="Exécuter javascript")
 
     # -----------------------------------------------------------------------
     # Tab builders
@@ -167,6 +169,46 @@ class DebugPageView(tk.Toplevel):
         self._txt_images, _ = self._make_text_area(frame, row=2)
         return frame
 
+    def _build_js_tab(self, parent: ttk.Notebook) -> ttk.Frame:
+        """Builds the JavaScript execution tab.
+
+        Args:
+            parent: The Notebook widget hosting this tab.
+
+        Returns:
+            The fully constructed tab frame.
+        """
+        frame = ttk.Frame(parent)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(2, weight=1)
+
+        input_row = ttk.Frame(frame)
+        input_row.grid(row=0, column=0, sticky="ew", pady=(4, 2), padx=4)
+        input_row.columnconfigure(1, weight=1)
+        ttk.Label(input_row, text="Code javascript :").grid(row=0, column=0, padx=(0, 5), sticky="nw")
+
+        code_container = ttk.Frame(input_row)
+        code_container.grid(row=0, column=1, sticky="nsew")
+        code_container.columnconfigure(0, weight=1)
+        hsb_js_code = ttk.Scrollbar(code_container, orient="horizontal")
+        self._entry_js_code = tk.Text(
+            code_container, height=4, wrap="none", xscrollcommand=hsb_js_code.set, font=("Courier New", 9)
+        )
+        hsb_js_code.configure(command=self._entry_js_code.xview)  # type: ignore[reportUnknownMemberType]
+        self._entry_js_code.grid(row=0, column=0, sticky="nsew")
+        hsb_js_code.grid(row=1, column=0, sticky="ew")
+
+        ttk.Button(input_row, text="Exécuter le JS", command=self._fire_execute_js).grid(
+            row=0, column=2, padx=(4, 0), sticky="n"
+        )
+
+        btn_row = ttk.Frame(frame)
+        btn_row.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 2))
+        ttk.Button(btn_row, text="Effacer", command=lambda: self._clear_text_area(self._txt_js)).pack(side=tk.LEFT)
+
+        self._txt_js, _ = self._make_text_area(frame, row=2)
+        return frame
+
     @staticmethod
     def _make_text_area(parent: ttk.Frame, row: int) -> tuple[tk.Text, ttk.Scrollbar]:
         """Creates a read-only scrollable Text widget and places it in the grid.
@@ -210,6 +252,7 @@ class DebugPageView(tk.Toplevel):
             (self._vm.html_content_var, self._sync_html_content),
             (self._vm.text_results_var, self._sync_text_results),
             (self._vm.image_results_var, self._sync_image_results),
+            (self._vm.js_result_var, self._sync_js_result),
             (self._vm.is_alive_var, self._sync_alive),
         ]
         for var, cb in bindings:
@@ -234,6 +277,10 @@ class DebugPageView(tk.Toplevel):
     def _sync_image_results(self, *_: object) -> None:
         """Re-render the images tab from image_results_var."""
         self._write_text_area(self._txt_images, self._vm.image_results_var.get())
+
+    def _sync_js_result(self, *_: object) -> None:
+        """Re-render the JS tab from js_result_var."""
+        self._write_text_area(self._txt_js, self._vm.js_result_var.get())
 
     def _sync_alive(self, *_: object) -> None:
         """Destroy this window when the Presenter signals is_alive_var = False."""
@@ -304,6 +351,12 @@ class DebugPageView(tk.Toplevel):
         selector = self._entry_image_selector.get().strip()
         if selector:
             self._vm.analyze_images(selector)
+
+    def _fire_execute_js(self) -> None:
+        """Reads the JavaScript source and dispatches it to the ViewModel."""
+        code = self._entry_js_code.get("1.0", "end").strip()
+        if code:
+            self._vm.execute_js(code)
 
     def _fire_close(self) -> None:
         """Notify the Presenter via vm.close() then destroy this window."""

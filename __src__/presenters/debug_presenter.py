@@ -104,6 +104,7 @@ class DebugPresenter:
         vm.bind_refresh(self._on_debug_refresh)
         vm.bind_analyze_texts(self._on_debug_analyze_texts)
         vm.bind_analyze_images(self._on_debug_analyze_images)
+        vm.bind_execute_js(self._on_debug_execute_js)
         vm.bind_close(self._on_debug_close)
 
     # -----------------------------------------------------------------------
@@ -249,6 +250,15 @@ class DebugPresenter:
         if self._vm.is_alive_var.get():
             self._vm.after(0, lambda: self._vm.image_results_var.set(text))
 
+    def _push_js_result(self, text: str) -> None:
+        """Schedule a js_result_var update on the main thread.
+
+        Args:
+            text: Formatted JS execution result (or error) string.
+        """
+        if self._vm.is_alive_var.get():
+            self._vm.after(0, lambda: self._vm.js_result_var.set(text))
+
     # -----------------------------------------------------------------------
     # Queued task dispatchers (main thread → worker thread)
     # -----------------------------------------------------------------------
@@ -272,6 +282,14 @@ class DebugPresenter:
             selector: CSS selector targeting image elements.
         """
         self._debug_queue.put(lambda page: self._task_analyze_images(page, selector))
+
+    def _on_debug_execute_js(self, code: str) -> None:
+        """Enqueues a JavaScript execution task for the given source code.
+
+        Args:
+            code: JavaScript source pasted by the user.
+        """
+        self._debug_queue.put(lambda page: self._task_execute_js(page, code))
 
     def _on_debug_close(self) -> None:
         """Handles a user-initiated window close: stops the browser worker."""
@@ -323,6 +341,20 @@ class DebugPresenter:
         except AspirabotBaseError:
             self._logger.exception("Échec de l'analyse des images")
             self._push_image_results(C_DEBUG_IMAGES_ERROR)
+
+    def _task_execute_js(self, page: Page, code: str) -> None:
+        """Runs user-supplied JavaScript and pushes the result (or error) to the ViewModel.
+
+        Args:
+            page: The live Playwright Page owned by the worker thread.
+            code: JavaScript source pasted by the user.
+        """
+        try:
+            result = self._debug_service.execute_js(page, code)
+            self._push_js_result(self._vm.format_js_result(result))
+        except Exception as exc:
+            self._logger.exception("Échec de l'exécution du JavaScript")
+            self._push_js_result(f"Erreur :\n{exc}")
 
 
 # EOF
