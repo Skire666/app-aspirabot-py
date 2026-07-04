@@ -181,7 +181,7 @@ C_STEP_TYPE_TO_LABELS: dict[StepTypeEnum, str] = {
     StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS: "Extraire infos vidéo - Youtube",
     StepTypeEnum.E_EXTRACT_TEXTS: "Extraire : Textes de la page",
     StepTypeEnum.E_EXTRACT_LINKS: "Extraire : Liens de la page",
-    StepTypeEnum.E_EXTRACT_JS_CUSTOM: "Extraire ! JS personnalisé",
+    StepTypeEnum.E_EXTRACT_JS_CUSTOM: "Extraire : JS personnalisé",
     StepTypeEnum.E_EXTRACT_VARIABLE: "Extraire : variable système",
     StepTypeEnum.E_EXPORT_DATA_TO_CSV: "Exporter données (csv)",
     StepTypeEnum.E_JUMP_TO_STEP: "Sauter vers l'étape si...",
@@ -228,6 +228,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "export_data_to_js_csv_filename_required": "[{step}.] : Fichier CSV obligatoire.",
     # --- all extracts with mapping ---
     "extract_key_mapping_already_used": "[{step}.] : clé de mapping déjà utilisé.",
+    "extract_key_mapping_alphanumeric": "[{step}.] : la clé doit être alphanumérique (et '_').",
     # --- extract_links ---
     "extract_links_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
     "extract_links_target_invalid": "[{step}.] : cible '{value}' invalide.",

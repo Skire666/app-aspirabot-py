@@ -85,7 +85,7 @@ class CsvRepository:
             raise CsvFileNotFoundError(path)
 
         try:
-            with path.open(encoding="utf-8", newline="") as fh:
+            with path.open(encoding="utf-8-sig", newline="") as fh:
                 reader = csv.DictReader(fh, delimiter=C_SEPARATOR, quotechar=C_QUOTECHAR)
                 table = CsvTable(set(reader.fieldnames or []))
                 for raw_row in reader:
@@ -108,7 +108,7 @@ class CsvRepository:
         """
         try:
             make_all_folders_if_not_exists(path, is_file_path=True)
-            with path.open("w", encoding="utf-8", newline="") as fh:
+            with path.open("w", encoding="utf-8-sig", newline="") as fh:
                 writer = csv.DictWriter(fh, fieldnames=table.header, delimiter=C_SEPARATOR, quotechar=C_QUOTECHAR)
                 writer.writeheader()
                 writer.writerows(table.to_list_of_dicts())

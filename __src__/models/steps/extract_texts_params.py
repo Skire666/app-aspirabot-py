@@ -85,7 +85,9 @@ class ExtractTextsParams(BaseModel):
             raise ValueError(ERROR_TEMPLATES["extract_texts_mapping_required"].format(step=step_label(info.context)))
         steps_context: StepsCollections | None = info.context.get("steps_context")
         if not v.replace("_", "").isalnum():
-            raise ValueError("La clé doit être alphanumérique (et '_').")
+            raise ValueError(
+                ERROR_TEMPLATES["extract_key_mapping_alphanumeric"].format(step=step_label(info.context))
+            )
         if steps_context is None:
             return v
         if steps_context.count_mapping_key(v) != 1:

@@ -76,6 +76,7 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
         except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
             # "... video unavailable ..." -> video not found
+            # "... video is available to this channel's members ..." -> video is members-only
             self._logger.exception("An error occurred while fetching YouTube video info.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

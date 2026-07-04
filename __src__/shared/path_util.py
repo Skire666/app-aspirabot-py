@@ -8,7 +8,7 @@ import string
 from datetime import datetime
 from pathlib import Path
 
-from shared.exception_util import InvalidDirectoryPathError
+from shared.exception_util import InvalidDirectoryPathError, InvalidFilePathError
 
 ALLOWED = set(string.ascii_letters + string.digits + "-_. ()")
 
@@ -165,7 +165,7 @@ def get_mtime_of_file(file_path: Path | str) -> datetime:
     """
     path = Path(file_path)
     if not path.is_file():
-        raise FileNotFoundError(f"The specified path is not a valid file: {file_path}")
+        raise InvalidFilePathError(str(file_path))
     return datetime.fromtimestamp(path.stat().st_mtime)
 
 

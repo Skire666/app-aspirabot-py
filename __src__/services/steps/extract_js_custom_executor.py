@@ -46,16 +46,7 @@ class ExtractJsCustomExecutor(IStepExecutor):
 
         p = cast(ExtractJsCustomParams, context.step_scraping_data.params)
         try:
-            is_success, raw_value = browser.evaluate_script_with_safe_retry(
-                p.js_code, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
-            )
-            if not is_success or raw_value is None:
-                raise ScriptExecutionFailedError("extract_js_custom")
-            if not isinstance(raw_value, dict):
-                raise ScriptExecutionFailedError("extract_js_custom", f"Expected dict, got {type(raw_value)}")
-            if not isinstance(raw_value, list):
-                raise ScriptExecutionFailedError("extract_js_custom", f"Expected list, got {type(raw_value)}")
-
+            raw_value = self._evaluate_and_validate(browser, p)
             self._apply_url_cutters(raw_value, p)
             # push
             context.push_js_custom_extracted(raw_value, p.primary_key)
@@ -69,33 +60,63 @@ class ExtractJsCustomExecutor(IStepExecutor):
             return StepExecutionResultEnum.E_SUCCESS
 
     @staticmethod
+    def _evaluate_and_validate(
+        browser: IWebBrowserService, p: ExtractJsCustomParams
+    ) -> dict[str, object] | list[object]:
+        """Evaluate the custom JS code and validate that it produced a usable result.
+
+        Args:
+            browser: Live browser service providing the current Playwright page.
+            p: ExtractJsCustomParams instance holding the JS code to run.
+
+        Returns:
+            The raw dict or list returned by the custom JS code.
+
+        Raises:
+            ScriptExecutionFailedError: If the script failed or returned an unusable value.
+        """
+        is_success, raw_value = browser.evaluate_script_with_safe_retry(
+            p.js_code, C_MAXIMUM_RETRY_EVALUATE_SCRIPT, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT
+        )
+        if not is_success or raw_value is None:
+            raise ScriptExecutionFailedError("extract_js_custom")
+        if not isinstance(raw_value, dict | list):
+            raise ScriptExecutionFailedError("extract_js_custom")
+        return cast("dict[str, object] | list[object]", raw_value)
+
+    @staticmethod
     def _apply_url_cutters(value: object, p: ExtractJsCustomParams) -> None:
         """Apply the URL cleanup options to the raw JS result.
 
         Args:
-            value: Raw string result returned by the custom JS code.
+            value: Raw dict, or list of dicts, returned by the custom JS code.
+            p: ExtractJsCustomParams instance containing the cleanup options.
+        """
+        if isinstance(value, dict):
+            ExtractJsCustomExecutor._cut_row(cast(dict[str, str], value), p)
+        elif isinstance(value, list):
+            for item in cast(list[object], value):
+                if not isinstance(item, dict):
+                    raise ScriptExecutionFailedError("extract_js_custom")
+                ExtractJsCustomExecutor._cut_row(cast(dict[str, str], item), p)
+        else:
+            raise ScriptExecutionFailedError("extract_js_custom")
+
+    @staticmethod
+    def _cut_row(row: dict[str, str], p: ExtractJsCustomParams) -> None:
+        """Apply the URL cleanup options to a single extracted row.
+
+        Args:
+            row: One extracted dict, keyed by field name.
             p: ExtractJsCustomParams instance containing the cleanup options.
         """
         pk = p.primary_key
-        if isinstance(value, dict):
-            if p.url_cut_ampersand:
-                value[pk] = value[pk].split("&")[0]
-            if p.url_cut_question:
-                value[pk] = value[pk].split("?")[0]
-            if p.url_always_add_slash and value and not value[pk].endswith("/"):
-                value[pk] += "/"
-        elif isinstance(value, list):
-            for item in value:
-                if not isinstance(item, dict):
-                    raise ScriptExecutionFailedError("extract_js_custom", f"Expected list of dicts, got {type(item)}")
-                if p.url_cut_ampersand:
-                    item[pk] = item[pk].split("&")[0]
-                if p.url_cut_question:
-                    item[pk] = item[pk].split("?")[0]
-                if p.url_always_add_slash and item and not item[pk].endswith("/"):
-                    item[pk] += "/"
-        else:
-            raise ScriptExecutionFailedError("extract_js_custom", f"Expected dict or list, got {type(value)}")
+        if p.url_cut_ampersand:
+            row[pk] = row[pk].split("&")[0]
+        if p.url_cut_question:
+            row[pk] = row[pk].split("?")[0]
+        if p.url_always_add_slash and row and not row[pk].endswith("/"):
+            row[pk] += "/"
 
 
 register_step_executor(ExtractJsCustomExecutor())

@@ -123,6 +123,7 @@ C_STATE_JUMP_TO_STEP_FAILURE: str = "failure"
 C_COLUMN_PRIMARY_KEY: str = "__primary_key__"
 C_COLUMN_DATE_CREATED: str = "__date_created__"
 C_COLUMN_DATE_MODIFIED: str = "__date_modified__"
+C_COLUMN_DATE_SESSION: str = "__date_session__"
 C_COLUMN_SOURCE: str = "__source__"
 
 # ------------------------------------------------------------------------------

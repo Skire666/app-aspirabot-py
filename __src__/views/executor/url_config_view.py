@@ -325,39 +325,22 @@ class UrlConfigView(ttk.Frame):
         row.pack(fill=tk.X)
         date_values = [e.enum_to_view() for e in RelativeDateEnum if e.is_valid()]
         MyLabel(row, text="Filtrer les dates de").pack_left()
-        MyCombobox(
-            row,
-            textvariable=self._vm.csv_date_type_used_var,
-            values=[C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED],
-            state="readonly",
-            width=15,
-        ).pack_left()
-        self._view_traces.append(
-            (
-                self._vm.csv_date_type_used_var,
-                self._vm.csv_date_type_used_var.trace_add("write", lambda *_: self._vm.form_changed()),
-            )
-        )
+        self._add_bound_combobox(row, self._vm.csv_date_type_used_var, [C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED])
         MyLabel(row, text=" entre ").pack_left()
-        MyCombobox(
-            row, textvariable=self._vm.csv_date_start_var, values=date_values, state="readonly", width=15
-        ).pack_left()
-        self._view_traces.append(
-            (
-                self._vm.csv_date_start_var,
-                self._vm.csv_date_start_var.trace_add("write", lambda *_: self._vm.form_changed()),
-            )
-        )
+        self._add_bound_combobox(row, self._vm.csv_date_start_var, date_values)
         MyLabel(row, text="et").pack_left()
-        MyCombobox(
-            row, textvariable=self._vm.csv_date_end_var, values=date_values, state="readonly", width=15
-        ).pack_left()
-        self._view_traces.append(
-            (
-                self._vm.csv_date_end_var,
-                self._vm.csv_date_end_var.trace_add("write", lambda *_: self._vm.form_changed()),
-            )
-        )
+        self._add_bound_combobox(row, self._vm.csv_date_end_var, date_values)
+
+    def _add_bound_combobox(self, parent: tk.Widget, var: tk.StringVar, values: list[str]) -> None:
+        """Create a readonly combobox bound to *var* and register its form-changed trace.
+
+        Args:
+            parent: Widget to attach the combobox to.
+            var: StringVar the combobox reads and writes.
+            values: Allowed combobox values.
+        """
+        MyCombobox(parent, textvariable=var, values=values, state="readonly", width=15).pack_left()
+        self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
 
     # ─── Panel 4 : Découverte automatique ────────────────────────────────────
 

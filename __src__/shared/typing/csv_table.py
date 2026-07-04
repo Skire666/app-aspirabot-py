@@ -81,14 +81,6 @@ class CsvTable:
         return len(self._rows)
 
     # ------------------------------------------------------------------
-    # Column access
-    # ------------------------------------------------------------------
-
-    def has_column(self, column: str) -> bool:
-        """Return True if *column* is part of the header."""
-        return column in self._header
-
-    # ------------------------------------------------------------------
     # Row access
     # ------------------------------------------------------------------
 

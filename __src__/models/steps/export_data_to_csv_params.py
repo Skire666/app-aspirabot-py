@@ -35,7 +35,9 @@ class ExportDataToCsvParams(BaseModel):
                 ERROR_TEMPLATES["export_data_to_js_csv_filename_required"].format(step=step_label(info.context))
             )
         if not v.replace("_", "").isalnum():
-            raise ValueError("La clé doit être alphanumérique (et '_').")
+            raise ValueError(
+                ERROR_TEMPLATES["extract_key_mapping_alphanumeric"].format(step=step_label(info.context))
+            )
         return v
 
     def to_dict(self) -> dict[str, Any]:

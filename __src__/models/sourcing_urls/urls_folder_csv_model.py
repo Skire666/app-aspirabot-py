@@ -53,6 +53,7 @@ class UrlsFolderCsvModel(IUrlsSourceModel):
             path_to_csv: Absolute path of the folder containing .json files.
             orders_json: Sort order applied when reading the .json files.
             x_top_taken: Maximum number of URLs to take.
+            date_type_used: Name of the date column used to filter files (created or modified).
             date_modified_start: Start date for filtering files by modification date.
             date_modified_end: End date for filtering files by modification date.
         """

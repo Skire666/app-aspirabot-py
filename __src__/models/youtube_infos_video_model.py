@@ -22,8 +22,6 @@ class YoutubeInfosVideoModel:
 
     id: Any
     webpage_url: Any
-    webpage_url_basename: Any
-    webpage_url_domain: Any
     title: Any
     fulltitle: Any
     description: Any
@@ -31,7 +29,6 @@ class YoutubeInfosVideoModel:
     uploader: Any
     uploader_id: Any
     uploader_url: Any
-    timestamp: Any
     upload_date: Any
     channel: Any
     channel_id: Any

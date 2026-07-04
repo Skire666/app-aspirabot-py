@@ -23,7 +23,13 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps_collections_model import StepsCollections
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.csv_repository import CsvRepository
-from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_PRIMARY_KEY, C_COLUMN_SOURCE
+from shared.constants import (
+    C_COLUMN_DATE_CREATED,
+    C_COLUMN_DATE_MODIFIED,
+    C_COLUMN_DATE_SESSION,
+    C_COLUMN_PRIMARY_KEY,
+    C_COLUMN_SOURCE,
+)
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import InvalidJsExtractedValueTypeError, JsExtractedPrimaryKeyMissingError
@@ -71,6 +77,7 @@ class ScrapingContextModel:
 
     # date extracted
     extracted_data: CsvTable | None = field(default=None)
+    start_session_datetime: str | None = field(default=None)
 
     # Optional URL source scenario injected by the service before each run.
     url_source: IUrlSourceProvider | None = field(default=None)
@@ -80,6 +87,7 @@ class ScrapingContextModel:
     last_result_step: StepExecutionResultEnum = field(default=StepExecutionResultEnum.E_UNSET)
     last_url_opened: str = field(default="")  # peut être en erreur, pas grave
     last_time_elapsed: float = field(default=0.0)
+    time_started: float = field(default=0.0, init=False)
     pending_jump: str | int | None = field(default=None)
     end_process: bool = field(default=False)
     browser_stats: tuple[int, str] = field(default=(0, "—"))
@@ -131,6 +139,7 @@ class ScrapingContextModel:
             steps: The list of steps in the workflow, used to build the CSV header.
         """
         ls_collection = StepsCollections(steps)
+        self.start_session_datetime = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         if ls_collection.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_CSV) >= 1:
             filename = ls_collection.get_name_of_file_csv()
             csv_repository = CsvRepository()
@@ -150,7 +159,7 @@ class ScrapingContextModel:
         Args:
             step: The step about to be executed.
         """
-        self._time_started = time.time()
+        self.time_started = time.time()
         self.step_scraping_data = step
         self.last_time_elapsed = 0.0
         self.pending_jump = None
@@ -163,7 +172,7 @@ class ScrapingContextModel:
             result: The execution result enum value.
         """
         self.last_result_step = result
-        self.last_time_elapsed = time.time() - self._time_started + 0.001  # add 1ms to avoid zero values
+        self.last_time_elapsed = time.time() - self.time_started + 0.001  # add 1ms to avoid zero values
 
     def last_step_was_success(self) -> bool:
         """Helper to check if the last step execution was a success."""
@@ -223,6 +232,7 @@ class ScrapingContextModel:
             JsExtractedPrimaryKeyMissingError: When *obj* is missing *col_primary_key*.
         """
         assert self.extracted_data is not None
+        assert self.start_session_datetime is not None
 
         pk_value = obj.get(col_primary_key)
         if pk_value is None:
@@ -236,11 +246,13 @@ class ScrapingContextModel:
             row[C_COLUMN_PRIMARY_KEY] = pk_str
             row[C_COLUMN_DATE_CREATED] = date_now
             row[C_COLUMN_DATE_MODIFIED] = date_now
+            row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
             row[C_COLUMN_SOURCE] = "js_custom"
             self.extracted_data.add_row(row)
         else:
             del row[col_primary_key]  # avoid duplicate column
             row[C_COLUMN_DATE_MODIFIED] = date_now
+            row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
             row[C_COLUMN_SOURCE] = "js_custom"
             self.extracted_data.update_cells(index, row)
 
@@ -251,6 +263,7 @@ class ScrapingContextModel:
             links: List of extracted link strings.
         """
         assert self.extracted_data is not None
+        assert self.start_session_datetime is not None
 
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         for link in links:
@@ -258,13 +271,18 @@ class ScrapingContextModel:
             if index is None:
                 dc = {
                     C_COLUMN_PRIMARY_KEY: link,
+                    C_COLUMN_DATE_SESSION: self.start_session_datetime,
                     C_COLUMN_DATE_CREATED: date_now,
                     C_COLUMN_DATE_MODIFIED: date_now,
                     C_COLUMN_SOURCE: "links",
                 }
                 self.extracted_data.add_row(dc)
             else:
-                dc = {C_COLUMN_DATE_MODIFIED: date_now, C_COLUMN_SOURCE: "links"}
+                dc = {
+                    C_COLUMN_DATE_SESSION: self.start_session_datetime,
+                    C_COLUMN_DATE_MODIFIED: date_now,
+                    C_COLUMN_SOURCE: "links",
+                }
                 self.extracted_data.update_cells(index, dc)
 
     def push_texts_extracted(self, mapping: str, texts: list[str], target: ExtractTargetEnum) -> None:
@@ -273,8 +291,10 @@ class ScrapingContextModel:
         Args:
             mapping: The mapping key for the extracted texts.
             texts: List of extracted text strings.
+            target: Extraction target mode, controls whether all texts or only the first are kept.
         """
         assert self.extracted_data is not None
+        assert self.start_session_datetime is not None
 
         # push
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
@@ -287,16 +307,23 @@ class ScrapingContextModel:
                 mapping: flt,
                 C_COLUMN_DATE_CREATED: date_now,
                 C_COLUMN_DATE_MODIFIED: date_now,
+                C_COLUMN_DATE_SESSION: self.start_session_datetime,
                 C_COLUMN_SOURCE: "texts",
             }
             self.extracted_data.add_row(dc)
         else:
-            dc = {mapping: flt, C_COLUMN_DATE_MODIFIED: date_now, C_COLUMN_SOURCE: "texts"}
+            dc = {
+                C_COLUMN_DATE_SESSION: self.start_session_datetime,
+                mapping: flt,
+                C_COLUMN_DATE_MODIFIED: date_now,
+                C_COLUMN_SOURCE: "texts",
+            }
             self.extracted_data.update_cells(index, dc)
 
     def push_vars_extracted(self, mapping: str, value: str) -> None:
         """Push a single extracted variable into the context's extracted data table."""
         assert self.extracted_data is not None
+        assert self.start_session_datetime is not None
 
         # push
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
@@ -304,6 +331,7 @@ class ScrapingContextModel:
         if index is None:  # not found...
             dc = {
                 C_COLUMN_PRIMARY_KEY: self.last_url_opened,
+                C_COLUMN_DATE_SESSION: self.start_session_datetime,
                 mapping: value,
                 C_COLUMN_DATE_CREATED: date_now,
                 C_COLUMN_DATE_MODIFIED: date_now,
@@ -311,12 +339,18 @@ class ScrapingContextModel:
             }
             self.extracted_data.add_row(dc)
         else:
-            dc = {mapping: value, C_COLUMN_DATE_MODIFIED: date_now, C_COLUMN_SOURCE: "vars"}
+            dc = {
+                C_COLUMN_DATE_SESSION: self.start_session_datetime,
+                mapping: value,
+                C_COLUMN_DATE_MODIFIED: date_now,
+                C_COLUMN_SOURCE: "vars",
+            }
             self.extracted_data.update_cells(index, dc)
 
     def push_ytdlp_extracted(self, ytdlp_data: YoutubeInfosVideoModel) -> None:
         """Push extracted YouTube data into the context's extracted data table."""
         assert self.extracted_data is not None
+        assert self.start_session_datetime is not None
 
         # push
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
@@ -328,11 +362,13 @@ class ScrapingContextModel:
             casted[C_COLUMN_PRIMARY_KEY] = self.last_url_opened
             casted[C_COLUMN_DATE_CREATED] = date_now
             casted[C_COLUMN_DATE_MODIFIED] = date_now
+            casted[C_COLUMN_DATE_SESSION] = self.start_session_datetime
             casted[C_COLUMN_SOURCE] = "ytdlp"
             # new
             self.extracted_data.add_row(casted)
         else:
             casted[C_COLUMN_DATE_MODIFIED] = date_now
+            casted[C_COLUMN_DATE_SESSION] = self.start_session_datetime
             casted[C_COLUMN_SOURCE] = "ytdlp"
             # update
             self.extracted_data.update_cells(index, casted)
