@@ -18,8 +18,8 @@ from operator import itemgetter
 
 
 class UrlSortOrderEnum(enum.Enum):
-    E_MTIME_ASC = "asc"
-    E_MTIME_DESC = "desc"
+    E_OLDEST_FIRST = "asc"
+    E_NEWEST_FIRST = "desc"
 
 
 class UrlProcessor:
@@ -38,7 +38,7 @@ class UrlProcessor:
             ):
                 list_filtered.append((url, dt))
 
-        reverse = self._sort_order == UrlSortOrderEnum.E_MTIME_DESC
+        reverse = self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST
         list_filtered.sort(key=lambda x: x[1], reverse=reverse)
 
         return [url for url, _ in list_filtered]
@@ -47,7 +47,7 @@ class UrlProcessor:
     def optimized(self, url_with_time: dict[str, datetime]) -> list[str]:
         newest = self._date_modified_newest
         oldest = self._date_modified_oldest
-        reverse = self._sort_order == UrlSortOrderEnum.E_MTIME_DESC
+        reverse = self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST
 
         filtered = [
             (url, dt)
@@ -90,7 +90,9 @@ def main() -> None:
     dates = list(data.values())
     dmin, dmax = min(dates), max(dates)
     span = dmax - dmin
-    proc = UrlProcessor(newest=dmin + span * 0.75, oldest=dmin + span * 0.25, sort_order=UrlSortOrderEnum.E_MTIME_DESC)
+    proc = UrlProcessor(
+        newest=dmin + span * 0.75, oldest=dmin + span * 0.25, sort_order=UrlSortOrderEnum.E_NEWEST_FIRST
+    )
 
     # Vérification : résultats identiques
     assert proc.original(data) == proc.optimized(data), "Les résultats diffèrent !"

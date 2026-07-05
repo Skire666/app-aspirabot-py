@@ -25,8 +25,12 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable
+from datetime import datetime
 from typing import Any
 
+from shared.constants import C_COLUMN_DATE_MODIFIED, C_COLUMN_PRIORITY_RANK, C_COLUMN_QUALITY_DATE, C_COLUMN_QUALITY_ROW
+from shared.datetime_util import parse_date_from_csv
+from shared.enums.relative_date_enum import get_quality_of_updating_date
 from shared.exception_util import CsvRowIndexNotFoundError
 
 # -----------------------------------------------------------------------------
@@ -72,8 +76,8 @@ class CsvTable:
 
     @property
     def header(self) -> list[str]:
-        """Ordered column names."""
-        return list(self._header)
+        """Column names, sorted alphabetically."""
+        return sorted(self._header)
 
     @property
     def row_count(self) -> int:
@@ -89,11 +93,11 @@ class CsvTable:
         return 0 <= index < len(self._rows)
 
     def to_list_of_dicts(self) -> list[dict[str, str]]:
-        """Return a copy of every row, in order."""
-        self._fill_missing_columns()
-        return [dict(row) for row in self._rows]
+        """Return a copy of every row, in order, with columns sorted alphabetically."""
+        self.fill_missing_columns()
+        return [{column: row[column] for column in self.header} for row in self._rows]
 
-    def _fill_missing_columns(self) -> None:
+    def fill_missing_columns(self) -> None:
         """Fill missing columns in each row with empty strings."""
         for row in self._rows:
             for column in self._header:
@@ -208,6 +212,39 @@ class CsvTable:
         """
         self._require_row(index)
         del self._rows[index]
+
+    # ------------------------------------------------------------------
+    # Quality
+    # ------------------------------------------------------------------
+
+    def compute_qualities(self) -> None:
+        """Return a dict mapping the number of filled cells in a row to the count of such rows.
+
+        Returns:
+            A dict where keys are the number of filled cells in a row, and values are the count of rows with that number of filled cells.
+        """
+        nw = datetime.now()
+        default_date_1900 = datetime(year=1900, month=1, day=1)
+
+        for row in self._rows:
+            # line
+
+            # quantity
+            cells_filled_count = 1
+            for value in row.values():
+                if value and len(value) >= 1:
+                    cells_filled_count += 1
+
+            row[C_COLUMN_QUALITY_ROW] = str(cells_filled_count)
+
+            # time
+            date_parsed = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED), default=default_date_1900)
+            score_updator = get_quality_of_updating_date(nw, date_parsed) + 1
+
+            row[C_COLUMN_QUALITY_DATE] = str(score_updator)
+
+            # heuristic
+            row[C_COLUMN_PRIORITY_RANK] = str(cells_filled_count * score_updator)
 
     # ------------------------------------------------------------------
     # JSON interoperability

@@ -82,4 +82,36 @@ def get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
     return datetime.now().strftime(C_TIMESTAMP_FILE_FORMAT_YYYY_MM_DD_HH_MM_SS_FFFFFF)
 
 
+# --------------------------------------------------------------------------
+# compliant with csv
+# -------------------------------------------------------------------------
+
+
+def parse_date_from_csv(value: str | None, default: datetime | None = None):
+    """Parse une string en datetime.
+    Retourne datetime.now() (ou la valeur `default`) si la string est
+    null/None, vide, ou mal formatée.
+    """
+    if default is None:
+        default = datetime(year=1900, month=1, day=1)
+
+    # Gère None, ainsi que les chaînes "null"/"none" venant du CSV
+    if value is None:
+        return default
+
+    if not isinstance(value, str):
+        return default
+
+    cleaned = value.strip()
+
+    # Chaîne vide ou marqueurs textuels de valeur manquante
+    if len(cleaned) <= 0 or cleaned.lower() in ("null", "none", "nan"):
+        return default
+
+    try:
+        return datetime.strptime(cleaned, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return default
+
+
 # EOF

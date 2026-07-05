@@ -51,6 +51,7 @@ class ExportDataToCsvExecutor(IStepExecutor):
                 raise ExportFolderNotConfiguredError()  # noqa: TRY301
 
             # write
+            context.precompute_qualities()
             dest: Path = context.folder_export / f"{p.csv_filename}.csv"
             self._csv_repository.write_file(dest, context.extracted_data)
 

@@ -21,7 +21,6 @@ class YoutubeInfosVideoModel:
     """Structured YouTube basic metadata payload ready for JSON serialization."""
 
     id: Any
-    webpage_url: Any
     title: Any
     fulltitle: Any
     description: Any
@@ -70,8 +69,6 @@ class YoutubeInfosVideoModel:
             rs.append(ErrorCodeYIV.YIV_1001, SeverityEnum.E_ERROR)
         if not self.title or not str(self.title).strip():
             rs.append(ErrorCodeYIV.YIV_1002, SeverityEnum.E_ERROR)
-        if not self.webpage_url or not str(self.webpage_url).strip():
-            rs.append(ErrorCodeYIV.YIV_1003, SeverityEnum.E_ERROR)
         if not self.duration:
             rs.append(ErrorCodeYIV.YIV_1004, SeverityEnum.E_ERROR)
         elif not isinstance(self.duration, (int, float)) or not str(self.duration).isdigit():

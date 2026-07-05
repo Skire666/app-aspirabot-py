@@ -13,7 +13,7 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from shared.constants import C_COLUMN_DATE_CREATED
+from shared.constants import C_COLUMN_DATE_MODIFIED
 from shared.enums import RelativeDateEnum, UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.exception_util import CallbackNotDefinedError
 from shared.i18n_fra import C_EXEC_SAVED_DATE_EMPTY
@@ -124,14 +124,14 @@ class ExecutorViewModel(ViewModelBase):
         self.manual_urls_var = tk.StringVar(master=master, value="")
         # racs
         self.urls_path_folder_racs_var = tk.StringVar(master=master, value="")
-        self.url_sort_order_shortcuts_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
+        self.url_sort_order_shortcuts_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_OLDEST_FIRST.value)
         # jsons
         self.urls_path_folder_csv_var = tk.StringVar(master=master, value="")
-        self.url_sort_order_csv_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_MTIME_ASC.value)
-        self.url_x_top_csv_var = tk.IntVar(master=master, value=100)
-        self.csv_date_type_used_var = tk.StringVar(master=master, value=C_COLUMN_DATE_CREATED)
+        self.url_sort_order_csv_var = tk.StringVar(master=master, value=UrlSortOrderEnum.E_OLDEST_FIRST.value)
+        self.url_x_top_csv_var = tk.StringVar(master=master, value="100")
+        self.csv_date_type_used_var = tk.StringVar(master=master, value=C_COLUMN_DATE_MODIFIED)
         self.csv_date_start_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_NOW.enum_to_view())
-        self.csv_date_end_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_99.enum_to_view())
+        self.csv_date_end_var = tk.StringVar(master=master, value=RelativeDateEnum.E_LAST_99Y.enum_to_view())
         # Status Var — written by the Presenter after compute or on error.
         self.global_threshold_var = tk.StringVar(master=master, value="")
         self.step_threshold_var = tk.StringVar(master=master, value="")

@@ -78,7 +78,7 @@ class UrlConfigPresenter:
             model = UrlsFolderCsvModel(
                 self._vm.urls_path_folder_csv_var.get().strip(),
                 self._vm.url_sort_order_csv_var.get(),
-                self._vm.url_x_top_csv_var.get(),
+                int(self._vm.url_x_top_csv_var.get() or 0),
                 self._vm.csv_date_type_used_var.get(),
                 RelativeDateEnum.view_to_enum(self._vm.csv_date_start_var.get()),
                 RelativeDateEnum.view_to_enum(self._vm.csv_date_end_var.get()),

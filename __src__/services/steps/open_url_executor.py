@@ -61,6 +61,8 @@ class OpenUrlExecutor(IStepExecutor):
         except Exception as exc:
             _logger.exception("An error occurred while opening the URL.")
             event_bus.log_step(context, f"Excp : {exc}")
+            if "context or browser has been close" in str(exc).lower():
+                return StepExecutionResultEnum.E_FATAL
             return StepExecutionResultEnum.E_ERROR
         else:
             return StepExecutionResultEnum.E_SUCCESS

@@ -22,6 +22,7 @@ from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_folder_csv_model import UrlsFolderCsvModel
 from repositories.csv_repository import CsvRepository
 from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_PRIMARY_KEY
+from shared.datetime_util import parse_date_from_csv
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import InvalidUrlSourceValueTypeError
 from shared.path_util import get_mtime_of_file
@@ -49,11 +50,11 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         # cache
         self._last_date_mtime_csv: datetime | None = None
         self._last_path_to_csv: str = ""
-        self._last_urls_readed: dict[str, datetime] = {}
+        self._last_urls_readed: list[tuple[str, datetime, int]] = []
 
         # model
         self._path_to_csv: str = ""
-        self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_MTIME_ASC
+        self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_OLDEST_FIRST
         self._x_top_taken: int = 0
         self._date_type_used: str = C_COLUMN_DATE_CREATED
         self._date_modified_newest: datetime = datetime.max
@@ -184,9 +185,9 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         time_elapsed = (time_end - time_start).total_seconds()
         print(f"DEBUG: discover_and_load took {time_elapsed:.3f} seconds, found {len(self._urls)} URLs.")
 
-    def _collect_urls(self) -> dict[str, datetime]:
+    def _collect_urls(self) -> list[tuple[str, datetime, int]]:
         """Scan all files and build a url→mtime map; duplicates keep the newest mtime."""
-        urls_time: dict[str, datetime] = {}
+        urls_time: list[tuple[str, datetime, int]] = []
         repo = CsvRepository()
         csv: CsvTable = repo.read_file(Path(self._path_to_csv))
 
@@ -194,33 +195,32 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         for row_index in range(nbr_rows):
             url = csv.get_cell(row_index, C_COLUMN_PRIMARY_KEY).strip()
             time_str = csv.get_cell(row_index, self._date_type_used).strip()
-            try:
-                time_casted = datetime.fromisoformat(time_str)
-            except ValueError:
-                continue  # skip invalid mtime format
-
-            if url and (url not in urls_time or time_casted > urls_time[url]):
-                urls_time[url] = time_casted
+            time_casted = parse_date_from_csv(time_str)
+            score_quality = csv.get_cell(row_index, C_COLUMN_PRIORITY_RANK).strip() or "0"
+            if url and time_casted:
+                urls_time.append((url, time_casted, int(score_quality)))
+                print(f"DEBUG: Row {row_index}: URL={url}, Time={time_casted}, Quality={score_quality}")
 
         return urls_time
 
-    def _filter_and_sort_urls(self, url_with_time: dict[str, datetime]) -> list[str]:
+    def _filter_and_sort_urls(self, url_with_time: list[tuple[str, datetime, int]]) -> list[str]:
         """Apply date range filter and sort order; return the final ordered URL list."""
         # 1. On sort les attributs de la boucle (accès attribut = coûteux en Python)
         newest = self._date_modified_newest
         oldest = self._date_modified_oldest
         top_n = self._x_top_taken
-        reverse = self._sort_order == UrlSortOrderEnum.E_MTIME_DESC
 
-        # 2. Filtrage — les tests `is None` sont hoistés hors de la comparaison
-        filtered = [(url, dt) for url, dt in url_with_time.items() if (dt <= newest) and (dt >= oldest)]
+        top_n = min(top_n, len(url_with_time))
+        
+        if self._sort_order == UrlSortOrderEnum.E_PRIORITY_FIRST:
+            # TODO PCO
+        elif self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST:
+            # TODO PCO
+        else:  # E_OLDEST_FIRST
+            # TODO PCO
 
-        # 3. Tri + limitation
-        # O(n log k) au lieu de O(n log n) : bien mieux quand k << n
-        pick = heapq.nlargest if reverse else heapq.nsmallest
-        selected = pick(top_n, filtered, key=itemgetter(1))
-
-        return [url for url, _ in selected]
+        # return
+            
 
 
 # EOF

@@ -11,7 +11,7 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 from shared.app_global_state import MyButton, MyCombobox, MyEntry, MyLabel, MyRadioButton
-from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED
+from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_DATE_SESSION
 from shared.enums import RelativeDateEnum, UrlSortOrderEnum, UrlSourceTypeEnum
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
@@ -194,16 +194,16 @@ class UrlConfigView(ttk.Frame):
         MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
         MyRadioButton(
             row,
-            text="Lire récemment modifié",
+            text="Lire récents en 1er",
             variable=self._vm.url_sort_order_shortcuts_var,
-            value=UrlSortOrderEnum.E_MTIME_DESC.value,
+            value=UrlSortOrderEnum.E_NEWEST_FIRST.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
         MyRadioButton(
             row,
-            text="Lire les plus anciens",
+            text="Lire anciens en 1er",
             variable=self._vm.url_sort_order_shortcuts_var,
-            value=UrlSortOrderEnum.E_MTIME_ASC.value,
+            value=UrlSortOrderEnum.E_OLDEST_FIRST.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
 
@@ -223,8 +223,8 @@ class UrlConfigView(ttk.Frame):
         self._panel_json = ttk.Frame(self._panels_container)
         self._create_json_stats_row(self._panel_json)
         self._create_json_path_row(self._panel_json)
-        self._create_json_sort_row(self._panel_json)
         self._create_json_dates_between(self._panel_json)
+        self._create_json_sort_row(self._panel_json)
         self._create_json_preview_row(self._panel_json)
 
     def _create_json_path_row(self, parent: tk.Widget) -> None:
@@ -294,26 +294,25 @@ class UrlConfigView(ttk.Frame):
         MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
         MyRadioButton(
             row,
-            text="Lire récents > anciens",
+            text="Lire récents en 1er",
             variable=self._vm.url_sort_order_csv_var,
-            value=UrlSortOrderEnum.E_MTIME_DESC.value,
+            value=UrlSortOrderEnum.E_NEWEST_FIRST.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
         MyRadioButton(
             row,
-            text="Lire anciens > récents",
+            text="Lire anciens en 1er",
             variable=self._vm.url_sort_order_csv_var,
-            value=UrlSortOrderEnum.E_MTIME_ASC.value,
+            value=UrlSortOrderEnum.E_OLDEST_FIRST.value,
             command=lambda: self._vm.form_changed(),
         ).pack_left()
-        MyEntry(row, textvariable=self._vm.url_x_top_csv_var).pack_right()
-        MyLabel(row, text="Nombre maximum à lire :").pack_right()
-        self._view_traces.append(
-            (
-                self._vm.url_x_top_csv_var,
-                self._vm.url_x_top_csv_var.trace_add("write", lambda *_: self._vm.form_changed()),
-            )
-        )
+        MyRadioButton(
+            row,
+            text="Lire prioritaires en 1er",
+            variable=self._vm.url_sort_order_csv_var,
+            value=UrlSortOrderEnum.E_PRIORITY_FIRST.value,
+            command=lambda: self._vm.form_changed(),
+        ).pack_left()
 
     def _create_json_dates_between(self, parent: tk.Widget) -> None:
         """Date-range filter row for the JSON source panel.
@@ -323,23 +322,33 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
+        values_coloumn = [C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_DATE_SESSION]
+        MyLabel(row, text="Filtrer : ").pack_left()
+        self._add_bound_combobox(row, self._vm.csv_date_type_used_var, values_coloumn, width=18)
         date_values = [e.enum_to_view() for e in RelativeDateEnum if e.is_valid()]
-        MyLabel(row, text="Filtrer les dates de").pack_left()
-        self._add_bound_combobox(row, self._vm.csv_date_type_used_var, [C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED])
         MyLabel(row, text=" entre ").pack_left()
-        self._add_bound_combobox(row, self._vm.csv_date_start_var, date_values)
+        self._add_bound_combobox(row, self._vm.csv_date_start_var, date_values, width=12)
         MyLabel(row, text="et").pack_left()
-        self._add_bound_combobox(row, self._vm.csv_date_end_var, date_values)
+        self._add_bound_combobox(row, self._vm.csv_date_end_var, date_values, width=12)
+        MyEntry(row, textvariable=self._vm.url_x_top_csv_var, width=6).pack_right()
+        MyLabel(row, text="Limiter nombre d'URL :").pack_right()
+        self._view_traces.append(
+            (
+                self._vm.url_x_top_csv_var,
+                self._vm.url_x_top_csv_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
 
-    def _add_bound_combobox(self, parent: tk.Widget, var: tk.StringVar, values: list[str]) -> None:
+    def _add_bound_combobox(self, parent: tk.Widget, var: tk.StringVar, values: list[str], width: int) -> None:
         """Create a readonly combobox bound to *var* and register its form-changed trace.
 
         Args:
             parent: Widget to attach the combobox to.
             var: StringVar the combobox reads and writes.
             values: Allowed combobox values.
+            width: Width of the combobox in characters.
         """
-        MyCombobox(parent, textvariable=var, values=values, state="readonly", width=15).pack_left()
+        MyCombobox(parent, textvariable=var, values=values, state="readonly", width=width, height=15).pack_left()
         self._view_traces.append((var, var.trace_add("write", lambda *_: self._vm.form_changed())))
 
     # ─── Panel 4 : Découverte automatique ────────────────────────────────────

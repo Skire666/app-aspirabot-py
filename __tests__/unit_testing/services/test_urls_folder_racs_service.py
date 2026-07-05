@@ -11,10 +11,8 @@ from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsServic
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import (
     InvalidUrlSourceValueTypeError,
-    UrlSourceExhaustedError,
     UrlSourceFileNotFoundError,
     UrlSourceFilesNotDiscoveredError,
-    UrlSourceNoUrlBufferedError,
 )
 
 # ---------------------------------------------------------------------------
@@ -22,7 +20,7 @@ from shared.exception_util import (
 # ---------------------------------------------------------------------------
 
 
-def _make_model(folder: str, order: str = UrlSortOrderEnum.E_MTIME_ASC.value) -> UrlsFolderRacsModel:
+def _make_model(folder: str, order: str = UrlSortOrderEnum.E_OLDEST_FIRST.value) -> UrlsFolderRacsModel:
     return UrlsFolderRacsModel(folder_racs=folder, orders_racs=order)
 
 
@@ -48,9 +46,9 @@ class TestSetupModel:
         assert svc._folder_path == str(tmp_path)
 
     def test_valid_model_stores_sort_order(self, svc: UrlsFolderRacsService, tmp_path: Path) -> None:
-        model = _make_model(str(tmp_path), UrlSortOrderEnum.E_MTIME_DESC.value)
+        model = _make_model(str(tmp_path), UrlSortOrderEnum.E_NEWEST_FIRST.value)
         svc.setup_model(model)
-        assert svc._sort_order == UrlSortOrderEnum.E_MTIME_DESC
+        assert svc._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST
 
     def test_invalid_model_raises(self, svc: UrlsFolderRacsService) -> None:
         with pytest.raises(InvalidUrlSourceValueTypeError):
@@ -232,7 +230,7 @@ class TestDiscoverFiles:
         time.sleep(0.01)
         f2.touch()
 
-        model = _make_model(str(tmp_path), UrlSortOrderEnum.E_MTIME_DESC.value)
+        model = _make_model(str(tmp_path), UrlSortOrderEnum.E_NEWEST_FIRST.value)
         svc.setup_model(model)
         files = svc._discover_files()
 
@@ -241,7 +239,7 @@ class TestDiscoverFiles:
 
     def test_raises_when_folder_missing(self, svc: UrlsFolderRacsService) -> None:
         svc._folder_path = "/nonexistent/xyz"
-        svc._sort_order = UrlSortOrderEnum.E_MTIME_ASC
+        svc._sort_order = UrlSortOrderEnum.E_OLDEST_FIRST
         with pytest.raises(UrlSourceFileNotFoundError):
             svc._discover_files()
 

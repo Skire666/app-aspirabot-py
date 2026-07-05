@@ -373,5 +373,10 @@ class ScrapingContextModel:
             # update
             self.extracted_data.update_cells(index, casted)
 
+    def precompute_qualities(self) -> None:
+        assert self.extracted_data is not None
+
+        self.extracted_data.compute_qualities()
+
 
 # EOF

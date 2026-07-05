@@ -203,9 +203,9 @@ class UrlsFolderRacsService(IUrlSourceProvider):
 
         files = list(Path(self._folder_path).glob("*.url"))
         match self._sort_order:
-            case UrlSortOrderEnum.E_MTIME_DESC:
+            case UrlSortOrderEnum.E_NEWEST_FIRST:
                 return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
-            case _:  # E_MTIME_ASC (default)
+            case _:  # E_OLDEST_FIRST (default)
                 return sorted(files, key=lambda f: f.stat().st_mtime)
 
     def _update_modified_time_of_current_file(self) -> None:

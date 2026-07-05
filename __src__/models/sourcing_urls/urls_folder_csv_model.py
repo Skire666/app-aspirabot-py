@@ -86,7 +86,7 @@ class UrlsFolderCsvModel(IUrlsSourceModel):
             x_top_taken=100,
             date_type_used=C_COLUMN_DATE_CREATED,
             date_modified_start=RelativeDateEnum.E_LAST_NOW,
-            date_modified_end=RelativeDateEnum.E_LAST_99,
+            date_modified_end=RelativeDateEnum.E_LAST_99Y,
         )
 
     @classmethod
@@ -104,8 +104,8 @@ class UrlsFolderCsvModel(IUrlsSourceModel):
             orders_json=str(data.get("orders_json") or ""),
             x_top_taken=int(data.get("x_top_taken") or 100),
             date_type_used=str(data.get("date_type_used") or C_COLUMN_DATE_CREATED),
-            date_modified_start=RelativeDateEnum(data.get("date_modified_start") or RelativeDateEnum.E_UNSET),
-            date_modified_end=RelativeDateEnum(data.get("date_modified_end") or RelativeDateEnum.E_UNSET),
+            date_modified_start=RelativeDateEnum.any_to_enum(data.get("date_modified_start")),
+            date_modified_end=RelativeDateEnum.any_to_enum(data.get("date_modified_end")),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:

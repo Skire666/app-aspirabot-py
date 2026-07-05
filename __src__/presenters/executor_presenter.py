@@ -348,15 +348,15 @@ class ExecutorPresenter:
         self._vm.set_manual_urls(profile.urls_manual_list.get_urls())
         # racs
         self._vm.url_sort_order_shortcuts_var.set(
-            profile.urls_folder_racs.orders_racs or UrlSortOrderEnum.E_MTIME_ASC.value
+            profile.urls_folder_racs.orders_racs or UrlSortOrderEnum.E_OLDEST_FIRST.value
         )
         self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
         # csv
         self._vm.urls_path_folder_csv_var.set(profile.urls_folder_csv.path_to_csv)
         self._vm.url_sort_order_csv_var.set(
-            profile.urls_folder_csv.sort_order_csv or UrlSortOrderEnum.E_MTIME_ASC.value
+            profile.urls_folder_csv.sort_order_csv or UrlSortOrderEnum.E_OLDEST_FIRST.value
         )
-        self._vm.url_x_top_csv_var.set(profile.urls_folder_csv.x_top_taken)
+        self._vm.url_x_top_csv_var.set(str(profile.urls_folder_csv.x_top_taken))
         self._vm.csv_date_type_used_var.set(profile.urls_folder_csv.date_type_used)
         self._vm.csv_date_start_var.set(profile.urls_folder_csv.date_start.enum_to_view())
         self._vm.csv_date_end_var.set(profile.urls_folder_csv.date_end.enum_to_view())
@@ -486,7 +486,7 @@ class ExecutorPresenter:
         # csv
         self._current_profile.urls_folder_csv.path_to_csv = self._vm.urls_path_folder_csv_var.get().strip()
         self._current_profile.urls_folder_csv.sort_order_csv = self._vm.url_sort_order_csv_var.get()
-        self._current_profile.urls_folder_csv.x_top_taken = self._vm.url_x_top_csv_var.get()
+        self._current_profile.urls_folder_csv.x_top_taken = int(self._vm.url_x_top_csv_var.get() or 0)
         self._current_profile.urls_folder_csv.date_type_used = self._vm.csv_date_type_used_var.get()
         self._current_profile.urls_folder_csv.date_start = RelativeDateEnum.view_to_enum(
             self._vm.csv_date_start_var.get()
