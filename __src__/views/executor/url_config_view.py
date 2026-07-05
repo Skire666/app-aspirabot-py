@@ -243,10 +243,10 @@ class UrlConfigView(ttk.Frame):
             )
         )
         MyEntry(row, textvariable=self._vm.urls_path_folder_csv_var).pack_left(fill=tk.X, expand=True)
-        FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_shortcuts_json).pack(
+        FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=self._open_folder_csv).pack(
             side=tk.RIGHT, padx=(0, 10), pady=(0, 5)
         )
-        MyButton(row, text="...", width=3, command=self._browse_jsons_folder).pack_right()
+        MyButton(row, text="...", width=3, command=self._browse_csvs_file).pack_right()
 
     def _create_json_preview_row(self, parent: tk.Widget) -> None:
         """Preview row with URL count and scrolled text for the JSON source panel.
@@ -463,13 +463,15 @@ class UrlConfigView(ttk.Frame):
         if path:
             open_folder(path)
 
-    def _browse_jsons_folder(self) -> None:
+    def _browse_csvs_file(self) -> None:
         """Open a folder dialog and write the result to urls_path_folder_csv_var."""
-        folder = filedialog.askdirectory(title="Choisir le dossier source (JSON)", parent=self)
-        if folder:
-            self._vm.urls_path_folder_csv_var.set(folder)
+        file = filedialog.askopenfilename(
+            title="Choisir le fichier CSV", filetypes=[("CSV Files", "*.csv")], parent=self
+        )
+        if file:
+            self._vm.urls_path_folder_csv_var.set(file)
 
-    def _open_shortcuts_json(self) -> None:
+    def _open_folder_csv(self) -> None:
         """Open the shortcuts folder in the OS file explorer."""
         path = self._vm.urls_path_folder_csv_var.get()
         if path:

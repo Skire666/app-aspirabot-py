@@ -52,6 +52,9 @@ def open_folder(path: str | Path) -> None:
     Args:
         path: Directory path to reveal in the OS file explorer.
     """
+    if Path(path).is_file():
+        path = Path(path).parent
+
     enum_os: OperatingSystem = detect_os()
 
     if enum_os == OperatingSystem.WINDOWS:

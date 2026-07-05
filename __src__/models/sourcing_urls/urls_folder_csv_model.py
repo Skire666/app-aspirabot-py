@@ -133,6 +133,8 @@ class UrlsFolderCsvModel(IUrlsSourceModel):
 
         if not self.path_to_csv or not self.path_to_csv.strip():
             rs.append(ErrorCodeUFC.UFC_1001, SeverityEnum.E_ERROR)
+        elif not self.path_to_csv.lower().endswith(".csv"):
+            rs.append(ErrorCodeUFC.UFC_1006, SeverityEnum.E_ERROR)
         elif not path_has_valid_syntax(self.path_to_csv):
             rs.append(ErrorCodeUFC.UFC_1002, SeverityEnum.E_ERROR)
         elif not Path(self.path_to_csv).exists():

@@ -126,7 +126,7 @@ C_COLUMN_DATE_MODIFIED: str = "__date_modified__"
 C_COLUMN_DATE_SESSION: str = "__date_session__"
 C_COLUMN_QUALITY_DATE: str = "__quality_date__"
 C_COLUMN_QUALITY_ROW: str = "__quality_row__"
-C_COLUMN_PRIORITY_RANK: str = "__priority_rank__"
+C_COLUMN_PRIORITY_RANK: str = "__quality_score__"
 C_COLUMN_SOURCE: str = "__source__"
 
 # ------------------------------------------------------------------------------

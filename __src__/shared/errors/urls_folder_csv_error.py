@@ -14,6 +14,7 @@ class ErrorCodeUFC(ErrorCode):
     UFC_1003 = "Aucun ordre de tri défini."
     UFC_1004 = "L'ordre de tri est invalide."
     UFC_1005 = "Le fichier '.csv' n'existe pas."
+    UFC_1006 = "Le fichier doit se terminer par l'extension'.csv'."
     UFC_1007 = "Date de modif. de début est vide."
     UFC_1008 = "Date de modif. de fin est vide."
     UFC_1009 = "Date de modif. de début postérieure à date de modif. de fin."

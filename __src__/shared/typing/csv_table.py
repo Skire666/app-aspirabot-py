@@ -202,6 +202,8 @@ class CsvTable:
             CsvColumnNotFoundError: When *column* is not part of the header.
         """
         self._require_row(index)
+        if column not in self._rows[index]:
+            return ""
         return self._rows[index][column]
 
     def delete_row(self, index: int) -> None:
@@ -225,7 +227,11 @@ class CsvTable:
         """
         nw = datetime.now()
         default_date_1900 = datetime(year=1900, month=1, day=1)
+        self._header.add(C_COLUMN_QUALITY_ROW)
+        self._header.add(C_COLUMN_QUALITY_DATE)
+        self._header.add(C_COLUMN_PRIORITY_RANK)
 
+        print(f"DEBUG: Computing qualities for {len(self._rows)} rows.")
         for row in self._rows:
             # line
 

@@ -21,7 +21,13 @@ from interfaces.i_url_source_provider import IUrlSourceProvider
 from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_folder_csv_model import UrlsFolderCsvModel
 from repositories.csv_repository import CsvRepository
-from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_PRIMARY_KEY
+from shared.constants import (
+    C_COLUMN_DATE_CREATED,
+    C_COLUMN_DATE_MODIFIED,
+    C_COLUMN_DATE_SESSION,
+    C_COLUMN_PRIMARY_KEY,
+    C_COLUMN_PRIORITY_RANK,
+)
 from shared.datetime_util import parse_date_from_csv
 from shared.enums import UrlSortOrderEnum
 from shared.exception_util import InvalidUrlSourceValueTypeError
@@ -91,8 +97,13 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
     def is_ready_to_consum_urls(self) -> bool:
         """Discover files and return True when at least one URL remains to be consumed."""
+        time_started_in_ms = datetime.now()
         self.reset()
-        return len(self._urls) > 0
+
+        time_ended_in_ms = datetime.now()
+        time_elapsed_in_ms = (time_ended_in_ms - time_started_in_ms).total_seconds()
+        print(f"DEBUG: is_ready_to_... {time_elapsed_in_ms:.3f} seconds, found {len(self._urls_filtred)} URLs.")
+        return len(self._urls_filtred) > 0
 
     def read_current_url(self) -> str | None:
         """Return the current URL without advancing the internal cursor.
@@ -100,8 +111,8 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         Returns:
             The current URL string, or None if no URL is available.
         """
-        if 0 <= self._index_url < len(self._urls):
-            return self._urls[self._index_url]
+        if 0 <= self._index_url < len(self._urls_filtred):
+            return self._urls_filtred[self._index_url]
         return None
 
     def has_next_url(self) -> bool:
@@ -110,7 +121,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         Returns:
             True if the cursor has not reached the end of the list.
         """
-        return 0 <= self._index_url < len(self._urls)
+        return 0 <= self._index_url < len(self._urls_filtred)
 
     def load_next_url(self) -> None:
         """Return the next URL and advance the cursor.
@@ -136,7 +147,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         Returns:
             A list of all URLs that would be consumed by this provider.
         """
-        return self._urls
+        return self._urls_filtred
 
     def count_urls(self) -> int:
         """Return the total number of URLs available in this source.
@@ -144,7 +155,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         Returns:
             The total number of URLs available in this source.
         """
-        return len(self._urls)
+        return len(self._urls_filtred)
 
     def get_progress_text(self) -> str:
         """Return a string describing the current progress for display purposes.
@@ -179,48 +190,65 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
         if need_reload:
             self._last_urls_readed = self._collect_urls()
-        self._urls = self._filter_and_sort_urls(self._last_urls_readed)
+        self._urls_filtred = self._filter_and_sort_urls(self._last_urls_readed)
 
         time_end = datetime.now()
         time_elapsed = (time_end - time_start).total_seconds()
-        print(f"DEBUG: discover_and_load took {time_elapsed:.3f} seconds, found {len(self._urls)} URLs.")
+        print(f"DEBUG: discover_and_load took {time_elapsed:.3f} seconds, found {len(self._urls_filtred)} URLs.")
 
-    def _collect_urls(self) -> list[tuple[str, datetime, int]]:
+    def _collect_urls(self) -> list[tuple[str, datetime, datetime, datetime, int]]:
         """Scan all files and build a url→mtime map; duplicates keep the newest mtime."""
-        urls_time: list[tuple[str, datetime, int]] = []
+        urls_time: list[tuple[str, datetime, datetime, datetime, int]] = []
         repo = CsvRepository()
         csv: CsvTable = repo.read_file(Path(self._path_to_csv))
 
         nbr_rows = csv.row_count
         for row_index in range(nbr_rows):
             url = csv.get_cell(row_index, C_COLUMN_PRIMARY_KEY).strip()
-            time_str = csv.get_cell(row_index, self._date_type_used).strip()
-            time_casted = parse_date_from_csv(time_str)
+            time_c = csv.get_cell(row_index, C_COLUMN_DATE_CREATED).strip()
+            time_c_casted = parse_date_from_csv(time_c)
+            time_m = csv.get_cell(row_index, C_COLUMN_DATE_MODIFIED).strip()
+            time_m_casted = parse_date_from_csv(time_m)
+            time_s = csv.get_cell(row_index, C_COLUMN_DATE_SESSION).strip()
+            time_s_casted = parse_date_from_csv(time_s)
             score_quality = csv.get_cell(row_index, C_COLUMN_PRIORITY_RANK).strip() or "0"
-            if url and time_casted:
-                urls_time.append((url, time_casted, int(score_quality)))
-                print(f"DEBUG: Row {row_index}: URL={url}, Time={time_casted}, Quality={score_quality}")
+            if url and time_m_casted:
+                urls_time.append((url, time_c_casted, time_m_casted, time_s_casted, int(score_quality)))
 
         return urls_time
 
-    def _filter_and_sort_urls(self, url_with_time: list[tuple[str, datetime, int]]) -> list[str]:
+    def _filter_and_sort_urls(self, url_with_time: list[tuple[str, datetime, datetime, datetime, int]]) -> list[str]:
         """Apply date range filter and sort order; return the final ordered URL list."""
         # 1. On sort les attributs de la boucle (accès attribut = coûteux en Python)
         newest = self._date_modified_newest
         oldest = self._date_modified_oldest
         top_n = self._x_top_taken
 
-        top_n = min(top_n, len(url_with_time))
-        
-        if self._sort_order == UrlSortOrderEnum.E_PRIORITY_FIRST:
-            # TODO PCO
-        elif self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST:
-            # TODO PCO
-        else:  # E_OLDEST_FIRST
-            # TODO PCO
+        # 2. Filtre sur la plage de dates
+        filtered: list[tuple[str, datetime, datetime, datetime, int]] = []
+        index = 4  # E_PRIORITY_FIRST
+        if self._date_type_used == C_COLUMN_DATE_CREATED:
+            index = 1
+            filtered = [item for item in url_with_time if oldest <= item[1] <= newest]
+        elif self._date_type_used == C_COLUMN_DATE_MODIFIED:
+            index = 2
+            filtered = [item for item in url_with_time if oldest <= item[2] <= newest]
+        elif self._date_type_used == C_COLUMN_DATE_SESSION:
+            index = 3
+            filtered = [item for item in url_with_time if oldest <= item[3] <= newest]
 
-        # return
-            
+        # 3. Tri (via heapq, pour ne garder que le top N sans trier toute la liste) + top N
+        if self._sort_order == UrlSortOrderEnum.E_PRIORITY_FIRST:
+            print(f"DEBUG: Sorting by priority, top {top_n} items.")
+            top_items = heapq.nsmallest(top_n, filtered, key=itemgetter(4))
+        elif self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST:
+            print(f"DEBUG: Sorting by newest first, top {top_n} items.")
+            top_items = heapq.nlargest(top_n, filtered, key=itemgetter(index))
+        else:  # E_OLDEST_FIRST
+            print(f"DEBUG: Sorting by oldest first, top {top_n} items.")
+            top_items = heapq.nsmallest(top_n, filtered, key=itemgetter(index))
+
+        return [item[0] for item in top_items]
 
 
 # EOF
