@@ -56,7 +56,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         # cache
         self._last_date_mtime_csv: datetime | None = None
         self._last_path_to_csv: str = ""
-        self._last_urls_readed: list[tuple[str, datetime, int]] = []
+        self._last_urls_readed: list[tuple[str, datetime, datetime, datetime, int]] = []
 
         # model
         self._path_to_csv: str = ""
@@ -202,16 +202,12 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         repo = CsvRepository()
         csv: CsvTable = repo.read_file(Path(self._path_to_csv))
 
-        nbr_rows = csv.row_count
-        for row_index in range(nbr_rows):
-            url = csv.get_cell(row_index, C_COLUMN_PRIMARY_KEY).strip()
-            time_c = csv.get_cell(row_index, C_COLUMN_DATE_CREATED).strip()
-            time_c_casted = parse_date_from_csv(time_c)
-            time_m = csv.get_cell(row_index, C_COLUMN_DATE_MODIFIED).strip()
-            time_m_casted = parse_date_from_csv(time_m)
-            time_s = csv.get_cell(row_index, C_COLUMN_DATE_SESSION).strip()
-            time_s_casted = parse_date_from_csv(time_s)
-            score_quality = csv.get_cell(row_index, C_COLUMN_PRIORITY_RANK).strip() or "0"
+        for row in csv.iter_rows():
+            url = row.get(C_COLUMN_PRIMARY_KEY, "").strip()
+            time_c_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_CREATED, ""))
+            time_m_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED, ""))
+            time_s_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_SESSION, ""))
+            score_quality = row.get(C_COLUMN_PRIORITY_RANK, "").strip() or "0"
             if url and time_m_casted:
                 urls_time.append((url, time_c_casted, time_m_casted, time_s_casted, int(score_quality)))
 

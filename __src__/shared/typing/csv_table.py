@@ -92,6 +92,15 @@ class CsvTable:
         """Return True if *index* points to an existing row."""
         return 0 <= index < len(self._rows)
 
+    def iter_rows(self) -> Iterable[dict[str, str]]:
+        """Yield each row's raw dict, in order.
+
+        Bypasses the per-cell bounds-checking of ``get_cell``, for callers
+        that scan every row and column themselves. Rows are yielded by
+        reference: treat them as read-only.
+        """
+        return iter(self._rows)
+
     def to_list_of_dicts(self) -> list[dict[str, str]]:
         """Return a copy of every row, in order, with columns sorted alphabetically."""
         self.fill_missing_columns()
@@ -155,7 +164,8 @@ class CsvTable:
         """
         self._rows.append(row)
         for key in row:
-            self.add_column(key)
+            if key not in self._header:
+                self._header.add(key)
         return len(self._rows) - 1
 
     def replace_row(self, index: int, row: dict[str, str]) -> None:
