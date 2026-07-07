@@ -115,39 +115,40 @@ _RELATIVE_DATE_TO_LABEL: dict[RelativeDateEnum, str] = {
     RelativeDateEnum.E_LAST_99Y: "99 ans",
 }
 _LABEL_TO_RELATIVE_DATE: dict[str, RelativeDateEnum] = {v: k for k, v in _RELATIVE_DATE_TO_LABEL.items()}
-_RELATIVE_DATE_TO_TIMEDELTA: dict[RelativeDateEnum, timedelta] = {
-    RelativeDateEnum.E_LAST_NOW: timedelta(0),
-    RelativeDateEnum.E_LAST_1H: timedelta(hours=1),
-    RelativeDateEnum.E_LAST_3H: timedelta(hours=3),
-    RelativeDateEnum.E_LAST_1D: timedelta(days=1),
-    RelativeDateEnum.E_LAST_3D: timedelta(days=3),
-    RelativeDateEnum.E_LAST_1W: timedelta(weeks=1),
-    RelativeDateEnum.E_LAST_3W: timedelta(weeks=3),
-    RelativeDateEnum.E_LAST_1M: timedelta(days=30),
-    RelativeDateEnum.E_LAST_3M: timedelta(days=90),
-    RelativeDateEnum.E_LAST_1Y: timedelta(days=365),
-    RelativeDateEnum.E_LAST_3Y: timedelta(days=1095),
-    RelativeDateEnum.E_LAST_99Y: timedelta(days=36135),
-}
 
-_RANKS_PRIORITY_DELTA = {enum_val: i for i, enum_val in enumerate(_RELATIVE_DATE_TO_TIMEDELTA)}
+_RELATIVE_DATE_TO_TIMEDELTA: list[timedelta] = [
+    timedelta(0),
+    timedelta(minutes=5),
+    timedelta(minutes=10),
+    timedelta(minutes=30),
+    timedelta(hours=1),
+    timedelta(hours=3),
+    timedelta(days=1),
+    timedelta(days=3),
+    timedelta(weeks=1),
+    timedelta(weeks=3),
+    timedelta(days=30),
+    timedelta(days=90),
+    timedelta(days=365),
+    timedelta(days=1095),
+    timedelta(days=36135),
+]
 
 
 def get_quality_of_updating_date(current: datetime, modified: datetime) -> int:
     gap = current - modified
-    nbr_ranks = len(_RELATIVE_DATE_TO_TIMEDELTA) + 1
+    nbr_max = len(_RELATIVE_DATE_TO_TIMEDELTA) + 1
 
     # Date de modification dans le futur -> on considère "Maintenant"
     if gap < timedelta(0):
-        return nbr_ranks - _RANKS_PRIORITY_DELTA[RelativeDateEnum.E_LAST_NOW]
+        return nbr_max
 
-    for enum_val, threshold in _RELATIVE_DATE_TO_TIMEDELTA.items():  # déjà trié croissant
+    for i, threshold in enumerate(_RELATIVE_DATE_TO_TIMEDELTA):  # déjà trié croissant
         if gap <= threshold:
-            return nbr_ranks - _RANKS_PRIORITY_DELTA[enum_val]
+            return nbr_max - i
 
     # Au-delà de 99 ans : on plafonne sur le dernier palier
-    last = next(reversed(_RELATIVE_DATE_TO_TIMEDELTA))
-    return nbr_ranks - _RANKS_PRIORITY_DELTA[last]
+    return 1
 
 
 # EOF

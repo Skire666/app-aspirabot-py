@@ -54,6 +54,8 @@ def open_folder(path: str | Path) -> None:
     """
     if Path(path).is_file():
         path = Path(path).parent
+    if not Path(path).is_dir():
+        path = Path(path).parent
 
     enum_os: OperatingSystem = detect_os()
 

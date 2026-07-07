@@ -241,7 +241,6 @@ class CsvTable:
         self._header.add(C_COLUMN_QUALITY_DATE)
         self._header.add(C_COLUMN_PRIORITY_RANK)
 
-        print(f"DEBUG: Computing qualities for {len(self._rows)} rows.")
         for row in self._rows:
             # line
 
