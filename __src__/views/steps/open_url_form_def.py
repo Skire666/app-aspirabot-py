@@ -15,7 +15,6 @@ from shared.constants import C_MAXIMUM_SIZE_IMAGE, C_UNITS_TIME_ALLOWED_FOR_VIEW
 from shared.enums import StepTypeEnum, WaitUntilEnum
 from shared.parse_util import safe_int_from_dict
 from shared.step_registry import register_form
-from views.components.canvas_checkbox import CanvasCheckbox
 from views.steps._constants import WAIT_UNIT_MODEL_TO_VIEW, WAIT_UNIT_VIEW_TO_MODEL
 
 # -----------------------------------------------------------------------------
@@ -26,9 +25,6 @@ C_DEFAULT_WAIT_UNTIL = WaitUntilEnum.E_IDLE.value
 C_DEFAULT_TIMEOUT_DURATION = 12
 C_DEFAULT_TIMEOUT_UNIT = C_UNITS_TIME_DEFAULT_VIEW
 
-C_KEY_URL_CUT_AMPERSAND = "url_cut_ampersand"
-C_KEY_URL_CUT_QUESTION = "url_cut_question"
-C_KEY_URL_ALWAYS_ADD_SLASH = "url_always_add_slash"
 C_KEY_WAIT_UNTIL = "wait_until"
 C_KEY_WAIT_DNS_SOLVER = "wait_dns_solver"
 C_KEY_TIMEOUT_DURATION = "timeout_duration"
@@ -59,40 +55,9 @@ class OpenUrlFormDef(IStepFormDef):
         """
         frame.columnconfigure(1, weight=1)
 
-        self._build_subform_url_cutter(frame, widgets)
         self._build_subform_wait_until(frame, widgets)
         self._build_subform_timeout(frame, widgets)
         self._build_subform_comment(frame, widgets)
-
-    @staticmethod
-    def _build_subform_url_cutter(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the URL cutter checkbox row.
-
-        Args:
-            frame: Parent frame to pack the row into.
-            widgets: Mutable mapping; populated with the C_KEY_URL_CUT_AMPERSAND tk.Variable.
-        """
-        row3 = ttk.Frame(frame)
-        row3.pack(fill="x", pady=(0, 8))
-
-        # ampersand
-        url_cut_amp_var = tk.BooleanVar(value=True)
-        CanvasCheckbox(row3, text="Couper '&...' de l'URL   ", variable=url_cut_amp_var).pack(side=tk.LEFT, padx=(0, 5))
-        widgets[C_KEY_URL_CUT_AMPERSAND] = url_cut_amp_var
-
-        # question
-        url_cut_question_var = tk.BooleanVar(value=False)
-        CanvasCheckbox(row3, text="Couper '?...' de l'URL   ", variable=url_cut_question_var).pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
-        widgets[C_KEY_URL_CUT_QUESTION] = url_cut_question_var
-
-        # always add slash
-        url_always_add_slash_var = tk.BooleanVar(value=False)
-        CanvasCheckbox(row3, text="Terminer URL par un '/'", variable=url_always_add_slash_var).pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
-        widgets[C_KEY_URL_ALWAYS_ADD_SLASH] = url_always_add_slash_var
 
     @staticmethod
     def _build_subform_wait_until(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -165,9 +130,6 @@ class OpenUrlFormDef(IStepFormDef):
             params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
-        widgets[C_KEY_URL_CUT_AMPERSAND].set(params_dict.get(C_KEY_URL_CUT_AMPERSAND, True))
-        widgets[C_KEY_URL_CUT_QUESTION].set(params_dict.get(C_KEY_URL_CUT_QUESTION, False))
-        widgets[C_KEY_URL_ALWAYS_ADD_SLASH].set(params_dict.get(C_KEY_URL_ALWAYS_ADD_SLASH, False))
         widgets[C_KEY_WAIT_UNTIL].set(params_dict.get(C_KEY_WAIT_UNTIL, C_DEFAULT_WAIT_UNTIL))
         widgets[C_KEY_WAIT_DNS_SOLVER].set(params_dict.get(C_KEY_WAIT_DNS_SOLVER, 6))
         widgets[C_KEY_TIMEOUT_DURATION].set(str(params_dict.get(C_KEY_TIMEOUT_DURATION, C_DEFAULT_TIMEOUT_DURATION)))
@@ -187,9 +149,6 @@ class OpenUrlFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         return {
-            C_KEY_URL_CUT_AMPERSAND: widgets[C_KEY_URL_CUT_AMPERSAND].get(),
-            C_KEY_URL_CUT_QUESTION: widgets[C_KEY_URL_CUT_QUESTION].get(),
-            C_KEY_URL_ALWAYS_ADD_SLASH: widgets[C_KEY_URL_ALWAYS_ADD_SLASH].get(),
             C_KEY_WAIT_UNTIL: widgets[C_KEY_WAIT_UNTIL].get(),
             C_KEY_WAIT_DNS_SOLVER: safe_int_from_dict(widgets, C_KEY_WAIT_DNS_SOLVER, -1),
             C_KEY_TIMEOUT_DURATION: safe_int_from_dict(widgets, C_KEY_TIMEOUT_DURATION, -1),

@@ -63,6 +63,10 @@ class LaunchModel:
     emergency_stop_threshold: int
     emergency_stop_step_id: str
     emergency_stop_step_threshold: int
+    # URL transformation rule: regexp capture rebased under a new prefix.
+    transformer_url_regexp: str
+    transformer_url_base: str
+    transformer_url_trailing_slash: bool
 
     @classmethod
     def get_default(cls, id_scenario: str) -> LaunchModel:
@@ -88,6 +92,9 @@ class LaunchModel:
             emergency_stop_step_id="",
             emergency_stop_step_threshold=C_DEFAULT_THRESHOLD_ERROR_SCRAPING,
             warmup_url="",
+            transformer_url_regexp="",
+            transformer_url_base="",
+            transformer_url_trailing_slash=False,
         )
 
     @classmethod
@@ -114,6 +121,9 @@ class LaunchModel:
             emergency_stop_step_id=data.get("emergency_stop_step_id", ""),
             emergency_stop_step_threshold=int(data.get("emergency_stop_step_threshold", 0)),
             warmup_url=str(data.get("warmup_url") or ""),
+            transformer_url_regexp=str(data.get("transformer_url_regexp") or ""),
+            transformer_url_base=str(data.get("transformer_url_base") or ""),
+            transformer_url_trailing_slash=bool(data.get("transformer_url_trailing_slash")),
         )
 
     def export_to_data_json(self) -> dict[str, Any]:
@@ -139,6 +149,9 @@ class LaunchModel:
             "emergency_stop_step_id": self.emergency_stop_step_id,
             "emergency_stop_step_threshold": self.emergency_stop_step_threshold,
             "warmup_url": self.warmup_url,
+            "transformer_url_regexp": self.transformer_url_regexp,
+            "transformer_url_base": self.transformer_url_base,
+            "transformer_url_trailing_slash": self.transformer_url_trailing_slash,
         }
 
     @classmethod
@@ -212,6 +225,18 @@ class LaunchModel:
         elif self.urls_source_type is UrlSourceTypeEnum.E_REFRESH_URLS:
             vr.extend(self.urls_folder_csv.validate())
 
+    def _validate_transformer_url(self, vr: ValidationResult) -> None:
+        """Validate the transformer URL fields."""
+        if self.warmup_url.strip():
+            if not self.warmup_url.startswith("http"):
+                vr.append(ErrorCodeLAM.LAM_1012, SeverityEnum.E_ERROR)
+            if len(self.warmup_url.strip()) < 4:
+                vr.append(ErrorCodeLAM.LAM_1013, SeverityEnum.E_ERROR)
+        if not self.transformer_url_regexp.strip() and self.transformer_url_base.strip():
+            vr.append(ErrorCodeLAM.LAM_1010, SeverityEnum.E_ERROR)
+        if self.transformer_url_regexp.strip() and not self.transformer_url_base.strip():
+            vr.append(ErrorCodeLAM.LAM_1011, SeverityEnum.E_ERROR)
+
     def validate(self) -> ValidationResult:
         """Validate all profile fields and the active URL source sub-model.
 
@@ -224,6 +249,7 @@ class LaunchModel:
         if self._validate_export_folder(vr):
             return vr
         self._validate_emergency_stop(vr)
+        self._validate_transformer_url(vr)
         if vr.has_errors_or_fatals():
             return vr
         self._validate_sub_model(vr)

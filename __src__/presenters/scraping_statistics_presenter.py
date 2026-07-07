@@ -21,8 +21,10 @@ class ScrapingStatisticsPresenter:
     def format_counters(rp: StatisticsStepModel) -> str:
         """Format a StatisticsStepModel into a compact counter string."""
         return (
-            f"Total = {rp.executed} | Succès = {rp.success}"
-            f" | Erreur gérée = {rp.error_but_managed} | Erreur non gérée = {rp.error_not_handled}"
+            f"Total = {rp.executed:>3}  | "
+            f"Succès = {rp.success:>3}  | "
+            f"Erreur gérée = {rp.error_but_managed:>3}  | "
+            f"Erreur non gérée = {rp.error_not_handled:>3}"
         )
 
     @staticmethod
@@ -31,9 +33,7 @@ class ScrapingStatisticsPresenter:
         ts = get_time_now_hh_mm_ss()
         fmt = ScrapingStatisticsPresenter.format_counters
         duration_in_min = (
-            (rp.finished_at - rp.started_at).total_seconds() / 60
-            if rp.started_at and rp.finished_at
-            else 0
+            (rp.finished_at - rp.started_at).total_seconds() / 60 if rp.started_at and rp.finished_at else 0
         )
         return [
             f"{ts} | === Résumé final ===",

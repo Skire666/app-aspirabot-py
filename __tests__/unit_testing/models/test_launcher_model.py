@@ -47,6 +47,9 @@ def _make_valid_model(
         emergency_stop_threshold=10,
         emergency_stop_step_id="step_x",
         emergency_stop_step_threshold=5,
+        transformer_url_regexp="",
+        transformer_url_base="",
+        transformer_url_trailing_slash=False,
     )
 
 

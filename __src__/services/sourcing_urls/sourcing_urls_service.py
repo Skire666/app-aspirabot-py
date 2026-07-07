@@ -30,6 +30,9 @@ class SourcingUrlsService:
 
     _export_folder: str
     _warmup_url: str | None
+    transformer_url_regexp: str | None
+    transformer_url_base: str | None
+    transformer_url_trailing_slash: bool
 
     def __init__(
         self,
@@ -130,6 +133,9 @@ class SourcingUrlsService:
         self._launcher = launcher
         self._export_folder = export_folder
         self._warmup_url = warmup_url
+        self.transformer_url_regexp = launcher.transformer_url_regexp
+        self.transformer_url_base = launcher.transformer_url_base
+        self.transformer_url_trailing_slash = launcher.transformer_url_trailing_slash
         ustype = launcher.urls_source_type
 
         if ustype is UrlSourceTypeEnum.E_MANUAL_LIST:

@@ -111,9 +111,6 @@ class ScrapingView(ttk.Frame):
             # steps stats
             ("Statistiques globales :", self._vm.stats_all_steps_var),
             ("Statistiques OpenURL :", self._vm.stats_open_url_var),
-            ("Statistiques Click* :", self._vm.stats_clicks_var),
-            ("Statistiques Extract Links :", self._vm.stats_extract_links_var),
-            ("Statistiques Extract Texts :", self._vm.stats_extract_texts_var),
             ("Démarrage :", self._vm.stat_started_var),
         ]
         for i, (label, var) in enumerate(rows):

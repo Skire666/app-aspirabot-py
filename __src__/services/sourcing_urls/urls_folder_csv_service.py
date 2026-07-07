@@ -97,12 +97,8 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
     def is_ready_to_consum_urls(self) -> bool:
         """Discover files and return True when at least one URL remains to be consumed."""
-        time_started_in_ms = datetime.now()
         self.reset()
 
-        time_ended_in_ms = datetime.now()
-        time_elapsed_in_ms = (time_ended_in_ms - time_started_in_ms).total_seconds()
-        print(f"DEBUG: is_ready_to_... {time_elapsed_in_ms:.3f} seconds, found {len(self._urls_filtred)} URLs.")
         return len(self._urls_filtred) > 0
 
     def read_current_url(self) -> str | None:
@@ -175,7 +171,6 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
     def _discover_and_load(self) -> None:
         """Scan the folder, deduplicate URLs (keeping newest mtime), filter and sort."""
-        time_start = datetime.now()
         need_reload = False
 
         if self._path_to_csv and self._path_to_csv != self._last_path_to_csv:
@@ -192,10 +187,6 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             self._last_urls_readed = self._collect_urls()
         self._urls_filtred = self._filter_and_sort_urls(self._last_urls_readed)
 
-        time_end = datetime.now()
-        time_elapsed = (time_end - time_start).total_seconds()
-        print(f"DEBUG: discover_and_load took {time_elapsed:.3f} seconds, found {len(self._urls_filtred)} URLs.")
-
     def _collect_urls(self) -> list[tuple[str, datetime, datetime, datetime, int]]:
         """Scan all files and build a url→mtime map; duplicates keep the newest mtime."""
         urls_time: list[tuple[str, datetime, datetime, datetime, int]] = []
@@ -204,9 +195,9 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
         for row in csv.iter_rows():
             url = row.get(C_COLUMN_PRIMARY_KEY, "").strip()
-            time_c_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_CREATED, ""))
-            time_m_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED, ""))
-            time_s_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_SESSION, ""))
+            time_c_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_CREATED, ""), datetime.now())
+            time_m_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED, ""), datetime.now())
+            time_s_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_SESSION, ""), datetime.now())
             score_quality = row.get(C_COLUMN_PRIORITY_RANK, "").strip() or "0"
             if url and time_m_casted:
                 urls_time.append((url, time_c_casted, time_m_casted, time_s_casted, int(score_quality)))
@@ -235,13 +226,10 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
         # 3. Tri (via heapq, pour ne garder que le top N sans trier toute la liste) + top N
         if self._sort_order == UrlSortOrderEnum.E_PRIORITY_FIRST:
-            print(f"DEBUG: Sorting by priority, top {top_n} items.")
             top_items = heapq.nsmallest(top_n, filtered, key=itemgetter(4))
         elif self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST:
-            print(f"DEBUG: Sorting by newest first, top {top_n} items.")
             top_items = heapq.nlargest(top_n, filtered, key=itemgetter(index))
         else:  # E_OLDEST_FIRST
-            print(f"DEBUG: Sorting by oldest first, top {top_n} items.")
             top_items = heapq.nsmallest(top_n, filtered, key=itemgetter(index))
 
         return [item[0] for item in top_items]

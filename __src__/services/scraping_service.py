@@ -84,6 +84,9 @@ class ScrapingService:
 
         # Optional warmup URL — navigated to before steps run, waits for user resume.
         self._warmup_url: str = ""
+        self.transformer_url_regexp: str | None = None
+        self.transformer_url_base: str | None = None
+        self.transformer_url_trailing_slash: bool = False
 
     # ------------------------------------------------------------------
     # Public API
@@ -120,6 +123,9 @@ class ScrapingService:
         # Build and attach the URL source when requested, forwarding sort order.
         self._context.url_source = sourcing_urls.get_provider_urls()
         self._context.folder_export = Path(sourcing_urls.get_export_folder())
+        self._context.transformer_url_regexp = sourcing_urls.transformer_url_regexp
+        self._context.transformer_url_base = sourcing_urls.transformer_url_base
+        self._context.transformer_url_trailing_slash = sourcing_urls.transformer_url_trailing_slash
 
         # Create a fresh browser service instance for each run via the injected factory.
         self._browser_service = self._browser_service_factory()

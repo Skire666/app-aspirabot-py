@@ -56,6 +56,9 @@ def _make_valid(
         emergency_stop_threshold=emergency_stop_threshold,
         emergency_stop_step_id=emergency_stop_step_id,
         emergency_stop_step_threshold=emergency_stop_step_threshold,
+        transformer_url_regexp="",
+        transformer_url_base="",
+        transformer_url_trailing_slash=False,
     )
 
 

@@ -200,7 +200,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     # --- check_url_page ---
     "check_url_page_nothing_to_check": "[{step}.] : Choix vides. Cocher au minimum 1 case.",
     # --- restart_to_beginning ---
-    "restart_to_beginning_comment_too_long": "[{step}.] : Le commentaire ne doit pas dépasser 120 caractères.",
+    "restart_to_beginning_comment_too_long": "[{step}.] : Commentaire dépasse 120 caractères.",
     # --- Shared image dimension validation (download_image, count_html_images, wait_html_images) ---
     "image_dim_not_int": "[{step}.] : {key} doit être un nombre entier.",
     "image_dim_negative": "[{step}.] : {key} doit être >= 0.",
@@ -234,11 +234,11 @@ ERROR_TEMPLATES: dict[str, str] = {
     "extract_links_target_invalid": "[{step}.] : cible '{value}' invalide.",
     "extract_links_mapping_required": "[{step}.] : clé de mapping est obligatoire.",
     # --- extract_js_custom ---
-    "extract_js_custom_js_code_invalid": "[{step}.] : le code JS est obligatoire (entre 5 et 32 000 caractères).",
+    "extract_js_custom_js_code_invalid": "[{step}.] : Code JS obligatoire : Longueur [5, 32K].",
     "extract_js_custom_primary_key_invalid": (
-        "[{step}.] : la clé primaire est obligatoire (entre 1 et 64 caractères alphanumériques ou '_')."
+        "[{step}.] : Clé primaire obligatoire : Longueur [1, 64] + alphanumériques ou '_')."
     ),
-    "extract_js_custom_comment_invalid": "[{step}.] : le commentaire doit contenir entre 1 et 100 caractères.",
+    "extract_js_custom_comment_invalid": "[{step}.] : Commentaire requis : Longueur [1, 100].",
     # --- extract_texts ---
     "extract_texts_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
     "extract_texts_mode_invalid": "[{step}.] : mode d'extraction '{value}' invalide.",

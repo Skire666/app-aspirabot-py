@@ -64,6 +64,9 @@ class ScrapingContextModel:
     # Inputs from the orchestrator.
     app_config: AppConfigurationModel
     folder_export: Path
+    transformer_url_regexp: str | None
+    transformer_url_base: str | None
+    transformer_url_trailing_slash: bool
     downloaded_urls: set[str]
     step_id_by_index: list[str]
     step_index_by_id: dict[str, int]

@@ -25,9 +25,6 @@ class OpenUrlParams(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    url_cut_ampersand: bool
-    url_cut_question: bool
-    url_always_add_slash: bool
     wait_until: WaitUntilEnum
     wait_dns_solver: int
     timeout_duration: int

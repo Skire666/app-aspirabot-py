@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import cast, override
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
@@ -17,6 +18,9 @@ from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RE
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
 from shared.step_registry import register_step_executor
+from shared.url_util import transformer_url
+
+_logger = logging.getLogger(__name__)
 
 
 class ExtractJsCustomExecutor(IStepExecutor):
@@ -47,13 +51,19 @@ class ExtractJsCustomExecutor(IStepExecutor):
         p = cast(ExtractJsCustomParams, context.step_scraping_data.params)
         try:
             raw_value = self._evaluate_and_validate(browser, p)
-            self._apply_url_cutters(raw_value, p)
+
+            if not raw_value:
+                event_bus.log_step(context, "Excp : Aucun texte extrait pour le code JS")
+                return StepExecutionResultEnum.E_ERROR
+
+            self._apply_url_cutters(raw_value, p, context)
             # push
             context.push_js_custom_extracted(raw_value, p.primary_key)
 
             # debug log
             event_bus.log_step(context, f"Clé primaire '{p.primary_key}' | str[:25] ='{str(raw_value)[:25]}'")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
+            _logger.exception("An error occurred while extracting texts.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:
@@ -85,38 +95,44 @@ class ExtractJsCustomExecutor(IStepExecutor):
         return cast("dict[str, object] | list[object]", raw_value)
 
     @staticmethod
-    def _apply_url_cutters(value: object, p: ExtractJsCustomParams) -> None:
+    def _apply_url_cutters(value: object, p: ExtractJsCustomParams, context: ScrapingContextModel) -> None:
         """Apply the URL cleanup options to the raw JS result.
 
         Args:
             value: Raw dict, or list of dicts, returned by the custom JS code.
             p: ExtractJsCustomParams instance containing the cleanup options.
+            context: The scraping context.
         """
         if isinstance(value, dict):
-            ExtractJsCustomExecutor._cut_row(cast(dict[str, str], value), p)
+            ExtractJsCustomExecutor._cut_row(cast(dict[str, str], value), p, context)
         elif isinstance(value, list):
             for item in cast(list[object], value):
                 if not isinstance(item, dict):
                     raise ScriptExecutionFailedError("extract_js_custom")
-                ExtractJsCustomExecutor._cut_row(cast(dict[str, str], item), p)
+                ExtractJsCustomExecutor._cut_row(cast(dict[str, str], item), p, context)
         else:
             raise ScriptExecutionFailedError("extract_js_custom")
 
     @staticmethod
-    def _cut_row(row: dict[str, str], p: ExtractJsCustomParams) -> None:
+    def _cut_row(row: dict[str, str], p: ExtractJsCustomParams, context: ScrapingContextModel) -> None:
         """Apply the URL cleanup options to a single extracted row.
 
         Args:
             row: One extracted dict, keyed by field name.
             p: ExtractJsCustomParams instance containing the cleanup options.
+            context: The scraping context.
         """
         pk = p.primary_key
-        if p.url_cut_ampersand:
-            row[pk] = row[pk].split("&")[0]
-        if p.url_cut_question:
-            row[pk] = row[pk].split("?")[0]
-        if p.url_always_add_slash and row and not row[pk].endswith("/"):
-            row[pk] += "/"
+        if context and context.transformer_url_regexp and context.transformer_url_base:
+            if not row[pk]:
+                raise ScriptExecutionFailedError("extract_js_custom")
+
+            row[pk] = transformer_url(
+                row[pk],
+                context.transformer_url_regexp,
+                context.transformer_url_base,
+                context.transformer_url_trailing_slash,
+            )
 
 
 register_step_executor(ExtractJsCustomExecutor())

@@ -335,6 +335,10 @@ class ExecutorPresenter:
         self._vm.export_folder_var.set(profile.export_folder or "")
         # Warmup URL
         self._vm.warmup_url_var.set(profile.warmup_url or "")
+        # Transformer URL
+        self._vm.transformer_url_regexp_var.set(profile.transformer_url_regexp or "")
+        self._vm.transformer_url_base_var.set(profile.transformer_url_base or "")
+        self._vm.transformer_url_trailing_slash_var.set(profile.transformer_url_trailing_slash)
 
     def _push_url_source_vars(self, profile: LaunchModel) -> None:
         """Write URL source type, per-mode values, and sort orders into VM Vars.
@@ -498,6 +502,9 @@ class ExecutorPresenter:
         self._current_profile.emergency_stop_threshold = safe_int_from_str(self._vm.global_threshold_var.get(), 0)
         self._current_profile.emergency_stop_step_threshold = safe_int_from_str(self._vm.step_threshold_var.get(), 0)
         self._current_profile.warmup_url = self._vm.warmup_url_var.get().strip()
+        self._current_profile.transformer_url_regexp = self._vm.transformer_url_regexp_var.get().strip()
+        self._current_profile.transformer_url_base = self._vm.transformer_url_base_var.get().strip()
+        self._current_profile.transformer_url_trailing_slash = self._vm.transformer_url_trailing_slash_var.get()
 
     def _on_form_changed(self) -> None:
         self._set_dirty(True)

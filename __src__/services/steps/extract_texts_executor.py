@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import cast, override
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
@@ -18,6 +19,8 @@ from services.steps._helpers import extract_from_element
 from shared.constants import C_STR_ERROR_EXTRACT_TEXTS
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
+
+_logger = logging.getLogger(__name__)
 
 
 class ExtractTextsExecutor(IStepExecutor):
@@ -63,11 +66,14 @@ class ExtractTextsExecutor(IStepExecutor):
                 return StepExecutionResultEnum.E_ERROR
 
             selected: list[ElementHandle] = self._select_elements(elements, p.target)
-            texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
+            if not selected:
+                event_bus.log_step(context, f"Excp : Aucune sélection trouvée pour le sélecteur '{p.selector}'")
+                return StepExecutionResultEnum.E_ERROR
 
-            if "#info > a" in p.selector:
-                print(f"DEBUG: Extracted texts from selector '{p.selector}': {texts}")
-                print(f"DEBUG: Elements count: {len(elements)}, Selected count: {len(selected)}")
+            texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
+            if not texts:
+                event_bus.log_step(context, f"Excp : Aucun texte extrait pour le sélecteur '{p.selector}'")
+                return StepExecutionResultEnum.E_ERROR
 
             # push
             context.push_texts_extracted(p.mapping, texts, p.target)
@@ -75,7 +81,8 @@ class ExtractTextsExecutor(IStepExecutor):
             # infos
             preview_one_item = texts[0] if texts and texts[0] else C_STR_ERROR_EXTRACT_TEXTS
             event_bus.log_step(context, f"x{len(texts)} texte(s) | str[:25] ='{preview_one_item[:25]}'")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
+            _logger.exception("An error occurred while extracting texts.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR
         else:

@@ -39,6 +39,8 @@ class JournalRepository:
             OSError: If the directory cannot be created or the file cannot
                 be written.
         """
+        if not str(folder).endswith("tmp_logs"):
+            folder = Path(folder) / "tmp_logs"
         folder.mkdir(parents=True, exist_ok=True)
         timestamp = get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff()
         path = folder / f"journal_{timestamp}.txt"

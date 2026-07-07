@@ -9,7 +9,7 @@ class ErrorCodeYIV(ErrorCode):
     """Error codes for YoutubeInfosVideoModel."""
 
     # wrong
-    YIV_1001 = "L'identifiant de la vidéo est manquant."
+    YIV_1001 = "L'URL de la vidéo est manquante."
     YIV_1002 = "Le titre de la vidéo est manquant."
     YIV_1003 = "L'URL de la page web est manquante."
     YIV_1004 = "La durée de la vidéo est manquante."

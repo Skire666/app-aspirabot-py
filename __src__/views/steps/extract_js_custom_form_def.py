@@ -13,7 +13,6 @@ from typing import Any, override
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
 from shared.step_registry import register_form
-from views.components.canvas_checkbox import CanvasCheckbox
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -21,9 +20,6 @@ from views.components.canvas_checkbox import CanvasCheckbox
 
 C_KEY_SELECTOR = "js_code"
 C_KEY_MAIN_MAPPING = "primary_key"
-C_KEY_URL_CUT_AMPERSAND = "url_cut_ampersand"
-C_KEY_URL_CUT_QUESTION = "url_cut_question"
-C_KEY_URL_ALWAYS_ADD_SLASH = "url_always_add_slash"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -49,7 +45,6 @@ class ExtractJsCustomFormDef(IStepFormDef):
         """
         self._build_subform_js_code(frame, widgets)
         self._build_subform_primary_key(frame, widgets)
-        self._build_subform_url_cutter(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
@@ -64,7 +59,7 @@ class ExtractJsCustomFormDef(IStepFormDef):
         row0.pack(fill="x", pady=(0, 8))
 
         ttk.Label(row0, text="Code JS :").pack(side=tk.LEFT, padx=(0, 5), anchor="n")
-        js_text = tk.Text(row0, height=1, wrap="none", font=("Courier New", 9))
+        js_text = tk.Text(row0, height=3, wrap="none", font=("Courier New", 9))
         js_text.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_SELECTOR] = js_text
 
@@ -83,36 +78,6 @@ class ExtractJsCustomFormDef(IStepFormDef):
         primary_key_var = tk.StringVar(value="")
         ttk.Entry(row1, textvariable=primary_key_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_MAIN_MAPPING] = primary_key_var
-
-    @staticmethod
-    def _build_subform_url_cutter(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the URL cutter checkbox row.
-
-        Args:
-            frame: Parent frame to pack the row into.
-            widgets: Mutable mapping; populated with the C_KEY_URL_CUT_AMPERSAND tk.Variable.
-        """
-        row2 = ttk.Frame(frame)
-        row2.pack(fill="x", pady=(0, 8))
-
-        # ampersand
-        url_cut_amp_var = tk.BooleanVar(value=True)
-        CanvasCheckbox(row2, text="Couper '&...' de l'URL   ", variable=url_cut_amp_var).pack(side=tk.LEFT, padx=(0, 5))
-        widgets[C_KEY_URL_CUT_AMPERSAND] = url_cut_amp_var
-
-        # question
-        url_cut_question_var = tk.BooleanVar(value=False)
-        CanvasCheckbox(row2, text="Couper '?...' de l'URL   ", variable=url_cut_question_var).pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
-        widgets[C_KEY_URL_CUT_QUESTION] = url_cut_question_var
-
-        # always add slash
-        url_always_add_slash_var = tk.BooleanVar(value=False)
-        CanvasCheckbox(row2, text="Terminer URL par un '/'", variable=url_always_add_slash_var).pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
-        widgets[C_KEY_URL_ALWAYS_ADD_SLASH] = url_always_add_slash_var
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -143,9 +108,6 @@ class ExtractJsCustomFormDef(IStepFormDef):
         js_text.insert("1.0", params_dict.get(C_KEY_SELECTOR, ""))
 
         widgets[C_KEY_MAIN_MAPPING].set(params_dict.get(C_KEY_MAIN_MAPPING, ""))
-        widgets[C_KEY_URL_CUT_AMPERSAND].set(params_dict.get(C_KEY_URL_CUT_AMPERSAND, True))
-        widgets[C_KEY_URL_CUT_QUESTION].set(params_dict.get(C_KEY_URL_CUT_QUESTION, False))
-        widgets[C_KEY_URL_ALWAYS_ADD_SLASH].set(params_dict.get(C_KEY_URL_ALWAYS_ADD_SLASH, False))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
@@ -162,9 +124,6 @@ class ExtractJsCustomFormDef(IStepFormDef):
         return {
             C_KEY_SELECTOR: js_text.get("1.0", "end-1c").strip(),
             C_KEY_MAIN_MAPPING: widgets[C_KEY_MAIN_MAPPING].get().strip(),
-            C_KEY_URL_CUT_AMPERSAND: widgets[C_KEY_URL_CUT_AMPERSAND].get(),
-            C_KEY_URL_CUT_QUESTION: widgets[C_KEY_URL_CUT_QUESTION].get(),
-            C_KEY_URL_ALWAYS_ADD_SLASH: widgets[C_KEY_URL_ALWAYS_ADD_SLASH].get(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

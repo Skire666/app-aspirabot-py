@@ -136,6 +136,9 @@ class ExecutorViewModel(ViewModelBase):
         self.global_threshold_var = tk.StringVar(master=master, value="")
         self.step_threshold_var = tk.StringVar(master=master, value="")
         self.warmup_url_var = tk.StringVar(master=master, value="")
+        self.transformer_url_regexp_var = tk.StringVar(master=master, value="")
+        self.transformer_url_base_var = tk.StringVar(master=master, value="")
+        self.transformer_url_trailing_slash_var = tk.BooleanVar(master=master, value=False)
         # Display Vars — Presenter writes, View binds via textvariable=.
         self.saved_date_var = tk.StringVar(master=master, value=C_EXEC_SAVED_DATE_EMPTY)
         self.verification_message_var = tk.StringVar(master=master, value="")

@@ -18,6 +18,7 @@ from playwright.sync_api import ElementHandle
 from shared.constants import C_STR_ERROR_EXTRACT_LINKS
 from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
+from shared.url_util import transformer_url
 
 
 class ExtractLinksExecutor(IStepExecutor):
@@ -56,7 +57,7 @@ class ExtractLinksExecutor(IStepExecutor):
             selected = self._select_elements(elements, p.target)
             parsed = urlparse(page.url)
             base_url = f"{parsed.scheme}://{parsed.netloc}"
-            links = self._get_all_links_from_elements(selected, base_url, p)
+            links = self._get_all_links_from_elements(selected, base_url, p, context)
 
             # push
             context.push_links_extracted(links)
@@ -88,13 +89,16 @@ class ExtractLinksExecutor(IStepExecutor):
         return elements
 
     @staticmethod
-    def _get_all_links_from_elements(elements: list[ElementHandle], base_url: str, p: ExtractLinksParams) -> list[str]:
+    def _get_all_links_from_elements(
+        elements: list[ElementHandle], base_url: str, p: ExtractLinksParams, context: ScrapingContextModel
+    ) -> list[str]:
         """Extract href attributes from a list of elements.
 
         Args:
             elements: List of ElementHandle objects to extract links from.
             base_url: The base URL to resolve relative links against.
             p: ExtractLinksParams instance containing extraction parameters.
+            context: The scraping context.
 
         Returns:
             List of fully qualified URLs extracted from the elements.
@@ -105,14 +109,27 @@ class ExtractLinksExecutor(IStepExecutor):
             href = (el.get_attribute("href") or "").strip()
             if href:
                 full_url = urljoin(base_url, href)
-                if p.url_cut_ampersand:
-                    full_url = full_url.split("&")[0]
-                if p.url_cut_question:
-                    full_url = full_url.split("?")[0]
-                if p.url_always_add_slash and not full_url.endswith("/"):
-                    full_url += "/"
+                full_url = ExtractLinksExecutor._cut_row(full_url, context)
                 links.append(full_url)
         return links
+
+    @staticmethod
+    def _cut_row(full_url: str, context: ScrapingContextModel) -> str:
+        """Apply the URL cleanup options to a single extracted row.
+
+        Args:
+            row: One extracted dict, keyed by field name.
+            p: ExtractJsCustomParams instance containing the cleanup options.
+            context: The scraping context.
+        """
+        if context and context.transformer_url_regexp and context.transformer_url_base:
+            full_url = transformer_url(
+                full_url,
+                context.transformer_url_regexp,
+                context.transformer_url_base,
+                context.transformer_url_trailing_slash,
+            )
+        return full_url
 
 
 register_step_executor(ExtractLinksExecutor())

@@ -18,6 +18,7 @@ from shared.enums import StepExecutionResultEnum, StepTypeEnum
 from shared.exception_util import UrlSourceExhaustedError
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_ms
+from shared.url_util import transformer_url
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -92,15 +93,25 @@ class OpenUrlExecutor(IStepExecutor):
         context.url_source.load_next_url()
         event_bus.log_step(context, f"Progression : {context.url_source.get_progress_text()}")
 
-        if url_readed:
-            if p.url_cut_ampersand:
-                url_readed = url_readed.split("&")[0]
-            if p.url_cut_question:
-                url_readed = url_readed.split("?")[0]
-            if p.url_always_add_slash and not url_readed.endswith("/"):
-                url_readed += "/"
+        return OpenUrlExecutor._cut_row(url_readed, context)
 
-        return url_readed
+    @staticmethod
+    def _cut_row(full_url: str | None, context: ScrapingContextModel) -> str | None:
+        """Apply the URL cleanup options to a single extracted row.
+
+        Args:
+            row: One extracted dict, keyed by field name.
+            p: ExtractJsCustomParams instance containing the cleanup options.
+            context: The scraping context.
+        """
+        if full_url and context and context.transformer_url_regexp and context.transformer_url_base:
+            full_url = transformer_url(
+                full_url,
+                context.transformer_url_regexp,
+                context.transformer_url_base,
+                context.transformer_url_trailing_slash,
+            )
+        return full_url
 
 
 register_step_executor(OpenUrlExecutor())

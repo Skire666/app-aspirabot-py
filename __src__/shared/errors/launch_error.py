@@ -19,6 +19,10 @@ class ErrorCodeLAM(ErrorCode):
     LAM_1007 = "Le compteur des erreurs globales est <= 0."
     LAM_1008 = "Le compteur des erreurs pour la step unitaire est <= 0."
     LAM_1009 = "La sélection pour la step unitaire est vide."
+    LAM_1010 = "Le regexp de transformation d'URL n'est pas défini."
+    LAM_1011 = "Le préfixe de transformation d'URL n'est pas défini."
+    LAM_1012 = "L'URL de préchauffage doit commencer par 'http'"
+    LAM_1013 = "L'URL de préchauffage fait moins de 4 caractères"
 
     # ???
     LAM_9999 = "Erreur inconnue."

@@ -20,11 +20,9 @@ from shared.validation_result import ValidationResult
 class YoutubeInfosVideoModel:
     """Structured YouTube basic metadata payload ready for JSON serialization."""
 
-    id: Any
     title: Any
     fulltitle: Any
     description: Any
-    display_id: Any
     uploader: Any
     uploader_id: Any
     uploader_url: Any
@@ -65,7 +63,7 @@ class YoutubeInfosVideoModel:
         """Validate the model fields and return any issues found."""
         rs = ValidationResult()
 
-        if not self.id or not str(self.id).strip():
+        if not self.original_url or not str(self.original_url).strip():
             rs.append(ErrorCodeYIV.YIV_1001, SeverityEnum.E_ERROR)
         if not self.title or not str(self.title).strip():
             rs.append(ErrorCodeYIV.YIV_1002, SeverityEnum.E_ERROR)

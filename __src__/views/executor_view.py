@@ -17,6 +17,7 @@ from typing import Any, cast
 
 from shared.app_global_state import MyButton, MyCombobox, MyEntry, MyLabel, MyListbox
 from view_models.executor_view_model import ExecutorViewModel, ProfileItem, ScenarioItem, StepItem
+from views.components.canvas_checkbox import CanvasCheckbox
 from views.components.column_combobox.column_combobox import ColumnCombobox
 from views.components.folder_link_widget import FolderLinkWidget
 from views.components.horizontal_line_frame import HorizontalLineFrame
@@ -140,6 +141,7 @@ class ExecutorView(ttk.Frame):
         self._create_folder(container)
         self._create_threshold_error(container)
         self._create_cfg_row_warmup(container)
+        self._create_cfg_row_transformer_url(container)
 
     def _create_url_settings_section(self, parent: tk.Widget) -> None:
         """Build the URL settings section containing the UrlConfigView notebook."""
@@ -201,6 +203,55 @@ class ExecutorView(ttk.Frame):
             (self._vm.warmup_url_var, self._vm.warmup_url_var.trace_add("write", lambda *_: self._vm.form_changed()))
         )
         MyEntry(row, textvariable=self._vm.warmup_url_var).pack_left(fill=tk.X, expand=True)
+
+    def _create_cfg_row_transformer_url(self, parent: tk.Widget) -> None:
+        """Transformer-URL row — regexp/prefix/trailing-slash config plus a Tester popup trigger."""
+        row = ttk.Frame(parent)
+        row.pack(fill=tk.X)
+        MyLabel(row, text="Transformer URL :").pack_left()
+
+        self._btn_test_transformer_url = MyButton(row, text="Tester", command=self._on_test_transformer_url_clicked)
+        self._btn_test_transformer_url.pack_right()
+
+        MyLabel(row, text="Regexp :").pack_left()
+        self._view_traces.append(
+            (
+                self._vm.transformer_url_regexp_var,
+                self._vm.transformer_url_regexp_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
+        self._view_traces.append(
+            (
+                self._vm.transformer_url_regexp_var,
+                self._vm.transformer_url_regexp_var.trace_add("write", self._sync_test_transformer_btn),
+            )
+        )
+        MyEntry(row, textvariable=self._vm.transformer_url_regexp_var, width=20).pack_left()
+
+        MyLabel(row, text="Préfixe").pack_left()
+        self._view_traces.append(
+            (
+                self._vm.transformer_url_base_var,
+                self._vm.transformer_url_base_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
+        self._view_traces.append(
+            (
+                self._vm.transformer_url_base_var,
+                self._vm.transformer_url_base_var.trace_add("write", self._sync_test_transformer_btn),
+            )
+        )
+        MyEntry(row, textvariable=self._vm.transformer_url_base_var).pack_left(fill=tk.X, expand=True)
+
+        self._view_traces.append(
+            (
+                self._vm.transformer_url_trailing_slash_var,
+                self._vm.transformer_url_trailing_slash_var.trace_add("write", lambda *_: self._vm.form_changed()),
+            )
+        )
+        CanvasCheckbox(row, text="Terminer par '/'", variable=self._vm.transformer_url_trailing_slash_var).pack(
+            side=tk.LEFT, padx=(5, 5)
+        )
 
     def _create_launch_section(self, parent: tk.Widget) -> None:
         """Build the launch-trigger section."""
@@ -324,6 +375,16 @@ class ExecutorView(ttk.Frame):
                 _apply(child)  # type: ignore[arg-type]
 
         _apply(self._basic_settings_grid)
+        self._sync_test_transformer_btn()
+
+    def _sync_test_transformer_btn(self, *_: object) -> None:
+        """Grey out Tester unless the section is active and both Regexp/Préfixe are filled."""
+        if not self._vm.is_profile_section_active_var.get():
+            return
+        has_pattern = bool(self._vm.transformer_url_regexp_var.get().strip())
+        has_base = bool(self._vm.transformer_url_base_var.get().strip())
+        state = tk.NORMAL if has_pattern and has_base else tk.DISABLED
+        self._btn_test_transformer_url.configure(state=state)
 
     def _sync_edit_btn(self, *_: object) -> None:
         """Mirror is_edit_btn_enabled_var onto the Modifier button."""
@@ -420,6 +481,12 @@ class ExecutorView(ttk.Frame):
         folder = filedialog.askdirectory(title="Choisir le dossier d'export", parent=self)
         if folder:
             self._vm.export_folder_var.set(folder)
+
+    def _on_test_transformer_url_clicked(self) -> None:
+        """Open the transformer-URL Tester popup, bound to this View's ViewModel."""
+        from views.executor.url_transformer_test_view import UrlTransformerTestView  # local — View layer only
+
+        UrlTransformerTestView(parent=self, vm=self._vm)
 
 
 # EOF

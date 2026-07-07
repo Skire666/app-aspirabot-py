@@ -28,9 +28,6 @@ class ExtractJsCustomParams(BaseModel):
 
     js_code: str
     primary_key: str
-    url_cut_ampersand: bool
-    url_cut_question: bool
-    url_always_add_slash: bool
     comment: str = ""
 
     @field_validator("js_code")
@@ -40,9 +37,9 @@ class ExtractJsCustomParams(BaseModel):
         if not info.context:
             return v
         if not (_MIN_JS_CODE_LENGTH <= len(v.strip()) <= _MAX_JS_CODE_LENGTH):
-            raise ValueError(
-                ERROR_TEMPLATES["extract_js_custom_js_code_invalid"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["extract_js_custom_js_code_invalid"].format(step=step_label(info.context)))
+        if "return" not in v.strip():
+            raise ValueError("Le code doit contenir un return pour renvoyer l'extraction.")
         return v
 
     @field_validator("primary_key")

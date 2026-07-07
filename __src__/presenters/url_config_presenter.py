@@ -111,6 +111,7 @@ class UrlConfigPresenter:
             provider.is_ready_to_consum_urls()
             urls = provider.preview_all_urls()
         except Exception as exc:
+            self._vm.show_error("Erreur", f"Erreur lors de la prévisualisation du dossier .url : {exc}")
             self._logger.error("Erreur lors de la prévisualisation du dossier .url : %s", exc, exc_info=True)
             urls = []
         self._vm.set_url_preview_shortcuts(urls)
@@ -127,7 +128,8 @@ class UrlConfigPresenter:
             provider.is_ready_to_consum_urls()
             urls = provider.preview_all_urls()
         except Exception as exc:
-            self._logger.error("Erreur lors de la prévisualisation du dossier .json : %s", exc, exc_info=True)
+            self._vm.show_error("Erreur", f"Erreur lors de la prévisualisation du dossier .csv : {exc}")
+            self._logger.error("Erreur lors de la prévisualisation du dossier .csv : %s", exc, exc_info=True)
             urls = []
         self._vm.set_url_preview_jsons(urls)
 
