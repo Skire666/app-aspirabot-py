@@ -72,7 +72,8 @@ class YoutubeInfosVideoModel:
         elif not isinstance(self.duration, (int, float)) or not str(self.duration).isdigit():
             rs.append(ErrorCodeYIV.YIV_1005, SeverityEnum.E_ERROR)
         if not self.language or not str(self.language).strip():
-            rs.append(ErrorCodeYIV.YIV_1006, SeverityEnum.E_ERROR)
+            # arrive souvent sur les vidéos très anciennes
+            rs.append(ErrorCodeYIV.YIV_1006, SeverityEnum.E_WARNING)
 
         return rs
 

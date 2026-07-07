@@ -44,41 +44,42 @@ class YoutubeSubtitlesListModel:
             self.compute_hypothetic_quality(digram_lang)
 
     def determine_langauge_from_audio_srt(self) -> str:
-        """Return the language code of the original audio track, or empty string if not found."""
+        """Return the language code of SRT."""
         for item in self.data:
             if "(Original)" in item.name:
                 return item.language.value
         return ""
 
-    def compute_hypothetic_quality(self, digram_lang_from_video: str) -> None:
+    def compute_hypothetic_quality(self, digram_from_audio: str) -> None:
         """Assign quality scores to each subtitle track based on language and origin.
 
         Args:
-            digram_lang_from_video: Two-letter language code of the video (e.g. 'fr', 'en').
+            digram_from_audio: Two-letter language code of the audio (e.g. 'fr', 'en').
 
         Raises:
             YoutubeLanguageMismatchError: If the audio original language differs from the
                 declared video language.
         """
-        original_language: str = self.determine_langauge_from_audio_srt()
+        original_srt_lang: str = self.determine_langauge_from_audio_srt()
 
-        if original_language and digram_lang_from_video and original_language != digram_lang_from_video:
+        if original_srt_lang and digram_from_audio and original_srt_lang != digram_from_audio:
             raise YoutubeLanguageMismatchError()
 
         # loop
         for item in self.data:
             item.quality = 10
             # original
-            if not item.code.startswith(original_language):
+            if not item.code.startswith(original_srt_lang):
                 item.quality -= 1
             # type
             if item.origin is SubtitleOriginEnum.E_MANUAL:
                 item.quality -= 2
             elif item.origin is SubtitleOriginEnum.E_AUTO:
-                if item.code.startswith(digram_lang_from_video):
+                if item.code.startswith(digram_from_audio):
                     item.quality -= 3
                 else:
-                    # AUTO + not original language of video == always HTTP 429 in youtube...
+                    # japonais, espagnol...
+                    # always HTTP 429 in youtube...
                     item.quality = 0
 
     # Example :
@@ -137,7 +138,7 @@ class YoutubeSubtitlesListModel:
         elif any(not sub.code.strip() for sub in self.data):
             rs.append(ErrorCodeYSL.YSL_1002, SeverityEnum.E_ERROR)
         elif all(sub.quality == 0 for sub in self.data):
-            rs.append(ErrorCodeYSL.YSL_1003, SeverityEnum.E_ERROR)
+            rs.append(ErrorCodeYSL.YSL_1003, SeverityEnum.E_WARNING)
         elif any(sub.origin is SubtitleOriginEnum.E_UNSET for sub in self.data):
             rs.append(ErrorCodeYSL.YSL_1004, SeverityEnum.E_ERROR)
         elif any(sub.origin is SubtitleOriginEnum.E_UNKNOWN for sub in self.data):

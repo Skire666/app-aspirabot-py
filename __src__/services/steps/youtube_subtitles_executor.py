@@ -55,7 +55,7 @@ def _require_valid_subtitles(rs: ValidationResult) -> None:
         YoutubeSubtitlesValidationFailedError: If validation has errors or fatals.
     """
     if rs.has_errors_or_fatals():
-        raise YoutubeSubtitlesValidationFailedError(rs.compute_displayable_issues(2))
+        raise YoutubeSubtitlesValidationFailedError(rs.compute_displayable_issues(5))
 
 
 def _require_subtitles_downloaded(count: int) -> None:
@@ -116,7 +116,7 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
 
         except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
-            # "... video unavailable ..." -> video not found
+            # "... video is not available ..." -> video not found
             self._logger.exception("An error occurred while fetching YouTube subtitles.")
             event_bus.log_step(context, f"Excp : {exc}")
             return StepExecutionResultEnum.E_ERROR

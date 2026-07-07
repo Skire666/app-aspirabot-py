@@ -69,7 +69,6 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         # obj
         self._urls_filtred: list[str] = []
         self._index: int = 0
-        self._is_ready: bool = False
 
     # ------------------------------------------------------------------
     # IUrlSourceProvider
@@ -97,7 +96,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
     def is_ready_to_consum_urls(self) -> bool:
         """Discover files and return True when at least one URL remains to be consumed."""
-        self.reset()
+        self._discover_and_load()
 
         return len(self._urls_filtred) > 0
 
@@ -107,8 +106,8 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         Returns:
             The current URL string, or None if no URL is available.
         """
-        if 0 <= self._index_url < len(self._urls_filtred):
-            return self._urls_filtred[self._index_url]
+        if 0 <= self._index < len(self._urls_filtred):
+            return self._urls_filtred[self._index]
         return None
 
     def has_next_url(self) -> bool:
@@ -117,7 +116,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         Returns:
             True if the cursor has not reached the end of the list.
         """
-        return 0 <= self._index_url < len(self._urls_filtred)
+        return 0 <= self._index < len(self._urls_filtred)
 
     def load_next_url(self) -> None:
         """Return the next URL and advance the cursor.
@@ -125,7 +124,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         Returns:
             The next URL string.
         """
-        self._index_url += 1
+        self._index += 1
 
     def reset(self) -> None:
         """Rewind to the first file; the discovered path list is preserved.
@@ -134,8 +133,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             None.
         """
         self._discover_and_load()
-        self._index_url = 0
-        self._is_ready = True
+        self._index = 0
 
     def preview_all_urls(self) -> list[str]:
         """Return a list of all URLs that would be consumed by this provider.
@@ -161,9 +159,9 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         """
         if self._last_date_mtime_csv is None:
             return "JSON : non chargé"
-        if self._index_url >= self.count_urls():
+        if self._index >= self.count_urls():
             return "JSON : plus aucune URL"
-        return f"JSON : {self._index_url} / {self.count_urls()} URLs consommé(s)"
+        return f"JSON : {self._index} / {self.count_urls()} URLs consommé(s)"
 
     # ------------------------------------------------------------------
     # Private helpers
