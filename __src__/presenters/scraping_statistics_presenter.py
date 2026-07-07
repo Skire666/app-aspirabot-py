@@ -40,8 +40,6 @@ class ScrapingStatisticsPresenter:
             f"{ts} | Steps : {fmt(rp.stats_steps)}",
             f"{ts} | Open_URL : {fmt(rp.open_urls_steps)}",
             f"{ts} | Clics_* : {fmt(rp.clicks_steps)}",
-            f"{ts} | Extract_Links : {fmt(rp.extract_links_steps)}",
-            f"{ts} | Extract_Texts : {fmt(rp.extract_texts_steps)}",
             f"{ts} | Annulé par l'utilisateur : {'oui' if rp.cancelled else 'non'}",
             f"{ts} | Durée totale : {duration_in_min:.1f} min",
         ]

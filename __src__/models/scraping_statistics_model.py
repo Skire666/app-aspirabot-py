@@ -65,8 +65,6 @@ class ScrapingStatisticsModel:
     stats_steps: StatisticsStepModel
     clicks_steps: StatisticsStepModel
     open_urls_steps: StatisticsStepModel
-    extract_links_steps: StatisticsStepModel
-    extract_texts_steps: StatisticsStepModel
     cancelled: bool
 
     def __init__(self) -> None:
@@ -80,8 +78,6 @@ class ScrapingStatisticsModel:
         self.stats_steps = StatisticsStepModel(0, 0, 0, 0)
         self.clicks_steps = StatisticsStepModel(0, 0, 0, 0)
         self.open_urls_steps = StatisticsStepModel(0, 0, 0, 0)
-        self.extract_links_steps = StatisticsStepModel(0, 0, 0, 0)
-        self.extract_texts_steps = StatisticsStepModel(0, 0, 0, 0)
         self.cancelled = False
 
     def start_timer(self) -> None:
@@ -92,7 +88,9 @@ class ScrapingStatisticsModel:
         """Set the workflow end timestamp to the current time."""
         self.finished_at = datetime.now()
 
-    def update_result_step(self, step_type: StepTypeEnum, is_success: bool, next_error_handled: bool) -> None:
+    def update_result_step(
+        self, step_type: StepTypeEnum, is_success: bool, duration_sec: float, next_error_handled: bool
+    ) -> None:
         """Update statistics counters based on the step type and success status."""
         self.stats_steps.add_stats(is_success, next_error_handled)
 
@@ -101,12 +99,6 @@ class ScrapingStatisticsModel:
 
         if step_type in {StepTypeEnum.E_OPEN_URL}:
             self.open_urls_steps.add_stats(is_success, next_error_handled)
-
-        if step_type in {StepTypeEnum.E_EXTRACT_LINKS}:
-            self.extract_links_steps.add_stats(is_success, next_error_handled)
-
-        if step_type in {StepTypeEnum.E_EXTRACT_TEXTS}:
-            self.extract_texts_steps.add_stats(is_success, next_error_handled)
 
 
 # EOF

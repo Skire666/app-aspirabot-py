@@ -1,115 +1,111 @@
-"""benchmark_filter_sort.py
+#!/usr/bin/env python3
+"""Analyse des lignes 'Bilan step' d'un fichier de log.
 
-Benchmark avant/après optimisation de _filter_and_sort_urls.
-top_n = 0 (aucune limite) — les deux versions font le même travail.
-Aucune dépendance externe. Python 3.11+ (dont 3.13).
-
-    python benchmark_filter_sort.py
+Principe :
+  - Chaque bloc d'étape partage un même code à 4 caractères (2e champ).
+  - Le type d'étape est déclaré sur une ligne '... | CODE | <TYPE> | ...'
+  - La durée est sur la ligne '... | CODE | Bilan step : STATUS | XX.XXXs'
+  On relie les deux via le dernier <TYPE> vu pour ce code.
 """
 
-from __future__ import annotations
+import pathlib
+import re
+import sys
+from collections import defaultdict
 
-import enum
-import random
-import statistics
-import time
-from datetime import datetime, timedelta
-from operator import itemgetter
+# --- Config ---------------------------------------------------------------
+FICHIER = "try stats.txt"  # adapte le chemin si besoin
+TOP_TYPES = 5
+TOP_DUREES = 20
 
-
-class UrlSortOrderEnum(enum.Enum):
-    E_OLDEST_FIRST = "asc"
-    E_NEWEST_FIRST = "desc"
-
-
-class UrlProcessor:
-    def __init__(self, newest, oldest, sort_order) -> None:
-        self._date_modified_newest = newest
-        self._date_modified_oldest = oldest
-        self._sort_order = sort_order
-
-    # --- VERSION ORIGINALE ------------------------------------------------
-    def original(self, url_with_time: dict[str, datetime]) -> list[str]:
-        list_filtered: list[tuple[str, datetime]] = []
-
-        for url, dt in url_with_time.items():
-            if (self._date_modified_newest is None or dt <= self._date_modified_newest) and (
-                self._date_modified_oldest is None or dt >= self._date_modified_oldest
-            ):
-                list_filtered.append((url, dt))
-
-        reverse = self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST
-        list_filtered.sort(key=lambda x: x[1], reverse=reverse)
-
-        return [url for url, _ in list_filtered]
-
-    # --- VERSION OPTIMISÉE ------------------------------------------------
-    def optimized(self, url_with_time: dict[str, datetime]) -> list[str]:
-        newest = self._date_modified_newest
-        oldest = self._date_modified_oldest
-        reverse = self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST
-
-        filtered = [
-            (url, dt)
-            for url, dt in url_with_time.items()
-            if (newest is None or dt <= newest) and (oldest is None or dt >= oldest)
-        ]
-        filtered.sort(key=itemgetter(1), reverse=reverse)
-
-        return [url for url, _ in filtered]
+# --- Regex ----------------------------------------------------------------
+RE_TYPE = re.compile(r"<([A-Z0-9_]+)>")  # ex: <WAIT_HTML_ELEMENTS>
+RE_DUREE = re.compile(r"(\d+\.\d+)\s*s")  # ex: 2.953s
+RE_STATUS = re.compile(r"Bilan step\s*:\s*(\w+)")  # ex: SUCCESS / FAILED
 
 
-def make_fake_data(n: int, seed: int = 42) -> dict[str, datetime]:
-    rng = random.Random(seed)
-    base = datetime(2020, 1, 1)
-    return {
-        f"https://example.com/page/{i}": base + timedelta(seconds=rng.randint(0, 5 * 365 * 24 * 3600)) for i in range(n)
-    }
+def parse(fichier):
+    """Retourne la liste des étapes 'Bilan step' : (type, duree, status, code, ligne)."""
+    type_courant = {}  # code -> dernier type vu
+    etapes = []
+
+    with pathlib.Path(fichier).open(encoding="utf-8", errors="replace") as f:
+        for ligne in f:
+            champs = [c.strip() for c in ligne.split("|")]
+            if len(champs) < 3:
+                continue
+            code = champs[1]
+
+            # Ligne de déclaration de type -> on mémorise pour ce code
+            m_type = RE_TYPE.search(ligne)
+            if m_type and "Bilan step" not in ligne:
+                type_courant[code] = m_type.group(1)
+
+            # Ligne de bilan -> on enregistre la durée
+            if "Bilan step" in ligne:
+                m_dur = RE_DUREE.search(ligne)
+                if not m_dur:
+                    continue
+                duree = float(m_dur.group(1))
+                status = (RE_STATUS.search(ligne) or [None, "?"])[1] if RE_STATUS.search(ligne) else "?"
+                m_status = RE_STATUS.search(ligne)
+                status = m_status.group(1) if m_status else "?"
+                etape_type = type_courant.get(code, "<INCONNU>")
+                etapes.append(
+                    {"type": etape_type, "duree": duree, "status": status, "code": code, "ligne": ligne.strip()}
+                )
+    return etapes
 
 
-def time_call(fn, data, repeats: int) -> float:
-    """Temps médian (ms) sur `repeats` exécutions."""
-    samples = []
-    for _ in range(repeats):
-        t0 = time.perf_counter()
-        fn(data)
-        t1 = time.perf_counter()
-        samples.append((t1 - t0) * 1000.0)
-    return statistics.median(samples)
+def agreger(etapes):
+    """Agrège par type : total, moyenne, nb occurrences."""
+    total = defaultdict(float)
+    count = defaultdict(int)
+    for e in etapes:
+        total[e["type"]] += e["duree"]
+        count[e["type"]] += 1
+    stats = []
+    for t in total:
+        stats.append({"type": t, "total": total[t], "nb": count[t], "moyenne": total[t] / count[t]})
+    return stats
 
 
-def main() -> None:
-    N = 500_000
-    REPEATS = 7
+def main():
+    fichier = sys.argv[1] if len(sys.argv) > 1 else FICHIER
+    etapes = parse(fichier)
 
-    print(f"Benchmark — n = {N:,} URLs, repeats = {REPEATS} (temps médian)\n")
+    if not etapes:
+        print("Aucune ligne 'Bilan step' exploitable trouvée.")
+        return
 
-    data = make_fake_data(N)
+    total_global = sum(e["duree"] for e in etapes)
+    print(f"Fichier         : {fichier}")
+    print(f"Étapes analysées: {len(etapes)}")
+    print(f"Temps total     : {total_global:.3f}s\n")
 
-    # Filtre sur une plage de dates réaliste
-    dates = list(data.values())
-    dmin, dmax = min(dates), max(dates)
-    span = dmax - dmin
-    proc = UrlProcessor(
-        newest=dmin + span * 0.75, oldest=dmin + span * 0.25, sort_order=UrlSortOrderEnum.E_NEWEST_FIRST
-    )
+    # --- Top des types par TEMPS CUMULÉ ---
+    stats = agreger(etapes)
+    stats_cumul = sorted(stats, key=lambda s: s["total"], reverse=True)
 
-    # Vérification : résultats identiques
-    assert proc.original(data) == proc.optimized(data), "Les résultats diffèrent !"
-    print("Cohérence : les deux versions renvoient un résultat identique.\n")
+    print(f"=== TOP {TOP_TYPES} TYPES PAR TEMPS CUMULÉ ===")
+    print(f"{'Type':<28}{'Total':>12}{'Nb':>7}{'Moy':>12}{'% total':>10}")
+    for s in stats_cumul[:TOP_TYPES]:
+        pct = 100 * s["total"] / total_global
+        print(f"{s['type']:<28}{s['total']:>10.3f}s{s['nb']:>7}{s['moyenne']:>10.3f}s{pct:>9.1f}%")
 
-    # Préchauffage (évite de payer le coût du premier appel dans la mesure)
-    proc.original(data)
-    proc.optimized(data)
+    # --- Top des types par TEMPS MOYEN (bonus) ---
+    stats_moy = sorted(stats, key=lambda s: s["moyenne"], reverse=True)
+    print(f"\n=== TOP {TOP_TYPES} TYPES PAR TEMPS MOYEN / occurrence ===")
+    print(f"{'Type':<28}{'Moy':>12}{'Nb':>7}{'Total':>12}")
+    for s in stats_moy[:TOP_TYPES]:
+        print(f"{s['type']:<28}{s['moyenne']:>10.3f}s{s['nb']:>7}{s['total']:>10.3f}s")
 
-    t_orig = time_call(proc.original, data, REPEATS)
-    t_opt = time_call(proc.optimized, data, REPEATS)
-    speedup = t_orig / t_opt if t_opt else float("inf")
-    gain = (1 - t_opt / t_orig) * 100 if t_orig else 0.0
-
-    print(f"  original   : {t_orig:8.3f} ms")
-    print(f"  optimized  : {t_opt:8.3f} ms")
-    print(f"  -> accélération x{speedup:.2f}  ({gain:+.1f} %)")
+    # --- Top des durées individuelles ---
+    plus_longues = sorted(etapes, key=lambda e: e["duree"], reverse=True)
+    print(f"\n=== TOP {TOP_DUREES} DURÉES LES PLUS LONGUES ===")
+    print(f"{'#':>3}{'Durée':>12}  {'Type':<28}{'Status':<10}{'Code'}")
+    for i, e in enumerate(plus_longues[:TOP_DUREES], 1):
+        print(f"{i:>3}{e['duree']:>10.3f}s  {e['type']:<28}{e['status']:<10}{e['code']}")
 
 
 if __name__ == "__main__":

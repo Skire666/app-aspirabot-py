@@ -197,8 +197,8 @@ class SourcingUrlsService:
             rs.append(ErrorCodeSUS.SUS_1010, SeverityEnum.E_ERROR)
 
         if not rs.has_errors_or_fatals():  # noqa: SIM102
-            if count > _C_MAX_URL_WARNING_COUNT_100:
-                if count > _C_MAX_URL_WARNING_COUNT_1000:
+            if count >= _C_MAX_URL_WARNING_COUNT_100:
+                if count >= _C_MAX_URL_WARNING_COUNT_1000:
                     rs.append(ErrorCodeSUS.SUS_1012, SeverityEnum.E_WARNING)
                 else:  # 100
                     rs.append(ErrorCodeSUS.SUS_1011, SeverityEnum.E_WARNING)
