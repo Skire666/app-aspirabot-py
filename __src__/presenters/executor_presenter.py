@@ -170,6 +170,7 @@ class ExecutorPresenter:
     def _on_scenario_changed(self, id_scenario: str) -> None:
         """React to a new scenario selection: load its profiles."""
         try:
+            self._vm.verification_message_var.set("--")
             self._current_scenario = self._svc_scenarios.read_scenario(id_scenario)
         except AspirabotBaseError:
             self._logger.exception("Impossible de lire le scénario %s", id_scenario)
@@ -400,6 +401,7 @@ class ExecutorPresenter:
     def _clear_profile_form(self) -> None:
         """Reset form and disable the profile section."""
         self._current_profile = None
+        self._vm.verification_message_var.set("--")
         self._vm.current_profile_name_var.set("")
         self._vm.export_folder_var.set("")
         self._url_config_presenter.clear_url_state()
@@ -413,6 +415,7 @@ class ExecutorPresenter:
     # ------------------------------------------------------------------
 
     def _on_new_profile(self, name: str) -> None:
+        self._vm.verification_message_var.set("--")
         if not self._current_scenario:
             return
         try:

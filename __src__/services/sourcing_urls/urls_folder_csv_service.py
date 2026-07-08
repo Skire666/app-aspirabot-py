@@ -179,6 +179,12 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             self._last_date_mtime_csv = None
             need_reload = True
 
+        if not self._path_to_csv:
+            self._last_date_mtime_csv = None
+            self._last_urls_readed = []
+            self._urls_filtred = []
+            return
+
         date_found = get_mtime_of_file(self._path_to_csv)
         if date_found and date_found != self._last_date_mtime_csv:
             self._last_date_mtime_csv = date_found

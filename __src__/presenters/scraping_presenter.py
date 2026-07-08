@@ -429,15 +429,16 @@ class ScrapingPresenter:
             self.on_scraping_stopped()
 
     def _append_final_stats(self, rp: ScrapingStatisticsModel) -> None:
-        """Append summary statistics to the journal.
+        """Append summary statistics and journal analysis to the journal.
 
         Args:
             rp: The completed statistics model.
         """
+        rp.analyze_journal(self._journal_lines)
         for line in ScrapingStatisticsPresenter.format_final_stats(rp):
             self._append_journal(line)
-
-        # TODO PCO
+        for line in ScrapingStatisticsPresenter.format_journal_analysis(rp):
+            self._append_journal(line)
 
     def _export_journal(self) -> None:
         """Delegate journal persistence to ScrapingService and push the path to the view."""

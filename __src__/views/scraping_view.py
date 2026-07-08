@@ -162,7 +162,7 @@ class ScrapingView(ttk.Frame):
         self._lbl_journal_path = ttk.Label(frame, textvariable=self._vm.journal_path_var)
         self._lbl_journal_path.pack(padx=5, pady=(0, 5), side=tk.LEFT)
         FolderLinkWidget(frame, title="", path="Ouvrir le dossier", callback=lambda: self._vm.open_folder_logs()).pack(
-            padx=5, pady=5, side=tk.RIGHT
+            padx=5, pady=6, side=tk.RIGHT
         )
 
     # ------------------------------------------------------------------
