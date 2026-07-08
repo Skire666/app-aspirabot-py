@@ -137,14 +137,51 @@ class YoutubeSubtitlesListModel:
             rs.append(ErrorCodeYSL.YSL_1001, SeverityEnum.E_ERROR)
         elif any(not sub.code.strip() for sub in self.data):
             rs.append(ErrorCodeYSL.YSL_1002, SeverityEnum.E_ERROR)
-        elif all(sub.quality == 0 for sub in self.data):
-            rs.append(ErrorCodeYSL.YSL_1003, SeverityEnum.E_WARNING)
         elif any(sub.origin is SubtitleOriginEnum.E_UNSET for sub in self.data):
             rs.append(ErrorCodeYSL.YSL_1004, SeverityEnum.E_ERROR)
         elif any(sub.origin is SubtitleOriginEnum.E_UNKNOWN for sub in self.data):
             rs.append(ErrorCodeYSL.YSL_1005, SeverityEnum.E_ERROR)
 
+        if rs.has_errors_or_fatals():
+            return rs
+
+        if not self.has_manual_fra_or_eng():
+            rs.append(ErrorCodeYSL.YSL_1007, SeverityEnum.E_WARNING)
+        if self.has_manual_but_not_fra_or_eng():
+            rs.append(ErrorCodeYSL.YSL_1006, SeverityEnum.E_WARNING)
+        if not self.has_automatic_fra_or_eng():
+            rs.append(ErrorCodeYSL.YSL_1008, SeverityEnum.E_WARNING)
+        if not self.has_valid_quality_subtitle():
+            rs.append(ErrorCodeYSL.YSL_1009, SeverityEnum.E_WARNING)
         return rs
+
+    def has_manual_fra_or_eng(self) -> bool:
+        """Return True if there is at least one manual subtitle in French or English."""
+        return any(
+            sub.origin is SubtitleOriginEnum.E_MANUAL
+            and sub.language in {SubtitleLanguageEnum.E_FR, SubtitleLanguageEnum.E_EN}
+            for sub in self.data
+        )
+
+    def has_manual_but_not_fra_or_eng(self) -> bool:
+        """Return True if there is at least one manual subtitle in French or English."""
+        return any(
+            sub.origin is SubtitleOriginEnum.E_MANUAL
+            and sub.language not in {SubtitleLanguageEnum.E_FR, SubtitleLanguageEnum.E_EN}
+            for sub in self.data
+        )
+
+    def has_automatic_fra_or_eng(self) -> bool:
+        """Return True if there is at least one automatic subtitle in French or English."""
+        return any(
+            sub.origin is SubtitleOriginEnum.E_AUTO
+            and sub.language in {SubtitleLanguageEnum.E_FR, SubtitleLanguageEnum.E_EN}
+            for sub in self.data
+        )
+
+    def has_valid_quality_subtitle(self) -> bool:
+        """Return True if there is at least one subtitle with quality greater than 0."""
+        return any(sub.quality >= 1 for sub in self.data)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the model to a dictionary."""

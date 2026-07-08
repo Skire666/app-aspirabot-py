@@ -9,6 +9,8 @@ from datetime import datetime
 
 from shared.enums import StepTypeEnum
 
+from __src__.shared.enums.step_execution_result_enum import StepExecutionResultEnum
+
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
@@ -30,15 +32,23 @@ class StatisticsStepModel:
         self.error_not_handled = 0
         self.error_but_managed = 0
 
-    def add_stats(self, is_success: bool, next_error_handled: bool) -> None:
+    def add_stats(self, is_success: StepExecutionResultEnum, next_error_handled: bool) -> None:
         """Update statistics counters based on the step success status."""
         self.executed += 1
-        if is_success:
+
+        print(f"add_stats: is_success={is_success}, next_error_handled={next_error_handled}")
+        if is_success in {StepExecutionResultEnum.E_SUCCESS, StepExecutionResultEnum.E_WARNING}:
+            print("AAAAA) Incrementing success counter.")
             self.success += 1
-        elif next_error_handled:
+        elif is_success is StepExecutionResultEnum.E_ERROR and next_error_handled:
+            print("AAAAA) Incrementing error_but_managed counter.")
             self.error_but_managed += 1
-        else:
+        elif is_success in {StepExecutionResultEnum.E_ERROR, StepExecutionResultEnum.E_FATAL}:
+            print("AAAAA) Incrementing error_not_handled counter.")
             self.error_not_handled += 1
+        else:
+            print(f"Unexpected StepExecutionResultEnum value: {is_success}")
+            raise ValueError(f"Unexpected StepExecutionResultEnum value: {is_success}")
 
 
 @dataclass
@@ -63,7 +73,6 @@ class ScrapingStatisticsModel:
     started_at: datetime | None
     finished_at: datetime | None
     stats_steps: StatisticsStepModel
-    clicks_steps: StatisticsStepModel
     open_urls_steps: StatisticsStepModel
     cancelled: bool
 
@@ -76,7 +85,6 @@ class ScrapingStatisticsModel:
         self.started_at = None
         self.finished_at = None
         self.stats_steps = StatisticsStepModel(0, 0, 0, 0)
-        self.clicks_steps = StatisticsStepModel(0, 0, 0, 0)
         self.open_urls_steps = StatisticsStepModel(0, 0, 0, 0)
         self.cancelled = False
 
@@ -89,16 +97,13 @@ class ScrapingStatisticsModel:
         self.finished_at = datetime.now()
 
     def update_result_step(
-        self, step_type: StepTypeEnum, is_success: bool, duration_sec: float, next_error_handled: bool
+        self, step_type: StepTypeEnum, rs: StepExecutionResultEnum, duration_sec: float, next_error_handled: bool
     ) -> None:
         """Update statistics counters based on the step type and success status."""
-        self.stats_steps.add_stats(is_success, next_error_handled)
-
-        if step_type in {StepTypeEnum.E_CLICK_FOR_DOWNLOAD, StepTypeEnum.E_CLICK_ON_ELEMENT}:
-            self.clicks_steps.add_stats(is_success, next_error_handled)
+        self.stats_steps.add_stats(rs, next_error_handled)
 
         if step_type in {StepTypeEnum.E_OPEN_URL}:
-            self.open_urls_steps.add_stats(is_success, next_error_handled)
+            self.open_urls_steps.add_stats(rs, next_error_handled)
 
 
 # EOF

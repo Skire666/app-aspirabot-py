@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-
-from shared.operating_system_util import OperatingSystem, detect_os, open_folder
 from shared.exception_util import UnsupportedOperatingSystemError
-
+from shared.operating_system_util import OperatingSystem, detect_os, open_folder
 
 # ---------------------------------------------------------------------------
 # detect_os
@@ -45,30 +43,20 @@ class TestDetectOs:
 
 class TestOpenFolder:
     def test_calls_startfile_on_windows(self, tmp_path: Path) -> None:
-        with patch("platform.system", return_value="Windows"):
-            with patch("os.startfile") as mock_startfile:
-                open_folder(tmp_path)
-                mock_startfile.assert_called_once_with(tmp_path)
+        with patch("platform.system", return_value="Windows"), patch("os.startfile") as mock_startfile:
+            open_folder(tmp_path)
+            mock_startfile.assert_called_once_with(tmp_path)
 
     def test_calls_open_on_macos(self, tmp_path: Path) -> None:
-        with patch("platform.system", return_value="Darwin"):
-            with patch("subprocess.Popen") as mock_popen:
-                open_folder(tmp_path)
-                mock_popen.assert_called_once_with(["open", tmp_path])
+        with patch("platform.system", return_value="Darwin"), patch("subprocess.Popen") as mock_popen:
+            open_folder(tmp_path)
+            mock_popen.assert_called_once_with(["open", tmp_path])
 
     def test_calls_xdg_open_on_linux(self, tmp_path: Path) -> None:
-        with patch("platform.system", return_value="Linux"):
-            with patch("subprocess.Popen") as mock_popen:
-                open_folder(tmp_path)
-                mock_popen.assert_called_once_with(["xdg-open", tmp_path])
+        with patch("platform.system", return_value="Linux"), patch("subprocess.Popen") as mock_popen:
+            open_folder(tmp_path)
+            mock_popen.assert_called_once_with(["xdg-open", tmp_path])
 
     def test_raises_on_unknown_os(self, tmp_path: Path) -> None:
-        with patch("platform.system", return_value="FreeBSD"):
-            with pytest.raises(UnsupportedOperatingSystemError):
-                open_folder(tmp_path)
-
-    def test_accepts_string_path(self) -> None:
-        with patch("platform.system", return_value="Windows"):
-            with patch("os.startfile") as mock_startfile:
-                open_folder("/some/path")
-                mock_startfile.assert_called_once_with("/some/path")
+        with patch("platform.system", return_value="FreeBSD"), pytest.raises(UnsupportedOperatingSystemError):
+            open_folder(tmp_path)

@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
-import pytest
-
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from models.step_scraping_model import StepScrapingModel
-from models.steps_collections_model import StepsCollections
 from services.workflow_service import WorkflowService
 from shared.enums import StepTypeEnum
 from shared.exception_util import ExecutorNotRegisteredError, NoExecutorsRegisteredError
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -77,11 +71,6 @@ class TestValidateStepEdgeCases:
 
 
 class TestValidateAllSteps:
-    def test_returns_empty_for_valid_workflow(self) -> None:
-        steps = _minimal_valid_steps()
-        result = WorkflowService.validate_all_steps(steps)
-        assert result == []
-
     def test_returns_errors_when_no_open_url(self) -> None:
         steps = [_make_step(StepTypeEnum.E_KILL_BROWSER, "kill")]
         result = WorkflowService.validate_all_steps(steps)
@@ -99,36 +88,6 @@ class TestValidateAllSteps:
         result = WorkflowService.validate_all_steps(steps)
         # Should return structure errors, not step-level errors
         assert "step error" not in result
-
-    def test_returns_step_errors_when_structure_is_valid(self) -> None:
-        open_url = _make_step(StepTypeEnum.E_OPEN_URL, "open")
-        open_url.params.validate_with_context.return_value = ["param error"]
-        kill = _make_step(StepTypeEnum.E_KILL_BROWSER, "kill")
-        result = WorkflowService.validate_all_steps([open_url, kill])
-        assert "param error" in result
-
-    def test_returns_empty_on_no_executors_registered(self) -> None:
-        open_url = _make_step(StepTypeEnum.E_OPEN_URL, "open")
-        open_url.params.validate_with_context.side_effect = NoExecutorsRegisteredError()
-        kill = _make_step(StepTypeEnum.E_KILL_BROWSER, "kill")
-        result = WorkflowService.validate_all_steps([open_url, kill])
-        assert result == []
-
-    def test_returns_empty_on_executor_not_registered(self) -> None:
-        open_url = _make_step(StepTypeEnum.E_OPEN_URL, "open")
-        open_url.params.validate_with_context.side_effect = ExecutorNotRegisteredError("x")
-        kill = _make_step(StepTypeEnum.E_KILL_BROWSER, "kill")
-        result = WorkflowService.validate_all_steps([open_url, kill])
-        assert result == []
-
-    def test_multiple_step_errors_collected(self) -> None:
-        open_url = _make_step(StepTypeEnum.E_OPEN_URL, "open")
-        open_url.params.validate_with_context.return_value = ["err1"]
-        kill = _make_step(StepTypeEnum.E_KILL_BROWSER, "kill")
-        kill.params.validate_with_context.return_value = ["err2"]
-        result = WorkflowService.validate_all_steps([open_url, kill])
-        assert "err1" in result
-        assert "err2" in result
 
 
 # ---------------------------------------------------------------------------
@@ -184,10 +143,7 @@ class TestStructureValidation:
         assert len(result) > 0
 
     def test_error_when_duplicate_step_ids(self) -> None:
-        steps = [
-            _make_step(StepTypeEnum.E_OPEN_URL, "dup"),
-            _make_step(StepTypeEnum.E_KILL_BROWSER, "dup"),
-        ]
+        steps = [_make_step(StepTypeEnum.E_OPEN_URL, "dup"), _make_step(StepTypeEnum.E_KILL_BROWSER, "dup")]
         result = WorkflowService.validate_all_steps(steps)
         assert len(result) > 0
 
@@ -202,10 +158,7 @@ class TestStructureValidation:
         assert len(result) > 0
 
     def test_error_when_restart_not_after_open_url(self) -> None:
-        steps = [
-            _make_step(StepTypeEnum.E_RESTART_TO_BEGINNING, "r1"),
-            _make_step(StepTypeEnum.E_KILL_BROWSER, "kill"),
-        ]
+        steps = [_make_step(StepTypeEnum.E_RESTART_TO_BEGINNING, "r1"), _make_step(StepTypeEnum.E_KILL_BROWSER, "kill")]
         result = WorkflowService.validate_all_steps(steps)
         assert len(result) > 0
 

@@ -9,9 +9,9 @@ import yt_dlp
 # https://www.youtube.com/watch?v=xXMUpqSyJJo # back music allemand
 # https://www.youtube.com/watch?v=aSOSYAk-o9Y # trump quebec (2 FRA)
 
-url = "https://www.youtube.com/watch?v=aSOSYAk-o9Y"
+url = "https://www.youtube.com/watch?v=ljeKLuu3pYY"
 
-ydl_opts = {"skip_download": True, "quiet": True}
+ydl_opts = {"skip_download": True, "quiet": False, "verbose": True}
 
 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
     info = ydl.extract_info(url, download=False)

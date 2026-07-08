@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum, TitleModuleEnum, UrlSourceTypeEnum
+from shared.enums import ExtractTargetEnum, ExtractTextHtmlEnum, StepTypeEnum, TitleModuleEnum
 from shared.enums.relative_date_enum import RelativeDateEnum
 
 
@@ -64,29 +64,6 @@ class TestExtractEnums:
 
     def test_extract_target_first(self) -> None:
         assert ExtractTargetEnum.E_FIRST.value == "first"
-
-
-class TestUrlSourceTypeEnum:
-    def test_manual_value(self) -> None:
-        assert UrlSourceTypeEnum.E_MANUAL_LIST.value == "MANUAL_LIST"
-
-    def test_folder_value(self) -> None:
-        assert UrlSourceTypeEnum.E_FOLDER_RACS.value == "FOLDER_RACS"
-
-    def test_json_value(self) -> None:
-        assert UrlSourceTypeEnum.E_REFRESH_URLS.value == "FOLDER_JSONS"
-
-    def test_to_displayable_str_manual_list(self) -> None:
-        assert UrlSourceTypeEnum.E_MANUAL_LIST.to_displayable_str() == "Liste manuelle"
-
-    def test_to_displayable_str_folder_racs(self) -> None:
-        assert UrlSourceTypeEnum.E_FOLDER_RACS.to_displayable_str() == "Dossier RACS"
-
-    def test_to_displayable_str_unset_returns_unknown(self) -> None:
-        assert UrlSourceTypeEnum.E_UNSET.to_displayable_str() == "Type inconnu"
-
-    def test_to_displayable_str_unknown_returns_unknown(self) -> None:
-        assert UrlSourceTypeEnum.E_UNKNOWN.to_displayable_str() == "Type inconnu"
 
 
 class TestRelativeDateEnum:

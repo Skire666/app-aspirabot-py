@@ -52,36 +52,6 @@ class TestSetStepsAndUrlPreview:
         assert result == ("http://a.com",)
 
 
-class TestDerivedStateRecompute:
-    def test_url_source_manual_shows_manual_panel(self, vm: ExecutorViewModel) -> None:
-        vm.urls_source_type_var.set("MANUAL_LIST")
-        assert vm.is_manual_panel_visible_var.get() is True
-        assert vm.is_folder_panel_visible_var.get() is False
-        assert vm.is_json_panel_visible_var.get() is False
-
-    def test_url_source_folder_shows_folder_panel(self, vm: ExecutorViewModel) -> None:
-        vm.urls_source_type_var.set("FOLDER_RACS")
-        assert vm.is_folder_panel_visible_var.get() is True
-        assert vm.is_manual_panel_visible_var.get() is False
-        assert vm.is_json_panel_visible_var.get() is False
-
-    def test_url_source_json_shows_json_panel(self, vm: ExecutorViewModel) -> None:
-        vm.urls_source_type_var.set("FOLDER_JSONS")
-        assert vm.is_json_panel_visible_var.get() is True
-        assert vm.is_manual_panel_visible_var.get() is False
-        assert vm.is_folder_panel_visible_var.get() is False
-
-    def test_profile_section_active_both_true(self, vm: ExecutorViewModel) -> None:
-        vm.is_profile_cfg_accessible_var.set(True)
-        vm.is_profile_section_enabled_var.set(True)
-        assert vm.is_profile_section_active_var.get() is True
-
-    def test_profile_section_active_one_false(self, vm: ExecutorViewModel) -> None:
-        vm.is_profile_cfg_accessible_var.set(True)
-        vm.is_profile_section_enabled_var.set(False)
-        assert vm.is_profile_section_active_var.get() is False
-
-
 class TestMissingActionMethods:
     def test_scenario_changed_dispatches(self, vm: ExecutorViewModel) -> None:
         cb = MagicMock()

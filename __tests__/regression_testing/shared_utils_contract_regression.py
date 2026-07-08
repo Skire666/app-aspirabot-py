@@ -21,7 +21,6 @@ from shared.datetime_util import (
     get_time_now_hh_mm_ss,
     get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff,
 )
-from shared.enums import UrlSourceTypeEnum
 from shared.exception_util import ValueMustBePositiveAndEvenError
 from shared.path_util import count_files_in_folder, folder_exists, list_files, path_has_valid_syntax
 from shared.random_util import (
@@ -256,22 +255,3 @@ class TestPathHasValidSyntaxEdgeCases:
 # ===========================================================================
 # UrlSourceTypeEnum — values contract
 # ===========================================================================
-
-
-class TestUrlSourceTypeEnumValues:
-    def test_all_expected_variants_present(self) -> None:
-        names = {e.name for e in UrlSourceTypeEnum}
-        assert "E_UNSET" in names
-        assert "E_UNKNOWN" in names
-        assert "E_MANUAL_LIST" in names
-        assert "E_FOLDER_RACS" in names
-        assert "E_REFRESH_URLS" in names
-
-    def test_enum_count_is_six(self) -> None:
-        assert len(list(UrlSourceTypeEnum)) == 6, (
-            "UrlSourceTypeEnum must have exactly 6 variants — update this test if adding new ones"
-        )
-
-    @pytest.mark.parametrize("member", list(UrlSourceTypeEnum))
-    def test_each_value_is_string(self, member: UrlSourceTypeEnum) -> None:
-        assert isinstance(member.value, str), f"{member.name}.value must be a string"

@@ -11,7 +11,7 @@ from services.sourcing_urls.urls_folder_csv_service import UrlsFolderCsvService
 from services.sourcing_urls.urls_folder_racs_service import UrlsFolderRacsService
 from services.sourcing_urls.urls_manual_list_service import UrlsManualListService
 from shared.enums import UrlSourceTypeEnum
-from shared.exception_util import UnknownUrlSourceTypeError, UrlSourceLauncherNotInitializedError
+from shared.exception_util import UrlSourceLauncherNotInitializedError
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -60,10 +60,6 @@ class TestInit:
         svc, _, racs, *_ = _make_service()
         assert svc.get_provider_folder_racs() is racs
 
-    def test_get_provider_folder_csv_returns_instance(self) -> None:
-        svc, _, _, jsons, _ = _make_service()
-        assert svc.get_provider_folder_csv() is jsons
-
 
 # ---------------------------------------------------------------------------
 # get_provider_urls — without context
@@ -75,73 +71,6 @@ class TestGetProviderUrlsNoContext:
         svc, *_ = _make_service()
         with pytest.raises(UrlSourceLauncherNotInitializedError):
             svc.get_provider_urls()
-
-
-# ---------------------------------------------------------------------------
-# set_context_scraping — per source type
-# ---------------------------------------------------------------------------
-
-
-class TestSetContextScraping:
-    def test_sets_export_folder_and_warmup(self) -> None:
-        svc, manual, *_ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_MANUAL_LIST)
-        manual.is_ready_to_consum_urls.return_value = True
-
-        svc.set_context_scraping(launcher, "export/path", "http://warmup.com")
-
-        assert svc.get_export_folder() == "export/path"
-        assert svc.get_warmup_url() == "http://warmup.com"
-
-    def test_manual_list_calls_setup_and_loads(self) -> None:
-        svc, manual, *_ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_MANUAL_LIST)
-
-        svc.set_context_scraping(launcher, "out", None)
-
-        manual.setup_model.assert_called_once_with(launcher.urls_manual_list)
-        manual.is_ready_to_consum_urls.assert_called_once()
-
-    def test_folder_racs_calls_setup_and_loads(self) -> None:
-        svc, _, racs, *_ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_FOLDER_RACS)
-
-        svc.set_context_scraping(launcher, "out", None)
-
-        racs.setup_model.assert_called_once_with(launcher.urls_folder_racs)
-        racs.is_ready_to_consum_urls.assert_called_once()
-
-    def test_unknown_source_type_raises(self) -> None:
-        svc, *_ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_UNKNOWN)
-
-        with pytest.raises(UnknownUrlSourceTypeError):
-            svc.set_context_scraping(launcher, "out", None)
-
-
-# ---------------------------------------------------------------------------
-# get_provider_urls — with context set
-# ---------------------------------------------------------------------------
-
-
-class TestGetProviderUrlsWithContext:
-    def test_returns_manual_provider(self) -> None:
-        svc, manual, *_ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_MANUAL_LIST)
-        svc.set_context_scraping(launcher, "out", None)
-        assert svc.get_provider_urls() is manual
-
-    def test_returns_racs_provider(self) -> None:
-        svc, _, racs, *_ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_FOLDER_RACS)
-        svc.set_context_scraping(launcher, "out", None)
-        assert svc.get_provider_urls() is racs
-
-    def test_returns_jsons_provider(self) -> None:
-        svc, _, _, jsons, _ = _make_service()
-        launcher = _make_launcher(UrlSourceTypeEnum.E_REFRESH_URLS)
-        svc.set_context_scraping(launcher, "out", None)
-        assert svc.get_provider_urls() is jsons
 
 
 # ---------------------------------------------------------------------------

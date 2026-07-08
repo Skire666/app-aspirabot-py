@@ -72,6 +72,7 @@ class OpenUrlExecutor(IStepExecutor):
                         context, f"Alerte durant l'ouverture de l'URL :\n{rs.concat_issues_by_order(10)}"
                     )
                 else:
+                    event_bus.log_step(context, "Ouverture de la page terminée.")
                     result = StepExecutionResultEnum.E_SUCCESS
 
             else:

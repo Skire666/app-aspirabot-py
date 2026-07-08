@@ -338,12 +338,15 @@ class ScrapingService:
         if self._browser_service is not None:
             self._context.browser_stats = self._browser_service.get_stats()
 
-        is_okay = self._context.last_step_was_success()
         self._statistics.update_result_step(
-            step.step_type, is_okay, self._context.last_time_elapsed, self._context.next_error_is_handled
+            step.step_type,
+            self._context.last_result_step,
+            self._context.last_time_elapsed,
+            self._context.next_error_is_handled,
         )
 
         # Track per-step failures for the step-level emergency stop.
+        is_okay = self._context.last_step_was_success()
         if not is_okay and step.step_id == self._emergency_stop_step_id:
             self._emergency_stop_step_failed += 1
 

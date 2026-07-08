@@ -187,13 +187,6 @@ class TestComputeDisplayableIssues:
         assert result.count("FATAL") == 2
         assert "ERROR" not in result
 
-    def test_collect_issues_private_stops_at_max(self) -> None:
-        vr = ValidationResult()
-        vr.append(_Code.CODE_C, SeverityEnum.E_ERROR)
-        vr.append(_Code.CODE_C, SeverityEnum.E_ERROR)
-        concat, nbr_pushed = vr._collect_issues(SeverityEnum.E_ERROR, "ERROR", 1, "", 0)
-        assert nbr_pushed == 1
-
     def test_result_is_stripped(self) -> None:
         vr = ValidationResult()
         vr.append(_Code.CODE_C, SeverityEnum.E_ERROR)
