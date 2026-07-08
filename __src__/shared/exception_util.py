@@ -66,7 +66,6 @@ from shared.exceptions.registry_errors import (
     InvalidDurationError,
     InvalidTimeUnitError,
     NoExecutorsRegisteredError,
-    OpenUrlTimeoutError,
     OpenUrlTooManyRetriesError,
     ParamsBuilderNotRegisteredError,
 )
@@ -136,12 +135,10 @@ from shared.exceptions.validation_errors import (
     ValueTooSmallError,
 )
 from shared.exceptions.youtube_errors import (
-    YoutubeInfosVideoNotDownloadedError,
     YoutubeLanguageMismatchError,
     YoutubeOutputDirParameterEmptyError,
     YoutubeSubtitlesDownloadedError,
     YoutubeSubtitlesNotFoundInMetadataError,
-    YoutubeSubtitlesValidationFailedError,
     YoutubeUrlParameterEmptyError,
     YoutubeVideoDataIncompleteError,
 )
@@ -220,7 +217,6 @@ __all__ = [
     "NoDataToExportError",
     "NoExecutorsRegisteredError",
     "NoMatchingImageFoundError",
-    "OpenUrlTimeoutError",
     "OpenUrlTooManyRetriesError",
     "PageNotAvailableOrClosedError",
     "ParamsBuilderNotRegisteredError",
@@ -250,12 +246,10 @@ __all__ = [
     "ValueMustBePositiveError",
     "ValueTooLargeError",
     "ValueTooSmallError",
-    "YoutubeInfosVideoNotDownloadedError",
     "YoutubeLanguageMismatchError",
     "YoutubeOutputDirParameterEmptyError",
     "YoutubeSubtitlesDownloadedError",
     "YoutubeSubtitlesNotFoundInMetadataError",
-    "YoutubeSubtitlesValidationFailedError",
     "YoutubeUrlParameterEmptyError",
     "YoutubeVideoDataIncompleteError",
 ]

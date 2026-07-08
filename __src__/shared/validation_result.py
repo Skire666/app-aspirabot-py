@@ -66,34 +66,69 @@ class ValidationResult:
         """Return True if there are any validation errors or fatals, False otherwise."""
         return self.count_errors > 0 or self.count_fatals > 0
 
+    def has_errors(self) -> bool:
+        """Return True if there are any validation errors, False otherwise."""
+        return self.count_errors > 0
+
+    def has_fatals(self) -> bool:
+        """Return True if there are any validation fatals, False otherwise."""
+        return self.count_fatals > 0
+
     def has_warnings(self) -> bool:
         """Return True if there are any validation warnings, False otherwise."""
         return self.count_warnings > 0
 
-    def _collect_issues(
-        self, severity: SeverityEnum, label: str, nbr_max: int, concat: str, nbr_pushed: int
-    ) -> tuple[str, int]:
+    def count_severities(self, severity: SeverityEnum) -> int:
+        if severity == SeverityEnum.E_WARNING:
+            return self.count_warnings
+        if severity == SeverityEnum.E_ERROR:
+            return self.count_errors
+        if severity == SeverityEnum.E_FATAL:
+            return self.count_fatals
+        return 0
+
+    def count_severities_by_code(self, code: ErrorCode) -> int:
+        """Count the number of issues with a specific error code."""
+        return sum(1 for issue in self.issues if issue.code is code)
+
+    def count_issues(self) -> int:
+        """Return the total number of validation issues."""
+        return len(self.issues)
+
+    def _collect_issues(self, severity: SeverityEnum, nbr_max: int, concat: str, nbr_pushed: int) -> tuple[str, int]:
         """Append formatted issues of one severity to concat, stopping at nbr_max total."""
         for issue in self.issues:
             if nbr_pushed >= nbr_max:
                 break
             if issue.severity == severity:
-                concat += f"{label} : {issue.code} - {issue.message}\n"
+                concat += f"{severity.value} : {issue.code} - {issue.message}\n"
                 nbr_pushed += 1
         return concat, nbr_pushed
 
-    def compute_displayable_issues(self, nbr_max: int = 2) -> str:
+    def concat_issues_by_severity(self, nbr_max: int = 2) -> str:
         """Compute a displayable string of validation issues."""
         if not self.issues:
             return "--"
         concat = ""
         nbr_pushed = 0
         if self.count_fatals > 0:
-            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_FATAL, "FATAL", nbr_max, concat, nbr_pushed)
+            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_FATAL, nbr_max, concat, nbr_pushed)
         if self.count_errors > 0 and nbr_pushed < nbr_max:
-            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_ERROR, "ERROR", nbr_max, concat, nbr_pushed)
+            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_ERROR, nbr_max, concat, nbr_pushed)
         if self.count_warnings > 0 and nbr_pushed < nbr_max:
-            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_WARNING, "WARNING", nbr_max, concat, nbr_pushed)
+            concat, nbr_pushed = self._collect_issues(SeverityEnum.E_WARNING, nbr_max, concat, nbr_pushed)
+        return concat.strip()
+
+    def concat_issues_by_order(self, nbr_max: int = 5) -> str:
+        """Compute a displayable string of validation issues."""
+        if not self.issues:
+            return "--"
+        concat = ""
+        nbr_pushed = 0
+        for nbr_pushed, issue in enumerate(self.issues):
+            concat += f"{issue.severity.value} : {issue.code} - {issue.message}\n"
+            if nbr_pushed + 1 >= nbr_max:
+                break
         return concat.strip()
 
     def clear(self) -> None:

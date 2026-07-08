@@ -47,26 +47,42 @@ class OpenUrlExecutor(IStepExecutor):
     ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
+        result = StepExecutionResultEnum.E_UNSET
+
         p = cast(OpenUrlParams, context.step_scraping_data.params)
         try:
             target_url = self._extract_next_url_used(context, p, event_bus)
             # obligé de le mettre avant de goto
             # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
-            if target_url is None:
+            if target_url:
+                context.last_url_opened = target_url
+                event_bus.log_step(context, f"Tentative d'ouverture : '{target_url}'")
+
+                timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
+                rs = browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
+
+                if rs.has_issues():
+                    if rs.has_warnings():
+                        result = StepExecutionResultEnum.E_WARNING
+                    if rs.has_errors():
+                        result = StepExecutionResultEnum.E_ERROR
+                    if rs.has_fatals():
+                        result = StepExecutionResultEnum.E_FATAL
+                    event_bus.log_step(
+                        context, f"Alerte durant l'ouverture de l'URL :\n{rs.concat_issues_by_order(10)}"
+                    )
+                else:
+                    result = StepExecutionResultEnum.E_SUCCESS
+
+            else:
                 event_bus.log_step(context, "Aucune URL à ouvrir.")
-                return StepExecutionResultEnum.E_ERROR
-            context.last_url_opened = target_url
-            timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
-            browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
-            event_bus.log_step(context, f"Ouvert : '{target_url}'")
+                result = StepExecutionResultEnum.E_ERROR
         except Exception as exc:
             _logger.exception("An error occurred while opening the URL.")
             event_bus.log_step(context, f"Excp : {exc}")
-            if "context or browser has been close" in str(exc).lower():
-                return StepExecutionResultEnum.E_FATAL
-            return StepExecutionResultEnum.E_ERROR
-        else:
-            return StepExecutionResultEnum.E_SUCCESS
+            result = StepExecutionResultEnum.E_ERROR
+
+        return result
 
     @staticmethod
     def _extract_next_url_used(

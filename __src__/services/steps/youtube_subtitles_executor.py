@@ -18,13 +18,8 @@ from models.scraping_context_model import ScrapingContextModel
 from models.Youtube_subtitles_list_model import YoutubeSubtitleModel, YoutubeSubtitlesListModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
-from shared.exception_util import (
-    YoutubeSubtitlesDownloadedError,
-    YoutubeSubtitlesNotFoundInMetadataError,
-    YoutubeSubtitlesValidationFailedError,
-)
+from shared.exception_util import YoutubeSubtitlesDownloadedError, YoutubeSubtitlesNotFoundInMetadataError
 from shared.step_registry import register_step_executor
-from shared.validation_result import ValidationResult
 from shared.youtube_util import get_id_video_youtube, sanitize_youtube_url
 
 
@@ -43,19 +38,6 @@ def _require_subtitles_found(all_srt: YoutubeSubtitlesListModel | None) -> Youtu
     if all_srt is None:
         raise YoutubeSubtitlesNotFoundInMetadataError()
     return all_srt
-
-
-def _require_valid_subtitles(rs: ValidationResult) -> None:
-    """Raise if the subtitle validation result contains errors or fatals.
-
-    Args:
-        rs: ValidationResult to inspect.
-
-    Raises:
-        YoutubeSubtitlesValidationFailedError: If validation has errors or fatals.
-    """
-    if rs.has_errors_or_fatals():
-        raise YoutubeSubtitlesValidationFailedError(rs.compute_displayable_issues(5))
 
 
 def _require_subtitles_downloaded(count: int) -> None:
@@ -104,24 +86,34 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
         """Execute the step."""
         assert context.step_scraping_data is not None
         exp_folder = Path(str(context.folder_export) + "/srt")
+        result: StepExecutionResultEnum = StepExecutionResultEnum.E_UNSET
+
         try:
             url_youtube = sanitize_youtube_url(context.last_url_opened)
             all_srt = _require_subtitles_found(self._repo.fetch_cached_subtitles(url_youtube))
             rs = all_srt.validate()
-            _require_valid_subtitles(rs)
 
-            nbr_ddl_srt = self.download_all_subtitles(url_youtube, all_srt, exp_folder, event_bus, context)
-            _require_subtitles_downloaded(nbr_ddl_srt)
-            event_bus.log_step(context, f"Nombre de sous-titres téléchargés : +{nbr_ddl_srt}")
+            if not rs.has_errors_or_fatals():
+                nbr_ddl_srt = self.download_all_subtitles(url_youtube, all_srt, exp_folder, event_bus, context)
+                _require_subtitles_downloaded(nbr_ddl_srt)
+                if rs.has_warnings():
+                    event_bus.log_step(context, rs.concat_issues_by_severity(5))
+                    result = StepExecutionResultEnum.E_WARNING
+                else:
+                    result = StepExecutionResultEnum.E_SUCCESS
+                event_bus.log_step(context, f"Nombre de sous-titres téléchargés : +{nbr_ddl_srt}")
+            else:
+                event_bus.log_step(context, rs.concat_issues_by_severity(10))
+                result = StepExecutionResultEnum.E_ERROR
 
         except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
             # "... video is not available ..." -> video not found
             self._logger.exception("An error occurred while fetching YouTube subtitles.")
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
-        else:
-            return StepExecutionResultEnum.E_SUCCESS
+            result = StepExecutionResultEnum.E_ERROR
+
+        return result
 
     def download_all_subtitles(
         self,

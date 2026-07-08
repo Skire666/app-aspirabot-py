@@ -19,13 +19,10 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 from shared.constants import C_STR_ERROR_JS_EVALUATION
 from shared.converter_util import convert_wait_until_to_literals
-from shared.enums import WaitUntilEnum
-from shared.exception_util import (
-    BrowserAlreadyLaunchedError,
-    BrowserNotLaunchedError,
-    OpenUrlTimeoutError,
-    OpenUrlTooManyRetriesError,
-)
+from shared.enums import SeverityEnum, WaitUntilEnum
+from shared.errors.browser_playwright_error import ErrorCodeBRP
+from shared.exception_util import BrowserAlreadyLaunchedError, BrowserNotLaunchedError
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -64,6 +61,11 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
         self._workflow_page: Page | None = None
+
+        # meta data
+        self._last_error: ValidationResult | None = None
+        self._last_url_used: str | None = None
+        self._nbr_retries: int = 0
 
     # ------------------------------------------------------------------
     # IWebBrowserService — public API
@@ -226,7 +228,9 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         return self._pw is not None
 
-    def safe_goto_url(self, url: str, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_sec: int) -> None:
+    def safe_goto_url(
+        self, url: str, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_sec: int
+    ) -> ValidationResult:
         """Navigate to url, retrying on redirect / closed-page / DNS errors.
 
         Args:
@@ -236,21 +240,25 @@ class BrowserPlaywrightService(IWebBrowserService):
             wait_dns_sec: Seconds to wait between retries if a DNS error is encountered.
 
         """
-        nav_retries, do_loop = 0, True
+        self._last_error = ValidationResult()
+        self._last_url_used = url
+        self._nbr_retries = 0
+        do_loop = 0, True
         cast_wait_time = convert_wait_until_to_literals(wait_until)
-        while do_loop and nav_retries < _NAV_MAX_RETRIES:
+
+        # retry
+        while do_loop:
             try:
                 page = self.get_workflow_page()
-                page.goto(url, wait_until="commit", timeout=timeout_ms)
+                page.goto(self._last_url_used, wait_until="commit", timeout=timeout_ms)
                 page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
+                do_loop = False  # Navigation succeeded; exit the loop.
             except Exception as exp:  # noqa: BLE001
-                nav_retries, do_loop = self._handle_goto_error(exp, wait_until, timeout_ms, wait_dns_sec, nav_retries)
-            else:
-                return
+                do_loop = self._handle_goto_error(exp, wait_dns_sec)
 
-    def _handle_goto_error(
-        self, exp: Exception, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_solver_sec: int, nav_retries: int
-    ) -> tuple[int, bool]:
+        return self._last_error
+
+    def _handle_goto_error(self, exp: Exception, wait_dns_solver_sec: int) -> bool:
         """Handle a navigation exception and return the updated retry-loop state.
 
         Args:
@@ -268,26 +276,39 @@ class BrowserPlaywrightService(IWebBrowserService):
             OpenUrlTooManyRetriesError: When no known recovery path matches the error.
         """
         assert self._workflow_page is not None, "Workflow page should be initialized before..."
+        assert self._last_error is not None, "ValidationResult should be initialized before..."
 
         msg = str(exp)
-        if "interrupted by another navigation" in msg and nav_retries < _NAV_MAX_RETRIES:
-            self.get_workflow_page(forced_new_page=True)
-            return nav_retries + 1, True
-        if "has been closed" in msg:
+        print("DEBUG: Erreur de navigation :\n%s", msg)
+
+        if "context or browser has been closed" in msg:
             time.sleep(1)  # Short delay to allow any pending page-close events to process.
             self.get_workflow_page(forced_new_page=True)
             self._workflow_page.wait_for_timeout(1000)  # ms
-            return nav_retries + 1, True
-        if "ERR_NAME_NOT_RESOLVED" in msg:
-            cast_wait_time = convert_wait_until_to_literals(wait_until)
+            self._last_error.append(ErrorCodeBRP.BRP_1001, SeverityEnum.E_WARNING)
+
+        if "interrupted by another navigation" in msg:
+            self.get_workflow_page(forced_new_page=True)
+            self._last_error.append(ErrorCodeBRP.BRP_1002, SeverityEnum.E_WARNING)
+
+        if "net::ERR_NAME_NOT_RESOLVED at" in msg:
             self.get_workflow_page()
             time.sleep(wait_dns_solver_sec)  # Wait before retrying DNS resolution
-            self._workflow_page.reload(wait_until=cast_wait_time, timeout=timeout_ms)
-            return nav_retries, False
+            self._last_url_used = self._workflow_page.url
+            self._last_error.append(ErrorCodeBRP.BRP_1003, SeverityEnum.E_WARNING)
+
         if "Timeout" in msg:
-            raise OpenUrlTimeoutError from exp
-        self._logger.error("Erreur de navigation non récupérable : %s", msg)
-        raise OpenUrlTooManyRetriesError() from exp
+            self._last_error.append(ErrorCodeBRP.BRP_1004, SeverityEnum.E_WARNING)
+
+        if self._last_error.count_severities(SeverityEnum.E_WARNING) >= _NAV_MAX_RETRIES:
+            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
+            self._last_error.append(ErrorCodeBRP.BRP_1005, SeverityEnum.E_ERROR)
+
+        if self._last_error.count_severities_by_code(ErrorCodeBRP.BRP_1001) >= _NAV_MAX_RETRIES:
+            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
+            self._last_error.append(ErrorCodeBRP.BRP_1006, SeverityEnum.E_FATAL)
+
+        return self._last_error.has_errors_or_fatals()
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.

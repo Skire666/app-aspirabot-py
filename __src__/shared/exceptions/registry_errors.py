@@ -75,14 +75,6 @@ class InvalidDurationError(ValueError, AspirabotBaseError):
         super().__init__(f"Durée invalide (doit être >= 0) : {duration}")
 
 
-class OpenUrlTimeoutError(RuntimeError, AspirabotBaseError):
-    """Raised when the open URL step times out."""
-
-    def __init__(self) -> None:
-        """Initialize the error message."""
-        super().__init__("Échec de l'ouverture de l'URL après timeout (augmenter la durée).")
-
-
 class OpenUrlTooManyRetriesError(RuntimeError, AspirabotBaseError):
     """Raised when the open URL step fails after all retries are exhausted."""
 

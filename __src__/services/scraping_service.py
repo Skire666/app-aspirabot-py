@@ -239,7 +239,11 @@ class ScrapingService:
         self._context.last_url_opened = self._warmup_url
         self._event_bus.fire_warmup_url(self._context)
 
-        self._browser_service.safe_goto_url(self._warmup_url, WaitUntilEnum.E_DOM, 30_000, 5)
+        rs = self._browser_service.safe_goto_url(self._warmup_url, WaitUntilEnum.E_DOM, 30_000, 5)
+
+        if rs.has_errors_or_fatals():
+            self._logger.error("Erreur lors du warmup URL : %s", rs.concat_issues_by_severity())
+            self._logger.error("Erreur lors du warmup URL : %s", self._warmup_url)
 
         # Signal the UI to activate the Reprendre button, then block.
         if callable(self._context.on_user_wait):

@@ -14,6 +14,8 @@ from typing import Protocol
 from playwright.sync_api import Page
 from shared.enums import WaitUntilEnum
 
+from __src__.shared.validation_result import ValidationResult
+
 # -----------------------------------------------------------------------------
 # Interface
 # -----------------------------------------------------------------------------
@@ -96,7 +98,9 @@ class IWebBrowserService(Protocol):
         """
         ...
 
-    def safe_goto_url(self, url: str, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_sec: int) -> None:
+    def safe_goto_url(
+        self, url: str, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_sec: int
+    ) -> ValidationResult:
         """Navigate the current page to the target URL with error handling and retries.
 
         This method wraps the Playwright ``page.goto()`` function with additional

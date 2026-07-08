@@ -527,13 +527,13 @@ class ExecutorPresenter:
         self._vm.verification_message_var.set("--")
         rs: ValidationResult = self._validate_launch()
         if rs.has_issues():  # warning, error, or fatal
-            msg = rs.compute_displayable_issues(2)
+            msg = rs.concat_issues_by_severity(2)
             self._vm.verification_message_var.set(msg)
         if rs.has_errors_or_fatals():
             return
         continue_process = True
         if rs.has_warnings():
-            msg = rs.compute_displayable_issues(10)
+            msg = rs.concat_issues_by_severity(10)
             continue_process = ask_launch_scraping_confirmation(msg)
             self._vm.verification_message_var.set(msg)
         if not continue_process:

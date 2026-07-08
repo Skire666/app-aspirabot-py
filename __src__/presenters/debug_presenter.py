@@ -203,7 +203,10 @@ class DebugPresenter:
 
         try:
             self._debug_browser.launch()
-            self._debug_browser.safe_goto_url(url, wait_until, timeout * 1000, dns_delay)
+            rs = self._debug_browser.safe_goto_url(url, wait_until, timeout * 1000, dns_delay)
+            if rs.has_errors_or_fatals():
+                self._push_html(f"Erreur lors du chargement :\n{rs.concat_issues_by_order(10)}")
+                return
             page = self._debug_browser.get_workflow_page()
             html = self._debug_service.get_html_content(page)
             self._push_html(html)

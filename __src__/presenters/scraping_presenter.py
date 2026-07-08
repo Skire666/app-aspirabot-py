@@ -460,9 +460,6 @@ class ScrapingPresenter:
         fmt = ScrapingStatisticsPresenter.format_counters
         self._vm.stats_all_steps_var.set(fmt(stats.stats_steps))
         self._vm.stats_open_url_var.set(fmt(stats.open_urls_steps))
-        self._vm.stats_clicks_var.set(fmt(stats.clicks_steps))
-        self._vm.stats_extract_links_var.set(fmt(stats.extract_links_steps))
-        self._vm.stats_extract_texts_var.set(fmt(stats.extract_texts_steps))
 
 
 # EOF

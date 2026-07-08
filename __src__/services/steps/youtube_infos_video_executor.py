@@ -16,25 +16,10 @@ from models.scraping_context_model import ScrapingContextModel
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.enums import StepExecutionResultEnum, StepTypeEnum
-from shared.exception_util import YoutubeInfosVideoNotDownloadedError
 from shared.step_registry import register_step_executor
-from shared.validation_result import ValidationResult
 from shared.youtube_util import sanitize_youtube_url
 
 _logger = logging.getLogger(__name__)
-
-
-def _require_valid_video_infos(rs: ValidationResult) -> None:
-    """Raise if the validation result contains errors or fatals.
-
-    Args:
-        rs: ValidationResult to inspect.
-
-    Raises:
-        YoutubeInfosVideoNotDownloadedError: If validation has errors or fatals.
-    """
-    if rs.has_errors_or_fatals():
-        raise YoutubeInfosVideoNotDownloadedError(rs.compute_displayable_issues(2))
 
 
 class YoutubeInfosVideoExecutor(IStepExecutor):
@@ -60,6 +45,7 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
     ) -> StepExecutionResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
+        result = StepExecutionResultEnum.E_UNSET
 
         # TEST cast(YoutubeInfosVideoParams, context.step_scraping_data.params)
         try:
@@ -67,11 +53,18 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             obj = self._repo.fetch_video_info(url_youtube)
             casted = YoutubeInfosVideoModel(obj)
             rs = casted.validate()
-            _require_valid_video_infos(rs)
-            self._repo.update_cached_subtitles(url_youtube, casted)
 
-            # push
-            context.push_ytdlp_extracted(casted)
+            if not rs.has_errors_or_fatals():
+                context.push_ytdlp_extracted(casted)
+                self._repo.update_cached_subtitles(url_youtube, casted.subtitles_ls)
+                if rs.has_warnings():
+                    event_bus.log_step(context, rs.concat_issues_by_severity(5))
+                    result = StepExecutionResultEnum.E_WARNING
+                else:
+                    result = StepExecutionResultEnum.E_SUCCESS
+            else:
+                event_bus.log_step(context, rs.concat_issues_by_severity(10))
+                result = StepExecutionResultEnum.E_ERROR
 
         except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
@@ -79,9 +72,9 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             # "... video is available to this channel's members ..." -> video is members-only
             self._logger.exception("An error occurred while fetching YouTube video info.")
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
-        else:
-            return StepExecutionResultEnum.E_SUCCESS
+            result = StepExecutionResultEnum.E_ERROR
+
+        return result
 
 
 register_step_executor(YoutubeInfosVideoExecutor(YoutubeRepository()))

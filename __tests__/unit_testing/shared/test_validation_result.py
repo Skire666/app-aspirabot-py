@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from shared.enums import SeverityEnum
 from shared.error_code import ErrorCode
 from shared.validation_result import ValidationIssue, ValidationResult
@@ -147,37 +145,37 @@ class TestValidationResultPredicates:
 
 
 # ---------------------------------------------------------------------------
-# ValidationResult — compute_displayable_issues
+# ValidationResult — concat_issues_by_severity
 # ---------------------------------------------------------------------------
 
 
 class TestComputeDisplayableIssues:
     def test_returns_dash_dash_when_empty(self) -> None:
-        assert ValidationResult().compute_displayable_issues() == "--"
+        assert ValidationResult().concat_issues_by_severity() == "--"
 
     def test_shows_fatal_first(self) -> None:
         vr = ValidationResult()
         vr.append(_Code.CODE_C, SeverityEnum.E_FATAL)
-        result = vr.compute_displayable_issues()
+        result = vr.concat_issues_by_severity()
         assert "FATAL" in result
 
     def test_shows_error_when_no_fatals(self) -> None:
         vr = ValidationResult()
         vr.append(_Code.CODE_C, SeverityEnum.E_ERROR)
-        result = vr.compute_displayable_issues()
+        result = vr.concat_issues_by_severity()
         assert "ERROR" in result
 
     def test_shows_warning_when_no_errors_or_fatals(self) -> None:
         vr = ValidationResult()
         vr.append(_Code.CODE_C, SeverityEnum.E_WARNING)
-        result = vr.compute_displayable_issues()
+        result = vr.concat_issues_by_severity()
         assert "WARNING" in result
 
     def test_respects_nbr_max(self) -> None:
         vr = ValidationResult()
         for _ in range(5):
             vr.append(_Code.CODE_C, SeverityEnum.E_ERROR)
-        result = vr.compute_displayable_issues(nbr_max=2)
+        result = vr.concat_issues_by_severity(nbr_max=2)
         assert result.count("ERROR") == 2
 
     def test_fatals_fill_up_max_before_errors(self) -> None:
@@ -185,7 +183,7 @@ class TestComputeDisplayableIssues:
         vr.append(_Code.CODE_C, SeverityEnum.E_FATAL)
         vr.append(_Code.CODE_C, SeverityEnum.E_FATAL)
         vr.append(_Code.CODE_C, SeverityEnum.E_ERROR)
-        result = vr.compute_displayable_issues(nbr_max=2)
+        result = vr.concat_issues_by_severity(nbr_max=2)
         assert result.count("FATAL") == 2
         assert "ERROR" not in result
 
@@ -199,7 +197,7 @@ class TestComputeDisplayableIssues:
     def test_result_is_stripped(self) -> None:
         vr = ValidationResult()
         vr.append(_Code.CODE_C, SeverityEnum.E_ERROR)
-        result = vr.compute_displayable_issues()
+        result = vr.concat_issues_by_severity()
         assert not result.endswith("\n")
 
 

@@ -79,9 +79,6 @@ class ScrapingViewModel(ViewModelBase):
         # steps stats
         self.stats_all_steps_var = tk.StringVar(master=master, value="—")
         self.stats_open_url_var = tk.StringVar(master=master, value="—")
-        self.stats_clicks_var = tk.StringVar(master=master, value="—")
-        self.stats_extract_links_var = tk.StringVar(master=master, value="—")
-        self.stats_extract_texts_var = tk.StringVar(master=master, value="—")
         self.stat_started_var = tk.StringVar(master=master, value="—")
         # Journal Vars — incremental append / full clear signals.
         self.journal_append_var = tk.StringVar(master=master, value="")

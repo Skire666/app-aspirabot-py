@@ -49,10 +49,10 @@ class YoutubeRepository:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def update_cached_subtitles(url: str, info: YoutubeInfosVideoModel) -> None:
+    def update_cached_subtitles(url: str, info: YoutubeSubtitlesListModel) -> None:
         """Update the cached video info."""
         global cached_video_info
-        cached_video_info[url] = info.subtitles_ls
+        cached_video_info[url] = info
 
     def fetch_cached_subtitles(self, url: str) -> YoutubeSubtitlesListModel | None:
         """Fetch cached subtitle info for a given URL."""
@@ -60,7 +60,7 @@ class YoutubeRepository:
         if url not in cached_video_info:
             obj = self.fetch_video_info(url)
             casted = YoutubeInfosVideoModel(obj)
-            self.update_cached_subtitles(url, casted)
+            self.update_cached_subtitles(url, casted.subtitles_ls)
         return cached_video_info.get(url)
 
     @staticmethod
@@ -91,9 +91,7 @@ class YoutubeRepository:
         return cast(dict[str, Any], raw)
 
     @staticmethod
-    def execute_subtitle_download(
-        url_youtube: str, id_video: str, out_dir: Path, srt: YoutubeSubtitleModel
-    ) -> None:
+    def execute_subtitle_download(url_youtube: str, id_video: str, out_dir: Path, srt: YoutubeSubtitleModel) -> None:
         """Invoke yt-dlp to download a specific set of subtitle tracks to disk.
 
         Args:

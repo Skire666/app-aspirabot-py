@@ -6,7 +6,7 @@ Covers lines left uncovered after the initial view_models_integration_regression
   - ProfilesViewModel: bind_sort/sort, grid_action routing
   - DebugViewModel: duplicate-bind guards, unbound action raises
   - LogViewModel: duplicate-bind guards, bound show_error/open_logs_folder
-  - ValidationResult: compute_displayable_issues, has_issues, has_warnings, clear, extend
+  - ValidationResult: concat_issues_by_severity, has_issues, has_warnings, clear, extend
 """
 
 from __future__ import annotations
@@ -117,19 +117,19 @@ class TestValidationResultExtend:
 class TestValidationResultComputeDisplayable:
     def test_empty_returns_dash(self) -> None:
         vr = ValidationResult()
-        assert vr.compute_displayable_issues() == "--"
+        assert vr.concat_issues_by_severity() == "--"
 
     def test_single_error_appears_in_output(self) -> None:
         vr = ValidationResult()
         vr.append(ErrorCodeWKF.WKF_1001, SeverityEnum.E_ERROR)
-        output = vr.compute_displayable_issues()
+        output = vr.concat_issues_by_severity()
         assert "ERROR" in output
 
     def test_fatal_appears_before_error(self) -> None:
         vr = ValidationResult()
         vr.append(ErrorCodeWKF.WKF_1001, SeverityEnum.E_ERROR)
         vr.append(ErrorCodeWKF.WKF_1002, SeverityEnum.E_FATAL)
-        output = vr.compute_displayable_issues(nbr_max=2)
+        output = vr.concat_issues_by_severity(nbr_max=2)
         fatal_pos = output.find("FATAL")
         error_pos = output.find("ERROR")
         assert fatal_pos < error_pos, "FATAL issues must appear before ERROR issues"
@@ -137,15 +137,15 @@ class TestValidationResultComputeDisplayable:
     def test_warning_appears_after_errors(self) -> None:
         vr = ValidationResult()
         vr.append(ErrorCodeWKF.WKF_1001, SeverityEnum.E_WARNING)
-        output = vr.compute_displayable_issues()
+        output = vr.concat_issues_by_severity()
         assert "WARNING" in output
 
     def test_nbr_max_limits_output(self) -> None:
         vr = ValidationResult()
         for _ in range(5):
             vr.append(ErrorCodeWKF.WKF_1001, SeverityEnum.E_ERROR)
-        output = vr.compute_displayable_issues(nbr_max=2)
-        assert output.count("ERROR") == 2, "compute_displayable_issues must respect nbr_max"
+        output = vr.concat_issues_by_severity(nbr_max=2)
+        assert output.count("ERROR") == 2, "concat_issues_by_severity must respect nbr_max"
 
 
 class TestValidationIssueMessage:
@@ -584,7 +584,6 @@ class TestValidationIssueFallbackMessage:
 
 
 class TestScenariosViewModelCoverageGap:
-
     def test_duplicate_bind_edit_raises(self, sc_vm: ScenariosViewModel) -> None:
         sc_vm.bind_edit(lambda _: None)
         with pytest.raises(CallbackNotDefinedError):
@@ -620,7 +619,6 @@ class TestScenariosViewModelCoverageGap:
     def test_unbound_delete_raises(self, sc_vm: ScenariosViewModel) -> None:
         with pytest.raises(CallbackNotDefinedError):
             sc_vm.delete("abc123")
-
 
 
 # ===========================================================================
