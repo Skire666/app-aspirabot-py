@@ -89,9 +89,7 @@ class ScrapingStatisticsModel:
         """Set the workflow end timestamp to the current time."""
         self.finished_at = datetime.now()
 
-    def update_result_step(
-        self, step_type: StepTypeEnum, rs: ProcessResultEnum, duration_sec: float, next_error_handled: bool
-    ) -> None:
+    def update_result_step(self, step_type: StepTypeEnum, rs: ProcessResultEnum, next_error_handled: bool) -> None:
         """Update statistics counters based on the step type and success status."""
         self.stats_steps.add_stats(rs, next_error_handled)
 

@@ -131,11 +131,14 @@ _RELATIVE_DATE_TO_TIMEDELTA: dict[RelativeDateEnum, timedelta] = {
     RelativeDateEnum.E_LAST_99Y: timedelta(days=36135),
 }
 
+# useful for scoring date (recent are betters)
 _RANK_DATE_TO_TIMEDELTA_ELAPSED: list[timedelta] = [
     timedelta(0),
+    timedelta(minutes=1),
     timedelta(minutes=5),
     timedelta(minutes=10),
-    timedelta(minutes=30),
+    timedelta(minutes=20),
+    timedelta(minutes=40),
     timedelta(hours=1),
     timedelta(hours=3),
     timedelta(hours=10),
@@ -148,6 +151,7 @@ _RANK_DATE_TO_TIMEDELTA_ELAPSED: list[timedelta] = [
     timedelta(days=90),
     timedelta(days=365),
     timedelta(days=1095),
+    timedelta(days=3650),
     timedelta(days=36135),
 ]
 

@@ -16,6 +16,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.enums import ProcessResultEnum, StepTypeEnum
+from shared.errors.youtube_yt_dlp_error import ErrorCodeYYD
 from shared.step_registry import register_step_executor
 from shared.youtube_util import sanitize_youtube_url
 
@@ -64,14 +65,35 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
                 event_bus.log_step(context, rs.concat_issues_by_order(10))
 
         except Exception as exc:
-            # "... in to confirm your age ..." -> video age restricted
-            # "... video unavailable ..." -> video not found
-            # "... video is available to this channel's members ..." -> video is members-only
             self._logger.exception("An error occurred while fetching YouTube video info.")
-            event_bus.log_step(context, f"Excp : {exc}")
+            excp_msg_lower = str(exc).lower()
+            err_code = self.simplify_error_message(excp_msg_lower)
+            if err_code is not None:
+                event_bus.log_step(context, f"Excp : {err_code} - {err_code.value}")
+            else:
+                event_bus.log_step(context, f"Excp : {exc}")
             result = ProcessResultEnum.E_ERROR
 
         return result
+
+    def simplify_error_message(self, message: str) -> ErrorCodeYYD | None:
+        """Simplify the error message for logging."""
+        # This video is available to this channel's members
+        if "video is available to this channel's members" in message:
+            return ErrorCodeYYD.YYD_1003
+
+        # Sign in to confirm your age. This video may be inappropriate for some users.
+        if "may be inappropriate for" in message:
+            return ErrorCodeYYD.YYD_1002
+        if "in to confirm your age" in message:
+            return ErrorCodeYYD.YYD_1002
+
+        # Video unavailable. This video is not available
+        if "video is not available" in message:
+            return ErrorCodeYYD.YYD_1001
+        if "video unavailable" in message:
+            return ErrorCodeYYD.YYD_1001
+        return None
 
 
 register_step_executor(YoutubeInfosVideoExecutor(YoutubeRepository()))

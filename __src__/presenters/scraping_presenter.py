@@ -38,6 +38,7 @@ from presenters.steps import (
 from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
+from shared.constants import C_SUB_FOLDER_LOGS_FOR_SCRAPING
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM, get_time_now_hh_mm_ss
 from shared.enums import EventScrapingEnum, ProcessResultEnum, StepTypeEnum
 from shared.exception_util import AspirabotBaseError
@@ -56,8 +57,6 @@ from shared.i18n_fra import (
     C_SCRAPING_STATUS_STARTING,
 )
 from view_models.scraping_view_model import ScrapingViewModel
-
-from __src__.shared.constants import C_SUB_FOLDER_LOGS_FOR_SCRAPING
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -437,6 +436,8 @@ class ScrapingPresenter:
         """
         for line in ScrapingStatisticsPresenter.format_final_stats(rp):
             self._append_journal(line)
+
+        # TODO PCO
 
     def _export_journal(self) -> None:
         """Delegate journal persistence to ScrapingService and push the path to the view."""
