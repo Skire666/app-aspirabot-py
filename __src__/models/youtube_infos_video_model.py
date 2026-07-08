@@ -74,6 +74,8 @@ class YoutubeInfosVideoModel:
         if not self.language or not str(self.language).strip():
             # arrive souvent sur les vidéos très anciennes
             rs.append(ErrorCodeYIV.YIV_1006, SeverityEnum.E_WARNING)
+        if self.language and str(self.language).strip() not in {"fr", "en"}:
+            rs.append(ErrorCodeYIV.YIV_1007, SeverityEnum.E_WARNING)
 
         return rs
 

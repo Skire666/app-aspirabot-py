@@ -17,7 +17,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.Youtube_subtitles_list_model import YoutubeSubtitleModel, YoutubeSubtitlesListModel
 from repositories.youtube_repository import YoutubeRepository
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import YoutubeSubtitlesDownloadedError, YoutubeSubtitlesNotFoundInMetadataError
 from shared.step_registry import register_step_executor
 from shared.youtube_util import get_id_video_youtube, sanitize_youtube_url
@@ -82,11 +82,11 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         exp_folder = Path(str(context.folder_export) + "/srt")
-        result: StepExecutionResultEnum = StepExecutionResultEnum.E_UNSET
+        result: ProcessResultEnum = ProcessResultEnum.E_UNSET
 
         try:
             url_youtube = sanitize_youtube_url(context.last_url_opened)
@@ -97,21 +97,21 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
                 nbr_ddl_srt = self.download_all_subtitles(url_youtube, all_srt, exp_folder, event_bus, context)
                 _require_subtitles_downloaded(nbr_ddl_srt)
                 if rs.has_warnings():
-                    event_bus.log_step(context, rs.concat_issues_by_severity(5))
-                    result = StepExecutionResultEnum.E_WARNING
+                    event_bus.log_step(context, rs.concat_issues_by_order(10))
+                    result = ProcessResultEnum.E_WARNING
                 else:
-                    result = StepExecutionResultEnum.E_SUCCESS
+                    result = ProcessResultEnum.E_SUCCESS
                 event_bus.log_step(context, f"Nombre de sous-titres téléchargés : +{nbr_ddl_srt}")
             else:
-                event_bus.log_step(context, rs.concat_issues_by_severity(10))
-                result = StepExecutionResultEnum.E_ERROR
+                event_bus.log_step(context, rs.concat_issues_by_order(10))
+                result = ProcessResultEnum.E_ERROR
 
         except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
             # "... video is not available ..." -> video not found
             self._logger.exception("An error occurred while fetching YouTube subtitles.")
             event_bus.log_step(context, f"Excp : {exc}")
-            result = StepExecutionResultEnum.E_ERROR
+            result = ProcessResultEnum.E_ERROR
 
         return result
 

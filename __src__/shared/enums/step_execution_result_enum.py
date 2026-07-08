@@ -5,7 +5,7 @@
 from enum import Enum
 
 
-class StepExecutionResultEnum(Enum):
+class ProcessResultEnum(Enum):
     """Enumerates the possible outcomes of a single step execution.
 
     Returned by every IStepExecutor.execute_logical() implementation.

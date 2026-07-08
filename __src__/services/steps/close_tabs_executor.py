@@ -14,7 +14,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.close_tabs_params import CloseTabsParams
 from playwright.sync_api import Page
-from shared.enums import FilterClosedEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.enums import FilterClosedEnum, ProcessResultEnum, StepTypeEnum
 from shared.exception_util import CurrentPageClosedUnexpectedlyError, MissingUrlFilterError
 from shared.step_registry import register_step_executor
 
@@ -30,7 +30,7 @@ class CloseTabsExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(CloseTabsParams, context.step_scraping_data.params)
@@ -45,9 +45,9 @@ class CloseTabsExecutor(IStepExecutor):
             self._enforce_max_tabs(browser, current_page, p.max_tabs)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
     @staticmethod
     def _resolve_url_filter(p: CloseTabsParams, context: ScrapingContextModel) -> str:

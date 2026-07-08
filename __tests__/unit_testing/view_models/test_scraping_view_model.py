@@ -6,9 +6,8 @@ import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
-from view_models.scraping_view_model import ScrapingViewModel
-
 from shared.exception_util import CallbackNotDefinedError
+from view_models.scraping_view_model import ScrapingViewModel
 
 
 @pytest.fixture()
@@ -144,32 +143,38 @@ class TestReentrancyGuard:
 class TestComputeJournalTag:
     def test_open_url_line_returns_tag_open(self, vm: ScrapingViewModel) -> None:
         from shared.enums import StepTypeEnum
+
         line = f"some text {StepTypeEnum.E_OPEN_URL.value} rest"
         assert vm._compute_journal_tag(line) == "tag_open"
 
     def test_success_line_returns_tag_success(self, vm: ScrapingViewModel) -> None:
-        from shared.enums import StepExecutionResultEnum
-        line = f"result: {StepExecutionResultEnum.E_SUCCESS.value}"
+        from shared.enums import ProcessResultEnum
+
+        line = f"result: {ProcessResultEnum.E_SUCCESS.value}"
         assert vm._compute_journal_tag(line) == "tag_success"
 
     def test_skipped_line_returns_tag_warning(self, vm: ScrapingViewModel) -> None:
-        from shared.enums import StepExecutionResultEnum
-        line = f"result: {StepExecutionResultEnum.E_SKIPPED.value}"
+        from shared.enums import ProcessResultEnum
+
+        line = f"result: {ProcessResultEnum.E_SKIPPED.value}"
         assert vm._compute_journal_tag(line) == "tag_warning"
 
     def test_warning_line_returns_tag_warning(self, vm: ScrapingViewModel) -> None:
-        from shared.enums import StepExecutionResultEnum
-        line = f"result: {StepExecutionResultEnum.E_WARNING.value}"
+        from shared.enums import ProcessResultEnum
+
+        line = f"result: {ProcessResultEnum.E_WARNING.value}"
         assert vm._compute_journal_tag(line) == "tag_warning"
 
     def test_error_line_returns_tag_error(self, vm: ScrapingViewModel) -> None:
-        from shared.enums import StepExecutionResultEnum
-        line = f"result: {StepExecutionResultEnum.E_ERROR.value}"
+        from shared.enums import ProcessResultEnum
+
+        line = f"result: {ProcessResultEnum.E_ERROR.value}"
         assert vm._compute_journal_tag(line) == "tag_error"
 
     def test_fatal_line_returns_tag_error(self, vm: ScrapingViewModel) -> None:
-        from shared.enums import StepExecutionResultEnum
-        line = f"result: {StepExecutionResultEnum.E_FATAL.value}"
+        from shared.enums import ProcessResultEnum
+
+        line = f"result: {ProcessResultEnum.E_FATAL.value}"
         assert vm._compute_journal_tag(line) == "tag_error"
 
     def test_plain_line_returns_empty_string(self, vm: ScrapingViewModel) -> None:
@@ -182,10 +187,10 @@ class TestComputeJournalTag:
 
 
 class TestDoubleBindRaises:
-    @pytest.mark.parametrize("bind_method", [
-        "bind_launch", "bind_cancel", "bind_pause",
-        "bind_resume", "bind_open_folder", "bind_show_error",
-    ])
+    @pytest.mark.parametrize(
+        "bind_method",
+        ["bind_launch", "bind_cancel", "bind_pause", "bind_resume", "bind_open_folder", "bind_show_error"],
+    )
     def test_double_bind_raises(self, vm: ScrapingViewModel, bind_method: str) -> None:
         cb = MagicMock()
         getattr(vm, bind_method)(cb)

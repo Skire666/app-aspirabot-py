@@ -25,7 +25,7 @@ from repositories.journal_repository import JournalRepository
 from services.scraping_event_bus import ScrapingEventBus
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from services.workflow_service import WorkflowService
-from shared.enums import StepExecutionResultEnum, StepTypeEnum, WaitUntilEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum, WaitUntilEnum
 from shared.exception_util import ExportFolderNotADirectoryError
 from shared.operating_system_util import open_folder
 from shared.step_registry import get_step_executor
@@ -350,11 +350,11 @@ class ScrapingService:
         if not is_okay and step.step_id == self._emergency_stop_step_id:
             self._emergency_stop_step_failed += 1
 
-        if result == StepExecutionResultEnum.E_FATAL:
+        if result == ProcessResultEnum.E_FATAL:
             self._context.end_process = True
         if (
             step.step_type == StepTypeEnum.E_RESTART_TO_BEGINNING
-            and self._context.last_result_step == StepExecutionResultEnum.E_SUCCESS
+            and self._context.last_result_step == ProcessResultEnum.E_SUCCESS
         ):
             return 0
 
@@ -433,7 +433,7 @@ class ScrapingService:
     # Step execution
     # ------------------------------------------------------------------
 
-    def _execute_step(self, step: StepScrapingModel) -> StepExecutionResultEnum:
+    def _execute_step(self, step: StepScrapingModel) -> ProcessResultEnum:
         """Dispatch a step to its registered executor and convert exceptions.
 
         The context is updated in place before calling the executor; output
@@ -445,21 +445,21 @@ class ScrapingService:
             step: The step model to execute.
 
         Returns:
-            The ``StepExecutionResultEnum`` value returned by the executor, or
+            The ``ProcessResultEnum`` value returned by the executor, or
             ``ERROR`` when the executor raises an unexpected exception.
         """
         assert self._browser_service is not None
 
         # if the step is inactive, skip execution
         if not step.is_active:
-            return StepExecutionResultEnum.E_SKIPPED
+            return ProcessResultEnum.E_SKIPPED
 
         try:
             executor: IStepExecutor = get_step_executor(step.step_type)
             result = executor.execute_logical(self._browser_service, self._context, self._event_bus)
         except Exception:
             self._logger.exception("Erreur lors de l'exécution de l'étape %s", step.step_id)
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
             return result
 

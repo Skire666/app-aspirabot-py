@@ -15,7 +15,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.wait_html_images_params import WaitHtmlImagesParams
 from services.steps._helpers import evaluate_count_condition, get_filtered_images
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import CountHtmlImagesConditionNotMetError
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
@@ -32,7 +32,7 @@ class WaitHtmlImagesExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(WaitHtmlImagesParams, context.step_scraping_data.params)
@@ -51,9 +51,9 @@ class WaitHtmlImagesExecutor(IStepExecutor):
             event_bus.log_step(context, f"Trouvé x{count} image(s), condition vérifiée.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
 
 register_step_executor(WaitHtmlImagesExecutor())

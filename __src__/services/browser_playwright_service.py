@@ -279,7 +279,6 @@ class BrowserPlaywrightService(IWebBrowserService):
         assert self._last_error is not None, "ValidationResult should be initialized before..."
 
         msg = str(exp)
-        print("DEBUG: Erreur de navigation :\n%s", msg)
 
         if "context or browser has been closed" in msg:
             time.sleep(1)  # Short delay to allow any pending page-close events to process.
@@ -294,10 +293,12 @@ class BrowserPlaywrightService(IWebBrowserService):
         if "net::ERR_NAME_NOT_RESOLVED at" in msg:
             self.get_workflow_page()
             time.sleep(wait_dns_solver_sec)  # Wait before retrying DNS resolution
+            self._workflow_page.reload(wait_until="networkidle", timeout=15000)
             self._last_url_used = self._workflow_page.url
             self._last_error.append(ErrorCodeBRP.BRP_1003, SeverityEnum.E_WARNING)
 
         if "Timeout" in msg:
+            print("DEBUG: Erreur de navigation :\n%s", msg)
             self._last_error.append(ErrorCodeBRP.BRP_1004, SeverityEnum.E_WARNING)
 
         if self._last_error.count_severities(SeverityEnum.E_WARNING) >= _NAV_MAX_RETRIES:
@@ -308,7 +309,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
             self._last_error.append(ErrorCodeBRP.BRP_1006, SeverityEnum.E_FATAL)
 
-        return self._last_error.has_errors_or_fatals()
+        return not self._last_error.has_errors_or_fatals()
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.

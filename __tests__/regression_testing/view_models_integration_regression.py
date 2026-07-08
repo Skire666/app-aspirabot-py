@@ -447,16 +447,16 @@ class TestScrapingViewModelJournal:
         assert tag == "tag_open"
 
     def test_compute_journal_tag_success(self) -> None:
-        from shared.enums import StepExecutionResultEnum
+        from shared.enums import ProcessResultEnum
 
-        line = f"[{StepExecutionResultEnum.E_SUCCESS.value}] success"
+        line = f"[{ProcessResultEnum.E_SUCCESS.value}] success"
         tag = ScrapingViewModel._compute_journal_tag(line)
         assert tag == "tag_success"
 
     def test_compute_journal_tag_error(self) -> None:
-        from shared.enums import StepExecutionResultEnum
+        from shared.enums import ProcessResultEnum
 
-        line = f"[{StepExecutionResultEnum.E_ERROR.value}] fail"
+        line = f"[{ProcessResultEnum.E_ERROR.value}] fail"
         tag = ScrapingViewModel._compute_journal_tag(line)
         assert tag == "tag_error"
 

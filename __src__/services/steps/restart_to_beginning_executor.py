@@ -13,7 +13,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.restart_to_beginning_params import RestartToBeginningParams
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 # -----------------------------------------------------------------------------
@@ -32,7 +32,7 @@ class RestartToBeginningExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(RestartToBeginningParams, context.step_scraping_data.params)
@@ -42,16 +42,16 @@ class RestartToBeginningExecutor(IStepExecutor):
                 has_next_url = context.url_source.has_next_url()
                 if not has_next_url:
                     event_bus.log_step(context, "Aucune URL restante (etape SKIP)")
-                    return StepExecutionResultEnum.E_SKIPPED
+                    return ProcessResultEnum.E_SKIPPED
                 event_bus.log_step(context, "URL restante (va reprendre au début)")
-                return StepExecutionResultEnum.E_SUCCESS
+                return ProcessResultEnum.E_SUCCESS
 
             event_bus.log_step(context, "Recommence au début")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
 
 register_step_executor(RestartToBeginningExecutor())

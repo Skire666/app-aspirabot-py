@@ -15,7 +15,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.scroll_down_params import ScrollDownParams
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
 from shared.step_registry import register_step_executor
 
@@ -33,7 +33,7 @@ class ScrollDownExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(ScrollDownParams, context.step_scraping_data.params)
@@ -57,9 +57,9 @@ class ScrollDownExecutor(IStepExecutor):
                     break
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
     @staticmethod
     def _get_page_height(browser: IWebBrowserService) -> int:

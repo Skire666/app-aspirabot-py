@@ -17,7 +17,7 @@ from models.steps.extract_texts_params import ExtractTextsParams
 from playwright.sync_api import ElementHandle
 from services.steps._helpers import extract_from_element
 from shared.constants import C_STR_ERROR_EXTRACT_TEXTS
-from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ExtractTargetEnum, ProcessResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class ExtractTextsExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Query the selector, apply the target filter, and extract text into the context.
 
         Args:
@@ -63,17 +63,17 @@ class ExtractTextsExecutor(IStepExecutor):
             elements: list[ElementHandle] = page.query_selector_all(p.selector)
             if not elements:
                 event_bus.log_step(context, f"Excp : Aucun élément trouvé pour le sélecteur '{p.selector}'")
-                return StepExecutionResultEnum.E_ERROR
+                return ProcessResultEnum.E_ERROR
 
             selected: list[ElementHandle] = self._select_elements(elements, p.target)
             if not selected:
                 event_bus.log_step(context, f"Excp : Aucune sélection trouvée pour le sélecteur '{p.selector}'")
-                return StepExecutionResultEnum.E_ERROR
+                return ProcessResultEnum.E_ERROR
 
             texts: list[str] = [extract_from_element(el, p.extract_mode) for el in selected]
             if not texts:
                 event_bus.log_step(context, f"Excp : Aucun texte extrait pour le sélecteur '{p.selector}'")
-                return StepExecutionResultEnum.E_ERROR
+                return ProcessResultEnum.E_ERROR
 
             # push
             context.push_texts_extracted(p.mapping, texts, p.target)
@@ -84,9 +84,9 @@ class ExtractTextsExecutor(IStepExecutor):
         except Exception as exc:
             _logger.exception("An error occurred while extracting texts.")
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
 
 register_step_executor(ExtractTextsExecutor())

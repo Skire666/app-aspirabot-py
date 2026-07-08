@@ -15,7 +15,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_variable_params import ExtractVariableParams
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
@@ -55,7 +55,7 @@ class ExtractVariableExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Resolve the chosen variable from context and push it into extracted data.
 
         Args:
@@ -75,9 +75,9 @@ class ExtractVariableExecutor(IStepExecutor):
             event_bus.log_step(context, f"Variable '{p.variable}' = '{value}'.")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
 
 register_step_executor(ExtractVariableExecutor())

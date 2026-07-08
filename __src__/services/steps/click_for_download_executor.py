@@ -14,7 +14,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.click_for_download_params import ClickForDownloadParams
 from playwright.sync_api import Download, ElementHandle, Page
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import DownloadNotDetectedError, ElementNotFoundForClickError
 from shared.step_registry import register_step_executor
 
@@ -45,7 +45,7 @@ class ClickForDownloadExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Click an element to trigger a file download, then save it to the export folder.
 
         Tries up to three click strategies (normal, forced, JS) depending on the configured
@@ -74,9 +74,9 @@ class ClickForDownloadExecutor(IStepExecutor):
             event_bus.log_step(context, f"Clique OK avec sélecteur '{p.selector}' pour téléchargement")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
     @staticmethod
     def _save_download(download_value: Download, context: ScrapingContextModel) -> None:

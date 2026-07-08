@@ -15,7 +15,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_js_custom_params import ExtractJsCustomParams
 from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
 from shared.step_registry import register_step_executor
 from shared.url_util import transformer_url
@@ -38,7 +38,7 @@ class ExtractJsCustomExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Evaluate the custom JS code and push the resulting primary key into the context.
 
         Args:
@@ -54,7 +54,7 @@ class ExtractJsCustomExecutor(IStepExecutor):
 
             if not raw_value:
                 event_bus.log_step(context, "Excp : Aucun texte extrait pour le code JS")
-                return StepExecutionResultEnum.E_ERROR
+                return ProcessResultEnum.E_ERROR
 
             self._apply_url_cutters(raw_value, p, context)
             # push
@@ -65,9 +65,9 @@ class ExtractJsCustomExecutor(IStepExecutor):
         except Exception as exc:
             _logger.exception("An error occurred while extracting texts.")
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
     @staticmethod
     def _evaluate_and_validate(

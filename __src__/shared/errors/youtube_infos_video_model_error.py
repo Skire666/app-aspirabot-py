@@ -15,6 +15,7 @@ class ErrorCodeYIV(ErrorCode):
     YIV_1004 = "La durée de la vidéo est manquante."
     YIV_1005 = "La durée de la vidéo est invalide ou égal à 0."
     YIV_1006 = "La langue de la vidéo est manquante."
+    YIV_1007 = "La langue de la vidéo existe, mais n'est pas FRA ou ENG."
 
     # ???
     YIV_9999 = "Erreur inconnue."

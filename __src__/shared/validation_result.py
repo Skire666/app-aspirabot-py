@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from shared.enums import SeverityEnum
+from shared.enums.step_execution_result_enum import ProcessResultEnum
 from shared.error_code import ErrorCode
 
 
@@ -57,6 +58,16 @@ class ValidationResult:
         self.count_warnings += other.count_warnings
         self.count_errors += other.count_errors
         self.count_fatals += other.count_fatals
+
+    def get_worst_result_enum(self) -> ProcessResultEnum:
+        """Return the worst ProcessResultEnum based on the accumulated issues."""
+        if self.count_fatals > 0:
+            return ProcessResultEnum.E_FATAL
+        if self.count_errors > 0:
+            return ProcessResultEnum.E_ERROR
+        if self.count_warnings > 0:
+            return ProcessResultEnum.E_WARNING
+        return ProcessResultEnum.E_SUCCESS
 
     def has_issues(self) -> bool:
         """Return True if there are any validation issues, False otherwise."""

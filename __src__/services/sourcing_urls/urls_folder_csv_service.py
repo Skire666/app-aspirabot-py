@@ -13,6 +13,7 @@ Discovery is lazy: the folder is scanned only on the first ``load_url_if_availab
 from __future__ import annotations
 
 import heapq
+import logging
 from datetime import datetime
 from operator import itemgetter
 from pathlib import Path
@@ -37,6 +38,8 @@ from shared.typing.csv_table import CsvTable
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
+
+_logger = logging.getLogger(__name__)
 
 
 class UrlsFolderCsvService(IUrlSourceProvider):
@@ -182,6 +185,8 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             need_reload = True
 
         if need_reload:
+            _logger.info(f"Reloading CSV file (need_reload = True): {self._path_to_csv}")
+            self._index = 0
             self._last_urls_readed = self._collect_urls()
         self._urls_filtred = self._filter_and_sort_urls(self._last_urls_readed)
 

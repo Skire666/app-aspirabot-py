@@ -14,7 +14,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.wait_user_action_params import WaitUserActionParams
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_sec
 
@@ -30,19 +30,19 @@ class WaitUserActionExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(WaitUserActionParams, context.step_scraping_data.params)
         try:
             if not self._should_pause(p, context):
-                return StepExecutionResultEnum.E_SKIPPED
+                return ProcessResultEnum.E_SKIPPED
             self._do_pause(context, p, event_bus)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
     @staticmethod
     def _should_pause(p: WaitUserActionParams, context: ScrapingContextModel) -> bool:

@@ -16,7 +16,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_links_params import ExtractLinksParams
 from playwright.sync_api import ElementHandle
 from shared.constants import C_STR_ERROR_EXTRACT_LINKS
-from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ExtractTargetEnum, ProcessResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.url_util import transformer_url
 
@@ -36,7 +36,7 @@ class ExtractLinksExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Query the selector, apply the target filter, and extract links into the context.
 
         Args:
@@ -53,7 +53,7 @@ class ExtractLinksExecutor(IStepExecutor):
             links: list[str] = []
             if not elements:
                 event_bus.log_step(context, f"Excp : Aucun élément trouvé pour le sélecteur '{p.selector}'")
-                return StepExecutionResultEnum.E_ERROR
+                return ProcessResultEnum.E_ERROR
             selected = self._select_elements(elements, p.target)
             parsed = urlparse(page.url)
             base_url = f"{parsed.scheme}://{parsed.netloc}"
@@ -67,9 +67,9 @@ class ExtractLinksExecutor(IStepExecutor):
             event_bus.log_step(context, f"x{len(links)} lien(s) | str[:25] ='{preview_one_item[:25]}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
     @staticmethod
     def _select_elements(elements: list[ElementHandle], target: ExtractTargetEnum) -> list[ElementHandle]:

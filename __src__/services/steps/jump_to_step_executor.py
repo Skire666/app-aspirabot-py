@@ -14,7 +14,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.jump_to_step_params import JumpToStepParams
 from shared.constants import C_STATE_JUMP_TO_STEP_FAILURE
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 
 
@@ -29,7 +29,7 @@ class JumpToStepExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(JumpToStepParams, context.step_scraping_data.params)
@@ -49,9 +49,9 @@ class JumpToStepExecutor(IStepExecutor):
             event_bus.log_step(context, str_jump)
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
 
 register_step_executor(JumpToStepExecutor())

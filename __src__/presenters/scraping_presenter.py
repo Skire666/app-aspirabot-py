@@ -23,6 +23,8 @@ from models.step_scraping_model import StepScrapingModel
 from models.workflow_run_handlers_model import WorkflowRunHandlers
 from presenters.scraping_statistics_presenter import ScrapingStatisticsPresenter
 from presenters.steps import (
+    count_html_elements_step_presenter,
+    count_html_images_step_presenter,
     extract_links_step_presenter,
     extract_texts_step_presenter,
     open_url_step_presenter,
@@ -37,7 +39,7 @@ from services.scenarios_service import ScenariosService
 from services.scraping_service import ScrapingService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM, get_time_now_hh_mm_ss
-from shared.enums import EventScrapingEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.enums import EventScrapingEnum, ProcessResultEnum, StepTypeEnum
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
     C_ERROR_DIALOG_TITLE,
@@ -54,6 +56,8 @@ from shared.i18n_fra import (
     C_SCRAPING_STATUS_STARTING,
 )
 from view_models.scraping_view_model import ScrapingViewModel
+
+from __src__.shared.constants import C_SUB_FOLDER_LOGS_FOR_SCRAPING
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -79,6 +83,8 @@ _STEP_START_FORMATTERS: dict[StepTypeEnum, Callable[[str, StepScrapingModel, Scr
     StepTypeEnum.E_EXTRACT_LINKS: extract_links_step_presenter.format_step_start,
     StepTypeEnum.E_WAIT_HTML_ELEMENTS: wait_html_elements_step_presenter.format_step_start,
     StepTypeEnum.E_WAIT_HTML_IMAGES: wait_html_images_step_presenter.format_step_start,
+    StepTypeEnum.E_COUNT_HTML_ELEMENTS: count_html_elements_step_presenter.format_step_start,
+    StepTypeEnum.E_COUNT_HTML_IMAGES: count_html_images_step_presenter.format_step_start,
 }
 
 # -----------------------------------------------------------------------------
@@ -147,7 +153,8 @@ class ScrapingPresenter:
         self._vm.bind_cancel(self._on_cancel)
         self._vm.bind_pause(self._on_pause)
         self._vm.bind_resume(self._on_resume)
-        self._vm.bind_open_folder(self._on_open_folder)
+        self._vm.bind_open_folder_export(self._on_open_folder_export)
+        self._vm.bind_open_folder_logs(self._on_open_folder_logs)
 
     # ------------------------------------------------------------------
     # Public API — called from main.py navigation hook
@@ -242,12 +249,23 @@ class ScrapingPresenter:
         self._vm.is_pause_enabled_var.set(True)
         self._vm.process_status_var.set(C_SCRAPING_STATUS_RUNNING)
 
-    def _on_open_folder(self) -> None:
+    def _on_open_folder_export(self) -> None:
         """Open the export folder of the current profile via the service."""
         if not self._profile or not self._profile.export_folder.strip():
             return
         try:
             self._service_scraping.open_export_folder(self._profile.export_folder)
+        except (AspirabotBaseError, OSError) as e:
+            self._vm.show_error(C_ERROR_DIALOG_TITLE, C_OPEN_EXPORT_FOLDER_ERROR.format(exc=e))
+
+    def _on_open_folder_logs(self) -> None:
+        """Open the logs folder of the current profile via the service."""
+        if not self._profile or not self._profile.export_folder.strip():
+            return
+        try:
+            self._service_scraping.open_export_folder(
+                self._profile.export_folder + "/" + C_SUB_FOLDER_LOGS_FOR_SCRAPING
+            )
         except (AspirabotBaseError, OSError) as e:
             self._vm.show_error(C_ERROR_DIALOG_TITLE, C_OPEN_EXPORT_FOLDER_ERROR.format(exc=e))
 
@@ -345,9 +363,9 @@ class ScrapingPresenter:
         msg_error: str = ""
         if context.last_result_is_error():
             if context.next_error_is_handled:
-                msg_error = f"{StepExecutionResultEnum.E_ERROR.value} (l'échec est géré)"
+                msg_error = f"{ProcessResultEnum.E_ERROR.value} (l'échec est géré)"
             else:
-                msg_error = f"{StepExecutionResultEnum.E_ERROR.value} (non géré)"
+                msg_error = f"{ProcessResultEnum.E_ERROR.value} (non géré)"
             return f"{ts} | {step.step_id} | Bilan step : {msg_error} | {elapsed:.3f}s"
         result_label = context.last_result_step.value
         return f"{ts} | {step.step_id} | Bilan step : {result_label}{msg_error} | {elapsed:.3f}s"

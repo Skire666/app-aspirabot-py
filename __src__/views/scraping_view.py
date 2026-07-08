@@ -93,9 +93,9 @@ class ScrapingView(ttk.Frame):
         ttk.Label(grid, text="Dossier d'export :").grid(row=2, column=0, sticky=tk.W, padx=(0, 5), pady=(0, 5))
         ttk.Label(grid, textvariable=self._vm.folder_var).grid(row=2, column=1, sticky=tk.W, pady=(0, 5))
 
-        FolderLinkWidget(grid, title="", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder()).grid(
-            row=2, column=2, padx=(20, 0), pady=(0, 5)
-        )
+        FolderLinkWidget(
+            grid, title="", path="Cliquer pour ouvrir", callback=lambda: self._vm.open_folder_export()
+        ).grid(row=2, column=2, padx=(20, 0), pady=(0, 5))
 
     def _create_stats_section(self, parent: tk.Widget) -> None:
         """Section 2 — real-time scraping statistics, bound to ViewModel Vars."""
@@ -160,7 +160,10 @@ class ScrapingView(ttk.Frame):
         self._txt_journal.pack(fill=tk.BOTH, expand=True)
 
         self._lbl_journal_path = ttk.Label(frame, textvariable=self._vm.journal_path_var)
-        self._lbl_journal_path.pack(padx=5, pady=(0, 5), anchor=tk.W)
+        self._lbl_journal_path.pack(padx=5, pady=(0, 5), side=tk.LEFT)
+        FolderLinkWidget(frame, title="", path="Ouvrir le dossier", callback=lambda: self._vm.open_folder_logs()).pack(
+            padx=5, pady=5, side=tk.RIGHT
+        )
 
     # ------------------------------------------------------------------
     # ViewModel bindings

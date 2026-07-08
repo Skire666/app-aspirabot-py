@@ -15,7 +15,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.youtube_repository import YoutubeRepository
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.step_registry import register_step_executor
 from shared.youtube_util import sanitize_youtube_url
 
@@ -42,10 +42,10 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
-        result = StepExecutionResultEnum.E_UNSET
+        result = ProcessResultEnum.E_UNSET
 
         # TEST cast(YoutubeInfosVideoParams, context.step_scraping_data.params)
         try:
@@ -57,14 +57,11 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             if not rs.has_errors_or_fatals():
                 context.push_ytdlp_extracted(casted)
                 self._repo.update_cached_subtitles(url_youtube, casted.subtitles_ls)
-                if rs.has_warnings():
-                    event_bus.log_step(context, rs.concat_issues_by_severity(5))
-                    result = StepExecutionResultEnum.E_WARNING
-                else:
-                    result = StepExecutionResultEnum.E_SUCCESS
-            else:
-                event_bus.log_step(context, rs.concat_issues_by_severity(10))
-                result = StepExecutionResultEnum.E_ERROR
+                result = ProcessResultEnum.E_SUCCESS
+
+            if rs.has_issues():
+                result = rs.get_worst_result_enum()
+                event_bus.log_step(context, rs.concat_issues_by_order(10))
 
         except Exception as exc:
             # "... in to confirm your age ..." -> video age restricted
@@ -72,7 +69,7 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
             # "... video is available to this channel's members ..." -> video is members-only
             self._logger.exception("An error occurred while fetching YouTube video info.")
             event_bus.log_step(context, f"Excp : {exc}")
-            result = StepExecutionResultEnum.E_ERROR
+            result = ProcessResultEnum.E_ERROR
 
         return result
 

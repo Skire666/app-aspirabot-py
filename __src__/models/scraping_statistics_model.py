@@ -7,9 +7,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from shared.enums import StepTypeEnum
-
-from __src__.shared.enums.step_execution_result_enum import StepExecutionResultEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 
 # -----------------------------------------------------------------------------
 # Class
@@ -32,23 +30,18 @@ class StatisticsStepModel:
         self.error_not_handled = 0
         self.error_but_managed = 0
 
-    def add_stats(self, is_success: StepExecutionResultEnum, next_error_handled: bool) -> None:
+    def add_stats(self, is_success: ProcessResultEnum, next_error_handled: bool) -> None:
         """Update statistics counters based on the step success status."""
         self.executed += 1
 
-        print(f"add_stats: is_success={is_success}, next_error_handled={next_error_handled}")
-        if is_success in {StepExecutionResultEnum.E_SUCCESS, StepExecutionResultEnum.E_WARNING}:
-            print("AAAAA) Incrementing success counter.")
+        if is_success in {ProcessResultEnum.E_SUCCESS, ProcessResultEnum.E_WARNING, ProcessResultEnum.E_SKIPPED}:
             self.success += 1
-        elif is_success is StepExecutionResultEnum.E_ERROR and next_error_handled:
-            print("AAAAA) Incrementing error_but_managed counter.")
+        elif is_success is ProcessResultEnum.E_ERROR and next_error_handled:
             self.error_but_managed += 1
-        elif is_success in {StepExecutionResultEnum.E_ERROR, StepExecutionResultEnum.E_FATAL}:
-            print("AAAAA) Incrementing error_not_handled counter.")
+        elif is_success in {ProcessResultEnum.E_ERROR, ProcessResultEnum.E_FATAL}:
             self.error_not_handled += 1
         else:
-            print(f"Unexpected StepExecutionResultEnum value: {is_success}")
-            raise ValueError(f"Unexpected StepExecutionResultEnum value: {is_success}")
+            raise ValueError(f"Unexpected ProcessResultEnum value: {is_success}")
 
 
 @dataclass
@@ -97,7 +90,7 @@ class ScrapingStatisticsModel:
         self.finished_at = datetime.now()
 
     def update_result_step(
-        self, step_type: StepTypeEnum, rs: StepExecutionResultEnum, duration_sec: float, next_error_handled: bool
+        self, step_type: StepTypeEnum, rs: ProcessResultEnum, duration_sec: float, next_error_handled: bool
     ) -> None:
         """Update statistics counters based on the step type and success status."""
         self.stats_steps.add_stats(rs, next_error_handled)

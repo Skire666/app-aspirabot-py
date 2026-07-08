@@ -14,7 +14,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.open_url_params import OpenUrlParams
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, SeverityEnum, StepTypeEnum
 from shared.exception_util import UrlSourceExhaustedError
 from shared.step_registry import register_step_executor
 from shared.time_util import convert_to_ms
@@ -44,10 +44,10 @@ class OpenUrlExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
-        result = StepExecutionResultEnum.E_UNSET
+        result = ProcessResultEnum.E_UNSET
 
         p = cast(OpenUrlParams, context.step_scraping_data.params)
         try:
@@ -62,26 +62,24 @@ class OpenUrlExecutor(IStepExecutor):
                 rs = browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
 
                 if rs.has_issues():
-                    if rs.has_warnings():
-                        result = StepExecutionResultEnum.E_WARNING
-                    if rs.has_errors():
-                        result = StepExecutionResultEnum.E_ERROR
-                    if rs.has_fatals():
-                        result = StepExecutionResultEnum.E_FATAL
+                    result = rs.get_worst_result_enum()
                     event_bus.log_step(
                         context, f"Alerte durant l'ouverture de l'URL :\n{rs.concat_issues_by_order(10)}"
                     )
+                    if result == ProcessResultEnum.E_WARNING:
+                        nbr_warnings = rs.count_severities(SeverityEnum.E_WARNING)
+                        event_bus.log_step(context, f"Ouverture terminée. x{nbr_warnings} WARNING(s).")
                 else:
-                    event_bus.log_step(context, "Ouverture de la page terminée.")
-                    result = StepExecutionResultEnum.E_SUCCESS
+                    event_bus.log_step(context, "Ouverture terminée.")
+                    result = ProcessResultEnum.E_SUCCESS
 
             else:
                 event_bus.log_step(context, "Aucune URL à ouvrir.")
-                result = StepExecutionResultEnum.E_ERROR
+                result = ProcessResultEnum.E_ERROR
         except Exception as exc:
             _logger.exception("An error occurred while opening the URL.")
             event_bus.log_step(context, f"Excp : {exc}")
-            result = StepExecutionResultEnum.E_ERROR
+            result = ProcessResultEnum.E_ERROR
 
         return result
 

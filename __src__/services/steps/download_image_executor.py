@@ -17,7 +17,7 @@ from models.scraping_context_model import ScrapingContextModel
 from models.steps.download_image_params import DownloadImageParams
 from services.steps._helpers import get_filtered_images
 from shared.datetime_util import get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import ImageDownloadFailedError, ImageNotDownloadedError
 from shared.path_util import make_all_folders_if_not_exists
 from shared.step_registry import register_step_executor
@@ -48,7 +48,7 @@ class DownloadImageExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the download-image step for all targeted images."""
         assert context.step_scraping_data is not None
         p = cast(DownloadImageParams, context.step_scraping_data.params)
@@ -70,9 +70,9 @@ class DownloadImageExecutor(IStepExecutor):
             event_bus.log_step(context, f"Téléchargé x{downloaded_count} image(s).")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
     @staticmethod
     def _save_image(

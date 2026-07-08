@@ -31,7 +31,7 @@ from shared.constants import (
     C_COLUMN_SOURCE,
 )
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
-from shared.enums import ExtractTargetEnum, StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ExtractTargetEnum, ProcessResultEnum, StepTypeEnum
 from shared.exception_util import InvalidJsExtractedValueTypeError, JsExtractedPrimaryKeyMissingError
 from shared.typing.csv_table import CsvTable
 
@@ -87,7 +87,7 @@ class ScrapingContextModel:
 
     # Output signals written by executors and read back by the orchestrator.
     next_error_is_handled: bool = field(default=False)
-    last_result_step: StepExecutionResultEnum = field(default=StepExecutionResultEnum.E_UNSET)
+    last_result_step: ProcessResultEnum = field(default=ProcessResultEnum.E_UNSET)
     last_url_opened: str = field(default="")  # peut être en erreur, pas grave
     last_time_elapsed: float = field(default=0.0)
     time_started: float = field(default=0.0, init=False)
@@ -124,7 +124,7 @@ class ScrapingContextModel:
         if self.url_source is not None:
             self.url_source.reset()
 
-        self.last_result_step = StepExecutionResultEnum.E_SUCCESS
+        self.last_result_step = ProcessResultEnum.E_SUCCESS
         self.log_messages = []
         self.pending_jump = None
         self.end_process = False
@@ -168,7 +168,7 @@ class ScrapingContextModel:
         self.pending_jump = None
         self.end_process = False
 
-    def set_result_execution(self, result: StepExecutionResultEnum) -> None:
+    def set_result_execution(self, result: ProcessResultEnum) -> None:
         """Set the result of the step execution and update related state.
 
         Args:
@@ -180,9 +180,9 @@ class ScrapingContextModel:
     def last_step_was_success(self) -> bool:
         """Helper to check if the last step execution was a success."""
         return self.last_result_step in {
-            StepExecutionResultEnum.E_SKIPPED,
-            StepExecutionResultEnum.E_SUCCESS,
-            StepExecutionResultEnum.E_WARNING,
+            ProcessResultEnum.E_SKIPPED,
+            ProcessResultEnum.E_SUCCESS,
+            ProcessResultEnum.E_WARNING,
         }
 
     def reset_exported_data(self) -> None:
@@ -194,7 +194,7 @@ class ScrapingContextModel:
 
     def last_result_is_error(self) -> bool:
         """Check if the last result indicates an error."""
-        return self.last_result_step in {StepExecutionResultEnum.E_ERROR, StepExecutionResultEnum.E_FATAL}
+        return self.last_result_step in {ProcessResultEnum.E_ERROR, ProcessResultEnum.E_FATAL}
 
     # ------------------------------------------------------------------
     # Push extracted data into the context's extracted_data table.

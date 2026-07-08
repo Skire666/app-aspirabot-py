@@ -14,7 +14,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.check_url_page_params import CheckUrlPageParams
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import UrlPageCheckMismatchError
 from shared.step_registry import register_step_executor
 
@@ -34,7 +34,7 @@ class CheckUrlPageExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(CheckUrlPageParams, context.step_scraping_data.params)
@@ -63,9 +63,9 @@ class CheckUrlPageExecutor(IStepExecutor):
             event_bus.log_step(context, f"URL vérifiée : '{', '.join(checks)}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
 
 register_step_executor(CheckUrlPageExecutor())

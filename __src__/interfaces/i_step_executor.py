@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Protocol
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
 from models.scraping_context_model import ScrapingContextModel
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 
 if TYPE_CHECKING:
     from interfaces.i_web_browser_service import IWebBrowserService
@@ -52,7 +52,7 @@ class IStepExecutor(Protocol):
 
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step using the browser service and the runtime context.
 
         Args:

@@ -82,6 +82,8 @@ C_SCENARIO_FILE = "scenario.json"
 # Suffix for profile files associated with scenarios (mirrors view layer naming convention).
 C_PROFILE_FILE = "profiles.json"
 
+C_SUB_FOLDER_LOGS_FOR_SCRAPING: str = "tmp_logs"
+
 # -----------------------------------------------------------------------------
 
 # Special string used to indicate an error

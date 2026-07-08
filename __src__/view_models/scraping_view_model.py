@@ -7,7 +7,7 @@
 import tkinter as tk
 from collections.abc import Callable
 
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import CallbackNotDefinedError
 
 from view_models.view_model_base import ViewModelBase
@@ -85,7 +85,7 @@ class ScrapingViewModel(ViewModelBase):
         self.journal_tag_var = tk.StringVar(master=master, value="")
         self.journal_version_var = tk.IntVar(master=master, value=0)
         self.journal_clear_var = tk.IntVar(master=master, value=0)
-        self.journal_path_var = tk.StringVar(master=master, value="Fichier journal : —")
+        self.journal_path_var = tk.StringVar(master=master, value="Fichier journal : --")
 
     def _init_callbacks(self) -> None:
         """Initialise all Presenter callback slots to None."""
@@ -93,7 +93,8 @@ class ScrapingViewModel(ViewModelBase):
         self._on_cancel: Callable[[], None] | None = None
         self._on_pause: Callable[[], None] | None = None
         self._on_resume: Callable[[], None] | None = None
-        self._on_open_folder: Callable[[], None] | None = None
+        self._on_open_folder_export: Callable[[], None] | None = None
+        self._on_open_folder_logs: Callable[[], None] | None = None
         self._on_show_error: Callable[[str, str], None] | None = None
 
     # ------------------------------------------------------------------
@@ -115,15 +116,11 @@ class ScrapingViewModel(ViewModelBase):
         """Return the canvas tag name for *line* based on its content."""
         if StepTypeEnum.E_OPEN_URL.value in line:
             return "tag_open"
-        if StepExecutionResultEnum.E_SUCCESS.value in line:
+        if ProcessResultEnum.E_SUCCESS.value in line:
             return "tag_success"
-        if StepExecutionResultEnum.E_SKIPPED.value in line or StepExecutionResultEnum.E_WARNING.value in line:
+        if ProcessResultEnum.E_SKIPPED.value in line or ProcessResultEnum.E_WARNING.value in line:
             return "tag_warning"
-        if (
-            StepExecutionResultEnum.E_ERROR.value in line
-            or StepExecutionResultEnum.E_FATAL.value in line
-            or "Excp :" in line
-        ):
+        if ProcessResultEnum.E_ERROR.value in line or ProcessResultEnum.E_FATAL.value in line or "Excp :" in line:
             return "tag_error"
         return ""
 
@@ -185,15 +182,25 @@ class ScrapingViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_resume = cb
 
-    def bind_open_folder(self, cb: Callable[[], None]) -> None:
+    def bind_open_folder_export(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked when the user clicks Ouvrir dossier.
 
         Raises:
             AspirabotBaseError: If the hook is already bound.
         """
-        if self._on_open_folder is not None:
+        if self._on_open_folder_export is not None:
             raise CallbackNotDefinedError()
-        self._on_open_folder = cb
+        self._on_open_folder_export = cb
+
+    def bind_open_folder_logs(self, cb: Callable[[], None]) -> None:
+        """Register the handler invoked when the user clicks Ouvrir dossier.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_open_folder_logs is not None:
+            raise CallbackNotDefinedError()
+        self._on_open_folder_logs = cb
 
     def bind_show_error(self, cb: Callable[[str, str], None]) -> None:
         """Register the handler that shows a modal error dialog.
@@ -252,15 +259,25 @@ class ScrapingViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_resume()
 
-    def open_folder(self) -> None:
+    def open_folder_export(self) -> None:
         """Dispatch an open-folder request.
 
         Raises:
             AspirabotBaseError: If the hook is not bound.
         """
-        if self._on_open_folder is None:
+        if self._on_open_folder_export is None:
             raise CallbackNotDefinedError()
-        self._on_open_folder()
+        self._on_open_folder_export()
+
+    def open_folder_logs(self) -> None:
+        """Dispatch an open-folder request.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_open_folder_logs is None:
+            raise CallbackNotDefinedError()
+        self._on_open_folder_logs()
 
     def show_error(self, title: str, message: str) -> None:
         """Dispatch an error dialog request.

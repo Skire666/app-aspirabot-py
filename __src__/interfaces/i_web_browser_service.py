@@ -13,8 +13,7 @@ from typing import Protocol
 
 from playwright.sync_api import Page
 from shared.enums import WaitUntilEnum
-
-from __src__.shared.validation_result import ValidationResult
+from shared.validation_result import ValidationResult
 
 # -----------------------------------------------------------------------------
 # Interface

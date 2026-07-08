@@ -16,7 +16,7 @@ from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 from repositories.csv_repository import CsvRepository
-from shared.enums import StepExecutionResultEnum, StepTypeEnum
+from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import ExportFolderNotConfiguredError, NoDataToExportError
 from shared.step_registry import register_step_executor
 
@@ -40,7 +40,7 @@ class ExportDataToCsvExecutor(IStepExecutor):
     @override
     def execute_logical(
         self, browser: IWebBrowserService, context: ScrapingContextModel, event_bus: IScrapingEventBus
-    ) -> StepExecutionResultEnum:
+    ) -> ProcessResultEnum:
         """Execute the step."""
         assert context.step_scraping_data is not None
         p = cast(ExportDataToCsvParams, context.step_scraping_data.params)
@@ -62,9 +62,9 @@ class ExportDataToCsvExecutor(IStepExecutor):
         except Exception as exc:
             self._logger.exception("An error occurred while exporting data to CSV.")
             event_bus.log_step(context, f"Excp : {exc}")
-            return StepExecutionResultEnum.E_ERROR
+            return ProcessResultEnum.E_ERROR
         else:
-            return StepExecutionResultEnum.E_SUCCESS
+            return ProcessResultEnum.E_SUCCESS
 
 
 register_step_executor(ExportDataToCsvExecutor())
