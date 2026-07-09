@@ -56,7 +56,7 @@ class OpenUrlExecutor(IStepExecutor):
             # car sinon les filtres apres ne peuvent pas savoir quelle est la dernière URL ouverte
             if target_url:
                 context.last_url_opened = target_url
-                event_bus.log_step(context, f"Tentative d'ouverture : '{target_url}'")
+                event_bus.log_step(context, f"URL suite au transformer : '{target_url}'")
 
                 timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
                 rs = browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
@@ -68,9 +68,11 @@ class OpenUrlExecutor(IStepExecutor):
                     )
                     if result == ProcessResultEnum.E_WARNING:
                         nbr_warnings = rs.count_severities(SeverityEnum.E_WARNING)
-                        event_bus.log_step(context, f"Ouverture terminée. x{nbr_warnings} WARNING(s).")
+                        event_bus.log_step(
+                            context, f"Page courante (x{nbr_warnings} WARNING) : {browser.get_workflow_page().url}."
+                        )
                 else:
-                    event_bus.log_step(context, "Ouverture terminée.")
+                    event_bus.log_step(context, f"Page ouverte : {browser.get_workflow_page().url}.")
                     result = ProcessResultEnum.E_SUCCESS
 
             else:

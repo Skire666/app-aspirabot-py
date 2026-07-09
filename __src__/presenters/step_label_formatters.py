@@ -84,7 +84,13 @@ def _fmt_check_url_page(params: dict[str, Any], _idx: int, _ctx: dict[str, int])
     """Format label for CHECK_URL_PAGE."""
     domain_str = "oui" if params.get("check_domain") else "non"
     path_str = "oui" if params.get("check_path") else "non"
-    return f"Vérifier l'URL de la page\nDomaine : {domain_str}  |  Chemin : {path_str}"
+    url_contains = params.get("url_contains", "") or "<_vide_>"
+    url_end_with = params.get("url_end_with", "") or "<_vide_>"
+
+    return (
+        f"Vérifier URL  |  Même domaine : {domain_str}  |  Même chemin : {path_str}\n"
+        f"L'URL contient : {url_contains}  |  Se termine par : {url_end_with}"
+    )
 
 
 def _fmt_restart_to_beginning(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
@@ -171,8 +177,7 @@ def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) 
 
 def _fmt_extract_js_custom(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXTRACT_JS_CUSTOM."""
-    primary_key = params.get("primary_key") or "<vide>"
-    return f"Extraction - JS Personnalisé\nClé primaire : {primary_key}"
+    return "Extraction - JS Personnalisé"
 
 
 def _fmt_extract_texts(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:

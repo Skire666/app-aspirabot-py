@@ -14,9 +14,15 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_js_custom_params import ExtractJsCustomParams
-from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
+from shared.constants import (
+    C_COLUMN_PRIMARY_KEY,
+    C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT,
+    C_MAXIMUM_RETRY_EVALUATE_SCRIPT,
+)
+from shared.dict_util import count_items_with_value
 from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import ScriptExecutionFailedError
+from shared.parse_util import safe_int_from_str
 from shared.step_registry import register_step_executor
 from shared.url_util import transformer_url
 
@@ -56,12 +62,12 @@ class ExtractJsCustomExecutor(IStepExecutor):
                 event_bus.log_step(context, "Excp : Aucun texte extrait pour le code JS")
                 return ProcessResultEnum.E_ERROR
 
-            self._apply_url_cutters(raw_value, p, context)
+            self._normalized_all_data(raw_value, p, context)
             # push
-            context.push_js_custom_extracted(raw_value, p.primary_key)
+            context.push_js_custom_extracted(raw_value)
 
             # debug log
-            event_bus.log_step(context, f"Clé primaire '{p.primary_key}' | str[:25] ='{str(raw_value)[:25]}'")
+            event_bus.log_step(context, f"JS Custom str[:35] ='{str(raw_value)[:35]}'")
         except Exception as exc:
             _logger.exception("An error occurred while extracting texts.")
             event_bus.log_step(context, f"Excp : {exc}")
@@ -95,7 +101,7 @@ class ExtractJsCustomExecutor(IStepExecutor):
         return cast("dict[str, object] | list[object]", raw_value)
 
     @staticmethod
-    def _apply_url_cutters(value: object, p: ExtractJsCustomParams, context: ScrapingContextModel) -> None:
+    def _normalized_all_data(value: object, p: ExtractJsCustomParams, context: ScrapingContextModel) -> None:
         """Apply the URL cleanup options to the raw JS result.
 
         Args:
@@ -104,17 +110,17 @@ class ExtractJsCustomExecutor(IStepExecutor):
             context: The scraping context.
         """
         if isinstance(value, dict):
-            ExtractJsCustomExecutor._cut_row(cast(dict[str, str], value), p, context)
+            ExtractJsCustomExecutor._normalize_row(cast(dict[str, str], value), p, context)
         elif isinstance(value, list):
             for item in cast(list[object], value):
                 if not isinstance(item, dict):
-                    raise ScriptExecutionFailedError("extract_js_custom")
-                ExtractJsCustomExecutor._cut_row(cast(dict[str, str], item), p, context)
+                    raise ScriptExecutionFailedError("not dict")
+                ExtractJsCustomExecutor._normalize_row(cast(dict[str, str], item), p, context)
         else:
-            raise ScriptExecutionFailedError("extract_js_custom")
+            raise ScriptExecutionFailedError("not [dict | list]")
 
     @staticmethod
-    def _cut_row(row: dict[str, str], p: ExtractJsCustomParams, context: ScrapingContextModel) -> None:
+    def _normalize_row(row: dict[str, str], p: ExtractJsCustomParams, context: ScrapingContextModel) -> None:
         """Apply the URL cleanup options to a single extracted row.
 
         Args:
@@ -122,13 +128,16 @@ class ExtractJsCustomExecutor(IStepExecutor):
             p: ExtractJsCustomParams instance containing the cleanup options.
             context: The scraping context.
         """
-        pk = p.primary_key
-        if context and context.transformer_url_regexp and context.transformer_url_base:
-            if not row[pk]:
-                raise ScriptExecutionFailedError("extract_js_custom")
+        if not row or not row[C_COLUMN_PRIMARY_KEY]:
+            raise ValueError("Pas de clé primaire valide dans l'objet extrait.")
 
-            row[pk] = transformer_url(
-                row[pk],
+        nbr_vals_expected = safe_int_from_str(p.quality_expected, 1)
+        if count_items_with_value(row) < nbr_vals_expected:
+            raise ValueError("Qualité insuffisante (data trop vide).")
+
+        if context and context.transformer_url_regexp and context.transformer_url_base:
+            row[C_COLUMN_PRIMARY_KEY] = transformer_url(
+                row[C_COLUMN_PRIMARY_KEY],
                 context.transformer_url_regexp,
                 context.transformer_url_base,
                 context.transformer_url_trailing_slash,

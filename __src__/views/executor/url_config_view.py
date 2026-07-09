@@ -298,21 +298,21 @@ class UrlConfigView(ttk.Frame):
             variable=self._vm.url_sort_order_csv_var,
             value=UrlSortOrderEnum.E_NEWEST_FIRST.value,
             command=lambda: self._vm.form_changed(),
-        ).pack_left()
+        ).pack(side=tk.LEFT, padx=(0, 15))
         MyRadioButton(
             row,
             text="Lire anciens en 1er",
             variable=self._vm.url_sort_order_csv_var,
             value=UrlSortOrderEnum.E_OLDEST_FIRST.value,
             command=lambda: self._vm.form_changed(),
-        ).pack_left()
+        ).pack(side=tk.LEFT, padx=(0, 15))
         MyRadioButton(
             row,
-            text="Lire prioritaires en 1er",
+            text="Lire prioritaires en 1er (modif. vieux + data vides)",
             variable=self._vm.url_sort_order_csv_var,
             value=UrlSortOrderEnum.E_PRIORITY_FIRST.value,
             command=lambda: self._vm.form_changed(),
-        ).pack_left()
+        ).pack(side=tk.LEFT, padx=(0, 15))
 
     def _create_json_dates_between(self, parent: tk.Widget) -> None:
         """Date-range filter row for the JSON source panel.

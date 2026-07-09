@@ -87,7 +87,7 @@ def get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
 # -------------------------------------------------------------------------
 
 
-def parse_date_from_csv(value: str | None, default: datetime | None = None):
+def parse_date_from_csv(value: str | None, default: datetime | None = None) -> datetime:
     """Parse une string en datetime.
     Retourne datetime.now() (ou la valeur `default`) si la string est
     null/None, vide, ou mal formatée.

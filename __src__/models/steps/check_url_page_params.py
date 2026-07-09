@@ -23,6 +23,8 @@ class CheckUrlPageParams(BaseModel):
 
     check_domain: bool
     check_path: bool
+    url_contains: str = ""
+    url_end_with: str = ""
     comment: str = ""
 
     @model_validator(mode="before")

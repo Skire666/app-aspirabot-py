@@ -19,7 +19,7 @@ from shared.step_registry import register_form
 # -----------------------------------------------------------------------------
 
 C_KEY_SELECTOR = "js_code"
-C_KEY_MAIN_MAPPING = "primary_key"
+C_KEY_QUALITY_EXPECTED = "quality_expected"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -44,7 +44,7 @@ class ExtractJsCustomFormDef(IStepFormDef):
             widgets: Mutable mapping populated with widget/variable references keyed by C_KEY_* constants.
         """
         self._build_subform_js_code(frame, widgets)
-        self._build_subform_primary_key(frame, widgets)
+        self._build_subform_qual_key(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
@@ -64,20 +64,20 @@ class ExtractJsCustomFormDef(IStepFormDef):
         widgets[C_KEY_SELECTOR] = js_text
 
     @staticmethod
-    def _build_subform_primary_key(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
-        """Build the primary key input row.
+    def _build_subform_qual_key(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the quality expected input row.
 
         Args:
             frame: Parent frame to pack the row into.
-            widgets: Mutable mapping; populated with the C_KEY_MAIN_MAPPING tk.Variable.
+            widgets: Mutable mapping; populated with the C_KEY_QUALITY_EXPECTED tk.Variable.
         """
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Clé primaire :").pack(side=tk.LEFT, padx=(0, 5))
-        primary_key_var = tk.StringVar(value="")
-        ttk.Entry(row1, textvariable=primary_key_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets[C_KEY_MAIN_MAPPING] = primary_key_var
+        ttk.Label(row1, text="Qualité attendue (qté de champs alimentés) :").pack(side=tk.LEFT, padx=(0, 5))
+        qual_key_var = tk.StringVar(value="")
+        ttk.Entry(row1, textvariable=qual_key_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_QUALITY_EXPECTED] = qual_key_var
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -107,7 +107,7 @@ class ExtractJsCustomFormDef(IStepFormDef):
         js_text.delete("1.0", "end")
         js_text.insert("1.0", params_dict.get(C_KEY_SELECTOR, ""))
 
-        widgets[C_KEY_MAIN_MAPPING].set(params_dict.get(C_KEY_MAIN_MAPPING, ""))
+        widgets[C_KEY_QUALITY_EXPECTED].set(params_dict.get(C_KEY_QUALITY_EXPECTED, ""))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
@@ -123,7 +123,7 @@ class ExtractJsCustomFormDef(IStepFormDef):
         js_text: tk.Text = widgets[C_KEY_SELECTOR]
         return {
             C_KEY_SELECTOR: js_text.get("1.0", "end-1c").strip(),
-            C_KEY_MAIN_MAPPING: widgets[C_KEY_MAIN_MAPPING].get().strip(),
+            C_KEY_QUALITY_EXPECTED: widgets[C_KEY_QUALITY_EXPECTED].get().strip(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

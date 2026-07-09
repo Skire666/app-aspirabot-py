@@ -28,7 +28,12 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 
-from shared.constants import C_COLUMN_DATE_MODIFIED, C_COLUMN_PRIORITY_RANK, C_COLUMN_QUALITY_DATE, C_COLUMN_QUALITY_ROW
+from shared.constants import (
+    C_COLUMN_DATE_MODIFIED,
+    C_COLUMN_QUALITY_DATE,
+    C_COLUMN_QUALITY_MODIFIED,
+    C_COLUMN_QUALITY_ROW,
+)
 from shared.datetime_util import parse_date_from_csv
 from shared.enums.relative_date_enum import get_quality_of_updating_date
 from shared.exception_util import CsvRowIndexNotFoundError
@@ -239,7 +244,7 @@ class CsvTable:
         default_date_1900 = datetime(year=1900, month=1, day=1)
         self._header.add(C_COLUMN_QUALITY_ROW)
         self._header.add(C_COLUMN_QUALITY_DATE)
-        self._header.add(C_COLUMN_PRIORITY_RANK)
+        self._header.add(C_COLUMN_QUALITY_MODIFIED)
 
         for row in self._rows:
             # line
@@ -254,12 +259,12 @@ class CsvTable:
 
             # time
             date_parsed = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED), default=default_date_1900)
-            score_updator = get_quality_of_updating_date(nw, date_parsed) + 1
+            score_updator = get_quality_of_updating_date(nw, date_parsed)
 
             row[C_COLUMN_QUALITY_DATE] = str(score_updator)
 
             # heuristic
-            row[C_COLUMN_PRIORITY_RANK] = str(cells_filled_count * score_updator)
+            row[C_COLUMN_QUALITY_MODIFIED] = str(cells_filled_count * score_updator)
 
     # ------------------------------------------------------------------
     # JSON interoperability

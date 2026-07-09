@@ -23,7 +23,9 @@ def _build(data: dict[str, Any]) -> ExtractJsCustomParams:
         A fully populated ExtractJsCustomParams instance.
     """
     return ExtractJsCustomParams(
-        js_code=data.get("js_code", ""), primary_key=data.get("primary_key", ""), comment=data.get("comment", "")
+        js_code=data.get("js_code", ""),
+        quality_expected=data.get("quality_expected", ""),
+        comment=data.get("comment", ""),
     )
 
 

@@ -21,6 +21,8 @@ from views.components.canvas_checkbox import CanvasCheckbox
 
 C_CHECK_DOMAIN = "check_domain"
 C_CHECK_PATH = "check_path"
+C_URL_CONTAINS = "url_contains"
+C_URL_END_WITH = "url_end_with"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -58,10 +60,24 @@ class CheckUrlPageFormDef(IStepFormDef):
 
         line2 = ttk.Frame(frame)
         line2.pack(fill="x", pady=(0, 8))
+        ttk.Label(line2, text="Doit contenir :").pack(side=tk.LEFT, padx=(0, 5))
+        url_contains_var = tk.StringVar(value="")
+        ttk.Entry(line2, textvariable=url_contains_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_URL_CONTAINS] = url_contains_var
 
-        ttk.Label(line2, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
+        line3 = ttk.Frame(frame)
+        line3.pack(fill="x", pady=(0, 8))
+        ttk.Label(line3, text="Doit terminer par :").pack(side=tk.LEFT, padx=(0, 5))
+        url_end_with_var = tk.StringVar(value="")
+        ttk.Entry(line3, textvariable=url_end_with_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_URL_END_WITH] = url_end_with_var
+
+        line4 = ttk.Frame(frame)
+        line4.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(line4, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
         comm_var = tk.StringVar(value="")
-        ttk.Entry(line2, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        ttk.Entry(line4, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_COMMENT] = comm_var
 
     @override
@@ -69,6 +85,8 @@ class CheckUrlPageFormDef(IStepFormDef):
         """Pre-fill form widgets from a serialised params snapshot."""
         widgets[C_CHECK_DOMAIN].set(bool(params_dict.get(C_CHECK_DOMAIN, True)))
         widgets[C_CHECK_PATH].set(bool(params_dict.get(C_CHECK_PATH)))
+        widgets[C_URL_CONTAINS].set(params_dict.get(C_URL_CONTAINS, ""))
+        widgets[C_URL_END_WITH].set(params_dict.get(C_URL_END_WITH, ""))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
@@ -77,6 +95,8 @@ class CheckUrlPageFormDef(IStepFormDef):
         return {
             C_CHECK_DOMAIN: widgets[C_CHECK_DOMAIN].get(),
             C_CHECK_PATH: widgets[C_CHECK_PATH].get(),
+            C_URL_CONTAINS: widgets[C_URL_CONTAINS].get().strip(),
+            C_URL_END_WITH: widgets[C_URL_END_WITH].get().strip(),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

@@ -27,7 +27,7 @@ from shared.constants import (
     C_COLUMN_DATE_MODIFIED,
     C_COLUMN_DATE_SESSION,
     C_COLUMN_PRIMARY_KEY,
-    C_COLUMN_PRIORITY_RANK,
+    C_COLUMN_QUALITY_MODIFIED,
 )
 from shared.datetime_util import parse_date_from_csv
 from shared.enums import UrlSortOrderEnum
@@ -207,7 +207,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             time_c_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_CREATED, ""), datetime.now())
             time_m_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED, ""), datetime.now())
             time_s_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_SESSION, ""), datetime.now())
-            score_quality = row.get(C_COLUMN_PRIORITY_RANK, "").strip() or "0"
+            score_quality = row.get(C_COLUMN_QUALITY_MODIFIED, "").strip() or "0"
             if url and time_m_casted:
                 urls_time.append((url, time_c_casted, time_m_casted, time_s_casted, int(score_quality)))
 

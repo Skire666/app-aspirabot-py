@@ -18,6 +18,8 @@ def _build(data: dict[str, Any]) -> CheckUrlPageParams:
     return CheckUrlPageParams(
         check_domain=bool(data.get("check_domain", True)),
         check_path=bool(data.get("check_path")),
+        url_contains=data.get("url_contains", ""),
+        url_end_with=data.get("url_end_with", ""),
         comment=data.get("comment", ""),
     )
 

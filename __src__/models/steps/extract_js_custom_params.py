@@ -11,13 +11,15 @@ from typing import TYPE_CHECKING, Any
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
 from shared.i18n_fra import ERROR_TEMPLATES
+from shared.parse_util import safe_int_from_str
+
+from __src__.shared.constants import C_COLUMN_PRIMARY_KEY
 
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
 
 _MIN_JS_CODE_LENGTH: int = 5
 _MAX_JS_CODE_LENGTH: int = 32_000
-_MAX_PRIMARY_KEY_LENGTH: int = 64
 _MAX_COMMENT_LENGTH: int = 100
 
 
@@ -27,7 +29,7 @@ class ExtractJsCustomParams(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     js_code: str
-    primary_key: str
+    quality_expected: str
     comment: str = ""
 
     @field_validator("js_code")
@@ -38,19 +40,22 @@ class ExtractJsCustomParams(BaseModel):
             return v
         if not (_MIN_JS_CODE_LENGTH <= len(v.strip()) <= _MAX_JS_CODE_LENGTH):
             raise ValueError(ERROR_TEMPLATES["extract_js_custom_js_code_invalid"].format(step=step_label(info.context)))
+        if C_COLUMN_PRIMARY_KEY not in v.strip():
+            raise ValueError(f"Le code doit contenir {C_COLUMN_PRIMARY_KEY}.")
         if "return" not in v.strip():
             raise ValueError("Le code doit contenir un return pour renvoyer l'extraction.")
         return v
 
-    @field_validator("primary_key")
+    @field_validator("quality_expected")
     @classmethod
-    def check_primary_key(cls, v: str, info: ValidationInfo) -> str:
-        """Validate that the primary key is 1-64 alphanumeric (+ '_') characters."""
+    def check_quality_expected(cls, v: str, info: ValidationInfo) -> str:
+        """Validate the quality expected value."""
         if not info.context:
             return v
-        if not (1 <= len(v.strip()) <= _MAX_PRIMARY_KEY_LENGTH) or not v.replace("_", "").isalnum():
+        val = safe_int_from_str(v, -1)
+        if not (1 <= val <= 999):
             raise ValueError(
-                ERROR_TEMPLATES["extract_js_custom_primary_key_invalid"].format(step=step_label(info.context))
+                ERROR_TEMPLATES["extract_js_custom_quality_expected_invalid"].format(step=step_label(info.context))
             )
         return v
 

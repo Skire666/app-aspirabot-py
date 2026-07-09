@@ -235,9 +235,7 @@ ERROR_TEMPLATES: dict[str, str] = {
     "extract_links_mapping_required": "[{step}.] : clé de mapping est obligatoire.",
     # --- extract_js_custom ---
     "extract_js_custom_js_code_invalid": "[{step}.] : Code JS obligatoire : Longueur [5, 32K].",
-    "extract_js_custom_primary_key_invalid": (
-        "[{step}.] : Clé primaire obligatoire : Longueur [1, 64] + alphanumériques ou '_')."
-    ),
+    "extract_js_custom_quality_expected_invalid": ("[{step}.] : Qualité obligatoire : Entre 1 et 999 champs requis."),
     "extract_js_custom_comment_invalid": "[{step}.] : Commentaire requis : Longueur [1, 100].",
     # --- extract_texts ---
     "extract_texts_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",

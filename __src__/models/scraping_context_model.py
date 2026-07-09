@@ -35,6 +35,8 @@ from shared.enums import ExtractTargetEnum, ProcessResultEnum, StepTypeEnum
 from shared.exception_util import InvalidJsExtractedValueTypeError, JsExtractedPrimaryKeyMissingError
 from shared.typing.csv_table import CsvTable
 
+from __src__.shared.dict_util import push_value_only_if_empty
+
 if TYPE_CHECKING:
     from interfaces.i_url_source_provider import IUrlSourceProvider
 
@@ -200,7 +202,7 @@ class ScrapingContextModel:
     # Push extracted data into the context's extracted_data table.
     # ------------------------------------------------------------------
 
-    def push_js_custom_extracted(self, js_obj: object, col_primary_key: str) -> None:
+    def push_js_custom_extracted(self, js_obj: object) -> None:
         """Push extracted JavaScript objects into the context's extracted data table.
 
         Args:
@@ -214,16 +216,16 @@ class ScrapingContextModel:
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
 
         if isinstance(js_obj, dict):
-            self._push_js_custom_row(cast(dict[str, object], js_obj), col_primary_key, date_now)
+            self._push_js_custom_row(cast(dict[str, object], js_obj), date_now)
         elif isinstance(js_obj, list):
             for item in cast(list[object], js_obj):
                 if not isinstance(item, dict):
                     raise InvalidJsExtractedValueTypeError(type(item).__name__)
-                self._push_js_custom_row(cast(dict[str, object], item), col_primary_key, date_now)
+                self._push_js_custom_row(cast(dict[str, object], item), date_now)
         else:
             raise InvalidJsExtractedValueTypeError(type(js_obj).__name__)
 
-    def _push_js_custom_row(self, obj: dict[str, object], col_primary_key: str, date_now: str) -> None:
+    def _push_js_custom_row(self, obj: dict[str, object], date_now: str) -> None:
         """Insert or update a single extracted-data row from a JS-extracted dict.
 
         Args:
@@ -237,26 +239,23 @@ class ScrapingContextModel:
         assert self.extracted_data is not None
         assert self.start_session_datetime is not None
 
-        pk_value = obj.get(col_primary_key)
+        pk_value = obj.get(C_COLUMN_PRIMARY_KEY)
         if pk_value is None:
-            raise JsExtractedPrimaryKeyMissingError(col_primary_key)
+            raise JsExtractedPrimaryKeyMissingError(C_COLUMN_PRIMARY_KEY)
 
         pk_str = CsvTable.flatten_value(pk_value)
         row = CsvTable.flatten_json_to_row(obj)
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, pk_str)
         if index is None:
-            del row[col_primary_key]  # avoid duplicate column
-            row[C_COLUMN_PRIMARY_KEY] = pk_str
-            row[C_COLUMN_DATE_CREATED] = date_now
+            push_value_only_if_empty(row, C_COLUMN_DATE_CREATED, date_now)
             row[C_COLUMN_DATE_MODIFIED] = date_now
             row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            row[C_COLUMN_SOURCE] = "js_custom"
+            row[C_COLUMN_SOURCE] = "js_custom_update"
             self.extracted_data.add_row(row)
         else:
-            del row[col_primary_key]  # avoid duplicate column
             row[C_COLUMN_DATE_MODIFIED] = date_now
             row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            row[C_COLUMN_SOURCE] = "js_custom"
+            row[C_COLUMN_SOURCE] = "js_custom_create"
             self.extracted_data.update_cells(index, row)
 
     def push_links_extracted(self, links: list[str]) -> None:

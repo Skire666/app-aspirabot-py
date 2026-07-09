@@ -52,14 +52,24 @@ class CheckUrlPageExecutor(IStepExecutor):
             if p.check_path and expected.path != current.path:
                 mismatches.append(f"Chemin attendu : {expected.path!r}, obtenu : {current.path!r}")
 
+            if p.url_contains and p.url_contains not in page.url:
+                mismatches.append(f"URL doit contenir : {p.url_contains!r}, obtenu : {page.url!r}")
+
+            if p.url_end_with and not page.url.endswith(p.url_end_with):
+                mismatches.append(f"URL doit terminer par : {p.url_end_with!r}, obtenu : {page.url!r}")
+
             # check errors
             if mismatches:
                 raise UrlPageCheckMismatchError(" | ".join(mismatches))  # noqa: TRY301
             checks: list[str] = []
             if p.check_domain:
-                checks.append("Domaine OK")
+                checks.append("Domaine = OK")
             if p.check_path:
-                checks.append("Chemin OK")
+                checks.append("Chemin = OK")
+            if p.url_contains:
+                checks.append("Contient = OK")
+            if p.url_end_with:
+                checks.append("Termine par = OK")
             event_bus.log_step(context, f"URL vérifiée : '{', '.join(checks)}'")
         except Exception as exc:  # noqa: BLE001
             event_bus.log_step(context, f"Excp : {exc}")
