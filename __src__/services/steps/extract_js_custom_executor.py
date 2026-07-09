@@ -21,7 +21,12 @@ from shared.constants import (
 )
 from shared.dict_util import count_items_with_value
 from shared.enums import ProcessResultEnum, StepTypeEnum
-from shared.exception_util import ScriptExecutionFailedError
+from shared.exception_util import (
+    InsufficientDataQualityError,
+    InvalidJsExtractedValueTypeError,
+    JsExtractedPrimaryKeyMissingError,
+    ScriptExecutionFailedError,
+)
 from shared.parse_util import safe_int_from_str
 from shared.step_registry import register_step_executor
 from shared.url_util import transformer_url
@@ -97,7 +102,7 @@ class ExtractJsCustomExecutor(IStepExecutor):
         if not is_success or raw_value is None:
             raise ScriptExecutionFailedError("extract_js_custom")
         if not isinstance(raw_value, dict | list):
-            raise ScriptExecutionFailedError("extract_js_custom")
+            raise ScriptExecutionFailedError("not [dict | list]")
         return cast("dict[str, object] | list[object]", raw_value)
 
     @staticmethod
@@ -114,10 +119,10 @@ class ExtractJsCustomExecutor(IStepExecutor):
         elif isinstance(value, list):
             for item in cast(list[object], value):
                 if not isinstance(item, dict):
-                    raise ScriptExecutionFailedError("not dict")
+                    raise InvalidJsExtractedValueTypeError(type(item).__name__)
                 ExtractJsCustomExecutor._normalize_row(cast(dict[str, str], item), p, context)
         else:
-            raise ScriptExecutionFailedError("not [dict | list]")
+            raise InvalidJsExtractedValueTypeError(type(value).__name__)
 
     @staticmethod
     def _normalize_row(row: dict[str, str], p: ExtractJsCustomParams, context: ScrapingContextModel) -> None:
@@ -129,11 +134,11 @@ class ExtractJsCustomExecutor(IStepExecutor):
             context: The scraping context.
         """
         if not row or not row[C_COLUMN_PRIMARY_KEY]:
-            raise ValueError("Pas de clé primaire valide dans l'objet extrait.")
+            raise JsExtractedPrimaryKeyMissingError(C_COLUMN_PRIMARY_KEY)
 
         nbr_vals_expected = safe_int_from_str(p.quality_expected, 1)
         if count_items_with_value(row) < nbr_vals_expected:
-            raise ValueError("Qualité insuffisante (data trop vide).")
+            raise InsufficientDataQualityError(nbr_vals_expected)
 
         if context and context.transformer_url_regexp and context.transformer_url_base:
             row[C_COLUMN_PRIMARY_KEY] = transformer_url(

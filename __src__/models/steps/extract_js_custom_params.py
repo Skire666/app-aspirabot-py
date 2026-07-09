@@ -10,10 +10,9 @@ from typing import TYPE_CHECKING, Any
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
+from shared.constants import C_COLUMN_PRIMARY_KEY
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.parse_util import safe_int_from_str
-
-from __src__.shared.constants import C_COLUMN_PRIMARY_KEY
 
 if TYPE_CHECKING:
     from models.steps_collections_model import StepsCollections
@@ -21,6 +20,8 @@ if TYPE_CHECKING:
 _MIN_JS_CODE_LENGTH: int = 5
 _MAX_JS_CODE_LENGTH: int = 32_000
 _MAX_COMMENT_LENGTH: int = 100
+_MIN_QUALITY_EXPECTED: int = 1
+_MAX_QUALITY_EXPECTED: int = 999
 
 
 class ExtractJsCustomParams(BaseModel):
@@ -41,9 +42,13 @@ class ExtractJsCustomParams(BaseModel):
         if not (_MIN_JS_CODE_LENGTH <= len(v.strip()) <= _MAX_JS_CODE_LENGTH):
             raise ValueError(ERROR_TEMPLATES["extract_js_custom_js_code_invalid"].format(step=step_label(info.context)))
         if C_COLUMN_PRIMARY_KEY not in v.strip():
-            raise ValueError(f"Le code doit contenir {C_COLUMN_PRIMARY_KEY}.")
+            raise ValueError(
+                ERROR_TEMPLATES["extract_js_custom_primary_key_required"].format(
+                    step=step_label(info.context), primary_key=C_COLUMN_PRIMARY_KEY
+                )
+            )
         if "return" not in v.strip():
-            raise ValueError("Le code doit contenir un return pour renvoyer l'extraction.")
+            raise ValueError(ERROR_TEMPLATES["extract_js_custom_return_required"].format(step=step_label(info.context)))
         return v
 
     @field_validator("quality_expected")
@@ -53,7 +58,7 @@ class ExtractJsCustomParams(BaseModel):
         if not info.context:
             return v
         val = safe_int_from_str(v, -1)
-        if not (1 <= val <= 999):
+        if not (_MIN_QUALITY_EXPECTED <= val <= _MAX_QUALITY_EXPECTED):
             raise ValueError(
                 ERROR_TEMPLATES["extract_js_custom_quality_expected_invalid"].format(step=step_label(info.context))
             )

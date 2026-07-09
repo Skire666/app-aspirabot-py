@@ -157,6 +157,16 @@ _RANK_DATE_TO_TIMEDELTA_ELAPSED: list[timedelta] = [
 
 
 def get_quality_of_updating_date(current: datetime, modified: datetime) -> int:
+    """Rank the freshness of a modification date on the elapsed-time scale.
+
+    Args:
+        current: Reference date, usually now.
+        modified: Last modification date to rank.
+
+    Returns:
+        A score from 1 (older than the last threshold) up to the number of
+        thresholds + 1 (modified now or in the future); higher means fresher.
+    """
     gap = current - modified
     nbr_max = len(_RANK_DATE_TO_TIMEDELTA_ELAPSED) + 1
 

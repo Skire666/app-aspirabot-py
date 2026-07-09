@@ -57,24 +57,7 @@ class OpenUrlExecutor(IStepExecutor):
             if target_url:
                 context.last_url_opened = target_url
                 event_bus.log_step(context, f"URL suite au transformer : '{target_url}'")
-
-                timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
-                rs = browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
-
-                if rs.has_issues():
-                    result = rs.get_worst_result_enum()
-                    event_bus.log_step(
-                        context, f"Alerte durant l'ouverture de l'URL :\n{rs.concat_issues_by_order(10)}"
-                    )
-                    if result == ProcessResultEnum.E_WARNING:
-                        nbr_warnings = rs.count_severities(SeverityEnum.E_WARNING)
-                        event_bus.log_step(
-                            context, f"Page courante (x{nbr_warnings} WARNING) : {browser.get_workflow_page().url}."
-                        )
-                else:
-                    event_bus.log_step(context, f"Page ouverte : {browser.get_workflow_page().url}.")
-                    result = ProcessResultEnum.E_SUCCESS
-
+                result = self._open_url_and_report(browser, context, event_bus, p, target_url)
             else:
                 event_bus.log_step(context, "Aucune URL à ouvrir.")
                 result = ProcessResultEnum.E_ERROR
@@ -83,6 +66,40 @@ class OpenUrlExecutor(IStepExecutor):
             event_bus.log_step(context, f"Excp : {exc}")
             result = ProcessResultEnum.E_ERROR
 
+        return result
+
+    @staticmethod
+    def _open_url_and_report(
+        browser: IWebBrowserService,
+        context: ScrapingContextModel,
+        event_bus: IScrapingEventBus,
+        p: OpenUrlParams,
+        target_url: str,
+    ) -> ProcessResultEnum:
+        """Navigate to the target URL and translate the navigation issues into a step result.
+
+        Args:
+            browser: Live browser service performing the navigation.
+            context: The current scraping context.
+            event_bus: Event bus for intermediate log entries.
+            p: Open URL step parameters (timeout and wait options).
+            target_url: The URL to open.
+
+        Returns:
+            E_SUCCESS when the page opened cleanly, otherwise the worst issue severity.
+        """
+        timeout_ms = convert_to_ms(p.timeout_duration, p.timeout_unit)
+        rs = browser.safe_goto_url(target_url, p.wait_until, timeout_ms, p.wait_dns_solver)
+
+        if not rs.has_issues():
+            event_bus.log_step(context, f"Page ouverte : {browser.get_workflow_page().url}.")
+            return ProcessResultEnum.E_SUCCESS
+
+        result = rs.get_worst_result_enum()
+        event_bus.log_step(context, f"Alerte durant l'ouverture de l'URL :\n{rs.concat_issues_by_order(10)}")
+        if result == ProcessResultEnum.E_WARNING:
+            nbr_warnings = rs.count_severities(SeverityEnum.E_WARNING)
+            event_bus.log_step(context, f"Page courante (x{nbr_warnings} WARNING) : {browser.get_workflow_page().url}.")
         return result
 
     @staticmethod
@@ -114,12 +131,11 @@ class OpenUrlExecutor(IStepExecutor):
 
     @staticmethod
     def _cut_row(full_url: str | None, context: ScrapingContextModel) -> str | None:
-        """Apply the URL cleanup options to a single extracted row.
+        """Apply the URL cleanup options to the URL consumed from the source.
 
         Args:
-            row: One extracted dict, keyed by field name.
-            p: ExtractJsCustomParams instance containing the cleanup options.
-            context: The scraping context.
+            full_url: URL read from the source, or None when unavailable.
+            context: The scraping context holding the transformer options.
         """
         if full_url and context and context.transformer_url_regexp and context.transformer_url_base:
             full_url = transformer_url(

@@ -88,9 +88,10 @@ def get_timestamp_file_yyyy_mm_dd_hh_mm_ss_ffffff() -> str:
 
 
 def parse_date_from_csv(value: str | None, default: datetime | None = None) -> datetime:
-    """Parse une string en datetime.
-    Retourne datetime.now() (ou la valeur `default`) si la string est
-    null/None, vide, ou mal formatée.
+    """Parse a CSV string value into a datetime.
+
+    Returns the *default* value (1900-01-01 when not provided) if the string
+    is None, empty, a textual missing-value marker, or malformed.
     """
     if default is None:
         default = datetime(year=1900, month=1, day=1)
@@ -102,7 +103,7 @@ def parse_date_from_csv(value: str | None, default: datetime | None = None) -> d
     cleaned = value.strip()
 
     # Chaîne vide ou marqueurs textuels de valeur manquante
-    if len(cleaned) <= 0 or cleaned.lower() in ("null", "none", "nan"):
+    if len(cleaned) <= 0 or cleaned.lower() in {"null", "none", "nan"}:
         return default
 
     try:

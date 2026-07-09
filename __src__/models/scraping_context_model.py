@@ -31,11 +31,10 @@ from shared.constants import (
     C_COLUMN_SOURCE,
 )
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
+from shared.dict_util import push_value_only_if_empty
 from shared.enums import ExtractTargetEnum, ProcessResultEnum, StepTypeEnum
 from shared.exception_util import InvalidJsExtractedValueTypeError, JsExtractedPrimaryKeyMissingError
 from shared.typing.csv_table import CsvTable
-
-from __src__.shared.dict_util import push_value_only_if_empty
 
 if TYPE_CHECKING:
     from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -376,6 +375,7 @@ class ScrapingContextModel:
             self.extracted_data.update_cells(index, casted)
 
     def precompute_qualities(self) -> None:
+        """Compute and write the quality columns on the extracted data table."""
         assert self.extracted_data is not None
 
         self.extracted_data.compute_qualities()

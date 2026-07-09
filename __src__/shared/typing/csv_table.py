@@ -235,10 +235,11 @@ class CsvTable:
     # ------------------------------------------------------------------
 
     def compute_qualities(self) -> None:
-        """Return a dict mapping the number of filled cells in a row to the count of such rows.
+        """Compute the quality columns and write them into every row.
 
-        Returns:
-            A dict where keys are the number of filled cells in a row, and values are the count of rows with that number of filled cells.
+        For each row, counts the filled cells, ranks the freshness of the
+        modification date, and stores both scores plus their product in the
+        dedicated quality columns (added to the header when missing).
         """
         nw = datetime.now()
         default_date_1900 = datetime(year=1900, month=1, day=1)

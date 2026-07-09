@@ -115,12 +115,11 @@ class ExtractLinksExecutor(IStepExecutor):
 
     @staticmethod
     def _cut_row(full_url: str, context: ScrapingContextModel) -> str:
-        """Apply the URL cleanup options to a single extracted row.
+        """Apply the URL cleanup options to a single extracted link.
 
         Args:
-            row: One extracted dict, keyed by field name.
-            p: ExtractJsCustomParams instance containing the cleanup options.
-            context: The scraping context.
+            full_url: Absolute URL extracted from the page.
+            context: The scraping context holding the transformer options.
         """
         if context and context.transformer_url_regexp and context.transformer_url_base:
             full_url = transformer_url(

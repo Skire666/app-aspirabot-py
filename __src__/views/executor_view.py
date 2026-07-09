@@ -213,6 +213,12 @@ class ExecutorView(ttk.Frame):
         self._btn_test_transformer_url = MyButton(row, text="Tester", command=self._on_test_transformer_url_clicked)
         self._btn_test_transformer_url.pack_right()
 
+        self._create_transformer_regexp_field(row)
+        self._create_transformer_prefix_field(row)
+        self._create_transformer_trailing_slash_field(row)
+
+    def _create_transformer_regexp_field(self, row: ttk.Frame) -> None:
+        """Regexp entry of the transformer row; traces form changes and Tester button sync."""
         MyLabel(row, text="Regexp :").pack_left()
         self._view_traces.append(
             (
@@ -228,6 +234,8 @@ class ExecutorView(ttk.Frame):
         )
         MyEntry(row, textvariable=self._vm.transformer_url_regexp_var, width=20).pack_left()
 
+    def _create_transformer_prefix_field(self, row: ttk.Frame) -> None:
+        """Prefix entry of the transformer row; traces form changes and Tester button sync."""
         MyLabel(row, text="Préfixe").pack_left()
         self._view_traces.append(
             (
@@ -243,6 +251,8 @@ class ExecutorView(ttk.Frame):
         )
         MyEntry(row, textvariable=self._vm.transformer_url_base_var).pack_left(fill=tk.X, expand=True)
 
+    def _create_transformer_trailing_slash_field(self, row: ttk.Frame) -> None:
+        """Trailing-slash checkbox of the transformer row; traces form changes."""
         self._view_traces.append(
             (
                 self._vm.transformer_url_trailing_slash_var,

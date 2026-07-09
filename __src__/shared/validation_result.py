@@ -90,6 +90,7 @@ class ValidationResult:
         return self.count_warnings > 0
 
     def count_severities(self, severity: SeverityEnum) -> int:
+        """Return the number of issues recorded for the given severity level."""
         if severity == SeverityEnum.E_WARNING:
             return self.count_warnings
         if severity == SeverityEnum.E_ERROR:

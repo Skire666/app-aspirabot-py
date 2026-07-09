@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import cast, override
 
 from interfaces.i_scraping_event_bus import IScrapingEventBus
@@ -19,6 +20,8 @@ from shared.step_registry import register_step_executor
 # -----------------------------------------------------------------------------
 # Class
 # -----------------------------------------------------------------------------
+
+_logger = logging.getLogger(__name__)
 
 
 class RestartToBeginningExecutor(IStepExecutor):
@@ -47,7 +50,9 @@ class RestartToBeginningExecutor(IStepExecutor):
                 return ProcessResultEnum.E_SUCCESS
 
             event_bus.log_step(context, "Recommence au début")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
+            _logger.exception("Exception in RESTART_TO_BEGINNING step: %s", exc)
+            print(f"DEBUG: Exception in RESTART_TO_BEGINNING step: {exc}")
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

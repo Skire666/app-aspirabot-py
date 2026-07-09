@@ -263,22 +263,35 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         Args:
             exp: The caught exception.
-            wait_until: Playwright wait state for DNS reload.
-            timeout_ms: Navigation timeout in milliseconds.
             wait_dns_solver_sec: Seconds to wait before the DNS reload.
-            nav_retries: Current count of navigation-interrupted retries.
-            do_loop: Current loop continuation flag.
 
         Returns:
-            Updated (nav_retries, do_loop) tuple.
-
-        Raises:
-            OpenUrlTooManyRetriesError: When no known recovery path matches the error.
+            True when the retry loop may continue, False when errors/fatals must stop it.
         """
-        assert self._workflow_page is not None, "Workflow page should be initialized before..."
         assert self._last_error is not None, "ValidationResult should be initialized before..."
 
         msg = str(exp)
+        self._apply_goto_error_recovery(msg, wait_dns_solver_sec)
+
+        if self._last_error.count_severities(SeverityEnum.E_WARNING) >= _NAV_MAX_RETRIES:
+            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
+            self._last_error.append(ErrorCodeBRP.BRP_1005, SeverityEnum.E_ERROR)
+
+        if self._last_error.count_severities_by_code(ErrorCodeBRP.BRP_1001) >= _NAV_MAX_RETRIES:
+            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
+            self._last_error.append(ErrorCodeBRP.BRP_1006, SeverityEnum.E_FATAL)
+
+        return not self._last_error.has_errors_or_fatals()
+
+    def _apply_goto_error_recovery(self, msg: str, wait_dns_solver_sec: int) -> None:
+        """Apply the recovery action matching the navigation error message, as a warning.
+
+        Args:
+            msg: Navigation error message reported by Playwright.
+            wait_dns_solver_sec: Seconds to wait before the DNS reload.
+        """
+        assert self._workflow_page is not None, "Workflow page should be initialized before..."
+        assert self._last_error is not None, "ValidationResult should be initialized before..."
 
         if "context or browser has been closed" in msg:
             time.sleep(1)  # Short delay to allow any pending page-close events to process.
@@ -298,18 +311,8 @@ class BrowserPlaywrightService(IWebBrowserService):
             self._last_error.append(ErrorCodeBRP.BRP_1003, SeverityEnum.E_WARNING)
 
         if "Timeout" in msg:
-            print("DEBUG: Erreur de navigation :\n%s", msg)
+            self._logger.debug("Erreur de navigation :\n%s", msg)
             self._last_error.append(ErrorCodeBRP.BRP_1004, SeverityEnum.E_WARNING)
-
-        if self._last_error.count_severities(SeverityEnum.E_WARNING) >= _NAV_MAX_RETRIES:
-            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
-            self._last_error.append(ErrorCodeBRP.BRP_1005, SeverityEnum.E_ERROR)
-
-        if self._last_error.count_severities_by_code(ErrorCodeBRP.BRP_1001) >= _NAV_MAX_RETRIES:
-            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
-            self._last_error.append(ErrorCodeBRP.BRP_1006, SeverityEnum.E_FATAL)
-
-        return not self._last_error.has_errors_or_fatals()
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.

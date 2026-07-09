@@ -76,7 +76,8 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
 
         return result
 
-    def simplify_error_message(self, message: str) -> ErrorCodeYYD | None:
+    @staticmethod
+    def simplify_error_message(message: str) -> ErrorCodeYYD | None:
         """Simplify the error message for logging."""
         # This video is available to this channel's members
         if "video is available to this channel's members" in message:

@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 from typing import Any
 
 
@@ -10,7 +14,10 @@ def count_items_with_value(dc: dict[str, Any]) -> int:
     return cells_filled_count
 
 
-def push_value_only_if_empty(dc: dict[str, Any], key: str, value: Any) -> None:
+def push_value_only_if_empty(dc: dict[str, Any], key: str, value: object) -> None:
     """Push a value to a dict only if the key is not already present or has an empty value."""
     if key not in dc or not dc[key]:
         dc[key] = value
+
+
+# EOF

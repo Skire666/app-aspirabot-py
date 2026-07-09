@@ -101,9 +101,8 @@ class UrlsFolderRacsService(IUrlSourceProvider):
             True if the cursor has not reached the end of the list.
         """
         assert self._file_paths is not None
-        assert self._index < len(self._file_paths)
 
-        return 0 <= self._index < len(self._file_paths) - 1
+        return 0 <= self._index < len(self._file_paths)
 
     def load_next_url(self) -> None:
         """Return the next URL and advance the cursor.
@@ -154,6 +153,7 @@ class UrlsFolderRacsService(IUrlSourceProvider):
                 result.append(url)
 
         self._counted_urls = len(result)
+
         return result
 
     def count_urls(self) -> int:

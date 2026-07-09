@@ -237,6 +237,8 @@ ERROR_TEMPLATES: dict[str, str] = {
     "extract_js_custom_js_code_invalid": "[{step}.] : Code JS obligatoire : Longueur [5, 32K].",
     "extract_js_custom_quality_expected_invalid": ("[{step}.] : Qualité obligatoire : Entre 1 et 999 champs requis."),
     "extract_js_custom_comment_invalid": "[{step}.] : Commentaire requis : Longueur [1, 100].",
+    "extract_js_custom_primary_key_required": "[{step}.] : Le code doit contenir {primary_key}.",
+    "extract_js_custom_return_required": "[{step}.] : Le code doit contenir un return pour renvoyer l'extraction.",
     # --- extract_texts ---
     "extract_texts_selector_required": "[{step}.] : le sélecteur CSS est obligatoire.",
     "extract_texts_mode_invalid": "[{step}.] : mode d'extraction '{value}' invalide.",

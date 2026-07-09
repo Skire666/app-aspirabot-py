@@ -42,43 +42,38 @@ class CheckUrlPageFormDef(IStepFormDef):
     def build_form(self, frame: ttk.Frame, widgets: dict[str, Any]) -> None:
         """Build all form widgets into the given frame."""
         frame.columnconfigure(1, weight=1)
+        self._build_check_flags_line(frame, widgets)
+        self._build_entry_line(frame, widgets, "Doit contenir :", C_URL_CONTAINS)
+        self._build_entry_line(frame, widgets, "Doit terminer par :", C_URL_END_WITH)
+        self._build_entry_line(frame, widgets, "Commentaire :", C_KEY_COMMENT)
 
-        line1 = ttk.Frame(frame)
-        line1.pack(fill="x", pady=(0, 8))
+    @staticmethod
+    def _build_check_flags_line(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the domain/path checkbox line and register their BooleanVars."""
+        line = ttk.Frame(frame)
+        line.pack(fill="x", pady=(0, 8))
 
         domain_var = tk.BooleanVar(value=True)
         path_var = tk.BooleanVar(value=False)
 
-        CanvasCheckbox(line1, text="Vérifier le domaine ( [xxx.com]/yyy/ )", variable=domain_var).pack(
+        CanvasCheckbox(line, text="Vérifier le domaine ( [xxx.com]/yyy/ )", variable=domain_var).pack(
             side=tk.LEFT, padx=(0, 25)
         )
-        CanvasCheckbox(line1, text="Vérifier le chemin ( xxx.com[/yyy]/ )", variable=path_var).pack(
+        CanvasCheckbox(line, text="Vérifier le chemin ( xxx.com[/yyy]/ )", variable=path_var).pack(
             side=tk.LEFT, padx=(0, 5)
         )
         widgets[C_CHECK_DOMAIN] = domain_var
         widgets[C_CHECK_PATH] = path_var
 
-        line2 = ttk.Frame(frame)
-        line2.pack(fill="x", pady=(0, 8))
-        ttk.Label(line2, text="Doit contenir :").pack(side=tk.LEFT, padx=(0, 5))
-        url_contains_var = tk.StringVar(value="")
-        ttk.Entry(line2, textvariable=url_contains_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets[C_URL_CONTAINS] = url_contains_var
-
-        line3 = ttk.Frame(frame)
-        line3.pack(fill="x", pady=(0, 8))
-        ttk.Label(line3, text="Doit terminer par :").pack(side=tk.LEFT, padx=(0, 5))
-        url_end_with_var = tk.StringVar(value="")
-        ttk.Entry(line3, textvariable=url_end_with_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets[C_URL_END_WITH] = url_end_with_var
-
-        line4 = ttk.Frame(frame)
-        line4.pack(fill="x", pady=(0, 8))
-
-        ttk.Label(line4, text="Commentaire :").pack(side=tk.LEFT, padx=(0, 5))
-        comm_var = tk.StringVar(value="")
-        ttk.Entry(line4, textvariable=comm_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
-        widgets[C_KEY_COMMENT] = comm_var
+    @staticmethod
+    def _build_entry_line(frame: ttk.Frame, widgets: dict[str, Any], label: str, key: str) -> None:
+        """Build one labelled text-entry line and register its StringVar under *key*."""
+        line = ttk.Frame(frame)
+        line.pack(fill="x", pady=(0, 8))
+        ttk.Label(line, text=label).pack(side=tk.LEFT, padx=(0, 5))
+        var = tk.StringVar(value="")
+        ttk.Entry(line, textvariable=var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[key] = var
 
     @override
     def load_params_step_to_widget(self, params_dict: dict[str, Any], widgets: dict[str, Any]) -> None:

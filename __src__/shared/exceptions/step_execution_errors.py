@@ -83,6 +83,30 @@ class EmptyCustomUrlError(ValueError, AspirabotBaseError):
         super().__init__("URL personnalisée vide.")
 
 
+class InsufficientDataQualityError(ValueError, AspirabotBaseError):
+    """Raised when an extracted row has fewer filled fields than the expected quality."""
+
+    def __init__(self, expected: int) -> None:
+        """Initialize the error message.
+
+        Args:
+            expected: Minimum number of filled fields required.
+        """
+        super().__init__(f"Qualité insuffisante (data trop vide) : au moins {expected} champ(s) requis.")
+
+
+class UnexpectedProcessResultError(ValueError, AspirabotBaseError):
+    """Raised when a step result enum value is not handled by the statistics counters."""
+
+    def __init__(self, value: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            value: The unhandled ProcessResultEnum value, as a string.
+        """
+        super().__init__(f"Valeur ProcessResultEnum inattendue : {value}.")
+
+
 class ScriptExecutionFailedError(RuntimeError, AspirabotBaseError):
     """Raised when a browser script fails after all retries are exhausted."""
 

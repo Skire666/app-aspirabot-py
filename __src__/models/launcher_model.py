@@ -23,6 +23,9 @@ from shared.path_util import path_has_valid_syntax
 from shared.random_util import generate_rng_hexastring
 from shared.validation_result import ValidationResult
 
+# Minimum length of a plausible warmup URL (e.g. "http" prefix plus content).
+_MIN_WARMUP_URL_LENGTH: int = 4
+
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
@@ -230,7 +233,7 @@ class LaunchModel:
         if self.warmup_url.strip():
             if not self.warmup_url.startswith("http"):
                 vr.append(ErrorCodeLAM.LAM_1012, SeverityEnum.E_ERROR)
-            if len(self.warmup_url.strip()) < 4:
+            if len(self.warmup_url.strip()) < _MIN_WARMUP_URL_LENGTH:
                 vr.append(ErrorCodeLAM.LAM_1013, SeverityEnum.E_ERROR)
         if not self.transformer_url_regexp.strip() and self.transformer_url_base.strip():
             vr.append(ErrorCodeLAM.LAM_1010, SeverityEnum.E_ERROR)

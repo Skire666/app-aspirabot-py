@@ -132,7 +132,14 @@ class YoutubeSubtitlesListModel:
     def validate(self) -> ValidationResult:
         """Validate the subtitles list and return any issues found."""
         rs = ValidationResult()
+        self._append_structure_errors(rs)
+        if rs.has_errors_or_fatals():
+            return rs
+        self._append_coverage_warnings(rs)
+        return rs
 
+    def _append_structure_errors(self, rs: ValidationResult) -> None:
+        """Append structural errors: empty list, blank codes, unset or unknown origins."""
         if not self.data:
             rs.append(ErrorCodeYSL.YSL_1001, SeverityEnum.E_ERROR)
         elif any(not sub.code.strip() for sub in self.data):
@@ -142,9 +149,8 @@ class YoutubeSubtitlesListModel:
         elif any(sub.origin is SubtitleOriginEnum.E_UNKNOWN for sub in self.data):
             rs.append(ErrorCodeYSL.YSL_1005, SeverityEnum.E_ERROR)
 
-        if rs.has_errors_or_fatals():
-            return rs
-
+    def _append_coverage_warnings(self, rs: ValidationResult) -> None:
+        """Append warnings about missing FR/EN coverage or too low subtitle quality."""
         if not self.has_manual_fra_or_eng():
             rs.append(ErrorCodeYSL.YSL_1007, SeverityEnum.E_WARNING)
         if self.has_manual_but_not_fra_or_eng():
@@ -153,7 +159,6 @@ class YoutubeSubtitlesListModel:
             rs.append(ErrorCodeYSL.YSL_1008, SeverityEnum.E_WARNING)
         if not self.has_valid_quality_subtitle():
             rs.append(ErrorCodeYSL.YSL_1009, SeverityEnum.E_WARNING)
-        return rs
 
     def has_manual_fra_or_eng(self) -> bool:
         """Return True if there is at least one manual subtitle in French or English."""

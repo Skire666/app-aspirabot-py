@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from shared.enums import ProcessResultEnum, StepTypeEnum
+from shared.exception_util import UnexpectedProcessResultError
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -88,7 +89,7 @@ class StatisticsStepModel:
         elif is_success in {ProcessResultEnum.E_ERROR, ProcessResultEnum.E_FATAL}:
             self.error_not_handled += 1
         else:
-            raise ValueError(f"Unexpected ProcessResultEnum value: {is_success}")
+            raise UnexpectedProcessResultError(str(is_success))
 
 
 @dataclass
