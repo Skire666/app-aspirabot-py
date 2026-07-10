@@ -22,6 +22,8 @@ from shared.exception_util import YoutubeSubtitlesDownloadedError, YoutubeSubtit
 from shared.step_registry import register_step_executor
 from shared.youtube_util import get_id_video_youtube, sanitize_youtube_url
 
+from __src__.shared.errors.youtube_yt_dlp_error import ErrorCodeYYD
+
 
 def _require_subtitles_found(all_srt: YoutubeSubtitlesListModel | None) -> YoutubeSubtitlesListModel:
     """Raise if no subtitles were found in the video metadata.
@@ -107,10 +109,13 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
                 result = ProcessResultEnum.E_ERROR
 
         except Exception as exc:
-            # "... in to confirm your age ..." -> video age restricted
-            # "... video is not available ..." -> video not found
             self._logger.exception("An error occurred while fetching YouTube subtitles.")
-            event_bus.log_step(context, f"Excp : {exc}")
+            excp_msg_lower = str(exc).lower()
+            err_code = self.simplify_error_message(excp_msg_lower)
+            if err_code is not None:
+                event_bus.log_step(context, f"Excp : {err_code} - {err_code.value}")
+            else:
+                event_bus.log_step(context, f"Excp : {exc}")
             result = ProcessResultEnum.E_ERROR
 
         return result
@@ -178,6 +183,26 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
         target = str(out_dir / f"{id_video} - Q{srt.quality} - {srt.origin.value} - {srt.language.value}.error")
         self._repo.write_placeholder_file_when_error(Path(target))
         return False
+
+    @staticmethod
+    def simplify_error_message(message: str) -> ErrorCodeYYD | None:
+        """Simplify the error message for logging."""
+        # This video is available to this channel's members
+        if "video is available to this channel's members" in message:
+            return ErrorCodeYYD.YYD_1003
+
+        # Sign in to confirm your age. This video may be inappropriate for some users.
+        if "may be inappropriate for" in message:
+            return ErrorCodeYYD.YYD_1002
+        if "in to confirm your age" in message:
+            return ErrorCodeYYD.YYD_1002
+
+        # Video unavailable. This video is not available
+        if "video is not available" in message:
+            return ErrorCodeYYD.YYD_1001
+        if "video unavailable" in message:
+            return ErrorCodeYYD.YYD_1001
+        return None
 
     @staticmethod
     def _is_rate_limit_error(exc: Exception) -> bool:
