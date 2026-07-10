@@ -102,6 +102,7 @@ class ExecutorPresenter:
         self._vm.bind_profile_selected(self._on_profile_selected)
         self._vm.bind_new_profile(self._on_new_profile)
         self._vm.bind_rename_profile(self._on_rename_profile)
+        self._vm.bind_duplicate_profile(self._on_duplicate_profile)
         self._vm.bind_delete_profile(self._on_delete_profile)
         self._vm.bind_save_profile(self._on_save_profile)
         self._vm.bind_form_changed(self._on_form_changed)
@@ -407,6 +408,7 @@ class ExecutorPresenter:
         self._url_config_presenter.clear_url_state()
         self._vm.is_profile_section_enabled_var.set(False)
         self._vm.is_rename_btn_enabled_var.set(False)
+        self._vm.is_duplicate_btn_enabled_var.set(False)
         self._vm.is_delete_btn_enabled_var.set(False)
         self._vm.is_save_btn_enabled_var.set(False)
 
@@ -437,6 +439,23 @@ class ExecutorPresenter:
         self._vm.current_profile_name_var.set(new_name)
         self._set_dirty(True)
         self._on_save_profile()
+
+    def _on_duplicate_profile(self, new_name: str) -> None:
+        if not self._current_profile or not self._current_scenario:
+            return
+        # Duplicate what the user sees: fold pending form edits into the source first.
+        self._apply_form_to_profile()
+        try:
+            duplicate = self._svc_profiles.duplicate_profile_launch(
+                self._current_scenario.id_file, self._current_profile, new_name
+            )
+            self._current_profiles_model = self._svc_profiles.read_profiles(self._current_scenario.id_file)
+        except AspirabotBaseError:
+            self._logger.exception("Erreur lors de la duplication du profil")
+            return
+        self._push_profiles(self._current_profiles_model.launch_profiles)
+        self._vm.saved_date_var.set(self._format_saved_date(self._current_profiles_model))
+        self._select_profile_model(duplicate)
 
     def _on_delete_profile(self) -> None:
         if not self._current_profile or not self._current_scenario:
@@ -518,6 +537,7 @@ class ExecutorPresenter:
         self._is_dirty = value
         has_profile = self._current_profile is not None
         self._vm.is_rename_btn_enabled_var.set(has_profile)
+        self._vm.is_duplicate_btn_enabled_var.set(has_profile)
         self._vm.is_delete_btn_enabled_var.set(has_profile)
         self._vm.is_save_btn_enabled_var.set(value)
 

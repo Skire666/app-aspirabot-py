@@ -64,7 +64,7 @@ class ExtractJsCustomExecutor(IStepExecutor):
             raw_value = self._evaluate_and_validate(browser, p)
 
             if not raw_value:
-                event_bus.log_step(context, "Excp : Aucun texte extrait pour le code JS")
+                event_bus.log_step(context, "ERROR : Le code JS a retourné une ligne totalement vide")
                 return ProcessResultEnum.E_ERROR
 
             self._normalized_all_data(raw_value, p, context)
@@ -137,8 +137,9 @@ class ExtractJsCustomExecutor(IStepExecutor):
             raise JsExtractedPrimaryKeyMissingError(C_COLUMN_PRIMARY_KEY)
 
         nbr_vals_expected = safe_int_from_str(p.quality_expected, 1)
-        if count_items_with_value(row) < nbr_vals_expected:
-            raise InsufficientDataQualityError(nbr_vals_expected)
+        nbr_vals_found = count_items_with_value(row)
+        if nbr_vals_found < nbr_vals_expected:
+            raise InsufficientDataQualityError(nbr_vals_found, nbr_vals_expected)
 
         if context and context.transformer_url_regexp and context.transformer_url_base:
             row[C_COLUMN_PRIMARY_KEY] = transformer_url(

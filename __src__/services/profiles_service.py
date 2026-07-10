@@ -200,6 +200,30 @@ class ProfilesService:
         self._repository.create_profiles(new_profiles)
         return profile
 
+    def duplicate_profile_launch(self, id_scenario: str, source: LaunchModel, new_name: str) -> LaunchModel:
+        """Duplicate *source* under a new name and persist it in the scenario's profile list.
+
+        Delegates to :meth:`~models.launcher_model.LaunchModel.copy_business` for the
+        deep copy and fresh ID, then overrides the name with *new_name*.
+
+        Args:
+            id_scenario: Unique identifier of the scenario to which the profile belongs.
+            source: The existing profile to duplicate.
+            new_name: Display name of the duplicated profile.
+
+        Returns:
+            The persisted duplicate.
+
+        Raises:
+            DatabaseUnavailableError: If the file cannot be written to disk.
+        """
+        duplicate = LaunchModel.copy_business(source)
+        duplicate.profile_name = new_name
+        found: ProfilesModel = self._repository.read_profiles(id_scenario)
+        found.create_profile_launch(duplicate)
+        self._repository.update_profiles(found)
+        return duplicate
+
     def delete_profile_launch(self, id_scenario: str, id_profile: str) -> None:
         """Remove a profile file from disk permanently.
 

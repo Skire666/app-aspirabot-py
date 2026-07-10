@@ -156,6 +156,7 @@ class ExecutorViewModel(ViewModelBase):
         self.is_profile_section_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_edit_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_rename_btn_enabled_var = tk.BooleanVar(master=master, value=False)
+        self.is_duplicate_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_delete_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         self.is_save_btn_enabled_var = tk.BooleanVar(master=master, value=False)
         # Status Vars — URL counts written when previews are pushed by the Presenter.
@@ -212,6 +213,7 @@ class ExecutorViewModel(ViewModelBase):
         self._on_profile_selected: Callable[[str], None] | None = None
         self._on_new_profile: Callable[[str], None] | None = None
         self._on_rename_profile: Callable[[str], None] | None = None
+        self._on_duplicate_profile: Callable[[str], None] | None = None
         self._on_delete_profile: Callable[[], None] | None = None
         self._on_save_profile: Callable[[], None] | None = None
         self._on_form_changed: Callable[[], None] | None = None
@@ -447,6 +449,19 @@ class ExecutorViewModel(ViewModelBase):
             raise CallbackNotDefinedError()
         self._on_rename_profile = cb
 
+    def bind_duplicate_profile(self, cb: Callable[[str], None]) -> None:
+        """Register the handler invoked when the user confirms a duplication.
+
+        Args:
+            cb: Called with the name chosen for the duplicated profile.
+
+        Raises:
+            AspirabotBaseError: If the hook is already bound.
+        """
+        if self._on_duplicate_profile is not None:
+            raise CallbackNotDefinedError()
+        self._on_duplicate_profile = cb
+
     def bind_delete_profile(self, cb: Callable[[], None]) -> None:
         """Register the handler invoked after the user confirms deletion.
 
@@ -585,6 +600,19 @@ class ExecutorViewModel(ViewModelBase):
         if self._on_rename_profile is None:
             raise CallbackNotDefinedError()
         self._on_rename_profile(new_name)
+
+    def duplicate_profile(self, new_name: str) -> None:
+        """Dispatch a duplication confirmation with the chosen name.
+
+        Args:
+            new_name: Name of the duplicated profile entered by the user.
+
+        Raises:
+            AspirabotBaseError: If the hook is not bound.
+        """
+        if self._on_duplicate_profile is None:
+            raise CallbackNotDefinedError()
+        self._on_duplicate_profile(new_name)
 
     def delete_profile(self) -> None:
         """Dispatch a delete confirmation (user already confirmed in the View).

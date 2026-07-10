@@ -86,13 +86,14 @@ class EmptyCustomUrlError(ValueError, AspirabotBaseError):
 class InsufficientDataQualityError(ValueError, AspirabotBaseError):
     """Raised when an extracted row has fewer filled fields than the expected quality."""
 
-    def __init__(self, expected: int) -> None:
+    def __init__(self, found: int, expected: int) -> None:
         """Initialize the error message.
 
         Args:
+            found: Number of filled fields found.
             expected: Minimum number of filled fields required.
         """
-        super().__init__(f"Qualité insuffisante (data trop vide) : au moins {expected} champ(s) requis.")
+        super().__init__(f"Qualité insuffisante : x{found} < {expected} champ(s) rempli(s).")
 
 
 class UnexpectedProcessResultError(ValueError, AspirabotBaseError):

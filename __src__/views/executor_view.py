@@ -122,6 +122,9 @@ class ExecutorView(ttk.Frame):
         self._btn_rename = MyButton(row2, text="Renommer", command=self._on_rename_clicked)
         self._btn_rename.pack_left()
 
+        self._btn_duplicate = MyButton(row2, text="Dupliquer", command=self._on_duplicate_clicked)
+        self._btn_duplicate.pack_left()
+
         self._btn_delete = MyButton(row2, text="Supprimer", command=self._on_delete_clicked)
         self._btn_delete.pack_left()
 
@@ -291,6 +294,7 @@ class ExecutorView(ttk.Frame):
             (self._vm.is_profile_section_active_var, self._sync_profile_section_enabled),
             (self._vm.is_edit_btn_enabled_var, self._sync_edit_btn),
             (self._vm.is_rename_btn_enabled_var, self._sync_rename_btn),
+            (self._vm.is_duplicate_btn_enabled_var, self._sync_duplicate_btn),
             (self._vm.is_delete_btn_enabled_var, self._sync_delete_btn),
             (self._vm.is_save_btn_enabled_var, self._sync_save_btn),
         ]
@@ -311,6 +315,7 @@ class ExecutorView(ttk.Frame):
         self._sync_profile_section_enabled()
         self._sync_edit_btn()
         self._sync_rename_btn()
+        self._sync_duplicate_btn()
         self._sync_delete_btn()
         self._sync_save_btn()
 
@@ -406,6 +411,11 @@ class ExecutorView(ttk.Frame):
         state = tk.NORMAL if self._vm.is_rename_btn_enabled_var.get() else tk.DISABLED
         self._btn_rename.configure(state=state)
 
+    def _sync_duplicate_btn(self, *_: object) -> None:
+        """Mirror is_duplicate_btn_enabled_var onto the Dupliquer button."""
+        state = tk.NORMAL if self._vm.is_duplicate_btn_enabled_var.get() else tk.DISABLED
+        self._btn_duplicate.configure(state=state)
+
     def _sync_delete_btn(self, *_: object) -> None:
         """Mirror is_delete_btn_enabled_var onto the Supprimer button."""
         state = tk.NORMAL if self._vm.is_delete_btn_enabled_var.get() else tk.DISABLED
@@ -471,6 +481,14 @@ class ExecutorView(ttk.Frame):
         new_name = simpledialog.askstring("Renommer le profil", "Nouveau nom :", initialvalue=current, parent=self)
         if new_name and new_name.strip() != current:
             self._vm.rename_profile(new_name.strip())
+
+    def _on_duplicate_clicked(self) -> None:
+        current = self._vm.current_profile_name_var.get()
+        new_name = simpledialog.askstring(
+            "Dupliquer le profil", "Nom du nouveau profil :", initialvalue=f"Copie de {current}", parent=self
+        )
+        if new_name and new_name.strip():
+            self._vm.duplicate_profile(new_name.strip())
 
     def _on_delete_clicked(self) -> None:
         name = self._vm.current_profile_name_var.get()
