@@ -66,8 +66,7 @@ class YoutubeInfosVideoExecutor(IStepExecutor):
 
         except Exception as exc:
             self._logger.exception("An error occurred while fetching YouTube video info.")
-            excp_msg_lower = str(exc).lower()
-            err_code = self.simplify_error_message(excp_msg_lower)
+            err_code = ErrorCodeYYD.try_simplify_exception(exc)
             if err_code is not None:
                 event_bus.log_step(context, f"Excp : {err_code} - {err_code.value}")
             else:
