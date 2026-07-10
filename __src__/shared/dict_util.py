@@ -9,7 +9,7 @@ def count_items_with_value(dc: dict[str, Any]) -> int:
     """Count the number of items in a dict that have a non-empty value."""
     cells_filled_count = 0
     for value in dc.values():
-        if value and len(value) >= 1:
+        if value is not None and value != "":
             cells_filled_count += 1
     return cells_filled_count
 

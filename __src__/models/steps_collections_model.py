@@ -276,6 +276,7 @@ class StepsCollections:
             in {
                 StepTypeEnum.E_EXTRACT_TEXTS,
                 StepTypeEnum.E_EXTRACT_LINKS,
+                StepTypeEnum.E_EXTRACT_JS_CUSTOM,
                 StepTypeEnum.E_EXTRACT_VARIABLE,
                 StepTypeEnum.E_YOUTUBE_EXTRACT_INFOS,
             }

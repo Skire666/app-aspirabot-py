@@ -245,16 +245,16 @@ class ScrapingContextModel:
         pk_str = CsvTable.flatten_value(pk_value)
         row = CsvTable.flatten_json_to_row(obj)
         index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, pk_str)
-        if index is None:
+        if index is None:  # not found...
             push_value_only_if_empty(row, C_COLUMN_DATE_CREATED, date_now)
             row[C_COLUMN_DATE_MODIFIED] = date_now
             row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            row[C_COLUMN_SOURCE] = "js_custom_update"
+            row[C_COLUMN_SOURCE] = "js_custom_create"
             self.extracted_data.add_row(row)
         else:
             row[C_COLUMN_DATE_MODIFIED] = date_now
             row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            row[C_COLUMN_SOURCE] = "js_custom_create"
+            row[C_COLUMN_SOURCE] = "js_custom_update"
             self.extracted_data.update_cells(index, row)
 
     def push_links_extracted(self, links: list[str]) -> None:
@@ -269,20 +269,20 @@ class ScrapingContextModel:
         date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         for link in links:
             index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, link)
-            if index is None:
+            if index is None:  # not found...
                 dc = {
                     C_COLUMN_PRIMARY_KEY: link,
                     C_COLUMN_DATE_SESSION: self.start_session_datetime,
                     C_COLUMN_DATE_CREATED: date_now,
                     C_COLUMN_DATE_MODIFIED: date_now,
-                    C_COLUMN_SOURCE: "links",
+                    C_COLUMN_SOURCE: "links_create",
                 }
                 self.extracted_data.add_row(dc)
             else:
                 dc = {
                     C_COLUMN_DATE_SESSION: self.start_session_datetime,
                     C_COLUMN_DATE_MODIFIED: date_now,
-                    C_COLUMN_SOURCE: "links",
+                    C_COLUMN_SOURCE: "links_update",
                 }
                 self.extracted_data.update_cells(index, dc)
 
@@ -309,7 +309,7 @@ class ScrapingContextModel:
                 C_COLUMN_DATE_CREATED: date_now,
                 C_COLUMN_DATE_MODIFIED: date_now,
                 C_COLUMN_DATE_SESSION: self.start_session_datetime,
-                C_COLUMN_SOURCE: "texts",
+                C_COLUMN_SOURCE: "texts_create",
             }
             self.extracted_data.add_row(dc)
         else:
@@ -317,7 +317,7 @@ class ScrapingContextModel:
                 C_COLUMN_DATE_SESSION: self.start_session_datetime,
                 mapping: flt,
                 C_COLUMN_DATE_MODIFIED: date_now,
-                C_COLUMN_SOURCE: "texts",
+                C_COLUMN_SOURCE: "texts_update",
             }
             self.extracted_data.update_cells(index, dc)
 
@@ -336,7 +336,7 @@ class ScrapingContextModel:
                 mapping: value,
                 C_COLUMN_DATE_CREATED: date_now,
                 C_COLUMN_DATE_MODIFIED: date_now,
-                C_COLUMN_SOURCE: "vars",
+                C_COLUMN_SOURCE: "vars_create",
             }
             self.extracted_data.add_row(dc)
         else:
@@ -344,7 +344,7 @@ class ScrapingContextModel:
                 C_COLUMN_DATE_SESSION: self.start_session_datetime,
                 mapping: value,
                 C_COLUMN_DATE_MODIFIED: date_now,
-                C_COLUMN_SOURCE: "vars",
+                C_COLUMN_SOURCE: "vars_update",
             }
             self.extracted_data.update_cells(index, dc)
 

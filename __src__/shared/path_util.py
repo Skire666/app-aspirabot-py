@@ -169,4 +169,18 @@ def get_mtime_of_file(file_path: Path | str) -> datetime:
     return datetime.fromtimestamp(path.stat().st_mtime)
 
 
+def can_write(chemin: str | Path) -> bool:
+    p = Path(chemin)
+    try:
+        if not p.is_file():
+            p.touch()
+            return True
+        # 'r+b' ouvre en lecture/écriture SANS tronquer le fichier
+        with Path(p).open("r+b"):
+            pass
+        return True
+    except PermissionError, OSError:
+        return False
+
+
 # EOF

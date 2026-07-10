@@ -302,7 +302,7 @@ class DebugViewModel(ViewModelBase):
                 f"# innerHTML   x{len(str_inner_html)} \t : {str_inner_html}",
                 f"# outerHTML   x{len(str_outer_html)} \t : {str_outer_html}",
                 f"# value       x{len(str_input_val)} \t : {str_input_val}",
-                "---------------",
+                "",
             ]
         return "\n".join(lines)
 

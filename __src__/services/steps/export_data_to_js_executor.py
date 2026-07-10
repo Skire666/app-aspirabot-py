@@ -20,6 +20,8 @@ from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import ExportFolderNotConfiguredError, NoDataToExportError
 from shared.step_registry import register_step_executor
 
+from __src__.shared.path_util import can_write
+
 # Separator used to flatten a field's multiple extracted values into one CSV cell.
 _C_VALUES_SEPARATOR = " | "
 
@@ -52,7 +54,15 @@ class ExportDataToCsvExecutor(IStepExecutor):
 
             # write
             context.precompute_qualities()
+
+            # test before write
             dest: Path = context.folder_export / f"{p.csv_filename}.csv"
+            if not can_write(dest):
+                dest = context.folder_export / f"{p.csv_filename}.csv2"
+                event_bus.log_step(context, "ERROR : Impossible de remplacer le fichier CSV (try 2)")
+                if not can_write(dest):
+                    dest = context.folder_export / f"{p.csv_filename}.csv3"
+                    event_bus.log_step(context, "ERROR : Impossible de remplacer le fichier CSV (try 3)")
             self._csv_repository.write_file(dest, context.extracted_data)
 
             # debug

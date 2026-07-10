@@ -21,7 +21,7 @@ from shared.datetime_util import get_time_now_hh_mm_ss
 _C_TOP_TYPES_BY_TOTAL_TIME_LIMIT = 5
 _C_TOP_TYPES_BY_MEAN_TIME_LIMIT = 5
 _C_TOP_LONGEST_DURATIONS_LIMIT = 10
-_C_TOP_MESSAGES_LIMIT = 8
+_C_TOP_MESSAGES_LIMIT = 10
 
 # -----------------------------------------------------------------------------
 # Class
