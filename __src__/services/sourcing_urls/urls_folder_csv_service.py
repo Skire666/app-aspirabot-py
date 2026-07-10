@@ -161,10 +161,10 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             A string like "JSON : 3/10 fichier(s) consommé(s)".
         """
         if self._last_date_mtime_csv is None:
-            return "JSON : non chargé"
+            return "CSV : non chargé"
         if self._index >= self.count_urls():
-            return "JSON : plus aucune URL"
-        return f"JSON : {self._index} / {self.count_urls()} URLs consommé(s)"
+            return "CSV : plus aucune URL"
+        return f"CSV : {self._index} / {self.count_urls()} URLs consommé(s)"
 
     # ------------------------------------------------------------------
     # Private helpers
