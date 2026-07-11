@@ -202,11 +202,13 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         repo = CsvRepository()
         csv: CsvTable = repo.read_file(Path(self._path_to_csv))
 
+        default_date_1900 = datetime(year=1900, month=1, day=1)
+
         for row in csv.iter_rows():
             url = row.get(C_COLUMN_PRIMARY_KEY, "").strip()
             time_c_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_CREATED, ""), datetime.now())
-            time_m_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED, ""), datetime.now())
-            time_s_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_SESSION, ""), datetime.now())
+            time_m_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED, ""), default_date_1900)
+            time_s_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_SESSION, ""), default_date_1900)
             score_quality = row.get(C_COLUMN_QUALITY_MODIFIED, "").strip() or "0"
             if url and time_m_casted:
                 urls_time.append((url, time_c_casted, time_m_casted, time_s_casted, int(score_quality)))
