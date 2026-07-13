@@ -1,7 +1,18 @@
 @echo off
+setlocal
 
-cd /d "%~dp0"
+set PROJECT=app-aspirabot-py
 
-call .\venv\Scripts\activate
+for %%D in (D E F) do (
+    if exist "%%D:\%PROJECT%\__src__\main.py" (
+        cd /d "%%D:\%PROJECT%"
 
-python __src__/main.py
+        call .venv\Scripts\activate.bat
+
+        python __src__\main.py
+        exit /b
+    )
+)
+
+echo Projet introuvable sur D:, E: ou F:.
+pause
