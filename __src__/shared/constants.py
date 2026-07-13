@@ -69,7 +69,7 @@ C_SIZE_HEXASTRING_PROFILE_LAUNCH_ID: int = 8  # must be even (aka % 2 == 0)
 
 # Default paths for the persistent Chromium profile and the uBlock extension.
 C_CHROMIUM_PROFILE_DIR: str = "chromium_tmp"
-C_CHROMIUM_EXTENSIONS_DIR: str = "extensions/uBlock0_chromium"
+C_CHROMIUM_EXTENSIONS_DIR: str = "extensions/ubo_chromium"
 
 # -----------------------------------------------------------------------------
 
@@ -126,9 +126,9 @@ C_COLUMN_PRIMARY_KEY: str = "__primary_key__"
 C_COLUMN_DATE_CREATED: str = "__date_created__"
 C_COLUMN_DATE_MODIFIED: str = "__date_modified__"
 C_COLUMN_DATE_SESSION: str = "__date_session__"
-C_COLUMN_QUALITY_DATE: str = "__quality_date__"
-C_COLUMN_QUALITY_ROW: str = "__quality_row__"
-C_COLUMN_QUALITY_MODIFIED: str = "__quality_modified__"
+C_COLUMN_QUALITY_1_DATE: str = "__quality_1_date__"
+C_COLUMN_QUALITY_2_ROW: str = "__quality_2_row__"
+C_COLUMN_QUALITY_12_GLOBAL: str = "__quality_12_global__"
 C_COLUMN_SOURCE: str = "__source__"
 
 # ------------------------------------------------------------------------------

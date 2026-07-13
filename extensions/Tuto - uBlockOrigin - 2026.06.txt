@@ -12,7 +12,7 @@ Prendre un des zip chromium :
 uBOLite_2026.625.1633.chromium.zip
 
 Dézipper. Veiller à ce que le manifeste soit dans :
-extensions/uBlock0_chromium/manifest.json
+extensions/ubo_chromium/manifest.json
 
 Lancer l'application :
 Si erreur lors du scraping avec l'extension, va mettre un warning.

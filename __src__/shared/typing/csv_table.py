@@ -30,9 +30,9 @@ from typing import Any
 
 from shared.constants import (
     C_COLUMN_DATE_MODIFIED,
-    C_COLUMN_QUALITY_DATE,
-    C_COLUMN_QUALITY_MODIFIED,
-    C_COLUMN_QUALITY_ROW,
+    C_COLUMN_QUALITY_1_DATE,
+    C_COLUMN_QUALITY_2_ROW,
+    C_COLUMN_QUALITY_12_GLOBAL,
 )
 from shared.datetime_util import parse_date_from_csv
 from shared.enums.relative_date_enum import get_quality_of_updating_date
@@ -243,9 +243,9 @@ class CsvTable:
         """
         nw = datetime.now()
         default_date_1900 = datetime(year=1900, month=1, day=1)
-        self._header.add(C_COLUMN_QUALITY_ROW)
-        self._header.add(C_COLUMN_QUALITY_DATE)
-        self._header.add(C_COLUMN_QUALITY_MODIFIED)
+        self._header.add(C_COLUMN_QUALITY_2_ROW)
+        self._header.add(C_COLUMN_QUALITY_1_DATE)
+        self._header.add(C_COLUMN_QUALITY_12_GLOBAL)
 
         for row in self._rows:
             # line
@@ -256,16 +256,16 @@ class CsvTable:
                 if value and len(value) >= 1:
                     cells_filled_count += 1
 
-            row[C_COLUMN_QUALITY_ROW] = str(cells_filled_count)
+            row[C_COLUMN_QUALITY_2_ROW] = str(cells_filled_count)
 
             # time
             date_parsed = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED), default=default_date_1900)
             score_updator = get_quality_of_updating_date(nw, date_parsed)
 
-            row[C_COLUMN_QUALITY_DATE] = str(score_updator)
+            row[C_COLUMN_QUALITY_1_DATE] = str(score_updator)
 
             # heuristic
-            row[C_COLUMN_QUALITY_MODIFIED] = str(cells_filled_count * score_updator)
+            row[C_COLUMN_QUALITY_12_GLOBAL] = str(cells_filled_count * score_updator)
 
     # ------------------------------------------------------------------
     # JSON interoperability

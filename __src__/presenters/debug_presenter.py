@@ -215,7 +215,7 @@ class DebugPresenter:
                 if task is None:
                     break
                 task(page)
-        except AspirabotBaseError as exc:
+        except Exception as exc:
             self._logger.exception("Échec du démarrage du worker navigateur")
             self._push_html(f"Erreur lors du chargement :\n{exc}")
         finally:
