@@ -324,17 +324,32 @@ class CsvTable:
     ) -> None:
         self._rows.sort(
             key=lambda row: (
-                row[primary_key] if not primary_reverse else self._negate(row[primary_key]),
-                row[secondary_key] if not secondary_reverse else self._negate(row[secondary_key]),
+                self._Reversed(row[primary_key]) if primary_reverse else row[primary_key],
+                self._Reversed(row[secondary_key]) if secondary_reverse else row[secondary_key],
             )
         )
 
         for index, row in enumerate(self._rows):
             row[rank_key] = str(index)
 
-    @staticmethod
-    def _negate(value: str) -> float:
-        return -float(value)
+    class _Reversed:
+        """Wraps a value so sort() orders it descending instead of negating it.
+
+        Works for any orderable type (numeric strings, ISO "yyyy-mm-dd hh:mm:ss"
+        dates, plain strings), unlike ``-float(value)`` which crashes on
+        non-numeric values.
+        """
+
+        __slots__ = ("value",)
+
+        def __init__(self, value: str) -> None:
+            self.value = value
+
+        def __eq__(self, other: object) -> bool:
+            return isinstance(other, CsvTable._Reversed) and other.value == self.value
+
+        def __lt__(self, other: CsvTable._Reversed) -> bool:
+            return other.value < self.value
 
 
 # EOF

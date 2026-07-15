@@ -244,12 +244,12 @@ class UrlsFolderCsvService(IUrlSourceProvider):
                 urls_time.append(
                     MetaDataCsvRows(
                         primary_key=url,
-                        date_first_created=row.get(C_CSV_FIRST_CREATED, "1900-01-01"),
-                        date_last_modified=row.get(C_CSV_LAST_MODIFIED, "1900-01-01"),
+                        date_first_created=row.get(C_CSV_FIRST_CREATED, "1900-01-01 00:00:00"),
+                        date_last_modified=row.get(C_CSV_LAST_MODIFIED, "1900-01-01 00:00:00"),
                         best_extractor=row.get(C_CSV_BEST_EXTRACTOR, "e0").strip(),
-                        quality_1_date=row.get(C_CSV_QUALITY_1_DATE, "0"),
-                        quality_2_row=row.get(C_CSV_QUALITY_2_ROW, "0"),
-                        quality_3_src=row.get(C_CSV_QUALITY_3_SRC, "0"),
+                        quality_1_date=row.get(C_CSV_QUALITY_1_DATE, "1"),
+                        quality_2_row=row.get(C_CSV_QUALITY_2_ROW, "1"),
+                        quality_3_src=row.get(C_CSV_QUALITY_3_SRC, "1"),
                         score_strategy_quality=row.get(C_CSV_STRATEGY_QUALITY, "0"),
                         score_strategy_newest=row.get(C_CSV_STRATEGY_NEWEST, "0"),
                         score_strategy_oldest=row.get(C_CSV_STRATEGY_OLDEST, "0"),

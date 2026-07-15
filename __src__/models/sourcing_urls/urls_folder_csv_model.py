@@ -64,7 +64,7 @@ class UrlsFolderCsvModel(IUrlsSourceModel):
         Returns:
             A UrlsFolderCsvModel with empty string fields.
         """
-        return cls(path_to_csv="", x_top_taken=100, priority_type_used=PriorityScrapingEnum.E_UNSET)
+        return cls(path_to_csv="", x_top_taken=100, priority_type_used=PriorityScrapingEnum.E_QUALITY_BY_LOW)
 
     @classmethod
     def import_from_data_json(cls, data: dict[str, Any]) -> UrlsFolderCsvModel:

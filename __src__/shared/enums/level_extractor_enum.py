@@ -4,7 +4,7 @@
 
 from enum import Enum
 
-C_E0_STR = "e0 (UNSET)"
+C_E0_STR = "e0 (UNSET ?)"
 C_E1_STR = "e1 (discover / minimal)"
 C_E2_STR = "e2 (partial / JS)"
 C_E3_STR = "e3 (complet / API)"
@@ -25,21 +25,22 @@ class LevelExtractorEnum(Enum):
         """Convert a view string to the corresponding enum value."""
         for enum_value in cls:
             if view.startswith(enum_value.value):
-                print(f"DEBUG: view_to_enum matched view '{view}' to enum_value '{enum_value}'")
                 return enum_value
         return cls.E_E1_DISCOVER  # default to E1_DISCOVER if no match found
 
     @classmethod
-    def enum_to_view(cls, enum_value: LevelExtractorEnum) -> str:
-        """Convert an enum value to the corresponding view string."""
-        print(f"DEBUG: enum_to_view called with enum_value: {enum_value}")
-        if enum_value is cls.E_E1_DISCOVER:
+    def enum_to_view(cls, enum_value: LevelExtractorEnum | str) -> str:
+        """Convert an enum value (or its raw string value, e.g. after JSON round-trip) to the view string."""
+        try:
+            member = cls(enum_value)
+        except ValueError:
+            return C_E0_STR
+        if member is cls.E_E1_DISCOVER:
             return C_E1_STR
-        if enum_value is cls.E_E2_PARTIAL:
+        if member is cls.E_E2_PARTIAL:
             return C_E2_STR
-        if enum_value is cls.E_E3_COMPLET:
+        if member is cls.E_E3_COMPLET:
             return C_E3_STR
-        print("DEBUG: WTF ???????")
         return C_E0_STR  # default to E0_EMPTY if no match found
 
     @classmethod

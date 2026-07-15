@@ -14,7 +14,7 @@ from interfaces.i_step_executor import IStepExecutor
 from interfaces.i_web_browser_service import IWebBrowserService
 from models.scraping_context_model import ScrapingContextModel
 from models.steps.extract_js_custom_params import ExtractJsCustomParams
-from shared.constants import C_CSV_PRIMARY_KEY, C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
+from shared.constants import C_DELAY_BETWEEN_RETRY_EVALUATE_SCRIPT, C_JS_PRIMARY_KEY, C_MAXIMUM_RETRY_EVALUATE_SCRIPT
 from shared.dict_util import count_items_with_value
 from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import (
@@ -129,8 +129,8 @@ class ExtractJsCustomExecutor(IStepExecutor):
             p: ExtractJsCustomParams instance containing the cleanup options.
             context: The scraping context.
         """
-        if not row or not row[C_CSV_PRIMARY_KEY]:
-            raise JsExtractedPrimaryKeyMissingError(C_CSV_PRIMARY_KEY)
+        if not row or not row[C_JS_PRIMARY_KEY]:
+            raise JsExtractedPrimaryKeyMissingError(C_JS_PRIMARY_KEY)
 
         nbr_vals_expected = safe_int_from_str(p.quality_expected, 1)
         nbr_vals_found = count_items_with_value(row)
@@ -138,8 +138,8 @@ class ExtractJsCustomExecutor(IStepExecutor):
             raise InsufficientDataQualityError(nbr_vals_found, nbr_vals_expected)
 
         if context and context.transformer_url_regexp and context.transformer_url_base:
-            row[C_CSV_PRIMARY_KEY] = transformer_url(
-                row[C_CSV_PRIMARY_KEY],
+            row[C_JS_PRIMARY_KEY] = transformer_url(
+                row[C_JS_PRIMARY_KEY],
                 context.transformer_url_regexp,
                 context.transformer_url_base,
                 context.transformer_url_trailing_slash,

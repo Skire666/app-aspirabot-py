@@ -361,7 +361,7 @@ class ExecutorPresenter:
         # csv
         self._vm.urls_path_folder_csv_var.set(profile.urls_folder_csv.path_to_csv)
         self._vm.url_x_top_csv_var.set(str(profile.urls_folder_csv.x_top_taken))
-        self._vm.csv_priority_type_used_var.set(profile.urls_folder_csv.priority_type_used.value)
+        self._vm.csv_priority_type_used_var.set(profile.urls_folder_csv.priority_type_used.enum_to_view())
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
@@ -508,7 +508,7 @@ class ExecutorPresenter:
         # csv
         self._current_profile.urls_folder_csv.path_to_csv = self._vm.urls_path_folder_csv_var.get().strip()
         self._current_profile.urls_folder_csv.x_top_taken = int(self._vm.url_x_top_csv_var.get() or 0)
-        self._current_profile.urls_folder_csv.priority_type_used = PriorityScrapingEnum.any_to_enum(
+        self._current_profile.urls_folder_csv.priority_type_used = PriorityScrapingEnum.view_to_enum(
             self._vm.csv_priority_type_used_var.get()
         )
 

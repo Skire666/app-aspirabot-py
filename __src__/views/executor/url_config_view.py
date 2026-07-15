@@ -290,9 +290,12 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
+
         values_coloumn = PriorityScrapingEnum.to_displayable_list()
         MyLabel(row, text="Prendre en priorité : ").pack_left()
-        self._add_bound_combobox(row, self._vm.csv_priority_type_used_var, values_coloumn, width=18)
+        self._add_bound_combobox(row, self._vm.csv_priority_type_used_var, values_coloumn, width=50)
+
+        MyEntry(row, textvariable=self._vm.url_x_top_csv_var, width=6).pack_right()
         MyLabel(row, text="Limiter nombre d'URL :").pack_right()
         self._view_traces.append(
             (

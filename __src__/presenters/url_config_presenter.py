@@ -79,7 +79,7 @@ class UrlConfigPresenter:
             model = UrlsFolderCsvModel(
                 self._vm.urls_path_folder_csv_var.get().strip(),
                 int(self._vm.url_x_top_csv_var.get() or 0),
-                PriorityScrapingEnum.any_to_enum(self._vm.csv_priority_type_used_var.get()),
+                PriorityScrapingEnum.view_to_enum(self._vm.csv_priority_type_used_var.get()),
             )
             self._refresh_folder_csv_from_model(model)
 

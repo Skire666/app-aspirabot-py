@@ -118,7 +118,6 @@ class ExtractJsCustomFormDef(IStepFormDef):
         js_text.insert("1.0", params_dict.get(C_KEY_SELECTOR, ""))
 
         widgets[C_KEY_QUALITY_EXPECTED].set(params_dict.get(C_KEY_QUALITY_EXPECTED, ""))
-        print(f"DEBUG: Loading level extractor from params_dict: {params_dict.get(C_KEY_LEVEL_EXTRACTOR)}")
         enum_to_view = LevelExtractorEnum.enum_to_view(
             params_dict.get(C_KEY_LEVEL_EXTRACTOR, LevelExtractorEnum.E_E1_DISCOVER)
         )
@@ -136,7 +135,6 @@ class ExtractJsCustomFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         js_text: tk.Text = widgets[C_KEY_SELECTOR]
-        print(f"DEBUG: Reading level extractor from widget: {widgets[C_KEY_LEVEL_EXTRACTOR].get()}")
         return {
             C_KEY_SELECTOR: js_text.get("1.0", "end-1c").strip(),
             C_KEY_QUALITY_EXPECTED: widgets[C_KEY_QUALITY_EXPECTED].get().strip(),
