@@ -10,6 +10,7 @@ from typing import Any
 
 from models.steps.extract_js_custom_params import ExtractJsCustomParams
 from shared.enums import StepTypeEnum
+from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.step_registry import register_params_builder
 
 
@@ -25,6 +26,7 @@ def _build(data: dict[str, Any]) -> ExtractJsCustomParams:
     return ExtractJsCustomParams(
         js_code=data.get("js_code", ""),
         quality_expected=data.get("quality_expected", ""),
+        level_extractor=data.get("level_extractor", LevelExtractorEnum.E_E1_DISCOVER),
         comment=data.get("comment", ""),
     )
 

@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
-from shared.constants import C_COLUMN_PRIMARY_KEY
+from shared.constants import C_JS_PRIMARY_KEY
+from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.i18n_fra import ERROR_TEMPLATES
 from shared.parse_util import safe_int_from_str
 
@@ -31,6 +32,7 @@ class ExtractJsCustomParams(BaseModel):
 
     js_code: str
     quality_expected: str
+    level_extractor: LevelExtractorEnum
     comment: str = ""
 
     @field_validator("js_code")
@@ -41,10 +43,10 @@ class ExtractJsCustomParams(BaseModel):
             return v
         if not (_MIN_JS_CODE_LENGTH <= len(v.strip()) <= _MAX_JS_CODE_LENGTH):
             raise ValueError(ERROR_TEMPLATES["extract_js_custom_js_code_invalid"].format(step=step_label(info.context)))
-        if C_COLUMN_PRIMARY_KEY not in v.strip():
+        if C_JS_PRIMARY_KEY not in v.strip():
             raise ValueError(
                 ERROR_TEMPLATES["extract_js_custom_primary_key_required"].format(
-                    step=step_label(info.context), primary_key=C_COLUMN_PRIMARY_KEY
+                    step=step_label(info.context), primary_key=C_JS_PRIMARY_KEY
                 )
             )
         if "return" not in v.strip():

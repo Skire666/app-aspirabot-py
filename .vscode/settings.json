@@ -1,6 +1,15 @@
 {
+    // Utiliser Pylance comme serveur de langage
+    "python.languageServer": "Pylance",
+
+    // Désactiver le type checking de Pylance
+    "python.analysis.typeCheckingMode": "off",
+
+    // Activer les fonctionnalités de code lens pour Pylance
     "editor.codeLens": true,
-    "python.languageServer": "None",
+
+    // Utiliser uniquement les diagnostics de BasedPyright
+    "basedpyright.disableLanguageServices": true,
     "basedpyright.analysis.diagnosticMode": "workspace",
     "python.testing.pytestArgs": [
         "__tests__"

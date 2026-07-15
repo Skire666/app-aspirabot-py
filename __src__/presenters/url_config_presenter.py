@@ -15,6 +15,7 @@ from models.sourcing_urls.urls_folder_csv_model import UrlsFolderCsvModel
 from models.sourcing_urls.urls_folder_racs_model import UrlsFolderRacsModel
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.enums import RelativeDateEnum, UrlSourceTypeEnum
+from shared.enums.priority_scraping_enum import PriorityScrapingEnum
 from view_models.executor_view_model import ExecutorViewModel
 
 # -----------------------------------------------------------------------------
@@ -77,11 +78,8 @@ class UrlConfigPresenter:
         elif source_type == UrlSourceTypeEnum.E_REFRESH_URLS:
             model = UrlsFolderCsvModel(
                 self._vm.urls_path_folder_csv_var.get().strip(),
-                self._vm.url_sort_order_csv_var.get(),
                 int(self._vm.url_x_top_csv_var.get() or 0),
-                self._vm.csv_date_type_used_var.get(),
-                RelativeDateEnum.view_to_enum(self._vm.csv_date_start_var.get()),
-                RelativeDateEnum.view_to_enum(self._vm.csv_date_end_var.get()),
+                PriorityScrapingEnum.any_to_enum(self._vm.csv_priority_type_used_var.get()),
             )
             self._refresh_folder_csv_from_model(model)
 

@@ -22,7 +22,8 @@ from services.profiles_service import ProfilesService
 from services.scenarios_service import ScenariosService
 from services.sourcing_urls.sourcing_urls_service import SourcingUrlsService
 from shared.datetime_util import C_DATETIME_FORMAT_YYYY_MM_DD_HH_MM_SS
-from shared.enums import RelativeDateEnum, SeverityEnum, UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.enums import SeverityEnum, UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.enums.priority_scraping_enum import PriorityScrapingEnum
 from shared.errors.executor_error import ErrorCodeEXE
 from shared.exception_util import AspirabotBaseError
 from shared.i18n_fra import (
@@ -359,13 +360,8 @@ class ExecutorPresenter:
         self._vm.urls_path_folder_racs_var.set(profile.urls_folder_racs.folder_racs)
         # csv
         self._vm.urls_path_folder_csv_var.set(profile.urls_folder_csv.path_to_csv)
-        self._vm.url_sort_order_csv_var.set(
-            profile.urls_folder_csv.sort_order_csv or UrlSortOrderEnum.E_OLDEST_FIRST.value
-        )
         self._vm.url_x_top_csv_var.set(str(profile.urls_folder_csv.x_top_taken))
-        self._vm.csv_date_type_used_var.set(profile.urls_folder_csv.date_type_used)
-        self._vm.csv_date_start_var.set(profile.urls_folder_csv.date_start.enum_to_view())
-        self._vm.csv_date_end_var.set(profile.urls_folder_csv.date_end.enum_to_view())
+        self._vm.csv_priority_type_used_var.set(profile.urls_folder_csv.priority_type_used.value)
 
     def _push_step_vars(self, profile: LaunchModel, steps: list[StepScrapingModel]) -> None:
         """Write thresholds and emergency-stop step list into VM Vars.
@@ -511,13 +507,10 @@ class ExecutorPresenter:
 
         # csv
         self._current_profile.urls_folder_csv.path_to_csv = self._vm.urls_path_folder_csv_var.get().strip()
-        self._current_profile.urls_folder_csv.sort_order_csv = self._vm.url_sort_order_csv_var.get()
         self._current_profile.urls_folder_csv.x_top_taken = int(self._vm.url_x_top_csv_var.get() or 0)
-        self._current_profile.urls_folder_csv.date_type_used = self._vm.csv_date_type_used_var.get()
-        self._current_profile.urls_folder_csv.date_start = RelativeDateEnum.view_to_enum(
-            self._vm.csv_date_start_var.get()
+        self._current_profile.urls_folder_csv.priority_type_used = PriorityScrapingEnum.any_to_enum(
+            self._vm.csv_priority_type_used_var.get()
         )
-        self._current_profile.urls_folder_csv.date_end = RelativeDateEnum.view_to_enum(self._vm.csv_date_end_var.get())
 
         # trivia
         self._current_profile.emergency_stop_step_id = self._vm.step_id_selected_var.get()

@@ -12,6 +12,7 @@ from typing import Any, override
 
 from interfaces.i_step_form_def import IStepFormDef
 from shared.enums import StepTypeEnum
+from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.step_registry import register_form
 
 # -----------------------------------------------------------------------------
@@ -20,6 +21,7 @@ from shared.step_registry import register_form
 
 C_KEY_SELECTOR = "js_code"
 C_KEY_QUALITY_EXPECTED = "quality_expected"
+C_KEY_LEVEL_EXTRACTOR = "level_extractor"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -74,10 +76,18 @@ class ExtractJsCustomFormDef(IStepFormDef):
         row1 = ttk.Frame(frame)
         row1.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(row1, text="Qualité attendue (qté de champs alimentés) :").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text="Nbr de champs requis :").pack(side=tk.LEFT, padx=(0, 5))
         qual_key_var = tk.StringVar(value="")
-        ttk.Entry(row1, textvariable=qual_key_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        ttk.Entry(row1, textvariable=qual_key_var, width=4).pack(side=tk.LEFT, padx=(0, 5))
         widgets[C_KEY_QUALITY_EXPECTED] = qual_key_var
+
+        ttk.Label(row1, text="    ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text="Niveau d'extracteur :").pack(side=tk.LEFT, padx=(0, 5))
+        level_extractor_var = tk.StringVar(value=LevelExtractorEnum.E_E1_DISCOVER.value)
+        ttk.Combobox(
+            row1, state="readonly", textvariable=level_extractor_var, values=LevelExtractorEnum.to_displayable_list()
+        ).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_LEVEL_EXTRACTOR] = level_extractor_var
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -108,6 +118,11 @@ class ExtractJsCustomFormDef(IStepFormDef):
         js_text.insert("1.0", params_dict.get(C_KEY_SELECTOR, ""))
 
         widgets[C_KEY_QUALITY_EXPECTED].set(params_dict.get(C_KEY_QUALITY_EXPECTED, ""))
+        print(f"DEBUG: Loading level extractor from params_dict: {params_dict.get(C_KEY_LEVEL_EXTRACTOR)}")
+        enum_to_view = LevelExtractorEnum.enum_to_view(
+            params_dict.get(C_KEY_LEVEL_EXTRACTOR, LevelExtractorEnum.E_E1_DISCOVER)
+        )
+        widgets[C_KEY_LEVEL_EXTRACTOR].set(enum_to_view)
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
     @override
@@ -121,9 +136,11 @@ class ExtractJsCustomFormDef(IStepFormDef):
             Dictionary of step parameters ready for persistence in the model.
         """
         js_text: tk.Text = widgets[C_KEY_SELECTOR]
+        print(f"DEBUG: Reading level extractor from widget: {widgets[C_KEY_LEVEL_EXTRACTOR].get()}")
         return {
             C_KEY_SELECTOR: js_text.get("1.0", "end-1c").strip(),
             C_KEY_QUALITY_EXPECTED: widgets[C_KEY_QUALITY_EXPECTED].get().strip(),
+            C_KEY_LEVEL_EXTRACTOR: LevelExtractorEnum.view_to_enum(widgets[C_KEY_LEVEL_EXTRACTOR].get().strip()),
             C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
         }
 

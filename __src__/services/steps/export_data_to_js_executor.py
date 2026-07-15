@@ -18,9 +18,8 @@ from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 from repositories.csv_repository import CsvRepository
 from shared.enums import ProcessResultEnum, StepTypeEnum
 from shared.exception_util import ExportFolderNotConfiguredError, NoDataToExportError
+from shared.path_util import can_write
 from shared.step_registry import register_step_executor
-
-from __src__.shared.path_util import can_write
 
 # Separator used to flatten a field's multiple extracted values into one CSV cell.
 _C_VALUES_SEPARATOR = " | "
@@ -53,7 +52,7 @@ class ExportDataToCsvExecutor(IStepExecutor):
                 raise ExportFolderNotConfiguredError()  # noqa: TRY301
 
             # write
-            context.precompute_qualities()
+            context.precompute_strategy_quality()
 
             # test before write
             dest: Path = context.folder_export / f"{p.csv_filename}.csv"

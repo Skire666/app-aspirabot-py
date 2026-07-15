@@ -23,16 +23,11 @@ from models.step_scraping_model import StepScrapingModel
 from models.steps_collections_model import StepsCollections
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.csv_repository import CsvRepository
-from shared.constants import (
-    C_COLUMN_DATE_CREATED,
-    C_COLUMN_DATE_MODIFIED,
-    C_COLUMN_DATE_SESSION,
-    C_COLUMN_PRIMARY_KEY,
-    C_COLUMN_SOURCE,
-)
+from shared.constants import C_COLUMNS_BASED_HEADERS, C_CSV_PRIMARY_KEY, C_JS_PRIMARY_KEY
 from shared.datetime_util import get_datetime_now_yyyy_mm_dd_hh_mm_ss
-from shared.dict_util import push_value_only_if_empty
+from shared.dict_util import flatten_value, prepare_dict_json_to_dict_csv
 from shared.enums import ExtractTargetEnum, ProcessResultEnum, StepTypeEnum
+from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.exception_util import InvalidJsExtractedValueTypeError, JsExtractedPrimaryKeyMissingError
 from shared.typing.csv_table import CsvTable
 
@@ -151,7 +146,7 @@ class ScrapingContextModel:
             if csv_repository.file_exists(fullpath):
                 self.extracted_data = csv_repository.read_file(fullpath)
             else:
-                base_headers = {C_COLUMN_PRIMARY_KEY, C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_SOURCE}
+                base_headers = C_COLUMNS_BASED_HEADERS
                 self.extracted_data = CsvTable(header=base_headers)
                 csv_repository.create_file(fullpath, base_headers)
         else:
@@ -201,35 +196,33 @@ class ScrapingContextModel:
     # Push extracted data into the context's extracted_data table.
     # ------------------------------------------------------------------
 
-    def push_js_custom_extracted(self, js_obj: object) -> None:
+    def push_js_custom_extracted(self, js_obj: object, lvl_extractor: LevelExtractorEnum) -> None:
         """Push extracted JavaScript objects into the context's extracted data table.
 
         Args:
             js_obj: The JavaScript object to extract data from.
-            col_primary_key: The column name for the primary key in the extracted data.
+            lvl_extractor: The level of the extractor.
 
         Raises:
             JsExtractedPrimaryKeyMissingError: When a dict is missing *primary_key*.
             InvalidJsExtractedValueTypeError: When *js_obj* is not a dict or a list of dicts.
         """
-        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
-
         if isinstance(js_obj, dict):
-            self._push_js_custom_row(cast(dict[str, object], js_obj), date_now)
+            self._push_js_custom_row(cast(dict[str, object], js_obj), lvl_extractor)
         elif isinstance(js_obj, list):
             for item in cast(list[object], js_obj):
                 if not isinstance(item, dict):
                     raise InvalidJsExtractedValueTypeError(type(item).__name__)
-                self._push_js_custom_row(cast(dict[str, object], item), date_now)
+                self._push_js_custom_row(cast(dict[str, object], item), lvl_extractor)
         else:
             raise InvalidJsExtractedValueTypeError(type(js_obj).__name__)
 
-    def _push_js_custom_row(self, obj: dict[str, object], date_now: str) -> None:
+    def _push_js_custom_row(self, obj: dict[str, object], lvl_extractor: LevelExtractorEnum) -> None:
         """Insert or update a single extracted-data row from a JS-extracted dict.
 
         Args:
             obj: The JS-extracted dict, keyed by column name.
-            col_primary_key: Column name holding the row's primary key.
+            lvl_extractor: The level of the extractor.
             date_now: Timestamp string stamped on created/modified rows.
 
         Raises:
@@ -238,23 +231,21 @@ class ScrapingContextModel:
         assert self.extracted_data is not None
         assert self.start_session_datetime is not None
 
-        pk_value = obj.get(C_COLUMN_PRIMARY_KEY)
+        # pk
+        pk_value = obj.get(C_JS_PRIMARY_KEY)
         if pk_value is None:
-            raise JsExtractedPrimaryKeyMissingError(C_COLUMN_PRIMARY_KEY)
+            raise JsExtractedPrimaryKeyMissingError(C_JS_PRIMARY_KEY)
+        pk_str = flatten_value(pk_value)
 
-        pk_str = CsvTable.flatten_value(pk_value)
-        row = CsvTable.flatten_json_to_row(obj)
-        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, pk_str)
+        # find
+        index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, pk_str)
+
+        # write
         if index is None:  # not found...
-            push_value_only_if_empty(row, C_COLUMN_DATE_CREATED, date_now)
-            row[C_COLUMN_DATE_MODIFIED] = date_now
-            row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            row[C_COLUMN_SOURCE] = "js_custom_create"
+            row = prepare_dict_json_to_dict_csv(obj, lvl_extractor, False)
             self.extracted_data.add_row(row)
-        else:
-            row[C_COLUMN_DATE_MODIFIED] = date_now
-            row[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            row[C_COLUMN_SOURCE] = "js_custom_update"
+        else:  # found !
+            row = prepare_dict_json_to_dict_csv(obj, lvl_extractor, True)
             self.extracted_data.update_cells(index, row)
 
     def push_links_extracted(self, links: list[str]) -> None:
@@ -266,25 +257,14 @@ class ScrapingContextModel:
         assert self.extracted_data is not None
         assert self.start_session_datetime is not None
 
-        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
         for link in links:
-            index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, link)
+            index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, link)
             if index is None:  # not found...
-                dc = {
-                    C_COLUMN_PRIMARY_KEY: link,
-                    C_COLUMN_DATE_SESSION: self.start_session_datetime,
-                    C_COLUMN_DATE_CREATED: date_now,
-                    C_COLUMN_DATE_MODIFIED: date_now,
-                    C_COLUMN_SOURCE: "links_create",
-                }
-                self.extracted_data.add_row(dc)
+                row = prepare_dict_json_to_dict_csv({C_CSV_PRIMARY_KEY: link}, LevelExtractorEnum.E_E1_DISCOVER, False)
+                self.extracted_data.add_row(row)
             else:
-                dc = {
-                    C_COLUMN_DATE_SESSION: self.start_session_datetime,
-                    C_COLUMN_DATE_MODIFIED: date_now,
-                    C_COLUMN_SOURCE: "links_update",
-                }
-                self.extracted_data.update_cells(index, dc)
+                row = prepare_dict_json_to_dict_csv({C_CSV_PRIMARY_KEY: link}, LevelExtractorEnum.E_E1_DISCOVER, True)
+                self.extracted_data.update_cells(index, row)
 
     def push_texts_extracted(self, mapping: str, texts: list[str], target: ExtractTargetEnum) -> None:
         """Push extracted texts into the context's extracted data table.
@@ -297,29 +277,19 @@ class ScrapingContextModel:
         assert self.extracted_data is not None
         assert self.start_session_datetime is not None
 
-        # push
-        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
-        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        # flatten
         value_flatten = texts if target == ExtractTargetEnum.E_ALL else texts[0]
-        flt = self.extracted_data.flatten_value(value_flatten)
+        flt = flatten_value(value_flatten)
+
+        # push
+        index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, self.last_url_opened)
         if index is None:  # not found...
-            dc = {
-                C_COLUMN_PRIMARY_KEY: self.last_url_opened,
-                mapping: flt,
-                C_COLUMN_DATE_CREATED: date_now,
-                C_COLUMN_DATE_MODIFIED: date_now,
-                C_COLUMN_DATE_SESSION: self.start_session_datetime,
-                C_COLUMN_SOURCE: "texts_create",
-            }
-            self.extracted_data.add_row(dc)
-        else:
-            dc = {
-                C_COLUMN_DATE_SESSION: self.start_session_datetime,
-                mapping: flt,
-                C_COLUMN_DATE_MODIFIED: date_now,
-                C_COLUMN_SOURCE: "texts_update",
-            }
-            self.extracted_data.update_cells(index, dc)
+            dc = {C_CSV_PRIMARY_KEY: self.last_url_opened, mapping: flt}
+            row = prepare_dict_json_to_dict_csv(dc, LevelExtractorEnum.E_E2_PARTIAL, False)
+            self.extracted_data.add_row(row)
+        else:  # found !
+            row = prepare_dict_json_to_dict_csv({mapping: flt}, LevelExtractorEnum.E_E2_PARTIAL, True)
+            self.extracted_data.update_cells(index, row)
 
     def push_vars_extracted(self, mapping: str, value: str) -> None:
         """Push a single extracted variable into the context's extracted data table."""
@@ -327,26 +297,15 @@ class ScrapingContextModel:
         assert self.start_session_datetime is not None
 
         # push
-        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
-        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, self.last_url_opened)
         if index is None:  # not found...
-            dc = {
-                C_COLUMN_PRIMARY_KEY: self.last_url_opened,
-                C_COLUMN_DATE_SESSION: self.start_session_datetime,
-                mapping: value,
-                C_COLUMN_DATE_CREATED: date_now,
-                C_COLUMN_DATE_MODIFIED: date_now,
-                C_COLUMN_SOURCE: "vars_create",
-            }
-            self.extracted_data.add_row(dc)
+            row = prepare_dict_json_to_dict_csv(
+                {C_CSV_PRIMARY_KEY: self.last_url_opened, mapping: value}, LevelExtractorEnum.E_E2_PARTIAL, False
+            )
+            self.extracted_data.add_row(row)
         else:
-            dc = {
-                C_COLUMN_DATE_SESSION: self.start_session_datetime,
-                mapping: value,
-                C_COLUMN_DATE_MODIFIED: date_now,
-                C_COLUMN_SOURCE: "vars_update",
-            }
-            self.extracted_data.update_cells(index, dc)
+            row = prepare_dict_json_to_dict_csv({mapping: value}, LevelExtractorEnum.E_E2_PARTIAL, True)
+            self.extracted_data.update_cells(index, row)
 
     def push_ytdlp_extracted(self, ytdlp_data: YoutubeInfosVideoModel) -> None:
         """Push extracted YouTube data into the context's extracted data table."""
@@ -354,31 +313,24 @@ class ScrapingContextModel:
         assert self.start_session_datetime is not None
 
         # push
-        index = self.extracted_data.find_row_index(C_COLUMN_PRIMARY_KEY, self.last_url_opened)
+        index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, self.last_url_opened)
         casted = ytdlp_data.to_dict()
-        casted = self.extracted_data.flatten_json_to_row(casted)
-        date_now = get_datetime_now_yyyy_mm_dd_hh_mm_ss()
+        casted[C_CSV_PRIMARY_KEY] = self.last_url_opened
 
         if index is None:  # not found...
-            casted[C_COLUMN_PRIMARY_KEY] = self.last_url_opened
-            casted[C_COLUMN_DATE_CREATED] = date_now
-            casted[C_COLUMN_DATE_MODIFIED] = date_now
-            casted[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            casted[C_COLUMN_SOURCE] = "ytdlp"
-            # new
-            self.extracted_data.add_row(casted)
+            row = prepare_dict_json_to_dict_csv(casted, LevelExtractorEnum.E_E3_COMPLET, False)
+            self.extracted_data.add_row(row)
         else:
-            casted[C_COLUMN_DATE_MODIFIED] = date_now
-            casted[C_COLUMN_DATE_SESSION] = self.start_session_datetime
-            casted[C_COLUMN_SOURCE] = "ytdlp"
-            # update
-            self.extracted_data.update_cells(index, casted)
+            row = prepare_dict_json_to_dict_csv(casted, LevelExtractorEnum.E_E3_COMPLET, True)
+            self.extracted_data.update_cells(index, row)
 
-    def precompute_qualities(self) -> None:
+    def precompute_strategy_quality(self) -> None:
         """Compute and write the quality columns on the extracted data table."""
         assert self.extracted_data is not None
 
-        self.extracted_data.compute_qualities()
+        self.extracted_data.pre_compute_metadata_csv()
+        self.extracted_data.compute_strategy_quality()
+        self.extracted_data.compute_strategies()
 
 
 # EOF

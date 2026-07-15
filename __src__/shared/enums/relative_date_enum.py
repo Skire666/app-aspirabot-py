@@ -151,13 +151,16 @@ _RANK_DATE_TO_TIMEDELTA_ELAPSED: list[timedelta] = [
     timedelta(days=90),
     timedelta(days=365),
     timedelta(days=1095),
-    timedelta(days=3650),
-    timedelta(days=36135),
+    timedelta(days=3650),  # 10 ans
+    timedelta(days=36500),  # 100 ans
+    timedelta(days=73000),  # 200 ans
 ]
 
 
 def get_quality_of_updating_date(current: datetime, modified: datetime) -> int:
     """Rank the freshness of a modification date on the elapsed-time scale.
+
+    TLDR : higher means fresher.
 
     Args:
         current: Reference date, usually now.

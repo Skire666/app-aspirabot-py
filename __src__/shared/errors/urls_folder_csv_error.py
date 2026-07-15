@@ -15,9 +15,7 @@ class ErrorCodeUFC(ErrorCode):
     UFC_1004 = "L'ordre de tri est invalide."
     UFC_1005 = "Le fichier '.csv' n'existe pas."
     UFC_1006 = "Le fichier doit se terminer par l'extension'.csv'."
-    UFC_1007 = "Date de modif. de début est vide."
-    UFC_1008 = "Date de modif. de fin est vide."
-    UFC_1009 = "Date de modif. de début postérieure à date de modif. de fin."
+    UFC_1007 = "Le type de priorité utilisé est invalide."
     UFC_1010 = "Le nombre maximal d'élément à lire doit être >= 1"
 
     # ???

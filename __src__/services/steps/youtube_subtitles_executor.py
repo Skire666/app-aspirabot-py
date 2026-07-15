@@ -18,11 +18,10 @@ from models.scraping_context_model import ScrapingContextModel
 from models.Youtube_subtitles_list_model import YoutubeSubtitleModel, YoutubeSubtitlesListModel
 from repositories.youtube_repository import YoutubeRepository
 from shared.enums import ProcessResultEnum, StepTypeEnum
+from shared.errors.youtube_yt_dlp_error import ErrorCodeYYD
 from shared.exception_util import YoutubeSubtitlesDownloadedError, YoutubeSubtitlesNotFoundInMetadataError
 from shared.step_registry import register_step_executor
 from shared.youtube_util import get_id_video_youtube, sanitize_youtube_url
-
-from __src__.shared.errors.youtube_yt_dlp_error import ErrorCodeYYD
 
 
 def _require_subtitles_found(all_srt: YoutubeSubtitlesListModel | None) -> YoutubeSubtitlesListModel:

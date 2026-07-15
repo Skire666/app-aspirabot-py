@@ -11,8 +11,8 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 from shared.app_global_state import MyButton, MyCombobox, MyEntry, MyLabel, MyRadioButton
-from shared.constants import C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_DATE_SESSION
-from shared.enums import RelativeDateEnum, UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.enums import UrlSortOrderEnum, UrlSourceTypeEnum
+from shared.enums.priority_scraping_enum import PriorityScrapingEnum
 from shared.operating_system_util import open_folder
 from view_models.executor_view_model import ExecutorViewModel
 from views.components.folder_link_widget import FolderLinkWidget
@@ -68,7 +68,7 @@ class UrlConfigView(ttk.Frame):
         self._panels_container.pack(fill=tk.BOTH, expand=True)
         self._create_panel_manual()
         self._create_panel_folder()
-        self._create_panel_json()
+        self._create_panel_csv()
 
     def _create_radio_bar(self, parent: tk.Widget) -> None:
         """Four radio buttons sharing _panel_var — one per content panel."""
@@ -218,16 +218,15 @@ class UrlConfigView(ttk.Frame):
 
     # ─── Panel 3 : Dossier avec JSON ─────────────────────────────────────────
 
-    def _create_panel_json(self) -> None:
+    def _create_panel_csv(self) -> None:
         """Panel 3 — folder of .json files with preview and sort options."""
         self._panel_json = ttk.Frame(self._panels_container)
-        self._create_json_stats_row(self._panel_json)
-        self._create_json_path_row(self._panel_json)
-        self._create_json_dates_between(self._panel_json)
-        self._create_json_sort_row(self._panel_json)
-        self._create_json_preview_row(self._panel_json)
+        self._create_csv_stats_row(self._panel_json)
+        self._create_csv_path_row(self._panel_json)
+        self._create_csv_dates_between(self._panel_json)
+        self._create_csv_preview_row(self._panel_json)
 
-    def _create_json_path_row(self, parent: tk.Widget) -> None:
+    def _create_csv_path_row(self, parent: tk.Widget) -> None:
         """Path entry row with browse button for the JSON source panel.
 
         Args:
@@ -248,7 +247,7 @@ class UrlConfigView(ttk.Frame):
         )
         MyButton(row, text="...", width=3, command=self._browse_csvs_file).pack_right()
 
-    def _create_json_preview_row(self, parent: tk.Widget) -> None:
+    def _create_csv_preview_row(self, parent: tk.Widget) -> None:
         """Preview row with URL count and scrolled text for the JSON source panel.
 
         Args:
@@ -266,7 +265,7 @@ class UrlConfigView(ttk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self._txt_url_jsons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    def _create_json_stats_row(self, parent: tk.Widget) -> None:
+    def _create_csv_stats_row(self, parent: tk.Widget) -> None:
         """Stats row (total / unique / duplicates / empty) for the JSON source panel.
 
         Args:
@@ -283,38 +282,7 @@ class UrlConfigView(ttk.Frame):
         MyLabel(stats, text="Lignes vides :").pack_left()
         MyLabel(stats, textvariable=self._vm.url_count_jsons_empty_var, width=10).pack_left()
 
-    def _create_json_sort_row(self, parent: tk.Widget) -> None:
-        """Sort-order RadioButtons row for the JSON source panel.
-
-        Args:
-            parent: The JSON panel frame to attach widgets to.
-        """
-        row = ttk.Frame(parent)
-        row.pack(fill=tk.X)
-        MyLabel(row, text="Ordre de lecture :", width=15).pack_left()
-        MyRadioButton(
-            row,
-            text="Lire récents en 1er",
-            variable=self._vm.url_sort_order_csv_var,
-            value=UrlSortOrderEnum.E_NEWEST_FIRST.value,
-            command=lambda: self._vm.form_changed(),
-        ).pack(side=tk.LEFT, padx=(0, 15))
-        MyRadioButton(
-            row,
-            text="Lire anciens en 1er",
-            variable=self._vm.url_sort_order_csv_var,
-            value=UrlSortOrderEnum.E_OLDEST_FIRST.value,
-            command=lambda: self._vm.form_changed(),
-        ).pack(side=tk.LEFT, padx=(0, 15))
-        MyRadioButton(
-            row,
-            text="Lire prioritaires en 1er (modif. vieux + data vides)",
-            variable=self._vm.url_sort_order_csv_var,
-            value=UrlSortOrderEnum.E_PRIORITY_FIRST.value,
-            command=lambda: self._vm.form_changed(),
-        ).pack(side=tk.LEFT, padx=(0, 15))
-
-    def _create_json_dates_between(self, parent: tk.Widget) -> None:
+    def _create_csv_dates_between(self, parent: tk.Widget) -> None:
         """Date-range filter row for the JSON source panel.
 
         Args:
@@ -322,15 +290,9 @@ class UrlConfigView(ttk.Frame):
         """
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        values_coloumn = [C_COLUMN_DATE_CREATED, C_COLUMN_DATE_MODIFIED, C_COLUMN_DATE_SESSION]
-        MyLabel(row, text="Filtrer : ").pack_left()
-        self._add_bound_combobox(row, self._vm.csv_date_type_used_var, values_coloumn, width=18)
-        date_values = [e.enum_to_view() for e in RelativeDateEnum if e.is_valid()]
-        MyLabel(row, text=" entre ").pack_left()
-        self._add_bound_combobox(row, self._vm.csv_date_start_var, date_values, width=12)
-        MyLabel(row, text="et").pack_left()
-        self._add_bound_combobox(row, self._vm.csv_date_end_var, date_values, width=12)
-        MyEntry(row, textvariable=self._vm.url_x_top_csv_var, width=6).pack_right()
+        values_coloumn = PriorityScrapingEnum.to_displayable_list()
+        MyLabel(row, text="Prendre en priorité : ").pack_left()
+        self._add_bound_combobox(row, self._vm.csv_priority_type_used_var, values_coloumn, width=18)
         MyLabel(row, text="Limiter nombre d'URL :").pack_right()
         self._view_traces.append(
             (

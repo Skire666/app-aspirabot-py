@@ -23,18 +23,28 @@ numbers since ``bool`` is a subclass of ``int`` in Python.
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterable
 from datetime import datetime
-from typing import Any
 
 from shared.constants import (
-    C_COLUMN_DATE_MODIFIED,
-    C_COLUMN_QUALITY_1_DATE,
-    C_COLUMN_QUALITY_2_ROW,
-    C_COLUMN_QUALITY_12_GLOBAL,
+    C_COLUMNS_BASED_HEADERS,
+    C_CSV_BEST_EXTRACTOR,
+    C_CSV_FIRST_CREATED,
+    C_CSV_LAST_MODIFIED,
+    C_CSV_QUALITY_1_DATE,
+    C_CSV_QUALITY_2_ROW,
+    C_CSV_QUALITY_3_SRC,
+    C_CSV_STRATEGY_NEWEST,
+    C_CSV_STRATEGY_OLDEST,
+    C_CSV_STRATEGY_QUALITY,
 )
 from shared.datetime_util import parse_date_from_csv
+from shared.dict_util import (
+    set_first_date_created,
+    set_last_date_modified_and_extractor,
+    set_quality_count_filled,
+    set_quality_lvl_extractor,
+)
 from shared.enums.relative_date_enum import get_quality_of_updating_date
 from shared.exception_util import CsvRowIndexNotFoundError
 
@@ -234,7 +244,21 @@ class CsvTable:
     # Quality
     # ------------------------------------------------------------------
 
-    def compute_qualities(self) -> None:
+    def pre_compute_metadata_csv(self) -> None:
+        """Compute the metadata columns and write them into every row.
+
+        For each row, compute the quality columns and the strategy columns.
+        """
+        for col in C_COLUMNS_BASED_HEADERS:
+            self._header.add(col)
+
+        for row in self._rows:
+            set_last_date_modified_and_extractor(row)  # do first...
+            set_first_date_created(row)
+            set_quality_count_filled(row)
+            set_quality_lvl_extractor(row)  # important de le faire en dernier
+
+    def compute_strategy_quality(self) -> None:
         """Compute the quality columns and write them into every row.
 
         For each row, counts the filled cells, ranks the freshness of the
@@ -243,100 +267,43 @@ class CsvTable:
         """
         nw = datetime.now()
         default_date_1900 = datetime(year=1900, month=1, day=1)
-        self._header.add(C_COLUMN_QUALITY_2_ROW)
-        self._header.add(C_COLUMN_QUALITY_1_DATE)
-        self._header.add(C_COLUMN_QUALITY_12_GLOBAL)
 
         for row in self._rows:
-            # line
-
-            # quantity
-            cells_filled_count = 1
-            for value in row.values():
-                if value and len(value) >= 1:
-                    cells_filled_count += 1
-
-            row[C_COLUMN_QUALITY_2_ROW] = str(cells_filled_count)
-
             # time
-            date_parsed = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED), default=default_date_1900)
+            date_found = row[C_CSV_LAST_MODIFIED]
+            date_parsed = parse_date_from_csv(date_found, default=default_date_1900)
             score_updator = get_quality_of_updating_date(nw, date_parsed)
 
-            row[C_COLUMN_QUALITY_1_DATE] = str(score_updator)
+            row[C_CSV_QUALITY_1_DATE] = str(score_updator)
 
             # heuristic
-            row[C_COLUMN_QUALITY_12_GLOBAL] = str(cells_filled_count * score_updator)
+            q1 = int(row[C_CSV_QUALITY_1_DATE]) or 1
+            q2 = int(row[C_CSV_QUALITY_2_ROW]) or 1
+            q3 = int(row[C_CSV_QUALITY_3_SRC]) or 1
 
-    # ------------------------------------------------------------------
-    # JSON interoperability
-    # ------------------------------------------------------------------
+            row[C_CSV_STRATEGY_QUALITY] = str(q1 * q2 * q3)
 
-    @staticmethod
-    def flatten_json_to_row(data: dict[str, Any]) -> dict[str, str]:
-        """Flatten a top-level JSON dict into a single CSV row.
+    def compute_strategies(self) -> None:
+        """Compute the strategy columns and write them into every row.
 
-        Args:
-            data: A dict whose top-level keys become column names. Values may
-                be str, int, float, bool, None, dict or list.
-
-        Returns:
-            A dict[str, str] suitable for CsvTable.add_row / replace_row.
+        For each row, compute the quality strategy, the newest strategy and
+        the oldest strategy.
         """
-        return {key: CsvTable.flatten_value(value) for key, value in data.items()}
+        self._header.add(C_CSV_STRATEGY_NEWEST)  # youtube usage
+        self._header.add(C_CSV_STRATEGY_OLDEST)  # metacritics usage
 
-    @staticmethod
-    def unflatten_row_to_json(row: dict[str, str]) -> dict[str, Any]:
-        """Convert a CSV row back into a JSON-ready dict.
-
-        Best-effort type inference: each cell is tried as bool, int, float,
-        then JSON (for values starting with "{" or "["), falling back to the
-        raw string.
-
-        Args:
-            row: A CSV row as produced by CsvTable.get_row.
-
-        Returns:
-            A dict[str, Any] with inferred value types.
-        """
-        return {key: CsvTable._unflatten_value(value) for key, value in row.items()}
-
-    def to_json(self) -> list[dict[str, Any]]:
-        """Return every row converted to a JSON-ready dict, in order."""
-        return [self.unflatten_row_to_json(row) for row in self._rows]
-
-    @staticmethod
-    def flatten_value(value: object) -> str:
-        """Stringify a single JSON value for storage in a CSV cell."""
-        if value is None:
-            return ""
-        # bool must be checked before int/float: bool is a subclass of int in Python.
-        if isinstance(value, bool):
-            return str(value)
-        if isinstance(value, (int, float)):
-            return str(value)
-        if isinstance(value, str):
-            return value
-        return json.dumps(value, ensure_ascii=False)
-
-    @staticmethod
-    def _unflatten_value(value: str) -> object:
-        """Infer the original JSON type of a single CSV cell, best-effort."""
-        if value in {"True", "False"}:
-            return value == "True"
-        try:
-            return int(value)
-        except ValueError:
-            pass
-        try:
-            return float(value)
-        except ValueError:
-            pass
-        if value[:1] in {"{", "["}:
-            try:
-                return json.loads(value)
-            except ValueError:
-                pass
-        return value
+        self._rank_rows(
+            primary_key=C_CSV_BEST_EXTRACTOR,
+            secondary_key=C_CSV_FIRST_CREATED,
+            rank_key=C_CSV_STRATEGY_NEWEST,
+            secondary_reverse=True,  # newest first
+        )
+        self._rank_rows(
+            primary_key=C_CSV_BEST_EXTRACTOR,
+            secondary_key=C_CSV_FIRST_CREATED,
+            rank_key=C_CSV_STRATEGY_OLDEST,
+            secondary_reverse=False,  # oldest first
+        )
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -346,6 +313,28 @@ class CsvTable:
         """Raise CsvRowIndexNotFoundError when *index* is out of range."""
         if not self.has_row(index):
             raise CsvRowIndexNotFoundError(index)
+
+    def _rank_rows(
+        self,
+        primary_key: str,
+        secondary_key: str,
+        rank_key: str,
+        primary_reverse: bool = False,
+        secondary_reverse: bool = False,
+    ) -> None:
+        self._rows.sort(
+            key=lambda row: (
+                row[primary_key] if not primary_reverse else self._negate(row[primary_key]),
+                row[secondary_key] if not secondary_reverse else self._negate(row[secondary_key]),
+            )
+        )
+
+        for index, row in enumerate(self._rows):
+            row[rank_key] = str(index)
+
+    @staticmethod
+    def _negate(value: str) -> float:
+        return -float(value)
 
 
 # EOF

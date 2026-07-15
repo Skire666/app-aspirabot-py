@@ -12,10 +12,9 @@ Discovery is lazy: the folder is scanned only on the first ``load_url_if_availab
 
 from __future__ import annotations
 
-import heapq
 import logging
+from dataclasses import dataclass
 from datetime import datetime
-from operator import itemgetter
 from pathlib import Path
 
 from interfaces.i_url_source_provider import IUrlSourceProvider
@@ -23,14 +22,19 @@ from interfaces.i_urls_source_model import IUrlsSourceModel
 from models.sourcing_urls.urls_folder_csv_model import UrlsFolderCsvModel
 from repositories.csv_repository import CsvRepository
 from shared.constants import (
-    C_COLUMN_DATE_CREATED,
-    C_COLUMN_DATE_MODIFIED,
-    C_COLUMN_DATE_SESSION,
-    C_COLUMN_PRIMARY_KEY,
-    C_COLUMN_QUALITY_12_GLOBAL,
+    C_CSV_BEST_EXTRACTOR,
+    C_CSV_FIRST_CREATED,
+    C_CSV_LAST_MODIFIED,
+    C_CSV_PRIMARY_KEY,
+    C_CSV_QUALITY_1_DATE,
+    C_CSV_QUALITY_2_ROW,
+    C_CSV_QUALITY_3_SRC,
+    C_CSV_STRATEGY_NEWEST,
+    C_CSV_STRATEGY_OLDEST,
+    C_CSV_STRATEGY_QUALITY,
 )
 from shared.datetime_util import parse_date_from_csv
-from shared.enums import UrlSortOrderEnum
+from shared.enums.priority_scraping_enum import PriorityScrapingEnum
 from shared.exception_util import InvalidUrlSourceValueTypeError
 from shared.path_util import get_mtime_of_file
 from shared.typing.csv_table import CsvTable
@@ -40,6 +44,44 @@ from shared.typing.csv_table import CsvTable
 # -----------------------------------------------------------------------------
 
 _logger = logging.getLogger(__name__)
+
+
+@dataclass
+class MetaDataCsvRows:
+    primary_key: str
+    date_first_created: datetime
+    date_last_modified: datetime
+    best_extractor: str
+    quality_1_date: int
+    quality_2_row: int
+    quality_3_src: int
+    score_strategy_quality: int
+    score_strategy_newest: int
+    score_strategy_oldest: int
+
+    def __init__(
+        self,
+        primary_key: str,
+        date_first_created: str,
+        date_last_modified: str,
+        best_extractor: str,
+        quality_1_date: str,
+        quality_2_row: str,
+        quality_3_src: str,
+        score_strategy_quality: str,
+        score_strategy_newest: str,
+        score_strategy_oldest: str,
+    ):
+        self.primary_key = primary_key
+        self.date_first_created = parse_date_from_csv(date_first_created)
+        self.date_last_modified = parse_date_from_csv(date_last_modified)
+        self.best_extractor = best_extractor
+        self.quality_1_date = int(quality_1_date)
+        self.quality_2_row = int(quality_2_row)
+        self.quality_3_src = int(quality_3_src)
+        self.score_strategy_quality = int(score_strategy_quality)
+        self.score_strategy_newest = int(score_strategy_newest)
+        self.score_strategy_oldest = int(score_strategy_oldest)
 
 
 class UrlsFolderCsvService(IUrlSourceProvider):
@@ -59,15 +101,12 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         # cache
         self._last_date_mtime_csv: datetime | None = None
         self._last_path_to_csv: str = ""
-        self._last_urls_readed: list[tuple[str, datetime, datetime, datetime, int]] = []
+        self._last_urls_readed: list[MetaDataCsvRows] = []
 
         # model
         self._path_to_csv: str = ""
-        self._sort_order: UrlSortOrderEnum = UrlSortOrderEnum.E_OLDEST_FIRST
         self._x_top_taken: int = 0
-        self._date_type_used: str = C_COLUMN_DATE_CREATED
-        self._date_modified_newest: datetime = datetime.max
-        self._date_modified_oldest: datetime = datetime.min
+        self._piority_type_used: PriorityScrapingEnum = PriorityScrapingEnum.E_UNSET
 
         # obj
         self._urls_filtred: list[str] = []
@@ -89,11 +128,8 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         """
         if isinstance(model, UrlsFolderCsvModel):
             self._path_to_csv = model.path_to_csv
-            self._sort_order = UrlSortOrderEnum(model.sort_order_csv)
             self._x_top_taken = model.x_top_taken
-            self._date_type_used = model.date_type_used
-            self._date_modified_newest = model.date_start.to_datetime()
-            self._date_modified_oldest = model.date_end.to_datetime()
+            self._piority_type_used = model.priority_type_used
         else:
             raise InvalidUrlSourceValueTypeError("folder_csv", "UrlsFolderCsvModel", type(model).__name__)
 
@@ -196,54 +232,55 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             self._last_urls_readed = self._collect_urls()
         self._urls_filtred = self._filter_and_sort_urls(self._last_urls_readed)
 
-    def _collect_urls(self) -> list[tuple[str, datetime, datetime, datetime, int]]:
+    def _collect_urls(self) -> list[MetaDataCsvRows]:
         """Scan all files and build a url→mtime map; duplicates keep the newest mtime."""
-        urls_time: list[tuple[str, datetime, datetime, datetime, int]] = []
+        urls_time: list[MetaDataCsvRows] = []
         repo = CsvRepository()
         csv: CsvTable = repo.read_file(Path(self._path_to_csv))
 
-        default_date_1900 = datetime(year=1900, month=1, day=1)
-
         for row in csv.iter_rows():
-            url = row.get(C_COLUMN_PRIMARY_KEY, "").strip()
-            time_c_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_CREATED, ""), datetime.now())
-            time_m_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_MODIFIED, ""), default_date_1900)
-            time_s_casted = parse_date_from_csv(row.get(C_COLUMN_DATE_SESSION, ""), default_date_1900)
-            score_quality = row.get(C_COLUMN_QUALITY_12_GLOBAL, "").strip() or "0"
-            if url and time_m_casted:
-                urls_time.append((url, time_c_casted, time_m_casted, time_s_casted, int(score_quality)))
-
+            url = row.get(C_CSV_PRIMARY_KEY, "").strip()
+            if url:
+                urls_time.append(
+                    MetaDataCsvRows(
+                        primary_key=url,
+                        date_first_created=row.get(C_CSV_FIRST_CREATED, "1900-01-01"),
+                        date_last_modified=row.get(C_CSV_LAST_MODIFIED, "1900-01-01"),
+                        best_extractor=row.get(C_CSV_BEST_EXTRACTOR, "e0").strip(),
+                        quality_1_date=row.get(C_CSV_QUALITY_1_DATE, "0"),
+                        quality_2_row=row.get(C_CSV_QUALITY_2_ROW, "0"),
+                        quality_3_src=row.get(C_CSV_QUALITY_3_SRC, "0"),
+                        score_strategy_quality=row.get(C_CSV_STRATEGY_QUALITY, "0"),
+                        score_strategy_newest=row.get(C_CSV_STRATEGY_NEWEST, "0"),
+                        score_strategy_oldest=row.get(C_CSV_STRATEGY_OLDEST, "0"),
+                    )
+                )
         return urls_time
 
-    def _filter_and_sort_urls(self, url_with_time: list[tuple[str, datetime, datetime, datetime, int]]) -> list[str]:
+    def _filter_and_sort_urls(self, url_with_time: list[MetaDataCsvRows]) -> list[str]:
         """Apply date range filter and sort order; return the final ordered URL list."""
-        # 1. On sort les attributs de la boucle (accès attribut = coûteux en Python)
-        newest = self._date_modified_newest
-        oldest = self._date_modified_oldest
+        # On sort les attributs de la boucle (accès attribut = coûteux en Python)
         top_n = self._x_top_taken
 
-        # 2. Filtre sur la plage de dates
-        filtered: list[tuple[str, datetime, datetime, datetime, int]] = []
-        index = 4  # E_PRIORITY_FIRST
-        if self._date_type_used == C_COLUMN_DATE_CREATED:
-            index = 1
-            filtered = [item for item in url_with_time if oldest <= item[1] <= newest]
-        elif self._date_type_used == C_COLUMN_DATE_MODIFIED:
-            index = 2
-            filtered = [item for item in url_with_time if oldest <= item[2] <= newest]
-        elif self._date_type_used == C_COLUMN_DATE_SESSION:
-            index = 3
-            filtered = [item for item in url_with_time if oldest <= item[3] <= newest]
+        # Tri
+        if self._piority_type_used == PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW:
+            sorted_urls = sorted(url_with_time, key=lambda x: x.date_first_created, reverse=True)
+        elif self._piority_type_used == PriorityScrapingEnum.E_LAST_CREATED_BY_OLD:
+            sorted_urls = sorted(url_with_time, key=lambda x: x.date_first_created)
+        elif self._piority_type_used == PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW:
+            sorted_urls = sorted(url_with_time, key=lambda x: x.date_last_modified, reverse=True)
+        elif self._piority_type_used == PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD:
+            sorted_urls = sorted(url_with_time, key=lambda x: x.date_last_modified)
+        elif self._piority_type_used == PriorityScrapingEnum.E_QUALITY_BY_LOW:
+            sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_quality)
+        elif self._piority_type_used == PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST:
+            sorted_urls = sorted(url_with_time, key=lambda x: (x.best_extractor, -x.date_last_modified.timestamp()))
+        elif self._piority_type_used == PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST:
+            sorted_urls = sorted(url_with_time, key=lambda x: (x.best_extractor, x.date_last_modified.timestamp()))
+        else:
+            raise ValueError(f"Unknown priority type used: {self._piority_type_used}")
 
-        # 3. Tri (via heapq, pour ne garder que le top N sans trier toute la liste) + top N
-        if self._sort_order == UrlSortOrderEnum.E_PRIORITY_FIRST:
-            top_items = heapq.nsmallest(top_n, filtered, key=itemgetter(4))
-        elif self._sort_order == UrlSortOrderEnum.E_NEWEST_FIRST:
-            top_items = heapq.nlargest(top_n, filtered, key=itemgetter(index))
-        else:  # E_OLDEST_FIRST
-            top_items = heapq.nsmallest(top_n, filtered, key=itemgetter(index))
-
-        return [item[0] for item in top_items]
+        return [item.primary_key for item in sorted_urls[:top_n]]
 
 
 # EOF
