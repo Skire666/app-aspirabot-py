@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, cast
 
 from models.app_configuration_model import AppConfigurationModel
 from models.step_scraping_model import StepScrapingModel
+from models.steps.export_data_to_csv_params import ExportDataToCsvParams
 from models.steps_collections_model import StepsCollections
 from models.youtube_infos_video_model import YoutubeInfosVideoModel
 from repositories.csv_repository import CsvRepository
@@ -260,10 +261,12 @@ class ScrapingContextModel:
         for link in links:
             index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, link)
             if index is None:  # not found...
-                row = prepare_dict_json_to_dict_csv({C_CSV_PRIMARY_KEY: link}, LevelExtractorEnum.E_E1_DISCOVER, False)
+                row = prepare_dict_json_to_dict_csv(
+                    {C_CSV_PRIMARY_KEY: link}, LevelExtractorEnum.E_E1_LIST_LINKS, False
+                )
                 self.extracted_data.add_row(row)
             else:
-                row = prepare_dict_json_to_dict_csv({C_CSV_PRIMARY_KEY: link}, LevelExtractorEnum.E_E1_DISCOVER, True)
+                row = prepare_dict_json_to_dict_csv({C_CSV_PRIMARY_KEY: link}, LevelExtractorEnum.E_E1_LIST_LINKS, True)
                 self.extracted_data.update_cells(index, row)
 
     def push_texts_extracted(self, mapping: str, texts: list[str], target: ExtractTargetEnum) -> None:
@@ -285,10 +288,10 @@ class ScrapingContextModel:
         index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, self.last_url_opened)
         if index is None:  # not found...
             dc = {C_CSV_PRIMARY_KEY: self.last_url_opened, mapping: flt}
-            row = prepare_dict_json_to_dict_csv(dc, LevelExtractorEnum.E_E2_PARTIAL, False)
+            row = prepare_dict_json_to_dict_csv(dc, LevelExtractorEnum.E_E3_BASIC_INFO, False)
             self.extracted_data.add_row(row)
         else:  # found !
-            row = prepare_dict_json_to_dict_csv({mapping: flt}, LevelExtractorEnum.E_E2_PARTIAL, True)
+            row = prepare_dict_json_to_dict_csv({mapping: flt}, LevelExtractorEnum.E_E3_BASIC_INFO, True)
             self.extracted_data.update_cells(index, row)
 
     def push_vars_extracted(self, mapping: str, value: str) -> None:
@@ -300,11 +303,11 @@ class ScrapingContextModel:
         index = self.extracted_data.find_row_index(C_CSV_PRIMARY_KEY, self.last_url_opened)
         if index is None:  # not found...
             row = prepare_dict_json_to_dict_csv(
-                {C_CSV_PRIMARY_KEY: self.last_url_opened, mapping: value}, LevelExtractorEnum.E_E2_PARTIAL, False
+                {C_CSV_PRIMARY_KEY: self.last_url_opened, mapping: value}, LevelExtractorEnum.E_E3_BASIC_INFO, False
             )
             self.extracted_data.add_row(row)
         else:
-            row = prepare_dict_json_to_dict_csv({mapping: value}, LevelExtractorEnum.E_E2_PARTIAL, True)
+            row = prepare_dict_json_to_dict_csv({mapping: value}, LevelExtractorEnum.E_E3_BASIC_INFO, True)
             self.extracted_data.update_cells(index, row)
 
     def push_ytdlp_extracted(self, ytdlp_data: YoutubeInfosVideoModel) -> None:
@@ -318,19 +321,23 @@ class ScrapingContextModel:
         casted[C_CSV_PRIMARY_KEY] = self.last_url_opened
 
         if index is None:  # not found...
-            row = prepare_dict_json_to_dict_csv(casted, LevelExtractorEnum.E_E3_COMPLET, False)
+            row = prepare_dict_json_to_dict_csv(casted, LevelExtractorEnum.E_E5_API_INFO, False)
             self.extracted_data.add_row(row)
         else:
-            row = prepare_dict_json_to_dict_csv(casted, LevelExtractorEnum.E_E3_COMPLET, True)
+            row = prepare_dict_json_to_dict_csv(casted, LevelExtractorEnum.E_E5_API_INFO, True)
             self.extracted_data.update_cells(index, row)
 
-    def precompute_strategy_quality(self) -> None:
+    def normalize_datas_for_csv(self, p: ExportDataToCsvParams, folder_export: Path) -> None:
         """Compute and write the quality columns on the extracted data table."""
         assert self.extracted_data is not None
 
+        self.extracted_data.fix_metadata_with_default()
+        self.extracted_data.fix_basic_data_with_default()
         self.extracted_data.pre_compute_metadata_csv()
         self.extracted_data.compute_strategy_quality()
         self.extracted_data.compute_strategies()
+        self.extracted_data.export_all_image_base64_to_external(folder_export)
+        self.extracted_data.do_aggregators(p.aggregators_list)
 
 
 # EOF

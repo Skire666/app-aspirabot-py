@@ -22,7 +22,11 @@ def _build(data: dict[str, Any]) -> ExportDataToCsvParams:
     Returns:
         A fully populated ExportDataToCsvParams instance.
     """
-    return ExportDataToCsvParams(csv_filename=data.get("csv_filename", ""), comment=data.get("comment", ""))
+    return ExportDataToCsvParams(
+        csv_filename=data.get("csv_filename", ""),
+        aggregators_list=data.get("aggregators_list", ""),
+        comment=data.get("comment", ""),
+    )
 
 
 register_params_builder(StepTypeEnum.E_EXPORT_DATA_TO_CSV, _build)

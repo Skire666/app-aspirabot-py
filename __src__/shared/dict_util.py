@@ -11,7 +11,6 @@ from shared.constants import (
     C_CSV_LAST_MODIFIED,
     C_CSV_PRIMARY_KEY,
     C_CSV_QUALITY_2_ROW,
-    C_CSV_QUALITY_3_SRC,
     C_JS_PRIMARY_KEY,
     C_SUB_COLUMN_DATE_CREATED,
     C_SUB_COLUMN_DATE_MODIFIED,
@@ -84,11 +83,15 @@ def set_quality_count_filled(row: dict[str, str]) -> None:
 
 def set_last_date_modified_and_extractor(row: dict[str, str]) -> None:
     """Get the last modified date from *row*."""
-    # ordre important !!!! E3 -> E1
+    # ordre important !!!! E5 -> E1
     date_modified: list[str] = [
-        LevelExtractorEnum.E_E3_COMPLET.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
-        LevelExtractorEnum.E_E2_PARTIAL.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
-        LevelExtractorEnum.E_E1_DISCOVER.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
+        # pas de E6 -> agrégation des sources, car on ne sait pas si c'est le meilleur extracteur
+        LevelExtractorEnum.E_E5_API_INFO.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
+        LevelExtractorEnum.E_E4_EXTEND_INFO.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
+        LevelExtractorEnum.E_E3_BASIC_INFO.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
+        LevelExtractorEnum.E_E2_DISCOVER.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
+        LevelExtractorEnum.E_E1_LIST_LINKS.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
+        LevelExtractorEnum.E_E0_MANUAL_ENTRY.value + "." + C_SUB_COLUMN_DATE_MODIFIED,
     ]
 
     for dt_header in date_modified:
@@ -106,9 +109,13 @@ def set_first_date_created(row: dict[str, str]) -> None:
     """Get the first created date from *row*."""
     # ordre important !!!! E1 -> E3
     date_created: list[str] = [
-        LevelExtractorEnum.E_E1_DISCOVER.value + "." + C_SUB_COLUMN_DATE_CREATED,
-        LevelExtractorEnum.E_E2_PARTIAL.value + "." + C_SUB_COLUMN_DATE_CREATED,
-        LevelExtractorEnum.E_E3_COMPLET.value + "." + C_SUB_COLUMN_DATE_CREATED,
+        # pas de E6 -> agrégation des sources, car on ne sait pas si c'est le meilleur extracteur
+        LevelExtractorEnum.E_E0_MANUAL_ENTRY.value + "." + C_SUB_COLUMN_DATE_CREATED,
+        LevelExtractorEnum.E_E1_LIST_LINKS.value + "." + C_SUB_COLUMN_DATE_CREATED,
+        LevelExtractorEnum.E_E2_DISCOVER.value + "." + C_SUB_COLUMN_DATE_CREATED,
+        LevelExtractorEnum.E_E3_BASIC_INFO.value + "." + C_SUB_COLUMN_DATE_CREATED,
+        LevelExtractorEnum.E_E4_EXTEND_INFO.value + "." + C_SUB_COLUMN_DATE_CREATED,
+        LevelExtractorEnum.E_E5_API_INFO.value + "." + C_SUB_COLUMN_DATE_CREATED,
     ]
 
     for dt_header in date_created:
@@ -118,22 +125,6 @@ def set_first_date_created(row: dict[str, str]) -> None:
 
     row[C_CSV_FIRST_CREATED] = "1900-01-01 00:00:00"  # default value
     row[C_CSV_BEST_EXTRACTOR] = "e0"  # undefined ?
-
-
-def set_quality_lvl_extractor(row: dict[str, str]) -> None:
-    """Determine the quality level of *row* based on its extractor level."""
-    quality_src = 1
-    if C_CSV_BEST_EXTRACTOR in row:
-        lvl = row[C_CSV_BEST_EXTRACTOR]
-        if lvl == LevelExtractorEnum.E_E3_COMPLET.value:  # complet (souvent API)
-            quality_src = 100
-        if lvl == LevelExtractorEnum.E_E2_PARTIAL.value:  # parteille (JS à la mano)
-            quality_src = 50
-        if lvl == LevelExtractorEnum.E_E1_DISCOVER.value:  # discover (minimlaliste)
-            quality_src = 25
-        if lvl == LevelExtractorEnum.E_E0_EMPTY.value:  # undefined ?
-            quality_src = 1
-    row[C_CSV_QUALITY_3_SRC] = str(quality_src)
 
 
 # EOF

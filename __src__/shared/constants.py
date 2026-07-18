@@ -125,34 +125,37 @@ C_STATE_JUMP_TO_STEP_FAILURE: str = "failure"
 C_JS_PRIMARY_KEY: str = "primary_key"
 
 # par extractor. Préfixe :
-# e0 -> si rien ou undefined
-# e1 -> discover (minimaliste)
-# e2 -> partielle (souvent JS)
-# e3 -> complète (souvent API)
+# "e0" -> entrée manuelle
+# "e1" -> liens basiques
+# "e2" -> discover (minimaliste)
+# "e3" -> fiche basique (JS)
+# "e4" -> fiche détaillée (JS)
+# "e5" -> complet (souvent API)
+# "e6" -> agrégation des sources
 C_SUB_COLUMN_DATE_CREATED: str = "date_created"
 C_SUB_COLUMN_DATE_MODIFIED: str = "date_modified"
 
 # metadata
+C_CSV_INDEX: str = "csv.index"
 C_CSV_PRIMARY_KEY: str = "csv.primary_key"
 C_CSV_FIRST_CREATED: str = "csv.first_created"
 C_CSV_LAST_MODIFIED: str = "csv.last_modified"
 C_CSV_BEST_EXTRACTOR: str = "csv.best_extractor"
 C_CSV_QUALITY_1_DATE: str = "csv.quality_1_date"
 C_CSV_QUALITY_2_ROW: str = "csv.quality_2_row"
-C_CSV_QUALITY_3_SRC: str = "csv.quality_3_src"
 C_CSV_STRATEGY_QUALITY: str = "csv.strategy_quality"
 C_CSV_STRATEGY_NEWEST: str = "csv.strategy_newest"
 C_CSV_STRATEGY_OLDEST: str = "csv.strategy_oldest"
 
 # base header
 C_COLUMNS_BASED_HEADERS = {
+    C_CSV_INDEX,
     C_CSV_PRIMARY_KEY,
     C_CSV_FIRST_CREATED,
     C_CSV_LAST_MODIFIED,
     C_CSV_BEST_EXTRACTOR,
     C_CSV_QUALITY_1_DATE,
     C_CSV_QUALITY_2_ROW,
-    C_CSV_QUALITY_3_SRC,
     C_CSV_STRATEGY_QUALITY,
     C_CSV_STRATEGY_NEWEST,
     C_CSV_STRATEGY_OLDEST,

@@ -21,6 +21,7 @@ from shared.step_registry import register_form
 C_INPUT_DEFAULT_EXPORT = "export"  # export_urls_done_2026-06-07_09h21m29s028210.json
 
 C_KEY_PREFIX = "csv_filename"
+C_KEY_AGGREGATORS = "aggregators_list"
 C_KEY_COMMENT = "comment"
 
 # -----------------------------------------------------------------------------
@@ -45,6 +46,7 @@ class ExportDataToJsFormDef(IStepFormDef):
             widgets: Mutable mapping populated with tk.Variable references keyed by W_* constants.
         """
         self._build_subform_prefix(frame, widgets)
+        self._build_subform_aggregator(frame, widgets)
         self._build_subform_comment(frame, widgets)
 
     @staticmethod
@@ -62,6 +64,22 @@ class ExportDataToJsFormDef(IStepFormDef):
         sel_var = tk.StringVar(value=C_INPUT_DEFAULT_EXPORT)
         ttk.Entry(row0, textvariable=sel_var).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
         widgets[C_KEY_PREFIX] = sel_var
+
+    @staticmethod
+    def _build_subform_aggregator(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
+        """Build the JS code input row.
+
+        Args:
+            frame: Parent frame to pack the row into.
+            widgets: Mutable mapping; populated with the C_KEY_SELECTOR tk.Text widget.
+        """
+        row0 = ttk.Frame(frame)
+        row0.pack(fill="x", pady=(0, 8))
+
+        ttk.Label(row0, text="Agréger\na = e0.b\ne6.a=e1.b").pack(side=tk.LEFT, padx=(0, 5), anchor="n")
+        js_text = tk.Text(row0, height=3, wrap="none", font=("Courier New", 9))
+        js_text.pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
+        widgets[C_KEY_AGGREGATORS] = js_text
 
     @staticmethod
     def _build_subform_comment(frame: ttk.Frame, widgets: dict[str, Any]) -> None:
@@ -87,6 +105,10 @@ class ExportDataToJsFormDef(IStepFormDef):
             params_dict: Serialised step parameters keyed by field name.
             widgets: Mutable mapping of widget name to tk.Variable reference.
         """
+        js_text: tk.Text = widgets[C_KEY_AGGREGATORS]
+        js_text.delete("1.0", "end")
+        js_text.insert("1.0", params_dict.get(C_KEY_AGGREGATORS, ""))
+
         widgets[C_KEY_PREFIX].set(params_dict.get(C_KEY_PREFIX, C_INPUT_DEFAULT_EXPORT))
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))
 
@@ -100,7 +122,13 @@ class ExportDataToJsFormDef(IStepFormDef):
         Returns:
             Dictionary of step parameters ready for persistence in the model.
         """
-        return {C_KEY_PREFIX: widgets[C_KEY_PREFIX].get().strip(), C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip()}
+        js_text: tk.Text = widgets[C_KEY_AGGREGATORS]
+
+        return {
+            C_KEY_PREFIX: widgets[C_KEY_PREFIX].get().strip(),
+            C_KEY_AGGREGATORS: js_text.get("1.0", "end-1c").strip(),
+            C_KEY_COMMENT: widgets[C_KEY_COMMENT].get().strip(),
+        }
 
 
 register_form(ExportDataToJsFormDef())

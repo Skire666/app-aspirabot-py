@@ -26,7 +26,7 @@ def _build(data: dict[str, Any]) -> ExtractJsCustomParams:
     return ExtractJsCustomParams(
         js_code=data.get("js_code", ""),
         quality_expected=data.get("quality_expected", ""),
-        level_extractor=data.get("level_extractor", LevelExtractorEnum.E_E1_DISCOVER),
+        level_extractor=data.get("level_extractor", LevelExtractorEnum.E_E0_MANUAL_ENTRY),
         comment=data.get("comment", ""),
     )
 

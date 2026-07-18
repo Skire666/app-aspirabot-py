@@ -132,6 +132,8 @@ class ScrapingService:
 
         # Initialise the browser and run all steps.
         cancelled = self._run_browser_lifecycle(scenario)
+        self._context.url_source.reset()
+
         return self._build_report(cancelled)
 
     @property

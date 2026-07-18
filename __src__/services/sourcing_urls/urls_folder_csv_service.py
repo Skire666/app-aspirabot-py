@@ -24,18 +24,20 @@ from repositories.csv_repository import CsvRepository
 from shared.constants import (
     C_CSV_BEST_EXTRACTOR,
     C_CSV_FIRST_CREATED,
+    C_CSV_INDEX,
     C_CSV_LAST_MODIFIED,
     C_CSV_PRIMARY_KEY,
     C_CSV_QUALITY_1_DATE,
     C_CSV_QUALITY_2_ROW,
-    C_CSV_QUALITY_3_SRC,
     C_CSV_STRATEGY_NEWEST,
     C_CSV_STRATEGY_OLDEST,
     C_CSV_STRATEGY_QUALITY,
 )
 from shared.datetime_util import parse_date_from_csv
+from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.enums.priority_scraping_enum import PriorityScrapingEnum
 from shared.exception_util import InvalidUrlSourceValueTypeError
+from shared.parse_util import safe_int_from_str
 from shared.path_util import get_mtime_of_file
 from shared.typing.csv_table import CsvTable
 
@@ -48,40 +50,40 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class MetaDataCsvRows:
+    index: int
     primary_key: str
     date_first_created: datetime
     date_last_modified: datetime
     best_extractor: str
     quality_1_date: int
     quality_2_row: int
-    quality_3_src: int
     score_strategy_quality: int
     score_strategy_newest: int
     score_strategy_oldest: int
 
     def __init__(
         self,
+        index: str,
         primary_key: str,
         date_first_created: str,
         date_last_modified: str,
         best_extractor: str,
         quality_1_date: str,
         quality_2_row: str,
-        quality_3_src: str,
         score_strategy_quality: str,
         score_strategy_newest: str,
         score_strategy_oldest: str,
     ):
+        self.index = safe_int_from_str(index, 0)
         self.primary_key = primary_key
         self.date_first_created = parse_date_from_csv(date_first_created)
         self.date_last_modified = parse_date_from_csv(date_last_modified)
-        self.best_extractor = best_extractor
-        self.quality_1_date = int(quality_1_date)
-        self.quality_2_row = int(quality_2_row)
-        self.quality_3_src = int(quality_3_src)
-        self.score_strategy_quality = int(score_strategy_quality)
-        self.score_strategy_newest = int(score_strategy_newest)
-        self.score_strategy_oldest = int(score_strategy_oldest)
+        self.best_extractor = best_extractor or LevelExtractorEnum.E_E0_MANUAL_ENTRY.value
+        self.quality_1_date = safe_int_from_str(quality_1_date, 1)
+        self.quality_2_row = safe_int_from_str(quality_2_row, 1)
+        self.score_strategy_quality = safe_int_from_str(score_strategy_quality, 0)
+        self.score_strategy_newest = safe_int_from_str(score_strategy_newest, 0)
+        self.score_strategy_oldest = safe_int_from_str(score_strategy_oldest, 0)
 
 
 class UrlsFolderCsvService(IUrlSourceProvider):
@@ -243,13 +245,13 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             if url:
                 urls_time.append(
                     MetaDataCsvRows(
+                        index=row.get(C_CSV_INDEX, "0"),
                         primary_key=url,
                         date_first_created=row.get(C_CSV_FIRST_CREATED, "1900-01-01 00:00:00"),
                         date_last_modified=row.get(C_CSV_LAST_MODIFIED, "1900-01-01 00:00:00"),
-                        best_extractor=row.get(C_CSV_BEST_EXTRACTOR, "e0").strip(),
+                        best_extractor=row.get(C_CSV_BEST_EXTRACTOR, LevelExtractorEnum.E_E0_MANUAL_ENTRY.value),
                         quality_1_date=row.get(C_CSV_QUALITY_1_DATE, "1"),
                         quality_2_row=row.get(C_CSV_QUALITY_2_ROW, "1"),
-                        quality_3_src=row.get(C_CSV_QUALITY_3_SRC, "1"),
                         score_strategy_quality=row.get(C_CSV_STRATEGY_QUALITY, "0"),
                         score_strategy_newest=row.get(C_CSV_STRATEGY_NEWEST, "0"),
                         score_strategy_oldest=row.get(C_CSV_STRATEGY_OLDEST, "0"),
@@ -264,9 +266,9 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
         # Tri
         if self._piority_type_used == PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.date_first_created, reverse=True)
+            sorted_urls = sorted(url_with_time, key=lambda x: x.index)
         elif self._piority_type_used == PriorityScrapingEnum.E_LAST_CREATED_BY_OLD:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.date_first_created)
+            sorted_urls = sorted(url_with_time, key=lambda x: x.index, reverse=True)
         elif self._piority_type_used == PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW:
             sorted_urls = sorted(url_with_time, key=lambda x: x.date_last_modified, reverse=True)
         elif self._piority_type_used == PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD:
@@ -274,9 +276,9 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         elif self._piority_type_used == PriorityScrapingEnum.E_QUALITY_BY_LOW:
             sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_quality)
         elif self._piority_type_used == PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST:
-            sorted_urls = sorted(url_with_time, key=lambda x: (x.best_extractor, -x.date_last_modified.timestamp()))
+            sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_newest)
         elif self._piority_type_used == PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST:
-            sorted_urls = sorted(url_with_time, key=lambda x: (x.best_extractor, x.date_last_modified.timestamp()))
+            sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_oldest)
         else:
             raise ValueError(f"Unknown priority type used: {self._piority_type_used}")
 

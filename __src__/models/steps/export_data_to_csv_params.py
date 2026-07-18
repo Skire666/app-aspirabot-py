@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from models.steps.base_step_params import extract_pydantic_errors, step_label
 from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
+from shared.aggregators_util import validate_aggregators_list
 from shared.i18n_fra import ERROR_TEMPLATES
 
 if TYPE_CHECKING:
@@ -20,8 +21,8 @@ class ExportDataToCsvParams(BaseModel):
     """Parameters for the export data to JS scraping step."""
 
     model_config = ConfigDict(frozen=True)
-
     csv_filename: str = ""
+    aggregators_list: str = ""
     comment: str = ""
 
     @field_validator("csv_filename")
@@ -35,9 +36,22 @@ class ExportDataToCsvParams(BaseModel):
                 ERROR_TEMPLATES["export_data_to_js_csv_filename_required"].format(step=step_label(info.context))
             )
         if not v.replace("_", "").isalnum():
-            raise ValueError(
-                ERROR_TEMPLATES["extract_key_mapping_alphanumeric"].format(step=step_label(info.context))
-            )
+            raise ValueError(ERROR_TEMPLATES["extract_key_mapping_alphanumeric"].format(step=step_label(info.context)))
+        return v
+
+    @field_validator("aggregators_list")
+    @classmethod
+    def check_aggregators_list(cls, v: str, info: ValidationInfo) -> str:
+        """Validate that aggregators_list is non-empty."""
+        if not info.context:
+            return v
+        if not v.strip():
+            # ok
+            return v
+        # check ?
+        r = validate_aggregators_list(v)
+        if not r.is_valid:
+            raise ValueError(r.message)
         return v
 
     def to_dict(self) -> dict[str, Any]:

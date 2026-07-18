@@ -83,7 +83,7 @@ class ExtractJsCustomFormDef(IStepFormDef):
 
         ttk.Label(row1, text="    ").pack(side=tk.LEFT, padx=(0, 5))
         ttk.Label(row1, text="Niveau d'extracteur :").pack(side=tk.LEFT, padx=(0, 5))
-        level_extractor_var = tk.StringVar(value=LevelExtractorEnum.E_E1_DISCOVER.value)
+        level_extractor_var = tk.StringVar(value=LevelExtractorEnum.E_E0_MANUAL_ENTRY.value)
         ttk.Combobox(
             row1, state="readonly", textvariable=level_extractor_var, values=LevelExtractorEnum.to_displayable_list()
         ).pack(side=tk.LEFT, fill="x", expand=True, padx=(0, 5))
@@ -119,7 +119,7 @@ class ExtractJsCustomFormDef(IStepFormDef):
 
         widgets[C_KEY_QUALITY_EXPECTED].set(params_dict.get(C_KEY_QUALITY_EXPECTED, ""))
         enum_to_view = LevelExtractorEnum.enum_to_view(
-            params_dict.get(C_KEY_LEVEL_EXTRACTOR, LevelExtractorEnum.E_E1_DISCOVER)
+            params_dict.get(C_KEY_LEVEL_EXTRACTOR, LevelExtractorEnum.E_E0_MANUAL_ENTRY)
         )
         widgets[C_KEY_LEVEL_EXTRACTOR].set(enum_to_view)
         widgets[C_KEY_COMMENT].set(params_dict.get(C_KEY_COMMENT, ""))

@@ -164,7 +164,9 @@ def _fmt_download_image(params: dict[str, Any], _idx: int, _ctx: dict[str, int])
 def _fmt_export_data_to_js(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:
     """Format label for EXPORT_DATA_TO_CSV."""
     csv_fname = params.get("csv_filename") or "<vide>"
-    return f"Exporter vers fichier CSV\nNom : {csv_fname}.csv"
+    aggregators = params.get("aggregators_list") or "<vide>"
+    pp = f"{aggregators.replace(chr(10), ''):.25}...(len x{len(aggregators)})" if len(aggregators) > 25 else aggregators
+    return f"Exporter vers fichier CSV - Préfixe : {csv_fname} (.csv)\nAgréger : {pp}"
 
 
 def _fmt_extract_links(params: dict[str, Any], _idx: int, _ctx: dict[str, int]) -> str:

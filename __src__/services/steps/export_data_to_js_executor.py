@@ -47,12 +47,12 @@ class ExportDataToCsvExecutor(IStepExecutor):
         p = cast(ExportDataToCsvParams, context.step_scraping_data.params)
         try:
             if not context.extracted_data:
-                raise NoDataToExportError()  # noqa: TRY301
+                raise NoDataToExportError()  # ruff:ignore[raise-within-try]
             if str(context.folder_export) in {".", ""}:
-                raise ExportFolderNotConfiguredError()  # noqa: TRY301
+                raise ExportFolderNotConfiguredError()  # ruff:ignore[raise-within-try]
 
             # write
-            context.precompute_strategy_quality()
+            context.normalize_datas_for_csv(p, context.folder_export)
 
             # test before write
             dest: Path = context.folder_export / f"{p.csv_filename}.csv"

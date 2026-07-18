@@ -25,28 +25,28 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import datetime
+from pathlib import Path
 
+from shared.aggregators_util import parse_aggregators_list, validate_aggregators_list
 from shared.constants import (
     C_COLUMNS_BASED_HEADERS,
     C_CSV_BEST_EXTRACTOR,
     C_CSV_FIRST_CREATED,
+    C_CSV_INDEX,
     C_CSV_LAST_MODIFIED,
+    C_CSV_PRIMARY_KEY,
     C_CSV_QUALITY_1_DATE,
     C_CSV_QUALITY_2_ROW,
-    C_CSV_QUALITY_3_SRC,
     C_CSV_STRATEGY_NEWEST,
     C_CSV_STRATEGY_OLDEST,
     C_CSV_STRATEGY_QUALITY,
 )
 from shared.datetime_util import parse_date_from_csv
-from shared.dict_util import (
-    set_first_date_created,
-    set_last_date_modified_and_extractor,
-    set_quality_count_filled,
-    set_quality_lvl_extractor,
-)
+from shared.dict_util import set_first_date_created, set_last_date_modified_and_extractor, set_quality_count_filled
+from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.enums.relative_date_enum import get_quality_of_updating_date
 from shared.exception_util import CsvRowIndexNotFoundError
+from shared.image_base64_util import export_base64_image
 
 # -----------------------------------------------------------------------------
 # Class
@@ -143,7 +143,7 @@ class CsvTable:
             CsvColumnNotFoundError: When *column* is not part of the header.
         """
         # cached ?
-        if self._cached_index >= 0 and self._cached_index < len(self._rows):  # noqa: SIM102
+        if self._cached_index >= 0 and self._cached_index < len(self._rows):  # ruff:ignore[collapsible-if]
             if self._rows[self._cached_index][column] == value:
                 return self._cached_index
 
@@ -167,7 +167,7 @@ class CsvTable:
         """
         self._header.add(column)
 
-    def add_row(self, row: dict[str, str]) -> int:
+    def add_row(self, row: dict[str, str]) -> None:
         """Append *row* and return its new index.
 
         Columns absent from *row* default to "". Extra keys not in the
@@ -177,23 +177,14 @@ class CsvTable:
         Raises:
             CsvColumnNotFoundError: When *row* has a key outside the header.
         """
+        if C_CSV_INDEX not in row or row.get(C_CSV_INDEX) is None:
+            length = len(self._rows) if self._rows else 0
+            row[C_CSV_INDEX] = str(length)
+
         self._rows.append(row)
         for key in row:
             if key not in self._header:
                 self._header.add(key)
-        return len(self._rows) - 1
-
-    def replace_row(self, index: int, row: dict[str, str]) -> None:
-        """Replace the row at *index* with *row*, keeping its "__id__".
-
-        Raises:
-            CsvRowIndexNotFoundError: When *index* is out of range.
-            CsvColumnNotFoundError: When *row* has a key outside the header.
-        """
-        self._require_row(index)
-        self._rows[index] = row
-        for key, _ in row:
-            self.add_column(key)
 
     def update_cell(self, index: int, column: str, value: str) -> None:
         """Set a single cell at (*index*, *column*) to *value*.
@@ -244,19 +235,57 @@ class CsvTable:
     # Quality
     # ------------------------------------------------------------------
 
+    def fix_metadata_with_default(self) -> None:
+        """Fix the data in the table.
+
+        This method is a placeholder for any data cleaning or transformation
+        that needs to be applied to the table before exporting or further processing.
+        """
+        for col in C_COLUMNS_BASED_HEADERS:
+            self._header.add(col)
+        self.fill_missing_columns()
+
+        # re-write index
+        self._rank_rows(
+            primary_key=C_CSV_FIRST_CREATED,
+            secondary_key=C_CSV_INDEX,
+            rank_key=C_CSV_INDEX,
+            secondary_reverse=False,  # oldest first
+        )
+
+    def fix_basic_data_with_default(self) -> None:  # ruff:ignore[complex-structure]
+        """Fix the basic data in the table.
+
+        This method is a placeholder for any basic data cleaning or transformation
+        that needs to be applied to the table before exporting or further processing.
+        """
+        for row in self._rows:
+            if C_CSV_FIRST_CREATED in row and row.get(C_CSV_FIRST_CREATED) is None:
+                row[C_CSV_FIRST_CREATED] = "1900-01-01 00:00:00"
+            if C_CSV_LAST_MODIFIED in row and row.get(C_CSV_LAST_MODIFIED) is None:
+                row[C_CSV_LAST_MODIFIED] = "1900-01-01 00:00:00"
+            if C_CSV_BEST_EXTRACTOR in row and row.get(C_CSV_BEST_EXTRACTOR) is None:
+                row[C_CSV_BEST_EXTRACTOR] = LevelExtractorEnum.E_E0_MANUAL_ENTRY.value
+            if C_CSV_QUALITY_1_DATE in row and row.get(C_CSV_QUALITY_1_DATE) is None:
+                row[C_CSV_QUALITY_1_DATE] = "1"
+            if C_CSV_QUALITY_2_ROW in row and row.get(C_CSV_QUALITY_2_ROW) is None:
+                row[C_CSV_QUALITY_2_ROW] = "1"
+            if C_CSV_STRATEGY_QUALITY in row and row.get(C_CSV_STRATEGY_QUALITY) is None:
+                row[C_CSV_STRATEGY_QUALITY] = "0"
+            if C_CSV_STRATEGY_NEWEST in row and row.get(C_CSV_STRATEGY_NEWEST) is None:
+                row[C_CSV_STRATEGY_NEWEST] = "0"
+            if C_CSV_STRATEGY_OLDEST in row and row.get(C_CSV_STRATEGY_OLDEST) is None:
+                row[C_CSV_STRATEGY_OLDEST] = "0"
+
     def pre_compute_metadata_csv(self) -> None:
         """Compute the metadata columns and write them into every row.
 
         For each row, compute the quality columns and the strategy columns.
         """
-        for col in C_COLUMNS_BASED_HEADERS:
-            self._header.add(col)
-
         for row in self._rows:
             set_last_date_modified_and_extractor(row)  # do first...
             set_first_date_created(row)
             set_quality_count_filled(row)
-            set_quality_lvl_extractor(row)  # important de le faire en dernier
 
     def compute_strategy_quality(self) -> None:
         """Compute the quality columns and write them into every row.
@@ -279,9 +308,8 @@ class CsvTable:
             # heuristic
             q1 = int(row[C_CSV_QUALITY_1_DATE]) or 1
             q2 = int(row[C_CSV_QUALITY_2_ROW]) or 1
-            q3 = int(row[C_CSV_QUALITY_3_SRC]) or 1
 
-            row[C_CSV_STRATEGY_QUALITY] = str(q1 * q2 * q3)
+            row[C_CSV_STRATEGY_QUALITY] = str(q1 * q2)
 
     def compute_strategies(self) -> None:
         """Compute the strategy columns and write them into every row.
@@ -304,6 +332,52 @@ class CsvTable:
             rank_key=C_CSV_STRATEGY_OLDEST,
             secondary_reverse=False,  # oldest first
         )
+
+    def export_all_image_base64_to_external(self, folder_export: Path) -> None:
+        """Export the image to an external file.
+
+        For each row, export the image to an external file.
+        """
+        for row in self._rows:
+            for col in row:
+                value = row.get(col, "")
+                # data:image/png;base64,iVBORw0KGgoAAAANSUhEUg... ???
+                if value and len(value) > 16 and value.startswith("data:image"):
+                    # export image to external file
+                    image_data = row[col]
+                    url_unique_keys = row.get(C_CSV_PRIMARY_KEY, "")
+                    new_vals = export_base64_image(col, url_unique_keys, image_data, folder_export)
+                    row[col] = "![[" + new_vals + "]]"  # syntaxe obsidian
+
+    def do_aggregators(self, aggregators_list: str) -> None:
+        """Apply the aggregators to the table.
+
+        For each row, apply the aggregators to the table.
+        """
+        if not aggregators_list:
+            # nothgin ? it's okay...
+            return
+
+        is_valid = validate_aggregators_list(aggregators_list)
+        if not is_valid:
+            raise ValueError(f"Invalid aggregators list: {aggregators_list}")
+
+        pairs = parse_aggregators_list(aggregators_list)
+
+        for kv in pairs:
+            print(f"0) row[{kv.e6}] = {kv.sourcing}")
+            for row in self._rows:
+                if kv.sourcing in row:
+                    column_e6 = kv.e6
+                    if not kv.e6.startswith(LevelExtractorEnum.E_E6_AGGREGATE.value + "."):
+                        column_e6 = LevelExtractorEnum.E_E6_AGGREGATE.value + "." + kv.e6
+                    # value exist ?
+                    value_fallback = row.get(kv.sourcing)
+                    if value_fallback and value_fallback != "":
+                        row[column_e6] = value_fallback
+                    self._header.add(column_e6)
+                # else:
+                #     print(f"Column '{kv.sourcing}' not found in row")
 
     # ------------------------------------------------------------------
     # Private helpers

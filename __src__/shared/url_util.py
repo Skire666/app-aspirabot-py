@@ -44,6 +44,8 @@ def transformer_url(
     if not match:
         return url
     captured = match.group(1) if match.groups() else match.group(0)
+    if not captured:
+        return url
     result = transformer_url_base + captured
     if transformer_url_trailing_slash and not result.endswith("/"):
         result += "/"

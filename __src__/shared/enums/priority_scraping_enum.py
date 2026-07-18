@@ -79,24 +79,34 @@ class PriorityScrapingEnum(Enum):
         ]
 
 
-_LABEL_TO_PRIORITY_SCRAPING: dict[str, PriorityScrapingEnum] = {
-    "Date création -> récent vers vieux": PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW,
-    "Date création -> vieux vers récent": PriorityScrapingEnum.E_LAST_CREATED_BY_OLD,
-    "Date modification -> récent vers vieux": PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW,
-    "Date modification -> vieux vers récent": PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD,
-    "Qualité faible à compléter": PriorityScrapingEnum.E_QUALITY_BY_LOW,
-    "Nouvelles entrées à compléter": PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST,
-    "Anciennes entrées à compléter": PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST,
-}
-
-_PRIORITY_SCRAPING_TO_LABEL = {
-    PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW: "Date création -> récent vers vieux",
-    PriorityScrapingEnum.E_LAST_CREATED_BY_OLD: "Date création -> vieux vers récent",
-    PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW: "Date modification -> récent vers vieux",
-    PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD: "Date modification -> vieux vers récent",
+_PRIORITY_SCRAPING_TO_LABEL: dict[PriorityScrapingEnum, str] = {
+    PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW: "Ordre de création -> Prendre 1er ",
+    PriorityScrapingEnum.E_LAST_CREATED_BY_OLD: "Ordre de création -> Prendre dernier",
+    PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW: "Ordre de modification -> Prendre récents",
+    PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD: "Ordre de modification -> Prendre anciens",
     PriorityScrapingEnum.E_QUALITY_BY_LOW: "Qualité faible à compléter",
     PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST: "Nouvelles entrées à compléter",
     PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST: "Anciennes entrées à compléter",
+}
+
+_LABEL_TO_PRIORITY_SCRAPING: dict[str, PriorityScrapingEnum] = {
+    _PRIORITY_SCRAPING_TO_LABEL[
+        PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW
+    ]: PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW,
+    _PRIORITY_SCRAPING_TO_LABEL[PriorityScrapingEnum.E_LAST_CREATED_BY_OLD]: PriorityScrapingEnum.E_LAST_CREATED_BY_OLD,
+    _PRIORITY_SCRAPING_TO_LABEL[
+        PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW
+    ]: PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW,
+    _PRIORITY_SCRAPING_TO_LABEL[
+        PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD
+    ]: PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD,
+    _PRIORITY_SCRAPING_TO_LABEL[PriorityScrapingEnum.E_QUALITY_BY_LOW]: PriorityScrapingEnum.E_QUALITY_BY_LOW,
+    _PRIORITY_SCRAPING_TO_LABEL[
+        PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST
+    ]: PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST,
+    _PRIORITY_SCRAPING_TO_LABEL[
+        PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST
+    ]: PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST,
 }
 
 
