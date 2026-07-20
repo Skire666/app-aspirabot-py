@@ -12,7 +12,9 @@ the internal list.
 
 import contextlib
 import logging
+import threading
 import time
+from collections.abc import Generator
 from pathlib import Path
 
 from interfaces.i_web_browser_service import IWebBrowserService
@@ -29,6 +31,7 @@ from shared.validation_result import ValidationResult
 # -----------------------------------------------------------------------------
 
 _NAV_MAX_RETRIES = 3  # Maximum retries for navigation interruptions before giving up.
+_FREEZE_TIMEOUT_SEC = 30  # Threshold above which a blocking call with no built-in timeout is flagged as frozen.
 
 # -----------------------------------------------------------------------------
 # Class
@@ -67,6 +70,11 @@ class BrowserPlaywrightService(IWebBrowserService):
         self._last_url_used: str | None = None
         self._nbr_retries: int = 0
 
+        # crash / freeze detection — populated by page/context events and the freeze watchdog.
+        self._crash_event = threading.Event()
+        self._crash_count: int = 0
+        self._freeze_event = threading.Event()
+
     # ------------------------------------------------------------------
     # IWebBrowserService — public API
     # ------------------------------------------------------------------
@@ -103,6 +111,14 @@ class BrowserPlaywrightService(IWebBrowserService):
 
         # Le browser n'est pas exposé séparément avec un contexte persistant.
         self._browser = self._pw.chromium.connect_over_cdp("http://localhost:9222")
+
+        # Register the crash listener on every page of the live context — both pages opened
+        # explicitly and those opened by JavaScript (target="_blank") — so a renderer crash is
+        # always reported, instead of silently leaving the page unresponsive.
+        context = self._browser.contexts[0]
+        context.on("page", self._wire_page_crash_listener)
+        for page in context.pages:
+            self._wire_page_crash_listener(page)
 
     def _old_launch_without_cdp(self) -> None:
         if self._pw is not None:
@@ -147,6 +163,62 @@ class BrowserPlaywrightService(IWebBrowserService):
             self._workflow_page = context.pages[0]  # Track the first page as the workflow page.
 
         return self._workflow_page
+
+    def _wire_page_crash_listener(self, page: Page) -> None:
+        """Attach the renderer-crash listener to a page.
+
+        Registered both explicitly (already-open pages) and via the context's
+        ``"page"`` event, so pages opened by JavaScript (``target="_blank"``) are
+        covered too — a crash on any of them is reported instead of going silent.
+        """
+        page.on("crash", self._on_page_crash)
+
+    def _on_page_crash(self, page: Page) -> None:
+        """Log a renderer crash immediately and flag it for recovery by the retry loop.
+
+        This runs on Playwright's internal dispatch thread (event callbacks are not
+        delivered on the calling thread), so it only logs and sets a
+        ``threading.Event`` — it must not touch the browser/page synchronously here.
+        """
+        self._crash_count += 1
+        url = "<url inconnue>"
+        with contextlib.suppress(Exception):
+            url = page.url
+        self._logger.error("Crash du renderer détecté sur %s (occurrence n°%d).", url, self._crash_count)
+        self._crash_event.set()
+
+    @contextlib.contextmanager
+    def _freeze_watchdog(self, operation_label: str) -> Generator[None]:
+        """Log+signal if the wrapped block runs longer than ``_FREEZE_TIMEOUT_SEC``.
+
+        Does not attempt to interrupt or kill anything — it only makes a silent
+        hang observable (timestamped log + ``self._freeze_event``) for calls such as
+        ``page.evaluate()`` that have no Playwright-level ``timeout`` of their own.
+        """
+        timer = threading.Timer(_FREEZE_TIMEOUT_SEC, self._on_freeze_detected, args=(operation_label,))
+        timer.daemon = True
+        timer.start()
+        try:
+            yield
+        finally:
+            timer.cancel()
+
+    def _on_freeze_detected(self, operation_label: str) -> None:
+        """Log a suspected freeze and set the freeze signal (no forced action)."""
+        self._freeze_event.set()
+        self._logger.error(
+            "Gel suspecté : l'opération '%s' est toujours en cours après %ds (signal levé, aucune action forcée).",
+            operation_label,
+            _FREEZE_TIMEOUT_SEC,
+        )
+
+    def has_pending_freeze_signal(self) -> bool:
+        """True if a freeze was detected since the last ``clear_freeze_signal()`` call."""
+        return self._freeze_event.is_set()
+
+    def clear_freeze_signal(self) -> None:
+        """Clear the freeze signal flag."""
+        self._freeze_event.clear()
 
     def close_all_tabs(self) -> None:
         """Close all open pages/tabs in the browser.
@@ -193,31 +265,33 @@ class BrowserPlaywrightService(IWebBrowserService):
     def close_browser(self) -> None:
         """Close all pages, the context, the browser, and Playwright runtime.
 
+        Each resource is closed independently so that a failure closing one
+        (e.g. a partial/failed launch leaving no context) never skips the
+        others — otherwise the underlying browser process is orphaned.
+
         Returns:
             None.
         """
-        try:
-            # Clear page registry before closing so stale references are gone.
+        with contextlib.suppress(Exception):
             self.close_all_tabs()
 
-            # Close in reverse-creation order: context → browser → playwright.
-            if self._context is not None:
+        # Close in reverse-creation order: context → browser → playwright.
+        if self._context is not None:
+            with contextlib.suppress(Exception):
                 self._context.close()  # crash if browser was closed by user
-                self._context = None
+            self._context = None
 
-            if self._browser is not None:
+        if self._browser is not None:
+            with contextlib.suppress(Exception):
                 self._browser.close()
-                self._browser = None
+            self._browser = None
 
-            if self._pw is not None:
+        if self._pw is not None:
+            with contextlib.suppress(Exception):
                 self._pw.stop()
-                self._pw = None
+            self._pw = None
 
-            self._logger.info("Navigateur fermé avec succès. is_launched=%s", self.is_launched)
-
-        except Exception:
-            self._logger.error("Une erreur s'est produite lors de la fermeture du navigateur", exc_info=True)
-            # Don't re-raise; ensure all resources are attempted to be cleaned up.
+        self._logger.info("Navigateur fermé avec succès. is_launched=%s", self.is_launched)
 
     @property
     def is_launched(self) -> bool:
@@ -250,8 +324,9 @@ class BrowserPlaywrightService(IWebBrowserService):
         while do_loop:
             try:
                 page = self.get_workflow_page()
-                page.goto(self._last_url_used, wait_until="commit", timeout=timeout_ms)
-                page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
+                with self._freeze_watchdog(f"safe_goto_url({self._last_url_used})"):
+                    page.goto(self._last_url_used, wait_until="commit", timeout=timeout_ms)
+                    page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
                 do_loop = False  # Navigation succeeded; exit the loop.
             except Exception as exp:  # noqa: BLE001
                 do_loop = self._handle_goto_error(exp, wait_dns_sec)
@@ -292,6 +367,12 @@ class BrowserPlaywrightService(IWebBrowserService):
         """
         assert self._workflow_page is not None, "Workflow page should be initialized before..."
         assert self._last_error is not None, "ValidationResult should be initialized before..."
+
+        if self._crash_event.is_set():
+            self._crash_event.clear()
+            self._logger.error("Reprise après crash du renderer : ouverture d'une nouvelle page.")
+            self.get_workflow_page(forced_new_page=True)
+            self._last_error.append(ErrorCodeBRP.BRP_1007, SeverityEnum.E_WARNING)
 
         if "context or browser has been closed" in msg:
             time.sleep(1)  # Short delay to allow any pending page-close events to process.
@@ -334,9 +415,14 @@ class BrowserPlaywrightService(IWebBrowserService):
         # Retry loop — re-raises on the final failed attempt.
         for attempt in range(1, retries + 1):
             try:
-                result = page.evaluate(script)
+                with self._freeze_watchdog(f"evaluate_script_with_safe_retry (tentative {attempt}/{retries})"):
+                    result = page.evaluate(script)
             except Exception as exc:
                 self._logger.info("Échec évaluation script, tentative %d/%d : %s", attempt, retries, exc)
+                if self._crash_event.is_set():
+                    self._crash_event.clear()
+                    self._logger.exception("Reprise après crash du renderer : ouverture d'une nouvelle page.")
+                    page = self.get_workflow_page(forced_new_page=True)
                 if attempt == retries:
                     # if this was the last attempt, re-raise the exception to signal failure
                     raise

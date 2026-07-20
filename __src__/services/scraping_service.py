@@ -65,13 +65,13 @@ class ScrapingService:
         self._journal_repository = journal_repository
 
         # Single context reference — initialized to safe defaults, updated each run.
-        self._context: ScrapingContextModel = ScrapingContextModel()
+        self._context: ScrapingContextModel | None = None
 
         # Run-level statistics counters.
         self._statistics: ScrapingStatisticsModel = ScrapingStatisticsModel()
 
         # Event bus — replaced at the start of each run; no-op between runs.
-        self._event_bus: ScrapingEventBus = ScrapingEventBus(None)
+        self._event_bus: ScrapingEventBus | None
 
         # Global emergency-stop configuration — set before each run.
         self._emergency_stop_threshold: int = 0
@@ -107,7 +107,9 @@ class ScrapingService:
             A ScrapingReportModel summarising the completed run.
         """
         # Build the event bus for this run from the Presenter-supplied callback.
+        self._context = ScrapingContextModel()
         self._event_bus = ScrapingEventBus(handlers.on_logging_event)
+        self._statistics.clear()
 
         # Bind run-scoped signals and callbacks onto the shared context.
         self._context.pause_event = handlers.pause_event
@@ -143,6 +145,8 @@ class ScrapingService:
         Returns:
             The shared ``ScrapingContextModel`` updated in place during execution.
         """
+        assert self._context is not None
+
         return self._context
 
     def open_export_folder(self, folder_path: str) -> None:
@@ -213,9 +217,12 @@ class ScrapingService:
             True if the run was aborted by the cancel signal.
         """
         assert self._browser_service is not None
+        assert self._event_bus is not None
+        assert self._context is not None
+
         self._event_bus.fire_browser_init()
-        self._browser_service.launch()
         try:
+            self._browser_service.launch()
             self._event_bus.fire_context_init()
             self._browser_service.get_workflow_page()
             self._event_bus.fire_workflow_init()
@@ -223,7 +230,8 @@ class ScrapingService:
             if not self._context.cancel_event.is_set():
                 self._run_all_steps(scenario.steps)
         finally:
-            # Always close the browser even if a step raised an exception.
+            # Always close the browser even if launch or a step raised an exception,
+            # so a failed/partial launch never leaves an orphaned browser process.
             self._browser_service.close_browser()
 
         return self._context.cancel_event.is_set()
@@ -233,9 +241,12 @@ class ScrapingService:
 
         Does nothing when ``_warmup_url`` is empty or when the run is already cancelled.
         """
+        assert self._context is not None
+        assert self._browser_service is not None
+        assert self._event_bus is not None
+
         if not self._warmup_url or self._context.cancel_event.is_set():
             return
-        assert self._browser_service is not None
 
         self._logger.info("Préchauffe : Url : %s", self._warmup_url)
         self._context.last_url_opened = self._warmup_url
@@ -262,6 +273,8 @@ class ScrapingService:
         Returns:
             A fully populated ScrapingReportModel.
         """
+        assert self._event_bus is not None
+
         self._event_bus.fire_completed()
         self._statistics.finish_timer()
         self._statistics.cancelled = cancelled
@@ -281,6 +294,9 @@ class ScrapingService:
         Args:
             steps: Ordered list of scraping steps to run.
         """
+        assert self._browser_service is not None
+        assert self._event_bus is not None
+        assert self._context is not None
         self._reset_run_state(steps)
         i = 0
 
@@ -312,6 +328,10 @@ class ScrapingService:
             steps: The full ordered list of steps for the upcoming run.
         """
         # Rewind the URL source so it can be replayed in a new run.
+        assert self._browser_service is not None
+        assert self._event_bus is not None
+        assert self._context is not None
+
         self._context.reset_before_new_process(steps)
         self._context.prepare_extracted_data(steps)
         self._statistics.clear()
@@ -331,6 +351,9 @@ class ScrapingService:
         Returns:
             The index of the next step to execute.
         """
+        assert self._event_bus is not None
+        assert self._context is not None
+
         self._context.prepare_step_execution(step)
         self._event_bus.fire_step_start(step, self._context)
         result = self._execute_step(step)
@@ -368,6 +391,8 @@ class ScrapingService:
         Returns:
             The resolved next step index.
         """
+        assert self._context is not None
+
         if self._context.pending_jump is None:
             return current_index + 1
 
@@ -385,6 +410,9 @@ class ScrapingService:
         Returns:
             None.
         """
+        assert self._context is not None
+        assert self._event_bus is not None
+
         # JUMP_TO_STEP and KILL_BROWSER steps are not subject to emergency stop, so skip the check.
         if next_step.step_type in {StepTypeEnum.E_JUMP_TO_STEP, StepTypeEnum.E_KILL_BROWSER}:
             return
@@ -414,6 +442,8 @@ class ScrapingService:
         Returns:
             A valid step index to jump to.
         """
+        assert self._context is not None
+
         if isinstance(pending_jump, int):
             if 0 <= pending_jump < len(self._context.step_id_by_index):
                 return pending_jump
@@ -448,6 +478,8 @@ class ScrapingService:
             ``ERROR`` when the executor raises an unexpected exception.
         """
         assert self._browser_service is not None
+        assert self._event_bus is not None
+        assert self._context is not None
 
         # if the step is inactive, skip execution
         if not step.is_active:
@@ -461,6 +493,24 @@ class ScrapingService:
             return ProcessResultEnum.E_ERROR
         else:
             return result
+
+    def clear_cache(self) -> None:
+        """Clear the browser cache and cookies via the browser service."""
+        assert self._context is not None
+
+        self._event_bus = None
+
+        # Bind run-scoped signals and callbacks onto the shared context.
+        self._context.on_user_wait = None
+        self._on_emergency_stop = None
+
+        # Build and attach the URL source when requested, forwarding sort order.
+        self._context.url_source = None
+        self._context.transformer_url_regexp = None
+        self._context.transformer_url_base = None
+
+        # Create a fresh browser service instance for each run via the injected factory.
+        self._browser_service = None
 
 
 # EOF

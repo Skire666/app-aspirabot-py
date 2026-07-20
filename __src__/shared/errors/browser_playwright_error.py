@@ -15,6 +15,8 @@ class ErrorCodeBRP(ErrorCode):
     BRP_1004 = "La page a déclenché un timeout (réseaux lent, serveur down, déconnecté)."
     BRP_1005 = "Toujours en erreur malgré 3 tentatives (erreur non récupérable)."
     BRP_1006 = "Navigateur fermé ou contexte non accessible (erreur fatale)."
+    BRP_1007 = "Le renderer de la page a crashé."
+    BRP_1008 = "Gel détecté : opération toujours en cours au-delà du délai de surveillance."
 
     # ???
     BRP_9999 = "Erreur inconnue."

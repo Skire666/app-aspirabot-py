@@ -14,13 +14,14 @@ class PriorityScrapingEnum(Enum):
     E_LAST_MODIFIED_BY_NEW = "LAST_MODIFIED_BY_NEW"  # last modified by new
     E_LAST_MODIFIED_BY_OLD = "LAST_MODIFIED_BY_OLD"  # last modified by old
     E_QUALITY_BY_LOW = "QUALITY_BY_LOW"  # worst quality
+    E_LOW_QUALITY_BY_OLDEST = "LOW_QUALITY_BY_OLDEST"  # low quality by oldest
     E_LOW_EXTRACTOR_NEWEST = "LOW_EXTRACTOR_NEWEST"  # low extractor newest
     E_LOW_EXTRACTOR_OLDEST = "LOW_EXTRACTOR_OLDEST"  # low extractor oldest
     E_UNKNOWN = "UNKNOWN"
 
     def enum_to_view(self) -> str:
         """Convert this enum member to its French display label."""
-        return _PRIORITY_SCRAPING_TO_LABEL.get(self, "")
+        return _PRIO_SCRAP_TO_LABEL.get(self, "")
 
     @classmethod
     def view_to_enum(cls, value: str) -> PriorityScrapingEnum:
@@ -61,6 +62,7 @@ class PriorityScrapingEnum(Enum):
             PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW,
             PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD,
             PriorityScrapingEnum.E_QUALITY_BY_LOW,
+            PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST,
             PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST,
             PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST,
         }
@@ -74,39 +76,32 @@ class PriorityScrapingEnum(Enum):
             PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW.enum_to_view(),
             PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD.enum_to_view(),
             PriorityScrapingEnum.E_QUALITY_BY_LOW.enum_to_view(),
+            PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST.enum_to_view(),
             PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST.enum_to_view(),
             PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST.enum_to_view(),
         ]
 
 
-_PRIORITY_SCRAPING_TO_LABEL: dict[PriorityScrapingEnum, str] = {
+_PRIO_SCRAP_TO_LABEL: dict[PriorityScrapingEnum, str] = {
     PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW: "Ordre de création -> Prendre 1er ",
     PriorityScrapingEnum.E_LAST_CREATED_BY_OLD: "Ordre de création -> Prendre dernier",
     PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW: "Ordre de modification -> Prendre récents",
     PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD: "Ordre de modification -> Prendre anciens",
-    PriorityScrapingEnum.E_QUALITY_BY_LOW: "Qualité faible à compléter",
+    PriorityScrapingEnum.E_QUALITY_BY_LOW: "Qualité basse (temps ignoré)",
+    PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST: "Qualité basse et ancienne à compléter",
     PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST: "Nouvelles entrées à compléter",
     PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST: "Anciennes entrées à compléter",
 }
 
 _LABEL_TO_PRIORITY_SCRAPING: dict[str, PriorityScrapingEnum] = {
-    _PRIORITY_SCRAPING_TO_LABEL[
-        PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW
-    ]: PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW,
-    _PRIORITY_SCRAPING_TO_LABEL[PriorityScrapingEnum.E_LAST_CREATED_BY_OLD]: PriorityScrapingEnum.E_LAST_CREATED_BY_OLD,
-    _PRIORITY_SCRAPING_TO_LABEL[
-        PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW
-    ]: PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW,
-    _PRIORITY_SCRAPING_TO_LABEL[
-        PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD
-    ]: PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD,
-    _PRIORITY_SCRAPING_TO_LABEL[PriorityScrapingEnum.E_QUALITY_BY_LOW]: PriorityScrapingEnum.E_QUALITY_BY_LOW,
-    _PRIORITY_SCRAPING_TO_LABEL[
-        PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST
-    ]: PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST,
-    _PRIORITY_SCRAPING_TO_LABEL[
-        PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST
-    ]: PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW]: PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_LAST_CREATED_BY_OLD]: PriorityScrapingEnum.E_LAST_CREATED_BY_OLD,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW]: PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD]: PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_QUALITY_BY_LOW]: PriorityScrapingEnum.E_QUALITY_BY_LOW,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST]: PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST]: PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST,
+    _PRIO_SCRAP_TO_LABEL[PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST]: PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST,
 }
 
 

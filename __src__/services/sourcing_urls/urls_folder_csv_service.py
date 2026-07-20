@@ -274,6 +274,8 @@ class UrlsFolderCsvService(IUrlSourceProvider):
         elif self._piority_type_used == PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD:
             sorted_urls = sorted(url_with_time, key=lambda x: x.date_last_modified)
         elif self._piority_type_used == PriorityScrapingEnum.E_QUALITY_BY_LOW:
+            sorted_urls = sorted(url_with_time, key=lambda x: x.quality_2_row)
+        elif self._piority_type_used == PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST:
             sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_quality)
         elif self._piority_type_used == PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST:
             sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_newest)

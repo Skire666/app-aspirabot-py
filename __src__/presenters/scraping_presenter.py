@@ -62,7 +62,7 @@ from view_models.scraping_view_model import ScrapingViewModel
 # Constants
 # -----------------------------------------------------------------------------
 
-_POLL_INTERVAL_MS = 200
+_POLL_INTERVAL_MS = 150
 
 _LIFECYCLE_MESSAGES: dict[EventScrapingEnum, str] = {
     EventScrapingEnum.E_BROWSER_INIT: C_SCRAPING_EVENT_BROWSER_INIT,
@@ -279,6 +279,7 @@ class ScrapingPresenter:
         try:
             handlers: WorkflowRunHandlers = self._build_run_handlers()
             report = self._service_scraping.run_workflow(self._scenario, self._sourcing_urls, handlers)
+            self._service_scraping.clear_cache()  # TODO PCO
         except AspirabotBaseError:
             self._logger.exception("Erreur critique pendant le scraping")
             report = None
@@ -427,6 +428,7 @@ class ScrapingPresenter:
         self._export_journal()
         if callable(self.on_scraping_stopped):
             self.on_scraping_stopped()
+        self._worker_thread = None
 
     def _append_final_stats(self, rp: ScrapingStatisticsModel) -> None:
         """Append summary statistics and journal analysis to the journal.

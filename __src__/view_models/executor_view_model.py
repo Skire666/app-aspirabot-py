@@ -128,7 +128,9 @@ class ExecutorViewModel(ViewModelBase):
         # jsons
         self.urls_path_folder_csv_var = tk.StringVar(master=master, value="")
         self.url_x_top_csv_var = tk.StringVar(master=master, value="100")
-        self.csv_priority_type_used_var = tk.StringVar(master=master, value=PriorityScrapingEnum.E_QUALITY_BY_LOW.value)
+        self.csv_priority_type_used_var = tk.StringVar(
+            master=master, value=PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST.value
+        )
         # Status Var — written by the Presenter after compute or on error.
         self.global_threshold_var = tk.StringVar(master=master, value="")
         self.step_threshold_var = tk.StringVar(master=master, value="")
