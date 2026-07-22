@@ -2,7 +2,6 @@
 tmp_app_logs/
 chromium_tmp/
 extensions/ubo_chromium/*
-config-aspirabot.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
