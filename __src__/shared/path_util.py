@@ -183,4 +183,20 @@ def can_write(chemin: str | Path) -> bool:
         return False
 
 
+def count_missing_folders(path: str | Path) -> int:
+    """Count the number of missing folders in a given path."""
+    p = Path(path).resolve() if not Path(path).is_absolute() else Path(path)
+    parts = p.parts
+
+    missing = 0
+    current = Path(parts[0])  # racine
+
+    for part in parts[1:]:
+        current /= part
+        if not current.is_dir():
+            missing += 1
+
+    return missing
+
+
 # EOF

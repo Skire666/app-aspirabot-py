@@ -217,7 +217,7 @@ class UrlsFolderCsvService(IUrlSourceProvider):
             self._last_date_mtime_csv = None
             need_reload = True
 
-        if not self._path_to_csv:
+        if not self._path_to_csv or not Path(self._path_to_csv).is_file():
             self._last_date_mtime_csv = None
             self._last_urls_readed = []
             self._urls_filtred = []

@@ -19,7 +19,7 @@ from shared.constants import C_DEFAULT_THRESHOLD_ERROR_SCRAPING, C_SIZE_HEXASTRI
 from shared.datetime_util import dict_with_key_to_optional_datetime
 from shared.enums import SeverityEnum, UrlSourceTypeEnum
 from shared.errors.launch_error import ErrorCodeLAM
-from shared.path_util import path_has_valid_syntax
+from shared.path_util import count_missing_folders, path_has_valid_syntax
 from shared.random_util import generate_rng_hexastring
 from shared.validation_result import ValidationResult
 
@@ -207,6 +207,9 @@ class LaunchModel:
             return True
         if self.export_folder.startswith("/"):
             vr.append(ErrorCodeLAM.LAM_1006, SeverityEnum.E_ERROR)
+            return True
+        if count_missing_folders(self.export_folder) >= 2:
+            vr.append(ErrorCodeLAM.LAM_1014, SeverityEnum.E_ERROR)
             return True
         return False
 

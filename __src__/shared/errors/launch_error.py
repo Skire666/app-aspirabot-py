@@ -23,6 +23,7 @@ class ErrorCodeLAM(ErrorCode):
     LAM_1011 = "Le préfixe de transformation d'URL n'est pas défini."
     LAM_1012 = "L'URL de préchauffage doit commencer par 'http'"
     LAM_1013 = "L'URL de préchauffage fait moins de 4 caractères"
+    LAM_1014 = "Le dossier d'export existe partiellement (anormal...)"
 
     # ???
     LAM_9999 = "Erreur inconnue."
