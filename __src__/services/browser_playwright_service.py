@@ -86,7 +86,7 @@ class BrowserPlaywrightService(IWebBrowserService):
             BrowserAlreadyLaunchedError: If the browser is already launched.
         """
         if self._pw is not None:
-            raise BrowserAlreadyLaunchedError()
+            self.close_browser()
 
         # Resolve to absolute path — Chromium executable is not Python, so relative paths are unsafe.
         ext_path = str(Path(self._chromium_extensions_dir).resolve())
@@ -148,7 +148,10 @@ class BrowserPlaywrightService(IWebBrowserService):
         if self._browser is None:
             raise BrowserNotLaunchedError()
         if len(self._browser.contexts) <= 0:
-            context = self._browser.new_context(no_viewport=True)
+            # en principe, ne passe qu'ici que si nabivateur est complètement fermé
+            # (si page fermé, page crash, ou page interrompue ne passent pas par ici)
+            print("No context found; creating a new one.")
+            self.launch()  # Re-launch the browser to create a new context.
 
         context = self._browser.contexts[0]
         if len(context.pages) == 0:
@@ -328,7 +331,7 @@ class BrowserPlaywrightService(IWebBrowserService):
                     page.goto(self._last_url_used, wait_until="commit", timeout=timeout_ms)
                     page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
                 do_loop = False  # Navigation succeeded; exit the loop.
-            except Exception as exp:  # noqa: BLE001
+            except Exception as exp:  # ruff: ignore[blind-except]
                 do_loop = self._handle_goto_error(exp, wait_dns_sec)
 
         return self._last_error
