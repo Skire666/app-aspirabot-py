@@ -98,7 +98,6 @@ def get_browsers_path() -> str:
     """
     base = os.environ.get("LOCALAPPDATA", str(Path("~").expanduser()))
     path_browser = str(Path(base) / C_APP_NAME / "ms-playwright")
-    logger.debug("Playwright browsers path: %s", path_browser)
     return path_browser
 
 
@@ -238,6 +237,8 @@ def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, start
         root.deiconify()
         app_state.wire_geometry_persistence(config_repo)
         _register_and_anchor(root, main_view, views, presenters)
+
+        logger.debug("PW : Playwright browsers path: %s", get_browsers_path())
     except Exception:  # ruff: ignore[blind-except]
         traceback.print_exc()
         root.destroy()

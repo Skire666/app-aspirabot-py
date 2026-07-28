@@ -22,7 +22,7 @@ cd app-wishlistor-py
 3. Lancer la compilation
 
 ```
-pyinstaller --noconfirm --onefile --windowed --name aspirabot --paths src __src__/main.py --icon "E:\app-aspirabot-py\__ress__\icons\apps.ico"
+pyinstaller --noconfirm --onefile --windowed --name aspirabot --paths src __src__/main.py --icon ".\__ress__\icons\apps.ico"
 ```
 
 --paths src : indique à PyInstaller d'ajouter src au chemin de recherche des modules, pour qu'il retrouve bien le package wishlistor si main.py fait des imports du type from wishlistor.timer import Timer

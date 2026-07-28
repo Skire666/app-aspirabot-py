@@ -37,6 +37,8 @@ _FREEZE_TIMEOUT_SEC = 30  # Threshold above which a blocking call with no built-
 # Class
 # -----------------------------------------------------------------------------
 
+_logger = logging.getLogger(__name__)
+
 
 class BrowserPlaywrightService(IWebBrowserService):
     """Playwright + stealth browser service for scraping workflows.
@@ -55,13 +57,12 @@ class BrowserPlaywrightService(IWebBrowserService):
             chromium_persistant_dir: Path to the persistent Chromium user-data directory.
             chromium_extensions_dir: Path to the uBlock extension directory.
         """
-        self._logger = logging.getLogger(__name__)
         self._chromium_persistant_dir = chromium_persistant_dir
         self._chromium_extensions_dir = chromium_extensions_dir
 
         # Lifecycle state — populated by launch(), cleared by close_browser().
-        self._pw: Playwright | None = None
-        self._browser: Browser | None = None
+        self._background_pw: Playwright | None = None
+        self._front_remote_cdp: Browser | None = None
         self._context: BrowserContext | None = None
         self._workflow_page: Page | None = None
 
@@ -85,52 +86,53 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             BrowserAlreadyLaunchedError: If the browser is already launched.
         """
-        if self._pw is not None:
+        if self._background_pw is not None:
             self.close_browser()
 
+        self._background_pw = sync_playwright().start()
+
+        # launch_persistent_context remplace launch() + new_context()
+        self._context = self._background_pw.chromium.launch_persistent_context(
+            user_data_dir=str(Path(self._chromium_persistant_dir).resolve()),
+            headless=False,
+            args=self.get_args_for_stealth(),
+            no_viewport=True,
+            accept_downloads=True,  # for redirects path when downloading
+        )
+
+        # Le browser n'est pas exposé séparément avec un contexte persistant.
+        self._front_remote_cdp = self._background_pw.chromium.connect_over_cdp("http://localhost:9222")
+
+        # Register the crash listener on every page of the live context — both pages opened
+        # explicitly and those opened by JavaScript (target="_blank") — so a renderer crash is
+        # always reported, instead of silently leaving the page unresponsive.
+        context = self._front_remote_cdp.contexts[0]
+        context.on("page", self._wire_page_crash_listener)
+        for page in context.pages:
+            self._wire_page_crash_listener(page)
+
+    def get_args_for_stealth(self) -> list[str]:
         # Resolve to absolute path — Chromium executable is not Python, so relative paths are unsafe.
         ext_path = str(Path(self._chromium_extensions_dir).resolve())
 
-        args = [
+        return [
             "--disable-blink-features=AutomationControlled",
             f"--disable-extensions-except={ext_path}",
             f"--load-extension={ext_path}",
             "--remote-debugging-port=9222",
         ]
 
-        self._pw = sync_playwright().start()
-
-        # launch_persistent_context remplace launch() + new_context()
-        self._context = self._pw.chromium.launch_persistent_context(
-            user_data_dir=str(Path(self._chromium_persistant_dir).resolve()),
-            headless=False,
-            args=args,
-            no_viewport=True,
-            accept_downloads=True,  # for redirects path when downloading
-        )
-
-        # Le browser n'est pas exposé séparément avec un contexte persistant.
-        self._browser = self._pw.chromium.connect_over_cdp("http://localhost:9222")
-
-        # Register the crash listener on every page of the live context — both pages opened
-        # explicitly and those opened by JavaScript (target="_blank") — so a renderer crash is
-        # always reported, instead of silently leaving the page unresponsive.
-        context = self._browser.contexts[0]
-        context.on("page", self._wire_page_crash_listener)
-        for page in context.pages:
-            self._wire_page_crash_listener(page)
-
     def _old_launch_without_cdp(self) -> None:
-        if self._pw is not None:
+        if self._background_pw is not None:
             raise BrowserAlreadyLaunchedError()
 
         # Obfuscated mode uses custom args; standard mode uses a plain context.
         args = ["--disable-blink-features=AutomationControlled"]
 
         # Start Playwright and create the browser + context.
-        self._pw = sync_playwright().start()
-        self._browser = self._pw.chromium.launch(headless=False, args=args)
-        self._context = self._browser.new_context(no_viewport=True)
+        self._background_pw = sync_playwright().start()
+        self._front_remote_cdp = self._background_pw.chromium.launch(headless=False, args=args)
+        self._context = self._front_remote_cdp.new_context(no_viewport=True)
         self._workflow_page = None
 
     def get_workflow_page(self, forced_new_page: bool = False) -> Page:
@@ -145,26 +147,31 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             BrowserNotLaunchedError: If ``launch()`` has not been called yet.
         """
-        if self._browser is None:
+        if self._front_remote_cdp is None:
+            _logger.warning("PW : get_workflow_page() called before launch()")
             raise BrowserNotLaunchedError()
-        if len(self._browser.contexts) <= 0:
+        if len(self._front_remote_cdp.contexts) <= 0:
             # en principe, ne passe qu'ici que si nabivateur est complètement fermé
             # (si page fermé, page crash, ou page interrompue ne passent pas par ici)
-            print("No context found; creating a new one.")
+            _logger.warning("PW : No context found; creating a new one.")
             self.launch()  # Re-launch the browser to create a new context.
 
-        context = self._browser.contexts[0]
+        context = self._front_remote_cdp.contexts[0]
         if len(context.pages) == 0:
+            _logger.warning("PW : No pages found; creating a new one.")
             self._workflow_page = context.new_page()
         elif forced_new_page:
+            _logger.warning("PW : Forced new page requested")
             new_pg = context.new_page()
             if self._workflow_page:
                 with contextlib.suppress(Exception):
                     self._workflow_page.close()
             self._workflow_page = new_pg
         elif self._workflow_page is None:
+            _logger.warning("PW : No workflow page tracked; using the first available page.")
             self._workflow_page = context.pages[0]  # Track the first page as the workflow page.
 
+        _logger.debug("PW : Current workflow page URL: %s", self._workflow_page.url)
         return self._workflow_page
 
     def _wire_page_crash_listener(self, page: Page) -> None:
@@ -187,7 +194,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         url = "<url inconnue>"
         with contextlib.suppress(Exception):
             url = page.url
-        self._logger.error("Crash du renderer détecté sur %s (occurrence n°%d).", url, self._crash_count)
+        _logger.warning("Crash du renderer détecté sur %s (occurrence n°%d).", url, self._crash_count)
         self._crash_event.set()
 
     @contextlib.contextmanager
@@ -209,7 +216,7 @@ class BrowserPlaywrightService(IWebBrowserService):
     def _on_freeze_detected(self, operation_label: str) -> None:
         """Log a suspected freeze and set the freeze signal (no forced action)."""
         self._freeze_event.set()
-        self._logger.error(
+        _logger.warning(
             "Gel suspecté : l'opération '%s' est toujours en cours après %ds (signal levé, aucune action forcée).",
             operation_label,
             _FREEZE_TIMEOUT_SEC,
@@ -232,13 +239,14 @@ class BrowserPlaywrightService(IWebBrowserService):
         Raises:
             BrowserNotLaunchedError: If ``launch()`` has not been called yet.
         """
-        if self._browser is None:
+        _logger.debug("PW : Fermeture de tous les onglets.")
+        if self._front_remote_cdp is None:
             raise BrowserNotLaunchedError()
-        if len(self._browser.contexts) <= 0:
+        if len(self._front_remote_cdp.contexts) <= 0:
             raise BrowserNotLaunchedError()
 
         # Close each page; the context event will handle de-registration.
-        for context in self._browser.contexts:
+        for context in self._front_remote_cdp.contexts:
             for page in context.pages:
                 page.close()
         self._workflow_page = None
@@ -249,8 +257,8 @@ class BrowserPlaywrightService(IWebBrowserService):
         Returns:
             A snapshot list of all open Page objects.
         """
-        if len(self._browser.contexts) >= 1:  # pyright: ignore[reportOptionalMemberAccess]
-            all_ctx = self._browser.contexts  # pyright: ignore[reportOptionalMemberAccess]
+        if len(self._front_remote_cdp.contexts) >= 1:  # pyright: ignore[reportOptionalMemberAccess]
+            all_ctx = self._front_remote_cdp.contexts  # pyright: ignore[reportOptionalMemberAccess]
             return [page for context in all_ctx for page in context.pages]
         return []
 
@@ -284,17 +292,17 @@ class BrowserPlaywrightService(IWebBrowserService):
                 self._context.close()  # crash if browser was closed by user
             self._context = None
 
-        if self._browser is not None:
+        if self._front_remote_cdp is not None:
             with contextlib.suppress(Exception):
-                self._browser.close()
-            self._browser = None
+                self._front_remote_cdp.close()
+            self._front_remote_cdp = None
 
-        if self._pw is not None:
+        if self._background_pw is not None:
             with contextlib.suppress(Exception):
-                self._pw.stop()
-            self._pw = None
+                self._background_pw.stop()
+            self._background_pw = None
 
-        self._logger.info("Navigateur fermé avec succès. is_launched=%s", self.is_launched)
+        _logger.info("Navigateur fermé avec succès. is_launched=%s", self.is_launched)
 
     @property
     def is_launched(self) -> bool:
@@ -303,7 +311,7 @@ class BrowserPlaywrightService(IWebBrowserService):
         Returns:
             bool: current launch state.
         """
-        return self._pw is not None
+        return self._background_pw is not None
 
     def safe_goto_url(
         self, url: str, wait_until: WaitUntilEnum, timeout_ms: int, wait_dns_sec: int
@@ -331,7 +339,8 @@ class BrowserPlaywrightService(IWebBrowserService):
                     page.goto(self._last_url_used, wait_until="commit", timeout=timeout_ms)
                     page.wait_for_load_state(cast_wait_time, timeout=timeout_ms)
                 do_loop = False  # Navigation succeeded; exit the loop.
-            except Exception as exp:  # ruff: ignore[blind-except]
+            except Exception as exp:
+                _logger.warning("PW : Error occurred -> %s", exp)
                 do_loop = self._handle_goto_error(exp, wait_dns_sec)
 
         return self._last_error
@@ -349,19 +358,23 @@ class BrowserPlaywrightService(IWebBrowserService):
         assert self._last_error is not None, "ValidationResult should be initialized before..."
 
         msg = str(exp)
-        self._apply_goto_error_recovery(msg, wait_dns_solver_sec)
+        error_handled = self._apply_goto_error_recovery(msg, wait_dns_solver_sec)
 
         if self._last_error.count_severities(SeverityEnum.E_WARNING) >= _NAV_MAX_RETRIES:
-            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
+            _logger.error("PW : Trop de tentatives de navigation échouées : %s", msg)
             self._last_error.append(ErrorCodeBRP.BRP_1005, SeverityEnum.E_ERROR)
 
         if self._last_error.count_severities_by_code(ErrorCodeBRP.BRP_1001) >= _NAV_MAX_RETRIES:
-            self._logger.error("Trop de tentatives de navigation échouées : %s", msg)
+            _logger.error("PW : Trop de tentatives de navigation échouées : %s", msg)
             self._last_error.append(ErrorCodeBRP.BRP_1006, SeverityEnum.E_FATAL)
+
+        if not error_handled:
+            _logger.error("PW : Erreur non gérée : %s", msg)
+            self._last_error.append(ErrorCodeBRP.BRP_9999, SeverityEnum.E_FATAL)
 
         return not self._last_error.has_errors_or_fatals()
 
-    def _apply_goto_error_recovery(self, msg: str, wait_dns_solver_sec: int) -> None:
+    def _apply_goto_error_recovery(self, msg: str, wait_dns_solver_sec: int) -> bool:
         """Apply the recovery action matching the navigation error message, as a warning.
 
         Args:
@@ -372,31 +385,41 @@ class BrowserPlaywrightService(IWebBrowserService):
         assert self._last_error is not None, "ValidationResult should be initialized before..."
 
         if self._crash_event.is_set():
+            _logger.warning("PW : Reprise après crash du renderer : nouvelle page.")
             self._crash_event.clear()
-            self._logger.error("Reprise après crash du renderer : ouverture d'une nouvelle page.")
             self.get_workflow_page(forced_new_page=True)
             self._last_error.append(ErrorCodeBRP.BRP_1007, SeverityEnum.E_WARNING)
+            return True
 
         if "context or browser has been closed" in msg:
+            _logger.warning("PW : Reprise après fermeture du navigateur : nouvelle page.")
             time.sleep(1)  # Short delay to allow any pending page-close events to process.
             self.get_workflow_page(forced_new_page=True)
             self._workflow_page.wait_for_timeout(1000)  # ms
             self._last_error.append(ErrorCodeBRP.BRP_1001, SeverityEnum.E_WARNING)
+            return True
 
         if "interrupted by another navigation" in msg:
+            _logger.warning("PW : Reprise après interruption de navigation : nouvelle page.")
             self.get_workflow_page(forced_new_page=True)
             self._last_error.append(ErrorCodeBRP.BRP_1002, SeverityEnum.E_WARNING)
+            return True
 
         if "net::ERR_NAME_NOT_RESOLVED at" in msg:
+            _logger.warning("PW : Reprise après erreur DNS : rechargement de la page")
             self.get_workflow_page()
             time.sleep(wait_dns_solver_sec)  # Wait before retrying DNS resolution
             self._workflow_page.reload(wait_until="networkidle", timeout=15000)
             self._last_url_used = self._workflow_page.url
             self._last_error.append(ErrorCodeBRP.BRP_1003, SeverityEnum.E_WARNING)
+            return True
 
         if "Timeout" in msg:
-            self._logger.debug("Erreur de navigation :\n%s", msg)
+            _logger.warning("PW : Reprise après timeout : rechargement de la page")
             self._last_error.append(ErrorCodeBRP.BRP_1004, SeverityEnum.E_WARNING)
+            return True
+
+        return False
 
     def evaluate_script_with_safe_retry(self, script: str, retries: int, delay: float) -> tuple[bool, object]:
         """Evaluate a JS snippet on the current page with retries on failure.
@@ -421,20 +444,22 @@ class BrowserPlaywrightService(IWebBrowserService):
                 with self._freeze_watchdog(f"evaluate_script_with_safe_retry (tentative {attempt}/{retries})"):
                     result = page.evaluate(script)
             except Exception as exc:
-                self._logger.info("Échec évaluation script, tentative %d/%d : %s", attempt, retries, exc)
+                _logger.info("PW : Échec évaluation script, tentative %d/%d : %s", attempt, retries, exc)
                 if self._crash_event.is_set():
                     self._crash_event.clear()
-                    self._logger.exception("Reprise après crash du renderer : ouverture d'une nouvelle page.")
+                    _logger.exception("PW : Reprise après crash du renderer : ouverture d'une nouvelle page.")
                     page = self.get_workflow_page(forced_new_page=True)
                 if attempt == retries:
                     # if this was the last attempt, re-raise the exception to signal failure
                     raise
                 time.sleep(delay)
             else:
+                _logger.debug("PW : Évaluation script réussie à la tentative %d/%d.", attempt, retries)
                 return True, result
 
         # This line should never be reached due to the re-raise in the except block
         # but is required for type checking.
+        _logger.warning("PW : Échec évaluation script après %d tentatives : %s", retries, script)
         return False, C_STR_ERROR_JS_EVALUATION
 
 

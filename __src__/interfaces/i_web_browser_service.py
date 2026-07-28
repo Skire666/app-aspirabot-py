@@ -23,13 +23,8 @@ from shared.validation_result import ValidationResult
 class IWebBrowserService(Protocol):
     """Contract for browser lifecycle management in the scraping service layer.
 
-    A single instance covers one scraping run. The expected call order is:
-    ``launch()`` → ``get_workflow_page()`` → ``get_current_page()`` (in executors)
-    → ``close_browser()``. Reusing an instance across runs is not supported.
-
-    All open pages are tracked internally. Pages opened by JavaScript (e.g.
-    via ``target="_blank"`` clicks) are included automatically. When a page
-    is closed, it is removed from the internal list without any manual action.
+    Implementations must handle all Playwright lifecycle details, including
+    launching, page management, stealth patching, and shutdown.
     """
 
     def launch(self) -> None:
