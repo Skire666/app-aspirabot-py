@@ -29,7 +29,7 @@ class CheckUrlPageParams(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_at_least_one_bool(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
+    def check_at_least_one_bool(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # ruff: ignore[any-type]
         """Validate that at least one of check_domain or check_path is True."""
         if not isinstance(data, dict) or not info.context:
             return cast(dict[str, Any], data)

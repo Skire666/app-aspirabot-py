@@ -10,11 +10,14 @@ Format attendu :
 La validation s'arrête à la première erreur et renvoie un code AGG_10XX.
 """
 
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import re
 from dataclasses import dataclass
 
 _KEY_RE = re.compile(r"^[a-z0-9_.]+$")
-# _FORBIDDEN_PREFIXES = tuple(f"e{i}." for i in range(6))  # e0. … e5.
 _FORBIDDEN_PREFIXES = ["e6"]
 
 # ── Résultat ────────────────────────────────────────────────────────
@@ -31,6 +34,7 @@ class ParsingResult:
     line_content: str | None = None
 
     def __str__(self) -> str:
+        """Return a human-readable summary of the validation outcome."""
         if self.is_valid:
             return "✓ Aucune erreur détectée."
         return f"[{self.code}] ligne {self.line_number} : {self.message}\n  → {self.line_content!r}"
@@ -66,26 +70,47 @@ def _validate_key(key: str, side: str, ln: int, content: str) -> ParsingResult |
     if not key:
         return _fail("AGG_1005", f"clé {side} vide", ln, content)
 
-    if re.search(r"[A-Z]", key):
-        return _fail("AGG_1006", f"clé {side} contient des majuscules : {key!r}", ln, content)
-
-    if re.search(r"\s", key):
-        return _fail("AGG_1007", f"clé {side} contient des espaces : {key!r}", ln, content)
-
-    if not _KEY_RE.match(key):
-        bad = sorted({ch for ch in key if not re.match(r"[a-z0-9_.]", ch)})
-        return _fail("AGG_1008", f"clé {side} contient des caractères interdits {bad} : {key!r}", ln, content)
-
-    if key.startswith(".") or key.endswith("."):
-        return _fail("AGG_1009", f"clé {side} commence ou finit par un point : {key!r}", ln, content)
-
-    if ".." in key:
-        return _fail("AGG_1010", f"clé {side} contient un double point : {key!r}", ln, content)
+    bad_chars = sorted({ch for ch in key if not re.match(r"[a-z0-9_.]", ch)})
+    checks: tuple[tuple[bool, str, str], ...] = (
+        (bool(re.search(r"[A-Z]", key)), "AGG_1006", f"clé {side} contient des majuscules : {key!r}"),
+        (bool(re.search(r"\s", key)), "AGG_1007", f"clé {side} contient des espaces : {key!r}"),
+        (not _KEY_RE.match(key), "AGG_1008", f"clé {side} contient des caractères interdits {bad_chars} : {key!r}"),
+        (key.startswith(".") or key.endswith("."), "AGG_1009", f"clé {side} commence ou finit par un point : {key!r}"),
+        (".." in key, "AGG_1010", f"clé {side} contient un double point : {key!r}"),
+    )
+    for is_invalid, code, message in checks:
+        if is_invalid:
+            return _fail(code, message, ln, content)
 
     return None
 
 
 # ── Validation du champ complet ─────────────────────────────────────
+
+
+def _validate_line(line: str, number: int) -> ParsingResult | None:
+    """Valide une seule ligne non vide ; renvoie l'erreur trouvée, ou None."""
+    # ── Préfixe interdit ────────────────────────────────────
+    for prefix in _FORBIDDEN_PREFIXES:
+        if not line.startswith(prefix):
+            return _fail("AGG_1002", f"la ligne doit commencer le préfixe : {prefix!r}", number, line)
+
+    # ── Exactement un '=' ───────────────────────────────────
+    eq_count = line.count("=")
+    if eq_count == 0:
+        return _fail("AGG_1003", "aucun séparateur '=' trouvé", number, line)
+    if eq_count > 1:
+        return _fail("AGG_1004", "plusieurs '=' sur la même ligne", number, line)
+
+    # ── Validation des clés ─────────────────────────────────
+    left, right = line.split("=")
+    left, right = left.strip(), right.strip()
+
+    err = _validate_key(left, "gauche (A)", number, line)
+    if err:
+        return err
+
+    return _validate_key(right, "droite (B)", number, line)
 
 
 def validate_aggregators_list(text: str) -> ParsingResult:
@@ -113,27 +138,7 @@ def validate_aggregators_list(text: str) -> ParsingResult:
         if not line:
             continue
 
-        # ── Préfixe interdit ────────────────────────────────────
-        for prefix in _FORBIDDEN_PREFIXES:
-            if not line.startswith(prefix):
-                return _fail("AGG_1002", f"la ligne doit commencer le préfixe : {prefix!r}", number, line)
-
-        # ── Exactement un '=' ───────────────────────────────────
-        eq_count = line.count("=")
-        if eq_count == 0:
-            return _fail("AGG_1003", "aucun séparateur '=' trouvé", number, line)
-        if eq_count > 1:
-            return _fail("AGG_1004", "plusieurs '=' sur la même ligne", number, line)
-
-        # ── Validation des clés ─────────────────────────────────
-        left, right = line.split("=")
-        left, right = left.strip(), right.strip()
-
-        err = _validate_key(left, "gauche (A)", number, line)
-        if err:
-            return err
-
-        err = _validate_key(right, "droite (B)", number, line)
+        err = _validate_line(line, number)
         if err:
             return err
 
@@ -182,16 +187,16 @@ def parse_aggregators_list(text: str) -> list[Mapping]:
 if __name__ == "__main__":
     tests = {
         "Valide": "abc_x = def.y\nfoo = bar",
-        "AGG_1001 – vide": "",
-        "AGG_1002 – préfixe interdit": "e3.title = something",
-        "AGG_1003 – pas de =": "abc def",
-        "AGG_1004 – plusieurs =": "a = b = c",
-        "AGG_1005 – clé vide": " = foo",
-        "AGG_1006 – majuscules": "Abc = foo",
-        "AGG_1007 – espace dans clé": "ab c = foo",
-        "AGG_1008 – caractère interdit": "ab@c = foo",
-        "AGG_1009 – point en bord": ".abc = foo",
-        "AGG_1010 – double point": "a..b = foo",
+        "AGG_1001 - vide": "",
+        "AGG_1002 - préfixe interdit": "e3.title = something",
+        "AGG_1003 - pas de =": "abc def",
+        "AGG_1004 - plusieurs =": "a = b = c",
+        "AGG_1005 - clé vide": " = foo",
+        "AGG_1006 - majuscules": "Abc = foo",
+        "AGG_1007 - espace dans clé": "ab c = foo",
+        "AGG_1008 - caractère interdit": "ab@c = foo",
+        "AGG_1009 - point en bord": ".abc = foo",
+        "AGG_1010 - double point": "a..b = foo",
     }
 
     for label, sample in tests.items():
@@ -207,3 +212,6 @@ if __name__ == "__main__":
     mappings = parse_aggregators_list(valid_text)
     for m in mappings:
         print(f"  e6={m.e6!r}  sourcing={m.sourcing!r}")
+
+
+# EOF

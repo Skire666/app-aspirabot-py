@@ -43,10 +43,10 @@ class CountHtmlElementsExecutor(IStepExecutor):
             condition_met = evaluate_count_condition(count, p.operator, p.value)
             step_success = condition_met if p.success_if == "success" else not condition_met
             if not step_success:
-                raise CountHtmlElementsConditionNotMetError(count, p.operator, str(p.value))  # noqa: TRY301
+                raise CountHtmlElementsConditionNotMetError(count, p.operator, str(p.value))  # ruff: ignore[raise-within-try]
             msg = f"Trouvé x{count} élément(s) | Sélecteur '{p.selector}' | Condition OK."
             event_bus.log_step(context, msg)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

@@ -95,6 +95,26 @@ class DiscoverComputeError(RuntimeError, AspirabotBaseError):
         super().__init__(f"Erreur lors du calcul de découverte : {reason}")
 
 
+class InvalidDataUriFormatError(ValueError, AspirabotBaseError):
+    """Raised when a base64 image data URI does not match the expected format."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Format attendu : data:<mime>;base64,<données>")
+
+
+class InvalidAggregatorsListError(ValueError, AspirabotBaseError):
+    """Raised when the aggregators mapping list fails validation."""
+
+    def __init__(self, reason: str) -> None:
+        """Initialize the error message.
+
+        Args:
+            reason: Human-readable description of the validation failure.
+        """
+        super().__init__(f"Liste d'agrégateurs invalide : {reason}")
+
+
 class UrlPageCheckMismatchError(AspirabotBaseError):
     """Raised when the current page URL does not match the expected URL components."""
 

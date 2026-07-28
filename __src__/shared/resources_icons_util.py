@@ -137,8 +137,8 @@ class ResourcesIcons:
         if key not in self._cache:
             try:
                 img = Image.open(resolved_path)
-                img = img.resize(size, Image.Resampling.BILINEAR)
-            except Exception:  # noqa: BLE001
+                img = img.resize(size, Image.Resampling.BILINEAR)  # type: ignore[reportUnknownMemberType]
+            except Exception:  # ruff: ignore[blind-except]
                 img = self._create_fallback(size)
 
             self._cache[key] = ImageTk.PhotoImage(img)
@@ -163,8 +163,8 @@ class ResourcesIcons:
 
         if key not in self._cache:
             try:
-                img = Image.open(resolved_path).resize(size, Image.Resampling.BILINEAR)
-            except Exception:  # noqa: BLE001
+                img = Image.open(resolved_path).resize(size, Image.Resampling.BILINEAR)  # type: ignore[reportUnknownMemberType]
+            except Exception:  # ruff: ignore[blind-except]
                 img = self._create_fallback(size)
             self._cache[key] = ImageTk.PhotoImage(self._apply_disabled_effect(img))
 
@@ -185,7 +185,7 @@ class ResourcesIcons:
         """
         img = img.convert("RGBA")
         r, g, b, a = img.split()
-        a = a.point(lambda v: int(v * 0.4))
+        a = a.point(lambda v: int(v * 0.4))  # type: ignore[reportUnknownMemberType]
         return Image.merge("RGBA", [r, g, b, a])
 
     @staticmethod

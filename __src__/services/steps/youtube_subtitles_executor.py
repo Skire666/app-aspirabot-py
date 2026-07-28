@@ -87,36 +87,43 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
         """Execute the step."""
         assert context.step_scraping_data is not None
         exp_folder = Path(str(context.folder_export) + "/srt")
-        result: ProcessResultEnum = ProcessResultEnum.E_UNSET
 
         try:
-            url_youtube = sanitize_youtube_url(context.last_url_opened)
-            all_srt = _require_subtitles_found(self._repo.fetch_cached_subtitles(url_youtube))
-            rs = all_srt.validate()
-
-            if not rs.has_errors_or_fatals():
-                nbr_ddl_srt = self.download_all_subtitles(url_youtube, all_srt, exp_folder, event_bus, context)
-                _require_subtitles_downloaded(nbr_ddl_srt)
-                if rs.has_warnings():
-                    event_bus.log_step(context, rs.concat_issues_by_order(10))
-                    result = ProcessResultEnum.E_WARNING
-                else:
-                    result = ProcessResultEnum.E_SUCCESS
-                event_bus.log_step(context, f"Nombre de sous-titres téléchargés : +{nbr_ddl_srt}")
-            else:
-                event_bus.log_step(context, rs.concat_issues_by_order(10))
-                result = ProcessResultEnum.E_ERROR
-
+            return self._fetch_and_download_subtitles(exp_folder, context, event_bus)
         except Exception as exc:
             self._logger.exception("An error occurred while fetching YouTube subtitles.")
-            err_code = ErrorCodeYYD.try_simplify_exception(exc)
-            if err_code is not None:
-                event_bus.log_step(context, f"Excp : {err_code} - {err_code.value}")
-            else:
-                event_bus.log_step(context, f"Excp : {exc}")
-            result = ProcessResultEnum.E_ERROR
+            event_bus.log_step(context, self._format_exception_message(exc))
+            return ProcessResultEnum.E_ERROR
 
+    def _fetch_and_download_subtitles(
+        self, exp_folder: Path, context: ScrapingContextModel, event_bus: IScrapingEventBus
+    ) -> ProcessResultEnum:
+        """Fetch subtitle metadata, download eligible tracks, and report the outcome."""
+        url_youtube = sanitize_youtube_url(context.last_url_opened)
+        all_srt = _require_subtitles_found(self._repo.fetch_cached_subtitles(url_youtube))
+        rs = all_srt.validate()
+
+        if rs.has_errors_or_fatals():
+            event_bus.log_step(context, rs.concat_issues_by_order(10))
+            return ProcessResultEnum.E_ERROR
+
+        nbr_ddl_srt = self.download_all_subtitles(url_youtube, all_srt, exp_folder, event_bus, context)
+        _require_subtitles_downloaded(nbr_ddl_srt)
+        if rs.has_warnings():
+            event_bus.log_step(context, rs.concat_issues_by_order(10))
+            result = ProcessResultEnum.E_WARNING
+        else:
+            result = ProcessResultEnum.E_SUCCESS
+        event_bus.log_step(context, f"Nombre de sous-titres téléchargés : +{nbr_ddl_srt}")
         return result
+
+    @staticmethod
+    def _format_exception_message(exc: Exception) -> str:
+        """Build a short log-step message from an unexpected exception."""
+        err_code = ErrorCodeYYD.try_simplify_exception(exc)
+        if err_code is not None:
+            return f"Excp : {err_code} - {err_code.value}"
+        return f"Excp : {exc}"
 
     def download_all_subtitles(
         self,
@@ -145,7 +152,7 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
                             event_bus.log_step(ctx, "ERROR: " + msg_log)
                     else:
                         event_bus.log_step(ctx, "SKIPPED (fait tout le temps HTTP 429): " + msg_log)
-        except Exception:  # noqa: BLE001
+        except Exception:  # ruff: ignore[blind-except]
             event_bus.log_step(ctx, "ERROR - Erreur inattendue...")
         return nbr_srt_ddl
 
@@ -171,7 +178,7 @@ class YoutubeSubtitlesExecutor(IStepExecutor):
 
             try:
                 self._repo.execute_subtitle_download(url_youtube, id_video, out_dir, srt)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:  # ruff: ignore[blind-except]
                 if not self._is_rate_limit_error(exc):
                     event_bus.log_step(ctx, f"Erreur yt-dlp (non rate-limit) : {exc}")
                     return False

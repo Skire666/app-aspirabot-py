@@ -65,14 +65,14 @@ class ClickForDownloadExecutor(IStepExecutor):
         try:
             page = browser.get_workflow_page()
             if page.locator(p.selector).count() <= 0:
-                raise ElementNotFoundForClickError(p.selector, p.click_mode)  # noqa: TRY301
+                raise ElementNotFoundForClickError(p.selector, p.click_mode)  # ruff: ignore[raise-within-try]
             download_ctx: Any = self._do_click_for_download(browser, p.click_mode, p.selector, p.index_clicked)
             dl: Download | None = download_ctx.value if download_ctx is not None else None
             if dl is None:
-                raise DownloadNotDetectedError()  # noqa: TRY301
+                raise DownloadNotDetectedError()  # ruff: ignore[raise-within-try]
             self._save_download(dl, context)
             event_bus.log_step(context, f"Clique OK avec sélecteur '{p.selector}' pour téléchargement")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:
@@ -87,14 +87,14 @@ class ClickForDownloadExecutor(IStepExecutor):
         download_value.save_as(new_path)
 
     @staticmethod
-    def _try_js_click(page: Page, elements: list[ElementHandle], index: int) -> Any:  # noqa: ANN401
+    def _try_js_click(page: Page, elements: list[ElementHandle], index: int) -> Any:  # ruff: ignore[any-type]
         """Trigger a JS click and capture the resulting download context manager."""
         with page.expect_download(timeout=C_LIMIT_TIMEOUT_CLICK_MS) as download_info:
             elements[index].evaluate("element => element.click()")
         return download_info
 
     @staticmethod
-    def _do_click_for_download(browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int) -> Any:  # noqa: ANN401
+    def _do_click_for_download(browser: IWebBrowserService, mode_click: str, selector: str, index_clicked: int) -> Any:  # ruff: ignore[any-type]
         """Locate the selector and attempt a JS click to trigger a download."""
         page = browser.get_workflow_page()
         elements = page.query_selector_all(selector)

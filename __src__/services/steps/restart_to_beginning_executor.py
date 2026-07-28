@@ -51,7 +51,7 @@ class RestartToBeginningExecutor(IStepExecutor):
 
             event_bus.log_step(context, "Recommence au début")
         except Exception as exc:
-            _logger.exception("Exception in RESTART_TO_BEGINNING step: %s", exc)
+            _logger.exception("Erreur lors du redémarrage au début.")
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

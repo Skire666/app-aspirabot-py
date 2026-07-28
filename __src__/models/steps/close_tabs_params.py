@@ -39,7 +39,7 @@ class CloseTabsParams(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_filter_custom(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
+    def check_filter_custom(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # ruff: ignore[any-type]
         """Validate filter_custom is set when filter_mode is custom."""
         if not isinstance(data, dict) or not info.context:
             return cast(dict[str, Any], data)

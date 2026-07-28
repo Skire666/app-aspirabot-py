@@ -73,7 +73,7 @@ class ExtractVariableExecutor(IStepExecutor):
             context.push_vars_extracted(p.mapping, value)
 
             event_bus.log_step(context, f"Variable '{p.variable}' = '{value}'.")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

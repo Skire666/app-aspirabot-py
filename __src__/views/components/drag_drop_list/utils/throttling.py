@@ -29,7 +29,7 @@ class Debouncer:
 
     # ── Public API ───────────────────────────────────────────────────
 
-    def schedule(self, widget: Any, callback: Callable[[], None]) -> None:  # noqa: ANN401
+    def schedule(self, widget: Any, callback: Callable[[], None]) -> None:  # ruff: ignore[any-type]
         """Schedules callback; cancels any previously pending call.
 
         Args:
@@ -40,7 +40,7 @@ class Debouncer:
             widget.after_cancel(self._job)
         self._job = widget.after(self._delay_ms, self._wrap(callback))
 
-    def cancel(self, widget: Any) -> None:  # noqa: ANN401
+    def cancel(self, widget: Any) -> None:  # ruff: ignore[any-type]
         """Cancels any pending callback.
 
         Args:

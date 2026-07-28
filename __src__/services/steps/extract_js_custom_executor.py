@@ -98,7 +98,7 @@ class ExtractJsCustomExecutor(IStepExecutor):
         if not is_success or raw_value is None:
             raise ScriptExecutionFailedError("extract_js_custom")
         if not isinstance(raw_value, dict | list):
-            raise ScriptExecutionFailedError("not [dict | list]")
+            raise InvalidJsExtractedValueTypeError(type(raw_value).__name__)
         return cast("dict[str, object] | list[object]", raw_value)
 
     @staticmethod

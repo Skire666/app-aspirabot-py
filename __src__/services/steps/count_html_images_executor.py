@@ -39,9 +39,9 @@ class CountHtmlImagesExecutor(IStepExecutor):
             condition_met = evaluate_count_condition(len(all_images), p.operator, p.value)
             step_success = condition_met if p.success_if == "success" else not condition_met
             if not step_success:
-                raise CountHtmlImagesConditionNotMetError(len(all_images), p.operator, str(p.value))  # noqa: TRY301
+                raise CountHtmlImagesConditionNotMetError(len(all_images), p.operator, str(p.value))  # ruff: ignore[raise-within-try]
             event_bus.log_step(context, f"Trouvé x{len(all_images)} image(s), condition vérifiée.")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

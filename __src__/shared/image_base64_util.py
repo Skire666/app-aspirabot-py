@@ -1,6 +1,12 @@
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import base64
 import hashlib
 from pathlib import Path
+
+from shared.exception_util import InvalidDataUriFormatError
 
 
 def export_base64_image(prefix: str, url_ok: str, data_uri: str, output_dir: str | Path = ".") -> str:
@@ -14,6 +20,9 @@ def export_base64_image(prefix: str, url_ok: str, data_uri: str, output_dir: str
 
     Returns:
         Le hash MD5 hexadécimal de l'URL source.
+
+    Raises:
+        InvalidDataUriFormatError: Si data_uri ne contient pas de séparateur ",".
     """
     # --- 1. Hash de l'URL source -----------------------------------------
     hash32char = hashlib.md5(url_ok.encode(), usedforsecurity=False).hexdigest()
@@ -21,7 +30,7 @@ def export_base64_image(prefix: str, url_ok: str, data_uri: str, output_dir: str
     # --- 2. Séparer l'en-tête du payload --------------------------------
     header, _, raw_b64 = data_uri.partition(",")
     if not raw_b64:
-        raise ValueError("Format attendu : data:<mime>;base64,<données>")
+        raise InvalidDataUriFormatError()
 
     mime = header.split(":")[1].split(";")[0]  # "image/png"
     ext = mime.split("/")[1]  # "png"
@@ -38,3 +47,6 @@ def export_base64_image(prefix: str, url_ok: str, data_uri: str, output_dir: str
     filepath.write_bytes(image_bytes)
 
     return str("./export_img/" + filepath.name)
+
+
+# EOF

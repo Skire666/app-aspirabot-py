@@ -47,7 +47,7 @@ class KillBrowserExecutor(IStepExecutor):
                 self._do_pause(context, event_bus)
             browser.close_all_tabs()
             context.end_process = True
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

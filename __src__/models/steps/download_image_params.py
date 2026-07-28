@@ -68,7 +68,7 @@ class DownloadImageParams(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_height_range(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
+    def check_height_range(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # ruff: ignore[any-type]
         """Validate that height_min does not exceed height_max."""
         if not isinstance(data, dict) or not info.context:
             return cast(dict[str, Any], data)
@@ -84,7 +84,7 @@ class DownloadImageParams(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_width_range(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # noqa: ANN401
+    def check_width_range(cls, data: Any, info: ValidationInfo) -> dict[str, Any]:  # ruff: ignore[any-type]
         """Validate that width_min does not exceed width_max."""
         if not isinstance(data, dict) or not info.context:
             return cast(dict[str, Any], data)

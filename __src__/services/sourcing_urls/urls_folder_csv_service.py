@@ -13,6 +13,7 @@ Discovery is lazy: the folder is scanned only on the first ``load_url_if_availab
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -36,7 +37,7 @@ from shared.constants import (
 from shared.datetime_util import parse_date_from_csv
 from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.enums.priority_scraping_enum import PriorityScrapingEnum
-from shared.exception_util import InvalidUrlSourceValueTypeError
+from shared.exception_util import InvalidUrlSourceValueTypeError, UnknownPriorityTypeUsedError
 from shared.parse_util import safe_int_from_str
 from shared.path_util import get_mtime_of_file
 from shared.typing.csv_table import CsvTable
@@ -50,6 +51,8 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class MetaDataCsvRows:
+    """One parsed CSV row, with raw string fields converted to their typed value."""
+
     index: int
     primary_key: str
     date_first_created: datetime
@@ -61,7 +64,7 @@ class MetaDataCsvRows:
     score_strategy_newest: int
     score_strategy_oldest: int
 
-    def __init__(
+    def __init__(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
         self,
         index: str,
         primary_key: str,
@@ -73,7 +76,21 @@ class MetaDataCsvRows:
         score_strategy_quality: str,
         score_strategy_newest: str,
         score_strategy_oldest: str,
-    ):
+    ) -> None:
+        """Parse and convert every raw CSV column value into its typed field.
+
+        Args:
+            index: Raw row index, as a string.
+            primary_key: The URL used to deduplicate rows.
+            date_first_created: Raw first-created timestamp, as a string.
+            date_last_modified: Raw last-modified timestamp, as a string.
+            best_extractor: Best known extractor level for this URL.
+            quality_1_date: Raw date-based quality score, as a string.
+            quality_2_row: Raw row-based quality score, as a string.
+            score_strategy_quality: Raw quality-priority score, as a string.
+            score_strategy_newest: Raw newest-priority score, as a string.
+            score_strategy_oldest: Raw oldest-priority score, as a string.
+        """
         self.index = safe_int_from_str(index, 0)
         self.primary_key = primary_key
         self.date_first_created = parse_date_from_csv(date_first_created)
@@ -84,6 +101,20 @@ class MetaDataCsvRows:
         self.score_strategy_quality = safe_int_from_str(score_strategy_quality, 0)
         self.score_strategy_newest = safe_int_from_str(score_strategy_newest, 0)
         self.score_strategy_oldest = safe_int_from_str(score_strategy_oldest, 0)
+
+
+# Sort key and direction to apply for each priority type; keeps _filter_and_sort_urls
+# a flat dispatch instead of a long if/elif chain.
+_SORT_SPEC_BY_PRIORITY: dict[PriorityScrapingEnum, tuple[Callable[[MetaDataCsvRows], int | datetime], bool]] = {
+    PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW: (lambda x: x.index, False),
+    PriorityScrapingEnum.E_LAST_CREATED_BY_OLD: (lambda x: x.index, True),
+    PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW: (lambda x: x.date_last_modified, True),
+    PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD: (lambda x: x.date_last_modified, False),
+    PriorityScrapingEnum.E_QUALITY_BY_LOW: (lambda x: x.quality_2_row, False),
+    PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST: (lambda x: x.score_strategy_quality, False),
+    PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST: (lambda x: x.score_strategy_newest, False),
+    PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST: (lambda x: x.score_strategy_oldest, False),
+}
 
 
 class UrlsFolderCsvService(IUrlSourceProvider):
@@ -261,28 +292,13 @@ class UrlsFolderCsvService(IUrlSourceProvider):
 
     def _filter_and_sort_urls(self, url_with_time: list[MetaDataCsvRows]) -> list[str]:
         """Apply date range filter and sort order; return the final ordered URL list."""
-        # On sort les attributs de la boucle (accès attribut = coûteux en Python)
         top_n = self._x_top_taken
 
-        # Tri
-        if self._piority_type_used == PriorityScrapingEnum.E_FIRST_CREATED_BY_NEW:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.index)
-        elif self._piority_type_used == PriorityScrapingEnum.E_LAST_CREATED_BY_OLD:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.index, reverse=True)
-        elif self._piority_type_used == PriorityScrapingEnum.E_LAST_MODIFIED_BY_NEW:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.date_last_modified, reverse=True)
-        elif self._piority_type_used == PriorityScrapingEnum.E_LAST_MODIFIED_BY_OLD:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.date_last_modified)
-        elif self._piority_type_used == PriorityScrapingEnum.E_QUALITY_BY_LOW:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.quality_2_row)
-        elif self._piority_type_used == PriorityScrapingEnum.E_LOW_QUALITY_BY_OLDEST:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_quality)
-        elif self._piority_type_used == PriorityScrapingEnum.E_LOW_EXTRACTOR_NEWEST:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_newest)
-        elif self._piority_type_used == PriorityScrapingEnum.E_LOW_EXTRACTOR_OLDEST:
-            sorted_urls = sorted(url_with_time, key=lambda x: x.score_strategy_oldest)
-        else:
-            raise ValueError(f"Unknown priority type used: {self._piority_type_used}")
+        sort_spec = _SORT_SPEC_BY_PRIORITY.get(self._piority_type_used)
+        if sort_spec is None:
+            raise UnknownPriorityTypeUsedError(self._piority_type_used)
+        key_func, reverse = sort_spec
+        sorted_urls = sorted(url_with_time, key=key_func, reverse=reverse)
 
         return [item.primary_key for item in sorted_urls[:top_n]]
 

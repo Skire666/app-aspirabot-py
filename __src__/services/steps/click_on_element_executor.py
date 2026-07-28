@@ -47,10 +47,10 @@ class ClickOnElementExecutor(IStepExecutor):
         try:
             page = browser.get_workflow_page()
             if page.locator(p.selector).count() <= 0:
-                raise ElementNotFoundForClickError(p.selector, p.click_mode)  # noqa: TRY301
+                raise ElementNotFoundForClickError(p.selector, p.click_mode)  # ruff: ignore[raise-within-try]
             result = self._do_click(browser, p.click_mode, p.selector, p.index_clicked)
             event_bus.log_step(context, f"Clique OK avec sélecteur {p.selector!r} avec le mode {result!r}.")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

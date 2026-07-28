@@ -170,6 +170,14 @@ def get_mtime_of_file(file_path: Path | str) -> datetime:
 
 
 def can_write(chemin: str | Path) -> bool:
+    """Check whether the given path can be written to.
+
+    Args:
+        chemin: The file path to test for write access.
+
+    Returns:
+        True if the file can be created or opened for writing, False otherwise.
+    """
     p = Path(chemin)
     try:
         if not p.is_file():
@@ -178,9 +186,10 @@ def can_write(chemin: str | Path) -> bool:
         # 'r+b' ouvre en lecture/écriture SANS tronquer le fichier
         with Path(p).open("r+b"):
             pass
-        return True
     except PermissionError, OSError:
         return False
+    else:
+        return True
 
 
 def count_missing_folders(path: str | Path) -> int:

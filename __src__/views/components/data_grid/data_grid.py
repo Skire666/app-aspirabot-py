@@ -273,7 +273,7 @@ class DataGrid(_DataGridDrawingMixin, ttk.Frame):
 
     def _on_header_click(self, event: tk.Event) -> None:
         """Handles sort clicks on a header cell."""
-        canvas_x: float = float(self.header_canvas.canvasx(event.x))  # type: ignore[reportUnknownMemberType]
+        canvas_x: float = float(self.header_canvas.canvasx(event.x))
         column_index = self._column_index_from_x(canvas_x)
         if column_index is None:
             return
@@ -315,7 +315,7 @@ class DataGrid(_DataGridDrawingMixin, ttk.Frame):
         if self._button_hover_row is not None:
             self._set_hover_row_state(self._button_hover_row)
             return
-        canvas_y: float = float(self.body_canvas.canvasy(event.y))  # type: ignore[reportUnknownMemberType]
+        canvas_y: float = float(self.body_canvas.canvasy(event.y))
         row_index = int(canvas_y // self._row_height)
         if row_index < 0 or row_index >= len(self._data):
             row_index = -1
@@ -358,7 +358,7 @@ class DataGrid(_DataGridDrawingMixin, ttk.Frame):
         ):
             new_hover: int | None = None
         else:
-            canvas_y: float = float(self.body_canvas.canvasy(local_y))  # type: ignore[reportUnknownMemberType]
+            canvas_y: float = float(self.body_canvas.canvasy(local_y))
             row_index = int(canvas_y // self._row_height)
             new_hover = row_index if 0 <= row_index < len(self._data) else None
         self._set_hover_row_state(new_hover)
@@ -403,8 +403,8 @@ class DataGrid(_DataGridDrawingMixin, ttk.Frame):
         vis = self._visible_columns
         if not vis:
             return 0, 0
-        x0: float = float(self.body_canvas.canvasx(0))  # type: ignore[reportUnknownMemberType]
-        x1: float = float(self.body_canvas.canvasx(self.body_canvas.winfo_width()))  # type: ignore[reportUnknownMemberType]
+        x0: float = float(self.body_canvas.canvasx(0))
+        x1: float = float(self.body_canvas.canvasx(self.body_canvas.winfo_width()))
         start = max(0, bisect.bisect_right(self._column_offsets, x0) - 1)
         end = max(start + 1, bisect.bisect_left(self._column_offsets, x1))
         return start, min(end, len(vis))
@@ -413,8 +413,8 @@ class DataGrid(_DataGridDrawingMixin, ttk.Frame):
         """Computes visible [start, end) row indexes."""
         if not self._data:
             return 0, 0
-        y0: float = max(0.0, float(self.body_canvas.canvasy(0)))  # type: ignore[reportUnknownMemberType]
-        y1: float = max(0.0, float(self.body_canvas.canvasy(self.body_canvas.winfo_height())))  # type: ignore[reportUnknownMemberType]
+        y0: float = max(0.0, float(self.body_canvas.canvasy(0)))
+        y1: float = max(0.0, float(self.body_canvas.canvasy(self.body_canvas.winfo_height())))
         start = max(0, int(y0 // self._row_height) - 1)
         end = min(len(self._data), int(y1 // self._row_height) + 2)
         return start, end

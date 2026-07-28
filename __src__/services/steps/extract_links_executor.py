@@ -65,7 +65,7 @@ class ExtractLinksExecutor(IStepExecutor):
             # debug log
             preview_one_item = links[0] if links and links[0] else C_STR_ERROR_EXTRACT_LINKS
             event_bus.log_step(context, f"x{len(links)} lien(s) | str[:25] ='{preview_one_item[:25]}'")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

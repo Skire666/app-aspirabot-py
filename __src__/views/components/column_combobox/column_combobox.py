@@ -45,7 +45,7 @@ class ColumnCombobox(tk.Frame):
         master: tk.Misc,
         state: str = "readonly",
         width: int = 30,
-        font: Any = None,  # noqa: ANN401
+        font: Any = None,  # ruff: ignore[any-type]
         textvariable: tk.StringVar | None = None,
         **kwargs: Any,
     ) -> None:
@@ -76,7 +76,7 @@ class ColumnCombobox(tk.Frame):
         self._state = state
         self._disabled: bool = False
 
-    def _resolve_font(self, font: Any) -> None:  # noqa: ANN401
+    def _resolve_font(self, font: Any) -> None:  # ruff: ignore[any-type]
         """Resolve the font argument into a tkfont.Font instance."""
         if font is None:
             self._font: tkfont.Font = tkfont.nametofont("TkDefaultFont").copy()
@@ -158,7 +158,7 @@ class ColumnCombobox(tk.Frame):
 
     # ── Item API ──────────────────────────────────────────────────────────────
 
-    def add_item(self, obj: Any, columns: list[Any] | None = None) -> None:  # noqa: ANN401
+    def add_item(self, obj: Any, columns: list[Any] | None = None) -> None:  # ruff: ignore[any-type]
         """Append *obj*, extracting and caching all column values immediately.
 
         Args:
@@ -176,7 +176,7 @@ class ColumnCombobox(tk.Frame):
             for col in self._columns:
                 try:
                     cache[col.key] = col.extractor(obj)
-                except Exception:  # noqa: BLE001
+                except Exception:  # ruff: ignore[blind-except]
                     cache[col.key] = ""
         self._row_cache.append(cache)
 
@@ -199,7 +199,7 @@ class ColumnCombobox(tk.Frame):
 
     # ── Selection accessors ───────────────────────────────────────────────────
 
-    def get_selected_object(self) -> Any | None:  # noqa: ANN401
+    def get_selected_object(self) -> Any | None:  # ruff: ignore[any-type]
         """Return the Python object bound to the selected row, or None."""
         return self._objects[self._selected_index] if self._selected_index is not None else None
 
@@ -209,7 +209,7 @@ class ColumnCombobox(tk.Frame):
             return None
         return dict(self._row_cache[self._selected_index])
 
-    def get_selected_value(self, key: str) -> Any | None:  # noqa: ANN401
+    def get_selected_value(self, key: str) -> Any | None:  # ruff: ignore[any-type]
         """Return the value of *key* column for the selected row, or None.
 
         Args:
@@ -220,7 +220,7 @@ class ColumnCombobox(tk.Frame):
         self._find_col(key)
         return self._row_cache[self._selected_index].get(key)
 
-    def get_object_at(self, index: int) -> Any | None:  # noqa: ANN401
+    def get_object_at(self, index: int) -> Any | None:  # ruff: ignore[any-type]
         """Return the Python object at *index*, or None if out of range.
 
         Args:

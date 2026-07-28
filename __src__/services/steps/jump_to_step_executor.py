@@ -47,7 +47,7 @@ class JumpToStepExecutor(IStepExecutor):
                 else "Ne saute pas. Lit prochaine étape."
             )
             event_bus.log_step(context, str_jump)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

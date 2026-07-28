@@ -41,9 +41,9 @@ class CloseTabsExecutor(IStepExecutor):
             msg = f"Fermé x{counter_closed} onglet(s) ne correspondant pas au filtre URL {filter_used!r}"
             event_bus.log_step(context, msg)
             if current_page not in browser.get_all_pages():
-                raise CurrentPageClosedUnexpectedlyError()  # noqa: TRY301
+                raise CurrentPageClosedUnexpectedlyError()  # ruff: ignore[raise-within-try]
             self._enforce_max_tabs(browser, current_page, p.max_tabs)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

@@ -38,7 +38,7 @@ class WaitUserActionExecutor(IStepExecutor):
             if not self._should_pause(p, context):
                 return ProcessResultEnum.E_SKIPPED
             self._do_pause(context, p, event_bus)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

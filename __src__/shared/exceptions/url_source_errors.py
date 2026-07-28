@@ -77,6 +77,18 @@ class UrlSourceExhaustedError(ValueError, AspirabotBaseError):
         super().__init__("Aucune URL disponible dans la source.")
 
 
+class UnknownPriorityTypeUsedError(ValueError, AspirabotBaseError):
+    """Raised when a URL source is asked to sort by an unhandled priority type."""
+
+    def __init__(self, priority_type: object) -> None:
+        """Initialize the error message.
+
+        Args:
+            priority_type: The unrecognised priority type value.
+        """
+        super().__init__(f"Type de priorité inconnu : {priority_type}")
+
+
 class UrlSourceFileNotFoundError(FileNotFoundError, AspirabotBaseError):
     """Raised when a required URL source file or folder cannot be found."""
 

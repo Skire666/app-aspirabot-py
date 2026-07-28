@@ -254,7 +254,7 @@ class WorkflowViewModel(ViewModelBase):
             return False
         return self._on_ask_overwrite()
 
-    def show_inline_form(self, step: Any = None) -> None:  # noqa: ANN401
+    def show_inline_form(self, step: Any = None) -> None:  # ruff: ignore[any-type]
         """Dispatch a show-inline-form request to the View.
 
         Args:

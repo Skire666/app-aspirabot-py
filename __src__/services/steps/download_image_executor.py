@@ -66,9 +66,9 @@ class DownloadImageExecutor(IStepExecutor):
                 self._save_image(page, full_url, context, downloaded_urls)
                 downloaded_count += 1
             if downloaded_count == 0:
-                raise ImageNotDownloadedError(len(targets))  # noqa: TRY301
+                raise ImageNotDownloadedError(len(targets))  # ruff: ignore[raise-within-try]
             event_bus.log_step(context, f"Téléchargé x{downloaded_count} image(s).")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:
@@ -76,7 +76,7 @@ class DownloadImageExecutor(IStepExecutor):
 
     @staticmethod
     def _save_image(
-        page: Any,  # noqa: ANN401
+        page: Any,  # ruff: ignore[any-type]
         full_url: str,
         context: ScrapingContextModel,
         downloaded_urls: set[str],

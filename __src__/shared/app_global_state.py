@@ -132,7 +132,7 @@ class AppGlobalState:
             try:
                 x, y = position.split(",", 1)
                 root.geometry(f"{config_model.gui_booting_size}+{int(x)}+{int(y)}")
-            except Exception:  # noqa: BLE001
+            except Exception:  # ruff: ignore[blind-except]
                 root.geometry(config_model.gui_booting_size)
         else:
             root.geometry(config_model.gui_booting_size)

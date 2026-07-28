@@ -39,7 +39,7 @@ __all__ = [
     "_BtnDef",
 ]
 
-_LAZY_ATTRS = frozenset(__all__)  # noqa: RUF067
+_LAZY_ATTRS = frozenset(__all__)  # ruff: ignore[non-empty-init-module]
 
 
 def __getattr__(name: str) -> object:

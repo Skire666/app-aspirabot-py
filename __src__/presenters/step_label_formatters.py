@@ -45,6 +45,9 @@ _OP_LABELS: dict[str, str] = {
 # Minimum image dimension default shared across image-related steps
 _C_DEFAULT_IMG_SIZE_MIN: int = 250
 
+# Beyond this length, the aggregators list preview is truncated with an ellipsis
+_C_MAX_AGGREGATORS_PREVIEW_LEN: int = 25
+
 # -----------------------------------------------------------------------------
 # Public API
 # -----------------------------------------------------------------------------
@@ -165,7 +168,11 @@ def _fmt_export_data_to_js(params: dict[str, Any], _idx: int, _ctx: dict[str, in
     """Format label for EXPORT_DATA_TO_CSV."""
     csv_fname = params.get("csv_filename") or "<vide>"
     aggregators = params.get("aggregators_list") or "<vide>"
-    pp = f"{aggregators.replace(chr(10), ''):.25}...(len x{len(aggregators)})" if len(aggregators) > 25 else aggregators
+    pp = (
+        f"{aggregators.replace(chr(10), ''):.{_C_MAX_AGGREGATORS_PREVIEW_LEN}}...(len x{len(aggregators)})"
+        if len(aggregators) > _C_MAX_AGGREGATORS_PREVIEW_LEN
+        else aggregators
+    )
     return f"Exporter vers fichier CSV - Préfixe : {csv_fname} (.csv)\nAgréger : {pp}"
 
 

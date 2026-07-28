@@ -419,8 +419,8 @@ class StepsListCrudView(ttk.Frame):
 
     def _get_dnd_viewport(self) -> tuple[int, int]:
         """Returns the visible viewport bounds in DragDropList coordinates."""
-        top: float = self._scroll_canvas.canvasy(0)  # type: ignore[reportUnknownMemberType]
-        bottom: float = self._scroll_canvas.canvasy(self._scroll_canvas.winfo_height())  # type: ignore[reportUnknownMemberType]
+        top: float = self._scroll_canvas.canvasy(0)
+        bottom: float = self._scroll_canvas.canvasy(self._scroll_canvas.winfo_height())
         return (int(top), int(bottom))
 
     def _on_mousewheel_scroll(self, event: tk.Event) -> None:

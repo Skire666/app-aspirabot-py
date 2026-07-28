@@ -55,7 +55,7 @@ class ScrollDownExecutor(IStepExecutor):
                 if consecutive_same_value_count >= C_LIMIT_GIVE_UP_SCROLLING:
                     event_bus.log_step(context, "Page stabilisée, arrêt du défilement.")
                     break
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

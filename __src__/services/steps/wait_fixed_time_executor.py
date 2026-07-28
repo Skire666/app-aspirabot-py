@@ -39,7 +39,7 @@ class WaitFixedTimeExecutor(IStepExecutor):
             if time_sec > 0:
                 time.sleep(time_sec)
             event_bus.log_step(context, f"Pause durant '{time_sec:.3f}' sec.")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

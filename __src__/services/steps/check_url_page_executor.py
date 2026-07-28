@@ -44,10 +44,10 @@ class CheckUrlPageExecutor(IStepExecutor):
 
             # check errors
             if mismatches:
-                raise UrlPageCheckMismatchError(" | ".join(mismatches))  # noqa: TRY301
+                raise UrlPageCheckMismatchError(" | ".join(mismatches))  # ruff: ignore[raise-within-try]
             checks = self._collect_passed_checks(p)
             event_bus.log_step(context, f"URL vérifiée : '{', '.join(checks)}'")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff: ignore[blind-except]
             event_bus.log_step(context, f"Excp : {exc}")
             return ProcessResultEnum.E_ERROR
         else:

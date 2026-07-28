@@ -97,6 +97,14 @@ class FailedToInitializeLoggingDuringRuntimeError(AspirabotBaseError):
         super().__init__("Impossible d'initialiser le système de journalisation au démarrage.")
 
 
+class ChromiumInstallationFailedError(AspirabotBaseError):
+    """Raised when the Playwright CLI fails to install Chromium."""
+
+    def __init__(self) -> None:
+        """Initialize the error message."""
+        super().__init__("Échec de l'installation de Chromium.")
+
+
 class UnsupportedBrowserEngineError(AspirabotBaseError):
     """Raised when the configured browser engine is unsupported."""
 

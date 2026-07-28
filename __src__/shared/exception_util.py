@@ -33,6 +33,7 @@ from shared.exceptions.browser_errors import (
     UrlNavigationMismatchError,
 )
 from shared.exceptions.config_errors import (
+    ChromiumInstallationFailedError,
     ConfigurationNotLoadedError,
     FailedToCreateRequiredDirectoriesDuringRuntimeError,
     FailedToInitializeLoggingDuringRuntimeError,
@@ -58,6 +59,8 @@ from shared.exceptions.discover_errors import (
     DiscoverKeyMappingRequiredError,
     DiscoverUrlPatternRequiredError,
     DuplicateColumnKeyError,
+    InvalidAggregatorsListError,
+    InvalidDataUriFormatError,
     UrlPageCheckMismatchError,
 )
 from shared.exceptions.registry_errors import (
@@ -109,6 +112,7 @@ from shared.exceptions.step_execution_errors import (
 )
 from shared.exceptions.url_source_errors import (
     InvalidUrlSourceValueTypeError,
+    UnknownPriorityTypeUsedError,
     UnknownUrlSourceTypeError,
     UrlSourceExhaustedError,
     UrlSourceFileNotFoundError,
@@ -152,6 +156,7 @@ __all__ = [
     "BrowserLaunchFailedError",
     "BrowserNotLaunchedError",
     "CallbackNotDefinedError",
+    "ChromiumInstallationFailedError",
     "ColumnNotFoundError",
     "ConfigurationNotLoadedError",
     "CountHtmlElementsConditionNotMetError",
@@ -190,8 +195,10 @@ __all__ = [
     "ImageNotDownloadedError",
     "ImageWaitTimeoutError",
     "InsufficientDataQualityError",
+    "InvalidAggregatorsListError",
     "InvalidBooleanError",
     "InvalidBrowserEngineError",
+    "InvalidDataUriFormatError",
     "InvalidDirectoryPathError",
     "InvalidDurationError",
     "InvalidFilePathError",
@@ -233,6 +240,7 @@ __all__ = [
     "StringTooLongError",
     "StringTooShortError",
     "UnexpectedProcessResultError",
+    "UnknownPriorityTypeUsedError",
     "UnknownUrlSourceTypeError",
     "UnsupportedBrowserEngineError",
     "UnsupportedClickModeError",

@@ -26,6 +26,9 @@ from shared.validation_result import ValidationResult
 # Minimum length of a plausible warmup URL (e.g. "http" prefix plus content).
 _MIN_WARMUP_URL_LENGTH: int = 4
 
+# Beyond this number of missing parent folders, the export path is rejected.
+_MAX_MISSING_EXPORT_FOLDERS: int = 2
+
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
@@ -208,7 +211,7 @@ class LaunchModel:
         if self.export_folder.startswith("/"):
             vr.append(ErrorCodeLAM.LAM_1006, SeverityEnum.E_ERROR)
             return True
-        if count_missing_folders(self.export_folder) >= 2:
+        if count_missing_folders(self.export_folder) >= _MAX_MISSING_EXPORT_FOLDERS:
             vr.append(ErrorCodeLAM.LAM_1014, SeverityEnum.E_ERROR)
             return True
         return False

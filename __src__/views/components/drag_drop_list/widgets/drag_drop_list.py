@@ -80,7 +80,7 @@ class DragDropList[T](_DragDropListActionsMixin, tk.Frame):
     on_toggle_active    : fn(item, idx)  | None → button hidden
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # ruff: ignore[too-many-arguments]
         self,
         parent: tk.Misc,
         items: list[T],

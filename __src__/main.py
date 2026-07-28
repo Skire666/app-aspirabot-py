@@ -5,9 +5,11 @@
 # -----------------------------------------------------------------------------
 
 import logging
+import os
 import tkinter as tk
 import traceback
 from collections.abc import Callable
+from pathlib import Path
 
 import models.steps  # ruff: ignore[unused-import] - load registry entries
 import presenters.steps  # ruff: ignore[unused-import] - load registry entries (params builders)
@@ -48,7 +50,7 @@ from services.workflow_service import WorkflowService
 
 # Bootstrap: import all step packages to populate the central registry.
 from shared.app_global_state import app_state
-from shared.constants import C_APP_CONFIG_FILE
+from shared.constants import C_APP_CONFIG_FILE, C_APP_NAME
 from shared.enums import TitleModuleEnum
 from shared.path_util import get_current_working_directory
 from shared.playwright_util import setup_environment_playwright
@@ -87,13 +89,17 @@ logger = logging.getLogger(__name__)
 # mais le navigateur n'y a jamais été inclus (ou n'y est plus).
 # SOLUTION : Chemin persistant hors du dossier temp (recommandé pour un .exe plus léger)
 
-# main.py — TOUT EN HAUT, avant "from playwright..."
-import os
 
+def get_browsers_path() -> str:
+    """Determine the persistent folder where Playwright should store Chromium.
 
-def get_browsers_path():
-    base = os.environ.get("LOCALAPPDATA", os.path.expanduser("~"))
-    return os.path.join(base, "TonApp", "ms-playwright")
+    Returns:
+        The absolute path to use as PLAYWRIGHT_BROWSERS_PATH.
+    """
+    base = os.environ.get("LOCALAPPDATA", str(Path("~").expanduser()))
+    path_browser = str(Path(base) / C_APP_NAME / "ms-playwright")
+    logger.debug("Playwright browsers path: %s", path_browser)
+    return path_browser
 
 
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = get_browsers_path()

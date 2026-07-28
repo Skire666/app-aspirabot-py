@@ -45,8 +45,27 @@ from shared.datetime_util import parse_date_from_csv
 from shared.dict_util import set_first_date_created, set_last_date_modified_and_extractor, set_quality_count_filled
 from shared.enums.level_extractor_enum import LevelExtractorEnum
 from shared.enums.relative_date_enum import get_quality_of_updating_date
-from shared.exception_util import CsvRowIndexNotFoundError
+from shared.exception_util import CsvRowIndexNotFoundError, InvalidAggregatorsListError
 from shared.image_base64_util import export_base64_image
+
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+
+# Below this length, a "data:image..." prefixed value cannot hold a real base64 payload.
+_MIN_DATA_URI_LENGTH = 16
+
+# Default value to backfill when a column is present but unset (None).
+_DEFAULT_VALUES_BY_COLUMN: dict[str, str] = {
+    C_CSV_FIRST_CREATED: "1900-01-01 00:00:00",
+    C_CSV_LAST_MODIFIED: "1900-01-01 00:00:00",
+    C_CSV_BEST_EXTRACTOR: LevelExtractorEnum.E_E0_MANUAL_ENTRY.value,
+    C_CSV_QUALITY_1_DATE: "1",
+    C_CSV_QUALITY_2_ROW: "1",
+    C_CSV_STRATEGY_QUALITY: "0",
+    C_CSV_STRATEGY_NEWEST: "0",
+    C_CSV_STRATEGY_OLDEST: "0",
+}
 
 # -----------------------------------------------------------------------------
 # Class
@@ -253,29 +272,16 @@ class CsvTable:
             secondary_reverse=False,  # oldest first
         )
 
-    def fix_basic_data_with_default(self) -> None:  # ruff:ignore[complex-structure]
+    def fix_basic_data_with_default(self) -> None:
         """Fix the basic data in the table.
 
         This method is a placeholder for any basic data cleaning or transformation
         that needs to be applied to the table before exporting or further processing.
         """
         for row in self._rows:
-            if C_CSV_FIRST_CREATED in row and row.get(C_CSV_FIRST_CREATED) is None:
-                row[C_CSV_FIRST_CREATED] = "1900-01-01 00:00:00"
-            if C_CSV_LAST_MODIFIED in row and row.get(C_CSV_LAST_MODIFIED) is None:
-                row[C_CSV_LAST_MODIFIED] = "1900-01-01 00:00:00"
-            if C_CSV_BEST_EXTRACTOR in row and row.get(C_CSV_BEST_EXTRACTOR) is None:
-                row[C_CSV_BEST_EXTRACTOR] = LevelExtractorEnum.E_E0_MANUAL_ENTRY.value
-            if C_CSV_QUALITY_1_DATE in row and row.get(C_CSV_QUALITY_1_DATE) is None:
-                row[C_CSV_QUALITY_1_DATE] = "1"
-            if C_CSV_QUALITY_2_ROW in row and row.get(C_CSV_QUALITY_2_ROW) is None:
-                row[C_CSV_QUALITY_2_ROW] = "1"
-            if C_CSV_STRATEGY_QUALITY in row and row.get(C_CSV_STRATEGY_QUALITY) is None:
-                row[C_CSV_STRATEGY_QUALITY] = "0"
-            if C_CSV_STRATEGY_NEWEST in row and row.get(C_CSV_STRATEGY_NEWEST) is None:
-                row[C_CSV_STRATEGY_NEWEST] = "0"
-            if C_CSV_STRATEGY_OLDEST in row and row.get(C_CSV_STRATEGY_OLDEST) is None:
-                row[C_CSV_STRATEGY_OLDEST] = "0"
+            for column, default_value in _DEFAULT_VALUES_BY_COLUMN.items():
+                if column in row and row.get(column) is None:
+                    row[column] = default_value
 
     def pre_compute_metadata_csv(self) -> None:
         """Compute the metadata columns and write them into every row.
@@ -342,7 +348,7 @@ class CsvTable:
             for col in row:
                 value = row.get(col, None)
                 # data:image/png;base64,iVBORw0KGgoAAAANSUhEUg... ???
-                if value and len(str(value)) >= 16 and value.startswith("data:image"):
+                if value and len(str(value)) >= _MIN_DATA_URI_LENGTH and value.startswith("data:image"):
                     # export image to external file
                     image_data = row[col]
                     url_unique_keys = row.get(C_CSV_PRIMARY_KEY, "")
@@ -358,9 +364,9 @@ class CsvTable:
             # nothgin ? it's okay...
             return
 
-        is_valid = validate_aggregators_list(aggregators_list)
-        if not is_valid:
-            raise ValueError(f"Invalid aggregators list: {aggregators_list}")
+        validation_result = validate_aggregators_list(aggregators_list)
+        if not validation_result.is_valid:
+            raise InvalidAggregatorsListError(str(validation_result))
 
         pairs = parse_aggregators_list(aggregators_list)
 
@@ -376,8 +382,6 @@ class CsvTable:
                     if value_fallback and value_fallback != "":
                         row[column_e6] = value_fallback
                     self._header.add(column_e6)
-                # else:
-                #     print(f"Column '{kv.sourcing}' not found in row")
 
     # ------------------------------------------------------------------
     # Private helpers
