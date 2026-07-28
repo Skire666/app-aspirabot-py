@@ -340,9 +340,9 @@ class CsvTable:
         """
         for row in self._rows:
             for col in row:
-                value = row.get(col, "")
+                value = row.get(col, None)
                 # data:image/png;base64,iVBORw0KGgoAAAANSUhEUg... ???
-                if value and len(value) > 16 and value.startswith("data:image"):
+                if value and len(str(value)) >= 16 and value.startswith("data:image"):
                     # export image to external file
                     image_data = row[col]
                     url_unique_keys = row.get(C_CSV_PRIMARY_KEY, "")

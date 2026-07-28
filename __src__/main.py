@@ -9,10 +9,10 @@ import tkinter as tk
 import traceback
 from collections.abc import Callable
 
-import models.steps  # noqa: F401 - load registry entries
-import presenters.steps  # noqa: F401 - load registry entries (params builders)
-import services.steps  # noqa: F401 - load registry entries
-import views.steps  # noqa: F401 - load registry entries
+import models.steps  # ruff: ignore[unused-import] - load registry entries
+import presenters.steps  # ruff: ignore[unused-import] - load registry entries (params builders)
+import services.steps  # ruff: ignore[unused-import] - load registry entries
+import views.steps  # ruff: ignore[unused-import] - load registry entries
 from models.app_configuration_model import AppConfigurationModel
 from presenters.app_configuration_presenter import AppConfigurationPresenter
 from presenters.debug_presenter import DebugPresenter
@@ -51,6 +51,7 @@ from shared.app_global_state import app_state
 from shared.constants import C_APP_CONFIG_FILE
 from shared.enums import TitleModuleEnum
 from shared.path_util import get_current_working_directory
+from shared.playwright_util import setup_environment_playwright
 from view_models.app_configuration_view_model import AppConfigurationViewModel
 from view_models.debug_view_model import DebugViewModel
 from view_models.executor_view_model import ExecutorViewModel
@@ -75,6 +76,29 @@ from views.splashscreen_view import SplashscreenView
 from views.workflow_view import WorkflowView
 
 logger = logging.getLogger(__name__)
+
+# -----------------------------------------------------------------------------
+# special case : playwright
+# -----------------------------------------------------------------------------
+
+# Le souci vient du fait que ton .exe (PyInstaller, vu le dossier _MEI...) est en mode onefile :
+# à chaque lancement, tout est extrait dans un dossier temporaire différent, qui est ensuite supprimé à la fermeture.
+# Playwright cherche Chromium dans ce dossier temporaire (_MEI111682\...\.local-browsers\...),
+# mais le navigateur n'y a jamais été inclus (ou n'y est plus).
+# SOLUTION : Chemin persistant hors du dossier temp (recommandé pour un .exe plus léger)
+
+# main.py — TOUT EN HAUT, avant "from playwright..."
+import os
+
+
+def get_browsers_path():
+    base = os.environ.get("LOCALAPPDATA", os.path.expanduser("~"))
+    return os.path.join(base, "TonApp", "ms-playwright")
+
+
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = get_browsers_path()
+
+setup_environment_playwright()
 
 # -----------------------------------------------------------------------------
 # Entry point
@@ -159,7 +183,7 @@ def _wire_all_navigation(
     main_view.set_on_show(TitleModuleEnum.E_EXECUTOR, executor_presenter.ensure_scenarios_loaded)
 
 
-def _assemble_components(  # noqa: PLR0914
+def _assemble_components(  # ruff: ignore[too-many-locals]
     main_view: MainView, config_repo: AppConfigurationRepository, startup_service: StartupService
 ) -> tuple[list[tk.Widget], list[object]]:
     """Instantiate all MVP component groups, wire navigation, and return views/presenters.
@@ -208,7 +232,7 @@ def _launch_main_app(root: tk.Tk, config_repo: AppConfigurationRepository, start
         root.deiconify()
         app_state.wire_geometry_persistence(config_repo)
         _register_and_anchor(root, main_view, views, presenters)
-    except Exception:  # noqa: BLE001
+    except Exception:  # ruff: ignore[blind-except]
         traceback.print_exc()
         root.destroy()
 
@@ -597,7 +621,7 @@ def _wire_teardown(root: tk.Tk, teardown_views: list[tk.Widget]) -> None:
     root.protocol("WM_DELETE_WINDOW", _on_close)
 
 
-def _register_views(  # noqa: PLR0913, PLR0917
+def _register_views(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
     main_view: MainView,
     log_view: LogView,
     historic_view: ProfilesView,

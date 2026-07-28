@@ -2,6 +2,7 @@
 tmp_app_logs/
 chromium_tmp/
 extensions/ubo_chromium/*
+aspirabot.exe
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

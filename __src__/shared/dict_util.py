@@ -76,7 +76,7 @@ def set_quality_count_filled(row: dict[str, str]) -> None:
     """Count the number of non-empty cells in *row*."""
     cells_filled_count = 1
     for value in row.values():
-        if value and len(value) >= 1:
+        if value:
             cells_filled_count += 1
     row[C_CSV_QUALITY_2_ROW] = str(cells_filled_count)
 
