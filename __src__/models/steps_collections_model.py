@@ -269,9 +269,13 @@ class StepsCollections:
                 return True
         return False
 
-    def has_export_step_when_extract_step(self) -> bool:
+    def has_export_step(self) -> bool:
         """Check if any E_EXTRACT*** step occurs without a corresponding E_EXPORT*** step."""
-        has_extract = any(
+        return self.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_CSV) >= 1
+
+    def has_extract_step(self) -> bool:
+        """Check if any E_EXTRACT*** step occurs without a corresponding E_EXPORT*** step."""
+        return any(
             step.step_type
             in {
                 StepTypeEnum.E_EXTRACT_TEXTS,
@@ -282,8 +286,6 @@ class StepsCollections:
             }
             for step in self.list_steps
         )
-        has_export = self.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_CSV) >= 1
-        return has_extract == has_export
 
     # ---------------------------------------------------------------
     # Cache management (private)

@@ -157,7 +157,7 @@ class ExecutorView(ttk.Frame):
         """Row 1 — export folder path, browse button, open-folder button."""
         row = ttk.Frame(parent)
         row.pack(fill=tk.X)
-        MyLabel(row, text="Dossier d'export :").pack_left()
+        MyLabel(row, text="Dossier d'export (logs, ddl) :").pack_left()
 
         FolderLinkWidget(row, title="", path="Ouvrir le dossier", callback=lambda: self._vm.open_export_folder()).pack(
             side=tk.RIGHT

@@ -2,9 +2,9 @@
     "log_level_enum": "DEBUG",
     "folder_logs": "tmp_app_logs",
     "folder_scenarios": "E:\\app-life-selector\\aspirabot_scenarios",
-    "gui_booting_size": "851x880",
-    "gui_booting_position": "846,0",
-    "gui_booting_fullscreen": false,
+    "gui_booting_size": "1707x889",
+    "gui_booting_position": "112,-21",
+    "gui_booting_fullscreen": true,
     "chromium_persistant_dir": "chromium_tmp",
     "chromium_extensions_dir": "extensions/ubo_chromium"
 }

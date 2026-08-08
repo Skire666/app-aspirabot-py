@@ -60,12 +60,13 @@ class WorkflowService:
         """Append export-step structural errors to vr."""
         if steps_context.count_type_step(StepTypeEnum.E_EXPORT_DATA_TO_CSV) > 1:
             vr.append(ErrorCodeWKF.WKF_1010, SeverityEnum.E_ERROR)
-        if not steps_context.has_export_step_when_extract_step():
-            vr.append(ErrorCodeWKF.WKF_1009, SeverityEnum.E_ERROR)
-        if not steps_context.has_export_step_before_kill_step():
-            vr.append(ErrorCodeWKF.WKF_1011, SeverityEnum.E_ERROR)
-        if not steps_context.has_export_step_after_restart_step():
-            vr.append(ErrorCodeWKF.WKF_1012, SeverityEnum.E_ERROR)
+        if steps_context.has_export_step() or steps_context.has_extract_step():
+            if steps_context.has_export_step() != steps_context.has_extract_step():
+                vr.append(ErrorCodeWKF.WKF_1009, SeverityEnum.E_ERROR)
+            if not steps_context.has_export_step_before_kill_step():
+                vr.append(ErrorCodeWKF.WKF_1011, SeverityEnum.E_ERROR)
+            if not steps_context.has_export_step_after_restart_step():
+                vr.append(ErrorCodeWKF.WKF_1012, SeverityEnum.E_ERROR)
 
     @staticmethod
     def _validate_workflow_structure(steps_context: StepsCollections) -> ValidationResult:
