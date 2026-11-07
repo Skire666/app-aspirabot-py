@@ -61,7 +61,7 @@ __src__/
 | `Presenter`     | `ViewModel`, `Service`, `Model`, `interfaces/`, `shared/`    | `View`, `Repository`, `tkinter`              |
 | `Service`       | `Repository`, `Model`, `interfaces/`, `shared/`              | `View`, `ViewModel`, `Presenter`, `tkinter`            |
 | `Repository`    | `Model`, `shared/`                                           | `View`, `ViewModel`, `Presenter`, `Service`, `tkinter`   |
-| `Model`         | `shared/`, `pydantic` (infrastructure only)                  | `View`, `ViewModel`, `Presenter`, `Service`, `Repository` |
+| `Model`         | `interfaces/`, `shared/`, `pydantic` (infrastructure only)   | `View`, `ViewModel`, `Presenter`, `Service`, `Repository` |
 | `ViewModel` (Vars only) | `tkinter`                                            | `Service`, `Repository`, `Model`                         |
 
 > If adding an import creates a cycle or runs against an arrow above, the design is wrong — refactor.

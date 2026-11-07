@@ -1,0 +1,47 @@
+{
+  "include": ["src/**/*.py"],
+  "select": ["FUR"],
+  "rules": {
+    "unused-foqa": {},
+    "function-too-long": { "max-lines": 26 },
+    "file-too-long": { "max-lines": 1000 },
+    "halstead-file": { "metric": "volume", "max": 15000 },
+    "halstead-function": { "metric": "volume", "max": 1200 },
+    "cognitive-complexity": { "max": 16 },
+    "too-complex-class": { "max-class-complexity": 80 },
+    "demeter-chain": {
+      "max-depth": 3,
+      "ignore-roots": ["self", "cls"],
+      "ignore-imported-modules": true,
+      "count-calls": false
+    },
+    "too-many-instance-attributes": { "max-instance-attributes": 20 },
+    "layer-violation": {
+      "source-roots": ["src"],
+      "include-type-checking": true,
+      "contracts": [
+        {
+          "type": "forbidden",
+          "name": "service-imports",
+          "source": ["services"],
+          "forbidden": ["views", "view_models", "presenters", "tkinter"]
+        },
+        {
+          "type": "forbidden",
+          "name": "model-imports",
+          "source": ["models"],
+          "forbidden": ["views", "view_models", "presenters", "services", "repositories", "tkinter"]
+        },
+        {
+          "type": "forbidden",
+          "name": "shared-imports",
+          "source": ["shared"],
+          "forbidden": ["views", "view_models", "presenters", "services", "repositories", "models"]
+        }
+      ]
+    }
+  },
+  "report": {
+    "title": "concentrator"
+  }
+}
